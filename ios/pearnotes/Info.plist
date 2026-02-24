@@ -7,7 +7,7 @@
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
     <key>CFBundleDisplayName</key>
-    <string>RN Pear Expo Starter</string>
+    <string>Pear notes</string>
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
     <key>CFBundleIdentifier</key>
@@ -27,8 +27,8 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>rnpearexpostarter</string>
-          <string>com.anonymous.rnpearexpostarter</string>
+          <string>pearnotes</string>
+          <string>com.amreshvs.pearnotes</string>
         </array>
       </dict>
     </array>

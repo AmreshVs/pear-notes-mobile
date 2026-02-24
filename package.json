@@ -1,5 +1,5 @@
 {
-  "name": "rn-pear-expo-starter",
+  "name": "pear-notes",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "standard": {
@@ -8,11 +8,6 @@
     ]
   },
   "private": true,
-  "author": {
-    "name": "Amresh Vs",
-    "email": "vsamreshpro@gmail.com",
-    "url": "https://github.com/AmreshVs"
-  },
   "scripts": {
     "start:clean": "watchman watch-del $PWD; watchman watch-project $PWD && expo start --dev-client --clear",
     "android": "expo run:android",

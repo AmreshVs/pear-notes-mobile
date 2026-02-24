@@ -1,4 +1,4 @@
-package com.anonymous.rnpearexpostarter
+package com.amreshvs.pearnotes
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
