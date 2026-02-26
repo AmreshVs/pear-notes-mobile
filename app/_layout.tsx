@@ -1,4 +1,6 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome'
+import { backendApi } from '@pear-notes/core/backend/api.js'
+import { store } from '@pear-notes/core/store/store.js'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { Directory, Paths } from 'expo-file-system'
 import { useFonts } from 'expo-font'
@@ -6,6 +8,7 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useCallback, useEffect, useState } from 'react'
 import 'react-native-reanimated'
+import { Provider } from 'react-redux'
 
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { useColorScheme } from '@/components/useColorScheme'
@@ -19,8 +22,8 @@ export const unstable_settings = {
 
 SplashScreen.preventAutoHideAsync()
 
-const coreDir = new Directory(Paths.document, 'core')
-const storagePath = coreDir.uri.replace(/^file:\/+/, '/')
+const documentDir = new Directory(Paths.document)
+const storage = documentDir.uri.replace(/^file:\/+/, '/')
 
 export default function RootLayout() {
   const [worketLoaded, setWorkletLoaded] = useState(false)
@@ -34,7 +37,8 @@ export default function RootLayout() {
   const initWorklet = useCallback(async () => {
     try {
       setFatalError(null)
-      await startWorklet(storagePath)
+      await startWorklet(storage)
+      await backendApi.ready({ storage, encryption: 'amresh' })
       setWorkletLoaded(true)
     } catch (e) {
       console.error('Error in initWorklet', e)
@@ -72,10 +76,12 @@ function RootLayoutNav() {
   const colorScheme = useColorScheme()
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      </Stack>
-    </ThemeProvider>
+    <Provider store={store}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        </Stack>
+      </ThemeProvider>
+    </Provider>
   )
 }

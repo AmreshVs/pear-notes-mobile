@@ -1,9 +1,8 @@
+import HRPC from '@pear-notes/core/spec/hrpc/index.js'
+
+const { setRPC } = require('@pear-notes/core/rpc.js')
 const FramedStream = require('framed-stream')
 const { Worklet } = require('react-native-bare-kit')
-
-const HRPC = require('../spec/hrpc')
-
-const { setRPC } = require('./rpc')
 
 export async function startWorklet(storagePath: string) {
   const worklet = new Worklet()
