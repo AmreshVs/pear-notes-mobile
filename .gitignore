@@ -38,7 +38,7 @@ yarn-error.*
 *.tsbuildinfo
 
 # bare-bundle
-backend/backend.bundle.js
+src/backend/backend.bundle.js
 
 # iOS
 ios/Podfile.lock
