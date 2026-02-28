@@ -8,12 +8,10 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated'
 
-import { backendApi } from '@/backend/api'
 import { Container, Text, useTheme, View } from '@/components/Themed'
 
 export default function TabOneScreen() {
   const { colors } = useTheme()
-  const [response, setResponse] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const buttonScale = useSharedValue(1)
 
@@ -22,16 +20,6 @@ export default function TabOneScreen() {
     buttonScale.value = withSpring(0.95, {}, () => {
       buttonScale.value = withSpring(1)
     })
-
-    try {
-      const res = await backendApi.helloWorld()
-      setResponse(res.value)
-    } catch (error) {
-      console.error(error)
-      setResponse('Error connecting to bare')
-    } finally {
-      setIsLoading(false)
-    }
   }, [buttonScale])
 
   const animatedButtonStyle = useAnimatedStyle(() => {
@@ -53,18 +41,6 @@ export default function TabOneScreen() {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(200)} style={styles.actionSection}>
-        <View style={styles.responseContainer}>
-          {response ? (
-            <Text variant="h3" style={[styles.responseText, { color: colors.success }]}>
-              {response}
-            </Text>
-          ) : (
-            <Text variant="caption" style={styles.placeholderText}>
-              Response from backend will appear here
-            </Text>
-          )}
-        </View>
-
         <Animated.View style={animatedButtonStyle}>
           <Pressable
             style={({ pressed }) => [

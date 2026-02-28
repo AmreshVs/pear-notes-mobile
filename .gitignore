@@ -42,3 +42,5 @@ backend/backend.bundle.js
 
 # iOS
 ios/Podfile.lock
+
+.agents

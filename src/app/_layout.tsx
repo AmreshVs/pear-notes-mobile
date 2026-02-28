@@ -34,8 +34,9 @@ export default function RootLayout() {
   const initWorklet = useCallback(async () => {
     try {
       setFatalError(null)
-      await startWorklet(storagePath)
+      await startWorklet(storage)
       await backendApi.ready({ storage, encryption: 'amresh' })
+      console.log('Backend runtime initialized')
       setWorkletLoaded(true)
     } catch (e) {
       console.error('Error in initWorklet', e)
