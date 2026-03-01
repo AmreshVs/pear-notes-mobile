@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script type="module">
+      import { Editor } from 'https://esm.sh/@tiptap/core';
+      import StarterKit from 'https://esm.sh/@tiptap/starter-kit';
+      import Placeholder from 'https://esm.sh/@tiptap/extension-placeholder';
+      import TaskList from 'https://esm.sh/@tiptap/extension-task-list';
+      import TaskItem from 'https://esm.sh/@tiptap/extension-task-item';
+      import Highlight from 'https://esm.sh/@tiptap/extension-highlight';
+      import Link from 'https://esm.sh/@tiptap/extension-link';
+      import Image from 'https://esm.sh/@tiptap/extension-image';
+      import Table from 'https://esm.sh/@tiptap/extension-table';
+      
+      const editor = new Editor({
+        element: document.querySelector('#editor'),
+        extensions: [
+          StarterKit,
+          Placeholder.configure({ placeholder: 'Start writing...' }),
+          TaskList,
+          TaskItem.configure({ nested: true }),
+          Highlight,
+          Link,
+          Image,
+          Table
+        ],
+        content: '<p>Hello esm.sh!</p>',
+      });
+      console.log('Editor initialized:', !!editor);
+    </script>
+  </head>
+  <body>
+    <div id="editor"></div>
+  </body>
+</html>

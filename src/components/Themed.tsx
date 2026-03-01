@@ -13,17 +13,20 @@ import { Typography } from '@/constants/Typography'
  * Hook to access the current theme tokens.
  */
 export function useTheme() {
-  const colorScheme = useDeviceColorScheme() ?? 'light'
+  const deviceColorScheme = useDeviceColorScheme()
+  const colorScheme = (deviceColorScheme === 'dark' ? 'dark' : 'light') as 'light' | 'dark'
+  const isDark = colorScheme === 'dark'
 
   return useMemo(
     () => ({
       colors: Colors[colorScheme],
       colorScheme,
+      isDark,
       spacing: Spacing,
       layout: Layout,
       typography: Typography,
     }),
-    [colorScheme],
+    [colorScheme, isDark],
   )
 }
 
@@ -90,6 +93,31 @@ export function Card(props: ViewProps) {
           backgroundColor: theme.colors.surface,
           borderWidth: 1,
           borderColor: theme.colors.border,
+        },
+        props.style,
+      ]}
+    />
+  )
+}
+
+/**
+ * Premium Glass Card component.
+ */
+export function GlassCard(props: ViewProps) {
+  const theme = useTheme()
+  return (
+    <View
+      {...props}
+      style={[
+        {
+          padding: theme.spacing.md,
+          borderRadius: 24,
+          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+          borderWidth: 1,
+          borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+          boxShadow: theme.isDark
+            ? '0 8px 32px rgba(0, 0, 0, 0.3)'
+            : '0 8px 32px rgba(0, 0, 0, 0.1)',
         },
         props.style,
       ]}

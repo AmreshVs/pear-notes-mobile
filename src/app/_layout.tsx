@@ -1,17 +1,20 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { Directory, Paths } from 'expo-file-system'
 import { useFonts } from 'expo-font'
+import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
+import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useState } from 'react'
 import 'react-native-reanimated'
 import { Provider } from 'react-redux'
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon'
-import AppTabs from '@/components/app-tabs'
 import { ErrorScreen } from '@/components/ErrorScreen'
+import { PairingOverlay } from '@/components/PairingOverlay'
 import { useColorScheme } from '@/components/useColorScheme'
 import { startWorklet } from '@/utils/worklet'
 
@@ -25,6 +28,8 @@ const storage = documentDir.uri.replace(/^file:\/+/, '/')
 export default function RootLayout() {
   const [worketLoaded, setWorkletLoaded] = useState(false)
   const [fatalError, setFatalError] = useState<string | null>(null)
+  const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
 
   const [loaded, fontError] = useFonts({
     SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
@@ -54,8 +59,19 @@ export default function RootLayout() {
   }, [initWorklet])
 
   useEffect(() => {
+    if (isDark) {
+      SystemUI.setBackgroundColorAsync('#202020')
+    } else {
+      SystemUI.setBackgroundColorAsync('#f2f2f7')
+    }
+  }, [isDark])
+
+  useEffect(() => {
     if (loaded && worketLoaded) {
       SplashScreen.hideAsync()
+      // Dispatch ready signals to start sagas
+      store.dispatch(appReady())
+      store.dispatch(initApp())
     }
   }, [loaded, worketLoaded])
 
@@ -67,18 +83,37 @@ export default function RootLayout() {
     return null
   }
 
-  return <RootLayoutNav />
+  return (
+    <Provider store={store}>
+      <RootLayoutNav />
+    </Provider>
+  )
 }
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme()
+  const isDark = colorScheme === 'dark'
 
   return (
-    <Provider store={store}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <AppTabs />
-        <AnimatedSplashOverlay />
-      </ThemeProvider>
-    </Provider>
+    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="note" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="settings"
+          options={{
+            presentation: 'modal',
+            headerShown: false,
+          }}
+        />
+      </Stack>
+
+      <PairingOverlay />
+      <AnimatedSplashOverlay />
+    </ThemeProvider>
   )
 }
