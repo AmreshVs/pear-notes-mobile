@@ -9,6 +9,7 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useState } from 'react'
+import { LogBox } from 'react-native'
 import 'react-native-reanimated'
 import { Provider } from 'react-redux'
 
@@ -19,6 +20,8 @@ import { useColorScheme } from '@/components/useColorScheme'
 import { startWorklet } from '@/utils/worklet'
 
 export { ErrorBoundary } from 'expo-router'
+
+LogBox.ignoreAllLogs()
 
 SplashScreen.preventAutoHideAsync()
 

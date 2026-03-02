@@ -1,6 +1,7 @@
-import { useTheme } from '@/components/Themed'
 import { Stack } from 'expo-router'
 import React from 'react'
+
+import { useTheme } from '@/components/Themed'
 
 export default function SearchLayout() {
   const { colors } = useTheme()
@@ -20,10 +21,7 @@ export default function SearchLayout() {
         headerBackButtonDisplayMode: 'minimal',
       }}
     >
-      <Stack.Screen 
-        name="index" 
-        options={{ title: 'Search' }} 
-      />
+      <Stack.Screen name="index" options={{ title: 'Search' }} />
     </Stack>
   )
 }

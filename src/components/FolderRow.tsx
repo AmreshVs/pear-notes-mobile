@@ -1,9 +1,9 @@
 import {
-    ChevronRight,
-    FileText,
-    Folder as FolderIcon,
-    LucideIcon,
-    Trash2,
+  ChevronRight,
+  FileText,
+  Folder as FolderIcon,
+  LucideIcon,
+  Trash2,
 } from 'lucide-react-native'
 import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
@@ -39,14 +39,23 @@ export function FolderRow({ name, count, icon, selected, onPress }: FolderRowPro
               ? 'rgba(220, 163, 35, 0.15)'
               : 'rgba(220, 163, 35, 0.1)'
             : pressed
-              ? isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+              ? isDark
+                ? 'rgba(255,255,255,0.05)'
+                : 'rgba(0,0,0,0.05)'
               : 'transparent',
         },
       ]}
     >
       <View style={styles.leftContent}>
-        <Icon size={20} color={selected ? colors.primary : colors.primary} style={{ opacity: selected ? 1 : 0.8 }} />
-        <Text variant="body" style={[styles.name, { color: colors.text, opacity: selected ? 1 : 0.9 }]}>
+        <Icon
+          size={20}
+          color={selected ? colors.primary : colors.primary}
+          style={{ opacity: selected ? 1 : 0.8 }}
+        />
+        <Text
+          variant="body"
+          style={[styles.name, { color: colors.text, opacity: selected ? 1 : 0.9 }]}
+        >
           {name}
         </Text>
       </View>

@@ -1,6 +1,7 @@
-import { useTheme } from '@/components/Themed'
 import { Stack } from 'expo-router'
 import React from 'react'
+
+import { useTheme } from '@/components/Themed'
 
 export default function FoldersLayout() {
   const { colors, isDark } = useTheme()
@@ -20,18 +21,9 @@ export default function FoldersLayout() {
         headerBackButtonDisplayMode: 'minimal',
       }}
     >
-      <Stack.Screen 
-        name="index" 
-        options={{ title: 'Folders' }} 
-      />
-      <Stack.Screen 
-        name="folder/[id]" 
-        options={{ headerLargeTitle: true }} 
-      />
-      <Stack.Screen 
-        name="note/[id]" 
-        options={{ headerLargeTitle: false, title: '' }} 
-      />
+      <Stack.Screen name="index" options={{ title: 'Folders' }} />
+      <Stack.Screen name="folder/[id]" options={{ headerLargeTitle: true }} />
+      <Stack.Screen name="note/[id]" options={{ headerLargeTitle: false, title: '' }} />
     </Stack>
   )
 }

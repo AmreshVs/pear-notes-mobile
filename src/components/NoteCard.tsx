@@ -65,8 +65,15 @@ export function NoteCard({
           {folderName && (
             <>
               <View style={styles.folderTag}>
-                <Folder size={11} color={colors.textSecondary} style={{ marginRight: 5, opacity: 0.7 }} />
-                <Text variant="caption" style={[styles.metadataText, { color: colors.textSecondary }]}>
+                <Folder
+                  size={11}
+                  color={colors.textSecondary}
+                  style={{ marginRight: 5, opacity: 0.7 }}
+                />
+                <Text
+                  variant="caption"
+                  style={[styles.metadataText, { color: colors.textSecondary }]}
+                >
                   {folderName}
                 </Text>
               </View>

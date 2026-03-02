@@ -53,7 +53,9 @@ export default function SearchScreen() {
       >
         {notes.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={{ color: colors.textSecondary, fontSize: 16, fontWeight: '600', opacity: 0.5 }}>
+            <Text
+              style={{ color: colors.textSecondary, fontSize: 16, fontWeight: '600', opacity: 0.5 }}
+            >
               Enter a search query to find notes.
             </Text>
           </View>
