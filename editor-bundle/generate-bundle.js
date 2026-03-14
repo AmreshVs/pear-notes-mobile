@@ -8,16 +8,13 @@
  *   vite build && node generate-bundle.js
  */
 
-const fs   = require('fs')
+const fs = require('fs')
 const path = require('path')
 
 const distHtml = fs.readFileSync(path.join(__dirname, 'dist', 'index.html'), 'utf-8')
 
 // Escape for a TypeScript template literal
-const escaped = distHtml
-  .replace(/\\/g,  '\\\\')
-  .replace(/`/g,   '\\`')
-  .replace(/\$\{/g, '\\${')
+const escaped = distHtml.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${')
 
 const output = `/**
  * tiptap-editor-bundle.ts  —  AUTO-GENERATED.  DO NOT EDIT.

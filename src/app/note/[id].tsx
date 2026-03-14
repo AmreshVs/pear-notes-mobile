@@ -8,23 +8,7 @@ import * as Haptics from 'expo-haptics'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import {
-  Bold,
-  CheckSquare,
-  ChevronLeft,
-  Code,
-  Edit3,
-  Heading1,
-  Heading2,
-  Italic,
-  List,
-  ListOrdered,
-  ListTodo,
-  Paperclip,
-  Quote,
-  RotateCcw,
-  Share2,
-} from 'lucide-react-native'
+import { SymbolView } from 'expo-symbols'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Keyboard,
@@ -47,13 +31,45 @@ import {
   type TiptapStyleState,
 } from '@/components/TiptapEditor'
 
+function HeaderCircleBtn({
+  sf,
+  onPress,
+  color,
+  bgColor,
+  size = 20,
+}: {
+  sf: string
+  onPress: () => void
+  color: string
+  bgColor: string
+  size?: number
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.headerCircleBtn,
+        { backgroundColor: bgColor, opacity: pressed ? 0.7 : 1 },
+      ]}
+    >
+      <SymbolView
+        name={sf as any}
+        size={size}
+        tintColor={color}
+        weight="medium"
+        fallback={<View style={{ width: size, height: size }} />}
+      />
+    </Pressable>
+  )
+}
+
 function ToolbarBtn({
-  icon: Icon,
+  sf,
   onPress,
   active,
   colors,
 }: {
-  icon: any
+  sf: string
   onPress: () => void
   active?: boolean
   colors: any
@@ -67,7 +83,13 @@ function ToolbarBtn({
         { opacity: pressed ? 0.5 : 1 },
       ]}
     >
-      <Icon size={20} color={active ? colors.primary : colors.text} strokeWidth={2} />
+      <SymbolView
+        name={sf as any}
+        size={22}
+        tintColor={active ? colors.primary : colors.text}
+        weight="regular"
+        fallback={<View style={{ width: 22, height: 22 }} />}
+      />
     </Pressable>
   )
 }
@@ -84,6 +106,21 @@ export default function NoteScreen() {
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
 
   const [title, setTitle] = useState(noteData?.title || '')
+
+  const initialContent = useMemo(() => {
+    let content = noteData?.note || ''
+    if (hyperdriveServerAddress && content.includes(HYPERDRIVE_URL_PREFIX)) {
+      content = content.replaceAll(
+        HYPERDRIVE_URL_PREFIX,
+        hyperdriveServerAddress.replace(/\/$/, ''),
+      )
+    }
+    return content
+  }, [noteData?.note, hyperdriveServerAddress])
+
+  const [localContent, setLocalContent] = useState(initialContent)
+  const isUpdatingRef = useRef(false)
+
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [styleState, setStyleState] = useState<TiptapStyleState | null>(null)
@@ -92,7 +129,17 @@ export default function NoteScreen() {
     if (noteData?.title !== undefined && title === '') {
       setTitle(noteData.title)
     }
-  }, [noteData, title])
+  }, [noteData?.title, title])
+
+  // React to remote note updates safely without infinite loops
+  useEffect(() => {
+    if (initialContent !== undefined && initialContent !== localContent) {
+      if (isUpdatingRef.current) return
+      // Remote or initial load change detected
+      setLocalContent(initialContent)
+      editorRef.current?.setHTML(initialContent)
+    }
+  }, [initialContent, localContent])
 
   useEffect(() => {
     const show = Keyboard.addListener(
@@ -115,6 +162,8 @@ export default function NoteScreen() {
   const handleUpdate = useCallback(
     (html: string) => {
       if (!id || id === 'new') return
+      isUpdatingRef.current = true
+      setLocalContent(html)
       let finalHtml = html
       if (hyperdriveServerAddress) {
         finalHtml = finalHtml.replaceAll(
@@ -123,6 +172,10 @@ export default function NoteScreen() {
         )
       }
       dispatch(updateNote({ key: id, title, note: finalHtml } as any))
+
+      setTimeout(() => {
+        isUpdatingRef.current = false
+      }, 50)
     },
     [dispatch, id, title, hyperdriveServerAddress],
   )
@@ -216,17 +269,6 @@ export default function NoteScreen() {
   const bg = colors.background
   const toolbarBottom = keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16
 
-  const initialContent = useMemo(() => {
-    let content = noteData?.note || ''
-    if (hyperdriveServerAddress && content.includes(HYPERDRIVE_URL_PREFIX)) {
-      content = content.replaceAll(
-        HYPERDRIVE_URL_PREFIX,
-        hyperdriveServerAddress.replace(/\/$/, ''),
-      )
-    }
-    return content
-  }, [noteData?.note, hyperdriveServerAddress])
-
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
       <Stack.Screen
@@ -235,6 +277,9 @@ export default function NoteScreen() {
           headerTransparent: false,
           headerStyle: { backgroundColor: bg },
           headerShadowVisible: false,
+          headerBackButtonDisplayMode: 'minimal',
+          headerBackTitle: 'Notes',
+          headerTintColor: colors.primary,
           headerLeft: () => (
             <Pressable
               onPress={async () => {
@@ -242,43 +287,52 @@ export default function NoteScreen() {
                 router.back()
               }}
               style={({ pressed }) => [
-                styles.headerCircleBtn,
-                { backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', opacity: pressed ? 0.7 : 1 },
+                {
+                  opacity: pressed ? 0.5 : 1,
+                },
               ]}
             >
-              <ChevronLeft size={18} color={colors.text} strokeWidth={2.5} />
+              <SymbolView
+                name="chevron.left"
+                size={24}
+                tintColor={colors.primary}
+                weight="medium"
+                fallback={<View />}
+              />
             </Pressable>
           ),
           headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-              {isEditing && (
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.headerCircleBtn,
-                    { backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', opacity: pressed ? 0.7 : 1 },
-                  ]}
-                >
-                  <RotateCcw size={15} color={colors.text} strokeWidth={2.5} />
-                </Pressable>
-              )}
-              <Pressable
-                style={({ pressed }) => [
-                  styles.headerCircleBtn,
-                  { backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', opacity: pressed ? 0.7 : 1 },
-                ]}
-              >
-                <Share2 size={15} color={colors.text} strokeWidth={2.5} />
-              </Pressable>
-              {isEditing && (
-                <Pressable
-                  onPress={handleDone}
-                  style={({ pressed }) => [
-                    styles.headerCircleBtn,
-                    { backgroundColor: colors.primary, opacity: pressed ? 0.8 : 1 },
-                  ]}
-                >
-                  <Edit3 size={15} color="#fff" strokeWidth={2.5} />
-                </Pressable>
+            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+              {isEditing ? (
+                <>
+                  <HeaderCircleBtn
+                    sf="arrow.uturn.backward"
+                    onPress={() => {}}
+                    color={colors.primary}
+                    bgColor={isDark ? '#2C2C2EB3' : '#E5E5EAB3'}
+                  />
+                  <HeaderCircleBtn
+                    sf="checkmark"
+                    onPress={handleDone}
+                    color={bg}
+                    bgColor={colors.primary}
+                  />
+                </>
+              ) : (
+                <>
+                  <HeaderCircleBtn
+                    sf="square.and.arrow.up"
+                    onPress={() => {}}
+                    color={colors.primary}
+                    bgColor={isDark ? '#2C2C2EB3' : '#E5E5EAB3'}
+                  />
+                  <HeaderCircleBtn
+                    sf="ellipsis"
+                    onPress={() => {}}
+                    color={colors.primary}
+                    bgColor={isDark ? '#2C2C2EB3' : '#E5E5EAB3'}
+                  />
+                </>
               )}
             </View>
           ),
@@ -334,73 +388,78 @@ export default function NoteScreen() {
               contentContainerStyle={styles.toolbarRow}
             >
               <ToolbarBtn
-                icon={CheckSquare}
+                sf="checkmark.square"
                 colors={colors}
                 active={isActive('checkboxList')}
                 onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
               />
-              <ToolbarBtn icon={Paperclip} colors={colors} onPress={handlePickImage} />
-              <ToolbarBtn icon={Edit3} colors={colors} onPress={() => {}} />
+              <ToolbarBtn sf="paperclip" colors={colors} onPress={handlePickImage} />
+              <ToolbarBtn sf="square.and.pencil" colors={colors} onPress={() => {}} />
               <View style={[styles.divider, { backgroundColor: colors.border }]} />
               <ToolbarBtn
-                icon={Heading1}
+                sf="textformat.size.larger"
                 colors={colors}
                 active={isActive('h1')}
                 onPress={() => run(() => editorRef.current?.toggleH1())}
               />
               <ToolbarBtn
-                icon={Heading2}
+                sf="textformat.size"
                 colors={colors}
                 active={isActive('h2')}
                 onPress={() => run(() => editorRef.current?.toggleH2())}
               />
               <ToolbarBtn
-                icon={Bold}
+                sf="bold"
                 colors={colors}
                 active={isActive('bold')}
                 onPress={() => run(() => editorRef.current?.toggleBold())}
               />
               <ToolbarBtn
-                icon={Italic}
+                sf="italic"
                 colors={colors}
                 active={isActive('italic')}
                 onPress={() => run(() => editorRef.current?.toggleItalic())}
               />
               <ToolbarBtn
-                icon={List}
+                sf="list.bullet"
                 colors={colors}
                 active={isActive('unorderedList')}
                 onPress={() => run(() => editorRef.current?.toggleUnorderedList())}
               />
               <ToolbarBtn
-                icon={ListOrdered}
+                sf="list.number"
                 colors={colors}
                 active={isActive('orderedList')}
                 onPress={() => run(() => editorRef.current?.toggleOrderedList())}
               />
               <ToolbarBtn
-                icon={ListTodo}
+                sf="checklist"
                 colors={colors}
                 active={isActive('checkboxList')}
                 onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
               />
               <ToolbarBtn
-                icon={Quote}
+                sf="text.quote"
                 colors={colors}
                 active={isActive('blockQuote')}
                 onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
               />
               <ToolbarBtn
-                icon={Code}
+                sf="chevron.left.forwardslash.chevron.right"
                 colors={colors}
                 active={isActive('codeBlock')}
                 onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
               />
             </ScrollView>
           ) : (
-            <View style={styles.toolbarRow}>
+            <View
+              style={[
+                styles.toolbarRow,
+                { justifyContent: 'flex-start', gap: 24, paddingHorizontal: 8 },
+              ]}
+            >
               <ToolbarBtn
-                icon={Paperclip}
+                sf="paperclip"
                 colors={colors}
                 onPress={() => {
                   setIsEditing(true)
@@ -408,7 +467,7 @@ export default function NoteScreen() {
                 }}
               />
               <ToolbarBtn
-                icon={Edit3}
+                sf="square.and.pencil"
                 colors={colors}
                 onPress={() => {
                   setIsEditing(true)
@@ -428,9 +487,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerCircleBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -2,9 +2,7 @@ import { defineConfig } from 'vite'
 import { viteSingleFile } from 'vite-plugin-singlefile'
 
 export default defineConfig({
-  plugins: [
-    viteSingleFile(),
-  ],
+  plugins: [viteSingleFile()],
   build: {
     // Target modern WebView — WKWebView on iOS 16+ and Android Chrome 100+
     target: 'esnext',

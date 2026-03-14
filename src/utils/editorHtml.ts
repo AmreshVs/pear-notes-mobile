@@ -449,5 +449,5 @@ export function getEditorHtml(): string {
     sendToRN({ type: 'ready' });
   </script>
 </body>
-</html>`;
+</html>`
 }

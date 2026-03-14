@@ -123,6 +123,175 @@ function broadcastStyleState(ed) {
 
 // ── Media Extensions ──────────────────────────────────────────────────────────
 
+function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
+  const container = document.createElement('div')
+  container.className = 'audio-player-container'
+  container.style.cssText =
+    'display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; margin: 12px 0; font-family: sans-serif;'
+
+  const topRow = document.createElement('div')
+  topRow.style.cssText =
+    'display: flex; align-items: center; gap: 16px; padding: 16px; width: 100%; box-sizing: border-box;'
+
+  const playBtn = document.createElement('button')
+  playBtn.className = 'play-btn'
+  playBtn.style.cssText =
+    'flex-shrink: 0; width: 48px; height: 48px; border-radius: 24px; background-color: var(--c-primary); display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; transition: transform 0.2s; padding: 0;'
+
+  const playIcon =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="none" style="margin-left: 2px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>'
+  const pauseIcon =
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>'
+
+  playBtn.innerHTML = playIcon
+
+  const audio = document.createElement('audio')
+  audio.preload = 'metadata'
+  audio.src = src || ''
+  audio.style.display = 'none'
+  playBtn.appendChild(audio)
+
+  const info = document.createElement('div')
+  info.style.cssText = 'flex: 1; min-width: 0;'
+
+  const title = document.createElement('p')
+  title.style.cssText =
+    'font-weight: 600; font-size: 14px; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 4px 0;'
+  title.textContent = titleText || 'Audio Recording'
+
+  const meta = document.createElement('div')
+  meta.style.cssText = 'display: flex; align-items: center; gap: 8px;'
+
+  const badge = document.createElement('span')
+  badge.style.cssText =
+    'font-size: 12px; font-weight: 500; color: var(--c-text-secondary); background-color: var(--c-bg); padding: 2px 8px; border-radius: 6px;'
+  badge.textContent = fileExt || 'AUDIO'
+
+  const dotSpan = document.createElement('span')
+  dotSpan.style.cssText = 'font-size: 12px; color: var(--c-text-secondary);'
+  dotSpan.textContent = '•'
+
+  const timeLabel = document.createElement('span')
+  timeLabel.style.cssText =
+    'font-size: 12px; color: var(--c-text-secondary); font-family: monospace;'
+
+  const formatTime = (secs) => {
+    if (!secs || isNaN(secs) || secs === Infinity) return '0:00'
+    const m = Math.floor(secs / 60)
+    const s = Math.floor(secs % 60)
+    return `${m}:${s.toString().padStart(2, '0')}`
+  }
+
+  let durationObj = initialDuration || 0
+  let currentObj = 0
+  timeLabel.textContent = `${formatTime(currentObj)} / ${formatTime(durationObj)}`
+
+  meta.appendChild(badge)
+  meta.appendChild(dotSpan)
+  meta.appendChild(timeLabel)
+
+  info.appendChild(title)
+  info.appendChild(meta)
+
+  topRow.appendChild(playBtn)
+  topRow.appendChild(info)
+
+  const actionsContainer = document.createElement('div')
+  actionsContainer.style.cssText = 'display: flex; align-items: center; gap: 6px;'
+  topRow.appendChild(actionsContainer)
+
+  const bottomRow = document.createElement('div')
+  bottomRow.style.cssText = 'padding: 0 16px 16px 16px; width: 100%; box-sizing: border-box;'
+
+  const sliderTrack = document.createElement('div')
+  sliderTrack.style.cssText =
+    'position: relative; height: 6px; background-color: var(--c-bg); width: 100%; border-radius: 3px;'
+
+  const sliderFill = document.createElement('div')
+  sliderFill.style.cssText =
+    'position: absolute; top: 0; left: 0; height: 100%; background-color: var(--c-primary); border-radius: 3px; width: 0%; pointer-events: none;'
+
+  const sliderThumb = document.createElement('div')
+  sliderThumb.style.cssText =
+    'position: absolute; top: 50%; left: 0%; width: 12px; height: 12px; background-color: white; border: 2px solid var(--c-primary); border-radius: 6px; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 2;'
+
+  const rangeInput = document.createElement('input')
+  rangeInput.type = 'range'
+  rangeInput.min = '0'
+  rangeInput.max = durationObj || 100
+  rangeInput.step = 'any'
+  rangeInput.value = '0'
+  rangeInput.style.cssText =
+    'position: absolute; top: -6px; left: 0; width: 100%; height: 18px; opacity: 0; cursor: pointer; z-index: 3; margin: 0;'
+
+  sliderTrack.appendChild(sliderFill)
+  sliderTrack.appendChild(sliderThumb)
+  sliderTrack.appendChild(rangeInput)
+  bottomRow.appendChild(sliderTrack)
+
+  container.appendChild(topRow)
+  container.appendChild(bottomRow)
+
+  let isPlaying = false
+
+  const updateProgress = () => {
+    durationObj = audio.duration && audio.duration !== Infinity ? audio.duration : durationObj
+    currentObj = audio.currentTime
+    timeLabel.textContent = `${formatTime(currentObj)} / ${formatTime(durationObj)}`
+    rangeInput.max = durationObj || 100
+    rangeInput.value = currentObj
+
+    const pct = durationObj > 0 ? (currentObj / durationObj) * 100 : 0
+    sliderFill.style.width = `${pct}%`
+    sliderThumb.style.left = `${pct}%`
+  }
+
+  audio.addEventListener('timeupdate', updateProgress)
+  audio.addEventListener('loadedmetadata', updateProgress)
+  audio.addEventListener('ended', () => {
+    isPlaying = false
+    playBtn.innerHTML = playIcon
+    playBtn.appendChild(audio)
+    audio.currentTime = 0
+    updateProgress()
+  })
+
+  playBtn.addEventListener('click', (e) => {
+    e.stopPropagation()
+    e.preventDefault()
+    if (isPlaying) {
+      audio.pause()
+      playBtn.innerHTML = playIcon
+    } else {
+      audio.play()
+      playBtn.innerHTML = pauseIcon
+    }
+    playBtn.appendChild(audio)
+    isPlaying = !isPlaying
+  })
+
+  rangeInput.addEventListener('input', (e) => {
+    const val = parseFloat(e.target.value)
+    audio.currentTime = val
+    updateProgress()
+  })
+
+  rangeInput.addEventListener('mouseenter', () => {
+    sliderThumb.style.opacity = '1'
+  })
+  rangeInput.addEventListener('mouseleave', () => {
+    sliderThumb.style.opacity = '0'
+  })
+
+  const stopEvent = (e) => e.stopPropagation()
+  playBtn.addEventListener('mousedown', stopEvent)
+  playBtn.addEventListener('touchstart', stopEvent)
+  rangeInput.addEventListener('mousedown', stopEvent)
+  rangeInput.addEventListener('touchstart', stopEvent)
+
+  return { container, actionsContainer }
+}
+
 const FileAttachment = Node.create({
   name: 'fileAttachment',
   group: 'block',
@@ -146,74 +315,158 @@ const FileAttachment = Node.create({
   addNodeView() {
     return ({ node, view, getPos }) => {
       const isVideo = node.attrs.fileType?.startsWith('video/')
+      const isAudio = node.attrs.fileType?.startsWith('audio/')
+
+      const btnStyle =
+        'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
+      const dlIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
+      const delIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
+
+      if (isAudio) {
+        const parts = (node.attrs.fileName || '').split('.')
+        const ext = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'AUDIO'
+        const player = createAudioPlayerDOM(
+          node.attrs.url || node.attrs.fileData,
+          node.attrs.fileName,
+          0,
+          ext,
+        )
+        const dom = player.container
+        dom.setAttribute('data-file-attachment', '')
+
+        const dlBtn = document.createElement('button')
+        dlBtn.className = 'dl-btn'
+        dlBtn.style.cssText = btnStyle
+        dlBtn.innerHTML = dlIcon
+        dlBtn.onclick = (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          window.editorBridge.openAttachment(node.attrs.url, node.attrs.fileName)
+        }
+
+        const delBtn = document.createElement('button')
+        delBtn.className = 'del-btn'
+        delBtn.style.cssText = btnStyle
+        delBtn.innerHTML = delIcon
+        delBtn.onclick = (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          window.editorBridge.deleteAttachment(node.attrs.url)
+          const pos = getPos()
+          if (typeof pos === 'number') {
+            view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize))
+          }
+        }
+
+        player.actionsContainer.appendChild(dlBtn)
+        player.actionsContainer.appendChild(delBtn)
+
+        return {
+          dom,
+          stopEvent: (event) => !!event.target.closest('button, input[type="range"]'),
+          ignoreMutation: () => true,
+        }
+      }
+
       const dom = document.createElement('div')
       dom.setAttribute('data-file-attachment', '')
+      dom.className = 'file-attachment-container'
       dom.style.cssText =
-        'padding: 12px; margin: 8px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 8px; font-family: sans-serif; position: relative; overflow: hidden;'
+        'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif;'
 
       if (isVideo) {
+        const videoContainer = document.createElement('div')
+        videoContainer.style.cssText =
+          'position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex;'
         const video = document.createElement('video')
         video.src = node.attrs.url || ''
         video.controls = true
         video.playsInline = true
         video.preload = 'metadata'
-        video.style.cssText =
-          'width: 100%; border-radius: 4px; margin-bottom: 8px; background: #000;'
+        video.style.cssText = 'width: 100%; height: 100%; object-fit: contain;'
 
         const stopEvent = (e) => e.stopPropagation()
         video.addEventListener('mousedown', stopEvent)
         video.addEventListener('click', stopEvent)
         video.addEventListener('touchstart', stopEvent)
 
-        dom.appendChild(video)
+        videoContainer.appendChild(video)
+        dom.appendChild(videoContainer)
       }
 
       const content = document.createElement('div')
       content.style.cssText =
-        'display: flex; align-items: center; justify-content: space-between; gap: 12px;'
+        'position: relative; display: flex; align-items: center; gap: 16px; padding: 16px;'
+
+      const iconContainer = document.createElement('div')
+      iconContainer.style.cssText =
+        'flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background-color: var(--c-bg); display: flex; align-items: center; justify-content: center; color: var(--c-text-secondary); border: 1px solid var(--c-border);'
+      const iconType = isVideo
+        ? '<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>'
+        : '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/>'
+      iconContainer.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${iconType}</svg>`
+      content.appendChild(iconContainer)
 
       const info = document.createElement('div')
       info.style.cssText = 'flex: 1; min-width: 0;'
 
-      const label = document.createElement('div')
+      const fileName = node.attrs.fileName || 'Untitled File'
+      const parts = fileName.split('.')
+      const ext = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE'
+
+      const label = document.createElement('p')
       label.style.cssText =
-        'font-weight: 600; font-size: 14px; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'
-      label.textContent = node.attrs.fileName || 'File Attachment'
+        'font-weight: 600; font-size: 14px; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 4px 0;'
+      label.textContent = fileName
       info.appendChild(label)
 
+      const meta = document.createElement('div')
+      meta.style.cssText = 'display: flex; align-items: center; gap: 8px;'
+
+      const extSpan = document.createElement('span')
+      extSpan.style.cssText =
+        'font-size: 12px; font-weight: 500; color: var(--c-text-secondary); background-color: var(--c-bg); padding: 2px 8px; border-radius: 6px;'
+      extSpan.textContent = ext
+      meta.appendChild(extSpan)
+
       if (node.attrs.fileSize) {
-        const meta = document.createElement('div')
-        meta.style.cssText = 'font-size: 11px; color: var(--c-text-secondary); margin-top: 2px;'
+        const dotSpan = document.createElement('span')
+        dotSpan.style.cssText = 'font-size: 12px; color: var(--c-text-secondary);'
+        dotSpan.textContent = '•'
+        meta.appendChild(dotSpan)
+
+        const sizeSpan = document.createElement('span')
+        sizeSpan.style.cssText = 'font-size: 12px; color: var(--c-text-secondary);'
         const size = node.attrs.fileSize
-        meta.textContent =
+        sizeSpan.textContent =
           size < 1024
             ? `${size} B`
             : size < 1048576
               ? `${(size / 1024).toFixed(1)} KB`
               : `${(size / 1048576).toFixed(1)} MB`
-        info.appendChild(meta)
+        meta.appendChild(sizeSpan)
       }
+      info.appendChild(meta)
 
       const actions = document.createElement('div')
-      actions.style.cssText = 'display: flex; align-items: center; gap: 4px;'
+      actions.style.cssText = 'display: flex; align-items: center; gap: 6px;'
 
-      const btnStyle =
-        'padding: 8px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s;'
-      const iconStroke = 'currentColor'
+      const genericBtnStyle =
+        'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
 
-      const dlBtn = document.createElement('div')
+      const dlBtn = document.createElement('button')
       dlBtn.className = 'dl-btn'
-      dlBtn.style.cssText = btnStyle
-      dlBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="${iconStroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
+      dlBtn.style.cssText = genericBtnStyle
+      dlBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
       dlBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
         window.editorBridge.openAttachment(node.attrs.url, node.attrs.fileName)
       }
 
-      const delBtn = document.createElement('div')
+      const delBtn = document.createElement('button')
       delBtn.className = 'del-btn'
-      delBtn.style.cssText = btnStyle
+      delBtn.style.cssText = genericBtnStyle
       delBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
       delBtn.onclick = (e) => {
         e.preventDefault()
@@ -260,26 +513,39 @@ const AudioAttachment = Node.create({
   },
   addNodeView() {
     return ({ node, view, getPos }) => {
-      const dom = document.createElement('div')
+      const parts = (node.attrs.fileName || '').split('.')
+      const ext = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'AUDIO'
+      const player = createAudioPlayerDOM(
+        node.attrs.url || node.attrs.audioData,
+        node.attrs.fileName,
+        node.attrs.duration,
+        ext,
+      )
+      const dom = player.container
       dom.setAttribute('data-audio-attachment', '')
-      dom.style.cssText =
-        'padding: 12px; margin: 8px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 8px; font-family: sans-serif; display: flex; flex-direction: column; gap: 8px;'
 
-      const header = document.createElement('div')
-      header.style.cssText =
-        'display: flex; align-items: center; justify-content: space-between; gap: 8px;'
+      const btnStyle =
+        'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
+      const dlIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
+      const delIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
 
-      const label = document.createElement('div')
-      label.style.cssText =
-        'font-weight: 600; font-size: 14px; color: var(--c-text); pointer-events: none;'
-      label.textContent = node.attrs.fileName || 'Audio Recording'
-      header.appendChild(label)
+      const dlBtn = document.createElement('button')
+      dlBtn.className = 'dl-btn'
+      dlBtn.style.cssText = btnStyle
+      dlBtn.innerHTML = dlIcon
+      dlBtn.onclick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        window.editorBridge.openAttachment(
+          node.attrs.url || node.attrs.audioData,
+          node.attrs.fileName,
+        )
+      }
 
-      const delBtn = document.createElement('div')
+      const delBtn = document.createElement('button')
       delBtn.className = 'del-btn'
-      delBtn.style.cssText =
-        'padding: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center;'
-      delBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
+      delBtn.style.cssText = btnStyle
+      delBtn.innerHTML = delIcon
       delBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -289,27 +555,13 @@ const AudioAttachment = Node.create({
           view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize))
         }
       }
-      header.appendChild(delBtn)
 
-      const audio = document.createElement('audio')
-      audio.src = node.attrs.url || ''
-      audio.controls = true
-      audio.playsInline = true
-      audio.preload = 'metadata'
-      audio.style.cssText = 'height: 40px; width: 100%; z-index: 50; position: relative;'
-
-      const stopEvent = (e) => e.stopPropagation()
-      audio.addEventListener('mousedown', stopEvent)
-      audio.addEventListener('click', stopEvent)
-      audio.addEventListener('touchstart', stopEvent)
-
-      dom.appendChild(header)
-      dom.appendChild(audio)
+      player.actionsContainer.appendChild(dlBtn)
+      player.actionsContainer.appendChild(delBtn)
 
       return {
         dom,
-        stopEvent: (event) =>
-          !!(event.target.tagName === 'AUDIO' || event.target.closest('svg, .del-btn')),
+        stopEvent: (event) => !!event.target.closest('button, input[type="range"]'),
         ignoreMutation: () => true,
       }
     }
