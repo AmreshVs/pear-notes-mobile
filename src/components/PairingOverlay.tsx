@@ -19,7 +19,6 @@ import {
   Pressable,
   StyleSheet,
   TextInput,
-  ViewStyle,
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -40,7 +39,7 @@ export function PairingOverlay() {
   const isReceiverActive = receiverStatus.step !== 'idle'
   const activeStatus = isInviterActive ? inviterStatus : receiverStatus
   const isInviter = isInviterActive
-  const { step, progress, userData, localKey } = activeStatus
+  const { step, progress, userData, localKey, data } = activeStatus
 
   useEffect(() => {
     if (isInviterActive || isReceiverActive || showPairingInput) {
@@ -74,366 +73,406 @@ export function PairingOverlay() {
     }
   }
 
+  const systemGreen = '#34C759'
+  const gold = colors.primary
+  const cancelBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+
+  const getMessage = () => {
+    switch (step) {
+      case 'searching': return 'Searching for device...'
+      case 'connected': return 'Device connected'
+      case 'authenticating': return 'Authenticating peer...'
+      case 'authorizing': return 'Authorizing device...'
+      case 'initializing_storage': return 'Initializing storage...'
+      case 'replicating_data': return 'Replicating data...'
+      case 'syncing': return 'Starting data replication...'
+      case 'receiving_data': return `Receiving data... (${data || 0} notes found)`
+      default: return 'Establishing Link...'
+    }
+  }
+
+  // Parse fingerprint: "🥝🍊🍒 (925B3)" → { emoji: "🥝🍊🍒", hex: "925B3" }
+  const parseFp = (fp: string | null | undefined) => {
+    if (!fp) return { emoji: '', hex: '' }
+    const hexMatch = fp.match(/\(([A-Fa-f0-9]+)\)/i)
+    const hex = hexMatch ? hexMatch[1].toUpperCase() : fp.replace(/[^A-Fa-f0-9]/g, '').toUpperCase()
+    const emoji = fp.replace(/\s*\([A-Fa-f0-9]+\)/i, '').trim()
+    return { emoji, hex }
+  }
+
   const renderStatusIcon = () => {
     if (step === 'done') {
       return (
-        <View
-          style={[
-            styles.iconLarge,
-            { backgroundColor: 'rgba(52, 199, 89, 0.15)', borderColor: 'rgba(52, 199, 89, 0.3)' },
-          ]}
-        >
-          <Check size={40} color="#34C759" strokeWidth={3} />
+        <View style={[s.iconBox, { backgroundColor: 'rgba(52,199,89,0.15)', borderColor: 'rgba(52,199,89,0.3)' }]}>
+          <Check size={40} color={systemGreen} strokeWidth={3} />
         </View>
       )
     }
-    if (step === 'confirmation') {
+    if (step === 'confirmation' || showPairingInput) {
       return (
-        <View
-          style={[
-            styles.iconLarge,
-            { backgroundColor: 'rgba(220, 163, 35, 0.15)', borderColor: 'rgba(220, 163, 35, 0.3)' },
-          ]}
-        >
-          <ShieldCheck size={40} color="#DCA323" />
+        <View style={[s.iconBox, { backgroundColor: `${gold}18`, borderColor: `${gold}30` }]}>
+          {showPairingInput ? <Link2 size={38} color={gold} /> : <ShieldCheck size={38} color={gold} />}
         </View>
       )
     }
     return (
-      <View style={styles.loaderContainer}>
-        <View
-          style={[
-            styles.iconLarge,
-            { backgroundColor: 'rgba(220, 163, 35, 0.05)', borderColor: 'rgba(220, 163, 35, 0.1)' },
-          ]}
-        >
-          <Globe size={40} color="#DCA323" style={{ opacity: 0.2 }} />
+      <View style={s.loaderWrap}>
+        <View style={[s.iconBox, { backgroundColor: `${gold}08`, borderColor: `${gold}12` }]}>
+          <Globe size={38} color={gold} style={{ opacity: 0.3 }} />
         </View>
-        <ActivityIndicator size="large" color="#DCA323" style={styles.absoluteLoader} />
+        <ActivityIndicator size="large" color={gold} style={s.spinner} />
       </View>
     )
   }
 
   const renderContent = () => {
-    if (step === 'done') {
+    const isDone = step === 'done'
+    const isConfirmation = step === 'confirmation'
+    const isSyncing = ['initializing_storage', 'replicating_data', 'syncing', 'receiving_data'].includes(step)
+
+    // ── DONE ──
+    if (isDone) {
       return (
-        <View style={styles.content}>
+        <>
           {renderStatusIcon()}
-          <View style={styles.textGroup}>
-            <Text variant="bodyBold" style={styles.title}>
-              Device Linked
-            </Text>
-            <Text variant="caption" style={[styles.subtitle, { color: colors.textSecondary }]}>
-              {isInviter
-                ? 'Your new device has been verified.'
-                : 'This device is now part of your library.'}
-            </Text>
-          </View>
+          <Text style={[s.title, { color: colors.text }]}>Device Linked</Text>
+          <Text style={[s.sub, { color: colors.textSecondary }]}>
+            {isInviter
+              ? 'Your new device has been verified and linked successfully.'
+              : 'Welcome! This device is now a secure part of your notes library.'}
+          </Text>
           <Pressable
             onPress={handleClose}
-            style={[
-              styles.mainButton,
-              { backgroundColor: 'rgba(52, 199, 89, 0.1)', borderColor: 'rgba(52, 199, 89, 0.2)' },
-            ]}
+            style={({ pressed }) => [s.fullBtn, { backgroundColor: 'rgba(52,199,89,0.10)', borderColor: 'rgba(52,199,89,0.20)', opacity: pressed ? 0.7 : 1 }]}
           >
-            <Text style={{ color: '#34C759', fontWeight: '800' }}>Done</Text>
+            <Text style={{ color: systemGreen, fontWeight: '700', fontSize: 15 }}>
+              {isInviter ? 'Return to Notes' : 'Open Workspace'}
+            </Text>
           </Pressable>
-        </View>
+        </>
       )
     }
 
-    if (['syncing', 'receiving_data', 'replicating_data'].includes(step)) {
+    // ── SYNCING ──
+    if (isSyncing) {
       return (
-        <View style={styles.content}>
+        <>
           {renderStatusIcon()}
-          <View style={styles.textGroup}>
-            <Text variant="bodyBold" style={styles.title}>
-              Syncing Data
+          <Text style={[s.title, { color: colors.text }]}>Syncing Data</Text>
+          <Text style={[s.sub, { color: colors.textSecondary }]}>
+            Moving your notes and media to this device...
+          </Text>
+          <View style={s.progressWrap}>
+            <Text style={[s.progressLabel, { color: colors.textSecondary }]}>
+              {getMessage()} • {progress ?? 0}% Complete
             </Text>
-            <Text variant="caption" style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Moving your notes to this device...
-            </Text>
-          </View>
-          <View style={styles.progressContainer}>
-            <View style={[styles.progressBarBase, { backgroundColor: colors.surfaceSecondary }]}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${progress}%`, backgroundColor: colors.primary },
-                ]}
-              />
+            <View style={[s.progressTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+              <View style={[s.progressFill, { width: `${progress ?? 0}%`, backgroundColor: gold }]} />
             </View>
-            <Text variant="caption" style={[styles.progressText, { color: colors.textSecondary }]}>
-              {progress}% COMPLETE
-            </Text>
           </View>
-        </View>
+        </>
       )
     }
 
+    // ── LINK INPUT ──
     if (showPairingInput) {
       return (
-        <View style={styles.content}>
-          <View
-            style={[
-              styles.iconLarge,
-              {
-                backgroundColor: 'rgba(220, 163, 35, 0.15)',
-                borderColor: 'rgba(220, 163, 35, 0.3)',
-              },
-            ]}
-          >
-            <Link2 size={40} color="#DCA323" />
+        <>
+          {renderStatusIcon()}
+          <Text style={[s.title, { color: colors.text }]}>Link Your Device</Text>
+          <Text style={[s.sub, { color: colors.textSecondary }]}>
+            Enter the invite code from your other device to sync your notes securely.
+          </Text>
+          <View style={[s.inputWrap, { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+            <Text style={[s.inputLabel, { color: colors.textSecondary }]}>Invite Code</Text>
+            <TextInput
+              value={pasteCode}
+              onChangeText={setPasteCode}
+              onSubmitEditing={handleConnect}
+              placeholder="Paste your code here..."
+              placeholderTextColor={isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)'}
+              style={[s.input, { color: colors.text, backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}
+              autoFocus
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
           </View>
-          <View style={styles.textGroup}>
-            <Text variant="bodyBold" style={styles.title}>
-              Link Your Device
-            </Text>
-            <Text variant="caption" style={[styles.subtitle, { color: colors.textSecondary }]}>
-              Enter the invite code from your other device to sync securely.
-            </Text>
-          </View>
-          <TextInput
-            value={pasteCode}
-            onChangeText={setPasteCode}
-            placeholder="Paste code here..."
-            placeholderTextColor={isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'}
-            style={[
-              styles.input,
-              {
-                color: colors.text,
-                backgroundColor: colors.surfaceSecondary,
-                borderColor: colors.border,
-              },
-            ]}
-            autoFocus
-          />
-          <View style={styles.buttonGroup}>
-            <Pressable onPress={handleClose} style={[styles.button, styles.cancelButton]}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+          <View style={s.btnRow}>
+            <Pressable onPress={handleClose} style={({ pressed }) => [s.btn, { backgroundColor: cancelBg, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderWidth: 1, opacity: pressed ? 0.7 : 1 }]}>
+              <Text style={{ color: colors.textSecondary, fontWeight: '700', fontSize: 14 }}>Cancel</Text>
             </Pressable>
-            <Pressable
-              onPress={handleConnect}
-              disabled={!pasteCode.trim()}
-              style={[styles.button, styles.connectButton, { backgroundColor: colors.primary }]}
-            >
-              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Connect</Text>
+            <Pressable onPress={handleConnect} disabled={!pasteCode.trim()} style={({ pressed }) => [s.btn, { backgroundColor: gold, opacity: !pasteCode.trim() ? 0.3 : pressed ? 0.8 : 1 }]}>
+              <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Connect</Text>
             </Pressable>
           </View>
-        </View>
+        </>
       )
     }
 
-    const peerFingerprint = getFingerprint(userData)
-    const myFingerprint = getFingerprint(localKey)
-    const displayId = step === 'confirmation' ? peerFingerprint : myFingerprint
+    // ── VERIFY / SEARCHING ──
+    const peerFp = getFingerprint(userData)
+    const myFp = getFingerprint(localKey)
+
+    const mainLabel = isConfirmation ? 'REMOTE ID' : 'MY ID'
+    const mainFp = isConfirmation ? peerFp : myFp
+    const subLabel = isConfirmation ? 'MY ID' : (peerFp ? 'REMOTE ID' : null)
+    const subFp = isConfirmation ? myFp : (peerFp || null)
+
+    const { emoji, hex } = parseFp(mainFp)
 
     return (
-      <View style={styles.content}>
+      <>
         {renderStatusIcon()}
-        <View style={styles.textGroup}>
-          <Text variant="bodyBold" style={styles.title}>
-            {step === 'confirmation' ? 'Verify Code' : 'Identity Verification'}
-          </Text>
-          <Text variant="caption" style={[styles.subtitle, { color: colors.textSecondary }]}>
-            {step === 'confirmation'
-              ? 'Ensure both devices display the same identification code.'
-              : 'Verifying connection. Authorize on your other device.'}
-          </Text>
-        </View>
+        <Text style={[s.title, { color: colors.text }]}>
+          {isConfirmation ? 'Verify Secure Code' : 'Identity Verification'}
+        </Text>
+        <Text style={[s.sub, { color: colors.textSecondary }]}>
+          {isConfirmation
+            ? 'Ensure both devices display the same identification code.'
+            : 'Verifying connection. Please authorize on your other device.'}
+        </Text>
 
-        {displayId && (
-          <View style={[styles.idCard, { backgroundColor: colors.surfaceSecondary }]}>
-            <Text style={styles.idLabel}>{step === 'confirmation' ? 'REMOTE ID' : 'MY ID'}</Text>
-            <Text style={[styles.idValue, { color: colors.text }]}>{displayId.toUpperCase()}</Text>
+        {mainFp ? (
+          <View style={[s.idCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)', borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
+            <Text style={[s.idLabel, { color: `${gold}99` }]}>{mainLabel}</Text>
+            {emoji ? <Text style={s.idEmoji}>{emoji}</Text> : null}
+            <Text style={[s.idHex, { color: colors.text }]}>{hex ? `( ${hex.split('').join(' ')} )` : ''}</Text>
           </View>
-        )}
+        ) : null}
 
-        {step === 'confirmation' ? (
-          <View style={styles.buttonGroup}>
-            <Pressable onPress={handleClose} style={[styles.button, styles.cancelButton]}>
-              <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>Cancel</Text>
+        {subFp ? (
+          <View style={s.subIdRow}>
+            <Text style={[s.subIdText, { color: colors.textSecondary }]}>
+              {subLabel}: {subFp.toUpperCase()}
+            </Text>
+          </View>
+        ) : null}
+
+        {isConfirmation ? (
+          <View style={s.btnRow}>
+            <Pressable onPress={handleClose} style={({ pressed }) => [s.btn, { backgroundColor: cancelBg, borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', borderWidth: 1, opacity: pressed ? 0.7 : 1 }]}>
+              <Text style={{ color: colors.textSecondary, fontWeight: '700', fontSize: 14 }}>Cancel</Text>
             </Pressable>
-            <Pressable
-              onPress={() => dispatch(confirmPairing())}
-              style={[styles.button, styles.connectButton, { backgroundColor: colors.primary }]}
-            >
-              <Text style={{ color: '#FFFFFF', fontWeight: '700' }}>Verify</Text>
+            <Pressable onPress={() => dispatch(confirmPairing())} style={({ pressed }) => [s.btn, { backgroundColor: gold, opacity: pressed ? 0.8 : 1, shadowColor: gold, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.25, shadowRadius: 16 }]}>
+              <Text style={{ color: '#000', fontWeight: '700', fontSize: 15 }}>Verify Code</Text>
             </Pressable>
           </View>
         ) : (
-          <View style={styles.loadingFooter}>
-            <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-              Establishing Link...
-            </Text>
+          <View style={s.progressWrap}>
+            <View style={[s.progressTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)', borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]}>
+              <View style={[s.progressFill, { width: `${progress || 25}%`, backgroundColor: gold }]} />
+            </View>
+            <Text style={[s.progressLabel, { color: colors.textSecondary }]}>{getMessage()}</Text>
           </View>
         )}
-      </View>
+      </>
     )
   }
 
-  const modalStyle: ViewStyle[] = [
-    styles.modalView,
-    { backgroundColor: isDark ? 'rgba(32, 32, 32, 0.7)' : 'rgba(255, 255, 255, 0.8)' },
-  ]
-
+  // ═══════════════════════════════════════════════════════════
+  // RENDER — exact mirror of desktop PairingStatusOverlay.jsx
+  // Desktop: fixed inset-0 → bg-black/50 backdrop-blur-xl
+  //          → bg-bg-panel/60 backdrop-blur-2xl border-white/0.08 rounded-2rem p-10 overflow-hidden
+  //            → absolute glow orbs + relative z-10 content
+  // ═══════════════════════════════════════════════════════════
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim, zIndex: 1000 }]}>
-      <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill}>
-        <Pressable onPress={handleClose} style={StyleSheet.absoluteFill} />
-        <View style={styles.centeredView}>
-          <GlassView borderRadius={32} style={modalStyle}>
+      {/* bg-black/50 backdrop-blur-xl */}
+      <BlurView intensity={80} tint={isDark ? 'dark' : 'light'} style={StyleSheet.absoluteFill} />
+      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.50)' }]} />
+      <Pressable onPress={handleClose} style={StyleSheet.absoluteFill} />
+
+      <View style={s.centeredView} pointerEvents="box-none">
+        {/* bg-bg-panel/60 backdrop-blur-2xl border-white/0.08 rounded-2rem p-10 overflow-hidden */}
+        <GlassView intensity={40} borderRadius={32} style={s.card}>
+          {/* absolute -top-24 -left-24 w-48 h-48 bg-accent-primary/10 blur-[80px] */}
+          <View style={[s.glowOrb, { top: -96, left: -96, backgroundColor: `${gold}1A` }]} pointerEvents="none" />
+          {/* absolute -bottom-24 -right-24 w-48 h-48 bg-accent-primary/5 blur-[80px] */}
+          <View style={[s.glowOrb, { bottom: -96, right: -96, backgroundColor: `${gold}0D` }]} pointerEvents="none" />
+          {/* relative z-10 content */}
+          <View style={s.content}>
             {renderContent()}
-          </GlassView>
-        </View>
-      </BlurView>
+          </View>
+        </GlassView>
+      </View>
     </Animated.View>
   )
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   centeredView: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 24,
   },
-  modalView: {
+  card: {
     width: '100%',
-    maxWidth: 340,
-    paddingHorizontal: 32,
-    paddingVertical: 40,
-    alignItems: 'center',
+    maxWidth: 380,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
     shadowOpacity: 0.5,
     shadowRadius: 40,
     elevation: 20,
   },
+  glowOrb: {
+    position: 'absolute',
+    width: 192,
+    height: 192,
+    borderRadius: 96,
+  },
   content: {
     alignItems: 'center',
     width: '100%',
+    padding: 32,
   },
-  iconLarge: {
+  // Icon
+  iconBox: {
     width: 80,
     height: 80,
     borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    marginBottom: 24,
+    marginBottom: 16,
   },
-  loaderContainer: {
+  loaderWrap: {
     position: 'relative',
-    marginBottom: 24,
+    marginBottom: 16,
   },
-  absoluteLoader: {
+  spinner: {
     position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
+    top: 0, bottom: 0, left: 0, right: 0,
   },
-  textGroup: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
+  // Text
   title: {
-    fontSize: 22,
+    fontSize: 24,
+    fontWeight: '700',
     textAlign: 'center',
+    letterSpacing: -0.4,
     marginBottom: 8,
   },
-  subtitle: {
+  sub: {
     fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
-    opacity: 0.8,
-  },
-  input: {
-    width: '100%',
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    lineHeight: 21,
+    opacity: 0.7,
     marginBottom: 24,
+    maxWidth: 280,
   },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: 12,
-    width: '100%',
-  },
-  button: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelButton: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  connectButton: {
-    // bg set dynamically
-  },
-  mainButton: {
-    width: '100%',
-    height: 54,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // ID card
   idCard: {
     width: '100%',
-    padding: 20,
+    paddingHorizontal: 24,
+    paddingVertical: 16,
     borderRadius: 16,
+    borderWidth: 1,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   idLabel: {
     fontSize: 10,
-    fontWeight: '800',
-    color: 'rgba(220, 163, 35, 0.6)',
+    fontWeight: '700',
     letterSpacing: 2,
     marginBottom: 8,
+    textTransform: 'uppercase',
   },
-  idValue: {
+  idEmoji: {
+    fontSize: 24,
+    marginBottom: 4,
+    textAlign: 'center',
+  },
+  idHex: {
     fontSize: 24,
     fontWeight: '900',
-    letterSpacing: 4,
+    letterSpacing: 3,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    textAlign: 'center',
   },
-  progressContainer: {
+  subIdRow: {
+    marginBottom: 24,
+    opacity: 0.4,
+  },
+  subIdText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  // Buttons
+  btnRow: {
+    flexDirection: 'row',
+    gap: 12,
     width: '100%',
+    marginTop: 8,
+  },
+  btn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  progressBarBase: {
+  fullBtn: {
     width: '100%',
-    height: 4,
-    borderRadius: 2,
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  // Input
+  inputWrap: {
+    width: '100%',
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 16,
+    marginBottom: 24,
+  },
+  inputLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+    marginLeft: 2,
+  },
+  input: {
+    width: '100%',
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    fontSize: 13,
+    textAlign: 'center',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    letterSpacing: 1,
+  },
+  // Progress
+  progressWrap: {
+    width: '100%',
+    marginTop: 8,
+  },
+  progressTrack: {
+    width: '100%',
+    height: 6,
+    borderRadius: 3,
     overflow: 'hidden',
+    borderWidth: 1,
     marginBottom: 12,
   },
-  progressBarFill: {
+  progressFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
   },
-  progressText: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 2,
-  },
-  loadingFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  loadingText: {
-    fontSize: 12,
-    fontWeight: '600',
+  progressLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    opacity: 0.6,
+    textAlign: 'center',
   },
 })

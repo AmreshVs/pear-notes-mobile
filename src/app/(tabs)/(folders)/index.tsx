@@ -6,7 +6,7 @@ import {
 } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { createNote, getSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { router, Stack } from 'expo-router'
-import { FolderPlus, Settings, SquarePen } from 'lucide-react-native'
+import { FolderPlus, SquarePen } from 'lucide-react-native'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
@@ -15,7 +15,7 @@ import { FolderRow } from '@/components/FolderRow'
 import { Text, useTheme, View } from '@/components/Themed'
 
 export default function FoldersScreen() {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const dispatch = useDispatch()
   const folders = useSelector(getFolders)
   const selectedNote = useSelector(getSelectedNote)
@@ -36,8 +36,6 @@ export default function FoldersScreen() {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
-      // Only push if we are exactly at the folders root
-      // This allows the user to see All Notes by default but slide back
       router.push(`/folder/${ALL_NOTES_KEY}` as any)
     }
   }, [])
@@ -88,7 +86,7 @@ export default function FoldersScreen() {
               onPress={() => router.push('/settings')}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
             >
-              <Settings size={22} color={colors.textSecondary} />
+              <Text style={{ color: colors.primary, fontSize: 17 }}>Settings</Text>
             </Pressable>
           ),
           headerRight: () => (
@@ -103,7 +101,7 @@ export default function FoldersScreen() {
                 onPress={handleCreateNote}
                 style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
               >
-                <SquarePen size={22} color={colors.primary} strokeWidth={2.5} />
+                <SquarePen size={22} color={colors.primary} strokeWidth={2} />
               </Pressable>
             </View>
           ),
@@ -128,7 +126,9 @@ export default function FoldersScreen() {
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text variant="caption" style={[styles.sectionHeader, { color: colors.textSecondary }]}>
+            <Text
+              style={[styles.sectionHeader, { color: isDark ? '#8e8e93' : '#8e8e93' }]}
+            >
               ARCHIVE
             </Text>
             {archiveFolders.map((folder: any) => (
@@ -154,19 +154,21 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 120,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
   },
   section: {
     backgroundColor: 'transparent',
   },
   archiveSection: {
-    marginTop: 32,
+    marginTop: 28,
   },
   sectionHeader: {
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.5,
     marginBottom: 8,
-    marginLeft: 12,
-    letterSpacing: 1,
+    marginLeft: 16,
+    textTransform: 'uppercase',
+    opacity: 0.5,
   },
 })

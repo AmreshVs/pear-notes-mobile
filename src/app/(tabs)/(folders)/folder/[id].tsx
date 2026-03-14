@@ -18,7 +18,7 @@ import { Text, View, useTheme } from '@/components/Themed'
 
 export default function FolderNotesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const dispatch = useDispatch()
   const folders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
@@ -63,8 +63,6 @@ export default function FolderNotesScreen() {
 
   const handleCreateNote = useCallback(() => {
     creatingNoteRef.current = true
-    // Explicitly set the selected folder so the core's createNoteSaga (which ignores payload)
-    // picks up the correct folder from the state.
     dispatch(setSelectedFolder(id as any))
     dispatch(createNote({ title: '', note: '' } as any))
   }, [dispatch, id])
@@ -98,13 +96,13 @@ export default function FolderNotesScreen() {
           headerTitle: folder?.name || 'Notes',
           headerLargeTitle: true,
           headerTransparent: true,
-          headerBlurEffect: 'none',
+          headerBlurEffect: isDark ? 'dark' : 'light',
           headerRight: () => (
             <Pressable
               onPress={handleCreateNote}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
             >
-              <SquarePen size={22} color={colors.primary} />
+              <SquarePen size={22} color={colors.primary} strokeWidth={2} />
             </Pressable>
           ),
           headerSearchBarOptions: {
@@ -132,10 +130,9 @@ export default function FolderNotesScreen() {
 
         {groupedNotes.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text
-              style={{ color: colors.textSecondary, fontSize: 16, fontWeight: '600', opacity: 0.5 }}
-            >
-              No Notes
+            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>No Notes</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              Tap the compose button to create one
             </Text>
           </View>
         ) : (
@@ -177,34 +174,35 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 120,
     paddingHorizontal: 16,
   },
   headerInfo: {
     paddingHorizontal: 20,
-    marginBottom: 16,
-    marginTop: -8,
+    marginBottom: 12,
+    marginTop: -4,
   },
   noteCount: {
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 1.2,
+    textTransform: 'uppercase',
     opacity: 0.5,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   sectionHeader: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    marginBottom: 4,
+    paddingVertical: 8,
+    marginBottom: 2,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1.5,
-    opacity: 0.7,
+    opacity: 0.5,
   },
   listContainer: {
     backgroundColor: 'transparent',
@@ -214,5 +212,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingTop: 120,
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 8,
+    opacity: 0.6,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    opacity: 0.4,
+    lineHeight: 20,
   },
 })

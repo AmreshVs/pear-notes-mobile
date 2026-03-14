@@ -17,6 +17,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Text as RNText,
   TextInput,
   useWindowDimensions,
   View,
@@ -280,44 +281,15 @@ export default function NoteScreen() {
           headerBackButtonDisplayMode: 'minimal',
           headerBackTitle: 'Notes',
           headerTintColor: colors.primary,
-          headerLeft: () => (
-            <Pressable
-              onPress={async () => {
-                await editorRef.current?.save()
-                router.back()
-              }}
-              style={({ pressed }) => [
-                {
-                  opacity: pressed ? 0.5 : 1,
-                },
-              ]}
-            >
-              <SymbolView
-                name="chevron.left"
-                size={24}
-                tintColor={colors.primary}
-                weight="medium"
-                fallback={<View />}
-              />
-            </Pressable>
-          ),
           headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
               {isEditing ? (
-                <>
-                  <HeaderCircleBtn
-                    sf="arrow.uturn.backward"
-                    onPress={() => {}}
-                    color={colors.primary}
-                    bgColor={isDark ? '#2C2C2EB3' : '#E5E5EAB3'}
-                  />
-                  <HeaderCircleBtn
-                    sf="checkmark"
-                    onPress={handleDone}
-                    color={bg}
-                    bgColor={colors.primary}
-                  />
-                </>
+                <Pressable
+                  onPress={handleDone}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                >
+                  <RNText style={{ color: colors.primary, fontSize: 17, fontWeight: '600' }}>Done</RNText>
+                </Pressable>
               ) : (
                 <>
                   <HeaderCircleBtn

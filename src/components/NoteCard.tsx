@@ -37,10 +37,12 @@ export function NoteCard({
               ? 'rgba(220, 163, 35, 0.12)'
               : 'rgba(220, 163, 35, 0.08)'
             : pressed
-              ? colors.surfaceSecondary
+              ? isDark
+                ? 'rgba(255,255,255,0.04)'
+                : 'rgba(0,0,0,0.03)'
               : 'transparent',
           borderBottomWidth: !isLast ? StyleSheet.hairlineWidth : 0,
-          borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+          borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
         },
       ]}
     >
@@ -55,7 +57,7 @@ export function NoteCard({
 
         <Text
           variant="caption"
-          numberOfLines={1}
+          numberOfLines={2}
           style={[styles.summary, { color: colors.textSecondary }]}
         >
           {summary || 'No additional text'}
@@ -108,7 +110,7 @@ const styles = StyleSheet.create({
   },
   summary: {
     fontSize: 14,
-    lineHeight: 18,
+    lineHeight: 19,
     opacity: 0.8,
     marginBottom: 8,
   },

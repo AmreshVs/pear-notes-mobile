@@ -41,20 +41,31 @@ export function FolderRow({ name, count, icon, selected, onPress }: FolderRowPro
             : pressed
               ? isDark
                 ? 'rgba(255,255,255,0.05)'
-                : 'rgba(0,0,0,0.05)'
+                : 'rgba(0,0,0,0.04)'
               : 'transparent',
         },
       ]}
     >
       <View style={styles.leftContent}>
-        <Icon
-          size={20}
-          color={selected ? colors.primary : colors.primary}
-          style={{ opacity: selected ? 1 : 0.8 }}
-        />
+        <View
+          style={[
+            styles.iconBox,
+            {
+              backgroundColor: selected
+                ? `${colors.primary}25`
+                : isDark
+                  ? 'rgba(220,163,35,0.12)'
+                  : 'rgba(220,163,35,0.09)',
+            },
+          ]}
+        >
+          <Icon size={17} color={colors.primary} strokeWidth={1.8} />
+        </View>
         <Text
-          variant="body"
-          style={[styles.name, { color: colors.text, opacity: selected ? 1 : 0.9 }]}
+          style={[
+            styles.name,
+            { color: colors.text, opacity: selected ? 1 : 0.9 },
+          ]}
         >
           {name}
         </Text>
@@ -62,11 +73,11 @@ export function FolderRow({ name, count, icon, selected, onPress }: FolderRowPro
 
       <View style={styles.rightContent}>
         {count !== undefined && count > 0 && (
-          <Text variant="caption" style={[styles.count, { color: colors.textSecondary }]}>
+          <Text style={[styles.count, { color: colors.textSecondary }]}>
             {count}
           </Text>
         )}
-        <ChevronRight size={14} color={colors.textSecondary} style={{ opacity: 0.3 }} />
+        <ChevronRight size={14} color={colors.textSecondary} style={{ opacity: 0.4 }} />
       </View>
     </Pressable>
   )
@@ -81,11 +92,19 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     marginVertical: 1,
+    minHeight: 52,
   },
   leftContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+  },
+  iconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   name: {
     fontSize: 17,

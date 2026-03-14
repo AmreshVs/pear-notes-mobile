@@ -40,8 +40,6 @@ const FONT_OPTIONS = [
   { label: 'Monospace', value: 'Mono' },
 ]
 
-const ACCENT = '#EAB308'
-
 function showPicker(
   title: string,
   options: { label: string; value: string }[],
@@ -73,10 +71,11 @@ export default function SettingsScreen() {
   const sortBy = useSelector(getSortBy)
 
   const pageBg = colors.background
-  const cardBg = isDark ? '#212225' : '#FFFFFF'
-  const cardBorder = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'
+  const cardBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)'
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const rowSep = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
   const text = colors.text
-  const textMuted = isDark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.42)'
+  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'
   const segBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
 
   return (
@@ -106,13 +105,16 @@ export default function SettingsScreen() {
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[styles.scroll, { backgroundColor: pageBg }]}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
+        {/* ── GENERAL ──────────────────────────────── */}
         <Text style={[styles.sectionCap, { color: textMuted }]}>GENERAL</Text>
 
         <RNView style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-          <RNView style={[styles.row, { borderBottomWidth: 1, borderBottomColor: cardBorder }]}>
+
+          {/* App Theme */}
+          <RNView style={[styles.row, { borderBottomWidth: 1, borderBottomColor: rowSep }]}>
             <Text style={[styles.rowLabel, { color: text }]}>App Theme</Text>
             <RNView style={[styles.segCtrl, { backgroundColor: segBg }]}>
               {(['system', 'light', 'dark'] as const).map((t, i) => {
@@ -124,10 +126,10 @@ export default function SettingsScreen() {
                     style={[
                       styles.segPill,
                       isActive && {
-                        backgroundColor: ACCENT,
-                        shadowColor: ACCENT,
+                        backgroundColor: colors.primary,
+                        shadowColor: colors.primary,
                         shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.35,
+                        shadowOpacity: 0.4,
                         shadowRadius: 5,
                         elevation: 3,
                       },
@@ -150,6 +152,7 @@ export default function SettingsScreen() {
             </RNView>
           </RNView>
 
+          {/* Sort Notes By */}
           <Pressable
             onPress={() =>
               showPicker('Sort Notes By', SORT_OPTIONS, (val) =>
@@ -158,10 +161,8 @@ export default function SettingsScreen() {
             }
             style={({ pressed }) => [
               styles.row,
-              { borderBottomWidth: 1, borderBottomColor: cardBorder },
-              pressed && {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-              },
+              { borderBottomWidth: 1, borderBottomColor: rowSep },
+              pressed && { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' },
             ]}
           >
             <Text style={[styles.rowLabel, { color: text }]}>Sort Notes By</Text>
@@ -173,6 +174,7 @@ export default function SettingsScreen() {
             </RNView>
           </Pressable>
 
+          {/* Font Family */}
           <Pressable
             onPress={() =>
               showPicker('Font Family', FONT_OPTIONS, (val) =>
@@ -181,10 +183,8 @@ export default function SettingsScreen() {
             }
             style={({ pressed }) => [
               styles.row,
-              { borderBottomWidth: 1, borderBottomColor: cardBorder },
-              pressed && {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-              },
+              { borderBottomWidth: 1, borderBottomColor: rowSep },
+              pressed && { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' },
             ]}
           >
             <Text style={[styles.rowLabel, { color: text }]}>Font Family</Text>
@@ -196,23 +196,17 @@ export default function SettingsScreen() {
             </RNView>
           </Pressable>
 
-          <RNView
-            style={[
-              styles.row,
-              { flexDirection: 'column', alignItems: 'stretch', paddingVertical: 18 },
-            ]}
-          >
-            <RNView
-              style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 14 }}
-            >
+          {/* Text Size */}
+          <RNView style={[styles.row, { flexDirection: 'column', alignItems: 'stretch', paddingVertical: 20 }]}>
+            <RNView style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <Text style={[styles.rowLabel, { color: text }]}>Text Size</Text>
               <RNView
                 style={[
                   styles.badge,
-                  { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' },
+                  { backgroundColor: isDark ? 'rgba(220,163,35,0.15)' : 'rgba(220,163,35,0.12)' },
                 ]}
               >
-                <Text style={{ color: text, fontSize: 12, fontWeight: '700' }}>
+                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
                   {editorFontSize}
                 </Text>
               </RNView>
@@ -228,30 +222,35 @@ export default function SettingsScreen() {
                 onValueChange={(val) =>
                   dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
                 }
-                minimumTrackTintColor={ACCENT}
+                minimumTrackTintColor={colors.primary}
                 maximumTrackTintColor={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'}
-                thumbTintColor={isDark ? '#FFFFFF' : '#000000'}
+                thumbTintColor={isDark ? '#FFFFFF' : '#FFFFFF'}
               />
               <Text style={{ color: textMuted, fontSize: 17, fontWeight: '600' }}>A</Text>
             </RNView>
           </RNView>
         </RNView>
 
-        <Text style={[styles.sectionCap, { color: textMuted, marginTop: 32 }]}>SYNC & DEVICES</Text>
+        {/* ── SYNC & DEVICES ──────────────────────── */}
+        <Text style={[styles.sectionCap, { color: textMuted, marginTop: 36 }]}>SYNC & DEVICES</Text>
+
         <RNView style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
           <Pressable
             onPress={() => router.push('/settings/sync')}
             style={({ pressed }) => [
               styles.row,
               { paddingVertical: 18 },
-              pressed && {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-              },
+              pressed && { backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)' },
             ]}
           >
             <RNView style={styles.rowLeft}>
-              <RNView style={[styles.iconBox, { backgroundColor: 'rgba(234,179,8,0.14)' }]}>
-                <RefreshCw size={17} color={ACCENT} strokeWidth={1.8} />
+              <RNView
+                style={[
+                  styles.iconBox,
+                  { backgroundColor: isDark ? 'rgba(220,163,35,0.15)' : 'rgba(220,163,35,0.1)' },
+                ]}
+              >
+                <RefreshCw size={17} color={colors.primary} strokeWidth={1.8} />
               </RNView>
               <Text style={[styles.rowLabel, { color: text, fontWeight: '600' }]}>
                 Link and Sync

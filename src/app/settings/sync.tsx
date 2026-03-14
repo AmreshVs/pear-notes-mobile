@@ -35,8 +35,6 @@ const PLATFORM_NAMES: Record<string, string> = {
   ios: 'iOS',
 }
 
-const ACCENT = '#EAB308'
-
 export default function SyncScreen() {
   const { isDark, colors } = useTheme()
   const dispatch = useDispatch()
@@ -53,10 +51,10 @@ export default function SyncScreen() {
   const [pasteCode, setPasteCode] = useState('')
 
   const pageBg = colors.background
-  const cardBg = isDark ? '#212225' : '#FFFFFF'
-  const cardBorderColor = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.07)'
-  const text = isDark ? '#FFFFFF' : '#0A0A0A'
-  const textMuted = isDark ? 'rgba(255,255,255,0.42)' : 'rgba(0,0,0,0.42)'
+  const cardBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)'
+  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
+  const text = colors.text
+  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'
   const segBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
 
   const handleCopy = async () => {
@@ -87,6 +85,7 @@ export default function SyncScreen() {
       contentContainerStyle={styles.scroll}
       showsVerticalScrollIndicator={false}
     >
+      {/* ── Segmented Control ─────────────────────── */}
       <RNView style={[styles.segRow, { backgroundColor: segBg }]}>
         {(['link', 'devices'] as const).map((t) => {
           const active = tab === t
@@ -97,8 +96,8 @@ export default function SyncScreen() {
               style={[
                 styles.segPill,
                 active && {
-                  backgroundColor: ACCENT,
-                  shadowColor: ACCENT,
+                  backgroundColor: colors.primary,
+                  shadowColor: colors.primary,
                   shadowOffset: { width: 0, height: 3 },
                   shadowOpacity: 0.4,
                   shadowRadius: 6,
@@ -122,18 +121,18 @@ export default function SyncScreen() {
 
       {tab === 'link' ? (
         <RNView style={styles.pad}>
-          <RNView
-            style={[styles.heroCard, { backgroundColor: cardBg, borderColor: cardBorderColor }]}
-          >
+
+          {/* ── Hero invite card ──────────────────── */}
+          <RNView style={[styles.heroCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             {!inviteCode ? (
               <>
                 <RNView
                   style={[
                     styles.iconRing,
-                    { backgroundColor: isDark ? 'rgba(234,179,8,0.13)' : 'rgba(234,179,8,0.1)' },
+                    { backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)' },
                   ]}
                 >
-                  <Globe size={26} color={ACCENT} strokeWidth={1.5} />
+                  <Globe size={26} color={colors.primary} strokeWidth={1.5} />
                 </RNView>
 
                 <Text style={[styles.heroTitle, { color: text }]}>Link Your Devices</Text>
@@ -146,7 +145,7 @@ export default function SyncScreen() {
                   onPress={() => dispatch(createInvite())}
                   disabled={isLoading}
                   style={({ pressed }) => ({
-                    backgroundColor: ACCENT,
+                    backgroundColor: colors.primary,
                     borderRadius: 14,
                     width: '100%',
                     flexDirection: 'row',
@@ -168,10 +167,10 @@ export default function SyncScreen() {
                   <RNView
                     style={[
                       styles.iconPill,
-                      { backgroundColor: isDark ? 'rgba(234,179,8,0.13)' : 'rgba(234,179,8,0.1)' },
+                      { backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)' },
                     ]}
                   >
-                    <ShieldCheck size={18} color={ACCENT} strokeWidth={1.5} />
+                    <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
                   </RNView>
                   <RNView style={{ flex: 1 }}>
                     <Text style={[styles.inviteTitle, { color: text }]}>Invitation Ready</Text>
@@ -184,7 +183,7 @@ export default function SyncScreen() {
                 <Text
                   style={[
                     styles.codeLabel,
-                    { color: textMuted, borderTopColor: cardBorderColor, borderTopWidth: 1 },
+                    { color: textMuted, borderTopColor: cardBorder, borderTopWidth: 1 },
                   ]}
                 >
                   SECURE PAIR CODE
@@ -210,7 +209,7 @@ export default function SyncScreen() {
                 <Pressable
                   onPress={handleCopy}
                   style={({ pressed }) => ({
-                    backgroundColor: copied ? '#22C55E' : ACCENT,
+                    backgroundColor: copied ? '#22C55E' : colors.primary,
                     borderRadius: 14,
                     width: '100%',
                     flexDirection: 'row',
@@ -229,17 +228,18 @@ export default function SyncScreen() {
             )}
           </RNView>
 
+          {/* Security notice */}
           {inviteCode && (
             <RNView
               style={[
                 styles.warningCard,
                 {
-                  backgroundColor: isDark ? 'rgba(234,179,8,0.07)' : 'rgba(234,179,8,0.08)',
-                  borderColor: isDark ? 'rgba(234,179,8,0.2)' : 'rgba(234,179,8,0.25)',
+                  backgroundColor: isDark ? 'rgba(220,163,35,0.07)' : 'rgba(220,163,35,0.08)',
+                  borderColor: isDark ? 'rgba(220,163,35,0.2)' : 'rgba(220,163,35,0.25)',
                 },
               ]}
             >
-              <ShieldCheck size={14} color={ACCENT} strokeWidth={1.8} style={{ marginTop: 1 }} />
+              <ShieldCheck size={14} color={colors.primary} strokeWidth={1.8} style={{ marginTop: 1 }} />
               <Text style={[styles.warningText, { color: textMuted }]}>
                 For security, don't share this code in public channels as it grants full access to
                 your notes.
@@ -247,12 +247,11 @@ export default function SyncScreen() {
             </RNView>
           )}
 
+          {/* ── Paste existing invite ──────────────── */}
           {!isSynced && (
             <RNView style={{ marginBottom: 24 }}>
-              <RNView
-                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 6 }}
-              >
-                <Text style={{ color: ACCENT, fontSize: 18, fontWeight: '600', lineHeight: 20 }}>
+              <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 6 }}>
+                <Text style={{ color: colors.primary, fontSize: 18, fontWeight: '600', lineHeight: 20 }}>
                   +
                 </Text>
                 <Text style={{ color: text, fontSize: 15, fontWeight: '600' }}>
@@ -282,19 +281,18 @@ export default function SyncScreen() {
                   onPress={handleConnect}
                   disabled={isLoading || pasteCode.trim().length === 0}
                   style={({ pressed }) => ({
-                    borderWidth: 1,
+                    backgroundColor: colors.primary,
                     borderRadius: 10,
                     paddingHorizontal: 16,
                     paddingVertical: 10,
-                    borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)',
                     opacity: isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
                   })}
                 >
                   {isLoading ? (
-                    <ActivityIndicator size="small" color={text} />
+                    <ActivityIndicator size="small" color="#000" />
                   ) : (
-                    <Text style={{ color: text, fontSize: 14, fontWeight: '600' }}>
-                      Link Device
+                    <Text style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>
+                      Link
                     </Text>
                   )}
                 </Pressable>
@@ -302,8 +300,9 @@ export default function SyncScreen() {
             </RNView>
           )}
 
+          {/* Footer */}
           <RNView style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
-            <ShieldCheck size={13} color={ACCENT} style={{ marginTop: 2 }} />
+            <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
             <Text style={[styles.footNote, { color: textMuted }]}>
               Your data moves directly between devices using encrypted Hypercore logs. No central
               server involved.
@@ -313,18 +312,26 @@ export default function SyncScreen() {
       ) : (
         <RNView style={styles.pad}>
           <Text style={[styles.sectionCap, { color: textMuted }]}>THIS DEVICE</Text>
-          <RNView style={{ gap: 10 }}>
+
+          <RNView
+            style={[
+              styles.deviceGroup,
+              { backgroundColor: cardBg, borderColor: cardBorder },
+            ]}
+          >
             {syncedDevices
               .filter((d: any) => d.isLocal)
-              .map((device: any) => (
+              .map((device: any, index: number, arr: any[]) => (
                 <DeviceCard
                   key={device.key}
                   device={device}
                   text={text}
                   textMuted={textMuted}
                   cardBg={cardBg}
-                  cardBorder={cardBorderColor}
                   isDark={isDark}
+                  colors={colors}
+                  showSep={index < arr.length - 1}
+                  cardBorder={cardBorder}
                 />
               ))}
           </RNView>
@@ -332,11 +339,17 @@ export default function SyncScreen() {
           <Text style={[styles.sectionCap, { color: textMuted, marginTop: 30 }]}>
             OTHER DEVICES
           </Text>
+
           {syncedDevices.filter((d: any) => !d.isLocal).length > 0 ? (
-            <RNView style={{ gap: 10 }}>
+            <RNView
+              style={[
+                styles.deviceGroup,
+                { backgroundColor: cardBg, borderColor: cardBorder },
+              ]}
+            >
               {syncedDevices
                 .filter((d: any) => !d.isLocal)
-                .map((device: any) => (
+                .map((device: any, index: number, arr: any[]) => (
                   <DeviceCard
                     key={device.key}
                     device={device}
@@ -344,8 +357,10 @@ export default function SyncScreen() {
                     text={text}
                     textMuted={textMuted}
                     cardBg={cardBg}
-                    cardBorder={cardBorderColor}
                     isDark={isDark}
+                    colors={colors}
+                    showSep={index < arr.length - 1}
+                    cardBorder={cardBorder}
                   />
                 ))}
             </RNView>
@@ -353,20 +368,18 @@ export default function SyncScreen() {
             <RNView
               style={[
                 styles.emptyCard,
-                {
-                  borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
-                },
+                { borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' },
               ]}
             >
               <Smartphone size={22} color={textMuted} strokeWidth={1.5} />
-              <Text style={[{ color: textMuted, fontSize: 13, marginTop: 10 }]}>
+              <Text style={{ color: textMuted, fontSize: 13, marginTop: 10 }}>
                 No other devices connected yet.
               </Text>
             </RNView>
           )}
 
           <RNView style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 32 }}>
-            <ShieldCheck size={13} color={ACCENT} style={{ marginTop: 2 }} />
+            <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
             <Text style={[styles.footNote, { color: textMuted }]}>
               Your data moves directly between devices using encrypted Hypercore logs. No central
               server involved.
@@ -384,16 +397,20 @@ function DeviceCard({
   text,
   textMuted,
   cardBg,
-  cardBorder,
   isDark,
+  colors,
+  showSep,
+  cardBorder,
 }: {
   device: any
   isOther?: boolean
   text: string
   textMuted: string
   cardBg: string
-  cardBorder: string
   isDark: boolean
+  colors: any
+  showSep: boolean
+  cardBorder: string
 }) {
   const dispatch = useDispatch()
   const Icon = device.deviceType === 'desktop' ? Monitor : Smartphone
@@ -413,34 +430,39 @@ function DeviceCard({
     )
 
   return (
-    <RNView style={[styles.deviceCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-      <RNView
-        style={[
-          styles.deviceIcon,
-          { backgroundColor: isDark ? 'rgba(234,179,8,0.1)' : 'rgba(234,179,8,0.08)' },
-        ]}
-      >
-        <Icon size={18} color={ACCENT} strokeWidth={1.5} />
-        {device.isLocal && <RNView style={[styles.onlineDot, { borderColor: cardBg }]} />}
-      </RNView>
-
-      <RNView style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={[styles.deviceName, { color: text }]} selectable>
-          {device.title || device.key || 'Unknown Device'}
-        </Text>
-        <Text style={[styles.deviceSub, { color: textMuted }]}>
-          {PLATFORM_NAMES[device.platform || ''] || device.platform || '—'}
-        </Text>
-      </RNView>
-
-      {isOther && (
-        <Pressable
-          onPress={handleDelete}
-          hitSlop={12}
-          style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+    <RNView>
+      <RNView style={styles.deviceRow}>
+        <RNView
+          style={[
+            styles.deviceIcon,
+            { backgroundColor: isDark ? 'rgba(220,163,35,0.1)' : 'rgba(220,163,35,0.08)' },
+          ]}
         >
-          <Trash2 size={17} color="#EF4444" strokeWidth={1.5} />
-        </Pressable>
+          <Icon size={18} color={colors.primary} strokeWidth={1.5} />
+          {device.isLocal && <RNView style={[styles.onlineDot, { borderColor: cardBg }]} />}
+        </RNView>
+
+        <RNView style={{ flex: 1 }}>
+          <Text numberOfLines={1} style={[styles.deviceName, { color: text }]} selectable>
+            {device.title || device.key || 'Unknown Device'}
+          </Text>
+          <Text style={[styles.deviceSub, { color: textMuted }]}>
+            {PLATFORM_NAMES[device.platform || ''] || device.platform || '—'}
+          </Text>
+        </RNView>
+
+        {isOther && (
+          <Pressable
+            onPress={handleDelete}
+            hitSlop={12}
+            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+          >
+            <Trash2 size={17} color="#EF4444" strokeWidth={1.5} />
+          </Pressable>
+        )}
+      </RNView>
+      {showSep && (
+        <RNView style={{ height: 1, backgroundColor: cardBorder, marginLeft: 70 }} />
       )}
     </RNView>
   )
@@ -481,7 +503,7 @@ const styles = StyleSheet.create({
     paddingTop: 28,
     paddingBottom: 24,
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   iconRing: {
     width: 58,
@@ -516,7 +538,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 14,
     width: '100%',
-    marginBottom: 0,
     paddingBottom: 16,
   },
   iconPill: {
@@ -552,7 +573,6 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
     paddingHorizontal: 12,
     width: '100%',
-    marginBottom: 0,
   },
   codeText: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace',
@@ -566,7 +586,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   warningText: {
     flex: 1,
@@ -579,8 +599,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 16,
     paddingLeft: 16,
-    paddingRight: 6,
-    paddingVertical: 5,
+    paddingRight: 8,
+    paddingVertical: 6,
     gap: 8,
   },
   codeInput: {
@@ -600,17 +620,22 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textTransform: 'uppercase',
   },
-  deviceCard: {
+  deviceGroup: {
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  deviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    padding: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
   },
   deviceIcon: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',

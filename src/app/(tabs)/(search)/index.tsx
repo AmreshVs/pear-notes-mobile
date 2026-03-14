@@ -10,7 +10,7 @@ import { NoteCard } from '@/components/NoteCard'
 import { Text, View, useTheme } from '@/components/Themed'
 
 export default function SearchScreen() {
-  const { colors } = useTheme()
+  const { colors, isDark } = useTheme()
   const dispatch = useDispatch()
   const notes = useSelector(getFilteredNotes)
 
@@ -37,9 +37,13 @@ export default function SearchScreen() {
           headerTitle: 'Search',
           headerLargeTitle: true,
           headerTransparent: true,
+          headerBlurEffect: isDark ? 'dark' : 'light',
           headerSearchBarOptions: {
             placeholder: 'Search all notes...',
             autoFocus: true,
+            textColor: colors.text,
+            hintTextColor: colors.textSecondary,
+            headerIconColor: colors.textSecondary,
             onChangeText: (event) => {
               dispatch(setSearchQuery(event.nativeEvent.text))
             },
@@ -53,10 +57,11 @@ export default function SearchScreen() {
       >
         {notes.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text
-              style={{ color: colors.textSecondary, fontSize: 16, fontWeight: '600', opacity: 0.5 }}
-            >
-              Enter a search query to find notes.
+            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
+              Search your notes
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+              Type above to find notes across your library
             </Text>
           </View>
         ) : (
@@ -68,7 +73,7 @@ export default function SearchScreen() {
                 title={note.value?.title}
                 date={format(
                   new Date(note.value?.updatedAt || note.value?.createdAt || 0),
-                  'MM/dd/yy',
+                  'MMM d',
                 )}
                 summary={getPreviewText(note.value?.note)}
                 folderName={note.value?.folderName}
@@ -89,17 +94,30 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 120,
     paddingHorizontal: 16,
   },
   listContainer: {
-    paddingTop: 12,
+    paddingTop: 8,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 120,
+    paddingTop: 140,
     paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+    marginBottom: 8,
+    opacity: 0.6,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    textAlign: 'center',
+    opacity: 0.4,
+    lineHeight: 20,
   },
 })
