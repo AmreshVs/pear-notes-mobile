@@ -1,7 +1,9 @@
 import { Buffer } from 'buffer'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import * as Haptics from 'expo-haptics'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
@@ -26,6 +28,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Keyboard,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -34,12 +37,15 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native'
-import type { OnChangeStateEvent } from 'react-native-enriched'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
-import { NoteEditor, NoteEditorHandle } from '@/components/NoteEditor'
 import { useTheme } from '@/components/Themed'
+import {
+  TiptapEditor,
+  type TiptapEditorHandle,
+  type TiptapStyleState,
+} from '@/components/TiptapEditor'
 
 function ToolbarBtn({
   icon: Icon,
@@ -71,15 +77,16 @@ export default function NoteScreen() {
   const { colors, isDark } = useTheme()
   const { width: windowWidth } = useWindowDimensions()
   const dispatch = useDispatch()
-  const editorRef = useRef<NoteEditorHandle>(null)
+  const editorRef = useRef<TiptapEditorHandle>(null)
 
   const rawNoteData = useSelector(getNoteData(id))
   const noteData = useMemo(() => (rawNoteData || {}) as any, [rawNoteData])
+  const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
 
   const [title, setTitle] = useState(noteData?.title || '')
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
-  const [styleState, setStyleState] = useState<OnChangeStateEvent | null>(null)
+  const [styleState, setStyleState] = useState<TiptapStyleState | null>(null)
 
   useEffect(() => {
     if (noteData?.title !== undefined && title === '') {
@@ -108,9 +115,16 @@ export default function NoteScreen() {
   const handleUpdate = useCallback(
     (html: string) => {
       if (!id || id === 'new') return
-      dispatch(updateNote({ key: id, title, note: html } as any))
+      let finalHtml = html
+      if (hyperdriveServerAddress) {
+        finalHtml = finalHtml.replaceAll(
+          hyperdriveServerAddress.replace(/\/$/, ''),
+          HYPERDRIVE_URL_PREFIX,
+        )
+      }
+      dispatch(updateNote({ key: id, title, note: finalHtml } as any))
     },
-    [dispatch, id, title],
+    [dispatch, id, title, hyperdriveServerAddress],
   )
 
   const handleTitleChange = useCallback(
@@ -172,36 +186,46 @@ export default function NoteScreen() {
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true },
       )
 
-      const localUri = manipulated.uri
+      if (!manipulated.base64) return
 
-      editorRef.current?.insertImage(localUri, finalWidth, finalHeight)
+      const buffer = Buffer.from(manipulated.base64, 'base64')
 
-      if (manipulated.base64) {
-        const buffer = Buffer.from(manipulated.base64, 'base64')
+      const { link } = await backendApi.insertFile({
+        key: id,
+        fileName: fileName || `image-${Date.now()}.jpg`,
+        buffer,
+      })
 
-        const { link } = await backendApi.insertFile({
-          key: id,
-          fileName: fileName || `image-${Date.now()}.jpg`,
-          buffer,
-        })
-
-        if (link) {
-          const currentHtml = await editorRef.current?.getHTML()
-          if (currentHtml) {
-            const newHtml = currentHtml.replace(localUri, link)
-            editorRef.current?.setHTML(newHtml)
-          }
+      if (link) {
+        let resolvedLink = link
+        if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
+          resolvedLink = link.replace(
+            HYPERDRIVE_URL_PREFIX,
+            hyperdriveServerAddress.replace(/\/$/, ''),
+          )
         }
+        editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
       }
     } catch (error) {
       console.error('Error uploading image:', error)
     }
   }, [id, windowWidth])
 
-  const isActive = (key: keyof OnChangeStateEvent) => styleState?.[key]?.isActive ?? false
+  const isActive = (key: keyof TiptapStyleState) => styleState?.[key]?.isActive ?? false
 
   const bg = colors.background
   const toolbarBottom = keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16
+
+  const initialContent = useMemo(() => {
+    let content = noteData?.note || ''
+    if (hyperdriveServerAddress && content.includes(HYPERDRIVE_URL_PREFIX)) {
+      content = content.replaceAll(
+        HYPERDRIVE_URL_PREFIX,
+        hyperdriveServerAddress.replace(/\/$/, ''),
+      )
+    }
+    return content
+  }, [noteData?.note, hyperdriveServerAddress])
 
   return (
     <View style={[styles.root, { backgroundColor: bg }]}>
@@ -276,11 +300,28 @@ export default function NoteScreen() {
           />
         </View>
 
-        <NoteEditor
+        <TiptapEditor
           ref={editorRef}
-          initialContent={noteData?.note || ''}
+          initialContent={initialContent}
           onContentChange={handleUpdate}
           onStyleStateChange={setStyleState}
+          onOpenAttachment={(url, fileName) => {
+            console.log('Opening attachment:', { url, fileName })
+            if (url) {
+              Linking.openURL(url).catch((err) => console.error('Failed to open file URL:', err))
+            }
+          }}
+          onDeleteAttachment={async (url) => {
+            if (!url) return
+            try {
+              if (url && url.startsWith(HYPERDRIVE_URL_PREFIX)) {
+                const key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
+                await backendApi.deleteFile(key)
+              }
+            } catch (error) {
+              console.error('Error deleting attachment from backend:', error)
+            }
+          }}
         />
       </View>
 
@@ -359,14 +400,6 @@ export default function NoteScreen() {
           ) : (
             <View style={styles.toolbarRow}>
               <ToolbarBtn
-                icon={CheckSquare}
-                colors={colors}
-                onPress={() => {
-                  setIsEditing(true)
-                  setTimeout(() => editorRef.current?.toggleCheckboxList(), 100)
-                }}
-              />
-              <ToolbarBtn
                 icon={Paperclip}
                 colors={colors}
                 onPress={() => {
@@ -385,21 +418,6 @@ export default function NoteScreen() {
             </View>
           )}
         </GlassView>
-
-        {!isEditing && (
-          <Pressable
-            onPress={() => {
-              setIsEditing(true)
-              editorRef.current?.focus()
-            }}
-            style={({ pressed }) => [
-              styles.editFab,
-              { backgroundColor: isDark ? '#2C2C2E' : '#E5E5EA', opacity: pressed ? 0.7 : 1 },
-            ]}
-          >
-            <Edit3 size={20} color={colors.text} strokeWidth={2} />
-          </Pressable>
-        )}
       </View>
     </View>
   )

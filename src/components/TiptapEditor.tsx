@@ -1,0 +1,398 @@
+/**
+ * TiptapEditor.tsx
+ *
+ * Production WebView editor with full Tiptap feature parity to the desktop.
+ *
+ * ─── Replacing NoteEditor in [id].tsx ──────────────────────────────────────
+ *
+ *   // Remove:
+ *   import type { OnChangeStateEvent } from 'react-native-enriched'
+ *   import { NoteEditor, NoteEditorHandle } from '@/components/NoteEditor'
+ *
+ *   // Add:
+ *   import {
+ *     TiptapEditor,
+ *     type TiptapEditorHandle,
+ *     type TiptapStyleState,
+ *   } from '@/components/TiptapEditor'
+ *
+ *   // Update state type:
+ *   const [styleState, setStyleState] = useState<TiptapStyleState | null>(null)
+ *
+ *   // Component usage and all editorRef.current?.toggle*() calls are unchanged.
+ */
+
+import React, {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react'
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from 'react-native'
+import WebView, { WebViewErrorEvent, WebViewMessageEvent } from 'react-native-webview'
+
+import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
+
+import { useTheme } from './Themed'
+
+// ── Public types ──────────────────────────────────────────────────────────────
+
+/** Style state broadcast on every cursor move / selection change. */
+export interface TiptapStyleState {
+  bold: { isActive: boolean }
+  italic: { isActive: boolean }
+  underline: { isActive: boolean }
+  strike: { isActive: boolean }
+  h1: { isActive: boolean }
+  h2: { isActive: boolean }
+  h3: { isActive: boolean }
+  unorderedList: { isActive: boolean }
+  orderedList: { isActive: boolean }
+  checkboxList: { isActive: boolean }
+  blockQuote: { isActive: boolean }
+  codeBlock: { isActive: boolean }
+  link: { isActive: boolean }
+  highlight: { isActive: boolean }
+}
+
+/** Imperative handle — superset of the old NoteEditorHandle. */
+export interface TiptapEditorHandle {
+  toggleBold: () => void
+  toggleItalic: () => void
+  toggleUnderline: () => void
+  toggleStrike: () => void
+  toggleH1: () => void
+  toggleH2: () => void
+  toggleH3: () => void
+  toggleUnorderedList: () => void
+  toggleOrderedList: () => void
+  toggleCheckboxList: () => void
+  toggleBlockQuote: () => void
+  toggleCodeBlock: () => void
+  toggleHighlight: () => void
+  setTextAlign: (align: 'left' | 'center' | 'right' | 'justify') => void
+  insertImage: (url: string, width: number, height: number) => void
+  updateImageSrc: (oldSrc: string, newSrc: string) => void
+  focus: () => void
+  save: () => Promise<void>
+  getHTML: () => Promise<string | undefined>
+  setHTML: (html: string) => void
+}
+
+export interface TiptapEditorProps {
+  initialContent: string
+  onContentChange: (html: string) => void
+  onStyleStateChange?: (state: TiptapStyleState) => void
+  /** Called when the editor gains focus (keyboard about to appear). */
+  onEditorFocus?: () => void
+  /** Called when the editor loses focus (immediate save has been flushed). */
+  onEditorBlur?: () => void
+  /** Called when an attachment is tapped in the editor. */
+  onOpenAttachment?: (url: string, fileName: string) => void
+  /** Called when the delete button on an attachment is tapped. */
+  onDeleteAttachment?: (url: string) => void
+}
+
+// ── Internal ──────────────────────────────────────────────────────────────────
+
+type WebViewMsg =
+  | { type: 'ready' }
+  | { type: 'initialized' }
+  | { type: 'contentChange'; html: string; text: string }
+  | { type: 'styleState'; state: TiptapStyleState }
+  | { type: 'htmlResponse'; requestId: string; html: string }
+  | { type: 'focus' }
+  | { type: 'blur' }
+  | { type: 'openAttachment'; url: string; fileName: string }
+  | { type: 'deleteAttachment'; url: string }
+
+type EditorState = 'loading' | 'ready' | 'error'
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
+const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
+  (
+    {
+      initialContent,
+      onContentChange,
+      onStyleStateChange,
+      onEditorFocus,
+      onEditorBlur,
+      onOpenAttachment,
+      onDeleteAttachment,
+    },
+    ref,
+  ) => {
+    const { colors, isDark } = useTheme()
+    const webViewRef = useRef<WebView>(null)
+
+    // ── Stable refs so all closures see the latest values ───────────────
+    const onContentChangeRef = useRef(onContentChange)
+    const onStyleStateChangeRef = useRef(onStyleStateChange)
+    const onEditorFocusRef = useRef(onEditorFocus)
+    const onEditorBlurRef = useRef(onEditorBlur)
+    const onOpenAttachmentRef = useRef(onOpenAttachment)
+    const onDeleteAttachmentRef = useRef(onDeleteAttachment)
+
+    onContentChangeRef.current = onContentChange
+    onStyleStateChangeRef.current = onStyleStateChange
+    onEditorFocusRef.current = onEditorFocus
+    onEditorBlurRef.current = onEditorBlur
+    onOpenAttachmentRef.current = onOpenAttachment
+    onDeleteAttachmentRef.current = onDeleteAttachment
+
+    const colorsRef = useRef(colors)
+    const isDarkRef = useRef(isDark)
+    colorsRef.current = colors
+    isDarkRef.current = isDark
+
+    // Track the latest initialContent so the 'ready' handler always has it.
+    // Before the editor is ready we keep it updated; after init, setHTML()
+    // must be called explicitly to update content.
+    const initialContentRef = useRef(initialContent)
+    const editorReadyRef = useRef(false)
+    useEffect(() => {
+      if (!editorReadyRef.current) {
+        initialContentRef.current = initialContent
+      }
+    }, [initialContent])
+
+    // ── Pending getHTML promises ─────────────────────────────────────────
+    const pendingRequests = useRef<Map<string, (html: string) => void>>(new Map())
+
+    // ── UI state ─────────────────────────────────────────────────────────
+    const [editorState, setEditorState] = useState<EditorState>('loading')
+    const fadeAnim = useRef(new Animated.Value(0)).current
+
+    const revealEditor = useCallback(() => {
+      setEditorState('ready')
+      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start()
+    }, [fadeAnim])
+
+    // ── Send a command to the WebView ────────────────────────────────────
+    const sendCommand = useCallback((command: object) => {
+      const js = `(function(){if(window.editorBridge){window.editorBridge.handleMessage(${JSON.stringify(JSON.stringify(command))})}})();true;`
+      webViewRef.current?.injectJavaScript(js)
+    }, [])
+
+    // ── Async getHTML with 3-second fallback ────────────────────────────
+    const getHTMLAsync = useCallback((): Promise<string | undefined> => {
+      return new Promise((resolve) => {
+        const id = `req_${Date.now()}_${Math.random().toString(36).slice(2)}`
+        const timer = setTimeout(() => {
+          pendingRequests.current.delete(id)
+          resolve(undefined)
+        }, 3000)
+        pendingRequests.current.set(id, (html) => {
+          clearTimeout(timer)
+          resolve(html)
+        })
+        sendCommand({ type: 'getHTML', requestId: id })
+      })
+    }, [sendCommand])
+
+    // ── Handle messages from WebView ─────────────────────────────────────
+    const handleMessage = useCallback(
+      (event: WebViewMessageEvent) => {
+        let msg: WebViewMsg
+        try {
+          msg = JSON.parse(event.nativeEvent.data)
+        } catch {
+          return
+        }
+
+        switch (msg.type) {
+          case 'ready':
+            // Send theme + initial content before revealing
+            editorReadyRef.current = true
+            sendCommand({
+              type: 'init',
+              colors: colorsRef.current,
+              isDark: isDarkRef.current,
+              html: initialContentRef.current,
+            })
+            break
+
+          case 'initialized':
+            // Theme and content are applied — fade in
+            revealEditor()
+            break
+
+          case 'contentChange':
+            onContentChangeRef.current(msg.html)
+            break
+
+          case 'styleState':
+            onStyleStateChangeRef.current?.(msg.state)
+            break
+
+          case 'htmlResponse': {
+            const resolve = pendingRequests.current.get(msg.requestId)
+            if (resolve) {
+              resolve(msg.html)
+              pendingRequests.current.delete(msg.requestId)
+            }
+            break
+          }
+
+          case 'focus':
+            onEditorFocusRef.current?.()
+            break
+
+          case 'blur':
+            onEditorBlurRef.current?.()
+            break
+
+          case 'openAttachment':
+            onOpenAttachmentRef.current?.(msg.url, msg.fileName)
+            break
+
+          case 'deleteAttachment':
+            onDeleteAttachmentRef.current?.(msg.url)
+            break
+        }
+      },
+      // sendCommand and revealEditor are stable; refs never change identity
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [],
+    )
+
+    // ── Live theme propagation — no reload required ──────────────────────
+    const prevIsDarkRef = useRef(isDark)
+    useEffect(() => {
+      if (prevIsDarkRef.current === isDark) return
+      prevIsDarkRef.current = isDark
+      if (editorReadyRef.current) {
+        sendCommand({ type: 'setTheme', colors, isDark })
+      }
+    }, [isDark, colors, sendCommand])
+
+    // ── WebView error ─────────────────────────────────────────────────────
+    const handleError = useCallback((_e: WebViewErrorEvent) => {
+      setEditorState('error')
+    }, [])
+
+    const handleRetry = useCallback(() => {
+      editorReadyRef.current = false
+      fadeAnim.setValue(0)
+      setEditorState('loading')
+      webViewRef.current?.reload()
+    }, [fadeAnim])
+
+    // ── Imperative handle ────────────────────────────────────────────────
+    useImperativeHandle(ref, () => ({
+      toggleBold: () => sendCommand({ type: 'toggleBold' }),
+      toggleItalic: () => sendCommand({ type: 'toggleItalic' }),
+      toggleUnderline: () => sendCommand({ type: 'toggleUnderline' }),
+      toggleStrike: () => sendCommand({ type: 'toggleStrike' }),
+      toggleH1: () => sendCommand({ type: 'toggleH1' }),
+      toggleH2: () => sendCommand({ type: 'toggleH2' }),
+      toggleH3: () => sendCommand({ type: 'toggleH3' }),
+      toggleUnorderedList: () => sendCommand({ type: 'toggleUnorderedList' }),
+      toggleOrderedList: () => sendCommand({ type: 'toggleOrderedList' }),
+      toggleCheckboxList: () => sendCommand({ type: 'toggleCheckboxList' }),
+      toggleBlockQuote: () => sendCommand({ type: 'toggleBlockQuote' }),
+      toggleCodeBlock: () => sendCommand({ type: 'toggleCodeBlock' }),
+      toggleHighlight: () => sendCommand({ type: 'toggleHighlight' }),
+      setTextAlign: (align) => sendCommand({ type: 'setTextAlign', align }),
+      insertImage: (url, width, height) => sendCommand({ type: 'insertImage', url, width, height }),
+      updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
+      focus: () => sendCommand({ type: 'focus' }),
+      save: async () => {
+        const html = await getHTMLAsync()
+        if (html !== undefined) onContentChangeRef.current(html)
+      },
+      getHTML: getHTMLAsync,
+      setHTML: (html) => sendCommand({ type: 'setContent', html }),
+    }))
+
+    // ── Render ────────────────────────────────────────────────────────────
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        {/* Spinner — shown while Tiptap is initialising */}
+        {editorState === 'loading' && (
+          <View style={styles.overlay} pointerEvents="none">
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        )}
+
+        {/* Error state with retry */}
+        {editorState === 'error' && (
+          <View style={styles.overlay}>
+            <Text style={[styles.errorText, { color: colors.textSecondary }]}>
+              Editor failed to load
+            </Text>
+            <Pressable
+              onPress={handleRetry}
+              style={[styles.retryBtn, { borderColor: colors.primary }]}
+            >
+              <Text style={[styles.retryText, { color: colors.primary }]}>Retry</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {/* WebView — fades in after 'initialized' to prevent colour flash */}
+        <Animated.View style={[styles.flex, { opacity: fadeAnim }]}>
+          <WebView
+            ref={webViewRef}
+            // HTTPS base URL so ES module imports from esm.sh are allowed
+            source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
+            onMessage={handleMessage}
+            onError={handleError}
+            style={[styles.webView, { backgroundColor: colors.background }]}
+            scrollEnabled
+            // Allows editor.commands.focus() to raise the keyboard on iOS
+            keyboardDisplayRequiresUserAction={false}
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+            bounces={false}
+            overScrollMode="never"
+            // Required for CDN imports (esm.sh cross-origin scripts)
+            originWhitelist={['*']}
+            javaScriptEnabled
+            domStorageEnabled
+            // Prevent iOS from adjusting insets (managed in CSS padding)
+            contentInsetAdjustmentBehavior="never"
+            automaticallyAdjustContentInsets={false}
+            contentMode="mobile"
+            setSupportMultipleWindows={false}
+          />
+        </Animated.View>
+      </View>
+    )
+  },
+)
+
+TiptapEditor.displayName = 'TiptapEditor'
+
+export { TiptapEditor }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  flex: { flex: 1 },
+  webView: { flex: 1 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  errorText: {
+    fontSize: 15,
+    marginBottom: 12,
+  },
+  retryBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  retryText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+})

@@ -1,0 +1,180 @@
+/* ── CSS variables — defaults use prefers-color-scheme ─────────────────
+   Overridden immediately by the 'init' command before the editor is shown. */
+:root {
+  --c-text:           #000000;
+  --c-text-secondary: #48484a;
+  --c-bg:             #f2f2f7;
+  --c-surface:        #ffffff;
+  --c-primary:        #DCA323;
+  --c-border:         #c6c6c8;
+  --c-placeholder:    rgba(0,0,0,0.28);
+  --c-code-bg:        #F0F0F2;
+  --c-code:           #2D5016;
+  --c-codeblock-bg:   #F4F4F5;
+  --hl-keyword:  #D73A49;
+  --hl-string:   #032F62;
+  --hl-comment:  #6A737D;
+  --hl-number:   #005CC5;
+  --hl-fn:       #6F42C1;
+  --hl-var:      #E36209;
+  --hl-builtin:  #005CC5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --c-text:           #ffffff;
+    --c-text-secondary: #b0b0b5;
+    --c-bg:             #202020;
+    --c-surface:        #1c1c1e;
+    --c-primary:        #DCA323;
+    --c-border:         #38383a;
+    --c-placeholder:    rgba(255,255,255,0.28);
+    --c-code-bg:        #1C1C1E;
+    --c-code:           #A8FF78;
+    --c-codeblock-bg:   #141414;
+    --hl-keyword:  #FF79C6;
+    --hl-string:   #F1FA8C;
+    --hl-comment:  #6272A4;
+    --hl-number:   #BD93F9;
+    --hl-fn:       #50FA7B;
+    --hl-var:      #FFB86C;
+    --hl-builtin:  #8BE9FD;
+  }
+}
+
+/* ── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: var(--c-bg);
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  -webkit-tap-highlight-color: transparent;
+}
+#editor { min-height: 100vh; }
+
+/* ── Editor ─────────────────────────────────────────────────────────────── */
+.tiptap {
+  min-height: 100vh;
+  padding: 8px 20px 180px 20px;
+  outline: none;
+  color: var(--c-text);
+  font-size: 17px;
+  font-family: -apple-system, BlinkMacSystemFont, 'San Francisco',
+               'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.65;
+  word-wrap: break-word;
+  caret-color: var(--c-primary);
+}
+
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: var(--c-placeholder);
+  pointer-events: none;
+  height: 0;
+}
+
+/* Headings */
+.tiptap h1 { font-size: 26px; font-weight: 700; margin: 20px 0 8px; line-height: 1.3; }
+.tiptap h2 { font-size: 22px; font-weight: 600; margin: 16px 0 6px; line-height: 1.3; }
+.tiptap h3 { font-size: 19px; font-weight: 600; margin: 12px 0 4px; line-height: 1.3; }
+.tiptap :is(h1,h2,h3):first-child { margin-top: 0; }
+
+/* Paragraph */
+.tiptap p { margin: 0 0 6px; }
+.tiptap p:last-child { margin-bottom: 0; }
+
+/* Lists */
+.tiptap ul, .tiptap ol { padding-left: 22px; margin: 4px 0 8px; }
+.tiptap li { margin: 3px 0; }
+.tiptap li p { margin: 0; }
+.tiptap ul { list-style-type: disc; }
+.tiptap ul li::marker { color: var(--c-primary); }
+.tiptap ol li::marker { color: var(--c-primary); }
+
+/* Task list */
+.tiptap ul[data-type="taskList"] { list-style: none; padding-left: 2px; }
+.tiptap ul[data-type="taskList"] li {
+  display: flex; align-items: flex-start; gap: 10px; margin: 5px 0;
+}
+.tiptap ul[data-type="taskList"] li > label { flex-shrink: 0; margin-top: 3px; }
+.tiptap ul[data-type="taskList"] li > label input[type="checkbox"] {
+  width: 18px; height: 18px; cursor: pointer;
+  accent-color: var(--c-primary); border-radius: 4px;
+}
+.tiptap ul[data-type="taskList"] li[data-checked="true"] > div {
+  opacity: 0.55; text-decoration: line-through;
+}
+.tiptap ul[data-type="taskList"] li > div { flex: 1; }
+
+/* Blockquote */
+.tiptap blockquote {
+  border-left: 3px solid var(--c-primary);
+  padding-left: 16px; margin: 8px 0;
+  color: var(--c-text-secondary);
+}
+
+/* Inline code */
+.tiptap code {
+  background: var(--c-code-bg); color: var(--c-code);
+  padding: 2px 6px; border-radius: 4px; font-size: 0.88em;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'Courier New', monospace;
+}
+
+/* Code block */
+.tiptap pre {
+  background: var(--c-codeblock-bg);
+  padding: 16px; border-radius: 10px; margin: 8px 0; overflow-x: auto;
+}
+.tiptap pre code {
+  background: none; color: var(--c-code); padding: 0;
+  border-radius: 0; font-size: 13px;
+  font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'Courier New', monospace;
+}
+
+/* Syntax tokens */
+.hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: var(--hl-keyword); }
+.hljs-string, .hljs-attr, .hljs-template-variable  { color: var(--hl-string);  }
+.hljs-comment, .hljs-quote                          { color: var(--hl-comment); font-style: italic; }
+.hljs-number, .hljs-literal, .hljs-regexp           { color: var(--hl-number);  }
+.hljs-title, .hljs-section                          { color: var(--hl-fn);      font-weight: 600; }
+.hljs-variable, .hljs-name, .hljs-tag               { color: var(--hl-var);     }
+.hljs-type, .hljs-class .hljs-title                 { color: var(--hl-builtin); }
+
+/* Links */
+.tiptap a { color: var(--c-primary); text-decoration: underline; }
+
+/* Highlight */
+.tiptap mark { border-radius: 3px; padding: 1px 2px; }
+
+/* Images */
+.tiptap img {
+  max-width: 100%; height: auto;
+  border-radius: 8px; display: block; margin: 8px 0;
+}
+
+/* Tables */
+.tiptap table {
+  border-collapse: collapse; width: 100%;
+  margin: 8px 0; font-size: 15px;
+}
+.tiptap table td, .tiptap table th {
+  border: 1px solid var(--c-border);
+  padding: 8px 12px; min-width: 80px; vertical-align: top;
+}
+.tiptap table th {
+  background: var(--c-surface); font-weight: 600; text-align: left;
+}
+.tiptap td, .tiptap th { position: relative; }
+.tiptap .selectedCell::after {
+  background: color-mix(in srgb, var(--c-primary) 20%, transparent);
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+}
+
+/* Misc */
+.tiptap hr { border: none; border-top: 1px solid var(--c-border); margin: 16px 0; }
+.tiptap sub  { vertical-align: sub;   font-size: 0.8em; }
+.tiptap sup  { vertical-align: super; font-size: 0.8em; }
+::selection  { background: color-mix(in srgb, var(--c-primary) 30%, transparent); }

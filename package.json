@@ -18,7 +18,8 @@
     "bare-bundle": " npx bare-pack --host ios --host android  --linked --out src/backend/backend.bundle.js src/backend/main.mjs",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
-    "kickstart": "node scripts/kickstart.js"
+    "kickstart": "node scripts/kickstart.js",
+    "build:editor": "cd editor-bundle && npm install && npm run build"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

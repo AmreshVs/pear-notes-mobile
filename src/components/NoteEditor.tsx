@@ -1,9 +1,11 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react'
+import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
 import {
   EnrichedTextInput,
   type EnrichedTextInputInstance,
   type OnChangeStateEvent,
 } from 'react-native-enriched'
+
+import { sanitizeTipTapHtml } from '../utils/sanitize-html'
 
 import { useTheme } from './Themed'
 
@@ -37,6 +39,8 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
     const onContentChangeRef = useRef(onContentChange)
     onContentChangeRef.current = onContentChange
 
+    const sanitizedContent = useMemo(() => sanitizeTipTapHtml(initialContent), [initialContent])
+
     const doSave = async () => {
       const html = await inputRef.current?.getHTML()
       if (html !== undefined) {
@@ -68,7 +72,7 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
     return (
       <EnrichedTextInput
         ref={inputRef}
-        defaultValue={initialContent}
+        defaultValue={sanitizedContent}
         style={{
           flex: 1,
           fontSize: 18,
