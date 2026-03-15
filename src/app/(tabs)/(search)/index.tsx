@@ -8,16 +8,18 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, View, useTheme } from '@/components/Themed'
+import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function SearchScreen() {
   const { colors, isDark } = useTheme()
   const dispatch = useDispatch()
+  const { openNote } = useNoteEditor()
   const notes = useSelector(getFilteredNotes)
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
       dispatch(setSelectedNote(noteId as any))
-      router.push(`/note/${noteId}` as any)
+      openNote(noteId)
     },
     [dispatch],
   )

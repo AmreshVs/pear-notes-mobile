@@ -15,11 +15,13 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, View, useTheme } from '@/components/Themed'
+import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FolderNotesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { colors, isDark } = useTheme()
   const dispatch = useDispatch()
+  const { openNote } = useNoteEditor()
   const folders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
   const selectedNote = useSelector(getSelectedNote)
@@ -56,7 +58,7 @@ export default function FolderNotesScreen() {
   const handleSelectNote = useCallback(
     (noteId: string) => {
       dispatch(setSelectedNote(noteId as any))
-      router.push(`/note/${noteId}` as any)
+      openNote(noteId)
     },
     [dispatch],
   )
@@ -71,7 +73,7 @@ export default function FolderNotesScreen() {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
       lastSelectedNoteRef.current = selectedNote
-      router.push(`/note/${selectedNote}` as any)
+      openNote(selectedNote)
     }
   }, [selectedNote])
 

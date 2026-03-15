@@ -18,6 +18,7 @@ import { ErrorScreen } from '@/components/ErrorScreen'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import { useResolvedColorScheme } from '@/components/Themed'
 import { useColorScheme } from '@/components/useColorScheme'
+import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { startWorklet } from '@/utils/worklet'
 
 export { ErrorBoundary } from 'expo-router'
@@ -107,24 +108,26 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="note" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="settings"
-          options={{
-            presentation: 'modal',
+      <NoteEditorProvider>
+        <Stack
+          screenOptions={{
             headerShown: false,
           }}
-        />
-      </Stack>
+        >
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="note" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="settings"
+            options={{
+              presentation: 'modal',
+              headerShown: false,
+            }}
+          />
+        </Stack>
 
-      <PairingOverlay />
-      <AnimatedSplashOverlay />
+        <PairingOverlay />
+        <AnimatedSplashOverlay />
+      </NoteEditorProvider>
     </ThemeProvider>
   )
 }

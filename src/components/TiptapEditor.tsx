@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewErrorEvent, WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
 
@@ -166,12 +166,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     // ── UI state ─────────────────────────────────────────────────────────
     const [editorState, setEditorState] = useState<EditorState>('loading')
-    const fadeAnim = useRef(new Animated.Value(0)).current
 
     const revealEditor = useCallback(() => {
       setEditorState('ready')
-      Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }).start()
-    }, [fadeAnim])
+    }, [])
 
     // ── Send a command to the WebView ────────────────────────────────────
     const sendCommand = useCallback((command: object) => {
@@ -298,10 +296,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     const handleRetry = useCallback(() => {
       editorReadyRef.current = false
-      fadeAnim.setValue(0)
       setEditorState('loading')
       webViewRef.current?.reload()
-    }, [fadeAnim])
+    }, [])
 
     // ── Imperative handle ────────────────────────────────────────────────
     useImperativeHandle(ref, () => ({
@@ -334,13 +331,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     // ── Render ────────────────────────────────────────────────────────────
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Spinner — shown while Tiptap is initialising */}
-        {editorState === 'loading' && (
-          <View style={styles.overlay} pointerEvents="none">
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        )}
-
         {/* Error state with retry */}
         {editorState === 'error' && (
           <View style={styles.overlay}>
@@ -356,33 +346,31 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           </View>
         )}
 
-        {/* WebView — fades in after 'initialized' to prevent colour flash */}
-        <Animated.View style={[styles.flex, { opacity: fadeAnim }]}>
+        {/* WebView — shown at full opacity immediately; backgroundColor matches
+            the screen so there is no visible flash while JS parses (~300ms,
+            hidden behind the iOS push-navigation animation). */}
+        <View style={styles.flex}>
           <WebView
             ref={webViewRef}
-            // HTTPS base URL so ES module imports from esm.sh are allowed
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
             onMessage={handleMessage}
             onError={handleError}
             style={[styles.webView, { backgroundColor: colors.background }]}
             scrollEnabled
-            // Allows editor.commands.focus() to raise the keyboard on iOS
             keyboardDisplayRequiresUserAction={false}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
             bounces={false}
             overScrollMode="never"
-            // Required for CDN imports (esm.sh cross-origin scripts)
             originWhitelist={['*']}
             javaScriptEnabled
             domStorageEnabled
-            // Prevent iOS from adjusting insets (managed in CSS padding)
             contentInsetAdjustmentBehavior="never"
             automaticallyAdjustContentInsets={false}
             contentMode="mobile"
             setSupportMultipleWindows={false}
           />
-        </Animated.View>
+        </View>
       </View>
     )
   },

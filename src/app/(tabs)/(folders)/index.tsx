@@ -13,10 +13,12 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { FolderRow } from '@/components/FolderRow'
 import { Text, useTheme, View } from '@/components/Themed'
+import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FoldersScreen() {
   const { colors, isDark } = useTheme()
   const dispatch = useDispatch()
+  const { openNote } = useNoteEditor()
   const folders = useSelector(getFolders)
   const selectedNote = useSelector(getSelectedNote)
 
@@ -45,7 +47,7 @@ export default function FoldersScreen() {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
       lastSelectedNoteRef.current = selectedNote
-      router.push(`/note/${selectedNote}` as any)
+      openNote(selectedNote)
     }
   }, [selectedNote])
 

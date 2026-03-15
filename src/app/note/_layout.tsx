@@ -1,21 +1,16 @@
 import { Stack } from 'expo-router'
-import { useColorScheme } from 'react-native'
 
+/**
+ * Note group layout — only used for deep-link fallback.
+ * Normal in-app navigation bypasses this entirely via openNote().
+ * Animation is disabled because the NoteEditorProvider overlay handles transitions.
+ */
 export default function NoteLayout() {
-  const colorScheme = useColorScheme()
-  const isDark = colorScheme === 'dark'
-
   return (
     <Stack
       screenOptions={{
-        headerShown: true,
-        headerLargeTitle: false,
-        headerBackButtonDisplayMode: 'minimal',
-        headerTransparent: true,
-        headerStyle: {
-          backgroundColor: 'transparent',
-        },
-        headerTintColor: isDark ? '#FFFFFF' : '#000000',
+        headerShown: false,
+        animation: 'none',
       }}
     >
       <Stack.Screen name="[id]" />
