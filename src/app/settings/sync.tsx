@@ -23,17 +23,17 @@ import {
   Smartphone,
   Trash2,
 } from 'lucide-react-native'
-import React, { useRef, useState } from 'react'
+import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Animated,
   Modal,
   Platform,
   Pressable,
-  StyleSheet,
-  TextInput,
   View as RNView,
   ScrollView,
+  StyleSheet,
+  TextInput,
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -63,69 +63,141 @@ export default function SyncScreen() {
   const [copied, setCopied] = useState(false)
   const [pasteCode, setPasteCode] = useState('')
 
-  const pageBg = colors.background
-  const cardBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)'
-  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-  const text = colors.text
-  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'
-  const segBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
+  const textMuted = useMemo(
+    () => (isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'),
+    [isDark],
+  )
+  const cardBg = useMemo(
+    () => (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)'),
+    [isDark],
+  )
+  const cardBorder = useMemo(
+    () => (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'),
+    [isDark],
+  )
+  const segBg = useMemo(() => (isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'), [isDark])
 
-  const handleCopy = async () => {
+  const handleCopy = useCallback(async () => {
     if (!inviteCode) return
     await Clipboard.setStringAsync(inviteCode)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
-  }
+  }, [inviteCode])
 
-  const handleConnect = () => {
+  const handleConnect = useCallback(() => {
     if (!pasteCode.trim()) return
     dispatch(subscribePairUser({ invite: pasteCode.trim() } as any))
     setPasteCode('')
-  }
+  }, [dispatch, pasteCode])
 
-  const formatExpiry = (ts: number | null) => {
+  const formatExpiry = useCallback((ts: number | null) => {
     if (!ts) return 'Permanent Link'
     const ms = ts < 10000000000 ? ts * 1000 : ts
     const d = new Date(ms)
     if (isNaN(d.getTime())) return 'Permanent Link'
     return `Expires ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-  }
+  }, [])
+
+  const scrollStyle = useMemo(
+    () => [st.container, { backgroundColor: colors.background }],
+    [colors.background],
+  )
+  const segRowStyle = useMemo(() => [st.segRow, { backgroundColor: segBg }], [segBg])
+  const heroCardStyle = useMemo(
+    () => [st.heroCard, { backgroundColor: cardBg, borderColor: cardBorder }],
+    [cardBg, cardBorder],
+  )
+  const iconRingStyle = useMemo(
+    () => [
+      st.iconRing,
+      { backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)' },
+    ],
+    [isDark],
+  )
+  const heroTitleStyle = useMemo(() => [st.heroTitle, { color: colors.text }], [colors.text])
+  const heroDescStyle = useMemo(() => [st.heroDesc, { color: textMuted }], [textMuted])
+  const inviteTitleStyle = useMemo(() => [st.inviteTitle, { color: colors.text }], [colors.text])
+  const inviteSubStyle = useMemo(() => [st.inviteSub, { color: textMuted }], [textMuted])
+  const iconPillStyle = useMemo(
+    () => [
+      st.iconPill,
+      { backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)' },
+    ],
+    [isDark],
+  )
+  const codeLabelStyle = useMemo(
+    () => [st.codeLabel, { color: textMuted, borderTopColor: cardBorder, borderTopWidth: 1 }],
+    [textMuted, cardBorder],
+  )
+  const codeBoxStyle = useMemo(
+    () => [st.codeBox, { borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' }],
+    [isDark],
+  )
+  const codeTextStyle = useMemo(() => [st.codeText, { color: colors.text }], [colors.text])
+  const warningCardStyle = useMemo(
+    () => [
+      st.warningCard,
+      {
+        backgroundColor: isDark ? 'rgba(220,163,35,0.07)' : 'rgba(220,163,35,0.08)',
+        borderColor: isDark ? 'rgba(220,163,35,0.2)' : 'rgba(220,163,35,0.25)',
+      },
+    ],
+    [isDark],
+  )
+  const warningTextStyle = useMemo(() => [st.warningText, { color: textMuted }], [textMuted])
+  const inputRowStyle = useMemo(
+    () => [
+      st.inputRow,
+      {
+        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+        borderColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
+      },
+    ],
+    [isDark],
+  )
+  const codeInputStyle = useMemo(() => [st.codeInput, { color: colors.text }], [colors.text])
+  const footNoteStyle = useMemo(() => [st.footNote, { color: textMuted }], [textMuted])
+  const sectionCapStyle = useMemo(() => [st.sectionCap, { color: textMuted }], [textMuted])
+  const sectionCapDeviceStyle = useMemo(
+    () => [st.sectionCap, { color: textMuted, marginTop: 30 }],
+    [textMuted],
+  )
+  const emptyCardStyle = useMemo(
+    () => [st.emptyCard, { borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }],
+    [isDark],
+  )
 
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
-      style={{ flex: 1, backgroundColor: pageBg }}
+      style={scrollStyle}
       contentContainerStyle={st.scroll}
       showsVerticalScrollIndicator={false}
     >
-      <RNView style={[st.segRow, { backgroundColor: segBg }]}>
+      <RNView style={segRowStyle}>
         {(['link', 'devices'] as const).map((t) => {
           const active = tab === t
+          const pillStyle = [
+            st.segPill,
+            active &&
+              ({
+                backgroundColor: colors.primary,
+                shadowColor: colors.primary,
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.4,
+                shadowRadius: 6,
+                elevation: 4,
+              } as any),
+          ]
+          const labelStyle = [
+            st.segLabel,
+            { color: active ? '#000000' : textMuted },
+            active && ({ fontWeight: '700' } as any),
+          ]
+
           return (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              style={[
-                st.segPill,
-                active && {
-                  backgroundColor: colors.primary,
-                  shadowColor: colors.primary,
-                  shadowOffset: { width: 0, height: 3 },
-                  shadowOpacity: 0.4,
-                  shadowRadius: 6,
-                  elevation: 4,
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  st.segLabel,
-                  { color: active ? '#000000' : textMuted },
-                  active && { fontWeight: '700' },
-                ]}
-              >
-                {t === 'link' ? 'Link Device' : 'My Devices'}
-              </Text>
+            <Pressable key={t} onPress={() => setTab(t)} style={pillStyle}>
+              <Text style={labelStyle}>{t === 'link' ? 'Link Device' : 'My Devices'}</Text>
             </Pressable>
           )
         })}
@@ -133,20 +205,15 @@ export default function SyncScreen() {
 
       {tab === 'link' ? (
         <RNView style={st.pad}>
-          <RNView style={[st.heroCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <RNView style={heroCardStyle}>
             {!inviteCode ? (
               <>
-                <RNView
-                  style={[
-                    st.iconRing,
-                    { backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)' },
-                  ]}
-                >
+                <RNView style={iconRingStyle}>
                   <Globe size={26} color={colors.primary} strokeWidth={1.5} />
                 </RNView>
 
-                <Text style={[st.heroTitle, { color: text }]}>Link Your Devices</Text>
-                <Text style={[st.heroDesc, { color: textMuted }]}>
+                <Text style={heroTitleStyle}>Link Your Devices</Text>
+                <Text style={heroDescStyle}>
                   Create a secure, end-to-end encrypted connection to sync your notes across devices
                   instantly.
                 </Text>
@@ -154,16 +221,10 @@ export default function SyncScreen() {
                 <Pressable
                   onPress={() => dispatch(createInvite())}
                   disabled={isLoading}
-                  style={({ pressed }) => ({
-                    backgroundColor: colors.primary,
-                    borderRadius: 14,
-                    width: '100%',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    paddingVertical: 17,
-                    opacity: isLoading || pressed ? 0.7 : 1,
-                  })}
+                  style={({ pressed }) => [
+                    st.generateBtn,
+                    { backgroundColor: colors.primary, opacity: isLoading || pressed ? 0.7 : 1 },
+                  ]}
                 >
                   {isLoading && (
                     <ActivityIndicator size="small" color="#000" style={{ marginRight: 8 }} />
@@ -174,45 +235,24 @@ export default function SyncScreen() {
             ) : (
               <>
                 <RNView style={st.inviteHeader}>
-                  <RNView
-                    style={[
-                      st.iconPill,
-                      {
-                        backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)',
-                      },
-                    ]}
-                  >
+                  <RNView style={iconPillStyle}>
                     <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
                   </RNView>
                   <RNView style={{ flex: 1 }}>
-                    <Text style={[st.inviteTitle, { color: text }]}>Invitation Ready</Text>
-                    <Text style={[st.inviteSub, { color: textMuted }]}>
-                      {formatExpiry(expiresAt)}
-                    </Text>
+                    <Text style={inviteTitleStyle}>Invitation Ready</Text>
+                    <Text style={inviteSubStyle}>{formatExpiry(expiresAt)}</Text>
                   </RNView>
                 </RNView>
 
-                <Text
-                  style={[
-                    st.codeLabel,
-                    { color: textMuted, borderTopColor: cardBorder, borderTopWidth: 1 },
-                  ]}
-                >
-                  SECURE PAIR CODE
-                </Text>
+                <Text style={codeLabelStyle}>SECURE PAIR CODE</Text>
 
-                <RNView
-                  style={[
-                    st.codeBox,
-                    { borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' },
-                  ]}
-                >
+                <RNView style={codeBoxStyle}>
                   <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 2 }}
+                    contentContainerStyle={st.codeScrollContent}
                   >
-                    <Text selectable style={[st.codeText, { color: text }]}>
+                    <Text selectable style={codeTextStyle}>
                       {inviteCode}
                     </Text>
                   </ScrollView>
@@ -220,18 +260,13 @@ export default function SyncScreen() {
 
                 <Pressable
                   onPress={handleCopy}
-                  style={({ pressed }) => ({
-                    backgroundColor: copied ? '#22C55E' : colors.primary,
-                    borderRadius: 14,
-                    width: '100%',
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    paddingVertical: 16,
-                    marginTop: 12,
-                    opacity: pressed ? 0.7 : 1,
-                  })}
+                  style={({ pressed }) => [
+                    st.copyBtn,
+                    {
+                      backgroundColor: copied ? '#22C55E' : colors.primary,
+                      opacity: pressed ? 0.7 : 1,
+                    },
+                  ]}
                 >
                   {copied ? (
                     <Check size={16} color="#fff" strokeWidth={2.5} />
@@ -247,22 +282,14 @@ export default function SyncScreen() {
           </RNView>
 
           {inviteCode && (
-            <RNView
-              style={[
-                st.warningCard,
-                {
-                  backgroundColor: isDark ? 'rgba(220,163,35,0.07)' : 'rgba(220,163,35,0.08)',
-                  borderColor: isDark ? 'rgba(220,163,35,0.2)' : 'rgba(220,163,35,0.25)',
-                },
-              ]}
-            >
+            <RNView style={warningCardStyle}>
               <ShieldCheck
                 size={14}
                 color={colors.primary}
                 strokeWidth={1.8}
                 style={{ marginTop: 1 }}
               />
-              <Text style={[st.warningText, { color: textMuted }]}>
+              <Text style={warningTextStyle}>
                 For security, don't share this code in public channels as it grants full access to
                 your notes.
               </Text>
@@ -271,62 +298,48 @@ export default function SyncScreen() {
 
           {!isSynced && (
             <RNView style={{ marginBottom: 24 }}>
-              <RNView
-                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 6 }}
-              >
-                <Text
-                  style={{ color: colors.primary, fontSize: 18, fontWeight: '600', lineHeight: 20 }}
-                >
-                  +
-                </Text>
-                <Text style={{ color: text, fontSize: 15, fontWeight: '600' }}>
+              <RNView style={st.invitePasteHeader}>
+                <Text style={[st.plusIcon, { color: colors.primary }]}>+</Text>
+                <Text style={[st.invitePasteText, { color: colors.text }]}>
                   Already have an invite?
                 </Text>
               </RNView>
 
-              <RNView
-                style={[
-                  st.inputRow,
-                  {
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                    borderColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
-                  },
-                ]}
-              >
+              <RNView style={inputRowStyle}>
                 <TextInput
                   value={pasteCode}
                   onChangeText={setPasteCode}
                   onSubmitEditing={handleConnect}
                   placeholder="Paste invite code here..."
                   placeholderTextColor={textMuted}
-                  style={[st.codeInput, { color: text }]}
+                  style={codeInputStyle}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
                 <Pressable
                   onPress={handleConnect}
                   disabled={isLoading || pasteCode.trim().length === 0}
-                  style={({ pressed }) => ({
-                    backgroundColor: colors.primary,
-                    borderRadius: 10,
-                    paddingHorizontal: 16,
-                    paddingVertical: 10,
-                    opacity: isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
-                  })}
+                  style={({ pressed }) => [
+                    st.linkBtn,
+                    {
+                      backgroundColor: colors.primary,
+                      opacity: isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
+                    },
+                  ]}
                 >
                   {isLoading ? (
                     <ActivityIndicator size="small" color="#000" />
                   ) : (
-                    <Text style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>Link</Text>
+                    <Text style={st.linkBtnText}>Link</Text>
                   )}
                 </Pressable>
               </RNView>
             </RNView>
           )}
 
-          <RNView style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
+          <RNView style={st.footNoteRow}>
             <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
-            <Text style={[st.footNote, { color: textMuted }]}>
+            <Text style={footNoteStyle}>
               Your data moves directly between devices using encrypted Hypercore logs. No central
               server involved.
             </Text>
@@ -334,7 +347,7 @@ export default function SyncScreen() {
         </RNView>
       ) : (
         <RNView style={st.pad}>
-          <Text style={[st.sectionCap, { color: textMuted }]}>THIS DEVICE</Text>
+          <Text style={sectionCapStyle}>THIS DEVICE</Text>
 
           <RNView style={[st.deviceGroup, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             {syncedDevices
@@ -345,7 +358,7 @@ export default function SyncScreen() {
                   device={device}
                   isDark={isDark}
                   colors={colors}
-                  text={text}
+                  text={colors.text}
                   textMuted={textMuted}
                   cardBg={cardBg}
                   cardBorder={cardBorder}
@@ -354,7 +367,7 @@ export default function SyncScreen() {
               ))}
           </RNView>
 
-          <Text style={[st.sectionCap, { color: textMuted, marginTop: 30 }]}>OTHER DEVICES</Text>
+          <Text style={sectionCapDeviceStyle}>OTHER DEVICES</Text>
 
           {syncedDevices.filter((d: any) => !d.isLocal).length > 0 ? (
             <RNView style={[st.deviceGroup, { backgroundColor: cardBg, borderColor: cardBorder }]}>
@@ -367,7 +380,7 @@ export default function SyncScreen() {
                     isOther
                     isDark={isDark}
                     colors={colors}
-                    text={text}
+                    text={colors.text}
                     textMuted={textMuted}
                     cardBg={cardBg}
                     cardBorder={cardBorder}
@@ -376,22 +389,17 @@ export default function SyncScreen() {
                 ))}
             </RNView>
           ) : (
-            <RNView
-              style={[
-                st.emptyCard,
-                { borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' },
-              ]}
-            >
+            <RNView style={emptyCardStyle}>
               <Smartphone size={22} color={textMuted} strokeWidth={1.5} />
-              <Text style={{ color: textMuted, fontSize: 13, marginTop: 10 }}>
+              <Text style={[st.emptyText, { color: textMuted }]}>
                 No other devices connected yet.
               </Text>
             </RNView>
           )}
 
-          <RNView style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 32 }}>
+          <RNView style={st.footNoteRowDevice}>
             <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
-            <Text style={[st.footNote, { color: textMuted }]}>
+            <Text style={footNoteStyle}>
               Your data moves directly between devices using encrypted Hypercore logs. No central
               server involved.
             </Text>
@@ -402,7 +410,7 @@ export default function SyncScreen() {
   )
 }
 
-function DeviceCard({
+const DeviceCard = memo(function DeviceCard({
   device,
   isOther,
   isDark,
@@ -433,54 +441,78 @@ function DeviceCard({
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
 
-  const openDeleteModal = () => {
+  const openDeleteModal = useCallback(() => {
     setShowDeleteModal(true)
     Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }).start()
-  }
+  }, [fadeAnim])
 
-  const closeDeleteModal = () => {
+  const closeDeleteModal = useCallback(() => {
     Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() =>
       setShowDeleteModal(false),
     )
-  }
+  }, [fadeAnim])
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     dispatch(deleteSyncedDevice({ key: device.key } as any))
     setShowDeleteModal(false)
-  }
+  }, [dispatch, device.key])
 
-  const startEditing = () => {
+  const startEditing = useCallback(() => {
     if (isOther) return
     setEditedTitle(device.title || '')
     setIsEditing(true)
     setTimeout(() => inputRef.current?.focus(), 50)
-  }
+  }, [isOther, device.title])
 
-  const commitEdit = () => {
+  const commitEdit = useCallback(() => {
     const trimmed = editedTitle.trim()
     if (trimmed && trimmed !== device.title) {
       dispatch(updateSyncedDevice({ key: device.key, title: trimmed } as any))
     }
     setIsEditing(false)
-  }
+  }, [dispatch, editedTitle, device.title, device.key])
 
-  const cancelEdit = () => {
+  const cancelEdit = useCallback(() => {
     setEditedTitle(device.title || '')
     setIsEditing(false)
-  }
+  }, [device.title])
 
   const RED = '#EF4444'
+
+  const deviceIconStyle = useMemo(
+    () => [
+      st.deviceIcon,
+      { backgroundColor: isDark ? 'rgba(220,163,35,0.1)' : 'rgba(220,163,35,0.08)' },
+    ],
+    [isDark],
+  )
+  const renameInputStyle = useMemo(
+    () => [
+      st.renameInput,
+      {
+        color: text,
+        borderColor: colors.primary,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+      },
+    ],
+    [text, colors.primary, isDark],
+  )
+  const deviceNameStyle = useMemo(() => [st.deviceName, { color: text }], [text])
+  const deviceSubStyle = useMemo(() => [st.deviceSub, { color: textMuted }], [textMuted])
+  const tapToRenameStyle = useMemo(
+    () => [st.deviceSub, { color: `${colors.primary}80` }],
+    [colors.primary],
+  )
+  const deleteBtnStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.5 : 1, padding: 4 }),
+    [],
+  )
 
   return (
     <>
       <RNView>
         <RNView style={st.deviceRow}>
-          <RNView
-            style={[
-              st.deviceIcon,
-              { backgroundColor: isDark ? 'rgba(220,163,35,0.1)' : 'rgba(220,163,35,0.08)' },
-            ]}
-          >
+          <RNView style={deviceIconStyle}>
             <Icon size={18} color={colors.primary} strokeWidth={1.5} />
             {device.isLocal && <RNView style={[st.onlineDot, { borderColor: cardBg }]} />}
           </RNView>
@@ -493,14 +525,7 @@ function DeviceCard({
                 onChangeText={setEditedTitle}
                 onBlur={commitEdit}
                 onSubmitEditing={commitEdit}
-                style={[
-                  st.renameInput,
-                  {
-                    color: text,
-                    borderColor: colors.primary,
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                  },
-                ]}
+                style={renameInputStyle}
                 returnKeyType="done"
                 autoCapitalize="words"
                 onKeyPress={({ nativeEvent }) => {
@@ -509,28 +534,19 @@ function DeviceCard({
               />
             ) : (
               <Pressable onPress={!isOther ? startEditing : undefined}>
-                <Text numberOfLines={1} style={[st.deviceName, { color: text }]}>
+                <Text numberOfLines={1} style={deviceNameStyle}>
                   {device.title || device.key || 'Unknown Device'}
                 </Text>
               </Pressable>
             )}
-            <Text style={[st.deviceSub, { color: textMuted }]}>
+            <Text style={deviceSubStyle}>
               {PLATFORM_NAMES[device.platform || ''] || device.platform || '—'}
-              {!isOther && !isEditing && (
-                <Text style={[st.deviceSub, { color: `${colors.primary}80` }]}>
-                  {' '}
-                  · Tap to rename
-                </Text>
-              )}
+              {!isOther && !isEditing && <Text style={tapToRenameStyle}> · Tap to rename</Text>}
             </Text>
           </RNView>
 
           {isOther && (
-            <Pressable
-              onPress={openDeleteModal}
-              hitSlop={12}
-              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 4 })}
-            >
+            <Pressable onPress={openDeleteModal} hitSlop={12} style={deleteBtnStyle}>
               <Trash2 size={17} color={RED} strokeWidth={1.5} />
             </Pressable>
           )}
@@ -552,9 +568,9 @@ function DeviceCard({
       />
     </>
   )
-}
+})
 
-function DeleteModal({
+const DeleteModal = memo(function DeleteModal({
   visible,
   device,
   isDark,
@@ -577,6 +593,50 @@ function DeleteModal({
 }) {
   const RED = '#EF4444'
 
+  const animatedStyle = useMemo(() => [StyleSheet.absoluteFill, { opacity: fadeAnim }], [fadeAnim])
+  const overlayStyle = useMemo(
+    () => [StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }],
+    [],
+  )
+  const dangerIconStyle = useMemo(
+    () => [st.dangerIcon, { backgroundColor: `${RED}26`, borderColor: `${RED}4D` }],
+    [RED],
+  )
+  const modalTitleStyle = useMemo(() => [st.modalTitle, { color: text }], [text])
+  const modalSubStyle = useMemo(() => [st.modalSub, { color: textMuted }], [textMuted])
+  const cancelTextStyle = useMemo(
+    () => ({ color: textMuted, fontWeight: '700' as const, fontSize: 14 }),
+    [textMuted],
+  )
+  const removeTextStyle = useMemo(
+    () => ({ color: '#fff', fontWeight: '700' as const, fontSize: 15 }),
+    [],
+  )
+
+  const cancelBtnPressable = useCallback(
+    ({ pressed }: { pressed: boolean }) => [
+      st.modalBtn,
+      st.cancelBtn,
+      { opacity: pressed ? 0.7 : 1 },
+    ],
+    [],
+  )
+  const removeBtnPressable = useCallback(
+    ({ pressed }: { pressed: boolean }) => [
+      st.modalBtn,
+      {
+        backgroundColor: RED,
+        opacity: pressed ? 0.8 : 1,
+        shadowColor: RED,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.35,
+        shadowRadius: 16,
+        elevation: 8,
+      },
+    ],
+    [RED],
+  )
+
   return (
     <Modal
       visible={visible}
@@ -585,53 +645,30 @@ function DeleteModal({
       statusBarTranslucent
       onRequestClose={onCancel}
     >
-      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+      <Animated.View style={animatedStyle}>
         <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
-        <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
+        <RNView style={overlayStyle} />
 
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
 
         <RNView style={st.modalCenter} pointerEvents="box-none">
           <GlassView intensity={40} borderRadius={32} style={st.modalCard}>
             <RNView style={st.modalInner}>
-              <RNView
-                style={[st.dangerIcon, { backgroundColor: `${RED}26`, borderColor: `${RED}4D` }]}
-              >
+              <RNView style={dangerIconStyle}>
                 <ShieldAlert size={40} color={RED} />
               </RNView>
 
-              <Text style={[st.modalTitle, { color: text }]}>Remove Device?</Text>
-              <Text style={[st.modalSub, { color: textMuted }]}>
+              <Text style={modalTitleStyle}>Remove Device?</Text>
+              <Text style={modalSubStyle}>
                 The device will lose the data sync and all data will be removed from that device.
               </Text>
 
               <RNView style={st.modalRow}>
-                <Pressable
-                  onPress={onCancel}
-                  style={({ pressed }) => [
-                    st.modalBtn,
-                    st.cancelBtn,
-                    { opacity: pressed ? 0.7 : 1 },
-                  ]}
-                >
-                  <Text style={{ color: textMuted, fontWeight: '700', fontSize: 14 }}>Cancel</Text>
+                <Pressable onPress={onCancel} style={cancelBtnPressable}>
+                  <Text style={cancelTextStyle}>Cancel</Text>
                 </Pressable>
-                <Pressable
-                  onPress={onConfirm}
-                  style={({ pressed }) => [
-                    st.modalBtn,
-                    {
-                      backgroundColor: RED,
-                      opacity: pressed ? 0.8 : 1,
-                      shadowColor: RED,
-                      shadowOffset: { width: 0, height: 8 },
-                      shadowOpacity: 0.35,
-                      shadowRadius: 16,
-                      elevation: 8,
-                    },
-                  ]}
-                >
-                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Remove</Text>
+                <Pressable onPress={onConfirm} style={removeBtnPressable}>
+                  <Text style={removeTextStyle}>Remove</Text>
                 </Pressable>
               </RNView>
             </RNView>
@@ -640,9 +677,10 @@ function DeleteModal({
       </Animated.View>
     </Modal>
   )
-}
+})
 
 const st = StyleSheet.create({
+  container: { flex: 1 },
   scroll: { paddingBottom: 80 },
 
   segRow: {
@@ -697,6 +735,14 @@ const st = StyleSheet.create({
     marginBottom: 22,
     paddingHorizontal: 6,
   },
+  generateBtn: {
+    borderRadius: 14,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 17,
+  },
   btnText: { color: '#000000', fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
   inviteHeader: {
     flexDirection: 'row',
@@ -731,10 +777,21 @@ const st = StyleSheet.create({
     paddingHorizontal: 12,
     width: '100%',
   },
+  codeScrollContent: { paddingHorizontal: 2 },
   codeText: {
     fontFamily: Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace',
     fontSize: 13,
     letterSpacing: 1,
+  },
+  copyBtn: {
+    borderRadius: 14,
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 16,
+    marginTop: 12,
   },
   warningCard: {
     flexDirection: 'row',
@@ -746,6 +803,9 @@ const st = StyleSheet.create({
     marginBottom: 24,
   },
   warningText: { flex: 1, fontSize: 12, lineHeight: 17 },
+  invitePasteHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 6 },
+  plusIcon: { fontSize: 18, fontWeight: '600', lineHeight: 20 },
+  invitePasteText: { fontSize: 15, fontWeight: '600' },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -757,6 +817,14 @@ const st = StyleSheet.create({
     gap: 8,
   },
   codeInput: { flex: 1, fontSize: 14, paddingVertical: 9 },
+  linkBtn: {
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  linkBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
+  footNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+  footNoteRowDevice: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 32 },
   footNote: { fontSize: 12, flex: 1, lineHeight: 17 },
 
   sectionCap: {
@@ -766,7 +834,6 @@ const st = StyleSheet.create({
     marginBottom: 12,
     textTransform: 'uppercase',
   },
-
 
   deviceGroup: { borderRadius: 18, borderWidth: 1, overflow: 'hidden', marginBottom: 8 },
   deviceRow: {
@@ -823,7 +890,7 @@ const st = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
+  emptyText: { fontSize: 13, marginTop: 10 },
 
   modalCenter: {
     flex: 1,

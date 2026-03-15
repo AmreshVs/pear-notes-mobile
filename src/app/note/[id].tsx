@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { View } from 'react-native'
 
 import { useTheme } from '@/components/Themed'
@@ -14,5 +14,10 @@ export default function NoteScreen() {
     if (id) openNote(id)
   }, [id, openNote])
 
-  return <View style={{ flex: 1, backgroundColor: colors.background }} />
+  const containerStyle = useMemo(
+    () => ({ flex: 1, backgroundColor: colors.background }),
+    [colors.background],
+  )
+
+  return <View style={containerStyle} />
 }

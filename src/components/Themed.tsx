@@ -1,5 +1,5 @@
 import { getTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
-import React, { useMemo } from 'react'
+import React, { memo, useMemo } from 'react'
 import {
   Text as DefaultText,
   View as DefaultView,
@@ -48,7 +48,7 @@ export type TextProps = ThemeProps &
   }
 export type ViewProps = ThemeProps & DefaultView['props']
 
-export function Text(props: TextProps) {
+export const Text = memo(function Text(props: TextProps) {
   const { style, lightColor, darkColor, variant = 'body', ...otherProps } = props
   const theme = useTheme()
 
@@ -56,10 +56,15 @@ export function Text(props: TextProps) {
     theme.colorScheme === 'light' ? lightColor || theme.colors.text : darkColor || theme.colors.text
   const typographyStyle = Typography[variant]
 
-  return <DefaultText style={[{ color }, typographyStyle, style]} {...otherProps} />
-}
+  const combinedStyle = useMemo(
+    () => [{ color }, typographyStyle, style],
+    [color, typographyStyle, style],
+  )
 
-export function View(props: ViewProps) {
+  return <DefaultText style={combinedStyle} {...otherProps} />
+})
+
+export const View = memo(function View(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props
   const theme = useTheme()
 
@@ -68,51 +73,61 @@ export function View(props: ViewProps) {
       ? lightColor || theme.colors.background
       : darkColor || theme.colors.background
 
-  return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />
-}
+  const combinedStyle = useMemo(() => [{ backgroundColor }, style], [backgroundColor, style])
 
-export function Container(props: ViewProps) {
-  const theme = useTheme()
-  return <View {...props} style={[{ flex: 1, padding: theme.spacing.md }, props.style]} />
-}
+  return <DefaultView style={combinedStyle} {...otherProps} />
+})
 
-export function Card(props: ViewProps) {
+export const Container = memo(function Container(props: ViewProps) {
   const theme = useTheme()
-  return (
-    <View
-      {...props}
-      style={[
-        {
-          padding: theme.spacing.md,
-          borderRadius: theme.layout.borderRadius.md,
-          backgroundColor: theme.colors.surface,
-          borderWidth: 1,
-          borderColor: theme.colors.border,
-        },
-        props.style,
-      ]}
-    />
+  const combinedStyle = useMemo(
+    () => [{ flex: 1, padding: theme.spacing.md }, props.style],
+    [theme.spacing.md, props.style],
   )
-}
+  return <View {...props} style={combinedStyle} />
+})
 
-export function GlassCard(props: ViewProps) {
+export const Card = memo(function Card(props: ViewProps) {
   const theme = useTheme()
-  return (
-    <View
-      {...props}
-      style={[
-        {
-          padding: theme.spacing.md,
-          borderRadius: 24,
-          backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
-          borderWidth: 1,
-          borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-          boxShadow: theme.isDark
-            ? '0 8px 32px rgba(0, 0, 0, 0.3)'
-            : '0 8px 32px rgba(0, 0, 0, 0.1)',
-        },
-        props.style,
-      ]}
-    />
+  const combinedStyle = useMemo(
+    () => [
+      {
+        padding: theme.spacing.md,
+        borderRadius: theme.layout.borderRadius.md,
+        backgroundColor: theme.colors.surface,
+        borderWidth: 1,
+        borderColor: theme.colors.border,
+      },
+      props.style,
+    ],
+    [
+      theme.spacing.md,
+      theme.layout.borderRadius.md,
+      theme.colors.surface,
+      theme.colors.border,
+      props.style,
+    ],
   )
-}
+
+  return <View {...props} style={combinedStyle} />
+})
+
+export const GlassCard = memo(function GlassCard(props: ViewProps) {
+  const theme = useTheme()
+  const combinedStyle = useMemo(
+    () => [
+      {
+        padding: theme.spacing.md,
+        borderRadius: 24,
+        backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+        borderWidth: 1,
+        borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+        boxShadow: theme.isDark ? '0 8px 32px rgba(0, 0, 0, 0.3)' : '0 8px 32px rgba(0, 0, 0, 0.1)',
+      },
+      props.style,
+    ],
+    [theme.spacing.md, theme.isDark, props.style],
+  )
+
+  return <View {...props} style={combinedStyle} />
+})

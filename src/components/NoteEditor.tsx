@@ -1,4 +1,5 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react'
+import React, { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
+import { StyleSheet } from 'react-native'
 import {
   EnrichedTextInput,
   type EnrichedTextInputInstance,
@@ -32,7 +33,7 @@ export interface NoteEditorHandle {
   setHTML: (html: string) => void
 }
 
-const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
+const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
   ({ initialContent, onContentChange, onStyleStateChange }, ref) => {
     const { colors, isDark } = useTheme()
     const inputRef = useRef<EnrichedTextInputInstance>(null)
@@ -41,97 +42,123 @@ const NoteEditor = forwardRef<NoteEditorHandle, NoteEditorProps>(
 
     const sanitizedContent = useMemo(() => sanitizeTipTapHtml(initialContent), [initialContent])
 
-    const doSave = async () => {
+    const doSave = useCallback(async () => {
       const html = await inputRef.current?.getHTML()
       if (html !== undefined) {
         onContentChangeRef.current(html)
       }
-    }
+    }, [])
 
-    useImperativeHandle(ref, () => ({
-      toggleBold: () => inputRef.current?.toggleBold(),
-      toggleItalic: () => inputRef.current?.toggleItalic(),
-      toggleH1: () => inputRef.current?.toggleH1(),
-      toggleH2: () => inputRef.current?.toggleH2(),
-      toggleUnorderedList: () => inputRef.current?.toggleUnorderedList(),
-      toggleOrderedList: () => inputRef.current?.toggleOrderedList(),
-      toggleCheckboxList: () => inputRef.current?.toggleCheckboxList(false),
-      toggleBlockQuote: () => inputRef.current?.toggleBlockQuote(),
-      toggleCodeBlock: () => inputRef.current?.toggleCodeBlock(),
-      insertImage: (url: string, width: number, height: number) =>
-        inputRef.current?.setImage(url, width, height),
-      focus: () => inputRef.current?.focus(),
-      save: doSave,
-      getHTML: async () => {
-        const html = await inputRef.current?.getHTML()
-        return html
+    useImperativeHandle(
+      ref,
+      () => ({
+        toggleBold: () => inputRef.current?.toggleBold(),
+        toggleItalic: () => inputRef.current?.toggleItalic(),
+        toggleH1: () => inputRef.current?.toggleH1(),
+        toggleH2: () => inputRef.current?.toggleH2(),
+        toggleUnorderedList: () => inputRef.current?.toggleUnorderedList(),
+        toggleOrderedList: () => inputRef.current?.toggleOrderedList(),
+        toggleCheckboxList: () => inputRef.current?.toggleCheckboxList(false),
+        toggleBlockQuote: () => inputRef.current?.toggleBlockQuote(),
+        toggleCodeBlock: () => inputRef.current?.toggleCodeBlock(),
+        insertImage: (url: string, width: number, height: number) =>
+          inputRef.current?.setImage(url, width, height),
+        focus: () => inputRef.current?.focus(),
+        save: doSave,
+        getHTML: async () => {
+          const html = await inputRef.current?.getHTML()
+          return html
+        },
+        setHTML: (html: string) => inputRef.current?.setValue(html),
+      }),
+      [doSave],
+    )
+
+    const placeholderColor = useMemo(
+      () => (isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'),
+      [isDark],
+    )
+
+    const handleStyleStateChange = useCallback(
+      (e: any) => {
+        onStyleStateChange?.(e.nativeEvent)
       },
-      setHTML: (html: string) => inputRef.current?.setValue(html),
-    }))
+      [onStyleStateChange],
+    )
+
+    const htmlStyle = useMemo(
+      () => ({
+        h1: { fontSize: 26, bold: true },
+        h2: { fontSize: 22, bold: true },
+        h3: { fontSize: 19, bold: true },
+        blockquote: {
+          borderColor: colors.primary,
+          borderWidth: 3,
+          gapWidth: 12,
+          color: colors.textSecondary,
+        },
+        codeblock: {
+          color: isDark ? '#A8FF78' : '#333',
+          backgroundColor: isDark ? '#1C1C1E' : '#F4F4F5',
+          borderRadius: 10,
+        },
+        code: {
+          color: isDark ? '#A8FF78' : '#333',
+          backgroundColor: isDark ? '#2C2C2E' : '#F4F4F5',
+        },
+        a: {
+          color: colors.primary,
+          textDecorationLine: 'underline' as const,
+        },
+        ul: {
+          bulletColor: colors.primary,
+          bulletSize: 6,
+          marginLeft: 20,
+          gapWidth: 6,
+        },
+        ol: {
+          markerColor: colors.primary,
+          marginLeft: 20,
+          gapWidth: 6,
+        },
+        ulCheckbox: {
+          boxColor: colors.primary,
+          boxSize: 18,
+          marginLeft: 4,
+          gapWidth: 10,
+        },
+      }),
+      [colors.primary, colors.textSecondary, isDark],
+    )
+
+    const inputStyle = useMemo(() => [s.input, { color: colors.text }], [colors.text])
 
     return (
       <EnrichedTextInput
         ref={inputRef}
         defaultValue={sanitizedContent}
-        style={{
-          flex: 1,
-          fontSize: 18,
-          lineHeight: 30,
-          paddingHorizontal: 20,
-          paddingBottom: 150,
-          color: colors.text,
-        }}
+        style={inputStyle as any}
         autoCapitalize="sentences"
         placeholder="Start writing..."
-        placeholderTextColor={isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'}
+        placeholderTextColor={placeholderColor}
         onBlur={doSave}
-        onChangeState={(e) => onStyleStateChange?.(e.nativeEvent)}
-        htmlStyle={{
-          h1: { fontSize: 26, bold: true },
-          h2: { fontSize: 22, bold: true },
-          h3: { fontSize: 19, bold: true },
-          blockquote: {
-            borderColor: colors.primary,
-            borderWidth: 3,
-            gapWidth: 12,
-            color: colors.textSecondary,
-          },
-          codeblock: {
-            color: isDark ? '#A8FF78' : '#333',
-            backgroundColor: isDark ? '#1C1C1E' : '#F4F4F5',
-            borderRadius: 10,
-          },
-          code: {
-            color: isDark ? '#A8FF78' : '#333',
-            backgroundColor: isDark ? '#2C2C2E' : '#F4F4F5',
-          },
-          a: {
-            color: colors.primary,
-            textDecorationLine: 'underline',
-          },
-          ul: {
-            bulletColor: colors.primary,
-            bulletSize: 6,
-            marginLeft: 20,
-            gapWidth: 6,
-          },
-          ol: {
-            markerColor: colors.primary,
-            marginLeft: 20,
-            gapWidth: 6,
-          },
-          ulCheckbox: {
-            boxColor: colors.primary,
-            boxSize: 18,
-            marginLeft: 4,
-            gapWidth: 10,
-          },
-        }}
+        onChangeState={handleStyleStateChange}
+        htmlStyle={htmlStyle}
       />
     )
   },
 )
 
-NoteEditor.displayName = 'NoteEditor'
+const s = StyleSheet.create({
+  input: {
+    flex: 1,
+    fontSize: 18,
+    lineHeight: 30,
+    paddingHorizontal: 20,
+    paddingBottom: 150,
+  },
+})
 
-export { NoteEditor }
+NoteEditorComponent.displayName = 'NoteEditor'
+
+export const NoteEditor = memo(NoteEditorComponent)

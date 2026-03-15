@@ -10,6 +10,7 @@ import * as ImagePicker from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
 import React, {
   createContext,
+  memo,
   useCallback,
   useContext,
   useEffect,
@@ -55,7 +56,7 @@ const NoteEditorContext = createContext<NoteEditorContextType>({
 
 export const useNoteEditor = () => useContext(NoteEditorContext)
 
-function ToolbarBtn({
+const ToolbarBtn = memo(function ToolbarBtn({
   sf,
   onPress,
   active,
@@ -66,33 +67,35 @@ function ToolbarBtn({
   active?: boolean
   colors: any
 }) {
+  const btnStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [
+      styles.toolbarBtn,
+      active && { backgroundColor: colors.primary + '33' },
+      { opacity: pressed ? 0.5 : 1 },
+    ],
+    [active, colors.primary],
+  )
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.toolbarBtn,
-        active && { backgroundColor: colors.primary + '33' },
-        { opacity: pressed ? 0.5 : 1 },
-      ]}
-    >
+    <Pressable onPress={onPress} style={btnStyle}>
       <SymbolView
         name={sf as any}
         size={22}
         tintColor={active ? colors.primary : colors.text}
         weight="regular"
-        fallback={<View style={{ width: 22, height: 22 }} />}
+        fallback={<View style={styles.fallbackIcon} />}
       />
     </Pressable>
   )
-}
+})
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
-  const { colors } = useTheme()
+  const { colors, isDark: themeIsDark } = useTheme()
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const editorRef = useRef<TiptapEditorHandle>(null)
   const colorScheme = useColorScheme()
-  const floatingHeaderHeight = insets.top + 52
+  const floatingHeaderHeight = useMemo(() => insets.top + 52, [insets.top])
   const isDark = colorScheme === 'dark'
 
   const [noteId, setNoteId] = useState<string | null>(null)
@@ -254,10 +257,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [noteId, hyperdriveServerAddress])
 
   const openNote = useCallback((id: string) => {
-    loadedNoteRef.current = null // force content reload
+    loadedNoteRef.current = null
     setNoteId(id)
     setIsOpen(true)
-    // Animation starts in the useEffect after content is set
   }, [])
 
   const closeNote = useCallback(async () => {
@@ -280,25 +282,69 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [openNote, closeNote, isOpen],
   )
 
-  const isActive = (key: keyof TiptapStyleState) => styleState?.[key]?.isActive ?? false
-  const toolbarBottom = keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16
+  const isActive = useCallback(
+    (key: keyof TiptapStyleState) => styleState?.[key]?.isActive ?? false,
+    [styleState],
+  )
+  const toolbarBottom = useMemo(
+    () => (keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16),
+    [keyboardHeight],
+  )
   const Wrapper = Platform.OS === 'ios' ? FullWindowOverlay : React.Fragment
+
+  const animatedViewStyle = useMemo(
+    () => [
+      StyleSheet.absoluteFill,
+      {
+        backgroundColor: colors.background,
+        transform: [{ translateX: slideAnim }],
+      },
+    ],
+    [colors.background, slideAnim],
+  )
+
+  const headerStyle = useMemo(() => [styles.header, { paddingTop: insets.top }], [insets.top])
+  const pillDividerStyle = useMemo(
+    () => [
+      styles.pillDivider,
+      {
+        backgroundColor: themeIsDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+      },
+    ],
+    [themeIsDark],
+  )
+
+  const toolbarStyle = useMemo(
+    () => [styles.floatingToolbar, { bottom: toolbarBottom }],
+    [toolbarBottom],
+  )
+  const toolbarRowStyle = useMemo(
+    () => [styles.toolbarRow, { justifyContent: 'flex-start' as const, gap: 24, paddingHorizontal: 8 }],
+    [],
+  )
+
+  const handleOpenAttachment = useCallback((url: string) => {
+    if (url) Linking.openURL(url).catch(console.error)
+  }, [])
+
+  const handleDeleteAttachment = useCallback(async (url: string) => {
+    if (!url) return
+    try {
+      if (url.startsWith(HYPERDRIVE_URL_PREFIX)) {
+        const key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
+        await backendApi.deleteFile(key)
+      }
+    } catch (error) {
+      console.error('Error deleting attachment:', error)
+    }
+  }, [])
 
   return (
     <NoteEditorContext.Provider value={contextValue}>
       {children}
       <Wrapper>
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFill,
-            {
-              backgroundColor: colors.background,
-              transform: [{ translateX: slideAnim }],
-            },
-          ]}
-          pointerEvents={isOpen ? 'auto' : 'none'}
-        >
-          <View style={[styles.header, { paddingTop: insets.top }]}>
+        <Animated.View style={animatedViewStyle} pointerEvents={isOpen ? 'auto' : 'none'}>
+          <View style={headerStyle}>
             <View style={styles.headerRow}>
               <GlassView intensity={5} borderRadius={24} style={styles.headerBtn}>
                 <Pressable
@@ -346,14 +392,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       fallback={<View />}
                     />
                   </Pressable>
-                  <View
-                    style={[
-                      styles.pillDivider,
-                      {
-                        backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
-                      },
-                    ]}
-                  />
+                  <View style={pillDividerStyle} />
                   <Pressable
                     onPress={() => {}}
                     style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
@@ -380,24 +419,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onTitleChange={handleTitleChange}
             onStyleStateChange={setStyleState}
             onEditorFocus={() => setIsEditing(true)}
-            onOpenAttachment={(url) => {
-              if (url) Linking.openURL(url).catch(console.error)
-            }}
-            onDeleteAttachment={async (url) => {
-              if (!url) return
-              try {
-                if (url.startsWith(HYPERDRIVE_URL_PREFIX)) {
-                  const key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
-                  await backendApi.deleteFile(key)
-                }
-              } catch (error) {
-                console.error('Error deleting attachment:', error)
-              }
-            }}
+            onOpenAttachment={handleOpenAttachment}
+            onDeleteAttachment={handleDeleteAttachment}
           />
 
           {isOpen && (
-            <View style={[styles.floatingToolbar, { bottom: toolbarBottom }]}>
+            <View style={toolbarStyle}>
               <GlassView intensity={5} borderRadius={28} style={styles.glassBar}>
                 {isEditing ? (
                   <ScrollView
@@ -470,12 +497,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                     />
                   </ScrollView>
                 ) : (
-                  <View
-                    style={[
-                      styles.toolbarRow,
-                      { justifyContent: 'flex-start', gap: 24, paddingHorizontal: 8 },
-                    ]}
-                  >
+                  <View style={toolbarRowStyle}>
                     <ToolbarBtn
                       sf="paperclip"
                       colors={colors}
@@ -573,4 +595,5 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     opacity: 0.4,
   },
+  fallbackIcon: { width: 22, height: 22 },
 })

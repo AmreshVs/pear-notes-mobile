@@ -1,9 +1,11 @@
 import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
 import React, {
   forwardRef,
+  memo,
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -83,7 +85,7 @@ type WebViewMsg =
 
 type EditorState = 'loading' | 'ready' | 'error'
 
-const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
+const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   (
     {
       initialContent,
@@ -155,7 +157,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     }, [])
 
     const sendCommand = useCallback((command: object) => {
-      const js = `(function(){if(window.editorBridge){window.editorBridge.handleMessage(${JSON.stringify(JSON.stringify(command))})}})();true;`
+      const js = `(function(){if(window.editorBridge){window.editorBridge.handleMessage(${JSON.stringify(
+        JSON.stringify(command),
+      )})}})();true;`
       webViewRef.current?.injectJavaScript(js)
     }, [])
 
@@ -166,7 +170,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           pendingRequests.current.delete(id)
           resolve(undefined)
         }, 3000)
-        pendingRequests.current.set(id, (html) => {
+        pendingRequests.current.set(id, (html: string) => {
           clearTimeout(timer)
           resolve(html)
         })
@@ -174,71 +178,74 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       })
     }, [sendCommand])
 
-    const handleMessage = useCallback((event: WebViewMessageEvent) => {
-      let msg: WebViewMsg
-      try {
-        msg = JSON.parse(event.nativeEvent.data)
-      } catch {
-        return
-      }
-
-      switch (msg.type) {
-        case 'ready':
-          editorReadyRef.current = true
-          sendCommand({
-            type: 'init',
-            colors: colorsRef.current,
-            isDark: isDarkRef.current,
-            fontSize: fontSizeRef.current,
-            fontFamily: fontFamilyRef.current,
-            title: initialTitleRef.current,
-            html: initialContentRef.current,
-            safeAreaTop: safeAreaTopRef.current,
-          })
-          break
-
-        case 'initialized':
-          revealEditor()
-          break
-
-        case 'contentChange':
-          onContentChangeRef.current(msg.html)
-          break
-
-        case 'titleChange':
-          onTitleChangeRef.current?.(msg.title)
-          break
-
-        case 'styleState':
-          onStyleStateChangeRef.current?.(msg.state)
-          break
-
-        case 'htmlResponse': {
-          const resolve = pendingRequests.current.get(msg.requestId)
-          if (resolve) {
-            resolve(msg.html)
-            pendingRequests.current.delete(msg.requestId)
-          }
-          break
+    const handleMessage = useCallback(
+      (event: WebViewMessageEvent) => {
+        let msg: WebViewMsg
+        try {
+          msg = JSON.parse(event.nativeEvent.data)
+        } catch {
+          return
         }
 
-        case 'focus':
-          onEditorFocusRef.current?.()
-          break
+        switch (msg.type) {
+          case 'ready':
+            editorReadyRef.current = true
+            sendCommand({
+              type: 'init',
+              colors: colorsRef.current,
+              isDark: isDarkRef.current,
+              fontSize: fontSizeRef.current,
+              fontFamily: fontFamilyRef.current,
+              title: initialTitleRef.current,
+              html: initialContentRef.current,
+              safeAreaTop: safeAreaTopRef.current,
+            })
+            break
 
-        case 'blur':
-          onEditorBlurRef.current?.()
-          break
+          case 'initialized':
+            revealEditor()
+            break
 
-        case 'openAttachment':
-          onOpenAttachmentRef.current?.(msg.url, msg.fileName)
-          break
+          case 'contentChange':
+            onContentChangeRef.current(msg.html)
+            break
 
-        case 'deleteAttachment':
-          onDeleteAttachmentRef.current?.(msg.url)
-          break
-      }
-    }, [])
+          case 'titleChange':
+            onTitleChangeRef.current?.(msg.title)
+            break
+
+          case 'styleState':
+            onStyleStateChangeRef.current?.(msg.state)
+            break
+
+          case 'htmlResponse': {
+            const resolve = pendingRequests.current.get(msg.requestId)
+            if (resolve) {
+              resolve(msg.html)
+              pendingRequests.current.delete(msg.requestId)
+            }
+            break
+          }
+
+          case 'focus':
+            onEditorFocusRef.current?.()
+            break
+
+          case 'blur':
+            onEditorBlurRef.current?.()
+            break
+
+          case 'openAttachment':
+            onOpenAttachmentRef.current?.(msg.url, msg.fileName)
+            break
+
+          case 'deleteAttachment':
+            onDeleteAttachmentRef.current?.(msg.url)
+            break
+        }
+      },
+      [revealEditor, sendCommand],
+    )
 
     const prevIsDarkRef = useRef(isDark)
     useEffect(() => {
@@ -270,45 +277,66 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       webViewRef.current?.reload()
     }, [])
 
-    useImperativeHandle(ref, () => ({
-      toggleBold: () => sendCommand({ type: 'toggleBold' }),
-      toggleItalic: () => sendCommand({ type: 'toggleItalic' }),
-      toggleUnderline: () => sendCommand({ type: 'toggleUnderline' }),
-      toggleStrike: () => sendCommand({ type: 'toggleStrike' }),
-      toggleH1: () => sendCommand({ type: 'toggleH1' }),
-      toggleH2: () => sendCommand({ type: 'toggleH2' }),
-      toggleH3: () => sendCommand({ type: 'toggleH3' }),
-      toggleUnorderedList: () => sendCommand({ type: 'toggleUnorderedList' }),
-      toggleOrderedList: () => sendCommand({ type: 'toggleOrderedList' }),
-      toggleCheckboxList: () => sendCommand({ type: 'toggleCheckboxList' }),
-      toggleBlockQuote: () => sendCommand({ type: 'toggleBlockQuote' }),
-      toggleCodeBlock: () => sendCommand({ type: 'toggleCodeBlock' }),
-      toggleHighlight: () => sendCommand({ type: 'toggleHighlight' }),
-      setTextAlign: (align) => sendCommand({ type: 'setTextAlign', align }),
-      insertImage: (url, width, height) => sendCommand({ type: 'insertImage', url, width, height }),
-      updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
-      focus: () => sendCommand({ type: 'focus' }),
-      save: async () => {
-        const html = await getHTMLAsync()
-        if (html !== undefined) onContentChangeRef.current(html)
-      },
-      getHTML: getHTMLAsync,
-      setHTML: (html) => sendCommand({ type: 'setContent', html }),
-      setTitle: (title) => sendCommand({ type: 'setTitle', title }),
-    }))
+    useImperativeHandle(
+      ref,
+      () => ({
+        toggleBold: () => sendCommand({ type: 'toggleBold' }),
+        toggleItalic: () => sendCommand({ type: 'toggleItalic' }),
+        toggleUnderline: () => sendCommand({ type: 'toggleUnderline' }),
+        toggleStrike: () => sendCommand({ type: 'toggleStrike' }),
+        toggleH1: () => sendCommand({ type: 'toggleH1' }),
+        toggleH2: () => sendCommand({ type: 'toggleH2' }),
+        toggleH3: () => sendCommand({ type: 'toggleH3' }),
+        toggleUnorderedList: () => sendCommand({ type: 'toggleUnorderedList' }),
+        toggleOrderedList: () => sendCommand({ type: 'toggleOrderedList' }),
+        toggleCheckboxList: () => sendCommand({ type: 'toggleCheckboxList' }),
+        toggleBlockQuote: () => sendCommand({ type: 'toggleBlockQuote' }),
+        toggleCodeBlock: () => sendCommand({ type: 'toggleCodeBlock' }),
+        toggleHighlight: () => sendCommand({ type: 'toggleHighlight' }),
+        setTextAlign: (align) => sendCommand({ type: 'setTextAlign', align }),
+        insertImage: (url, width, height) =>
+          sendCommand({ type: 'insertImage', url, width, height }),
+        updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
+        focus: () => sendCommand({ type: 'focus' }),
+        save: async () => {
+          const html = await getHTMLAsync()
+          if (html !== undefined) onContentChangeRef.current(html)
+        },
+        getHTML: getHTMLAsync,
+        setHTML: (html) => sendCommand({ type: 'setContent', html }),
+        setTitle: (title) => sendCommand({ type: 'setTitle', title }),
+      }),
+      [sendCommand, getHTMLAsync],
+    )
+
+    const containerStyle = useMemo(
+      () => [styles.container, { backgroundColor: colors.background }],
+      [colors.background],
+    )
+    const errorTextStyle = useMemo(
+      () => [styles.errorText, { color: colors.textSecondary }],
+      [colors.textSecondary],
+    )
+    const retryBtnStyle = useMemo(
+      () => [styles.retryBtn, { borderColor: colors.primary }],
+      [colors.primary],
+    )
+    const retryTextStyle = useMemo(
+      () => [styles.retryText, { color: colors.primary }],
+      [colors.primary],
+    )
+    const webViewStyle = useMemo(
+      () => [styles.webView, { backgroundColor: colors.background }],
+      [colors.background],
+    )
 
     return (
-      <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={containerStyle}>
         {editorState === 'error' && (
           <View style={styles.overlay}>
-            <Text style={[styles.errorText, { color: colors.textSecondary }]}>
-              Editor failed to load
-            </Text>
-            <Pressable
-              onPress={handleRetry}
-              style={[styles.retryBtn, { borderColor: colors.primary }]}
-            >
-              <Text style={[styles.retryText, { color: colors.primary }]}>Retry</Text>
+            <Text style={errorTextStyle}>Editor failed to load</Text>
+            <Pressable onPress={handleRetry} style={retryBtnStyle}>
+              <Text style={retryTextStyle}>Retry</Text>
             </Pressable>
           </View>
         )}
@@ -319,7 +347,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
             onMessage={handleMessage}
             onError={handleError}
-            style={[styles.webView, { backgroundColor: colors.background }]}
+            style={webViewStyle}
             scrollEnabled
             keyboardDisplayRequiresUserAction={false}
             showsVerticalScrollIndicator={false}
@@ -340,9 +368,9 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   },
 )
 
-TiptapEditor.displayName = 'TiptapEditor'
+TiptapEditorComponent.displayName = 'TiptapEditor'
 
-export { TiptapEditor }
+export const TiptapEditor = memo(TiptapEditorComponent)
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

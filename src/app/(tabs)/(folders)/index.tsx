@@ -16,7 +16,7 @@ import { Text, useTheme, View } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FoldersScreen() {
-  const { colors, isDark } = useTheme()
+  const { colors } = useTheme()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const folders = useSelector(getFolders)
@@ -47,7 +47,7 @@ export default function FoldersScreen() {
       lastSelectedNoteRef.current = selectedNote
       openNote(selectedNote)
     }
-  }, [selectedNote])
+  }, [selectedNote, openNote])
 
   useEffect(() => {
     if (selectedNote) {
@@ -67,45 +67,67 @@ export default function FoldersScreen() {
     dispatch(createFolder({ name: 'Untitled' } as any))
   }, [dispatch])
 
-  const getFolderIcon = (folder: any) => {
+  const getFolderIcon = useCallback((folder: any) => {
     if (folder.isAll) return 'All'
     if (folder.isTrash) return 'Trash'
     return 'Folder'
-  }
+  }, [])
+
+  const containerStyle = useMemo(
+    () => [styles.container, { backgroundColor: colors.background }],
+    [colors.background],
+  )
+  const settingsBtnStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 }),
+    [],
+  )
+  const settingsTextStyle = useMemo(
+    () => ({ color: colors.primary, fontSize: 17 }),
+    [colors.primary],
+  )
+  const headerRightStyle = useMemo(
+    () => ({ flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 }),
+    [],
+  )
+  const sectionHeaderStyle = useMemo(() => [styles.sectionHeader, { color: '#8e8e93' }], [])
+
+  const headerLeft = useCallback(
+    () => (
+      <Pressable onPress={() => router.push('/settings')} style={settingsBtnStyle}>
+        <Text style={settingsTextStyle}>Settings</Text>
+      </Pressable>
+    ),
+    [settingsBtnStyle, settingsTextStyle],
+  )
+
+  const headerRight = useCallback(
+    () => (
+      <View style={headerRightStyle}>
+        <Pressable onPress={handleCreateFolder} style={settingsBtnStyle}>
+          <FolderPlus size={22} color={colors.primary} />
+        </Pressable>
+        <Pressable onPress={handleCreateNote} style={settingsBtnStyle}>
+          <SquarePen size={22} color={colors.primary} strokeWidth={2} />
+        </Pressable>
+      </View>
+    ),
+    [headerRightStyle, handleCreateFolder, handleCreateNote, settingsBtnStyle, colors.primary],
+  )
+
+  const screenOptions = useMemo(
+    () => ({
+      headerTitle: 'Folders',
+      headerTransparent: true,
+      headerLargeTitle: true,
+      headerLeft,
+      headerRight,
+    }),
+    [headerLeft, headerRight],
+  )
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Stack.Screen
-        options={{
-          headerTitle: 'Folders',
-          headerTransparent: true,
-          headerLargeTitle: true,
-          headerLeft: () => (
-            <Pressable
-              onPress={() => router.push('/settings')}
-              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
-            >
-              <Text style={{ color: colors.primary, fontSize: 17 }}>Settings</Text>
-            </Pressable>
-          ),
-          headerRight: () => (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Pressable
-                onPress={handleCreateFolder}
-                style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
-              >
-                <FolderPlus size={22} color={colors.primary} />
-              </Pressable>
-              <Pressable
-                onPress={handleCreateNote}
-                style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
-              >
-                <SquarePen size={22} color={colors.primary} strokeWidth={2} />
-              </Pressable>
-            </View>
-          ),
-        }}
-      />
+    <View style={containerStyle}>
+      <Stack.Screen options={screenOptions} />
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -125,9 +147,7 @@ export default function FoldersScreen() {
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text style={[styles.sectionHeader, { color: isDark ? '#8e8e93' : '#8e8e93' }]}>
-              ARCHIVE
-            </Text>
+            <Text style={sectionHeaderStyle}>ARCHIVE</Text>
             {archiveFolders.map((folder: any) => (
               <FolderRow
                 key={folder.id || folder.key}

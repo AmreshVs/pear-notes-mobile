@@ -1,6 +1,6 @@
 import { Folder } from 'lucide-react-native'
-import React from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import React, { memo, useCallback, useMemo } from 'react'
+import { Pressable, StyleSheet, type ViewStyle } from 'react-native'
 
 import { Text, View, useTheme } from './Themed'
 
@@ -15,7 +15,7 @@ interface NoteCardProps {
   onPress: () => void
 }
 
-export function NoteCard({
+export const NoteCard = memo(function NoteCard({
   title,
   date,
   summary,
@@ -26,40 +26,64 @@ export function NoteCard({
 }: NoteCardProps) {
   const { colors, isDark } = useTheme()
 
+  const containerStyle = useMemo(
+    () => ({
+      borderBottomWidth: !isLast ? StyleSheet.hairlineWidth : 0,
+      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+    }),
+    [isLast, isDark],
+  )
+
+  const selectedBg = useMemo(
+    () => (isDark ? 'rgba(220, 163, 35, 0.12)' : 'rgba(220, 163, 35, 0.08)'),
+    [isDark],
+  )
+  const pressedBg = useMemo(
+    () => (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
+    [isDark],
+  )
+
+  const getPressableStyle = useCallback(
+    ({ pressed }: { pressed: boolean }): ViewStyle[] => [
+      styles.container,
+      containerStyle,
+      {
+        backgroundColor: selected ? selectedBg : pressed ? pressedBg : 'transparent',
+      },
+    ],
+    [selected, selectedBg, pressedBg, containerStyle],
+  )
+
+  const titleStyle = useMemo(
+    () => [styles.title, { color: selected ? colors.primary : colors.text }],
+    [selected, colors.primary, colors.text],
+  )
+
+  const summaryStyle = useMemo(
+    () => [styles.summary, { color: colors.textSecondary }],
+    [colors.textSecondary],
+  )
+
+  const metadataTextStyle = useMemo(
+    () => [styles.metadataText, { color: colors.textSecondary }],
+    [colors.textSecondary],
+  )
+
+  const separatorStyle = useMemo(
+    () => [styles.separator, { color: colors.textSecondary }],
+    [colors.textSecondary],
+  )
+
+  const folderIconStyle = useMemo(() => ({ marginRight: 5, opacity: 0.7 }), [])
+
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.container,
-        {
-          backgroundColor: selected
-            ? isDark
-              ? 'rgba(220, 163, 35, 0.12)'
-              : 'rgba(220, 163, 35, 0.08)'
-            : pressed
-              ? isDark
-                ? 'rgba(255,255,255,0.04)'
-                : 'rgba(0,0,0,0.03)'
-              : 'transparent',
-          borderBottomWidth: !isLast ? StyleSheet.hairlineWidth : 0,
-          borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-        },
-      ]}
-    >
+    <Pressable onPress={onPress} style={getPressableStyle}>
       <View style={styles.content}>
-        <Text
-          variant="bodyBold"
-          numberOfLines={1}
-          style={[styles.title, { color: selected ? colors.primary : colors.text }]}
-        >
+        <Text variant="bodyBold" numberOfLines={1} style={titleStyle}>
           {title || 'Untitled'}
         </Text>
 
-        <Text
-          variant="caption"
-          numberOfLines={2}
-          style={[styles.summary, { color: colors.textSecondary }]}
-        >
+        <Text variant="caption" numberOfLines={2} style={summaryStyle}>
           {summary || 'No additional text'}
         </Text>
 
@@ -67,31 +91,24 @@ export function NoteCard({
           {folderName && (
             <>
               <View style={styles.folderTag}>
-                <Folder
-                  size={11}
-                  color={colors.textSecondary}
-                  style={{ marginRight: 5, opacity: 0.7 }}
-                />
-                <Text
-                  variant="caption"
-                  style={[styles.metadataText, { color: colors.textSecondary }]}
-                >
+                <Folder size={11} color={colors.textSecondary} style={folderIconStyle} />
+                <Text variant="caption" style={metadataTextStyle}>
                   {folderName}
                 </Text>
               </View>
-              <Text variant="caption" style={[styles.separator, { color: colors.textSecondary }]}>
+              <Text variant="caption" style={separatorStyle}>
                 •
               </Text>
             </>
           )}
-          <Text variant="caption" style={[styles.metadataText, { color: colors.textSecondary }]}>
+          <Text variant="caption" style={metadataTextStyle}>
             {date}
           </Text>
         </View>
       </View>
     </Pressable>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {

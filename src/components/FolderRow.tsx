@@ -5,7 +5,7 @@ import {
   LucideIcon,
   Trash2,
 } from 'lucide-react-native'
-import React from 'react'
+import React, { memo, useCallback, useMemo } from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 
 import { Text, useTheme, View } from './Themed'
@@ -24,64 +24,82 @@ interface FolderRowProps {
   onPress: () => void
 }
 
-export function FolderRow({ name, count, icon, selected, onPress }: FolderRowProps) {
+export const FolderRow = memo(function FolderRow({
+  name,
+  count,
+  icon,
+  selected,
+  onPress,
+}: FolderRowProps) {
   const { colors, isDark } = useTheme()
   const Icon = ICON_MAP[icon || 'Folder'] || FolderIcon
+
+  const containerStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [
+      styles.container,
+      {
+        backgroundColor: selected
+          ? isDark
+            ? 'rgba(220, 163, 35, 0.15)'
+            : 'rgba(220, 163, 35, 0.1)'
+          : pressed
+            ? isDark
+              ? 'rgba(255,255,255,0.05)'
+              : 'rgba(0,0,0,0.04)'
+            : 'transparent',
+      },
+    ],
+    [selected, isDark],
+  )
+
+  const iconBoxStyle = useMemo(
+    () => [
+      styles.iconBox,
+      {
+        backgroundColor: selected
+          ? `${colors.primary}25`
+          : isDark
+            ? 'rgba(220,163,35,0.12)'
+            : 'rgba(220,163,35,0.09)',
+      },
+    ],
+    [selected, colors.primary, isDark],
+  )
+
+  const nameStyle = useMemo(
+    () => [styles.name, { color: colors.text, opacity: selected ? 1 : 0.9 }],
+    [colors.text, selected],
+  )
+
+  const countStyle = useMemo(
+    () => [styles.count, { color: colors.textSecondary }],
+    [colors.textSecondary],
+  )
+  const chevronStyle = useMemo(() => ({ opacity: 0.4 }), [])
+
+  const rightInnerStyle = useMemo(() => [styles.rightContent], [])
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.container,
-        {
-          backgroundColor: selected
-            ? isDark
-              ? 'rgba(220, 163, 35, 0.15)'
-              : 'rgba(220, 163, 35, 0.1)'
-            : pressed
-              ? isDark
-                ? 'rgba(255,255,255,0.05)'
-                : 'rgba(0,0,0,0.04)'
-              : 'transparent',
-        },
-      ]}
+      style={containerStyle}
     >
       <View style={styles.leftContent}>
-        <View
-          style={[
-            styles.iconBox,
-            {
-              backgroundColor: selected
-                ? `${colors.primary}25`
-                : isDark
-                  ? 'rgba(220,163,35,0.12)'
-                  : 'rgba(220,163,35,0.09)',
-            },
-          ]}
-        >
+        <View style={iconBoxStyle}>
           <Icon size={17} color={colors.primary} strokeWidth={1.8} />
         </View>
-        <Text
-          style={[
-            styles.name,
-            { color: colors.text, opacity: selected ? 1 : 0.9 },
-          ]}
-        >
+        <Text style={nameStyle}>
           {name}
         </Text>
       </View>
 
-      <View style={styles.rightContent}>
-        {count !== undefined && count > 0 && (
-          <Text style={[styles.count, { color: colors.textSecondary }]}>
-            {count}
-          </Text>
-        )}
-        <ChevronRight size={14} color={colors.textSecondary} style={{ opacity: 0.4 }} />
+      <View style={rightInnerStyle}>
+        {count !== undefined && count > 0 && <Text style={countStyle}>{count}</Text>}
+        <ChevronRight size={14} color={colors.textSecondary} style={chevronStyle} />
       </View>
     </Pressable>
   )
-}
+})
 
 const styles = StyleSheet.create({
   container: {
