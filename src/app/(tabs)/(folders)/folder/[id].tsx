@@ -1,35 +1,74 @@
+import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
 import { getFolders, setSelectedFolder } from '@pear-notes/core/store/slices/foldersSlice.js'
 import {
   createNote,
+  deleteNote,
   getFilteredNotes,
   getSelectedNote,
   setSelectedNote,
+  updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import { setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
-import { format, isAfter, isToday, isYesterday, subDays } from 'date-fns'
-import { Stack, router, useLocalSearchParams } from 'expo-router'
+import { formatDate } from '@pear-notes/core/utils.js'
+import * as Clipboard from 'expo-clipboard'
+import { Stack, useLocalSearchParams } from 'expo-router'
 import { SquarePen } from 'lucide-react-native'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Pressable, ScrollView, StyleSheet } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, View, useTheme } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
+// Replace HTML tags with a space so words don't run together, then normalize whitespace
+const getPreview = (html: string): string => {
+  if (!html) return 'No additional text'
+  const text = html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return text.length > 100 ? text.substring(0, 100) + '…' : text || 'No additional text'
+}
+
+const getFirstImageUrl = (html: string): string | undefined => {
+  if (!html) return undefined
+
+  const divMatch =
+    html.match(/<div[^>]*filetype="image\/[^"]*"[^>]*url="([^"]+)"[^>]*>/) ||
+    html.match(/<div[^>]*url="([^"]+)"[^>]*filetype="image\/[^"]*"[^>]*>/)
+  if (divMatch?.[1]) {
+    return divMatch[1].replace(/&amp;/g, '&')
+  }
+
+  const imgMatch = html.match(/<img[^>]+src="([^"]+)"/)
+  if (imgMatch?.[1]) {
+    return imgMatch[1].replace(/&amp;/g, '&')
+  }
+  return undefined
+}
+
 export default function FolderNotesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { colors, isDark } = useTheme()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
-  const folders = useSelector(getFolders)
+  const allFolders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
   const selectedNote = useSelector(getSelectedNote)
 
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote || null)
 
-  const folder = useMemo(() => folders.find((f: any) => f.id === id || f.key === id), [folders, id])
+  const folder = useMemo(
+    () => allFolders.find((f: any) => f.id === id || f.key === id),
+    [allFolders, id],
+  )
+
+  const moveFolders = useMemo(
+    () => allFolders.filter((f: any) => !f.isTrash && f.id !== ALL_NOTES_KEY && f.id !== id),
+    [allFolders, id],
+  )
 
   const groupedNotes = useMemo(() => {
     const sections: Record<string, any[]> = {
@@ -38,15 +77,14 @@ export default function FolderNotesScreen() {
       'Last 7 Days': [],
       Older: [],
     }
-
-    const now = new Date()
-    const sevenDaysAgo = subDays(now, 7)
+    const now = Date.now()
+    const DAY = 86_400_000
 
     notes.forEach((note: any) => {
-      const date = new Date(note.value?.updatedAt || note.value?.createdAt || 0)
-      if (isToday(date)) sections['Today'].push(note)
-      else if (isYesterday(date)) sections['Yesterday'].push(note)
-      else if (isAfter(date, sevenDaysAgo)) sections['Last 7 Days'].push(note)
+      const diff = now - (note.value?.updatedAt || note.value?.createdAt || 0)
+      if (diff < DAY) sections['Today'].push(note)
+      else if (diff < 2 * DAY) sections['Yesterday'].push(note)
+      else if (diff < 7 * DAY) sections['Last 7 Days'].push(note)
       else sections['Older'].push(note)
     })
 
@@ -60,7 +98,7 @@ export default function FolderNotesScreen() {
       dispatch(setSelectedNote(noteId as any))
       openNote(noteId)
     },
-    [dispatch],
+    [dispatch, openNote],
   )
 
   const handleCreateNote = useCallback(() => {
@@ -69,27 +107,50 @@ export default function FolderNotesScreen() {
     dispatch(createNote({ title: '', note: '' } as any))
   }, [dispatch, id])
 
+  const handleDeleteNote = useCallback(
+    (noteId: string) => {
+      const isTrash = id === RECENTLY_DELETED_KEY
+      if (isTrash) {
+        Alert.alert('Permanently Delete', 'This note cannot be recovered.', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Delete',
+            style: 'destructive',
+            onPress: () => dispatch(deleteNote(noteId as any)),
+          },
+        ])
+      } else {
+        dispatch(deleteNote(noteId as any))
+      }
+    },
+    [dispatch, id],
+  )
+
+  const handleMoveNote = useCallback(
+    (noteId: string, folderId: string) => {
+      dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
+    },
+    [dispatch],
+  )
+
+  const handleCopyNote = useCallback(async (title: string, html: string) => {
+    const plain = [title, getPreview(html)].filter(Boolean).join('\n\n')
+    await Clipboard.setStringAsync(plain)
+  }, [])
+
   useEffect(() => {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
       lastSelectedNoteRef.current = selectedNote
       openNote(selectedNote)
     }
-  }, [selectedNote])
+  }, [selectedNote, openNote])
 
   useEffect(() => {
     if (selectedNote) {
       lastSelectedNoteRef.current = selectedNote
     }
   }, [selectedNote])
-
-  const getPreviewText = (html: string) => {
-    if (!html) return 'No additional text'
-    return html
-      .replace(/<[^>]*>?/gm, '')
-      .substring(0, 100)
-      .trim()
-  }
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -104,7 +165,7 @@ export default function FolderNotesScreen() {
               onPress={handleCreateNote}
               style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
             >
-              <SquarePen size={22} color={colors.primary} strokeWidth={2} />
+              <SquarePen size={22} color={colors.text} strokeWidth={1.8} />
             </Pressable>
           ),
           headerSearchBarOptions: {
@@ -151,15 +212,21 @@ export default function FolderNotesScreen() {
                     key={note.key}
                     id={note.key}
                     title={note.value?.title}
-                    date={format(
-                      new Date(note.value?.updatedAt || note.value?.createdAt || 0),
-                      'h:mm a',
-                    )}
-                    summary={getPreviewText(note.value?.note)}
-                    folderName={folder?.name === 'All Notes' ? note.value?.folderName : undefined}
+                    date={formatDate(note.value?.updatedAt || note.value?.createdAt)}
+                    summary={getPreview(note.value?.note)}
+                    rawImageUrl={getFirstImageUrl(note.value?.note)}
+                    folderName={
+                      folder?.id === ALL_NOTES_KEY
+                        ? allFolders.find((f: any) => f.id === note.value?.folderKey)?.name
+                        : undefined
+                    }
                     selected={false}
                     isLast={index === section.data.length - 1}
                     onPress={() => handleSelectNote(note.key)}
+                    onDelete={() => handleDeleteNote(note.key)}
+                    onCopy={() => handleCopyNote(note.value?.title, note.value?.note)}
+                    moveFolders={moveFolders}
+                    onMoveTo={(folderId) => handleMoveNote(note.key, folderId)}
                   />
                 ))}
               </View>
@@ -177,17 +244,18 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 120,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
+    paddingTop: 8,
   },
   headerInfo: {
-    paddingHorizontal: 20,
+    marginLeft: 16,
     marginBottom: 12,
     marginTop: -4,
   },
   noteCount: {
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
     opacity: 0.5,
   },
@@ -195,7 +263,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionHeader: {
-    paddingHorizontal: 20,
+    marginLeft: 16,
     paddingVertical: 8,
     marginBottom: 2,
   },

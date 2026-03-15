@@ -6,7 +6,7 @@ import {
   Trash2,
 } from 'lucide-react-native'
 import React, { memo, useCallback, useMemo } from 'react'
-import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
 
 import { Text, useTheme, View } from './Themed'
 
@@ -116,20 +116,9 @@ export const FolderRow = memo(function FolderRow({
     <Host>
       <ContextMenu>
         <ContextMenu.Items>
-          {onRename && (
-            <Button
-              label="Rename"
-              systemImage="pencil"
-              onPress={onRename}
-            />
-          )}
+          {onRename && <Button label="Rename" systemImage="pencil" onPress={onRename} />}
           {onDelete && (
-            <Button
-              label="Delete"
-              systemImage="trash"
-              role="destructive"
-              onPress={onDelete}
-            />
+            <Button label="Delete" systemImage="trash" role="destructive" onPress={onDelete} />
           )}
         </ContextMenu.Items>
         <ContextMenu.Trigger>{row}</ContextMenu.Trigger>
