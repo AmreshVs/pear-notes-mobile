@@ -1,27 +1,4 @@
-/**
- * TiptapEditor.tsx
- *
- * Production WebView editor with full Tiptap feature parity to the desktop.
- *
- * ─── Replacing NoteEditor in [id].tsx ──────────────────────────────────────
- *
- *   // Remove:
- *   import type { OnChangeStateEvent } from 'react-native-enriched'
- *   import { NoteEditor, NoteEditorHandle } from '@/components/NoteEditor'
- *
- *   // Add:
- *   import {
- *     TiptapEditor,
- *     type TiptapEditorHandle,
- *     type TiptapStyleState,
- *   } from '@/components/TiptapEditor'
- *
- *   // Update state type:
- *   const [styleState, setStyleState] = useState<TiptapStyleState | null>(null)
- *
- *   // Component usage and all editorRef.current?.toggle*() calls are unchanged.
- */
-
+import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
 import React, {
   forwardRef,
   useCallback,
@@ -32,6 +9,7 @@ import React, {
 } from 'react'
 import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewErrorEvent, WebViewMessageEvent } from 'react-native-webview'
+import { useSelector } from 'react-redux'
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
@@ -79,11 +57,16 @@ export interface TiptapEditorHandle {
   save: () => Promise<void>
   getHTML: () => Promise<string | undefined>
   setHTML: (html: string) => void
+  setTitle: (title: string) => void
 }
 
 export interface TiptapEditorProps {
   initialContent: string
+  initialTitle?: string
+  /** Top padding (pts) for the title input so it clears a floating header overlay. */
+  safeAreaTop?: number
   onContentChange: (html: string) => void
+  onTitleChange?: (title: string) => void
   onStyleStateChange?: (state: TiptapStyleState) => void
   /** Called when the editor gains focus (keyboard about to appear). */
   onEditorFocus?: () => void
@@ -101,6 +84,7 @@ type WebViewMsg =
   | { type: 'ready' }
   | { type: 'initialized' }
   | { type: 'contentChange'; html: string; text: string }
+  | { type: 'titleChange'; title: string }
   | { type: 'styleState'; state: TiptapStyleState }
   | { type: 'htmlResponse'; requestId: string; html: string }
   | { type: 'focus' }
@@ -116,7 +100,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   (
     {
       initialContent,
+      initialTitle,
+      safeAreaTop,
       onContentChange,
+      onTitleChange,
       onStyleStateChange,
       onEditorFocus,
       onEditorBlur,
@@ -126,10 +113,13 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     ref,
   ) => {
     const { colors, isDark } = useTheme()
+    const fontSize = useSelector(getEditorFontSize)
+    const fontFamily = useSelector(getFontFamily)
     const webViewRef = useRef<WebView>(null)
 
     // ── Stable refs so all closures see the latest values ───────────────
     const onContentChangeRef = useRef(onContentChange)
+    const onTitleChangeRef = useRef(onTitleChange)
     const onStyleStateChangeRef = useRef(onStyleStateChange)
     const onEditorFocusRef = useRef(onEditorFocus)
     const onEditorBlurRef = useRef(onEditorBlur)
@@ -137,6 +127,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onDeleteAttachmentRef = useRef(onDeleteAttachment)
 
     onContentChangeRef.current = onContentChange
+    onTitleChangeRef.current = onTitleChange
     onStyleStateChangeRef.current = onStyleStateChange
     onEditorFocusRef.current = onEditorFocus
     onEditorBlurRef.current = onEditorBlur
@@ -145,14 +136,25 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     const colorsRef = useRef(colors)
     const isDarkRef = useRef(isDark)
+    const fontSizeRef = useRef(fontSize)
+    const fontFamilyRef = useRef(fontFamily)
+    const safeAreaTopRef = useRef(safeAreaTop ?? 100)
     colorsRef.current = colors
     isDarkRef.current = isDark
+    fontSizeRef.current = fontSize
+    fontFamilyRef.current = fontFamily
+    safeAreaTopRef.current = safeAreaTop ?? 100
 
-    // Track the latest initialContent so the 'ready' handler always has it.
-    // Before the editor is ready we keep it updated; after init, setHTML()
-    // must be called explicitly to update content.
-    const initialContentRef = useRef(initialContent)
     const editorReadyRef = useRef(false)
+
+    // Track initial title/content — updated until ready, then set explicitly
+    const initialTitleRef = useRef(initialTitle ?? '')
+    const initialContentRef = useRef(initialContent)
+    useEffect(() => {
+      if (!editorReadyRef.current) {
+        initialTitleRef.current = initialTitle ?? ''
+      }
+    }, [initialTitle])
     useEffect(() => {
       if (!editorReadyRef.current) {
         initialContentRef.current = initialContent
@@ -205,13 +207,17 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
         switch (msg.type) {
           case 'ready':
-            // Send theme + initial content before revealing
+            // Send theme + font settings + title + initial content before revealing
             editorReadyRef.current = true
             sendCommand({
               type: 'init',
               colors: colorsRef.current,
               isDark: isDarkRef.current,
+              fontSize: fontSizeRef.current,
+              fontFamily: fontFamilyRef.current,
+              title: initialTitleRef.current,
               html: initialContentRef.current,
+              safeAreaTop: safeAreaTopRef.current,
             })
             break
 
@@ -222,6 +228,10 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
           case 'contentChange':
             onContentChangeRef.current(msg.html)
+            break
+
+          case 'titleChange':
+            onTitleChangeRef.current?.(msg.title)
             break
 
           case 'styleState':
@@ -269,6 +279,18 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     }, [isDark, colors, sendCommand])
 
+    // ── Live font settings propagation ───────────────────────────────────
+    const prevFontSizeRef = useRef(fontSize)
+    const prevFontFamilyRef = useRef(fontFamily)
+    useEffect(() => {
+      if (prevFontSizeRef.current === fontSize && prevFontFamilyRef.current === fontFamily) return
+      prevFontSizeRef.current = fontSize
+      prevFontFamilyRef.current = fontFamily
+      if (editorReadyRef.current) {
+        sendCommand({ type: 'setFontSettings', fontSize, fontFamily })
+      }
+    }, [fontSize, fontFamily, sendCommand])
+
     // ── WebView error ─────────────────────────────────────────────────────
     const handleError = useCallback((_e: WebViewErrorEvent) => {
       setEditorState('error')
@@ -306,6 +328,7 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       },
       getHTML: getHTMLAsync,
       setHTML: (html) => sendCommand({ type: 'setContent', html }),
+      setTitle: (title) => sendCommand({ type: 'setTitle', title }),
     }))
 
     // ── Render ────────────────────────────────────────────────────────────

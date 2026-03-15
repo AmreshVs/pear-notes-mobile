@@ -51,17 +51,39 @@ html, body {
   -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
 }
+#note-title {
+  display: block;
+  width: 100%;
+  padding: var(--title-top-pad, 100px) 20px 4px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--c-text);
+  background: transparent;
+  border: none;
+  outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+#note-title::placeholder {
+  color: var(--c-placeholder);
+}
 #editor { min-height: 100vh; }
 
 /* ── Editor ─────────────────────────────────────────────────────────────── */
+:root {
+  --editor-font-size: 17px;
+  --editor-font-family: -apple-system, BlinkMacSystemFont, 'San Francisco',
+                        'Helvetica Neue', Arial, sans-serif;
+}
 .tiptap {
   min-height: 100vh;
   padding: 8px 20px 180px 20px;
   outline: none;
   color: var(--c-text);
-  font-size: 17px;
-  font-family: -apple-system, BlinkMacSystemFont, 'San Francisco',
-               'Helvetica Neue', Arial, sans-serif;
+  font-size: var(--editor-font-size);
+  font-family: var(--editor-font-family);
   line-height: 1.65;
   word-wrap: break-word;
   caret-color: var(--c-primary);

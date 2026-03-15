@@ -17,11 +17,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text as RNText,
-  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
@@ -31,38 +30,6 @@ import {
   type TiptapEditorHandle,
   type TiptapStyleState,
 } from '@/components/TiptapEditor'
-
-function HeaderCircleBtn({
-  sf,
-  onPress,
-  color,
-  bgColor,
-  size = 20,
-}: {
-  sf: string
-  onPress: () => void
-  color: string
-  bgColor: string
-  size?: number
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.headerCircleBtn,
-        { backgroundColor: bgColor, opacity: pressed ? 0.7 : 1 },
-      ]}
-    >
-      <SymbolView
-        name={sf as any}
-        size={size}
-        tintColor={color}
-        weight="medium"
-        fallback={<View style={{ width: size, height: size }} />}
-      />
-    </Pressable>
-  )
-}
 
 function ToolbarBtn({
   sf,
@@ -99,6 +66,8 @@ export default function NoteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { colors, isDark } = useTheme()
   const { width: windowWidth } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
+  const floatingHeaderHeight = insets.top + 52
   const dispatch = useDispatch()
   const editorRef = useRef<TiptapEditorHandle>(null)
 
@@ -275,61 +244,88 @@ export default function NoteScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          headerTransparent: false,
-          headerStyle: { backgroundColor: bg },
-          headerShadowVisible: false,
+          headerTransparent: true,
+          headerBlurEffect: 'none',
+          headerTitle: '',
+          headerBackTitle: '',
           headerBackButtonDisplayMode: 'minimal',
-          headerBackTitle: 'Notes',
           headerTintColor: colors.primary,
+          headerStyle: {
+            backgroundColor: 'transparent',
+          },
+          headerLeft: () => (
+            <Pressable
+              onPress={async () => {
+                await editorRef.current?.save()
+                router.back()
+              }}
+              style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 8 }]}
+            >
+              <SymbolView
+                name="chevron.left"
+                size={22}
+                tintColor={colors.text}
+                weight="semibold"
+                fallback={<View />}
+              />
+            </Pressable>
+          ),
           headerRight: () => (
-            <View style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
               {isEditing ? (
                 <Pressable
                   onPress={handleDone}
-                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
                 >
-                  <RNText style={{ color: colors.primary, fontSize: 17, fontWeight: '600' }}>Done</RNText>
+                  <SymbolView
+                    name="checkmark"
+                    size={22}
+                    tintColor={colors.text}
+                    weight="semibold"
+                    fallback={<View />}
+                  />
                 </Pressable>
               ) : (
                 <>
-                  <HeaderCircleBtn
-                    sf="square.and.arrow.up"
+                  <Pressable
                     onPress={() => {}}
-                    color={colors.primary}
-                    bgColor={isDark ? '#2C2C2EB3' : '#E5E5EAB3'}
-                  />
-                  <HeaderCircleBtn
-                    sf="ellipsis"
+                    style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
+                  >
+                    <SymbolView
+                      name="square.and.arrow.up"
+                      size={22}
+                      tintColor={colors.text}
+                      weight="medium"
+                      fallback={<View />}
+                    />
+                  </Pressable>
+                  <Pressable
                     onPress={() => {}}
-                    color={colors.primary}
-                    bgColor={isDark ? '#2C2C2EB3' : '#E5E5EAB3'}
-                  />
+                    style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
+                  >
+                    <SymbolView
+                      name="ellipsis.circle"
+                      size={22}
+                      tintColor={colors.text}
+                      weight="medium"
+                      fallback={<View />}
+                    />
+                  </Pressable>
                 </>
               )}
             </View>
           ),
-          title: '',
         }}
       />
 
       <View style={{ flex: 1, flexDirection: 'column' }}>
-        <View style={styles.titleArea}>
-          <TextInput
-            style={[styles.titleInput, { color: colors.text }]}
-            value={title}
-            onChangeText={handleTitleChange}
-            placeholder="Title"
-            placeholderTextColor={isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'}
-            autoCorrect={false}
-            autoCapitalize="sentences"
-            multiline={false}
-          />
-        </View>
-
         <TiptapEditor
           ref={editorRef}
           initialContent={initialContent}
+          initialTitle={title}
+          safeAreaTop={floatingHeaderHeight}
           onContentChange={handleUpdate}
+          onTitleChange={handleTitleChange}
           onStyleStateChange={setStyleState}
           onOpenAttachment={(url, fileName) => {
             console.log('Opening attachment:', { url, fileName })
@@ -458,13 +454,7 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
   },
-  headerCircleBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+
   titleArea: {
     paddingHorizontal: 20,
     paddingTop: 12,

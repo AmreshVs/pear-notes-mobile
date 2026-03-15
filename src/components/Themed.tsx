@@ -1,20 +1,38 @@
+import { getTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import React, { useMemo } from 'react'
 import {
   Text as DefaultText,
   View as DefaultView,
   useColorScheme as useDeviceColorScheme,
 } from 'react-native'
+import { useSelector } from 'react-redux'
 
 import Colors from '@/constants/Colors'
 import { Layout, Spacing } from '@/constants/Spacing'
 import { Typography } from '@/constants/Typography'
 
 /**
+ * Resolve the effective color scheme from the Redux theme setting.
+ * 'system' → delegate to device OS setting
+ * 'light' / 'dark' → use directly
+ */
+export function useResolvedColorScheme(): 'light' | 'dark' {
+  const deviceColorScheme = useDeviceColorScheme()
+  // Always called inside <Provider> — safe to call unconditionally
+  const themeSetting: string = useSelector(getTheme) ?? 'system'
+
+  if (themeSetting === 'dark') return 'dark'
+  if (themeSetting === 'light') return 'light'
+  // 'system' — follow device OS preference
+  return deviceColorScheme === 'dark' ? 'dark' : 'light'
+}
+
+/**
  * Hook to access the current theme tokens.
+ * Reads the user-chosen theme from Redux ('system' | 'light' | 'dark').
  */
 export function useTheme() {
-  const deviceColorScheme = useDeviceColorScheme()
-  const colorScheme = (deviceColorScheme === 'dark' ? 'dark' : 'light') as 'light' | 'dark'
+  const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
 
   return useMemo(

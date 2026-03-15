@@ -41,6 +41,30 @@ function sendToRN(msg) {
   } catch (_) {}
 }
 
+// ── Font settings (CSS variables) ────────────────────────────────────────────
+const FONT_FAMILY_MAP = {
+  Inter: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+  Outfit: "'Outfit', -apple-system, sans-serif",
+  Lora: "'Lora', Georgia, 'Times New Roman', serif",
+  Newsreader: "'Newsreader', Georgia, 'Times New Roman', serif",
+  'IBM Plex Mono':
+    "'IBM Plex Mono', 'SF Mono', SFMono-Regular, ui-monospace, 'Courier New', monospace",
+  System: "-apple-system, BlinkMacSystemFont, 'San Francisco', 'Helvetica Neue', Arial, sans-serif",
+  Serif: "Georgia, 'Times New Roman', serif",
+  Mono: "'SF Mono', SFMono-Regular, ui-monospace, 'Courier New', monospace",
+}
+
+function applyFontSettings(fontSize, fontFamily) {
+  const r = document.documentElement.style
+  if (fontSize != null) {
+    r.setProperty('--editor-font-size', `${fontSize}px`)
+  }
+  if (fontFamily != null) {
+    const resolved = FONT_FAMILY_MAP[fontFamily] || FONT_FAMILY_MAP.System
+    r.setProperty('--editor-font-family', resolved)
+  }
+}
+
 // ── Theme (CSS variables) ────────────────────────────────────────────────────
 function applyTheme(colors, isDark) {
   const r = document.documentElement.style
@@ -633,12 +657,30 @@ window.editorBridge = {
     switch (msg.type) {
       case 'init':
         applyTheme(msg.colors, msg.isDark)
+        applyFontSettings(msg.fontSize, msg.fontFamily)
+        if (msg.safeAreaTop != null) {
+          document.documentElement.style.setProperty('--title-top-pad', `${msg.safeAreaTop}px`)
+        }
+        {
+          const titleEl = document.getElementById('note-title')
+          if (titleEl && msg.title != null) titleEl.value = msg.title
+        }
         if (msg.html) editor.commands.setContent(msg.html, false)
         sendToRN({ type: 'initialized' })
         break
 
+      case 'setTitle': {
+        const titleEl = document.getElementById('note-title')
+        if (titleEl) titleEl.value = msg.title || ''
+        break
+      }
+
       case 'setTheme':
         applyTheme(msg.colors, msg.isDark)
+        break
+
+      case 'setFontSettings':
+        applyFontSettings(msg.fontSize, msg.fontFamily)
         break
 
       case 'setContent':
@@ -724,6 +766,20 @@ window.editorBridge = {
         break
     }
   },
+}
+
+// ── Title input bridge ────────────────────────────────────────────────────────
+const titleInputEl = document.getElementById('note-title')
+if (titleInputEl) {
+  titleInputEl.addEventListener('input', () => {
+    sendToRN({ type: 'titleChange', title: titleInputEl.value })
+  })
+  titleInputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      editor.commands.focus()
+    }
+  })
 }
 
 // Signal ready

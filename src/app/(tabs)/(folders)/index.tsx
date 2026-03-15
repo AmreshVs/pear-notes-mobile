@@ -126,9 +126,7 @@ export default function FoldersScreen() {
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text
-              style={[styles.sectionHeader, { color: isDark ? '#8e8e93' : '#8e8e93' }]}
-            >
+            <Text style={[styles.sectionHeader, { color: isDark ? '#8e8e93' : '#8e8e93' }]}>
               ARCHIVE
             </Text>
             {archiveFolders.map((folder: any) => (

@@ -16,6 +16,7 @@ import { Provider } from 'react-redux'
 import { AnimatedSplashOverlay } from '@/components/animated-icon'
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { PairingOverlay } from '@/components/PairingOverlay'
+import { useResolvedColorScheme } from '@/components/Themed'
 import { useColorScheme } from '@/components/useColorScheme'
 import { startWorklet } from '@/utils/worklet'
 
@@ -94,8 +95,15 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme()
+  // Read from Redux so the user's chosen theme (light/dark/system) is respected.
+  // useResolvedColorScheme() is safe here since RootLayoutNav renders inside <Provider>.
+  const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
+
+  // Keep system UI background in sync with the resolved theme
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(isDark ? '#202020' : '#f2f2f7')
+  }, [isDark])
 
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>

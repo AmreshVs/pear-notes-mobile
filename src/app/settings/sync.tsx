@@ -2,6 +2,7 @@ import {
   deleteSyncedDevice,
   getLocalPreferences,
   getSyncedDevices,
+  updateSyncedDevice,
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import {
   createInvite,
@@ -10,21 +11,33 @@ import {
   getSyncIsLoading,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
+import { BlurView } from 'expo-blur'
 import * as Clipboard from 'expo-clipboard'
-import { Globe, Link2, Monitor, ShieldCheck, Smartphone, Trash2 } from 'lucide-react-native'
-import React, { useState } from 'react'
+import {
+  Check,
+  Globe,
+  Link2,
+  Monitor,
+  ShieldAlert,
+  ShieldCheck,
+  Smartphone,
+  Trash2,
+} from 'lucide-react-native'
+import React, { useRef, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
+  Animated,
+  Modal,
   Platform,
   Pressable,
-  View as RNView,
-  ScrollView,
   StyleSheet,
   TextInput,
+  View as RNView,
+  ScrollView,
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { GlassView } from '@/components/GlassView'
 import { Text, useTheme } from '@/components/Themed'
 
 const PLATFORM_NAMES: Record<string, string> = {
@@ -82,11 +95,11 @@ export default function SyncScreen() {
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       style={{ flex: 1, backgroundColor: pageBg }}
-      contentContainerStyle={styles.scroll}
+      contentContainerStyle={st.scroll}
       showsVerticalScrollIndicator={false}
     >
       {/* ── Segmented Control ─────────────────────── */}
-      <RNView style={[styles.segRow, { backgroundColor: segBg }]}>
+      <RNView style={[st.segRow, { backgroundColor: segBg }]}>
         {(['link', 'devices'] as const).map((t) => {
           const active = tab === t
           return (
@@ -94,7 +107,7 @@ export default function SyncScreen() {
               key={t}
               onPress={() => setTab(t)}
               style={[
-                styles.segPill,
+                st.segPill,
                 active && {
                   backgroundColor: colors.primary,
                   shadowColor: colors.primary,
@@ -107,7 +120,7 @@ export default function SyncScreen() {
             >
               <Text
                 style={[
-                  styles.segLabel,
+                  st.segLabel,
                   { color: active ? '#000000' : textMuted },
                   active && { fontWeight: '700' },
                 ]}
@@ -120,23 +133,22 @@ export default function SyncScreen() {
       </RNView>
 
       {tab === 'link' ? (
-        <RNView style={styles.pad}>
-
+        <RNView style={st.pad}>
           {/* ── Hero invite card ──────────────────── */}
-          <RNView style={[styles.heroCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <RNView style={[st.heroCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             {!inviteCode ? (
               <>
                 <RNView
                   style={[
-                    styles.iconRing,
+                    st.iconRing,
                     { backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)' },
                   ]}
                 >
                   <Globe size={26} color={colors.primary} strokeWidth={1.5} />
                 </RNView>
 
-                <Text style={[styles.heroTitle, { color: text }]}>Link Your Devices</Text>
-                <Text style={[styles.heroDesc, { color: textMuted }]}>
+                <Text style={[st.heroTitle, { color: text }]}>Link Your Devices</Text>
+                <Text style={[st.heroDesc, { color: textMuted }]}>
                   Create a secure, end-to-end encrypted connection to sync your notes across devices
                   instantly.
                 </Text>
@@ -158,23 +170,27 @@ export default function SyncScreen() {
                   {isLoading && (
                     <ActivityIndicator size="small" color="#000" style={{ marginRight: 8 }} />
                   )}
-                  <Text style={styles.btnText}>{isLoading ? 'Preparing…' : 'Generate Invite'}</Text>
+                  <Text style={st.btnText}>{isLoading ? 'Preparing…' : 'Generate Invite'}</Text>
                 </Pressable>
               </>
             ) : (
               <>
-                <RNView style={styles.inviteHeader}>
+                <RNView style={st.inviteHeader}>
                   <RNView
                     style={[
-                      styles.iconPill,
-                      { backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)' },
+                      st.iconPill,
+                      {
+                        backgroundColor: isDark
+                          ? 'rgba(220,163,35,0.13)'
+                          : 'rgba(220,163,35,0.1)',
+                      },
                     ]}
                   >
                     <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
                   </RNView>
                   <RNView style={{ flex: 1 }}>
-                    <Text style={[styles.inviteTitle, { color: text }]}>Invitation Ready</Text>
-                    <Text style={[styles.inviteSub, { color: textMuted }]}>
+                    <Text style={[st.inviteTitle, { color: text }]}>Invitation Ready</Text>
+                    <Text style={[st.inviteSub, { color: textMuted }]}>
                       {formatExpiry(expiresAt)}
                     </Text>
                   </RNView>
@@ -182,7 +198,7 @@ export default function SyncScreen() {
 
                 <Text
                   style={[
-                    styles.codeLabel,
+                    st.codeLabel,
                     { color: textMuted, borderTopColor: cardBorder, borderTopWidth: 1 },
                   ]}
                 >
@@ -191,7 +207,7 @@ export default function SyncScreen() {
 
                 <RNView
                   style={[
-                    styles.codeBox,
+                    st.codeBox,
                     { borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)' },
                   ]}
                 >
@@ -200,7 +216,7 @@ export default function SyncScreen() {
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={{ paddingHorizontal: 2 }}
                   >
-                    <Text selectable style={[styles.codeText, { color: text }]}>
+                    <Text selectable style={[st.codeText, { color: text }]}>
                       {inviteCode}
                     </Text>
                   </ScrollView>
@@ -221,8 +237,14 @@ export default function SyncScreen() {
                     opacity: pressed ? 0.7 : 1,
                   })}
                 >
-                  <Link2 size={16} color="#000" strokeWidth={2.2} />
-                  <Text style={styles.btnText}>{copied ? 'Copied!' : 'Copy Invite Code'}</Text>
+                  {copied ? (
+                    <Check size={16} color="#fff" strokeWidth={2.5} />
+                  ) : (
+                    <Link2 size={16} color="#000" strokeWidth={2.2} />
+                  )}
+                  <Text style={[st.btnText, copied && { color: '#fff' }]}>
+                    {copied ? 'Copied!' : 'Copy Invite Code'}
+                  </Text>
                 </Pressable>
               </>
             )}
@@ -232,15 +254,20 @@ export default function SyncScreen() {
           {inviteCode && (
             <RNView
               style={[
-                styles.warningCard,
+                st.warningCard,
                 {
                   backgroundColor: isDark ? 'rgba(220,163,35,0.07)' : 'rgba(220,163,35,0.08)',
                   borderColor: isDark ? 'rgba(220,163,35,0.2)' : 'rgba(220,163,35,0.25)',
                 },
               ]}
             >
-              <ShieldCheck size={14} color={colors.primary} strokeWidth={1.8} style={{ marginTop: 1 }} />
-              <Text style={[styles.warningText, { color: textMuted }]}>
+              <ShieldCheck
+                size={14}
+                color={colors.primary}
+                strokeWidth={1.8}
+                style={{ marginTop: 1 }}
+              />
+              <Text style={[st.warningText, { color: textMuted }]}>
                 For security, don't share this code in public channels as it grants full access to
                 your notes.
               </Text>
@@ -261,7 +288,7 @@ export default function SyncScreen() {
 
               <RNView
                 style={[
-                  styles.inputRow,
+                  st.inputRow,
                   {
                     backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
                     borderColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
@@ -271,9 +298,10 @@ export default function SyncScreen() {
                 <TextInput
                   value={pasteCode}
                   onChangeText={setPasteCode}
+                  onSubmitEditing={handleConnect}
                   placeholder="Paste invite code here..."
                   placeholderTextColor={textMuted}
-                  style={[styles.codeInput, { color: text }]}
+                  style={[st.codeInput, { color: text }]}
                   autoCapitalize="none"
                   autoCorrect={false}
                 />
@@ -291,9 +319,7 @@ export default function SyncScreen() {
                   {isLoading ? (
                     <ActivityIndicator size="small" color="#000" />
                   ) : (
-                    <Text style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>
-                      Link
-                    </Text>
+                    <Text style={{ color: '#000', fontSize: 14, fontWeight: '700' }}>Link</Text>
                   )}
                 </Pressable>
               </RNView>
@@ -303,50 +329,38 @@ export default function SyncScreen() {
           {/* Footer */}
           <RNView style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
             <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
-            <Text style={[styles.footNote, { color: textMuted }]}>
+            <Text style={[st.footNote, { color: textMuted }]}>
               Your data moves directly between devices using encrypted Hypercore logs. No central
               server involved.
             </Text>
           </RNView>
         </RNView>
       ) : (
-        <RNView style={styles.pad}>
-          <Text style={[styles.sectionCap, { color: textMuted }]}>THIS DEVICE</Text>
+        <RNView style={st.pad}>
+          <Text style={[st.sectionCap, { color: textMuted }]}>THIS DEVICE</Text>
 
-          <RNView
-            style={[
-              styles.deviceGroup,
-              { backgroundColor: cardBg, borderColor: cardBorder },
-            ]}
-          >
+          <RNView style={[st.deviceGroup, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             {syncedDevices
               .filter((d: any) => d.isLocal)
               .map((device: any, index: number, arr: any[]) => (
                 <DeviceCard
                   key={device.key}
                   device={device}
+                  isDark={isDark}
+                  colors={colors}
                   text={text}
                   textMuted={textMuted}
                   cardBg={cardBg}
-                  isDark={isDark}
-                  colors={colors}
-                  showSep={index < arr.length - 1}
                   cardBorder={cardBorder}
+                  showSep={index < arr.length - 1}
                 />
               ))}
           </RNView>
 
-          <Text style={[styles.sectionCap, { color: textMuted, marginTop: 30 }]}>
-            OTHER DEVICES
-          </Text>
+          <Text style={[st.sectionCap, { color: textMuted, marginTop: 30 }]}>OTHER DEVICES</Text>
 
           {syncedDevices.filter((d: any) => !d.isLocal).length > 0 ? (
-            <RNView
-              style={[
-                styles.deviceGroup,
-                { backgroundColor: cardBg, borderColor: cardBorder },
-              ]}
-            >
+            <RNView style={[st.deviceGroup, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               {syncedDevices
                 .filter((d: any) => !d.isLocal)
                 .map((device: any, index: number, arr: any[]) => (
@@ -354,20 +368,20 @@ export default function SyncScreen() {
                     key={device.key}
                     device={device}
                     isOther
+                    isDark={isDark}
+                    colors={colors}
                     text={text}
                     textMuted={textMuted}
                     cardBg={cardBg}
-                    isDark={isDark}
-                    colors={colors}
-                    showSep={index < arr.length - 1}
                     cardBorder={cardBorder}
+                    showSep={index < arr.length - 1}
                   />
                 ))}
             </RNView>
           ) : (
             <RNView
               style={[
-                styles.emptyCard,
+                st.emptyCard,
                 { borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' },
               ]}
             >
@@ -380,7 +394,7 @@ export default function SyncScreen() {
 
           <RNView style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 32 }}>
             <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
-            <Text style={[styles.footNote, { color: textMuted }]}>
+            <Text style={[st.footNote, { color: textMuted }]}>
               Your data moves directly between devices using encrypted Hypercore logs. No central
               server involved.
             </Text>
@@ -391,87 +405,265 @@ export default function SyncScreen() {
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DeviceCard — with inline rename (local) + premium delete modal (other)
+// ─────────────────────────────────────────────────────────────────────────────
 function DeviceCard({
   device,
   isOther,
+  isDark,
+  colors,
   text,
   textMuted,
   cardBg,
-  isDark,
-  colors,
-  showSep,
   cardBorder,
+  showSep,
 }: {
   device: any
   isOther?: boolean
+  isDark: boolean
+  colors: any
   text: string
   textMuted: string
   cardBg: string
-  isDark: boolean
-  colors: any
-  showSep: boolean
   cardBorder: string
+  showSep: boolean
 }) {
   const dispatch = useDispatch()
   const Icon = device.deviceType === 'desktop' ? Monitor : Smartphone
 
-  const handleDelete = () =>
-    Alert.alert(
-      'Unlink Device?',
-      'This device will be removed from your sync network and its local data will be deleted.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Unlink',
-          style: 'destructive',
-          onPress: () => dispatch(deleteSyncedDevice(device.key as any)),
-        },
-      ],
+  // Rename state (local device only)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editedTitle, setEditedTitle] = useState(device.title || '')
+  const inputRef = useRef<TextInput>(null)
+
+  // Delete confirm modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const fadeAnim = useRef(new Animated.Value(0)).current
+
+  const openDeleteModal = () => {
+    setShowDeleteModal(true)
+    Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }).start()
+  }
+
+  const closeDeleteModal = () => {
+    Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() =>
+      setShowDeleteModal(false),
     )
+  }
+
+  const confirmDelete = () => {
+    // Fix: dispatch { key } object as saga expects payload.key
+    dispatch(deleteSyncedDevice({ key: device.key } as any))
+    setShowDeleteModal(false)
+  }
+
+  const startEditing = () => {
+    if (isOther) return
+    setEditedTitle(device.title || '')
+    setIsEditing(true)
+    setTimeout(() => inputRef.current?.focus(), 50)
+  }
+
+  const commitEdit = () => {
+    const trimmed = editedTitle.trim()
+    if (trimmed && trimmed !== device.title) {
+      dispatch(updateSyncedDevice({ key: device.key, title: trimmed } as any))
+    }
+    setIsEditing(false)
+  }
+
+  const cancelEdit = () => {
+    setEditedTitle(device.title || '')
+    setIsEditing(false)
+  }
+
+  const RED = '#EF4444'
 
   return (
-    <RNView>
-      <RNView style={styles.deviceRow}>
-        <RNView
-          style={[
-            styles.deviceIcon,
-            { backgroundColor: isDark ? 'rgba(220,163,35,0.1)' : 'rgba(220,163,35,0.08)' },
-          ]}
-        >
-          <Icon size={18} color={colors.primary} strokeWidth={1.5} />
-          {device.isLocal && <RNView style={[styles.onlineDot, { borderColor: cardBg }]} />}
-        </RNView>
-
-        <RNView style={{ flex: 1 }}>
-          <Text numberOfLines={1} style={[styles.deviceName, { color: text }]} selectable>
-            {device.title || device.key || 'Unknown Device'}
-          </Text>
-          <Text style={[styles.deviceSub, { color: textMuted }]}>
-            {PLATFORM_NAMES[device.platform || ''] || device.platform || '—'}
-          </Text>
-        </RNView>
-
-        {isOther && (
-          <Pressable
-            onPress={handleDelete}
-            hitSlop={12}
-            style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1 })}
+    <>
+      <RNView>
+        <RNView style={st.deviceRow}>
+          <RNView
+            style={[
+              st.deviceIcon,
+              { backgroundColor: isDark ? 'rgba(220,163,35,0.1)' : 'rgba(220,163,35,0.08)' },
+            ]}
           >
-            <Trash2 size={17} color="#EF4444" strokeWidth={1.5} />
-          </Pressable>
+            <Icon size={18} color={colors.primary} strokeWidth={1.5} />
+            {device.isLocal && <RNView style={[st.onlineDot, { borderColor: cardBg }]} />}
+          </RNView>
+
+          <RNView style={{ flex: 1 }}>
+            {isEditing ? (
+              <TextInput
+                ref={inputRef}
+                value={editedTitle}
+                onChangeText={setEditedTitle}
+                onBlur={commitEdit}
+                onSubmitEditing={commitEdit}
+                style={[
+                  st.renameInput,
+                  {
+                    color: text,
+                    borderColor: colors.primary,
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                  },
+                ]}
+                returnKeyType="done"
+                autoCapitalize="words"
+                onKeyPress={({ nativeEvent }) => {
+                  if (nativeEvent.key === 'Escape') cancelEdit()
+                }}
+              />
+            ) : (
+              <Pressable onPress={!isOther ? startEditing : undefined}>
+                <Text
+                  numberOfLines={1}
+                  style={[st.deviceName, { color: text }]}
+                  title={!isOther ? 'Tap to rename' : undefined}
+                >
+                  {device.title || device.key || 'Unknown Device'}
+                </Text>
+              </Pressable>
+            )}
+            <Text style={[st.deviceSub, { color: textMuted }]}>
+              {PLATFORM_NAMES[device.platform || ''] || device.platform || '—'}
+              {!isOther && !isEditing && (
+                <Text style={[st.deviceSub, { color: `${colors.primary}80` }]}> · Tap to rename</Text>
+              )}
+            </Text>
+          </RNView>
+
+          {isOther && (
+            <Pressable
+              onPress={openDeleteModal}
+              hitSlop={12}
+              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 4 })}
+            >
+              <Trash2 size={17} color={RED} strokeWidth={1.5} />
+            </Pressable>
+          )}
+        </RNView>
+
+        {showSep && (
+          <RNView style={{ height: 1, backgroundColor: cardBorder, marginLeft: 70 }} />
         )}
       </RNView>
-      {showSep && (
-        <RNView style={{ height: 1, backgroundColor: cardBorder, marginLeft: 70 }} />
-      )}
-    </RNView>
+
+      {/* ── Delete confirmation modal ── */}
+      <DeleteModal
+        visible={showDeleteModal}
+        device={device}
+        isDark={isDark}
+        colors={colors}
+        text={text}
+        textMuted={textMuted}
+        fadeAnim={fadeAnim}
+        onCancel={closeDeleteModal}
+        onConfirm={confirmDelete}
+      />
+    </>
   )
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    paddingBottom: 80,
-  },
+// ─────────────────────────────────────────────────────────────────────────────
+// DeleteModal — matches desktop's glassmorphic remove device dialog
+// Uses RN Modal so it correctly renders above everything (scroll views, nav, etc.)
+// ─────────────────────────────────────────────────────────────────────────────
+function DeleteModal({
+  visible,
+  device,
+  isDark,
+  colors,
+  text,
+  textMuted,
+  fadeAnim,
+  onCancel,
+  onConfirm,
+}: {
+  visible: boolean
+  device: any
+  isDark: boolean
+  colors: any
+  text: string
+  textMuted: string
+  fadeAnim: Animated.Value
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const RED = '#EF4444'
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      statusBarTranslucent
+      onRequestClose={onCancel}
+    >
+      <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
+        {/* Backdrop: blur + scrim */}
+        <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
+        <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
+
+        {/* Dismiss on backdrop tap */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+
+        {/* Card */}
+        <RNView style={st.modalCenter} pointerEvents="box-none">
+          <GlassView intensity={40} borderRadius={32} style={st.modalCard}>
+            <RNView style={st.modalInner}>
+              {/* Danger icon */}
+              <RNView
+                style={[st.dangerIcon, { backgroundColor: `${RED}26`, borderColor: `${RED}4D` }]}
+              >
+                <ShieldAlert size={40} color={RED} />
+              </RNView>
+
+              <Text style={[st.modalTitle, { color: text }]}>Remove Device?</Text>
+              <Text style={[st.modalSub, { color: textMuted }]}>
+                The device will lose the data sync and all data will be removed from that device.
+              </Text>
+
+              <RNView style={st.modalRow}>
+                <Pressable
+                  onPress={onCancel}
+                  style={({ pressed }) => [st.modalBtn, st.cancelBtn, { opacity: pressed ? 0.7 : 1 }]}
+                >
+                  <Text style={{ color: textMuted, fontWeight: '700', fontSize: 14 }}>Cancel</Text>
+                </Pressable>
+                <Pressable
+                  onPress={onConfirm}
+                  style={({ pressed }) => [
+                    st.modalBtn,
+                    {
+                      backgroundColor: RED,
+                      opacity: pressed ? 0.8 : 1,
+                      shadowColor: RED,
+                      shadowOffset: { width: 0, height: 8 },
+                      shadowOpacity: 0.35,
+                      shadowRadius: 16,
+                      elevation: 8,
+                    },
+                  ]}
+                >
+                  <Text style={{ color: '#fff', fontWeight: '700', fontSize: 15 }}>Remove</Text>
+                </Pressable>
+              </RNView>
+            </RNView>
+          </GlassView>
+        </RNView>
+      </Animated.View>
+    </Modal>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+const st = StyleSheet.create({
+  scroll: { paddingBottom: 80 },
+
+  // Segmented control
   segRow: {
     flexDirection: 'row',
     borderRadius: 12,
@@ -489,13 +681,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  segLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  pad: {
-    paddingHorizontal: 20,
-  },
+  segLabel: { fontSize: 13, fontWeight: '500' },
+
+  pad: { paddingHorizontal: 20 },
+
+  // Link card
   heroCard: {
     borderRadius: 22,
     borderWidth: 1,
@@ -527,12 +717,7 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     paddingHorizontal: 6,
   },
-  btnText: {
-    color: '#000000',
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.2,
-  },
+  btnText: { color: '#000000', fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
   inviteHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -547,16 +732,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  inviteTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 2,
-  },
-  inviteSub: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
+  inviteTitle: { fontSize: 16, fontWeight: '700', letterSpacing: -0.3, marginBottom: 2 },
+  inviteSub: { fontSize: 12, fontWeight: '500' },
   codeLabel: {
     fontSize: 10,
     fontWeight: '700',
@@ -588,11 +765,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 24,
   },
-  warningText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
-  },
+  warningText: { flex: 1, fontSize: 12, lineHeight: 17 },
   inputRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -603,16 +776,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     gap: 8,
   },
-  codeInput: {
-    flex: 1,
-    fontSize: 14,
-    paddingVertical: 9,
-  },
-  footNote: {
-    fontSize: 12,
-    flex: 1,
-    lineHeight: 17,
-  },
+  codeInput: { flex: 1, fontSize: 14, paddingVertical: 9 },
+  footNote: { fontSize: 12, flex: 1, lineHeight: 17 },
+
+  // Section cap
   sectionCap: {
     fontSize: 11,
     fontWeight: '700',
@@ -620,12 +787,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     textTransform: 'uppercase',
   },
-  deviceGroup: {
-    borderRadius: 18,
-    borderWidth: 1,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
+
+  // Device list
+  deviceGroup: { borderRadius: 18, borderWidth: 1, overflow: 'hidden', marginBottom: 8 },
   deviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -658,10 +822,19 @@ const styles = StyleSheet.create({
     marginBottom: 3,
   },
   deviceSub: {
-    fontSize: 12,
+    fontSize: 11,
     textTransform: 'uppercase',
     letterSpacing: 0.7,
     fontWeight: '500',
+  },
+  renameInput: {
+    fontSize: 15,
+    fontWeight: '600',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    marginBottom: 2,
   },
   emptyCard: {
     borderWidth: 1,
@@ -670,5 +843,61 @@ const styles = StyleSheet.create({
     paddingVertical: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // Delete modal
+  modalCenter: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 384,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.5,
+    shadowRadius: 40,
+    elevation: 20,
+  },
+  modalInner: { padding: 40, alignItems: 'center', width: '100%' },
+  dangerIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    marginBottom: 8,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    textAlign: 'center',
+    letterSpacing: -0.4,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  modalSub: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
+    opacity: 0.7,
+    marginBottom: 28,
+    maxWidth: 280,
+  },
+  modalRow: { flexDirection: 'row', gap: 12, width: '100%' },
+  modalBtn: {
+    flex: 1,
+    height: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelBtn: {
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
   },
 })
