@@ -1,15 +1,17 @@
 import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
 import {
   createFolder,
+  deleteFolder,
   getFolders,
   setSelectedFolder,
+  updateFolder,
 } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { createNote, getSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { router, Stack } from 'expo-router'
 import { SymbolView } from 'expo-symbols'
 import { FolderPlus, SquarePen } from 'lucide-react-native'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Pressable, ScrollView, StyleSheet } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { FolderRow } from '@/components/FolderRow'
@@ -69,6 +71,38 @@ export default function FoldersScreen() {
     dispatch(createFolder({ name: 'Untitled' } as any))
   }, [dispatch])
 
+  const handleRenameFolder = useCallback(
+    (folderId: string, currentName: string) => {
+      Alert.prompt(
+        'Rename Folder',
+        undefined,
+        (newName) => {
+          const trimmed = newName?.trim()
+          if (trimmed && trimmed !== currentName) {
+            dispatch(updateFolder({ id: folderId, name: trimmed } as any))
+          }
+        },
+        'plain-text',
+        currentName,
+      )
+    },
+    [dispatch],
+  )
+
+  const handleDeleteFolder = useCallback(
+    (folderId: string) => {
+      Alert.alert('Delete Folder', 'This folder and its notes will be deleted.', [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => dispatch(deleteFolder(folderId as any)),
+        },
+      ])
+    },
+    [dispatch],
+  )
+
   const getFolderIcon = useCallback((folder: any) => {
     if (folder.isAll) return 'All'
     if (folder.isTrash) return 'Trash'
@@ -102,7 +136,7 @@ export default function FoldersScreen() {
 
   const headerRight = useCallback(
     () => (
-      <GlassView intensity={60} borderRadius={22} style={styles.headerPill}>
+      <GlassView intensity={20} borderRadius={24} style={styles.headerPill}>
         <Pressable onPress={handleCreateFolder} style={iconBtnStyle}>
           <FolderPlus size={20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
@@ -141,7 +175,16 @@ export default function FoldersScreen() {
               name={folder.name}
               count={folder.noteCount || 0}
               icon={getFolderIcon(folder)}
+              isSystem={folder.isSystem}
               onPress={() => handleSelectFolder(folder.id || folder.key)}
+              onRename={
+                folder.isSystem
+                  ? undefined
+                  : () => handleRenameFolder(folder.id || folder.key, folder.name)
+              }
+              onDelete={
+                folder.isSystem ? undefined : () => handleDeleteFolder(folder.id || folder.key)
+              }
             />
           ))}
         </View>
@@ -155,7 +198,16 @@ export default function FoldersScreen() {
                 name={folder.name}
                 count={folder.noteCount || 0}
                 icon={getFolderIcon(folder)}
+                isSystem={folder.isSystem}
                 onPress={() => handleSelectFolder(folder.id || folder.key)}
+                onRename={
+                  folder.isSystem
+                    ? undefined
+                    : () => handleRenameFolder(folder.id || folder.key, folder.name)
+                }
+                onDelete={
+                  folder.isSystem ? undefined : () => handleDeleteFolder(folder.id || folder.key)
+                }
               />
             ))}
           </View>
@@ -177,14 +229,13 @@ const styles = StyleSheet.create({
   headerPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 36,
-    paddingHorizontal: 4,
-    marginRight: -2,
+    paddingHorizontal: 8,
   },
   pillDivider: {
     width: StyleSheet.hairlineWidth,
     height: 16,
     backgroundColor: 'rgba(255,255,255,0.2)',
+    marginHorizontal: 8,
   },
   section: {
     backgroundColor: 'transparent',

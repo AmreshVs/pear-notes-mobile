@@ -6,9 +6,12 @@ import {
   Trash2,
 } from 'lucide-react-native'
 import React, { memo, useCallback, useMemo } from 'react'
-import { Pressable, StyleSheet, View as RNView } from 'react-native'
+import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
 
 import { Text, useTheme, View } from './Themed'
+
+// @expo/ui is iOS-only — import lazily so Android doesn't crash
+const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 const ICON_MAP: Record<string, LucideIcon> = {
   Folder: FolderIcon,
@@ -21,7 +24,10 @@ interface FolderRowProps {
   count?: number
   icon?: string
   selected?: boolean
+  isSystem?: boolean
   onPress: () => void
+  onRename?: () => void
+  onDelete?: () => void
 }
 
 export const FolderRow = memo(function FolderRow({
@@ -29,7 +35,10 @@ export const FolderRow = memo(function FolderRow({
   count,
   icon,
   selected,
+  isSystem,
   onPress,
+  onRename,
+  onDelete,
 }: FolderRowProps) {
   const { colors, isDark } = useTheme()
   const Icon = ICON_MAP[icon || 'Folder'] || FolderIcon
@@ -75,20 +84,16 @@ export const FolderRow = memo(function FolderRow({
     () => [styles.count, { color: colors.textSecondary }],
     [colors.textSecondary],
   )
+
   const chevronWrapStyle = useMemo(() => ({ opacity: 0.55 }), [])
 
-  return (
-    <Pressable
-      onPress={onPress}
-      style={containerStyle}
-    >
+  const row = (
+    <Pressable onPress={onPress} style={containerStyle}>
       <RNView style={styles.leftContent}>
         <View style={iconBoxStyle}>
           <Icon size={17} color={colors.primary} strokeWidth={1.8} />
         </View>
-        <Text style={nameStyle}>
-          {name}
-        </Text>
+        <Text style={nameStyle}>{name}</Text>
       </RNView>
 
       <RNView style={styles.rightContent}>
@@ -98,6 +103,38 @@ export const FolderRow = memo(function FolderRow({
         </RNView>
       </RNView>
     </Pressable>
+  )
+
+  // System folders and Android: plain row, no context menu
+  if (isSystem || !ExpoUI || (!onRename && !onDelete)) {
+    return row
+  }
+
+  const { Host, ContextMenu, Button } = ExpoUI
+
+  return (
+    <Host>
+      <ContextMenu>
+        <ContextMenu.Items>
+          {onRename && (
+            <Button
+              label="Rename"
+              systemImage="pencil"
+              onPress={onRename}
+            />
+          )}
+          {onDelete && (
+            <Button
+              label="Delete"
+              systemImage="trash"
+              role="destructive"
+              onPress={onDelete}
+            />
+          )}
+        </ContextMenu.Items>
+        <ContextMenu.Trigger>{row}</ContextMenu.Trigger>
+      </ContextMenu>
+    </Host>
   )
 })
 
