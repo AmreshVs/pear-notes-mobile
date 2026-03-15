@@ -6,12 +6,14 @@ import {
 } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { createNote, getSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { router, Stack } from 'expo-router'
+import { SymbolView } from 'expo-symbols'
 import { FolderPlus, SquarePen } from 'lucide-react-native'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { FolderRow } from '@/components/FolderRow'
+import { GlassView } from '@/components/GlassView'
 import { Text, useTheme, View } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
@@ -77,41 +79,40 @@ export default function FoldersScreen() {
     () => [styles.container, { backgroundColor: colors.background }],
     [colors.background],
   )
-  const settingsBtnStyle = useCallback(
+  const iconBtnStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 }),
-    [],
-  )
-  const settingsTextStyle = useMemo(
-    () => ({ color: colors.primary, fontSize: 17 }),
-    [colors.primary],
-  )
-  const headerRightStyle = useMemo(
-    () => ({ flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 }),
     [],
   )
   const sectionHeaderStyle = useMemo(() => [styles.sectionHeader, { color: '#8e8e93' }], [])
 
   const headerLeft = useCallback(
     () => (
-      <Pressable onPress={() => router.push('/settings')} style={settingsBtnStyle}>
-        <Text style={settingsTextStyle}>Settings</Text>
+      <Pressable onPress={() => router.push('/settings')} style={iconBtnStyle}>
+        <SymbolView
+          name="gearshape"
+          size={22}
+          tintColor={colors.text}
+          weight="regular"
+          fallback={<View style={{ width: 22, height: 22 }} />}
+        />
       </Pressable>
     ),
-    [settingsBtnStyle, settingsTextStyle],
+    [iconBtnStyle, colors.text],
   )
 
   const headerRight = useCallback(
     () => (
-      <View style={headerRightStyle}>
-        <Pressable onPress={handleCreateFolder} style={settingsBtnStyle}>
-          <FolderPlus size={22} color={colors.primary} />
+      <GlassView intensity={60} borderRadius={22} style={styles.headerPill}>
+        <Pressable onPress={handleCreateFolder} style={iconBtnStyle}>
+          <FolderPlus size={20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
-        <Pressable onPress={handleCreateNote} style={settingsBtnStyle}>
-          <SquarePen size={22} color={colors.primary} strokeWidth={2} />
+        <View style={styles.pillDivider} />
+        <Pressable onPress={handleCreateNote} style={iconBtnStyle}>
+          <SquarePen size={20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
-      </View>
+      </GlassView>
     ),
-    [headerRightStyle, handleCreateFolder, handleCreateNote, settingsBtnStyle, colors.primary],
+    [handleCreateFolder, handleCreateNote, iconBtnStyle, colors.text],
   )
 
   const screenOptions = useMemo(
@@ -170,8 +171,20 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 120,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingTop: 8,
+  },
+  headerPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 36,
+    paddingHorizontal: 4,
+    marginRight: -2,
+  },
+  pillDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
   },
   section: {
     backgroundColor: 'transparent',

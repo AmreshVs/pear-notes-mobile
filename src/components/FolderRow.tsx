@@ -6,7 +6,7 @@ import {
   Trash2,
 } from 'lucide-react-native'
 import React, { memo, useCallback, useMemo } from 'react'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View as RNView } from 'react-native'
 
 import { Text, useTheme, View } from './Themed'
 
@@ -75,28 +75,28 @@ export const FolderRow = memo(function FolderRow({
     () => [styles.count, { color: colors.textSecondary }],
     [colors.textSecondary],
   )
-  const chevronStyle = useMemo(() => ({ opacity: 0.4 }), [])
-
-  const rightInnerStyle = useMemo(() => [styles.rightContent], [])
+  const chevronWrapStyle = useMemo(() => ({ opacity: 0.55 }), [])
 
   return (
     <Pressable
       onPress={onPress}
       style={containerStyle}
     >
-      <View style={styles.leftContent}>
+      <RNView style={styles.leftContent}>
         <View style={iconBoxStyle}>
           <Icon size={17} color={colors.primary} strokeWidth={1.8} />
         </View>
         <Text style={nameStyle}>
           {name}
         </Text>
-      </View>
+      </RNView>
 
-      <View style={rightInnerStyle}>
+      <RNView style={styles.rightContent}>
         {count !== undefined && count > 0 && <Text style={countStyle}>{count}</Text>}
-        <ChevronRight size={14} color={colors.textSecondary} style={chevronStyle} />
-      </View>
+        <RNView style={chevronWrapStyle}>
+          <ChevronRight size={14} color={colors.textSecondary} />
+        </RNView>
+      </RNView>
     </Pressable>
   )
 })
@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
+    backgroundColor: 'transparent',
   },
   iconBox: {
     width: 32,
@@ -133,6 +134,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    backgroundColor: 'transparent',
   },
   count: {
     fontSize: 16,
