@@ -26,10 +26,11 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useColorScheme,
   View,
 } from 'react-native'
-import { FullWindowOverlay } from 'react-native-screens'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { FullWindowOverlay } from 'react-native-screens'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
@@ -96,7 +97,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const editorRef = useRef<TiptapEditorHandle>(null)
+  const colorScheme = useColorScheme()
   const floatingHeaderHeight = insets.top + 52
+  const isDark = colorScheme === 'dark'
 
   // ── State ───────────────────────────────────────────────────────────
   const [noteId, setNoteId] = useState<string | null>(null)
@@ -267,15 +270,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   // ── Context actions ────────────────────────────────────────────────
 
-  const openNote = useCallback(
-    (id: string) => {
-      loadedNoteRef.current = null // force content reload
-      setNoteId(id)
-      setIsOpen(true)
-      // Animation starts in the useEffect after content is set
-    },
-    [],
-  )
+  const openNote = useCallback((id: string) => {
+    loadedNoteRef.current = null // force content reload
+    setNoteId(id)
+    setIsOpen(true)
+    // Animation starts in the useEffect after content is set
+  }, [])
 
   const closeNote = useCallback(async () => {
     await editorRef.current?.save()
@@ -298,8 +298,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 
   const isActive = (key: keyof TiptapStyleState) => styleState?.[key]?.isActive ?? false
-  const toolbarBottom =
-    keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16
+  const toolbarBottom = keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16
 
   // ── Render ─────────────────────────────────────────────────────────
 
@@ -319,67 +318,79 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           ]}
           pointerEvents={isOpen ? 'auto' : 'none'}
         >
-          {/* ── Custom Header ──────────────────────────────────────── */}
+          {/* ── Custom Header — transparent with individual glass pill buttons ── */}
           <View style={[styles.header, { paddingTop: insets.top }]}>
             <View style={styles.headerRow}>
-              <Pressable
-                onPress={closeNote}
-                style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1, padding: 8 }]}
-              >
-                <SymbolView
-                  name="chevron.left"
-                  size={22}
-                  tintColor={colors.text}
-                  weight="semibold"
-                  fallback={<View />}
-                />
-              </Pressable>
+              {/* Back — standalone glass circle */}
+              <GlassView intensity={5} borderRadius={24} style={styles.headerBtn}>
+                <Pressable
+                  onPress={closeNote}
+                  style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
+                >
+                  <SymbolView
+                    name="chevron.left"
+                    size={20}
+                    tintColor={colors.text}
+                    weight="semibold"
+                    fallback={<View />}
+                  />
+                </Pressable>
+              </GlassView>
 
               <View style={{ flex: 1 }} />
 
-              <View style={{ flexDirection: 'row', gap: 4, alignItems: 'center' }}>
-                {isEditing ? (
+              {/* Right actions — grouped in a glass pill */}
+              {isEditing ? (
+                <GlassView intensity={5} borderRadius={22} style={styles.headerBtn}>
                   <Pressable
                     onPress={handleDone}
-                    style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
+                    style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
                   >
                     <SymbolView
                       name="checkmark"
-                      size={22}
+                      size={28}
                       tintColor={colors.text}
                       weight="semibold"
                       fallback={<View />}
                     />
                   </Pressable>
-                ) : (
-                  <>
-                    <Pressable
-                      onPress={() => {}}
-                      style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
-                    >
-                      <SymbolView
-                        name="square.and.arrow.up"
-                        size={22}
-                        tintColor={colors.text}
-                        weight="medium"
-                        fallback={<View />}
-                      />
-                    </Pressable>
-                    <Pressable
-                      onPress={() => {}}
-                      style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
-                    >
-                      <SymbolView
-                        name="ellipsis.circle"
-                        size={22}
-                        tintColor={colors.text}
-                        weight="medium"
-                        fallback={<View />}
-                      />
-                    </Pressable>
-                  </>
-                )}
-              </View>
+                </GlassView>
+              ) : (
+                <GlassView intensity={5} borderRadius={24} style={styles.headerPill}>
+                  <Pressable
+                    onPress={() => {}}
+                    style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
+                  >
+                    <SymbolView
+                      name="square.and.arrow.up"
+                      size={24}
+                      tintColor={colors.text}
+                      weight="medium"
+                      fallback={<View />}
+                    />
+                  </Pressable>
+                  <View
+                    style={[
+                      styles.pillDivider,
+                      {
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
+                      },
+                    ]}
+                  />
+                  <Pressable
+                    onPress={() => {}}
+                    style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
+                  >
+                    <SymbolView
+                      name="ellipsis"
+                      size={24}
+                      tintColor={colors.text}
+                      weight="medium"
+                      fallback={<View />}
+                    />
+                  </Pressable>
+                </GlassView>
+              )}
             </View>
           </View>
 
@@ -412,7 +423,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           {/* ── Floating Toolbar ────────────────────────────────────── */}
           {isOpen && (
             <View style={[styles.floatingToolbar, { bottom: toolbarBottom }]}>
-              <GlassView intensity={60} borderRadius={28} style={styles.glassBar}>
+              <GlassView intensity={5} borderRadius={28} style={styles.glassBar}>
                 {isEditing ? (
                   <ScrollView
                     horizontal
@@ -531,7 +542,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 52,
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
+  },
+  // Standalone glass circle (back / checkmark)
+  headerBtn: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  headerBtnInner: {
+    width: 48,
+    height: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Pill containing share + divider + ellipsis
+  headerPill: {
+    height: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  pillDivider: {
+    width: StyleSheet.hairlineWidth,
+    height: 20,
   },
   floatingToolbar: {
     position: 'absolute',
