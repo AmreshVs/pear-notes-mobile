@@ -11,26 +11,15 @@ import Colors from '@/constants/Colors'
 import { Layout, Spacing } from '@/constants/Spacing'
 import { Typography } from '@/constants/Typography'
 
-/**
- * Resolve the effective color scheme from the Redux theme setting.
- * 'system' → delegate to device OS setting
- * 'light' / 'dark' → use directly
- */
 export function useResolvedColorScheme(): 'light' | 'dark' {
   const deviceColorScheme = useDeviceColorScheme()
-  // Always called inside <Provider> — safe to call unconditionally
   const themeSetting: string = useSelector(getTheme) ?? 'system'
 
   if (themeSetting === 'dark') return 'dark'
   if (themeSetting === 'light') return 'light'
-  // 'system' — follow device OS preference
   return deviceColorScheme === 'dark' ? 'dark' : 'light'
 }
 
-/**
- * Hook to access the current theme tokens.
- * Reads the user-chosen theme from Redux ('system' | 'light' | 'dark').
- */
 export function useTheme() {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
@@ -59,9 +48,6 @@ export type TextProps = ThemeProps &
   }
 export type ViewProps = ThemeProps & DefaultView['props']
 
-/**
- * Theme-aware Text component with typography variants.
- */
 export function Text(props: TextProps) {
   const { style, lightColor, darkColor, variant = 'body', ...otherProps } = props
   const theme = useTheme()
@@ -73,9 +59,6 @@ export function Text(props: TextProps) {
   return <DefaultText style={[{ color }, typographyStyle, style]} {...otherProps} />
 }
 
-/**
- * Theme-aware View component.
- */
 export function View(props: ViewProps) {
   const { style, lightColor, darkColor, ...otherProps } = props
   const theme = useTheme()
@@ -88,17 +71,11 @@ export function View(props: ViewProps) {
   return <DefaultView style={[{ backgroundColor }, style]} {...otherProps} />
 }
 
-/**
- * Pre-styled Container with standard padding.
- */
 export function Container(props: ViewProps) {
   const theme = useTheme()
   return <View {...props} style={[{ flex: 1, padding: theme.spacing.md }, props.style]} />
 }
 
-/**
- * Pre-styled Card component.
- */
 export function Card(props: ViewProps) {
   const theme = useTheme()
   return (
@@ -118,9 +95,6 @@ export function Card(props: ViewProps) {
   )
 }
 
-/**
- * Premium Glass Card component.
- */
 export function GlassCard(props: ViewProps) {
   const theme = useTheme()
   return (

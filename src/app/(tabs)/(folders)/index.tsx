@@ -34,7 +34,6 @@ export default function FoldersScreen() {
     dispatch(createNote({ title: '', note: '' } as any))
   }, [dispatch])
 
-  // Handle initial push to All Notes
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -42,7 +41,6 @@ export default function FoldersScreen() {
     }
   }, [])
 
-  // Watch for selectedNote change after creation
   useEffect(() => {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
@@ -51,7 +49,6 @@ export default function FoldersScreen() {
     }
   }, [selectedNote])
 
-  // Keep lastSelectedNoteRef in sync for manual selections
   useEffect(() => {
     if (selectedNote) {
       lastSelectedNoteRef.current = selectedNote

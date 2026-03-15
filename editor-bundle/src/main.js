@@ -1,10 +1,3 @@
-/**
- * main.js — Tiptap editor bridge for the pear-notes mobile WebView.
- *
- * Bundled by Vite into a single self-contained HTML file (no CDN deps).
- * Mirrors the extension set of pear-notes-desktop exactly.
- */
-
 import { Editor, Node, mergeAttributes } from '@tiptap/core'
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
 import Highlight from '@tiptap/extension-highlight'
@@ -32,7 +25,6 @@ import langTS from 'highlight.js/lib/languages/typescript'
 import langXML from 'highlight.js/lib/languages/xml'
 import { createLowlight } from 'lowlight'
 
-// ── RN bridge ───────────────────────────────────────────────────────────────
 function sendToRN(msg) {
   try {
     if (window.ReactNativeWebView) {
@@ -41,7 +33,6 @@ function sendToRN(msg) {
   } catch (_) {}
 }
 
-// ── Font settings (CSS variables) ────────────────────────────────────────────
 const FONT_FAMILY_MAP = {
   Inter: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
   Outfit: "'Outfit', -apple-system, sans-serif",
@@ -65,7 +56,6 @@ function applyFontSettings(fontSize, fontFamily) {
   }
 }
 
-// ── Theme (CSS variables) ────────────────────────────────────────────────────
 function applyTheme(colors, isDark) {
   const r = document.documentElement.style
   r.setProperty('--c-text', colors.text)
@@ -89,7 +79,6 @@ function applyTheme(colors, isDark) {
   r.setProperty('--hl-builtin', isDark ? '#8BE9FD' : '#005CC5')
 }
 
-// ── Lowlight ─────────────────────────────────────────────────────────────────
 const lowlight = createLowlight()
 lowlight.register('javascript', langJS)
 lowlight.register('js', langJS)
@@ -104,14 +93,12 @@ lowlight.register('bash', langBash)
 lowlight.register('sh', langBash)
 lowlight.register('json', langJSON)
 
-// ── Image extension with width/height ────────────────────────────────────────
 const ImageWithSize = Image.extend({
   addAttributes() {
     return { ...this.parent?.(), width: { default: null }, height: { default: null } }
   },
 }).configure({ inline: false, allowBase64: true })
 
-// ── Debounced content change ──────────────────────────────────────────────────
 let contentTimer = null
 function scheduleContentChange(html, text) {
   clearTimeout(contentTimer)
@@ -122,7 +109,6 @@ function flushContentChange(html, text) {
   sendToRN({ type: 'contentChange', html, text })
 }
 
-// ── Style state ───────────────────────────────────────────────────────────────
 function broadcastStyleState(ed) {
   sendToRN({
     type: 'styleState',
@@ -144,8 +130,6 @@ function broadcastStyleState(ed) {
     },
   })
 }
-
-// ── Media Extensions ──────────────────────────────────────────────────────────
 
 function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   const container = document.createElement('div')
@@ -333,7 +317,6 @@ const FileAttachment = Node.create({
     return [{ tag: 'div[data-file-attachment]' }]
   },
   renderHTML({ HTMLAttributes }) {
-    // Only used for HTML serialization
     return ['div', mergeAttributes(HTMLAttributes, { 'data-file-attachment': '' })]
   },
   addNodeView() {
@@ -592,7 +575,6 @@ const AudioAttachment = Node.create({
   },
 })
 
-// ── Editor ────────────────────────────────────────────────────────────────────
 const editor = new Editor({
   element: document.querySelector('#editor'),
   extensions: [
@@ -623,7 +605,7 @@ const editor = new Editor({
     AudioAttachment,
   ],
 
-  content: '', // set via 'init' command after ready
+  content: '',
 
   onUpdate: ({ editor }) => {
     scheduleContentChange(editor.getHTML(), editor.getText())
@@ -637,7 +619,6 @@ const editor = new Editor({
   },
 })
 
-// ── Command bridge ────────────────────────────────────────────────────────────
 window.editorBridge = {
   openAttachment(url, fileName) {
     sendToRN({ type: 'openAttachment', url, fileName })
@@ -746,7 +727,7 @@ window.editorBridge = {
           if (node.type.name === 'image' && node.attrs.src === oldSrc) {
             pos = p
             nodeAttrs = node.attrs
-            return false // Stop descending
+            return false
           }
         })
         if (pos !== -1 && nodeAttrs) {
@@ -768,7 +749,6 @@ window.editorBridge = {
   },
 }
 
-// ── Title input bridge ────────────────────────────────────────────────────────
 const titleInputEl = document.getElementById('note-title')
 if (titleInputEl) {
   titleInputEl.addEventListener('input', () => {
@@ -782,5 +762,4 @@ if (titleInputEl) {
   })
 }
 
-// Signal ready
 sendToRN({ type: 'ready' })

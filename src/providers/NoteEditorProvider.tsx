@@ -41,8 +41,6 @@ import {
   type TiptapStyleState,
 } from '@/components/TiptapEditor'
 
-// ── Context ──────────────────────────────────────────────────────────────────
-
 interface NoteEditorContextType {
   openNote: (id: string) => void
   closeNote: () => void
@@ -56,8 +54,6 @@ const NoteEditorContext = createContext<NoteEditorContextType>({
 })
 
 export const useNoteEditor = () => useContext(NoteEditorContext)
-
-// ── ToolbarBtn ───────────────────────────────────────────────────────────────
 
 function ToolbarBtn({
   sf,
@@ -90,8 +86,6 @@ function ToolbarBtn({
   )
 }
 
-// ── Provider ─────────────────────────────────────────────────────────────────
-
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme()
   const insets = useSafeAreaInsets()
@@ -101,7 +95,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const floatingHeaderHeight = insets.top + 52
   const isDark = colorScheme === 'dark'
 
-  // ── State ───────────────────────────────────────────────────────────
   const [noteId, setNoteId] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
@@ -112,12 +105,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const titleRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
 
-  // ── Redux data ──────────────────────────────────────────────────────
   const rawNoteData = useSelector(getNoteData(noteId ?? ''))
   const noteData = useMemo(() => (rawNoteData || {}) as any, [rawNoteData])
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
 
-  // ── Keyboard tracking ───────────────────────────────────────────────
   useEffect(() => {
     const show = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
@@ -140,7 +131,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [isOpen])
 
-  // ── Load note content when noteId changes ───────────────────────────
   useEffect(() => {
     if (!noteId || noteId === loadedNoteRef.current) return
     loadedNoteRef.current = noteId
@@ -154,11 +144,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       )
     }
 
-    // Send content to the already-initialised WebView — near-instant
     editorRef.current?.setHTML(content)
     editorRef.current?.setTitle(noteData?.title || '')
 
-    // Start the slide-in animation *after* content is set
     Animated.spring(slideAnim, {
       toValue: 0,
       useNativeDriver: true,
@@ -167,15 +155,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }).start()
   }, [noteId, noteData, hyperdriveServerAddress, slideAnim])
 
-  // Reset editing state when note closes
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false)
       setKeyboardHeight(0)
     }
   }, [isOpen])
-
-  // ── Callbacks ───────────────────────────────────────────────────────
 
   const handleUpdate = useCallback(
     (html: string) => {
@@ -268,8 +253,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [noteId, hyperdriveServerAddress])
 
-  // ── Context actions ────────────────────────────────────────────────
-
   const openNote = useCallback((id: string) => {
     loadedNoteRef.current = null // force content reload
     setNoteId(id)
@@ -299,9 +282,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const isActive = (key: keyof TiptapStyleState) => styleState?.[key]?.isActive ?? false
   const toolbarBottom = keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16
-
-  // ── Render ─────────────────────────────────────────────────────────
-
   const Wrapper = Platform.OS === 'ios' ? FullWindowOverlay : React.Fragment
 
   return (
@@ -318,10 +298,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           ]}
           pointerEvents={isOpen ? 'auto' : 'none'}
         >
-          {/* ── Custom Header — transparent with individual glass pill buttons ── */}
           <View style={[styles.header, { paddingTop: insets.top }]}>
             <View style={styles.headerRow}>
-              {/* Back — standalone glass circle */}
               <GlassView intensity={5} borderRadius={24} style={styles.headerBtn}>
                 <Pressable
                   onPress={closeNote}
@@ -339,7 +317,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
               <View style={{ flex: 1 }} />
 
-              {/* Right actions — grouped in a glass pill */}
               {isEditing ? (
                 <GlassView intensity={5} borderRadius={22} style={styles.headerBtn}>
                   <Pressable
@@ -394,7 +371,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </View>
           </View>
 
-          {/* ── Editor (always mounted, content swapped via setHTML) ── */}
           <TiptapEditor
             ref={editorRef}
             initialContent=""
@@ -420,7 +396,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             }}
           />
 
-          {/* ── Floating Toolbar ────────────────────────────────────── */}
           {isOpen && (
             <View style={[styles.floatingToolbar, { bottom: toolbarBottom }]}>
               <GlassView intensity={5} borderRadius={28} style={styles.glassBar}>
@@ -528,8 +503,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 }
 
-// ── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   header: {
     position: 'absolute',
@@ -544,7 +517,6 @@ const styles = StyleSheet.create({
     height: 52,
     paddingHorizontal: 16,
   },
-  // Standalone glass circle (back / checkmark)
   headerBtn: {
     width: 48,
     height: 48,
@@ -558,7 +530,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Pill containing share + divider + ellipsis
   headerPill: {
     height: 48,
     flexDirection: 'row',

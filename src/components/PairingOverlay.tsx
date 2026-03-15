@@ -25,7 +25,6 @@ import { useDispatch, useSelector } from 'react-redux'
 import { GlassView } from './GlassView'
 import { Text, View, useTheme } from './Themed'
 
-// Parse "🥝🍊🍒 (925B3)" → { emoji: "🥝🍊🍒", hex: "925B3" }
 function parseFp(fp: string | null | undefined) {
   if (!fp) return { emoji: '', hex: '' }
   const m = fp.match(/\(([A-Fa-f0-9]+)\)/i)
@@ -101,27 +100,21 @@ export function PairingOverlay() {
     }
   }
 
-  // ────────────────────────────────────────────────────────────
-  // Icon
-  // ────────────────────────────────────────────────────────────
   const renderIcon = () => {
-    // Done → green check
+
     if (step === 'done')
       return (
         <View style={[s.icon, { backgroundColor: `${GREEN}26`, borderColor: `${GREEN}4D` }]}>
           <Check size={40} color={GREEN} strokeWidth={3} />
         </View>
       )
-    // Link input → chain link
+
     if (showPairingInput)
       return (
         <View style={[s.icon, { backgroundColor: `${GOLD}26`, borderColor: `${GOLD}4D` }]}>
           <Link2 size={40} color={GOLD} />
         </View>
       )
-    // ALL other states (confirmation, searching, authenticating, etc.) → ShieldCheck
-    // Desktop shows ShieldCheck for every non-done, non-syncing state
-    // Globe+spinner is rendered inline only inside the syncing section
     return (
       <View style={[s.icon, { backgroundColor: `${GOLD}26`, borderColor: `${GOLD}4D` }]}>
         <ShieldCheck size={40} color={GOLD} />
@@ -129,7 +122,6 @@ export function PairingOverlay() {
     )
   }
 
-  // Globe+spinner — only used inside the syncing section (mirrors desktop renderStatusIcon fallback)
   const renderSyncIcon = () => (
     <View style={s.loaderWrap}>
       <View style={[s.icon, { backgroundColor: `${GOLD}0D`, borderColor: `${GOLD}1A` }]}>
@@ -139,9 +131,6 @@ export function PairingOverlay() {
     </View>
   )
 
-  // ────────────────────────────────────────────────────────────
-  // Content
-  // ────────────────────────────────────────────────────────────
   const renderContent = () => {
     const isDone = step === 'done'
     const isConfirm = step === 'confirmation'
@@ -152,7 +141,6 @@ export function PairingOverlay() {
       'receiving_data',
     ].includes(step)
 
-    // DONE
     if (isDone) {
       return (
         <>
@@ -175,7 +163,6 @@ export function PairingOverlay() {
       )
     }
 
-    // SYNCING
     if (isSyncing) {
       return (
         <>
@@ -198,7 +185,6 @@ export function PairingOverlay() {
       )
     }
 
-    // LINK INPUT
     if (showPairingInput) {
       return (
         <>
@@ -257,14 +243,13 @@ export function PairingOverlay() {
       )
     }
 
-    // VERIFY / SEARCHING
     const peerFp = getFingerprint(userData)
     const myFp = getFingerprint(localKey)
     const mainFp = isConfirm ? peerFp : myFp
     const mainLabel = isConfirm ? 'REMOTE ID' : 'MY ID'
     const subLabel = isConfirm ? 'MY ID' : peerFp ? 'REMOTE ID' : null
     const subFp = isConfirm ? myFp : peerFp || null
-    const { emoji, hex } = parseFp(mainFp)
+    parseFp(mainFp)
 
     return (
       <>
@@ -328,23 +313,13 @@ export function PairingOverlay() {
     )
   }
 
-  // ════════════════════════════════════════════════════════════
-  // RENDER — Desktop structure:
-  //   bg-black/50 backdrop-blur-xl
-  //     bg-bg-panel/60 backdrop-blur-2xl border-white/0.08
-  //       rounded-[2rem] p-10 overflow-hidden
-  // ════════════════════════════════════════════════════════════
   return (
     <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim, zIndex: 1000 }]}>
-      {/* bg-black/50 backdrop-blur-xl — match desktop's dark frosted glass backdrop */}
-      {/* Layer 1: native system blur */}
       <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
-      {/* Layer 2: black scrim on top to reach ~50% darkness, matching desktop */}
       <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} />
       <Pressable onPress={handleClose} style={StyleSheet.absoluteFill} />
 
       <View style={s.center} pointerEvents="box-none">
-        {/* GlassView = expo-glass-effect + BlurView inside = desktop's backdrop-blur-2xl */}
         <GlassView intensity={40} borderRadius={32} style={s.card}>
           <View style={s.cardInner}>{renderContent()}</View>
         </GlassView>
@@ -353,7 +328,6 @@ export function PairingOverlay() {
   )
 }
 
-// Desktop: p-10 = 40px, rounded-2rem = 32px, max-w-sm = 384px
 const s = StyleSheet.create({
   center: {
     flex: 1,
@@ -373,7 +347,6 @@ const s = StyleSheet.create({
     elevation: 20,
   },
   cardInner: { padding: 40, alignItems: 'center', width: '100%' },
-  // Icon: w-20 h-20 = 80px, rounded-3xl = 24px, ring-1
   icon: {
     width: 80,
     height: 80,
@@ -391,7 +364,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
-  // Text: text-2xl = 24px, text-sm = 14px
   title: {
     fontSize: 24,
     fontWeight: '700',
@@ -407,7 +379,6 @@ const s = StyleSheet.create({
     marginBottom: 24,
     maxWidth: 280,
   },
-  // ID card: px-6=24 py-4=16, rounded-2xl=16, bg-white/0.03, border-white/0.08
   idCard: {
     width: '100%',
     paddingHorizontal: 24,
@@ -431,7 +402,6 @@ const s = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     textAlign: 'center',
   },
-  // Buttons: py-4=16 → h~50, rounded-xl=12
   row: { flexDirection: 'row', gap: 12, width: '100%', paddingTop: 8 },
   btn: { flex: 1, height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   cancelBtn: {
@@ -455,7 +425,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Input
   inputArea: { width: '100%', marginBottom: 24 },
   input: {
     width: '100%',
@@ -468,7 +437,6 @@ const s = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     letterSpacing: 1,
   },
-  // Progress
   progressWrap: { width: '100%', paddingTop: 8 },
   track: {
     width: '100%',

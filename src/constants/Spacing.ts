@@ -1,6 +1,3 @@
-/**
- * Standard 8px based spacing grid.
- */
 export const Spacing = {
   xs: 4,
   sm: 8,

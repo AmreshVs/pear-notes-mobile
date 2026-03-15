@@ -15,9 +15,6 @@ import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
 import { useTheme } from './Themed'
 
-// ── Public types ──────────────────────────────────────────────────────────────
-
-/** Style state broadcast on every cursor move / selection change. */
 export interface TiptapStyleState {
   bold: { isActive: boolean }
   italic: { isActive: boolean }
@@ -35,7 +32,6 @@ export interface TiptapStyleState {
   highlight: { isActive: boolean }
 }
 
-/** Imperative handle — superset of the old NoteEditorHandle. */
 export interface TiptapEditorHandle {
   toggleBold: () => void
   toggleItalic: () => void
@@ -63,22 +59,15 @@ export interface TiptapEditorHandle {
 export interface TiptapEditorProps {
   initialContent: string
   initialTitle?: string
-  /** Top padding (pts) for the title input so it clears a floating header overlay. */
   safeAreaTop?: number
   onContentChange: (html: string) => void
   onTitleChange?: (title: string) => void
   onStyleStateChange?: (state: TiptapStyleState) => void
-  /** Called when the editor gains focus (keyboard about to appear). */
   onEditorFocus?: () => void
-  /** Called when the editor loses focus (immediate save has been flushed). */
   onEditorBlur?: () => void
-  /** Called when an attachment is tapped in the editor. */
   onOpenAttachment?: (url: string, fileName: string) => void
-  /** Called when the delete button on an attachment is tapped. */
   onDeleteAttachment?: (url: string) => void
 }
-
-// ── Internal ──────────────────────────────────────────────────────────────────
 
 type WebViewMsg =
   | { type: 'ready' }
@@ -93,8 +82,6 @@ type WebViewMsg =
   | { type: 'deleteAttachment'; url: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
-
-// ── Component ─────────────────────────────────────────────────────────────────
 
 const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   (
@@ -117,7 +104,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const fontFamily = useSelector(getFontFamily)
     const webViewRef = useRef<WebView>(null)
 
-    // ── Stable refs so all closures see the latest values ───────────────
     const onContentChangeRef = useRef(onContentChange)
     const onTitleChangeRef = useRef(onTitleChange)
     const onStyleStateChangeRef = useRef(onStyleStateChange)
@@ -147,7 +133,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     const editorReadyRef = useRef(false)
 
-    // Track initial title/content — updated until ready, then set explicitly
     const initialTitleRef = useRef(initialTitle ?? '')
     const initialContentRef = useRef(initialContent)
     useEffect(() => {
@@ -161,23 +146,19 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     }, [initialContent])
 
-    // ── Pending getHTML promises ─────────────────────────────────────────
     const pendingRequests = useRef<Map<string, (html: string) => void>>(new Map())
 
-    // ── UI state ─────────────────────────────────────────────────────────
     const [editorState, setEditorState] = useState<EditorState>('loading')
 
     const revealEditor = useCallback(() => {
       setEditorState('ready')
     }, [])
 
-    // ── Send a command to the WebView ────────────────────────────────────
     const sendCommand = useCallback((command: object) => {
       const js = `(function(){if(window.editorBridge){window.editorBridge.handleMessage(${JSON.stringify(JSON.stringify(command))})}})();true;`
       webViewRef.current?.injectJavaScript(js)
     }, [])
 
-    // ── Async getHTML with 3-second fallback ────────────────────────────
     const getHTMLAsync = useCallback((): Promise<string | undefined> => {
       return new Promise((resolve) => {
         const id = `req_${Date.now()}_${Math.random().toString(36).slice(2)}`
@@ -193,81 +174,72 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       })
     }, [sendCommand])
 
-    // ── Handle messages from WebView ─────────────────────────────────────
-    const handleMessage = useCallback(
-      (event: WebViewMessageEvent) => {
-        let msg: WebViewMsg
-        try {
-          msg = JSON.parse(event.nativeEvent.data)
-        } catch {
-          return
-        }
+    const handleMessage = useCallback((event: WebViewMessageEvent) => {
+      let msg: WebViewMsg
+      try {
+        msg = JSON.parse(event.nativeEvent.data)
+      } catch {
+        return
+      }
 
-        switch (msg.type) {
-          case 'ready':
-            // Send theme + font settings + title + initial content before revealing
-            editorReadyRef.current = true
-            sendCommand({
-              type: 'init',
-              colors: colorsRef.current,
-              isDark: isDarkRef.current,
-              fontSize: fontSizeRef.current,
-              fontFamily: fontFamilyRef.current,
-              title: initialTitleRef.current,
-              html: initialContentRef.current,
-              safeAreaTop: safeAreaTopRef.current,
-            })
-            break
+      switch (msg.type) {
+        case 'ready':
+          editorReadyRef.current = true
+          sendCommand({
+            type: 'init',
+            colors: colorsRef.current,
+            isDark: isDarkRef.current,
+            fontSize: fontSizeRef.current,
+            fontFamily: fontFamilyRef.current,
+            title: initialTitleRef.current,
+            html: initialContentRef.current,
+            safeAreaTop: safeAreaTopRef.current,
+          })
+          break
 
-          case 'initialized':
-            // Theme and content are applied — fade in
-            revealEditor()
-            break
+        case 'initialized':
+          revealEditor()
+          break
 
-          case 'contentChange':
-            onContentChangeRef.current(msg.html)
-            break
+        case 'contentChange':
+          onContentChangeRef.current(msg.html)
+          break
 
-          case 'titleChange':
-            onTitleChangeRef.current?.(msg.title)
-            break
+        case 'titleChange':
+          onTitleChangeRef.current?.(msg.title)
+          break
 
-          case 'styleState':
-            onStyleStateChangeRef.current?.(msg.state)
-            break
+        case 'styleState':
+          onStyleStateChangeRef.current?.(msg.state)
+          break
 
-          case 'htmlResponse': {
-            const resolve = pendingRequests.current.get(msg.requestId)
-            if (resolve) {
-              resolve(msg.html)
-              pendingRequests.current.delete(msg.requestId)
-            }
-            break
+        case 'htmlResponse': {
+          const resolve = pendingRequests.current.get(msg.requestId)
+          if (resolve) {
+            resolve(msg.html)
+            pendingRequests.current.delete(msg.requestId)
           }
-
-          case 'focus':
-            onEditorFocusRef.current?.()
-            break
-
-          case 'blur':
-            onEditorBlurRef.current?.()
-            break
-
-          case 'openAttachment':
-            onOpenAttachmentRef.current?.(msg.url, msg.fileName)
-            break
-
-          case 'deleteAttachment':
-            onDeleteAttachmentRef.current?.(msg.url)
-            break
+          break
         }
-      },
-      // sendCommand and revealEditor are stable; refs never change identity
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      [],
-    )
 
-    // ── Live theme propagation — no reload required ──────────────────────
+        case 'focus':
+          onEditorFocusRef.current?.()
+          break
+
+        case 'blur':
+          onEditorBlurRef.current?.()
+          break
+
+        case 'openAttachment':
+          onOpenAttachmentRef.current?.(msg.url, msg.fileName)
+          break
+
+        case 'deleteAttachment':
+          onDeleteAttachmentRef.current?.(msg.url)
+          break
+      }
+    }, [])
+
     const prevIsDarkRef = useRef(isDark)
     useEffect(() => {
       if (prevIsDarkRef.current === isDark) return
@@ -277,7 +249,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     }, [isDark, colors, sendCommand])
 
-    // ── Live font settings propagation ───────────────────────────────────
     const prevFontSizeRef = useRef(fontSize)
     const prevFontFamilyRef = useRef(fontFamily)
     useEffect(() => {
@@ -289,7 +260,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     }, [fontSize, fontFamily, sendCommand])
 
-    // ── WebView error ─────────────────────────────────────────────────────
     const handleError = useCallback((_e: WebViewErrorEvent) => {
       setEditorState('error')
     }, [])
@@ -300,7 +270,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       webViewRef.current?.reload()
     }, [])
 
-    // ── Imperative handle ────────────────────────────────────────────────
     useImperativeHandle(ref, () => ({
       toggleBold: () => sendCommand({ type: 'toggleBold' }),
       toggleItalic: () => sendCommand({ type: 'toggleItalic' }),
@@ -328,10 +297,8 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       setTitle: (title) => sendCommand({ type: 'setTitle', title }),
     }))
 
-    // ── Render ────────────────────────────────────────────────────────────
     return (
       <View style={[styles.container, { backgroundColor: colors.background }]}>
-        {/* Error state with retry */}
         {editorState === 'error' && (
           <View style={styles.overlay}>
             <Text style={[styles.errorText, { color: colors.textSecondary }]}>
@@ -346,9 +313,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           </View>
         )}
 
-        {/* WebView — shown at full opacity immediately; backgroundColor matches
-            the screen so there is no visible flash while JS parses (~300ms,
-            hidden behind the iOS push-navigation animation). */}
         <View style={styles.flex}>
           <WebView
             ref={webViewRef}
@@ -379,8 +343,6 @@ const TiptapEditor = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 TiptapEditor.displayName = 'TiptapEditor'
 
 export { TiptapEditor }
-
-// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

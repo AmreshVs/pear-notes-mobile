@@ -98,7 +98,6 @@ export default function SyncScreen() {
       contentContainerStyle={st.scroll}
       showsVerticalScrollIndicator={false}
     >
-      {/* ── Segmented Control ─────────────────────── */}
       <RNView style={[st.segRow, { backgroundColor: segBg }]}>
         {(['link', 'devices'] as const).map((t) => {
           const active = tab === t
@@ -134,7 +133,6 @@ export default function SyncScreen() {
 
       {tab === 'link' ? (
         <RNView style={st.pad}>
-          {/* ── Hero invite card ──────────────────── */}
           <RNView style={[st.heroCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             {!inviteCode ? (
               <>
@@ -180,9 +178,7 @@ export default function SyncScreen() {
                     style={[
                       st.iconPill,
                       {
-                        backgroundColor: isDark
-                          ? 'rgba(220,163,35,0.13)'
-                          : 'rgba(220,163,35,0.1)',
+                        backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)',
                       },
                     ]}
                   >
@@ -250,7 +246,6 @@ export default function SyncScreen() {
             )}
           </RNView>
 
-          {/* Security notice */}
           {inviteCode && (
             <RNView
               style={[
@@ -274,11 +269,14 @@ export default function SyncScreen() {
             </RNView>
           )}
 
-          {/* ── Paste existing invite ──────────────── */}
           {!isSynced && (
             <RNView style={{ marginBottom: 24 }}>
-              <RNView style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 6 }}>
-                <Text style={{ color: colors.primary, fontSize: 18, fontWeight: '600', lineHeight: 20 }}>
+              <RNView
+                style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 6 }}
+              >
+                <Text
+                  style={{ color: colors.primary, fontSize: 18, fontWeight: '600', lineHeight: 20 }}
+                >
                   +
                 </Text>
                 <Text style={{ color: text, fontSize: 15, fontWeight: '600' }}>
@@ -326,7 +324,6 @@ export default function SyncScreen() {
             </RNView>
           )}
 
-          {/* Footer */}
           <RNView style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6 }}>
             <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
             <Text style={[st.footNote, { color: textMuted }]}>
@@ -405,9 +402,6 @@ export default function SyncScreen() {
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DeviceCard — with inline rename (local) + premium delete modal (other)
-// ─────────────────────────────────────────────────────────────────────────────
 function DeviceCard({
   device,
   isOther,
@@ -432,12 +426,10 @@ function DeviceCard({
   const dispatch = useDispatch()
   const Icon = device.deviceType === 'desktop' ? Monitor : Smartphone
 
-  // Rename state (local device only)
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(device.title || '')
   const inputRef = useRef<TextInput>(null)
 
-  // Delete confirm modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
 
@@ -453,7 +445,6 @@ function DeviceCard({
   }
 
   const confirmDelete = () => {
-    // Fix: dispatch { key } object as saga expects payload.key
     dispatch(deleteSyncedDevice({ key: device.key } as any))
     setShowDeleteModal(false)
   }
@@ -518,11 +509,7 @@ function DeviceCard({
               />
             ) : (
               <Pressable onPress={!isOther ? startEditing : undefined}>
-                <Text
-                  numberOfLines={1}
-                  style={[st.deviceName, { color: text }]}
-                  title={!isOther ? 'Tap to rename' : undefined}
-                >
+                <Text numberOfLines={1} style={[st.deviceName, { color: text }]}>
                   {device.title || device.key || 'Unknown Device'}
                 </Text>
               </Pressable>
@@ -530,7 +517,10 @@ function DeviceCard({
             <Text style={[st.deviceSub, { color: textMuted }]}>
               {PLATFORM_NAMES[device.platform || ''] || device.platform || '—'}
               {!isOther && !isEditing && (
-                <Text style={[st.deviceSub, { color: `${colors.primary}80` }]}> · Tap to rename</Text>
+                <Text style={[st.deviceSub, { color: `${colors.primary}80` }]}>
+                  {' '}
+                  · Tap to rename
+                </Text>
               )}
             </Text>
           </RNView>
@@ -546,12 +536,9 @@ function DeviceCard({
           )}
         </RNView>
 
-        {showSep && (
-          <RNView style={{ height: 1, backgroundColor: cardBorder, marginLeft: 70 }} />
-        )}
+        {showSep && <RNView style={{ height: 1, backgroundColor: cardBorder, marginLeft: 70 }} />}
       </RNView>
 
-      {/* ── Delete confirmation modal ── */}
       <DeleteModal
         visible={showDeleteModal}
         device={device}
@@ -567,10 +554,6 @@ function DeviceCard({
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DeleteModal — matches desktop's glassmorphic remove device dialog
-// Uses RN Modal so it correctly renders above everything (scroll views, nav, etc.)
-// ─────────────────────────────────────────────────────────────────────────────
 function DeleteModal({
   visible,
   device,
@@ -603,18 +586,14 @@ function DeleteModal({
       onRequestClose={onCancel}
     >
       <Animated.View style={[StyleSheet.absoluteFill, { opacity: fadeAnim }]}>
-        {/* Backdrop: blur + scrim */}
         <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
         <RNView style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
 
-        {/* Dismiss on backdrop tap */}
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
 
-        {/* Card */}
         <RNView style={st.modalCenter} pointerEvents="box-none">
           <GlassView intensity={40} borderRadius={32} style={st.modalCard}>
             <RNView style={st.modalInner}>
-              {/* Danger icon */}
               <RNView
                 style={[st.dangerIcon, { backgroundColor: `${RED}26`, borderColor: `${RED}4D` }]}
               >
@@ -629,7 +608,11 @@ function DeleteModal({
               <RNView style={st.modalRow}>
                 <Pressable
                   onPress={onCancel}
-                  style={({ pressed }) => [st.modalBtn, st.cancelBtn, { opacity: pressed ? 0.7 : 1 }]}
+                  style={({ pressed }) => [
+                    st.modalBtn,
+                    st.cancelBtn,
+                    { opacity: pressed ? 0.7 : 1 },
+                  ]}
                 >
                   <Text style={{ color: textMuted, fontWeight: '700', fontSize: 14 }}>Cancel</Text>
                 </Pressable>
@@ -659,11 +642,9 @@ function DeleteModal({
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 const st = StyleSheet.create({
   scroll: { paddingBottom: 80 },
 
-  // Segmented control
   segRow: {
     flexDirection: 'row',
     borderRadius: 12,
@@ -685,7 +666,6 @@ const st = StyleSheet.create({
 
   pad: { paddingHorizontal: 20 },
 
-  // Link card
   heroCard: {
     borderRadius: 22,
     borderWidth: 1,
@@ -779,7 +759,6 @@ const st = StyleSheet.create({
   codeInput: { flex: 1, fontSize: 14, paddingVertical: 9 },
   footNote: { fontSize: 12, flex: 1, lineHeight: 17 },
 
-  // Section cap
   sectionCap: {
     fontSize: 11,
     fontWeight: '700',
@@ -788,7 +767,7 @@ const st = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // Device list
+
   deviceGroup: { borderRadius: 18, borderWidth: 1, overflow: 'hidden', marginBottom: 8 },
   deviceRow: {
     flexDirection: 'row',
@@ -845,7 +824,7 @@ const st = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Delete modal
+
   modalCenter: {
     flex: 1,
     justifyContent: 'center',

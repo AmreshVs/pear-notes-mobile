@@ -1,39 +1,3 @@
-/**
- * editorHtml.ts
- *
- * Returns the static CDN-based HTML shell for the Tiptap WebView editor.
- * All colours are stored as CSS variables and set at runtime via the `init`
- * and `setTheme` commands — the HTML itself carries no theme values, so
- * swapping in an offline bundle later requires zero changes to this file.
- *
- * ─── Message protocol (RN → WebView via injectJavaScript) ───────────────────
- *   window.editorBridge.handleMessage(JSON.stringify(msg))
- *
- *   { type: 'init',       colors, isDark, html }   ← call once after 'ready'
- *   { type: 'setTheme',   colors, isDark }          ← live theme swap
- *   { type: 'setContent', html }
- *   { type: 'getHTML',    requestId }
- *   { type: 'focus' }
- *   { type: 'toggleBold' | 'toggleItalic' | ... }
- *   { type: 'insertImage', url, width, height }
- *   { type: 'setTextAlign', align }
- *
- * ─── Message protocol (WebView → RN via postMessage) ────────────────────────
- *   { type: 'ready' }              ← send init immediately after this
- *   { type: 'initialized' }        ← content + theme applied; show the WebView
- *   { type: 'contentChange', html, text }   ← debounced 500 ms + on blur
- *   { type: 'styleState',   state }
- *   { type: 'htmlResponse', requestId, html }
- *   { type: 'focus' }
- *   { type: 'blur' }
- *
- * ─── Offline / Production ────────────────────────────────────────────────────
- * The CDN imports work after the WebView's first network fetch (disk-cached
- * thereafter). For a fully-offline build run:
- *   cd editor-bundle && npm install && npm run build
- * which replaces src/utils/tiptap-editor-bundle.ts with an inlined JS bundle.
- */
-
 export function getEditorHtml(): string {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -44,8 +8,6 @@ export function getEditorHtml(): string {
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
   />
   <style>
-    /* ── CSS variables — defaults match light theme ─────────────── */
-    /* Overridden immediately by the 'init' command before reveal.   */
     :root {
       --c-text:            #000000;
       --c-text-secondary:  #48484a;
@@ -57,7 +19,6 @@ export function getEditorHtml(): string {
       --c-code-bg:         #F0F0F2;
       --c-code:            #2D5016;
       --c-codeblock-bg:    #F4F4F5;
-      /* Syntax tokens */
       --hl-keyword:  #D73A49;
       --hl-string:   #032F62;
       --hl-comment:  #6A737D;
@@ -88,7 +49,6 @@ export function getEditorHtml(): string {
       }
     }
 
-    /* ── Reset ────────────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
       margin: 0; padding: 0;
@@ -100,7 +60,6 @@ export function getEditorHtml(): string {
     }
     #editor { min-height: 100vh; }
 
-    /* ── Tiptap / ProseMirror ─────────────────────────────────────── */
     .tiptap {
       min-height: 100vh;
       padding: 8px 20px 180px 20px;
@@ -114,7 +73,6 @@ export function getEditorHtml(): string {
       caret-color: var(--c-primary);
     }
 
-    /* ── Placeholder ─────────────────────────────────────────────── */
     .tiptap p.is-editor-empty:first-child::before {
       content: attr(data-placeholder);
       float: left;
@@ -123,17 +81,14 @@ export function getEditorHtml(): string {
       height: 0;
     }
 
-    /* ── Headings ─────────────────────────────────────────────────── */
     .tiptap h1 { font-size: 26px; font-weight: 700; margin: 20px 0 8px; line-height: 1.3; }
     .tiptap h2 { font-size: 22px; font-weight: 600; margin: 16px 0 6px; line-height: 1.3; }
     .tiptap h3 { font-size: 19px; font-weight: 600; margin: 12px 0 4px; line-height: 1.3; }
     .tiptap :is(h1,h2,h3):first-child { margin-top: 0; }
 
-    /* ── Paragraph ────────────────────────────────────────────────── */
     .tiptap p { margin: 0 0 6px; }
     .tiptap p:last-child { margin-bottom: 0; }
 
-    /* ── Lists ────────────────────────────────────────────────────── */
     .tiptap ul, .tiptap ol { padding-left: 22px; margin: 4px 0 8px; }
     .tiptap li { margin: 3px 0; }
     .tiptap li p { margin: 0; }
@@ -141,7 +96,6 @@ export function getEditorHtml(): string {
     .tiptap ul li::marker { color: var(--c-primary); }
     .tiptap ol li::marker { color: var(--c-primary); }
 
-    /* ── Task list ────────────────────────────────────────────────── */
     .tiptap ul[data-type="taskList"] { list-style: none; padding-left: 2px; }
     .tiptap ul[data-type="taskList"] li {
       display: flex; align-items: flex-start; gap: 10px; margin: 5px 0;
@@ -156,21 +110,18 @@ export function getEditorHtml(): string {
     }
     .tiptap ul[data-type="taskList"] li > div { flex: 1; }
 
-    /* ── Blockquote ───────────────────────────────────────────────── */
     .tiptap blockquote {
       border-left: 3px solid var(--c-primary);
       padding-left: 16px; margin: 8px 0;
       color: var(--c-text-secondary);
     }
 
-    /* ── Inline code ──────────────────────────────────────────────── */
     .tiptap code {
       background: var(--c-code-bg); color: var(--c-code);
       padding: 2px 6px; border-radius: 4px; font-size: 0.88em;
       font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'Courier New', monospace;
     }
 
-    /* ── Code block ───────────────────────────────────────────────── */
     .tiptap pre {
       background: var(--c-codeblock-bg);
       padding: 16px; border-radius: 10px; margin: 8px 0; overflow-x: auto;
@@ -181,7 +132,6 @@ export function getEditorHtml(): string {
       font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'Courier New', monospace;
     }
 
-    /* ── Syntax highlighting ──────────────────────────────────────── */
     .hljs-keyword, .hljs-selector-tag, .hljs-built_in { color: var(--hl-keyword); }
     .hljs-string, .hljs-attr, .hljs-template-variable  { color: var(--hl-string);  }
     .hljs-comment, .hljs-quote                          { color: var(--hl-comment); font-style: italic; }
@@ -190,19 +140,15 @@ export function getEditorHtml(): string {
     .hljs-variable, .hljs-name, .hljs-tag               { color: var(--hl-var);     }
     .hljs-type, .hljs-class .hljs-title                 { color: var(--hl-builtin); }
 
-    /* ── Links ────────────────────────────────────────────────────── */
     .tiptap a { color: var(--c-primary); text-decoration: underline; }
 
-    /* ── Highlight ────────────────────────────────────────────────── */
     .tiptap mark { border-radius: 3px; padding: 1px 2px; }
 
-    /* ── Images ───────────────────────────────────────────────────── */
     .tiptap img {
       max-width: 100%; height: auto;
       border-radius: 8px; display: block; margin: 8px 0;
     }
 
-    /* ── Tables ───────────────────────────────────────────────────── */
     .tiptap table {
       border-collapse: collapse; width: 100%;
       margin: 8px 0; font-size: 15px;
@@ -220,7 +166,6 @@ export function getEditorHtml(): string {
       content: ''; position: absolute; inset: 0; pointer-events: none;
     }
 
-    /* ── Misc ─────────────────────────────────────────────────────── */
     .tiptap hr { border: none; border-top: 1px solid var(--c-border); margin: 16px 0; }
     .tiptap sub  { vertical-align: sub;   font-size: 0.8em; }
     .tiptap sup  { vertical-align: super; font-size: 0.8em; }
@@ -231,9 +176,6 @@ export function getEditorHtml(): string {
   <div id="editor"></div>
 
   <script type="module">
-    // ─── CDN imports (esm.sh — version-pinned) ──────────────────────────
-    // Replaced with an inlined bundle when you run:
-    //   cd editor-bundle && npm install && npm run build
     import { Editor }            from 'https://esm.sh/@tiptap/core@3';
     import StarterKit            from 'https://esm.sh/@tiptap/starter-kit@3';
     import Placeholder           from 'https://esm.sh/@tiptap/extension-placeholder@3';
@@ -261,7 +203,6 @@ export function getEditorHtml(): string {
     import langBash from 'https://esm.sh/highlight.js@11/lib/languages/bash';
     import langJSON from 'https://esm.sh/highlight.js@11/lib/languages/json';
 
-    // ─── Bridge helpers ─────────────────────────────────────────────────
     function sendToRN(msg) {
       try {
         if (window.ReactNativeWebView) {
@@ -270,7 +211,6 @@ export function getEditorHtml(): string {
       } catch (_) {}
     }
 
-    // ─── Theme ──────────────────────────────────────────────────────────
     function applyTheme(colors, isDark) {
       const r = document.documentElement.style;
       r.setProperty('--c-text',           colors.text);
@@ -294,7 +234,6 @@ export function getEditorHtml(): string {
       r.setProperty('--hl-builtin',  isDark ? '#8BE9FD' : '#005CC5');
     }
 
-    // ─── Lowlight ───────────────────────────────────────────────────────
     const lowlight = createLowlight();
     lowlight.register('javascript', langJS);  lowlight.register('js',   langJS);
     lowlight.register('typescript', langTS);  lowlight.register('ts',   langTS);
@@ -304,14 +243,12 @@ export function getEditorHtml(): string {
     lowlight.register('bash',       langBash); lowlight.register('sh',  langBash);
     lowlight.register('json',       langJSON);
 
-    // ─── Image extension with width/height attrs ─────────────────────────
     const ImageWithSize = Image.extend({
       addAttributes() {
         return { ...this.parent?.(), width: { default: null }, height: { default: null } };
       },
     }).configure({ inline: false, allowBase64: true });
 
-    // ─── Debounced content change ────────────────────────────────────────
     let contentTimer = null;
     function scheduleContentChange(html, text) {
       clearTimeout(contentTimer);
@@ -322,7 +259,6 @@ export function getEditorHtml(): string {
       sendToRN({ type: 'contentChange', html, text });
     }
 
-    // ─── Style state ─────────────────────────────────────────────────────
     function broadcastStyleState(ed) {
       sendToRN({
         type: 'styleState',
@@ -345,7 +281,6 @@ export function getEditorHtml(): string {
       });
     }
 
-    // ─── Editor ──────────────────────────────────────────────────────────
     const editor = new Editor({
       element: document.querySelector('#editor'),
       extensions: [
@@ -369,8 +304,6 @@ export function getEditorHtml(): string {
         CodeBlockLowlight.configure({ lowlight }),
       ],
 
-      // Content will be set via the 'init' command — start empty so there is
-      // no flash of stale content while the native side sends the real data.
       content: '',
 
       onUpdate: ({ editor }) => {
@@ -385,7 +318,6 @@ export function getEditorHtml(): string {
       },
     });
 
-    // ─── Command bridge ───────────────────────────────────────────────────
     window.editorBridge = {
       handleMessage(raw) {
         let msg;
@@ -394,7 +326,6 @@ export function getEditorHtml(): string {
 
         switch (msg.type) {
 
-          // ── Lifecycle ──────────────────────────────────────────────────
           case 'init':
             applyTheme(msg.colors, msg.isDark);
             if (msg.html) editor.commands.setContent(msg.html, false);
@@ -405,7 +336,6 @@ export function getEditorHtml(): string {
             applyTheme(msg.colors, msg.isDark);
             break;
 
-          // ── Content ────────────────────────────────────────────────────
           case 'setContent':
             editor.commands.setContent(msg.html || '', false);
             break;
@@ -414,7 +344,6 @@ export function getEditorHtml(): string {
             sendToRN({ type: 'htmlResponse', requestId: msg.requestId, html: editor.getHTML() });
             break;
 
-          // ── Formatting ─────────────────────────────────────────────────
           case 'toggleBold':          ch().toggleBold().run();                    break;
           case 'toggleItalic':        ch().toggleItalic().run();                  break;
           case 'toggleUnderline':     ch().toggleUnderline().run();               break;
@@ -430,14 +359,11 @@ export function getEditorHtml(): string {
           case 'toggleHighlight':     ch().toggleHighlight().run();               break;
           case 'setTextAlign':        ch().setTextAlign(msg.align).run();         break;
 
-          // ── Media ──────────────────────────────────────────────────────
           case 'insertImage':
             ch().setImage({ src: msg.url, width: msg.width, height: msg.height }).run();
             break;
 
-          // ── Focus ──────────────────────────────────────────────────────
           case 'focus':
-            // dispatchEvent ensures the keyboard shows on iOS even via injectJavaScript
             editor.view.dom.dispatchEvent(new MouseEvent('click', { bubbles: true }));
             editor.commands.focus();
             break;
@@ -445,7 +371,6 @@ export function getEditorHtml(): string {
       },
     };
 
-    // Signal to the native side that the editor DOM is ready
     sendToRN({ type: 'ready' });
   </script>
 </body>

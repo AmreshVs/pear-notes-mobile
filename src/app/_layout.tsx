@@ -74,7 +74,6 @@ export default function RootLayout() {
   useEffect(() => {
     if (loaded && worketLoaded) {
       SplashScreen.hideAsync()
-      // Dispatch ready signals to start sagas
       store.dispatch(appReady())
       store.dispatch(initApp())
     }
@@ -96,12 +95,9 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  // Read from Redux so the user's chosen theme (light/dark/system) is respected.
-  // useResolvedColorScheme() is safe here since RootLayoutNav renders inside <Provider>.
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
 
-  // Keep system UI background in sync with the resolved theme
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(isDark ? '#202020' : '#f2f2f7')
   }, [isDark])
