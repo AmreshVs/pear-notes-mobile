@@ -11,9 +11,9 @@ export default function NoteLayout() {
         headerShown: true,
         headerLargeTitle: false,
         headerBackButtonDisplayMode: 'minimal',
-        headerTransparent: false,
+        headerTransparent: true,
         headerStyle: {
-          backgroundColor: isDark ? '#1C1C1E' : '#F2F2F7',
+          backgroundColor: 'transparent',
         },
         headerTintColor: isDark ? '#FFFFFF' : '#000000',
       }}

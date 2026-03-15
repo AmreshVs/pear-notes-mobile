@@ -64,7 +64,7 @@ function ToolbarBtn({
 
 export default function NoteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { colors, isDark } = useTheme()
+  const { colors } = useTheme()
   const { width: windowWidth } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const floatingHeaderHeight = insets.top + 52
@@ -75,7 +75,8 @@ export default function NoteScreen() {
   const noteData = useMemo(() => (rawNoteData || {}) as any, [rawNoteData])
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
 
-  const [title, setTitle] = useState(noteData?.title || '')
+  // Title as ref — never causes a re-render (eliminates WebView flicker on keystrokes)
+  const titleRef = useRef<string>(noteData?.title || '')
 
   const initialContent = useMemo(() => {
     let content = noteData?.note || ''
@@ -88,28 +89,9 @@ export default function NoteScreen() {
     return content
   }, [noteData?.note, hyperdriveServerAddress])
 
-  const [localContent, setLocalContent] = useState(initialContent)
-  const isUpdatingRef = useRef(false)
-
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [styleState, setStyleState] = useState<TiptapStyleState | null>(null)
-
-  useEffect(() => {
-    if (noteData?.title !== undefined && title === '') {
-      setTitle(noteData.title)
-    }
-  }, [noteData?.title, title])
-
-  // React to remote note updates safely without infinite loops
-  useEffect(() => {
-    if (initialContent !== undefined && initialContent !== localContent) {
-      if (isUpdatingRef.current) return
-      // Remote or initial load change detected
-      setLocalContent(initialContent)
-      editorRef.current?.setHTML(initialContent)
-    }
-  }, [initialContent, localContent])
 
   useEffect(() => {
     const show = Keyboard.addListener(
@@ -132,8 +114,6 @@ export default function NoteScreen() {
   const handleUpdate = useCallback(
     (html: string) => {
       if (!id || id === 'new') return
-      isUpdatingRef.current = true
-      setLocalContent(html)
       let finalHtml = html
       if (hyperdriveServerAddress) {
         finalHtml = finalHtml.replaceAll(
@@ -141,18 +121,14 @@ export default function NoteScreen() {
           HYPERDRIVE_URL_PREFIX,
         )
       }
-      dispatch(updateNote({ key: id, title, note: finalHtml } as any))
-
-      setTimeout(() => {
-        isUpdatingRef.current = false
-      }, 50)
+      dispatch(updateNote({ key: id, title: titleRef.current, note: finalHtml } as any))
     },
-    [dispatch, id, title, hyperdriveServerAddress],
+    [dispatch, id, hyperdriveServerAddress],
   )
 
   const handleTitleChange = useCallback(
     (newTitle: string) => {
-      setTitle(newTitle)
+      titleRef.current = newTitle
       if (!id || id === 'new') return
       dispatch(updateNote({ key: id, title: newTitle, note: noteData?.note || '' } as any))
     },
@@ -164,7 +140,7 @@ export default function NoteScreen() {
     Keyboard.dismiss()
     setIsEditing(false)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-  }, [editorRef])
+  }, [])
 
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -173,28 +149,23 @@ export default function NoteScreen() {
 
   const handlePickImage = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 0.8,
     })
-
     if (result.canceled || !result.assets[0]) return
 
     const { uri, width, height, fileName } = result.assets[0]
-
     const maxWidth = windowWidth - 40
     const maxHeight = 400
     let finalWidth = width
     let finalHeight = height
-
     if (width > maxWidth) {
       const ratio = maxWidth / width
       finalWidth = maxWidth
       finalHeight = height * ratio
     }
-
     if (finalHeight > maxHeight) {
       const ratio = maxHeight / finalHeight
       finalHeight = maxHeight
@@ -202,23 +173,19 @@ export default function NoteScreen() {
     }
 
     try {
-      // Manipulate locally for resize and faster upload
       const manipulated = await ImageManipulator.manipulateAsync(
         uri,
         [{ resize: { width: finalWidth, height: finalHeight } }],
         { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true },
       )
-
       if (!manipulated.base64) return
 
       const buffer = Buffer.from(manipulated.base64, 'base64')
-
       const { link } = await backendApi.insertFile({
         key: id,
         fileName: fileName || `image-${Date.now()}.jpg`,
         buffer,
       })
-
       if (link) {
         let resolvedLink = link
         if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
@@ -232,15 +199,13 @@ export default function NoteScreen() {
     } catch (error) {
       console.error('Error uploading image:', error)
     }
-  }, [id, windowWidth])
+  }, [id, windowWidth, hyperdriveServerAddress])
 
   const isActive = (key: keyof TiptapStyleState) => styleState?.[key]?.isActive ?? false
-
-  const bg = colors.background
   const toolbarBottom = keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16
 
   return (
-    <View style={[styles.root, { backgroundColor: bg }]}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Stack.Screen
         options={{
           headerShown: true,
@@ -250,9 +215,7 @@ export default function NoteScreen() {
           headerBackTitle: '',
           headerBackButtonDisplayMode: 'minimal',
           headerTintColor: colors.primary,
-          headerStyle: {
-            backgroundColor: 'transparent',
-          },
+          headerStyle: { backgroundColor: 'transparent' },
           headerLeft: () => (
             <Pressable
               onPress={async () => {
@@ -318,34 +281,30 @@ export default function NoteScreen() {
         }}
       />
 
-      <View style={{ flex: 1, flexDirection: 'column' }}>
-        <TiptapEditor
-          ref={editorRef}
-          initialContent={initialContent}
-          initialTitle={title}
-          safeAreaTop={floatingHeaderHeight}
-          onContentChange={handleUpdate}
-          onTitleChange={handleTitleChange}
-          onStyleStateChange={setStyleState}
-          onOpenAttachment={(url, fileName) => {
-            console.log('Opening attachment:', { url, fileName })
-            if (url) {
-              Linking.openURL(url).catch((err) => console.error('Failed to open file URL:', err))
+      <TiptapEditor
+        ref={editorRef}
+        initialContent={initialContent}
+        initialTitle={noteData?.title || ''}
+        safeAreaTop={floatingHeaderHeight}
+        onContentChange={handleUpdate}
+        onTitleChange={handleTitleChange}
+        onStyleStateChange={setStyleState}
+        onEditorFocus={() => setIsEditing(true)}
+        onOpenAttachment={(url) => {
+          if (url) Linking.openURL(url).catch(console.error)
+        }}
+        onDeleteAttachment={async (url) => {
+          if (!url) return
+          try {
+            if (url.startsWith(HYPERDRIVE_URL_PREFIX)) {
+              const key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
+              await backendApi.deleteFile(key)
             }
-          }}
-          onDeleteAttachment={async (url) => {
-            if (!url) return
-            try {
-              if (url && url.startsWith(HYPERDRIVE_URL_PREFIX)) {
-                const key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
-                await backendApi.deleteFile(key)
-              }
-            } catch (error) {
-              console.error('Error deleting attachment from backend:', error)
-            }
-          }}
-        />
-      </View>
+          } catch (error) {
+            console.error('Error deleting attachment:', error)
+          }
+        }}
+      />
 
       <View style={[styles.floatingToolbar, { bottom: toolbarBottom }]}>
         <GlassView intensity={60} borderRadius={28} style={styles.glassBar}>
@@ -451,25 +410,11 @@ export default function NoteScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-
-  titleArea: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
-  },
-  titleInput: {
-    fontSize: 28,
-    fontWeight: '800',
-    letterSpacing: -0.5,
-  },
+  root: { flex: 1 },
   floatingToolbar: {
     position: 'absolute',
     left: 16,
     right: 16,
-    bottom: 32,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
@@ -498,12 +443,5 @@ const styles = StyleSheet.create({
     height: 24,
     marginHorizontal: 4,
     opacity: 0.4,
-  },
-  editFab: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 })
