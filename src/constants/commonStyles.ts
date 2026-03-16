@@ -97,7 +97,6 @@ export const createCommonStyles = (theme: Theme) =>
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingTop: Space.scrollBottom,
       paddingHorizontal: Space.xxxl,
     },
 
@@ -105,6 +104,7 @@ export const createCommonStyles = (theme: Theme) =>
       fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.3,
+      textAlign: 'center',
       marginBottom: Space.sm,
       opacity: 0.6,
       color: theme.colors.textSecondary,

@@ -8,7 +8,7 @@ import {
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
-import { setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 import * as Clipboard from 'expo-clipboard'
 import { Stack, useLocalSearchParams } from 'expo-router'
@@ -19,7 +19,13 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
-import { Space, useCommonStyles } from '@/constants/commonStyles'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Space,
+  useCommonStyles,
+} from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 // Replace HTML tags with a space so words don't run together, then normalize whitespace
@@ -59,6 +65,7 @@ export default function FolderNotesScreen() {
   const { openNote } = useNoteEditor()
   const allFolders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
+  const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote)
 
   const creatingNoteRef = useRef(false)
@@ -160,8 +167,8 @@ export default function FolderNotesScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: folder?.name || 'Notes',
-          headerLargeTitle: true,
+          headerTitle: '',
+          headerLargeTitle: false,
           headerTransparent: true,
           headerBlurEffect: isDark ? 'dark' : 'light',
           headerRight: () => (
@@ -189,6 +196,7 @@ export default function FolderNotesScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        <Text style={styles.pageTitle}>{folder?.name || 'Notes'}</Text>
         <View style={styles.headerInfo}>
           <Text style={common.sectionCap}>
             {notes.length} {notes.length === 1 ? 'NOTE' : 'NOTES'}
@@ -197,8 +205,17 @@ export default function FolderNotesScreen() {
 
         {groupedNotes.length === 0 ? (
           <View style={common.emptyContainer}>
-            <Text style={common.emptyTitle}>No Notes</Text>
-            <Text style={common.emptySubtitle}>Tap the compose button to create one</Text>
+            {searchQuery.trim().length > 0 ? (
+              <>
+                <Text style={common.emptyTitle}>No matches found</Text>
+                <Text style={common.emptySubtitle}>Try a different search term</Text>
+              </>
+            ) : (
+              <>
+                <Text style={common.emptyTitle}>No Notes</Text>
+                <Text style={common.emptySubtitle}>Tap the compose button to create one</Text>
+              </>
+            )}
           </View>
         ) : (
           groupedNotes.map((section) => (
@@ -245,21 +262,30 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
+      flexGrow: 1,
       paddingBottom: Space.scrollBottom,
       paddingHorizontal: 0,
-      paddingTop: Space.sm,
+      paddingTop: Space.lg,
+    },
+    pageTitle: {
+      fontSize: FontSize.hero,
+      lineHeight: 42,
+      fontWeight: FontWeight.heavy,
+      letterSpacing: LetterSpacing.tight,
+      color: theme.colors.text,
+      marginLeft: Space.base,
+      marginBottom: Space.xs,
     },
     headerInfo: {
       marginLeft: Space.base,
-      marginBottom: Space.md,
-      marginTop: -4,
+      marginBottom: Space.sm,
     },
     section: {
-      marginBottom: Space.base,
+      marginBottom: Space.sm,
     },
     sectionHeader: {
       marginLeft: Space.base,
-      paddingVertical: Space.sm,
+      paddingVertical: Space.xs,
       marginBottom: 2,
     },
     listContainer: {

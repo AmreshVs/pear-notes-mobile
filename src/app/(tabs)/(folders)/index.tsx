@@ -6,7 +6,11 @@ import {
   setSelectedFolder,
   updateFolder,
 } from '@pear-notes/core/store/slices/foldersSlice.js'
-import { createNote, getSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import {
+  createNote,
+  getNoteCountsPerFolder,
+  getSelectedNote,
+} from '@pear-notes/core/store/slices/notesSlice.js'
 import { router, Stack } from 'expo-router'
 import { SymbolView } from 'expo-symbols'
 import { FolderPlus, SquarePen } from 'lucide-react-native'
@@ -17,7 +21,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
 import { Text, Theme, useColors, useThemedStyles, View } from '@/components/Themed'
-import { Space, useCommonStyles } from '@/constants/commonStyles'
+import { FontSize, FontWeight, LetterSpacing, Space, useCommonStyles } from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FoldersScreen() {
@@ -27,6 +31,7 @@ export default function FoldersScreen() {
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const folders = useSelector(getFolders)
+  const noteCounts = useSelector(getNoteCountsPerFolder) as Record<string, number>
   const selectedNote = useSelector(getSelectedNote)
 
   const creatingNoteRef = useRef(false)
@@ -154,7 +159,7 @@ export default function FoldersScreen() {
           key={folder.id || folder.key}
           id={folder.id || folder.key}
           name={folder.name}
-          count={folder.noteCount || 0}
+          count={noteCounts[folder.id || folder.key] ?? 0}
           icon={getFolderIcon(folder)}
           isSystem={folder.isSystem}
           onPress={handleSelectFolder}
@@ -162,14 +167,14 @@ export default function FoldersScreen() {
           onDelete={folder.isSystem ? undefined : handleDeleteFolder}
         />
       )),
-    [getFolderIcon, handleSelectFolder, handleRenameFolder, handleDeleteFolder],
+    [noteCounts, getFolderIcon, handleSelectFolder, handleRenameFolder, handleDeleteFolder],
   )
 
   const screenOptions = useMemo(
     () => ({
-      headerTitle: 'Folders',
+      headerTitle: '',
       headerTransparent: true,
-      headerLargeTitle: true,
+      headerLargeTitle: false,
       headerLeft,
       headerRight,
     }),
@@ -184,6 +189,7 @@ export default function FoldersScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
       >
+        <Text style={styles.pageTitle}>Folders</Text>
         <View style={styles.section}>{renderFolders(topFolders)}</View>
 
         {archiveFolders.length > 0 && (
@@ -206,7 +212,16 @@ const createStyles = (theme: Theme) =>
     scrollContent: {
       paddingBottom: Space.scrollBottom,
       paddingHorizontal: 0,
-      paddingTop: Space.sm,
+      paddingTop: Space.lg,
+    },
+    pageTitle: {
+      fontSize: FontSize.hero,
+      lineHeight: 42,
+      fontWeight: FontWeight.heavy,
+      letterSpacing: LetterSpacing.tight,
+      color: theme.colors.text,
+      marginLeft: Space.base,
+      marginBottom: Space.sm,
     },
     headerPill: {
       flexDirection: 'row',

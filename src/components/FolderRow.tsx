@@ -8,7 +8,7 @@ import {
 import React, { memo, useCallback } from 'react'
 import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
 
-import { Text, Theme, useThemedStyles, View } from './Themed'
+import { Text, Theme, useThemedStyles } from './Themed'
 
 import { FontSize, FontWeight, LetterSpacing, Radii, Space } from '@/constants/commonStyles'
 
@@ -59,9 +59,8 @@ export const FolderRow = memo(function FolderRow({
   const row = (
     <Pressable onPress={() => onPress(id)} style={containerStyle}>
       <RNView style={styles.leftContent}>
-        <View style={[styles.iconBox, selected && styles.iconBoxSelected]}>
-          <Icon size={17} color={styles.icon.color} strokeWidth={1.8} />
-        </View>
+        <Icon size={20} color={styles.icon.color} strokeWidth={1.8} />
+
         <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
       </RNView>
 
@@ -127,17 +126,6 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
       gap: 14,
       backgroundColor: 'transparent',
-    },
-    iconBox: {
-      width: Space.xxl,
-      height: Space.xxl,
-      borderRadius: 9,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.borderSecondary,
-    },
-    iconBoxSelected: {
-      backgroundColor: `${theme.colors.primary}25`,
     },
     icon: {
       color: theme.colors.primary,

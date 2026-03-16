@@ -1,5 +1,5 @@
 import { getFilteredNotes, setSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import { setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { format } from 'date-fns'
 import { Stack } from 'expo-router'
 import React, { useCallback } from 'react'
@@ -19,6 +19,7 @@ export default function SearchScreen() {
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const notes = useSelector(getFilteredNotes)
+  const searchQuery = useSelector(getSearchQuery) as string
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -63,8 +64,17 @@ export default function SearchScreen() {
       >
         {notes.length === 0 ? (
           <View style={common.emptyContainer}>
-            <Text style={common.emptyTitle}>Search your notes</Text>
-            <Text style={common.emptySubtitle}>Type above to find notes across your library</Text>
+            {searchQuery.trim().length > 0 ? (
+              <>
+                <Text style={common.emptyTitle}>No matches found</Text>
+                <Text style={common.emptySubtitle}>Try a different search term</Text>
+              </>
+            ) : (
+              <>
+                <Text style={common.emptyTitle}>Search your notes</Text>
+                <Text style={common.emptySubtitle}>Type above to find notes across your library</Text>
+              </>
+            )}
           </View>
         ) : (
           <View style={styles.listContainer}>
@@ -98,6 +108,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
+      flexGrow: 1,
       paddingBottom: Space.scrollBottom,
       paddingHorizontal: Space.base,
     },

@@ -190,7 +190,7 @@ const createStyles = (theme: Theme) =>
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: 14,
+      paddingVertical: Space.sm,
       gap: Space.md,
     },
     content: {
@@ -206,7 +206,7 @@ const createStyles = (theme: Theme) =>
       fontSize: FontSize.body,
       lineHeight: 19,
       opacity: 0.8,
-      marginBottom: Space.sm,
+      marginBottom: Space.xs,
       color: theme.colors.textSecondary,
     },
     metadata: {
