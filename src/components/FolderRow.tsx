@@ -5,10 +5,10 @@ import {
   LucideIcon,
   Trash2,
 } from 'lucide-react-native'
-import React, { memo, useCallback, useMemo } from 'react'
+import React, { memo, useCallback } from 'react'
 import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
 
-import { Text, useTheme, View } from './Themed'
+import { Text, Theme, useThemedStyles, View } from './Themed'
 
 // @expo/ui is iOS-only — import lazily so Android doesn't crash
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
@@ -42,66 +42,31 @@ export const FolderRow = memo(function FolderRow({
   onRename,
   onDelete,
 }: FolderRowProps) {
-  const { colors, isDark } = useTheme()
+  const styles = useThemedStyles(createStyles)
   const Icon = ICON_MAP[icon || 'Folder'] || FolderIcon
 
   const containerStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
       styles.container,
-      {
-        backgroundColor: selected
-          ? isDark
-            ? 'rgba(220, 163, 35, 0.15)'
-            : 'rgba(220, 163, 35, 0.1)'
-          : pressed
-            ? isDark
-              ? 'rgba(255,255,255,0.05)'
-              : 'rgba(0,0,0,0.04)'
-            : 'transparent',
-      },
+      selected && styles.containerSelected,
+      pressed && styles.containerPressed,
     ],
-    [selected, isDark],
+    [styles, selected],
   )
-
-  const iconBoxStyle = useMemo(
-    () => [
-      styles.iconBox,
-      {
-        backgroundColor: selected
-          ? `${colors.primary}25`
-          : isDark
-            ? 'rgba(220,163,35,0.12)'
-            : 'rgba(220,163,35,0.09)',
-      },
-    ],
-    [selected, colors.primary, isDark],
-  )
-
-  const nameStyle = useMemo(
-    () => [styles.name, { color: colors.text, opacity: selected ? 1 : 0.9 }],
-    [colors.text, selected],
-  )
-
-  const countStyle = useMemo(
-    () => [styles.count, { color: colors.textSecondary }],
-    [colors.textSecondary],
-  )
-
-  const chevronWrapStyle = useMemo(() => ({ opacity: 0.55 }), [])
 
   const row = (
     <Pressable onPress={() => onPress(id)} style={containerStyle}>
       <RNView style={styles.leftContent}>
-        <View style={iconBoxStyle}>
-          <Icon size={17} color={colors.primary} strokeWidth={1.8} />
+        <View style={[styles.iconBox, selected && styles.iconBoxSelected]}>
+          <Icon size={17} color={styles.icon.color} strokeWidth={1.8} />
         </View>
-        <Text style={nameStyle}>{name}</Text>
+        <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
       </RNView>
 
       <RNView style={styles.rightContent}>
-        {count !== undefined && count > 0 && <Text style={countStyle}>{count}</Text>}
-        <RNView style={chevronWrapStyle}>
-          <ChevronRight size={14} color={colors.textSecondary} />
+        {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
+        <RNView style={styles.chevronWrap}>
+          <ChevronRight size={14} color={styles.count.color} />
         </RNView>
       </RNView>
     </Pressable>
@@ -136,43 +101,67 @@ export const FolderRow = memo(function FolderRow({
   )
 })
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginVertical: 1,
-    minHeight: 52,
-  },
-  leftContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: 'transparent',
-  },
-  iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 9,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  name: {
-    fontSize: 17,
-    fontWeight: '500',
-    letterSpacing: -0.4,
-  },
-  rightContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: 'transparent',
-  },
-  count: {
-    fontSize: 16,
-    opacity: 0.6,
-  },
-})
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      marginVertical: 1,
+      minHeight: 52,
+      backgroundColor: 'transparent',
+    },
+    containerSelected: {
+      backgroundColor: theme.colors.cardSelected,
+    },
+    containerPressed: {
+      backgroundColor: theme.colors.cardPressed,
+    },
+    leftContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      backgroundColor: 'transparent',
+    },
+    iconBox: {
+      width: 32,
+      height: 32,
+      borderRadius: 9,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.borderSecondary,
+    },
+    iconBoxSelected: {
+      backgroundColor: `${theme.colors.primary}25`,
+    },
+    icon: {
+      color: theme.colors.primary,
+    },
+    name: {
+      fontSize: 17,
+      fontWeight: '500',
+      letterSpacing: -0.4,
+      color: theme.colors.text,
+      opacity: 0.9,
+    },
+    nameSelected: {
+      opacity: 1,
+    },
+    rightContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      backgroundColor: 'transparent',
+    },
+    count: {
+      fontSize: 16,
+      color: theme.colors.textSecondary,
+      opacity: 0.6,
+    },
+    chevronWrap: {
+      opacity: 0.55,
+    },
+  })

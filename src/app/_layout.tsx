@@ -18,6 +18,7 @@ import { ErrorScreen } from '@/components/ErrorScreen'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import { useResolvedColorScheme } from '@/components/Themed'
 import { useColorScheme } from '@/components/useColorScheme'
+import Colors from '@/constants/Colors'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { startWorklet } from '@/utils/worklet'
 
@@ -64,11 +65,7 @@ export default function RootLayout() {
   }, [initWorklet])
 
   useEffect(() => {
-    if (isDark) {
-      SystemUI.setBackgroundColorAsync('#202020')
-    } else {
-      SystemUI.setBackgroundColorAsync('#f2f2f7')
-    }
+    SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
   }, [isDark])
 
   useEffect(() => {
@@ -99,7 +96,7 @@ function RootLayoutNav() {
   const isDark = colorScheme === 'dark'
 
   useEffect(() => {
-    SystemUI.setBackgroundColorAsync(isDark ? '#202020' : '#f2f2f7')
+    SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
   }, [isDark])
 
   return (

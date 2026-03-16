@@ -21,7 +21,7 @@ import {
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { Text, useTheme } from '@/components/Themed'
+import { Text, Theme, useThemedStyles, useTheme } from '@/components/Themed'
 
 const SORT_OPTIONS = [
   { label: 'Date Edited', value: 'updatedAt' },
@@ -62,24 +62,18 @@ function showPicker(
 }
 
 export default function SettingsScreen() {
-  const { isDark, colors } = useTheme()
+  const theme = useTheme()
+  const { colors } = theme
+  const styles = useThemedStyles(createStyles)
   const dispatch = useDispatch()
 
-  const theme = useSelector(getTheme)
+  const currentTheme = useSelector(getTheme)
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
 
-  const pageBg = colors.background
-  const cardBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)'
-  const cardBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'
-  const rowSep = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'
-  const text = colors.text
-  const textMuted = isDark ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)'
-  const segBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.07)'
-
   return (
-    <RNView style={{ flex: 1, backgroundColor: pageBg }}>
+    <RNView style={styles.container}>
       <Stack.Screen
         options={{
           title: 'Settings',
@@ -87,17 +81,9 @@ export default function SettingsScreen() {
             <Pressable
               onPress={() => router.back()}
               hitSlop={8}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.6 : 1,
-                width: 30,
-                height: 30,
-                borderRadius: 15,
-                backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)',
-                alignItems: 'center',
-                justifyContent: 'center',
-              })}
+              style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
             >
-              <X size={14} color={text} strokeWidth={2.5} />
+              <X size={14} color={colors.text} strokeWidth={2.5} />
             </Pressable>
           ),
         }}
@@ -108,39 +94,26 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[styles.sectionCap, { color: textMuted }]}>GENERAL</Text>
+        <Text style={styles.sectionCap}>GENERAL</Text>
 
-        <RNView style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-          <RNView style={[styles.row, { borderBottomWidth: 1, borderBottomColor: rowSep }]}>
-            <Text style={[styles.rowLabel, { color: text }]}>App Theme</Text>
-            <RNView style={[styles.segCtrl, { backgroundColor: segBg }]}>
+        <RNView style={styles.card}>
+          <RNView style={styles.rowUnderline}>
+            <Text style={styles.rowLabel}>App Theme</Text>
+            <RNView style={styles.segCtrl}>
               {(['system', 'light', 'dark'] as const).map((t, i) => {
-                const isActive = theme === t
+                const isActive = currentTheme === t
                 return (
                   <Pressable
                     key={t}
                     onPress={() => dispatch(setTheme(t))}
                     style={[
                       styles.segPill,
-                      isActive && {
-                        backgroundColor: colors.primary,
-                        shadowColor: colors.primary,
-                        shadowOffset: { width: 0, height: 2 },
-                        shadowOpacity: 0.4,
-                        shadowRadius: 5,
-                        elevation: 3,
-                      },
-                      i === 0 && { borderTopLeftRadius: 8, borderBottomLeftRadius: 8 },
-                      i === 2 && { borderTopRightRadius: 8, borderBottomRightRadius: 8 },
+                      isActive && styles.segPillActive,
+                      i === 0 && styles.radiusLeft,
+                      i === 2 && styles.radiusRight,
                     ]}
                   >
-                    <Text
-                      style={{
-                        color: isActive ? '#000000' : textMuted,
-                        fontSize: 12,
-                        fontWeight: isActive ? '700' : '500',
-                      }}
-                    >
+                    <Text style={[styles.segText, isActive && styles.segTextActive]}>
                       {t.charAt(0).toUpperCase() + t.slice(1)}
                     </Text>
                   </Pressable>
@@ -155,20 +128,14 @@ export default function SettingsScreen() {
                 dispatch(updateSetting({ key: 'sortBy', value: val })),
               )
             }
-            style={({ pressed }) => [
-              styles.row,
-              { borderBottomWidth: 1, borderBottomColor: rowSep },
-              pressed && {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-              },
-            ]}
+            style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
           >
-            <Text style={[styles.rowLabel, { color: text }]}>Sort Notes By</Text>
+            <Text style={styles.rowLabel}>Sort Notes By</Text>
             <RNView style={styles.rowRight}>
-              <Text style={[styles.rowVal, { color: textMuted }]}>
+              <Text style={styles.rowVal}>
                 {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Date Edited'}
               </Text>
-              <ChevronRight size={15} color={textMuted} />
+              <ChevronRight size={15} color={colors.textMuted} />
             </RNView>
           </Pressable>
 
@@ -178,53 +145,28 @@ export default function SettingsScreen() {
                 dispatch(updateSetting({ key: 'fontFamily', value: val })),
               )
             }
-            style={({ pressed }) => [
-              styles.row,
-              { borderBottomWidth: 1, borderBottomColor: rowSep },
-              pressed && {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-              },
-            ]}
+            style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
           >
-            <Text style={[styles.rowLabel, { color: text }]}>Font Family</Text>
+            <Text style={styles.rowLabel}>Font Family</Text>
             <RNView style={styles.rowRight}>
-              <Text style={[styles.rowVal, { color: textMuted }]}>
+              <Text style={styles.rowVal}>
                 {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
               </Text>
-              <ChevronRight size={15} color={textMuted} />
+              <ChevronRight size={15} color={colors.textMuted} />
             </RNView>
           </Pressable>
 
-          <RNView
-            style={[
-              styles.row,
-              { flexDirection: 'column', alignItems: 'stretch', paddingVertical: 20 },
-            ]}
-          >
-            <RNView
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 16,
-              }}
-            >
-              <Text style={[styles.rowLabel, { color: text }]}>Text Size</Text>
-              <RNView
-                style={[
-                  styles.badge,
-                  { backgroundColor: isDark ? 'rgba(220,163,35,0.15)' : 'rgba(220,163,35,0.12)' },
-                ]}
-              >
-                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '700' }}>
-                  {editorFontSize}
-                </Text>
+          <RNView style={styles.sliderRow}>
+            <RNView style={styles.sliderHeader}>
+              <Text style={styles.rowLabel}>Text Size</Text>
+              <RNView style={styles.badge}>
+                <Text style={styles.badgeText}>{editorFontSize}</Text>
               </RNView>
             </RNView>
-            <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Text style={{ color: textMuted, fontSize: 11, fontWeight: '600' }}>A</Text>
+            <RNView style={styles.sliderContainer}>
+              <Text style={styles.sizeSm}>A</Text>
               <Slider
-                style={{ flex: 1 }}
+                style={styles.slider}
                 minimumValue={12}
                 maximumValue={24}
                 step={1}
@@ -233,125 +175,230 @@ export default function SettingsScreen() {
                   dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
                 }
                 minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'}
-                thumbTintColor={isDark ? '#FFFFFF' : '#FFFFFF'}
+                maximumTrackTintColor={colors.borderSecondary}
+                thumbTintColor="#FFFFFF"
               />
-              <Text style={{ color: textMuted, fontSize: 17, fontWeight: '600' }}>A</Text>
+              <Text style={styles.sizeLg}>A</Text>
             </RNView>
           </RNView>
         </RNView>
 
-        <Text style={[styles.sectionCap, { color: textMuted, marginTop: 36 }]}>SYNC & DEVICES</Text>
+        <Text style={styles.sectionCapMargin}>SYNC & DEVICES</Text>
 
-        <RNView style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+        <RNView style={styles.card}>
           <Pressable
             onPress={() => router.push('/settings/sync')}
-            style={({ pressed }) => [
-              styles.row,
-              { paddingVertical: 18 },
-              pressed && {
-                backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
-              },
-            ]}
+            style={({ pressed }) => [styles.syncRow, pressed && styles.rowPressed]}
           >
             <RNView style={styles.rowLeft}>
-              <RNView
-                style={[
-                  styles.iconBox,
-                  { backgroundColor: isDark ? 'rgba(220,163,35,0.15)' : 'rgba(220,163,35,0.1)' },
-                ]}
-              >
+              <RNView style={styles.iconBox}>
                 <RefreshCw size={17} color={colors.primary} strokeWidth={1.8} />
               </RNView>
-              <Text style={[styles.rowLabel, { color: text, fontWeight: '600' }]}>
-                Link and Sync
-              </Text>
+              <Text style={styles.rowLabelSemiBold}>Link and Sync</Text>
             </RNView>
-            <ChevronRight size={16} color={textMuted} />
+            <ChevronRight size={16} color={colors.textMuted} />
           </Pressable>
         </RNView>
 
-        <Text style={[styles.footer, { color: textMuted }]}>
-          End-to-end encrypted • Fully private
-        </Text>
+        <Text style={styles.footer}>End-to-end encrypted • Fully private</Text>
       </ScrollView>
     </RNView>
   )
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-    paddingTop: 12,
-  },
-  sectionCap: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    marginBottom: 10,
-    textTransform: 'uppercase',
-  },
-  card: {
-    borderRadius: 18,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-    minHeight: 52,
-  },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  rowLabel: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  rowVal: {
-    fontSize: 14,
-  },
-  segCtrl: {
-    flexDirection: 'row',
-    borderRadius: 9,
-    padding: 2,
-  },
-  segPill: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 7,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconBox: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  footer: {
-    textAlign: 'center',
-    fontSize: 13,
-    marginTop: 40,
-    fontStyle: 'italic',
-  },
-})
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scroll: {
+      paddingHorizontal: 20,
+      paddingBottom: 60,
+      paddingTop: 12,
+    },
+    sectionCap: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 1.2,
+      marginBottom: 10,
+      textTransform: 'uppercase',
+      color: theme.colors.textMuted,
+    },
+    sectionCapMargin: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 1.2,
+      marginBottom: 10,
+      textTransform: 'uppercase',
+      color: theme.colors.textMuted,
+      marginTop: 36,
+    },
+    card: {
+      borderRadius: 18,
+      borderWidth: 1,
+      overflow: 'hidden',
+      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)',
+      borderColor: theme.colors.borderSecondary,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      minHeight: 52,
+    },
+    rowUnderline: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 16,
+      minHeight: 52,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.borderSecondary,
+    },
+    rowPressed: {
+      backgroundColor: theme.colors.cardPressed,
+    },
+    rowLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+    },
+    rowRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    rowLabel: {
+      fontSize: 16,
+      fontWeight: '500',
+      color: theme.colors.text,
+    },
+    rowLabelSemiBold: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    rowVal: {
+      fontSize: 14,
+      color: theme.colors.textMuted,
+    },
+    segCtrl: {
+      flexDirection: 'row',
+      borderRadius: 9,
+      padding: 2,
+      backgroundColor: theme.colors.controlBackground,
+    },
+    segPill: {
+      paddingHorizontal: 12,
+      paddingVertical: 7,
+      borderRadius: 7,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    segPillActive: {
+      backgroundColor: theme.colors.primary,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.4,
+      shadowRadius: 5,
+      elevation: 3,
+    },
+    radiusLeft: {
+      borderTopLeftRadius: 8,
+      borderBottomLeftRadius: 8,
+    },
+    radiusRight: {
+      borderTopRightRadius: 8,
+      borderBottomRightRadius: 8,
+    },
+    segText: {
+      fontSize: 12,
+      fontWeight: '500',
+      color: theme.colors.textMuted,
+    },
+    segTextActive: {
+      color: theme.isDark ? '#000000' : '#ffffff',
+      fontWeight: '700',
+    },
+    badge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.cardSelected,
+    },
+    badgeText: {
+      color: theme.colors.primary,
+      fontSize: 13,
+      fontWeight: '700',
+    },
+    iconBox: {
+      width: 34,
+      height: 34,
+      borderRadius: 10,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.cardSelected,
+    },
+    footer: {
+      textAlign: 'center',
+      fontSize: 13,
+      marginTop: 40,
+      fontStyle: 'italic',
+      color: theme.colors.textMuted,
+    },
+    closeBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: theme.colors.controlBackground,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    pressed: {
+      opacity: 0.6,
+    },
+    sliderRow: {
+      flexDirection: 'column',
+      alignItems: 'stretch',
+      paddingVertical: 20,
+      paddingHorizontal: 18,
+    },
+    sliderHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    sliderContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+    },
+    slider: {
+      flex: 1,
+    },
+    sizeSm: {
+      color: theme.colors.textMuted,
+      fontSize: 11,
+      fontWeight: '600',
+    },
+    sizeLg: {
+      color: theme.colors.textMuted,
+      fontSize: 17,
+      fontWeight: '600',
+    },
+    syncRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      paddingVertical: 18,
+      minHeight: 52,
+    },
+  })

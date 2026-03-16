@@ -4,10 +4,10 @@ import React from 'react'
 import { useTheme } from '@/components/Themed'
 
 export default function TabsLayout() {
-  const { isDark } = useTheme()
+  const { colors } = useTheme()
 
   return (
-    <NativeTabs tintColor="#DCA323">
+    <NativeTabs tintColor={colors.primary}>
       <NativeTabs.Trigger name="(folders)">
         <NativeTabs.Trigger.Icon sf="folder" />
         <NativeTabs.Trigger.Label>Folders</NativeTabs.Trigger.Label>

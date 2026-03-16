@@ -1,17 +1,19 @@
 import { getFilteredNotes, setSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { format } from 'date-fns'
-import { Stack, router } from 'expo-router'
+import { Stack } from 'expo-router'
 import React, { useCallback } from 'react'
 import { ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
-import { Text, View, useTheme } from '@/components/Themed'
+import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function SearchScreen() {
-  const { colors, isDark } = useTheme()
+  const theme = useTheme()
+  const { colors, isDark } = theme
+  const styles = useThemedStyles(createStyles)
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const notes = useSelector(getFilteredNotes)
@@ -33,7 +35,7 @@ export default function SearchScreen() {
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       <Stack.Screen
         options={{
           headerTitle: 'Search',
@@ -59,12 +61,8 @@ export default function SearchScreen() {
       >
         {notes.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>
-              Search your notes
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Type above to find notes across your library
-            </Text>
+            <Text style={styles.emptyTitle}>Search your notes</Text>
+            <Text style={styles.emptySubtitle}>Type above to find notes across your library</Text>
           </View>
         ) : (
           <View style={styles.listContainer}>
@@ -91,35 +89,39 @@ export default function SearchScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 120,
-    paddingHorizontal: 16,
-  },
-  listContainer: {
-    paddingTop: 8,
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 140,
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 8,
-    opacity: 0.6,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    opacity: 0.4,
-    lineHeight: 20,
-  },
-})
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+      paddingBottom: 120,
+      paddingHorizontal: 16,
+    },
+    listContainer: {
+      paddingTop: 8,
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: 140,
+      paddingHorizontal: 40,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: -0.3,
+      marginBottom: 8,
+      opacity: 0.6,
+      color: theme.colors.textSecondary,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      textAlign: 'center',
+      opacity: 0.4,
+      lineHeight: 20,
+      color: theme.colors.textSecondary,
+    },
+  })
