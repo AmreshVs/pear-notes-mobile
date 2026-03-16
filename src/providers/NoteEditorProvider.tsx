@@ -27,7 +27,6 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  useColorScheme,
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -95,9 +94,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const editorRef = useRef<TiptapEditorHandle>(null)
-  const colorScheme = useColorScheme()
   const floatingHeaderHeight = useMemo(() => insets.top + 52, [insets.top])
-  const isDark = colorScheme === 'dark'
 
   const [noteId, setNoteId] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -107,6 +104,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current
   const titleRef = useRef<string>('')
+  const noteContentRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
 
   const rawNoteData = useSelector(getNoteData(noteId ?? ''))
@@ -139,6 +137,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!noteId || noteId === loadedNoteRef.current) return
     loadedNoteRef.current = noteId
     titleRef.current = noteData?.title || ''
+    noteContentRef.current = noteData?.note || ''
 
     let content = noteData?.note || ''
     if (hyperdriveServerAddress && content.includes(HYPERDRIVE_URL_PREFIX)) {
@@ -150,6 +149,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
     editorRef.current?.setHTML(content)
     editorRef.current?.setTitle(noteData?.title || '')
+
+    setTimeout(() => {
+      editorRef.current?.scrollToTop()
+    }, 150)
 
     Animated.spring(slideAnim, {
       toValue: 0,
@@ -176,6 +179,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           HYPERDRIVE_URL_PREFIX,
         )
       }
+
+      if (finalHtml === noteContentRef.current) return
+
+      noteContentRef.current = finalHtml
       dispatch(updateNote({ key: noteId, title: titleRef.current, note: finalHtml } as any))
     },
     [dispatch, noteId, hyperdriveServerAddress],
@@ -183,11 +190,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleTitleChange = useCallback(
     (newTitle: string) => {
+      if (titleRef.current === newTitle) return
       titleRef.current = newTitle
       if (!noteId || noteId === 'new') return
-      dispatch(updateNote({ key: noteId, title: newTitle, note: noteData?.note || '' } as any))
+      dispatch(updateNote({ key: noteId, title: newTitle, note: noteContentRef.current } as any))
     },
-    [dispatch, noteId, noteData],
+    [dispatch, noteId],
   )
 
   const handleDone = useCallback(async () => {
@@ -258,6 +266,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [noteId, hyperdriveServerAddress])
 
   const openNote = useCallback((id: string) => {
+    Keyboard.dismiss()
+    setIsEditing(false)
+    editorRef.current?.blur()
+
     loadedNoteRef.current = null
     setNoteId(id)
     setIsOpen(true)
@@ -288,7 +300,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [styleState],
   )
   const toolbarBottom = useMemo(
-    () => (keyboardHeight > 0 ? keyboardHeight + 8 : Platform.OS === 'ios' ? 32 : 16),
+    () => (keyboardHeight > 0 ? keyboardHeight + 12 : Platform.OS === 'ios' ? 32 : 16),
     [keyboardHeight],
   )
   const Wrapper = Platform.OS === 'ios' ? FullWindowOverlay : React.Fragment
@@ -375,7 +387,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   >
                     <SymbolView
                       name="checkmark"
-                      size={28}
+                      size={22}
                       tintColor={colors.text}
                       weight="semibold"
                       fallback={<View />}
@@ -419,6 +431,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             initialContent=""
             initialTitle=""
             safeAreaTop={floatingHeaderHeight}
+            safeAreaBottom={isOpen ? toolbarBottom + 56 : 0}
             onContentChange={handleUpdate}
             onTitleChange={handleTitleChange}
             onStyleStateChange={setStyleState}

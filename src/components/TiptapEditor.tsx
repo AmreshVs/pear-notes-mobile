@@ -51,16 +51,19 @@ export interface TiptapEditorHandle {
   insertImage: (url: string, width: number, height: number) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
+  blur: () => void
   save: () => Promise<void>
   getHTML: () => Promise<string | undefined>
   setHTML: (html: string) => void
   setTitle: (title: string) => void
+  scrollToTop: () => void
 }
 
 export interface TiptapEditorProps {
   initialContent: string
   initialTitle?: string
   safeAreaTop?: number
+  safeAreaBottom?: number
   onContentChange: (html: string) => void
   onTitleChange?: (title: string) => void
   onStyleStateChange?: (state: TiptapStyleState) => void
@@ -90,6 +93,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       initialContent,
       initialTitle,
       safeAreaTop,
+      safeAreaBottom,
       onContentChange,
       onTitleChange,
       onStyleStateChange,
@@ -299,6 +303,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'insertImage', url, width, height }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => sendCommand({ type: 'focus' }),
+        blur: () => sendCommand({ type: 'blur' }),
         save: async () => {
           const html = await getHTMLAsync()
           if (html !== undefined) onContentChangeRef.current(html)
@@ -306,6 +311,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         getHTML: getHTMLAsync,
         setHTML: (html) => sendCommand({ type: 'setContent', html }),
         setTitle: (title) => sendCommand({ type: 'setTitle', title }),
+        scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
       }),
       [sendCommand, getHTMLAsync],
     )
@@ -321,7 +327,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           </View>
         )}
 
-        <View style={styles.flex}>
+        <View style={[styles.flex, { paddingBottom: safeAreaBottom || 0 }]}>
           <WebView
             ref={webViewRef}
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
@@ -341,6 +347,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             automaticallyAdjustContentInsets={false}
             contentMode="mobile"
             setSupportMultipleWindows={false}
+            hideKeyboardAccessoryView
           />
         </View>
       </View>

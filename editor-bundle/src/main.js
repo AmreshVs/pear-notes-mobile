@@ -672,6 +672,12 @@ window.editorBridge = {
         sendToRN({ type: 'htmlResponse', requestId: msg.requestId, html: editor.getHTML() })
         break
 
+      case 'scrollToTop':
+        window.scrollTo(0, 0)
+        document.body.scrollTop = 0
+        document.documentElement.scrollTop = 0
+        break
+
       case 'toggleBold':
         ch().toggleBold().run()
         break
@@ -744,6 +750,10 @@ window.editorBridge = {
       case 'focus':
         editor.view.dom.dispatchEvent(new MouseEvent('click', { bubbles: true }))
         editor.commands.focus()
+        break
+
+      case 'blur':
+        editor.commands.blur()
         break
     }
   },
