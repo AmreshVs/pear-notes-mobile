@@ -92,7 +92,7 @@ export default function SettingsScreen() {
               hitSlop={8}
               style={({ pressed }) => [styles.closeBtn, pressed && common.pressed]}
             >
-              <X size={14} color={colors.text} strokeWidth={2.5} />
+              <X size={16} color={colors.text} strokeWidth={2.5} />
             </Pressable>
           ),
         }}
@@ -280,32 +280,27 @@ const createStyles = (theme: Theme) =>
     },
     segCtrl: {
       flexDirection: 'row',
-      borderRadius: 9,
-      padding: 2,
+      borderRadius: Radii.lg,
+      padding: 3,
       backgroundColor: theme.colors.controlBackground,
     },
     segPill: {
       paddingHorizontal: Space.md,
       paddingVertical: 7,
-      borderRadius: 7,
+      borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
     },
     segPillActive: {
       backgroundColor: theme.colors.primary,
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.4,
-      shadowRadius: 5,
-      elevation: 3,
     },
     radiusLeft: {
-      borderTopLeftRadius: Radii.sm,
-      borderBottomLeftRadius: Radii.sm,
+      borderTopLeftRadius: Radii.md,
+      borderBottomLeftRadius: Radii.md,
     },
     radiusRight: {
-      borderTopRightRadius: Radii.sm,
-      borderBottomRightRadius: Radii.sm,
+      borderTopRightRadius: Radii.md,
+      borderBottomRightRadius: Radii.md,
     },
     segText: {
       fontSize: FontSize.small,
@@ -313,7 +308,7 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.textMuted,
     },
     segTextActive: {
-      color: theme.isDark ? '#000000' : '#ffffff',
+      color: theme.colors.text,
       fontWeight: FontWeight.bold,
     },
     badge: {
@@ -340,7 +335,6 @@ const createStyles = (theme: Theme) =>
       width: 30,
       height: 30,
       borderRadius: 15,
-      backgroundColor: theme.colors.controlBackground,
       alignItems: 'center',
       justifyContent: 'center',
     },

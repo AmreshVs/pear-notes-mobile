@@ -514,7 +514,7 @@ const createStyles = (theme: Theme) => {
 
     segRow: {
       flexDirection: 'row',
-      borderRadius: Radii.md,
+      borderRadius: Radii.lg,
       padding: 3,
       marginHorizontal: Space.lg,
       marginTop: Space.md,
@@ -526,20 +526,15 @@ const createStyles = (theme: Theme) => {
     segPill: {
       flex: 1,
       paddingVertical: 9,
-      borderRadius: 9,
+      borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
     },
     segPillActive: {
       backgroundColor: theme.colors.primary,
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.4,
-      shadowRadius: 6,
-      elevation: 4,
     },
     segLabel: { fontSize: FontSize.small, fontWeight: FontWeight.medium },
-    segLabelActive: { color: isDark ? '#000000' : '#ffffff', fontWeight: FontWeight.bold },
+    segLabelActive: { color: '#ffffff', fontWeight: FontWeight.bold },
     segLabelInactive: { color: textMuted },
 
     pad: { paddingHorizontal: Space.lg },
@@ -589,7 +584,7 @@ const createStyles = (theme: Theme) => {
       paddingVertical: 17,
     },
     btnText: {
-      color: '#000000',
+      color: '#ffffff',
       fontSize: FontSize.base,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.2,
@@ -694,11 +689,16 @@ const createStyles = (theme: Theme) => {
       paddingVertical: Space.md,
     },
     linkBtnText: { color: '#000', fontSize: FontSize.body, fontWeight: FontWeight.bold },
-    footNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
+    footNoteRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: Space.sm,
+      marginTop: Space.xl,
+    },
     footNoteRowDevice: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: 6,
+      gap: Space.sm,
       marginTop: Space.xxl,
     },
     footNote: { fontSize: FontSize.small, flex: 1, lineHeight: 17, color: textMuted },
@@ -716,7 +716,7 @@ const createStyles = (theme: Theme) => {
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
       marginBottom: Space.md,
-      marginTop: 30,
+      marginTop: Space.lg,
       textTransform: 'uppercase',
       color: textMuted,
     },
@@ -771,7 +771,11 @@ const createStyles = (theme: Theme) => {
       color: textMuted,
     },
     tapToRename: {
-      color: `${theme.colors.primary}80`,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
+      textTransform: 'none',
+      letterSpacing: 0,
+      color: `${theme.colors.primary}90`,
     },
     renameInput: {
       fontSize: 15,
@@ -851,11 +855,6 @@ const createStyles = (theme: Theme) => {
     cancelText: { color: textMuted, fontWeight: FontWeight.bold, fontSize: FontSize.body },
     removeBtn: {
       backgroundColor: '#EF4444',
-      shadowColor: '#EF4444',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.35,
-      shadowRadius: 16,
-      elevation: 8,
     },
     removeText: { color: '#fff', fontWeight: FontWeight.bold, fontSize: 15 },
     deleteBtn: {
