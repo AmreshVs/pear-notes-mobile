@@ -23,6 +23,8 @@ export default {
     glassShadow: 'rgba(0, 0, 0, 0.1)',
     success: '#34C759',
     error: '#FF3B30',
+    inputBackground: 'rgba(0,0,0,0.04)',
+    inputBorder: 'rgba(0,0,0,0.09)',
   },
   dark: {
     text: '#ffffff',
@@ -46,5 +48,7 @@ export default {
     glassShadow: 'rgba(0, 0, 0, 0.3)',
     success: '#32D74B',
     error: '#FF453A',
+    inputBackground: 'rgba(255,255,255,0.05)',
+    inputBorder: 'rgba(255,255,255,0.09)',
   },
 }

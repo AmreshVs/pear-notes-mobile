@@ -679,8 +679,8 @@ const createStyles = (theme: Theme) => {
       paddingRight: Space.sm,
       paddingVertical: 6,
       gap: Space.sm,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-      borderColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
+      backgroundColor: theme.colors.inputBackground,
+      borderColor: theme.colors.inputBorder,
     },
     codeInput: { flex: 1, fontSize: FontSize.body, paddingVertical: 9, color: theme.colors.text },
     linkBtn: {
@@ -787,7 +787,7 @@ const createStyles = (theme: Theme) => {
       marginBottom: 2,
       color: theme.colors.text,
       borderColor: theme.colors.primary,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+      backgroundColor: theme.colors.inputBackground,
     },
     deviceSep: {
       height: 1,
