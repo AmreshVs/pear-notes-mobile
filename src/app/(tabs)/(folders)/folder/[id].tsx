@@ -19,6 +19,13 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Space,
+  useCommonStyles,
+} from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 // Replace HTML tags with a space so words don't run together, then normalize whitespace
@@ -53,6 +60,7 @@ export default function FolderNotesScreen() {
   const theme = useTheme()
   const { colors, isDark } = theme
   const styles = useThemedStyles(createStyles)
+  const common = useCommonStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const allFolders = useSelector(getFolders)
@@ -165,7 +173,7 @@ export default function FolderNotesScreen() {
           headerRight: () => (
             <Pressable
               onPress={handleCreateNote}
-              style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
+              style={({ pressed }) => [common.headerBtn, pressed && common.pressed]}
             >
               <SquarePen size={22} color={colors.text} strokeWidth={1.8} />
             </Pressable>
@@ -194,15 +202,15 @@ export default function FolderNotesScreen() {
         </View>
 
         {groupedNotes.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>No Notes</Text>
-            <Text style={styles.emptySubtitle}>Tap the compose button to create one</Text>
+          <View style={common.emptyContainer}>
+            <Text style={common.emptyTitle}>No Notes</Text>
+            <Text style={common.emptySubtitle}>Tap the compose button to create one</Text>
           </View>
         ) : (
           groupedNotes.map((section) => (
             <View key={section.title} style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <Text style={common.sectionCap}>{section.title}</Text>
               </View>
               <View style={styles.listContainer}>
                 {section.data.map((note, index) => (
@@ -243,68 +251,33 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
-      paddingBottom: 120,
+      paddingBottom: Space.scrollBottom,
       paddingHorizontal: 0,
-      paddingTop: 8,
+      paddingTop: Space.sm,
     },
     headerInfo: {
-      marginLeft: 16,
-      marginBottom: 12,
+      marginLeft: Space.base,
+      marginBottom: Space.md,
       marginTop: -4,
     },
-    headerBtn: {
-      padding: 8,
-    },
-    pressed: {
-      opacity: 0.5,
-    },
     noteCount: {
-      fontSize: 11,
-      fontWeight: '800',
-      letterSpacing: 1.5,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.heavy,
+      letterSpacing: LetterSpacing.caps,
       textTransform: 'uppercase',
       color: theme.colors.textSecondary,
       opacity: 0.5,
     },
     section: {
-      marginBottom: 16,
+      marginBottom: Space.base,
     },
     sectionHeader: {
-      marginLeft: 16,
-      paddingVertical: 8,
+      marginLeft: Space.base,
+      paddingVertical: Space.sm,
       marginBottom: 2,
     },
-    sectionTitle: {
-      fontSize: 11,
-      fontWeight: '800',
-      textTransform: 'uppercase',
-      letterSpacing: 1.5,
-      color: theme.colors.textSecondary,
-      opacity: 0.5,
-    },
+    sectionTitleMargin: {},
     listContainer: {
       backgroundColor: 'transparent',
-    },
-    emptyContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 120,
-      paddingHorizontal: 40,
-    },
-    emptyTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      letterSpacing: -0.3,
-      marginBottom: 8,
-      color: theme.colors.textSecondary,
-      opacity: 0.6,
-    },
-    emptySubtitle: {
-      fontSize: 14,
-      textAlign: 'center',
-      color: theme.colors.textSecondary,
-      opacity: 0.4,
-      lineHeight: 20,
     },
   })

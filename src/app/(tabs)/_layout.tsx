@@ -7,7 +7,7 @@ export default function TabsLayout() {
   const { colors } = useTheme()
 
   return (
-    <NativeTabs tintColor={colors.primary}>
+    <NativeTabs tintColor={colors.text}>
       <NativeTabs.Trigger name="(folders)">
         <NativeTabs.Trigger.Icon sf="folder" />
         <NativeTabs.Trigger.Label>Folders</NativeTabs.Trigger.Label>

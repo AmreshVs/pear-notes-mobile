@@ -4,6 +4,8 @@ import { StyleSheet, TouchableOpacity } from 'react-native'
 
 import { Text, Theme, View, useThemedStyles } from './Themed'
 
+import { FontSize, FontWeight, Radii, Space } from '@/constants/commonStyles'
+
 interface ErrorScreenProps {
   message: string
   onRetry: () => void
@@ -33,40 +35,40 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.background,
       alignItems: 'center',
       justifyContent: 'center',
-      padding: 20,
+      padding: Space.lg,
     },
     icon: {
       color: theme.colors.error,
-      marginBottom: 20,
+      marginBottom: Space.lg,
     },
     title: {
       fontSize: 22,
-      fontWeight: 'bold',
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
-      marginBottom: 10,
+      marginBottom: Space.md,
     },
     message: {
-      fontSize: 16,
+      fontSize: FontSize.base,
       color: theme.colors.textSecondary,
       textAlign: 'center',
-      marginBottom: 30,
+      marginBottom: Space.xxxl,
       lineHeight: 22,
     },
     button: {
       backgroundColor: theme.colors.primary,
-      paddingHorizontal: 24,
+      paddingHorizontal: Space.xl,
       paddingVertical: 14,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
     },
     buttonIcon: {
-      marginRight: 8,
+      marginRight: Space.sm,
     },
     buttonText: {
       color: theme.isDark ? '#000' : '#fff',
-      fontSize: 16,
-      fontWeight: '600',
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semibold,
     },
   })

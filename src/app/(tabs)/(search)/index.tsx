@@ -8,12 +8,14 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
+import { Space, useCommonStyles } from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function SearchScreen() {
   const theme = useTheme()
   const { colors, isDark } = theme
   const styles = useThemedStyles(createStyles)
+  const common = useCommonStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const notes = useSelector(getFilteredNotes)
@@ -60,9 +62,9 @@ export default function SearchScreen() {
         showsVerticalScrollIndicator={false}
       >
         {notes.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyTitle}>Search your notes</Text>
-            <Text style={styles.emptySubtitle}>Type above to find notes across your library</Text>
+          <View style={common.emptyContainer}>
+            <Text style={common.emptyTitle}>Search your notes</Text>
+            <Text style={common.emptySubtitle}>Type above to find notes across your library</Text>
           </View>
         ) : (
           <View style={styles.listContainer}>
@@ -96,32 +98,10 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
-      paddingBottom: 120,
-      paddingHorizontal: 16,
+      paddingBottom: Space.scrollBottom,
+      paddingHorizontal: Space.base,
     },
     listContainer: {
-      paddingTop: 8,
-    },
-    emptyContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 140,
-      paddingHorizontal: 40,
-    },
-    emptyTitle: {
-      fontSize: 18,
-      fontWeight: '700',
-      letterSpacing: -0.3,
-      marginBottom: 8,
-      opacity: 0.6,
-      color: theme.colors.textSecondary,
-    },
-    emptySubtitle: {
-      fontSize: 14,
-      textAlign: 'center',
-      opacity: 0.4,
-      lineHeight: 20,
-      color: theme.colors.textSecondary,
+      paddingTop: Space.sm,
     },
   })

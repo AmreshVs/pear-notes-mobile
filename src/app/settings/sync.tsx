@@ -28,7 +28,6 @@ import {
   ActivityIndicator,
   Animated,
   Modal,
-  Platform,
   Pressable,
   View as RNView,
   ScrollView,
@@ -39,6 +38,15 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
 import { Text, Theme, useTheme, useThemedStyles } from '@/components/Themed'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  MonoFontFamily,
+  Radii,
+  Space,
+  useCommonStyles,
+} from '@/constants/commonStyles'
 
 const PLATFORM_NAMES: Record<string, string> = {
   darwin: 'macOS',
@@ -311,6 +319,7 @@ const DeviceCard = memo(function DeviceCard({
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
+  const common = useCommonStyles()
   const dispatch = useDispatch()
   const Icon = device.deviceType === 'desktop' ? Monitor : Smartphone
 
@@ -398,7 +407,7 @@ const DeviceCard = memo(function DeviceCard({
             <Pressable
               onPress={openDeleteModal}
               hitSlop={12}
-              style={({ pressed }) => [styles.deleteBtn, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.deleteBtn, pressed && common.pressed]}
             >
               <Trash2 size={17} color={colors.error} strokeWidth={1.5} />
             </Pressable>
@@ -433,6 +442,7 @@ const DeleteModal = memo(function DeleteModal({
 }) {
   const { colors } = useTheme()
   const styles = useThemedStyles(createStyles)
+  const common = useCommonStyles()
 
   return (
     <Modal
@@ -444,13 +454,13 @@ const DeleteModal = memo(function DeleteModal({
     >
       <Animated.View style={[styles.modalFill, { opacity: fadeAnim }]}>
         <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
-        <RNView style={styles.modalOverlay} />
+        <RNView style={common.modalOverlay} />
 
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
 
         <RNView style={styles.modalCenter} pointerEvents="box-none">
-          <GlassView intensity={40} borderRadius={32} style={styles.modalCard}>
-            <RNView style={styles.modalInner}>
+          <GlassView intensity={40} borderRadius={32} style={common.modalCard}>
+            <RNView style={common.modalInner}>
               <RNView style={styles.dangerIcon}>
                 <ShieldAlert size={40} color={colors.error} />
               </RNView>
@@ -465,8 +475,8 @@ const DeleteModal = memo(function DeleteModal({
                   onPress={onCancel}
                   style={({ pressed }) => [
                     styles.modalBtn,
-                    styles.cancelBtn,
-                    pressed && styles.pressed,
+                    common.cancelBtn,
+                    pressed && common.pressed,
                   ]}
                 >
                   <Text style={styles.cancelText}>Cancel</Text>
@@ -476,7 +486,7 @@ const DeleteModal = memo(function DeleteModal({
                   style={({ pressed }) => [
                     styles.modalBtn,
                     styles.removeBtn,
-                    pressed && styles.pressed,
+                    pressed && common.pressed,
                   ]}
                 >
                   <Text style={styles.removeText}>Remove</Text>
@@ -499,14 +509,14 @@ const createStyles = (theme: Theme) => {
 
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: theme.colors.background },
-    scroll: { paddingBottom: 80 },
+    scroll: { paddingBottom: Space.huge },
 
     segRow: {
       flexDirection: 'row',
-      borderRadius: 12,
+      borderRadius: Radii.md,
       padding: 3,
-      marginHorizontal: 20,
-      marginTop: 10,
+      marginHorizontal: Space.lg,
+      marginTop: Space.md,
       marginBottom: 28,
       alignSelf: 'center',
       width: 264,
@@ -527,20 +537,20 @@ const createStyles = (theme: Theme) => {
       shadowRadius: 6,
       elevation: 4,
     },
-    segLabel: { fontSize: 13, fontWeight: '500' },
-    segLabelActive: { color: isDark ? '#000000' : '#ffffff', fontWeight: '700' },
+    segLabel: { fontSize: FontSize.small, fontWeight: FontWeight.medium },
+    segLabelActive: { color: isDark ? '#000000' : '#ffffff', fontWeight: FontWeight.bold },
     segLabelInactive: { color: textMuted },
 
-    pad: { paddingHorizontal: 20 },
+    pad: { paddingHorizontal: Space.lg },
 
     heroCard: {
       borderRadius: 22,
       borderWidth: 1,
-      paddingHorizontal: 24,
+      paddingHorizontal: Space.xl,
       paddingTop: 28,
-      paddingBottom: 24,
+      paddingBottom: Space.xl,
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: Space.base,
       backgroundColor: cardBg,
       borderColor: cardBorder,
     },
@@ -555,14 +565,14 @@ const createStyles = (theme: Theme) => {
     },
     heroTitle: {
       fontSize: 21,
-      fontWeight: '700',
+      fontWeight: FontWeight.bold,
       letterSpacing: -0.5,
-      marginBottom: 10,
+      marginBottom: Space.md,
       textAlign: 'center',
       color: theme.colors.text,
     },
     heroDesc: {
-      fontSize: 14,
+      fontSize: FontSize.body,
       lineHeight: 21,
       textAlign: 'center',
       marginBottom: 22,
@@ -577,37 +587,42 @@ const createStyles = (theme: Theme) => {
       justifyContent: 'center',
       paddingVertical: 17,
     },
-    btnText: { color: '#000000', fontSize: 16, fontWeight: '700', letterSpacing: -0.2 },
+    btnText: {
+      color: '#000000',
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.bold,
+      letterSpacing: -0.2,
+    },
     inviteHeader: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 14,
       width: '100%',
-      paddingBottom: 16,
+      paddingBottom: Space.base,
     },
     iconPill: {
       width: 42,
       height: 42,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: isDark ? 'rgba(220,163,35,0.13)' : 'rgba(220,163,35,0.1)',
     },
     inviteTitle: {
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.bold,
       letterSpacing: -0.3,
       marginBottom: 2,
       color: theme.colors.text,
     },
-    inviteSub: { fontSize: 12, fontWeight: '500', color: textMuted },
+    inviteSub: { fontSize: FontSize.small, fontWeight: FontWeight.medium, color: textMuted },
     codeLabel: {
-      fontSize: 10,
-      fontWeight: '700',
+      fontSize: FontSize.micro,
+      fontWeight: FontWeight.bold,
       letterSpacing: 1.4,
       textTransform: 'uppercase',
       paddingTop: 14,
-      paddingBottom: 10,
+      paddingBottom: Space.md,
       width: '100%',
       color: textMuted,
       borderTopColor: cardBorder,
@@ -616,16 +631,16 @@ const createStyles = (theme: Theme) => {
     codeBox: {
       borderWidth: 1,
       borderStyle: 'dashed',
-      borderRadius: 12,
+      borderRadius: Radii.md,
       paddingVertical: 15,
-      paddingHorizontal: 12,
+      paddingHorizontal: Space.md,
       width: '100%',
       borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
     },
     codeScrollContent: { paddingHorizontal: 2 },
     codeText: {
-      fontFamily: Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace',
-      fontSize: 13,
+      fontFamily: MonoFontFamily,
+      fontSize: FontSize.small,
       letterSpacing: 1,
       color: theme.colors.text,
     },
@@ -635,71 +650,81 @@ const createStyles = (theme: Theme) => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      gap: 8,
-      paddingVertical: 16,
-      marginTop: 12,
+      gap: Space.sm,
+      paddingVertical: Space.base,
+      marginTop: Space.md,
     },
     warningCard: {
       flexDirection: 'row',
       alignItems: 'flex-start',
-      gap: 8,
+      gap: Space.sm,
       borderWidth: 1,
-      borderRadius: 12,
+      borderRadius: Radii.md,
       padding: 14,
-      marginBottom: 24,
+      marginBottom: Space.xl,
       backgroundColor: isDark ? 'rgba(220,163,35,0.07)' : 'rgba(220,163,35,0.08)',
       borderColor: isDark ? 'rgba(220,163,35,0.2)' : 'rgba(220,163,35,0.25)',
     },
-    warningText: { flex: 1, fontSize: 12, lineHeight: 17, color: textMuted },
+    warningText: { flex: 1, fontSize: FontSize.small, lineHeight: 17, color: textMuted },
     invitePasteHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 6 },
-    plusIcon: { fontSize: 18, fontWeight: '600', lineHeight: 20, color: theme.colors.primary },
-    invitePasteText: { fontSize: 15, fontWeight: '600', color: theme.colors.text },
+    plusIcon: {
+      fontSize: 18,
+      fontWeight: FontWeight.semibold,
+      lineHeight: 20,
+      color: theme.colors.primary,
+    },
+    invitePasteText: { fontSize: 15, fontWeight: FontWeight.semibold, color: theme.colors.text },
     inputRow: {
       flexDirection: 'row',
       alignItems: 'center',
       borderWidth: 1,
-      borderRadius: 16,
-      paddingLeft: 16,
-      paddingRight: 8,
+      borderRadius: Space.base,
+      paddingLeft: Space.base,
+      paddingRight: Space.sm,
       paddingVertical: 6,
-      gap: 8,
+      gap: Space.sm,
       backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
       borderColor: isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.09)',
     },
-    codeInput: { flex: 1, fontSize: 14, paddingVertical: 9, color: theme.colors.text },
+    codeInput: { flex: 1, fontSize: FontSize.body, paddingVertical: 9, color: theme.colors.text },
     linkBtn: {
-      borderRadius: 10,
-      paddingHorizontal: 16,
-      paddingVertical: 10,
+      borderRadius: Space.md,
+      paddingHorizontal: Space.base,
+      paddingVertical: Space.md,
     },
-    linkBtnText: { color: '#000', fontSize: 14, fontWeight: '700' },
+    linkBtnText: { color: '#000', fontSize: FontSize.body, fontWeight: FontWeight.bold },
     footNoteRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
-    footNoteRowDevice: { flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 32 },
-    footNote: { fontSize: 12, flex: 1, lineHeight: 17, color: textMuted },
+    footNoteRowDevice: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 6,
+      marginTop: Space.xxl,
+    },
+    footNote: { fontSize: FontSize.small, flex: 1, lineHeight: 17, color: textMuted },
 
     sectionCap: {
-      fontSize: 11,
-      fontWeight: '700',
-      letterSpacing: 1.2,
-      marginBottom: 12,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: LetterSpacing.caps,
+      marginBottom: Space.md,
       textTransform: 'uppercase',
       color: textMuted,
     },
     sectionCapDevice: {
-      fontSize: 11,
-      fontWeight: '700',
-      letterSpacing: 1.2,
-      marginBottom: 12,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: LetterSpacing.caps,
+      marginBottom: Space.md,
+      marginTop: 30,
       textTransform: 'uppercase',
       color: textMuted,
-      marginTop: 30,
     },
 
     deviceGroup: {
-      borderRadius: 18,
+      borderRadius: Radii.card,
       borderWidth: 1,
       overflow: 'hidden',
-      marginBottom: 8,
+      marginBottom: Space.sm,
       backgroundColor: cardBg,
       borderColor: cardBorder,
     },
@@ -711,9 +736,9 @@ const createStyles = (theme: Theme) => {
       paddingVertical: 14,
     },
     deviceIcon: {
-      width: 44,
-      height: 44,
-      borderRadius: 12,
+      width: Space.huge,
+      height: Space.huge,
+      borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
@@ -732,16 +757,16 @@ const createStyles = (theme: Theme) => {
     },
     deviceName: {
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: FontWeight.semibold,
       letterSpacing: -0.3,
       marginBottom: 3,
       color: theme.colors.text,
     },
     deviceSub: {
-      fontSize: 11,
+      fontSize: FontSize.caption,
       textTransform: 'uppercase',
       letterSpacing: 0.7,
-      fontWeight: '500',
+      fontWeight: FontWeight.medium,
       color: textMuted,
     },
     tapToRename: {
@@ -749,10 +774,10 @@ const createStyles = (theme: Theme) => {
     },
     renameInput: {
       fontSize: 15,
-      fontWeight: '600',
+      fontWeight: FontWeight.semibold,
       borderWidth: 1,
-      borderRadius: 8,
-      paddingHorizontal: 10,
+      borderRadius: Radii.sm,
+      paddingHorizontal: Space.md,
       paddingVertical: 6,
       marginBottom: 2,
       color: theme.colors.text,
@@ -767,59 +792,53 @@ const createStyles = (theme: Theme) => {
     emptyCard: {
       borderWidth: 1,
       borderStyle: 'dashed',
-      borderRadius: 16,
+      borderRadius: Space.base,
       paddingVertical: 36,
       alignItems: 'center',
       justifyContent: 'center',
       borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
     },
-    emptyText: { fontSize: 13, marginTop: 10, color: textMuted },
+    emptyText: { fontSize: FontSize.small, marginTop: Space.md, color: textMuted },
 
     modalFill: {
       ...StyleSheet.absoluteFillObject,
-    },
-    modalOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(0,0,0,0.45)',
     },
     modalCenter: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      paddingHorizontal: 24,
+      paddingHorizontal: Space.xl,
     },
-    modalCard: {
-      width: '100%',
-      maxWidth: 384,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 20 },
-      shadowOpacity: 0.5,
-      shadowRadius: 40,
-      elevation: 20,
+    // modalCard, modalInner, modalOverlay → use common.*
+    modalBtn: {
+      flex: 1,
+      height: 50,
+      borderRadius: Radii.md,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
-    modalInner: { padding: 40, alignItems: 'center', width: '100%' },
     dangerIcon: {
       width: 80,
       height: 80,
-      borderRadius: 24,
+      borderRadius: Space.xl,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1,
-      marginBottom: 8,
+      marginBottom: Space.sm,
       backgroundColor: 'rgba(239, 68, 68, 0.15)',
       borderColor: 'rgba(239, 68, 68, 0.3)',
     },
     modalTitle: {
-      fontSize: 24,
-      fontWeight: '700',
+      fontSize: FontSize.heading,
+      fontWeight: FontWeight.bold,
       textAlign: 'center',
-      letterSpacing: -0.4,
-      marginBottom: 8,
-      marginTop: 4,
+      letterSpacing: LetterSpacing.tight,
+      marginBottom: Space.sm,
+      marginTop: Space.xs,
       color: theme.colors.text,
     },
     modalSub: {
-      fontSize: 14,
+      fontSize: FontSize.body,
       textAlign: 'center',
       lineHeight: 22,
       opacity: 0.7,
@@ -827,20 +846,8 @@ const createStyles = (theme: Theme) => {
       maxWidth: 280,
       color: theme.colors.text,
     },
-    modalRow: { flexDirection: 'row', gap: 12, width: '100%' },
-    modalBtn: {
-      flex: 1,
-      height: 50,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    cancelBtn: {
-      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-    },
-    cancelText: { color: textMuted, fontWeight: '700', fontSize: 14 },
+    modalRow: { flexDirection: 'row', gap: Space.md, width: '100%' },
+    cancelText: { color: textMuted, fontWeight: FontWeight.bold, fontSize: FontSize.body },
     removeBtn: {
       backgroundColor: '#EF4444',
       shadowColor: '#EF4444',
@@ -849,12 +856,9 @@ const createStyles = (theme: Theme) => {
       shadowRadius: 16,
       elevation: 8,
     },
-    removeText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+    removeText: { color: '#fff', fontWeight: FontWeight.bold, fontSize: 15 },
     deleteBtn: {
-      padding: 4,
-    },
-    pressed: {
-      opacity: 0.5,
+      padding: Space.xs,
     },
   })
 }

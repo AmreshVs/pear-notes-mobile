@@ -21,7 +21,15 @@ import {
 } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { Text, Theme, useThemedStyles, useTheme } from '@/components/Themed'
+import { Text, Theme, useTheme, useThemedStyles } from '@/components/Themed'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Radii,
+  Space,
+  useCommonStyles,
+} from '@/constants/commonStyles'
 
 const SORT_OPTIONS = [
   { label: 'Date Edited', value: 'updatedAt' },
@@ -65,6 +73,7 @@ export default function SettingsScreen() {
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
+  const common = useCommonStyles()
   const dispatch = useDispatch()
 
   const currentTheme = useSelector(getTheme)
@@ -81,7 +90,7 @@ export default function SettingsScreen() {
             <Pressable
               onPress={() => router.back()}
               hitSlop={8}
-              style={({ pressed }) => [styles.closeBtn, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.closeBtn, pressed && common.pressed]}
             >
               <X size={14} color={colors.text} strokeWidth={2.5} />
             </Pressable>
@@ -96,7 +105,7 @@ export default function SettingsScreen() {
       >
         <Text style={styles.sectionCap}>GENERAL</Text>
 
-        <RNView style={styles.card}>
+        <RNView style={common.card}>
           <RNView style={styles.rowUnderline}>
             <Text style={styles.rowLabel}>App Theme</Text>
             <RNView style={styles.segCtrl}>
@@ -131,7 +140,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
           >
             <Text style={styles.rowLabel}>Sort Notes By</Text>
-            <RNView style={styles.rowRight}>
+            <RNView style={common.settingsRowRight}>
               <Text style={styles.rowVal}>
                 {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Date Edited'}
               </Text>
@@ -148,7 +157,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
           >
             <Text style={styles.rowLabel}>Font Family</Text>
-            <RNView style={styles.rowRight}>
+            <RNView style={common.settingsRowRight}>
               <Text style={styles.rowVal}>
                 {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
               </Text>
@@ -185,13 +194,13 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionCapMargin}>SYNC & DEVICES</Text>
 
-        <RNView style={styles.card}>
+        <RNView style={common.card}>
           <Pressable
             onPress={() => router.push('/settings/sync')}
             style={({ pressed }) => [styles.syncRow, pressed && styles.rowPressed]}
           >
-            <RNView style={styles.rowLeft}>
-              <RNView style={styles.iconBox}>
+            <RNView style={common.settingsRowLeft}>
+              <RNView style={common.iconBox34}>
                 <RefreshCw size={17} color={colors.primary} strokeWidth={1.8} />
               </RNView>
               <Text style={styles.rowLabelSemiBold}>Link and Sync</Text>
@@ -213,40 +222,33 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.background,
     },
     scroll: {
-      paddingHorizontal: 20,
+      paddingHorizontal: Space.lg,
       paddingBottom: 60,
-      paddingTop: 12,
+      paddingTop: Space.md,
     },
     sectionCap: {
-      fontSize: 11,
-      fontWeight: '700',
-      letterSpacing: 1.2,
-      marginBottom: 10,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: LetterSpacing.caps,
+      marginBottom: Space.md,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },
     sectionCapMargin: {
-      fontSize: 11,
-      fontWeight: '700',
-      letterSpacing: 1.2,
-      marginBottom: 10,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: LetterSpacing.caps,
+      marginBottom: Space.md,
+      marginTop: Space.xxxl,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
-      marginTop: 36,
-    },
-    card: {
-      borderRadius: 18,
-      borderWidth: 1,
-      overflow: 'hidden',
-      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)',
-      borderColor: theme.colors.borderSecondary,
     },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 18,
-      paddingVertical: 16,
+      paddingVertical: Space.base,
       minHeight: 52,
     },
     rowUnderline: {
@@ -254,7 +256,7 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
       justifyContent: 'space-between',
       paddingHorizontal: 18,
-      paddingVertical: 16,
+      paddingVertical: Space.base,
       minHeight: 52,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.borderSecondary,
@@ -262,28 +264,18 @@ const createStyles = (theme: Theme) =>
     rowPressed: {
       backgroundColor: theme.colors.cardPressed,
     },
-    rowLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-    },
-    rowRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
     rowLabel: {
-      fontSize: 16,
-      fontWeight: '500',
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
     rowLabelSemiBold: {
-      fontSize: 16,
-      fontWeight: '600',
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
     rowVal: {
-      fontSize: 14,
+      fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
     segCtrl: {
@@ -293,7 +285,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.controlBackground,
     },
     segPill: {
-      paddingHorizontal: 12,
+      paddingHorizontal: Space.md,
       paddingVertical: 7,
       borderRadius: 7,
       alignItems: 'center',
@@ -308,47 +300,39 @@ const createStyles = (theme: Theme) =>
       elevation: 3,
     },
     radiusLeft: {
-      borderTopLeftRadius: 8,
-      borderBottomLeftRadius: 8,
+      borderTopLeftRadius: Radii.sm,
+      borderBottomLeftRadius: Radii.sm,
     },
     radiusRight: {
-      borderTopRightRadius: 8,
-      borderBottomRightRadius: 8,
+      borderTopRightRadius: Radii.sm,
+      borderBottomRightRadius: Radii.sm,
     },
     segText: {
-      fontSize: 12,
-      fontWeight: '500',
+      fontSize: FontSize.small,
+      fontWeight: FontWeight.medium,
       color: theme.colors.textMuted,
     },
     segTextActive: {
       color: theme.isDark ? '#000000' : '#ffffff',
-      fontWeight: '700',
+      fontWeight: FontWeight.bold,
     },
     badge: {
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 8,
+      paddingHorizontal: Space.md,
+      paddingVertical: Space.xs,
+      borderRadius: Radii.sm,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.colors.cardSelected,
     },
     badgeText: {
       color: theme.colors.primary,
-      fontSize: 13,
-      fontWeight: '700',
-    },
-    iconBox: {
-      width: 34,
-      height: 34,
-      borderRadius: 10,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.cardSelected,
+      fontSize: FontSize.small,
+      fontWeight: FontWeight.bold,
     },
     footer: {
       textAlign: 'center',
-      fontSize: 13,
-      marginTop: 40,
+      fontSize: FontSize.small,
+      marginTop: Space.xxxl,
       fontStyle: 'italic',
       color: theme.colors.textMuted,
     },
@@ -360,38 +344,35 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
-    pressed: {
-      opacity: 0.6,
-    },
     sliderRow: {
       flexDirection: 'column',
       alignItems: 'stretch',
-      paddingVertical: 20,
+      paddingVertical: Space.lg,
       paddingHorizontal: 18,
     },
     sliderHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 16,
+      marginBottom: Space.base,
     },
     sliderContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 10,
+      gap: Space.md,
     },
     slider: {
       flex: 1,
     },
     sizeSm: {
       color: theme.colors.textMuted,
-      fontSize: 11,
-      fontWeight: '600',
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.semibold,
     },
     sizeLg: {
       color: theme.colors.textMuted,
-      fontSize: 17,
-      fontWeight: '600',
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.semibold,
     },
     syncRow: {
       flexDirection: 'row',

@@ -13,6 +13,8 @@ import { useSelector } from 'react-redux'
 
 import { Text, Theme, useColors, useThemedStyles } from './Themed'
 
+import { FontSize, FontWeight, LetterSpacing, Radii, Space } from '@/constants/commonStyles'
+
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 interface MoveFolder {
@@ -177,8 +179,8 @@ export const NoteCard = memo(function NoteCard({
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
-      paddingHorizontal: 16,
-      borderRadius: 12,
+      paddingHorizontal: Space.base,
+      borderRadius: Radii.md,
       marginVertical: 1,
     },
     borderBottom: {
@@ -189,22 +191,22 @@ const createStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       paddingVertical: 14,
-      gap: 12,
+      gap: Space.md,
     },
     content: {
       flex: 1,
     },
     title: {
-      fontSize: 16,
-      fontWeight: '700',
-      marginBottom: 4,
-      letterSpacing: -0.4,
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.bold,
+      marginBottom: Space.xs,
+      letterSpacing: LetterSpacing.tight,
     },
     summary: {
-      fontSize: 14,
+      fontSize: FontSize.body,
       lineHeight: 19,
       opacity: 0.8,
-      marginBottom: 8,
+      marginBottom: Space.sm,
       color: theme.colors.textSecondary,
     },
     metadata: {
@@ -216,12 +218,12 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
     },
     folderIcon: {
-      marginRight: 4,
+      marginRight: Space.xs,
       opacity: 0.7,
     },
     metadataText: {
-      fontSize: 11,
-      fontWeight: '700',
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
       opacity: 0.6,
@@ -229,13 +231,13 @@ const createStyles = (theme: Theme) =>
     },
     separator: {
       opacity: 0.3,
-      fontSize: 11,
+      fontSize: FontSize.caption,
       color: theme.colors.textSecondary,
     },
     thumbnail: {
       width: 56,
       height: 56,
-      borderRadius: 8,
+      borderRadius: Radii.sm,
       backgroundColor: theme.colors.separator,
       flexShrink: 0,
     },

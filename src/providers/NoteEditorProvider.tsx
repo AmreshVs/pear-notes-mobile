@@ -41,6 +41,7 @@ import {
   type TiptapEditorHandle,
   type TiptapStyleState,
 } from '@/components/TiptapEditor'
+import { Radii, Space } from '@/constants/commonStyles'
 
 interface NoteEditorContextType {
   openNote: (id: string) => void
@@ -319,7 +320,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [toolbarBottom],
   )
   const toolbarRowStyle = useMemo(
-    () => [styles.toolbarRow, { justifyContent: 'flex-start' as const, gap: 24, paddingHorizontal: 8 }],
+    () => [
+      styles.toolbarRow,
+      { justifyContent: 'flex-start' as const, gap: 24, paddingHorizontal: 8 },
+    ],
     [],
   )
 
@@ -537,7 +541,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 52,
-    paddingHorizontal: 16,
+    paddingHorizontal: Space.base,
   },
   headerBtn: {
     width: 48,
@@ -564,12 +568,12 @@ const styles = StyleSheet.create({
   },
   floatingToolbar: {
     position: 'absolute',
-    left: 16,
-    right: 16,
+    left: Space.base,
+    right: Space.base,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: 10,
+    gap: Space.md,
   },
   glassBar: {
     minHeight: 52,
@@ -587,12 +591,12 @@ const styles = StyleSheet.create({
     height: 52,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: Radii.md,
   },
   divider: {
     width: 1,
     height: 24,
-    marginHorizontal: 4,
+    marginHorizontal: Space.xs,
     opacity: 0.4,
   },
   fallbackIcon: { width: 22, height: 22 },

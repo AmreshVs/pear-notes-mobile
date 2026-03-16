@@ -10,6 +10,8 @@ import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
 
 import { Text, Theme, useThemedStyles, View } from './Themed'
 
+import { FontSize, FontWeight, LetterSpacing, Radii, Space } from '@/constants/commonStyles'
+
 // @expo/ui is iOS-only — import lazily so Android doesn't crash
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -107,9 +109,9 @@ const createStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 12,
+      paddingVertical: Space.md,
+      paddingHorizontal: Space.base,
+      borderRadius: Radii.md,
       marginVertical: 1,
       minHeight: 52,
       backgroundColor: 'transparent',
@@ -127,8 +129,8 @@ const createStyles = (theme: Theme) =>
       backgroundColor: 'transparent',
     },
     iconBox: {
-      width: 32,
-      height: 32,
+      width: Space.xxl,
+      height: Space.xxl,
       borderRadius: 9,
       alignItems: 'center',
       justifyContent: 'center',
@@ -141,9 +143,9 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.primary,
     },
     name: {
-      fontSize: 17,
-      fontWeight: '500',
-      letterSpacing: -0.4,
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.medium,
+      letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,
       opacity: 0.9,
     },
@@ -153,11 +155,11 @@ const createStyles = (theme: Theme) =>
     rightContent: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
+      gap: Space.sm,
       backgroundColor: 'transparent',
     },
     count: {
-      fontSize: 16,
+      fontSize: FontSize.base,
       color: theme.colors.textSecondary,
       opacity: 0.6,
     },

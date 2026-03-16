@@ -17,10 +17,18 @@ import { useDispatch, useSelector } from 'react-redux'
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
 import { Text, Theme, useColors, useThemedStyles, View } from '@/components/Themed'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Space,
+  useCommonStyles,
+} from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FoldersScreen() {
   const styles = useThemedStyles(createStyles)
+  const common = useCommonStyles()
   const colors = useColors()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -136,7 +144,7 @@ export default function FoldersScreen() {
         <Pressable onPress={handleCreateFolder} style={iconBtnStyle}>
           <FolderPlus size={20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
-        <View style={styles.pillDivider} />
+        <View style={common.pillDivider} />
         <Pressable onPress={handleCreateNote} style={iconBtnStyle}>
           <SquarePen size={20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
@@ -202,20 +210,14 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
-      paddingBottom: 120,
+      paddingBottom: Space.scrollBottom,
       paddingHorizontal: 0,
-      paddingTop: 8,
+      paddingTop: Space.sm,
     },
     headerPill: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 8,
-    },
-    pillDivider: {
-      width: StyleSheet.hairlineWidth,
-      height: 16,
-      backgroundColor: theme.colors.separator,
-      marginHorizontal: 8,
+      paddingHorizontal: Space.sm,
     },
     section: {
       backgroundColor: 'transparent',
@@ -224,11 +226,11 @@ const createStyles = (theme: Theme) =>
       marginTop: 28,
     },
     sectionHeader: {
-      fontSize: 11,
-      fontWeight: '800',
-      letterSpacing: 1.5,
-      marginBottom: 8,
-      marginLeft: 16,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.heavy,
+      letterSpacing: LetterSpacing.caps,
+      marginBottom: Space.sm,
+      marginLeft: Space.base,
       textTransform: 'uppercase',
       opacity: 0.5,
       color: theme.colors.textSecondary,
