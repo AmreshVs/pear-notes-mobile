@@ -29,24 +29,20 @@ export const GlassView = memo(function GlassView({
 
   return (
     <ExpoGlassView {...props} style={containerStyle}>
-      <BlurView
-        intensity={intensity}
-        tint={styles.blur.tint as 'dark' | 'light'}
-        style={blurStyle}
-      />
+      <BlurView intensity={intensity} tint={styles.blurTint} style={blurStyle} />
       {children}
     </ExpoGlassView>
   )
 })
 
 const createStyles = (theme: Theme) => ({
-  container: {
-    overflow: 'hidden' as const,
-    backgroundColor: theme.colors.glassBackground,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.glassBorder,
-  },
-  blur: {
-    tint: theme.isDark ? 'dark' : 'light',
-  },
+  ...StyleSheet.create({
+    container: {
+      overflow: 'hidden',
+      backgroundColor: theme.colors.glassBackground,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.glassBorder,
+    },
+  }),
+  blurTint: (theme.isDark ? 'dark' : 'light') as 'dark' | 'light',
 })

@@ -19,13 +19,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
-import {
-  FontSize,
-  FontWeight,
-  LetterSpacing,
-  Space,
-  useCommonStyles,
-} from '@/constants/commonStyles'
+import { Space, useCommonStyles } from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 // Replace HTML tags with a space so words don't run together, then normalize whitespace
@@ -196,7 +190,7 @@ export default function FolderNotesScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerInfo}>
-          <Text style={styles.noteCount}>
+          <Text style={common.sectionCap}>
             {notes.length} {notes.length === 1 ? 'NOTE' : 'NOTES'}
           </Text>
         </View>
@@ -260,14 +254,6 @@ const createStyles = (theme: Theme) =>
       marginBottom: Space.md,
       marginTop: -4,
     },
-    noteCount: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      letterSpacing: LetterSpacing.caps,
-      textTransform: 'uppercase',
-      color: theme.colors.textSecondary,
-      opacity: 0.5,
-    },
     section: {
       marginBottom: Space.base,
     },
@@ -276,7 +262,6 @@ const createStyles = (theme: Theme) =>
       paddingVertical: Space.sm,
       marginBottom: 2,
     },
-    sectionTitleMargin: {},
     listContainer: {
       backgroundColor: 'transparent',
     },

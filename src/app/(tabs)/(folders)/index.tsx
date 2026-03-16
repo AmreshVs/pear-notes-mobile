@@ -17,13 +17,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
 import { Text, Theme, useColors, useThemedStyles, View } from '@/components/Themed'
-import {
-  FontSize,
-  FontWeight,
-  LetterSpacing,
-  Space,
-  useCommonStyles,
-} from '@/constants/commonStyles'
+import { Space, useCommonStyles } from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FoldersScreen() {
@@ -119,8 +113,8 @@ export default function FoldersScreen() {
   }, [])
 
   const iconBtnStyle = useCallback(
-    ({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 }),
-    [],
+    ({ pressed }: { pressed: boolean }) => [styles.iconBtn, pressed && common.pressed],
+    [styles.iconBtn, common.pressed],
   )
 
   const headerLeft = useCallback(
@@ -131,7 +125,7 @@ export default function FoldersScreen() {
           size={22}
           tintColor={colors.text}
           weight="regular"
-          fallback={<View style={{ width: 22, height: 22 }} />}
+          fallback={<View style={styles.fallbackIcon} />}
         />
       </Pressable>
     ),
@@ -194,7 +188,7 @@ export default function FoldersScreen() {
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text style={styles.sectionHeader}>ARCHIVE</Text>
+            <Text style={[common.sectionCap, styles.sectionHeaderMargin]}>ARCHIVE</Text>
             {renderFolders(archiveFolders)}
           </View>
         )}
@@ -223,16 +217,17 @@ const createStyles = (theme: Theme) =>
       backgroundColor: 'transparent',
     },
     archiveSection: {
-      marginTop: 28,
+      marginTop: Space.xxl,
     },
-    sectionHeader: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      letterSpacing: LetterSpacing.caps,
+    sectionHeaderMargin: {
       marginBottom: Space.sm,
       marginLeft: Space.base,
-      textTransform: 'uppercase',
-      opacity: 0.5,
-      color: theme.colors.textSecondary,
+    },
+    iconBtn: {
+      padding: Space.sm,
+    },
+    fallbackIcon: {
+      width: 22,
+      height: 22,
     },
   })

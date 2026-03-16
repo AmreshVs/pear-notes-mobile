@@ -60,6 +60,7 @@ export default function SyncScreen() {
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
+  const common = useCommonStyles()
   const dispatch = useDispatch()
 
   const inviteCode = useSelector(getInvite)
@@ -144,7 +145,7 @@ export default function SyncScreen() {
                   ]}
                 >
                   {isLoading && (
-                    <ActivityIndicator size="small" color="#000" style={{ marginRight: 8 }} />
+                    <ActivityIndicator size="small" color="#000" style={styles.indicatorMargin} />
                   )}
                   <Text style={styles.btnText}>{isLoading ? 'Preparing…' : 'Generate Invite'}</Text>
                 </Pressable>
@@ -155,7 +156,7 @@ export default function SyncScreen() {
                   <RNView style={styles.iconPill}>
                     <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
                   </RNView>
-                  <RNView style={{ flex: 1 }}>
+                  <RNView style={common.flex1}>
                     <Text style={styles.inviteTitle}>Invitation Ready</Text>
                     <Text style={styles.inviteSub}>{formatExpiry(expiresAt)}</Text>
                   </RNView>
@@ -190,7 +191,7 @@ export default function SyncScreen() {
                   ) : (
                     <Link2 size={16} color="#000" strokeWidth={2.2} />
                   )}
-                  <Text style={[styles.btnText, copied && { color: '#fff' }]}>
+                  <Text style={[styles.btnText, copied && styles.btnTextCopied]}>
                     {copied ? 'Copied!' : 'Copy Invite Code'}
                   </Text>
                 </Pressable>
@@ -204,7 +205,7 @@ export default function SyncScreen() {
                 size={14}
                 color={colors.primary}
                 strokeWidth={1.8}
-                style={{ marginTop: 1 }}
+                style={styles.iconTopFix}
               />
               <Text style={styles.warningText}>
                 For security, don't share this code in public channels as it grants full access to
@@ -214,7 +215,7 @@ export default function SyncScreen() {
           )}
 
           {!isSynced && (
-            <RNView style={{ marginBottom: 24 }}>
+            <RNView style={styles.invitePasteSection}>
               <RNView style={styles.invitePasteHeader}>
                 <Text style={styles.plusIcon}>+</Text>
                 <Text style={styles.invitePasteText}>Already have an invite?</Text>
@@ -859,6 +860,18 @@ const createStyles = (theme: Theme) => {
     removeText: { color: '#fff', fontWeight: FontWeight.bold, fontSize: 15 },
     deleteBtn: {
       padding: Space.xs,
+    },
+    indicatorMargin: {
+      marginRight: Space.sm,
+    },
+    iconTopFix: {
+      marginTop: 1,
+    },
+    invitePasteSection: {
+      marginBottom: Space.xl,
+    },
+    btnTextCopied: {
+      color: '#fff',
     },
   })
 }
