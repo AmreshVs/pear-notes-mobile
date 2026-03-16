@@ -20,6 +20,8 @@ export function useResolvedColorScheme(): 'light' | 'dark' {
   return deviceColorScheme === 'dark' ? 'dark' : 'light'
 }
 
+export type Theme = ReturnType<typeof useTheme>
+
 export function useTheme() {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
@@ -35,6 +37,16 @@ export function useTheme() {
     }),
     [colorScheme, isDark],
   )
+}
+
+export function useColors() {
+  const { colors } = useTheme()
+  return colors
+}
+
+export function useThemedStyles<T>(factory: (theme: Theme) => T): T {
+  const theme = useTheme()
+  return useMemo(() => factory(theme), [factory, theme])
 }
 
 type ThemeProps = {
@@ -119,14 +131,14 @@ export const GlassCard = memo(function GlassCard(props: ViewProps) {
       {
         padding: theme.spacing.md,
         borderRadius: 24,
-        backgroundColor: theme.isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.8)',
+        backgroundColor: theme.colors.glassBackground,
         borderWidth: 1,
-        borderColor: theme.isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-        boxShadow: theme.isDark ? '0 8px 32px rgba(0, 0, 0, 0.3)' : '0 8px 32px rgba(0, 0, 0, 0.1)',
+        borderColor: theme.colors.glassBorder,
+        boxShadow: `0 8px 32px ${theme.colors.glassShadow}`,
       },
       props.style,
     ],
-    [theme.spacing.md, theme.isDark, props.style],
+    [theme.spacing.md, theme.colors, props.style],
   )
 
   return <View {...props} style={combinedStyle} />

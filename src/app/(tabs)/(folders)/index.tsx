@@ -16,11 +16,12 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
-import { Text, useTheme, View } from '@/components/Themed'
+import { Text, Theme, useColors, useThemedStyles, View } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FoldersScreen() {
-  const { colors } = useTheme()
+  const styles = useThemedStyles(createStyles)
+  const colors = useColors()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const folders = useSelector(getFolders)
@@ -109,15 +110,10 @@ export default function FoldersScreen() {
     return 'Folder'
   }, [])
 
-  const containerStyle = useMemo(
-    () => [styles.container, { backgroundColor: colors.background }],
-    [colors.background],
-  )
   const iconBtnStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 }),
     [],
   )
-  const sectionHeaderStyle = useMemo(() => [styles.sectionHeader, { color: '#8e8e93' }], [])
 
   const headerLeft = useCallback(
     () => (
@@ -149,6 +145,24 @@ export default function FoldersScreen() {
     [handleCreateFolder, handleCreateNote, iconBtnStyle, colors.text],
   )
 
+  const renderFolders = useCallback(
+    (foldersToRender: any[]) =>
+      foldersToRender.map((folder: any) => (
+        <FolderRow
+          key={folder.id || folder.key}
+          id={folder.id || folder.key}
+          name={folder.name}
+          count={folder.noteCount || 0}
+          icon={getFolderIcon(folder)}
+          isSystem={folder.isSystem}
+          onPress={handleSelectFolder}
+          onRename={folder.isSystem ? undefined : handleRenameFolder}
+          onDelete={folder.isSystem ? undefined : handleDeleteFolder}
+        />
+      )),
+    [getFolderIcon, handleSelectFolder, handleRenameFolder, handleDeleteFolder],
+  )
+
   const screenOptions = useMemo(
     () => ({
       headerTitle: 'Folders',
@@ -161,55 +175,19 @@ export default function FoldersScreen() {
   )
 
   return (
-    <View style={containerStyle}>
+    <View style={styles.container}>
       <Stack.Screen options={screenOptions} />
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.section}>
-          {topFolders.map((folder: any) => (
-            <FolderRow
-              key={folder.id || folder.key}
-              name={folder.name}
-              count={folder.noteCount || 0}
-              icon={getFolderIcon(folder)}
-              isSystem={folder.isSystem}
-              onPress={() => handleSelectFolder(folder.id || folder.key)}
-              onRename={
-                folder.isSystem
-                  ? undefined
-                  : () => handleRenameFolder(folder.id || folder.key, folder.name)
-              }
-              onDelete={
-                folder.isSystem ? undefined : () => handleDeleteFolder(folder.id || folder.key)
-              }
-            />
-          ))}
-        </View>
+        <View style={styles.section}>{renderFolders(topFolders)}</View>
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text style={sectionHeaderStyle}>ARCHIVE</Text>
-            {archiveFolders.map((folder: any) => (
-              <FolderRow
-                key={folder.id || folder.key}
-                name={folder.name}
-                count={folder.noteCount || 0}
-                icon={getFolderIcon(folder)}
-                isSystem={folder.isSystem}
-                onPress={() => handleSelectFolder(folder.id || folder.key)}
-                onRename={
-                  folder.isSystem
-                    ? undefined
-                    : () => handleRenameFolder(folder.id || folder.key, folder.name)
-                }
-                onDelete={
-                  folder.isSystem ? undefined : () => handleDeleteFolder(folder.id || folder.key)
-                }
-              />
-            ))}
+            <Text style={styles.sectionHeader}>ARCHIVE</Text>
+            {renderFolders(archiveFolders)}
           </View>
         )}
       </ScrollView>
@@ -217,39 +195,42 @@ export default function FoldersScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 120,
-    paddingHorizontal: 0,
-    paddingTop: 8,
-  },
-  headerPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-  },
-  pillDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    marginHorizontal: 8,
-  },
-  section: {
-    backgroundColor: 'transparent',
-  },
-  archiveSection: {
-    marginTop: 28,
-  },
-  sectionHeader: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    marginBottom: 8,
-    marginLeft: 16,
-    textTransform: 'uppercase',
-    opacity: 0.5,
-  },
-})
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+      paddingBottom: 120,
+      paddingHorizontal: 0,
+      paddingTop: 8,
+    },
+    headerPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+    },
+    pillDivider: {
+      width: StyleSheet.hairlineWidth,
+      height: 16,
+      backgroundColor: theme.colors.separator,
+      marginHorizontal: 8,
+    },
+    section: {
+      backgroundColor: 'transparent',
+    },
+    archiveSection: {
+      marginTop: 28,
+    },
+    sectionHeader: {
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 1.5,
+      marginBottom: 8,
+      marginLeft: 16,
+      textTransform: 'uppercase',
+      opacity: 0.5,
+      color: theme.colors.textSecondary,
+    },
+  })

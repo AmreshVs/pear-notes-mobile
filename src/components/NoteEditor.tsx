@@ -1,5 +1,4 @@
 import React, { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
-import { StyleSheet } from 'react-native'
 import {
   EnrichedTextInput,
   type EnrichedTextInputInstance,
@@ -8,7 +7,7 @@ import {
 
 import { sanitizeTipTapHtml } from '../utils/sanitize-html'
 
-import { useTheme } from './Themed'
+import { Theme, useColors, useThemedStyles } from './Themed'
 
 interface NoteEditorProps {
   initialContent: string
@@ -35,7 +34,8 @@ export interface NoteEditorHandle {
 
 const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
   ({ initialContent, onContentChange, onStyleStateChange }, ref) => {
-    const { colors, isDark } = useTheme()
+    const styles = useThemedStyles(createStyles)
+    const colors = useColors()
     const inputRef = useRef<EnrichedTextInputInstance>(null)
     const onContentChangeRef = useRef(onContentChange)
     onContentChangeRef.current = onContentChange
@@ -74,11 +74,6 @@ const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
       [doSave],
     )
 
-    const placeholderColor = useMemo(
-      () => (isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.25)'),
-      [isDark],
-    )
-
     const handleStyleStateChange = useCallback(
       (e: any) => {
         onStyleStateChange?.(e.nativeEvent)
@@ -86,76 +81,71 @@ const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
       [onStyleStateChange],
     )
 
-    const htmlStyle = useMemo(
-      () => ({
-        h1: { fontSize: 26, bold: true },
-        h2: { fontSize: 22, bold: true },
-        h3: { fontSize: 19, bold: true },
-        blockquote: {
-          borderColor: colors.primary,
-          borderWidth: 3,
-          gapWidth: 12,
-          color: colors.textSecondary,
-        },
-        codeblock: {
-          color: isDark ? '#A8FF78' : '#333',
-          backgroundColor: isDark ? '#1C1C1E' : '#F4F4F5',
-          borderRadius: 10,
-        },
-        code: {
-          color: isDark ? '#A8FF78' : '#333',
-          backgroundColor: isDark ? '#2C2C2E' : '#F4F4F5',
-        },
-        a: {
-          color: colors.primary,
-          textDecorationLine: 'underline' as const,
-        },
-        ul: {
-          bulletColor: colors.primary,
-          bulletSize: 6,
-          marginLeft: 20,
-          gapWidth: 6,
-        },
-        ol: {
-          markerColor: colors.primary,
-          marginLeft: 20,
-          gapWidth: 6,
-        },
-        ulCheckbox: {
-          boxColor: colors.primary,
-          boxSize: 18,
-          marginLeft: 4,
-          gapWidth: 10,
-        },
-      }),
-      [colors.primary, colors.textSecondary, isDark],
-    )
-
-    const inputStyle = useMemo(() => [s.input, { color: colors.text }], [colors.text])
-
     return (
       <EnrichedTextInput
         ref={inputRef}
         defaultValue={sanitizedContent}
-        style={inputStyle as any}
+        style={styles.input}
         autoCapitalize="sentences"
         placeholder="Start writing..."
-        placeholderTextColor={placeholderColor}
+        placeholderTextColor={colors.separator}
         onBlur={doSave}
         onChangeState={handleStyleStateChange}
-        htmlStyle={htmlStyle}
+        htmlStyle={styles.htmlStyle as any}
       />
     )
   },
 )
 
-const s = StyleSheet.create({
+const createStyles = (theme: Theme) => ({
   input: {
     flex: 1,
     fontSize: 18,
     lineHeight: 30,
     paddingHorizontal: 20,
     paddingBottom: 150,
+    color: theme.colors.text,
+  },
+  htmlStyle: {
+    h1: { fontSize: 26, bold: true },
+    h2: { fontSize: 22, bold: true },
+    h3: { fontSize: 19, bold: true },
+    blockquote: {
+      borderColor: theme.colors.primary,
+      borderWidth: 3,
+      gapWidth: 12,
+      color: theme.colors.textSecondary,
+    },
+    codeblock: {
+      color: theme.isDark ? '#A8FF78' : '#333',
+      backgroundColor: theme.isDark ? '#1C1C1E' : '#F4F4F5',
+      borderRadius: 10,
+    },
+    code: {
+      color: theme.isDark ? '#A8FF78' : '#333',
+      backgroundColor: theme.isDark ? '#2C2C2E' : '#F4F4F5',
+    },
+    a: {
+      color: theme.colors.primary,
+      textDecorationLine: 'underline' as const,
+    },
+    ul: {
+      bulletColor: theme.colors.primary,
+      bulletSize: 6,
+      marginLeft: 20,
+      gapWidth: 6,
+    },
+    ol: {
+      markerColor: theme.colors.primary,
+      marginLeft: 20,
+      gapWidth: 6,
+    },
+    ulCheckbox: {
+      boxColor: theme.colors.primary,
+      boxSize: 18,
+      marginLeft: 4,
+      gapWidth: 10,
+    },
   },
 })
 

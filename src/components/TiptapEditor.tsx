@@ -5,17 +5,16 @@ import React, {
   useCallback,
   useEffect,
   useImperativeHandle,
-  useMemo,
   useRef,
   useState,
 } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import WebView, { WebViewErrorEvent, WebViewMessageEvent } from 'react-native-webview'
+import WebView, { WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
-import { useTheme } from './Themed'
+import { Theme, useTheme, useThemedStyles } from './Themed'
 
 export interface TiptapStyleState {
   bold: { isActive: boolean }
@@ -101,7 +100,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     },
     ref,
   ) => {
-    const { colors, isDark } = useTheme()
+    const styles = useThemedStyles(createStyles)
+    const theme = useTheme()
+    const { colors } = theme
     const fontSize = useSelector(getEditorFontSize)
     const fontFamily = useSelector(getFontFamily)
     const webViewRef = useRef<WebView>(null)
@@ -123,12 +124,12 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onDeleteAttachmentRef.current = onDeleteAttachment
 
     const colorsRef = useRef(colors)
-    const isDarkRef = useRef(isDark)
+    const isDarkRef = useRef(theme.isDark)
     const fontSizeRef = useRef(fontSize)
     const fontFamilyRef = useRef(fontFamily)
     const safeAreaTopRef = useRef(safeAreaTop ?? 100)
     colorsRef.current = colors
-    isDarkRef.current = isDark
+    isDarkRef.current = theme.isDark
     fontSizeRef.current = fontSize
     fontFamilyRef.current = fontFamily
     safeAreaTopRef.current = safeAreaTop ?? 100
@@ -247,14 +248,14 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       [revealEditor, sendCommand],
     )
 
-    const prevIsDarkRef = useRef(isDark)
+    const prevIsDarkRef = useRef(theme.isDark)
     useEffect(() => {
-      if (prevIsDarkRef.current === isDark) return
-      prevIsDarkRef.current = isDark
+      if (prevIsDarkRef.current === theme.isDark) return
+      prevIsDarkRef.current = theme.isDark
       if (editorReadyRef.current) {
-        sendCommand({ type: 'setTheme', colors, isDark })
+        sendCommand({ type: 'setTheme', colors, isDark: theme.isDark })
       }
-    }, [isDark, colors, sendCommand])
+    }, [theme.isDark, colors, sendCommand])
 
     const prevFontSizeRef = useRef(fontSize)
     const prevFontFamilyRef = useRef(fontFamily)
@@ -267,7 +268,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     }, [fontSize, fontFamily, sendCommand])
 
-    const handleError = useCallback((_e: WebViewErrorEvent) => {
+    const handleError = useCallback((_e: any) => {
       setEditorState('error')
     }, [])
 
@@ -309,34 +310,13 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       [sendCommand, getHTMLAsync],
     )
 
-    const containerStyle = useMemo(
-      () => [styles.container, { backgroundColor: colors.background }],
-      [colors.background],
-    )
-    const errorTextStyle = useMemo(
-      () => [styles.errorText, { color: colors.textSecondary }],
-      [colors.textSecondary],
-    )
-    const retryBtnStyle = useMemo(
-      () => [styles.retryBtn, { borderColor: colors.primary }],
-      [colors.primary],
-    )
-    const retryTextStyle = useMemo(
-      () => [styles.retryText, { color: colors.primary }],
-      [colors.primary],
-    )
-    const webViewStyle = useMemo(
-      () => [styles.webView, { backgroundColor: colors.background }],
-      [colors.background],
-    )
-
     return (
-      <View style={containerStyle}>
+      <View style={styles.container}>
         {editorState === 'error' && (
           <View style={styles.overlay}>
-            <Text style={errorTextStyle}>Editor failed to load</Text>
-            <Pressable onPress={handleRetry} style={retryBtnStyle}>
-              <Text style={retryTextStyle}>Retry</Text>
+            <Text style={styles.errorText}>Editor failed to load</Text>
+            <Pressable onPress={handleRetry} style={styles.retryBtn}>
+              <Text style={styles.retryText}>Retry</Text>
             </Pressable>
           </View>
         )}
@@ -347,7 +327,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
             onMessage={handleMessage}
             onError={handleError}
-            style={webViewStyle}
+            style={styles.webView}
             scrollEnabled
             keyboardDisplayRequiresUserAction={false}
             showsVerticalScrollIndicator={false}
@@ -372,28 +352,32 @@ TiptapEditorComponent.displayName = 'TiptapEditor'
 
 export const TiptapEditor = memo(TiptapEditorComponent)
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  flex: { flex: 1 },
-  webView: { flex: 1 },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  errorText: {
-    fontSize: 15,
-    marginBottom: 12,
-  },
-  retryBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1.5,
-  },
-  retryText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-})
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.background },
+    flex: { flex: 1 },
+    webView: { flex: 1, backgroundColor: theme.colors.background },
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 10,
+    },
+    errorText: {
+      fontSize: 15,
+      marginBottom: 12,
+      color: theme.colors.textSecondary,
+    },
+    retryBtn: {
+      paddingHorizontal: 20,
+      paddingVertical: 8,
+      borderRadius: 20,
+      borderWidth: 1.5,
+      borderColor: theme.colors.primary,
+    },
+    retryText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.colors.primary,
+    },
+  })

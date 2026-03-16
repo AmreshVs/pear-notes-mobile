@@ -18,7 +18,7 @@ import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
-import { Text, View, useTheme } from '@/components/Themed'
+import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 // Replace HTML tags with a space so words don't run together, then normalize whitespace
@@ -50,7 +50,9 @@ const getFirstImageUrl = (html: string): string | undefined => {
 
 export default function FolderNotesScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { colors, isDark } = useTheme()
+  const theme = useTheme()
+  const { colors, isDark } = theme
+  const styles = useThemedStyles(createStyles)
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const allFolders = useSelector(getFolders)
@@ -153,7 +155,7 @@ export default function FolderNotesScreen() {
   }, [selectedNote])
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={styles.container}>
       <Stack.Screen
         options={{
           headerTitle: folder?.name || 'Notes',
@@ -163,7 +165,7 @@ export default function FolderNotesScreen() {
           headerRight: () => (
             <Pressable
               onPress={handleCreateNote}
-              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, padding: 8 })}
+              style={({ pressed }) => [styles.headerBtn, pressed && styles.pressed]}
             >
               <SquarePen size={22} color={colors.text} strokeWidth={1.8} />
             </Pressable>
@@ -186,25 +188,21 @@ export default function FolderNotesScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerInfo}>
-          <Text style={[styles.noteCount, { color: colors.textSecondary }]}>
+          <Text style={styles.noteCount}>
             {notes.length} {notes.length === 1 ? 'NOTE' : 'NOTES'}
           </Text>
         </View>
 
         {groupedNotes.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyTitle, { color: colors.textSecondary }]}>No Notes</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              Tap the compose button to create one
-            </Text>
+            <Text style={styles.emptyTitle}>No Notes</Text>
+            <Text style={styles.emptySubtitle}>Tap the compose button to create one</Text>
           </View>
         ) : (
           groupedNotes.map((section) => (
             <View key={section.title} style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>
-                  {section.title}
-                </Text>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
               </View>
               <View style={styles.listContainer}>
                 {section.data.map((note, index) => (
@@ -238,63 +236,75 @@ export default function FolderNotesScreen() {
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 120,
-    paddingHorizontal: 0,
-    paddingTop: 8,
-  },
-  headerInfo: {
-    marginLeft: 16,
-    marginBottom: 12,
-    marginTop: -4,
-  },
-  noteCount: {
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    opacity: 0.5,
-  },
-  section: {
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    marginLeft: 16,
-    paddingVertical: 8,
-    marginBottom: 2,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 1.5,
-    opacity: 0.5,
-  },
-  listContainer: {
-    backgroundColor: 'transparent',
-  },
-  emptyContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingTop: 120,
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: -0.3,
-    marginBottom: 8,
-    opacity: 0.6,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    opacity: 0.4,
-    lineHeight: 20,
-  },
-})
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scrollContent: {
+      paddingBottom: 120,
+      paddingHorizontal: 0,
+      paddingTop: 8,
+    },
+    headerInfo: {
+      marginLeft: 16,
+      marginBottom: 12,
+      marginTop: -4,
+    },
+    headerBtn: {
+      padding: 8,
+    },
+    pressed: {
+      opacity: 0.5,
+    },
+    noteCount: {
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 1.5,
+      textTransform: 'uppercase',
+      color: theme.colors.textSecondary,
+      opacity: 0.5,
+    },
+    section: {
+      marginBottom: 16,
+    },
+    sectionHeader: {
+      marginLeft: 16,
+      paddingVertical: 8,
+      marginBottom: 2,
+    },
+    sectionTitle: {
+      fontSize: 11,
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: 1.5,
+      color: theme.colors.textSecondary,
+      opacity: 0.5,
+    },
+    listContainer: {
+      backgroundColor: 'transparent',
+    },
+    emptyContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingTop: 120,
+      paddingHorizontal: 40,
+    },
+    emptyTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      letterSpacing: -0.3,
+      marginBottom: 8,
+      color: theme.colors.textSecondary,
+      opacity: 0.6,
+    },
+    emptySubtitle: {
+      fontSize: 14,
+      textAlign: 'center',
+      color: theme.colors.textSecondary,
+      opacity: 0.4,
+      lineHeight: 20,
+    },
+  })

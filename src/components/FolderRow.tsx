@@ -20,17 +20,19 @@ const ICON_MAP: Record<string, LucideIcon> = {
 }
 
 interface FolderRowProps {
+  id: string
   name: string
   count?: number
   icon?: string
   selected?: boolean
   isSystem?: boolean
-  onPress: () => void
-  onRename?: () => void
-  onDelete?: () => void
+  onPress: (id: string) => void
+  onRename?: (id: string, currentName: string) => void
+  onDelete?: (id: string) => void
 }
 
 export const FolderRow = memo(function FolderRow({
+  id,
   name,
   count,
   icon,
@@ -88,7 +90,7 @@ export const FolderRow = memo(function FolderRow({
   const chevronWrapStyle = useMemo(() => ({ opacity: 0.55 }), [])
 
   const row = (
-    <Pressable onPress={onPress} style={containerStyle}>
+    <Pressable onPress={() => onPress(id)} style={containerStyle}>
       <RNView style={styles.leftContent}>
         <View style={iconBoxStyle}>
           <Icon size={17} color={colors.primary} strokeWidth={1.8} />
@@ -116,9 +118,16 @@ export const FolderRow = memo(function FolderRow({
     <Host>
       <ContextMenu>
         <ContextMenu.Items>
-          {onRename && <Button label="Rename" systemImage="pencil" onPress={onRename} />}
+          {onRename && (
+            <Button label="Rename" systemImage="pencil" onPress={() => onRename(id, name)} />
+          )}
           {onDelete && (
-            <Button label="Delete" systemImage="trash" role="destructive" onPress={onDelete} />
+            <Button
+              label="Delete"
+              systemImage="trash"
+              role="destructive"
+              onPress={() => onDelete(id)}
+            />
           )}
         </ContextMenu.Items>
         <ContextMenu.Trigger>{row}</ContextMenu.Trigger>

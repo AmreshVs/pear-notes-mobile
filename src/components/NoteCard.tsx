@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import { useSelector } from 'react-redux'
 
-import { Text, useTheme } from './Themed'
+import { Text, Theme, useColors, useThemedStyles } from './Themed'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -50,54 +50,37 @@ export const NoteCard = memo(function NoteCard({
   moveFolders,
   onMoveTo,
 }: NoteCardProps) {
-  const { colors, isDark } = useTheme()
+  const styles = useThemedStyles(createStyles)
+  const colors = useColors()
   const [thumbError, setThumbError] = useState(false)
 
   const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
-  const borderStyle = useMemo(
-    () => ({
-      borderBottomWidth: !isLast ? StyleSheet.hairlineWidth : 0,
-      borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-    }),
-    [isLast, isDark],
-  )
-
-  const selectedBg = useMemo(
-    () => (isDark ? 'rgba(220, 163, 35, 0.12)' : 'rgba(220, 163, 35, 0.08)'),
-    [isDark],
-  )
-  const pressedBg = useMemo(
-    () => (isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)'),
-    [isDark],
-  )
 
   const getPressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }): ViewStyle[] => [
       styles.container,
-      borderStyle,
-      { backgroundColor: selected ? selectedBg : pressed ? pressedBg : 'transparent' },
+      isLast ? {} : styles.borderBottom,
+      {
+        backgroundColor: selected
+          ? colors.cardSelected
+          : pressed
+            ? colors.cardPressed
+            : 'transparent',
+      },
     ],
-    [selected, selectedBg, pressedBg, borderStyle],
+    [
+      selected,
+      colors.cardSelected,
+      colors.cardPressed,
+      styles.container,
+      styles.borderBottom,
+      isLast,
+    ],
   )
 
   const titleStyle = useMemo(
     () => [styles.title, { color: selected ? colors.primary : colors.text }],
-    [selected, colors.primary, colors.text],
-  )
-
-  const summaryStyle = useMemo(
-    () => [styles.summary, { color: colors.textSecondary }],
-    [colors.textSecondary],
-  )
-
-  const metadataTextStyle = useMemo(
-    () => [styles.metadataText, { color: colors.textSecondary }],
-    [colors.textSecondary],
-  )
-
-  const separatorStyle = useMemo(
-    () => [styles.separator, { color: colors.textSecondary }],
-    [colors.textSecondary],
+    [selected, colors.primary, colors.text, styles.title],
   )
 
   const showThumbnail = !!imageUrl && !thumbError
@@ -110,7 +93,7 @@ export const NoteCard = memo(function NoteCard({
             {title || 'Untitled'}
           </Text>
 
-          <Text variant="caption" numberOfLines={2} style={summaryStyle}>
+          <Text variant="caption" numberOfLines={2} style={styles.summary}>
             {summary || 'No additional text'}
           </Text>
 
@@ -119,16 +102,16 @@ export const NoteCard = memo(function NoteCard({
               <>
                 <RNView style={styles.folderTag}>
                   <Folder size={11} color={colors.textSecondary} style={styles.folderIcon} />
-                  <Text variant="caption" style={metadataTextStyle}>
+                  <Text variant="caption" style={styles.metadataText}>
                     {folderName}
                   </Text>
                 </RNView>
-                <Text variant="caption" style={separatorStyle}>
+                <Text variant="caption" style={styles.separator}>
                   {'  ·  '}
                 </Text>
               </>
             )}
-            <Text variant="caption" style={metadataTextStyle}>
+            <Text variant="caption" style={styles.metadataText}>
               {date}
             </Text>
           </RNView>
@@ -191,61 +174,69 @@ export const NoteCard = memo(function NoteCard({
   )
 })
 
-const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginVertical: 1,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    gap: 12,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
-    letterSpacing: -0.4,
-  },
-  summary: {
-    fontSize: 14,
-    lineHeight: 19,
-    opacity: 0.8,
-    marginBottom: 8,
-  },
-  metadata: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  folderTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  folderIcon: {
-    marginRight: 4,
-    opacity: 0.7,
-  },
-  metadataText: {
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    opacity: 0.6,
-  },
-  separator: {
-    opacity: 0.3,
-    fontSize: 11,
-  },
-  thumbnail: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
-    backgroundColor: 'rgba(120,120,128,0.12)',
-    flexShrink: 0,
-  },
-})
+const createStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      paddingHorizontal: 16,
+      borderRadius: 12,
+      marginVertical: 1,
+    },
+    borderBottom: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.colors.borderSecondary,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 14,
+      gap: 12,
+    },
+    content: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '700',
+      marginBottom: 4,
+      letterSpacing: -0.4,
+    },
+    summary: {
+      fontSize: 14,
+      lineHeight: 19,
+      opacity: 0.8,
+      marginBottom: 8,
+      color: theme.colors.textSecondary,
+    },
+    metadata: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    folderTag: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    folderIcon: {
+      marginRight: 4,
+      opacity: 0.7,
+    },
+    metadataText: {
+      fontSize: 11,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+      opacity: 0.6,
+      color: theme.colors.textSecondary,
+    },
+    separator: {
+      opacity: 0.3,
+      fontSize: 11,
+      color: theme.colors.textSecondary,
+    },
+    thumbnail: {
+      width: 56,
+      height: 56,
+      borderRadius: 8,
+      backgroundColor: theme.colors.separator,
+      flexShrink: 0,
+    },
+  })

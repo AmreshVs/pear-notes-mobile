@@ -4,7 +4,7 @@ import React from 'react'
 import { useTheme } from '@/components/Themed'
 
 export default function FoldersLayout() {
-  const { colors, isDark } = useTheme()
+  const { colors } = useTheme()
 
   return (
     <Stack

@@ -23,11 +23,12 @@ import {
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from './GlassView'
-import { Text, View, useTheme } from './Themed'
+import { Text, Theme, View, useColors, useThemedStyles } from './Themed'
 
 export const PairingOverlay = memo(function PairingOverlay() {
   const dispatch = useDispatch()
-  const { colors, isDark } = useTheme()
+  const styles = useThemedStyles(createStyles)
+  const colors = useColors()
   const [pasteCode, setPasteCode] = useState('')
   const fadeAnim = useMemo(() => new Animated.Value(0), [])
 
@@ -65,8 +66,54 @@ export const PairingOverlay = memo(function PairingOverlay() {
     }
   }, [dispatch, pasteCode])
 
-  const GOLD = colors.primary
-  const GREEN = '#34C759'
+  const renderIcon = useCallback(() => {
+    if (step === 'done') {
+      return (
+        <View style={styles.iconDone}>
+          <Check size={40} color={colors.success} strokeWidth={3} />
+        </View>
+      )
+    }
+
+    if (showPairingInput) {
+      return (
+        <View style={styles.iconGold}>
+          <Link2 size={40} color={colors.primary} />
+        </View>
+      )
+    }
+
+    return (
+      <View style={styles.iconGold}>
+        <ShieldCheck size={40} color={colors.primary} />
+      </View>
+    )
+  }, [step, showPairingInput, styles.iconDone, styles.iconGold, colors])
+
+  const renderSyncIcon = useCallback(
+    () => (
+      <View style={styles.loaderWrap}>
+        <View style={styles.syncIconWrapper}>
+          <Globe size={40} color={colors.primary} style={styles.globeIcon} />
+        </View>
+        <ActivityIndicator size="large" color={colors.primary} style={StyleSheet.absoluteFill} />
+      </View>
+    ),
+    [styles.loaderWrap, styles.syncIconWrapper, styles.globeIcon, colors.primary],
+  )
+
+  const isSyncing = useMemo(
+    () => ['initializing_storage', 'replicating_data', 'syncing', 'receiving_data'].includes(step),
+    [step],
+  )
+
+  const peerFp = useMemo(() => getFingerprint(userData), [userData])
+  const myFp = useMemo(() => getFingerprint(localKey), [localKey])
+  const isConfirm = step === 'confirmation'
+  const mainFp = isConfirm ? peerFp : myFp
+  const mainLabel = isConfirm ? 'REMOTE ID' : 'MY ID'
+  const subLabel = isConfirm ? 'MY ID' : peerFp ? 'REMOTE ID' : null
+  const subFp = isConfirm ? myFp : peerFp || null
 
   const getMessage = useCallback(() => {
     switch (step) {
@@ -91,114 +138,23 @@ export const PairingOverlay = memo(function PairingOverlay() {
     }
   }, [step, data])
 
-  const iconDoneStyle = useMemo(
-    () => [s.icon, { backgroundColor: `${GREEN}26`, borderColor: `${GREEN}4D` }],
-    [GREEN],
-  )
-  const iconGoldStyle = useMemo(
-    () => [s.icon, { backgroundColor: `${GOLD}26`, borderColor: `${GOLD}4D` }],
-    [GOLD],
-  )
-  const syncIconWrapperStyle = useMemo(
-    () => [s.icon, { backgroundColor: `${GOLD}0D`, borderColor: `${GOLD}1A` }],
-    [GOLD],
-  )
-
-  const renderIcon = useCallback(() => {
-    if (step === 'done') {
-      return (
-        <View style={iconDoneStyle}>
-          <Check size={40} color={GREEN} strokeWidth={3} />
-        </View>
-      )
-    }
-
-    if (showPairingInput) {
-      return (
-        <View style={iconGoldStyle}>
-          <Link2 size={40} color={GOLD} />
-        </View>
-      )
-    }
-
-    return (
-      <View style={iconGoldStyle}>
-        <ShieldCheck size={40} color={GOLD} />
-      </View>
-    )
-  }, [step, showPairingInput, iconDoneStyle, iconGoldStyle, GREEN, GOLD])
-
-  const renderSyncIcon = useCallback(
-    () => (
-      <View style={s.loaderWrap}>
-        <View style={syncIconWrapperStyle}>
-          <Globe size={40} color={GOLD} style={s.globeIcon} />
-        </View>
-        <ActivityIndicator size="large" color={GOLD} style={StyleSheet.absoluteFill} />
-      </View>
-    ),
-    [syncIconWrapperStyle, GOLD],
-  )
-
-  const isSyncing = useMemo(
-    () => ['initializing_storage', 'replicating_data', 'syncing', 'receiving_data'].includes(step),
-    [step],
-  )
-
-  const peerFp = useMemo(() => getFingerprint(userData), [userData])
-  const myFp = useMemo(() => getFingerprint(localKey), [localKey])
-  const isConfirm = step === 'confirmation'
-  const mainFp = isConfirm ? peerFp : myFp
-  const mainLabel = isConfirm ? 'REMOTE ID' : 'MY ID'
-  const subLabel = isConfirm ? 'MY ID' : peerFp ? 'REMOTE ID' : null
-  const subFp = isConfirm ? myFp : peerFp || null
-
-  const titleStyle = useMemo(() => [s.title, { color: colors.text }], [colors.text])
-  const subStyle = useMemo(() => [s.sub, { color: colors.textSecondary }], [colors.textSecondary])
-  const labelTextStyle = useMemo(
-    () => [s.labelText, { color: colors.textSecondary }],
-    [colors.textSecondary],
-  )
-  const placeholderColor = useMemo(
-    () => (isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)'),
-    [isDark],
-  )
-  const inputStyle = useMemo(
-    () => [
-      s.input,
-      {
-        color: colors.text,
-        borderColor: 'rgba(255,255,255,0.05)',
-        backgroundColor: 'rgba(255,255,255,0.04)',
-      },
-    ],
-    [colors.text],
-  )
-  const confirmBtnStyle = useMemo(
-    () => [s.btn, { backgroundColor: GOLD, opacity: !pasteCode.trim() ? 0.3 : 1 }],
-    [GOLD, pasteCode],
-  )
-
-  const idCardStyle = useMemo(() => [s.idCard, { borderColor: 'rgba(255,255,255,0.08)' }], [])
-  const idLabelStyle = useMemo(() => [s.idLabel, { color: `${GOLD}99` }], [GOLD])
-  const idValueStyle = useMemo(() => [s.idValue, { color: colors.text }], [colors.text])
-  const verifyBtnStyle = useMemo(() => [s.btn, { backgroundColor: GOLD }], [GOLD])
-
   const renderContent = useCallback(() => {
     const isDone = step === 'done'
 
     if (isDone) {
       return (
-        <View style={s.cardInner}>
+        <View style={styles.cardInner}>
           {renderIcon()}
-          <Text style={titleStyle}>Device Linked</Text>
-          <Text style={subStyle}>
+          <Text style={styles.title}>Device Linked</Text>
+          <Text style={styles.sub}>
             {isInviter
               ? 'Your new device has been verified and linked successfully.'
               : 'Welcome! This device is now a secure part of your notes library.'}
           </Text>
-          <Pressable onPress={handleClose} style={s.greenBtn}>
-            <Text style={s.greenBtnText}>{isInviter ? 'Return to Notes' : 'Open Workspace'}</Text>
+          <Pressable onPress={handleClose} style={styles.greenBtn}>
+            <Text style={styles.greenBtnText}>
+              {isInviter ? 'Return to Notes' : 'Open Workspace'}
+            </Text>
           </Pressable>
         </View>
       )
@@ -206,19 +162,22 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
     if (isSyncing) {
       return (
-        <View style={s.cardInner}>
+        <View style={styles.cardInner}>
           {renderSyncIcon()}
-          <Text style={titleStyle}>Syncing Data</Text>
-          <Text style={subStyle}>Moving your notes and media to this device...</Text>
-          <View style={s.progressWrap}>
-            <View style={s.progressLabel}>
-              <Text style={labelTextStyle}>
+          <Text style={styles.title}>Syncing Data</Text>
+          <Text style={styles.sub}>Moving your notes and media to this device...</Text>
+          <View style={styles.progressWrap}>
+            <View style={styles.progressLabel}>
+              <Text style={styles.labelText}>
                 {getMessage()} • {progress ?? 0}% Complete
               </Text>
             </View>
-            <View style={s.trackContainer}>
+            <View style={styles.trackContainer}>
               <View
-                style={[s.fill, { width: `${progress ?? 0}%` as any, backgroundColor: GOLD }]}
+                style={[
+                  styles.fill,
+                  { width: `${progress ?? 0}%` as any, backgroundColor: colors.primary },
+                ]}
               />
             </View>
           </View>
@@ -228,81 +187,96 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
     if (showPairingInput) {
       return (
-        <View style={s.cardInner}>
+        <View style={styles.cardInner}>
           {renderIcon()}
-          <Text style={titleStyle}>Link Your Device</Text>
-          <Text style={subStyle}>
+          <Text style={styles.title}>Link Your Device</Text>
+          <Text style={styles.sub}>
             Enter the invite code from your other device to sync your notes securely.
           </Text>
-          <View style={s.inputArea}>
-            <Text style={s.inputLabelText}>Invite Code</Text>
+          <View style={styles.inputArea}>
+            <Text style={styles.inputLabelText}>Invite Code</Text>
             <TextInput
               value={pasteCode}
               onChangeText={setPasteCode}
               onSubmitEditing={handleConnect}
               placeholder="Paste your code here..."
-              placeholderTextColor={placeholderColor}
-              style={inputStyle}
+              placeholderTextColor={colors.textSecondary}
+              style={styles.input}
               autoFocus
               autoCapitalize="none"
               autoCorrect={false}
             />
           </View>
-          <View style={s.row}>
-            <Pressable onPress={handleClose} style={s.cancelPressable}>
-              <Text style={s.cancelBtnText}>Cancel</Text>
+          <View style={styles.row}>
+            <Pressable onPress={handleClose} style={styles.cancelPressable}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
             </Pressable>
-            <Pressable onPress={handleConnect} disabled={!pasteCode.trim()} style={confirmBtnStyle}>
-              <Text style={s.confirmBtnText}>Connect</Text>
+            <Pressable
+              onPress={handleConnect}
+              disabled={!pasteCode.trim()}
+              style={[
+                styles.btn,
+                { backgroundColor: colors.primary, opacity: !pasteCode.trim() ? 0.3 : 1 },
+              ]}
+            >
+              <Text style={styles.confirmBtnText}>Connect</Text>
             </Pressable>
           </View>
         </View>
       )
     }
 
-    const progressFillStyle = { width: `${progress || 25}%` as any, backgroundColor: GOLD }
-
     return (
-      <View style={s.cardInner}>
+      <View style={styles.cardInner}>
         {renderIcon()}
-        <Text style={titleStyle}>{isConfirm ? 'Verify Secure Code' : 'Identity Verification'}</Text>
-        <Text style={subStyle}>
+        <Text style={styles.title}>
+          {isConfirm ? 'Verify Secure Code' : 'Identity Verification'}
+        </Text>
+        <Text style={styles.sub}>
           {isConfirm
             ? 'Ensure both devices display the same identification code.'
             : 'Verifying connection. Please authorize on your other device.'}
         </Text>
 
         {mainFp ? (
-          <View style={idCardStyle}>
-            <Text style={idLabelStyle}>{mainLabel}</Text>
-            <Text style={idValueStyle}>{mainFp.toUpperCase()}</Text>
+          <View style={styles.idCard}>
+            <Text style={styles.idLabel}>{mainLabel}</Text>
+            <Text style={styles.idValue}>{mainFp.toUpperCase()}</Text>
           </View>
         ) : null}
 
         {subFp ? (
-          <View style={s.subFpWrapper}>
-            <Text style={labelTextStyle}>
+          <View style={styles.subFpWrapper}>
+            <Text style={styles.labelText}>
               {subLabel}: {subFp.toUpperCase()}
             </Text>
           </View>
         ) : null}
 
         {isConfirm ? (
-          <View style={s.row}>
-            <Pressable onPress={handleClose} style={s.cancelPressable}>
-              <Text style={s.cancelBtnText}>Cancel</Text>
+          <View style={styles.row}>
+            <Pressable onPress={handleClose} style={styles.cancelPressable}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
             </Pressable>
-            <Pressable onPress={() => dispatch(confirmPairing())} style={verifyBtnStyle}>
-              <Text style={s.confirmBtnText}>Verify Code</Text>
+            <Pressable
+              onPress={() => dispatch(confirmPairing())}
+              style={[styles.btn, { backgroundColor: colors.primary }]}
+            >
+              <Text style={styles.confirmBtnText}>Verify Code</Text>
             </Pressable>
           </View>
         ) : (
-          <View style={s.progressWrap}>
-            <View style={s.trackContainer}>
-              <View style={[s.fill, progressFillStyle]} />
+          <View style={styles.progressWrap}>
+            <View style={styles.trackContainer}>
+              <View
+                style={[
+                  styles.fill,
+                  { width: `${progress || 25}%` as any, backgroundColor: colors.primary },
+                ]}
+              />
             </View>
-            <View style={s.progressLabel}>
-              <Text style={labelTextStyle}>{getMessage()}</Text>
+            <View style={styles.progressLabel}>
+              <Text style={styles.labelText}>{getMessage()}</Text>
             </View>
           </View>
         )}
@@ -315,29 +289,19 @@ export const PairingOverlay = memo(function PairingOverlay() {
     renderIcon,
     handleClose,
     colors,
-    GOLD,
     pasteCode,
     handleConnect,
     dispatch,
     getMessage,
     renderSyncIcon,
     isSyncing,
-    titleStyle,
-    subStyle,
-    labelTextStyle,
-    placeholderColor,
-    inputStyle,
-    confirmBtnStyle,
     isConfirm,
     mainFp,
-    idCardStyle,
-    idLabelStyle,
     mainLabel,
-    idValueStyle,
     subFp,
     subLabel,
-    verifyBtnStyle,
-    showPairingInput, // Added showPairingInput to dependencies
+    showPairingInput,
+    styles,
   ])
 
   const fadeStyle = useMemo(
@@ -350,11 +314,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
   return (
     <Animated.View style={fadeStyle}>
       <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={s.overlay} />
+      <View style={styles.overlay} />
       <Pressable onPress={handleClose} style={StyleSheet.absoluteFill} />
 
-      <View style={s.center} pointerEvents="box-none">
-        <GlassView intensity={40} borderRadius={32} style={s.card}>
+      <View style={styles.center} pointerEvents="box-none">
+        <GlassView intensity={40} borderRadius={32} style={styles.card}>
           {renderContent()}
         </GlassView>
       </View>
@@ -362,155 +326,193 @@ export const PairingOverlay = memo(function PairingOverlay() {
   )
 })
 
-const s = StyleSheet.create({
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    opacity: 1,
-    backgroundColor: 'transparent',
-  },
-  card: {
-    width: '100%',
-    maxWidth: 384,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.5,
-    shadowRadius: 40,
-    elevation: 20,
-  },
-  cardInner: { padding: 40, alignItems: 'center', width: '100%' },
-  icon: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  loaderWrap: {
-    position: 'relative',
-    width: 96,
-    height: 96,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    textAlign: 'center',
-    letterSpacing: -0.4,
-    marginBottom: 8,
-  },
-  sub: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 22,
-    opacity: 0.7,
-    marginBottom: 24,
-    maxWidth: 280,
-  },
-  idCard: {
-    width: '100%',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    marginBottom: 4,
-  },
-  idLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 2,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  idValue: {
-    fontSize: 24,
-    fontWeight: '900',
-    letterSpacing: 3,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    textAlign: 'center',
-  },
-  row: { flexDirection: 'row', gap: 12, width: '100%', paddingTop: 8 },
-  btn: { flex: 1, height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-  },
-  globeIcon: { opacity: 0.2 },
-  greenBtnText: { color: '#34C759', fontWeight: '700', fontSize: 15 },
-  cancelPressable: {
-    flex: 1,
-    height: 50,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  cancelBtnText: { color: 'rgba(255,255,255,0.45)', fontWeight: '700', fontSize: 14 },
-  confirmBtnText: { color: '#000', fontWeight: '700', fontSize: 15 },
-  inputLabelText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    opacity: 0.6,
-    marginBottom: 8,
-    marginLeft: 1,
-  },
-  subFpWrapper: { opacity: 0.4, marginBottom: 16 },
-  progressWrap: { width: '100%', paddingTop: 8 },
-  fill: { height: '100%', borderRadius: 3 },
-  inputArea: { width: '100%', marginBottom: 24 },
-  input: {
-    width: '100%',
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    fontSize: 13,
-    textAlign: 'center',
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
-    letterSpacing: 1,
-  },
-  greenBtn: {
-    width: '100%',
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1,
-    backgroundColor: 'rgba(52,199,89,0.10)',
-    borderColor: 'rgba(52,199,89,0.20)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  goldBtn: {
-    shadowColor: '#DCA323',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-  },
-  trackContainer: {
-    width: '100%',
-    height: 6,
-    borderRadius: 3,
-    overflow: 'hidden',
-    borderWidth: 1,
-    backgroundColor: 'rgba(255,255,255,0.03)',
-    borderColor: 'rgba(255,255,255,0.05)',
-  },
-  progressLabel: { marginTop: 12, alignItems: 'center' },
-  labelText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    opacity: 0.6,
-  },
-})
+const createStyles = (theme: Theme) => {
+  return StyleSheet.create({
+    center: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+      backgroundColor: 'transparent',
+    },
+    card: {
+      width: '100%',
+      maxWidth: 384,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.5,
+      shadowRadius: 40,
+      elevation: 20,
+    },
+    cardInner: { padding: 40, alignItems: 'center', width: '100%' },
+    icon: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      marginBottom: 8,
+    },
+    iconDone: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      marginBottom: 8,
+      backgroundColor: `${theme.colors.success}26`,
+      borderColor: `${theme.colors.success}4D`,
+    },
+    iconGold: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      marginBottom: 8,
+      backgroundColor: `${theme.colors.primary}26`,
+      borderColor: `${theme.colors.primary}4D`,
+    },
+    syncIconWrapper: {
+      width: 80,
+      height: 80,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      marginBottom: 8,
+      backgroundColor: `${theme.colors.primary}0D`,
+      borderColor: `${theme.colors.primary}1A`,
+    },
+    loaderWrap: {
+      position: 'relative',
+      width: 96,
+      height: 96,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    title: {
+      fontSize: 24,
+      fontWeight: '700',
+      textAlign: 'center',
+      letterSpacing: -0.4,
+      marginBottom: 8,
+      color: theme.colors.text,
+    },
+    sub: {
+      fontSize: 14,
+      textAlign: 'center',
+      lineHeight: 22,
+      opacity: 0.7,
+      marginBottom: 24,
+      maxWidth: 280,
+      color: theme.colors.textSecondary,
+    },
+    idCard: {
+      width: '100%',
+      paddingHorizontal: 24,
+      paddingVertical: 16,
+      borderRadius: 16,
+      borderWidth: 1,
+      backgroundColor: theme.colors.cardSelected,
+      borderColor: theme.colors.borderSecondary,
+      marginBottom: 4,
+    },
+    idLabel: {
+      fontSize: 10,
+      fontWeight: '700',
+      letterSpacing: 2,
+      marginBottom: 4,
+      textAlign: 'center',
+      color: `${theme.colors.primary}99`,
+    },
+    idValue: {
+      fontSize: 24,
+      fontWeight: '900',
+      letterSpacing: 3,
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      textAlign: 'center',
+      color: theme.colors.text,
+    },
+    row: { flexDirection: 'row', gap: 12, width: '100%', paddingTop: 8 },
+    btn: { flex: 1, height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+    overlay: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: 'rgba(0,0,0,0.35)',
+    },
+    globeIcon: { opacity: 0.2 },
+    greenBtnText: { color: theme.colors.success, fontWeight: '700', fontSize: 15 },
+    cancelPressable: {
+      flex: 1,
+      height: 50,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.cardPressed,
+      borderWidth: 1,
+      borderColor: theme.colors.borderSecondary,
+    },
+    cancelBtnText: { color: theme.colors.textSecondary, fontWeight: '700', fontSize: 14 },
+    confirmBtnText: { color: theme.isDark ? '#000' : '#fff', fontWeight: '700', fontSize: 15 },
+    inputLabelText: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 1.5,
+      textTransform: 'uppercase',
+      opacity: 0.6,
+      marginBottom: 8,
+      marginLeft: 1,
+      color: theme.colors.textSecondary,
+    },
+    subFpWrapper: { opacity: 0.4, marginBottom: 16 },
+    progressWrap: { width: '100%', paddingTop: 8 },
+    fill: { height: '100%', borderRadius: 3 },
+    inputArea: { width: '100%', marginBottom: 24 },
+    input: {
+      width: '100%',
+      height: 44,
+      borderRadius: 12,
+      borderWidth: 1,
+      paddingHorizontal: 16,
+      fontSize: 13,
+      textAlign: 'center',
+      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+      letterSpacing: 1,
+      color: theme.colors.text,
+      borderColor: theme.colors.borderSecondary,
+      backgroundColor: theme.colors.cardPressed,
+    },
+    greenBtn: {
+      width: '100%',
+      height: 50,
+      borderRadius: 12,
+      borderWidth: 1,
+      backgroundColor: `${theme.colors.success}1A`,
+      borderColor: `${theme.colors.success}33`,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    trackContainer: {
+      width: '100%',
+      height: 6,
+      borderRadius: 3,
+      overflow: 'hidden',
+      borderWidth: 1,
+      backgroundColor: theme.colors.cardPressed,
+      borderColor: theme.colors.borderSecondary,
+    },
+    progressLabel: { marginTop: 12, alignItems: 'center' },
+    labelText: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 1.5,
+      textTransform: 'uppercase',
+      opacity: 0.6,
+      color: theme.colors.textSecondary,
+    },
+  })
+}
