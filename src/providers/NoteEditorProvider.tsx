@@ -1,8 +1,13 @@
 import { Buffer } from 'buffer'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
-import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
-import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import {
+  ALL_NOTES_KEY,
+  HYPERDRIVE_URL_PREFIX,
+  RECENTLY_DELETED_KEY,
+} from '@pear-notes/core/constant.js'
+import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
+import { deleteNote, getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -22,6 +27,7 @@ import React, {
 } from 'react'
 import {
   ActionSheetIOS,
+  Alert,
   Animated,
   Dimensions,
   InteractionManager,
@@ -30,6 +36,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   View,
 } from 'react-native'
@@ -44,6 +51,8 @@ import {
   type TiptapStyleState,
 } from '@/components/TiptapEditor'
 import { Radii, Space } from '@/constants/commonStyles'
+
+const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 interface NoteEditorContextType {
   openNote: (id: string) => void
@@ -288,6 +297,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const rawNoteData = useSelector(noteSelector)
   const noteData = useMemo(() => (rawNoteData || {}) as any, [rawNoteData])
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
+  const allFolders = useSelector(getFolders) as any[]
+  const moveFolders = useMemo(
+    () =>
+      allFolders.filter(
+        (f: any) => !f.isTrash && f.id !== ALL_NOTES_KEY && f.id !== RECENTLY_DELETED_KEY,
+      ),
+    [allFolders],
+  )
 
   useEffect(() => {
     const show = Keyboard.addListener(
@@ -483,7 +500,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         if (isAudio) {
           editorRef.current?.insertAudioAttachment(resolvedLink, name || 'Audio')
         } else {
-          editorRef.current?.insertFileAttachment(resolvedLink, name || 'File', size || 0, mimeType || '')
+          editorRef.current?.insertFileAttachment(
+            resolvedLink,
+            name || 'File',
+            size || 0,
+            mimeType || '',
+          )
         }
       }
     } catch (error) {
@@ -519,6 +541,101 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setIsOpen(true)
   }, [])
 
+  const handleDeleteNote = useCallback(() => {
+    if (!noteId) return
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    Alert.alert('Delete Note', 'Are you sure you want to delete this note?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          dispatch(deleteNote(noteId as any))
+          const w = Dimensions.get('window').width
+          Animated.timing(slideAnim, {
+            toValue: w,
+            duration: 250,
+            useNativeDriver: true,
+          }).start(() => {
+            setIsOpen(false)
+            setNoteId(null)
+            loadedNoteRef.current = null
+          })
+        },
+      },
+    ])
+  }, [noteId, dispatch, slideAnim])
+
+  const handleMoveNote = useCallback(
+    (folderId: string) => {
+      if (!noteId) return
+      dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    },
+    [noteId, dispatch],
+  )
+
+  const handleShare = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const title = titleRef.current || 'Untitled'
+    const html = noteContentRef.current || ''
+    const plainText = html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n')
+      .replace(/<\/h[1-6]>/gi, '\n')
+      .replace(/<\/li>/gi, '\n')
+      .replace(/<li[^>]*>/gi, '• ')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim()
+    const message = title ? `${title}\n\n${plainText}` : plainText
+    try {
+      await Share.share({ title, message })
+    } catch {}
+  }, [])
+
+  const showMoveToSheet = useCallback(() => {
+    if (moveFolders.length === 0) return
+    const folderNames = moveFolders.map((f: any) => f.name || f.id)
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: 'Move to',
+        options: ['Cancel', ...folderNames],
+        cancelButtonIndex: 0,
+      },
+      (index) => {
+        if (index === 0) return
+        const folder = moveFolders[index - 1]
+        if (folder) handleMoveNote(folder.id)
+      },
+    )
+  }, [moveFolders, handleMoveNote])
+
+  const handleMoreOptions = useCallback(() => {
+    if (!noteId) return
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Move to', 'Delete'],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: 2,
+        },
+        (index) => {
+          if (index === 1) showMoveToSheet()
+          else if (index === 2) handleDeleteNote()
+        },
+      )
+    } else {
+      handleDeleteNote()
+    }
+  }, [noteId, showMoveToSheet, handleDeleteNote])
+
   const closeNote = useCallback(async () => {
     editorRef.current?.blur()
     Keyboard.dismiss()
@@ -553,7 +670,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     () => (keyboardHeight > 0 ? keyboardHeight + 12 : Platform.OS === 'ios' ? 32 : 16),
     [keyboardHeight],
   )
-  const Wrapper = React.Fragment
 
   const animatedViewStyle = useMemo(
     () => [
@@ -598,7 +714,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   return (
     <NoteEditorContext.Provider value={contextValue}>
       {children}
-      <Wrapper>
+      <>
         <Animated.View style={animatedViewStyle} pointerEvents={isOpen ? 'auto' : 'none'}>
           <View style={headerStyle}>
             <View style={styles.headerRow}>
@@ -637,7 +753,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               ) : (
                 <GlassView intensity={5} borderRadius={24} style={styles.headerPill}>
                   <Pressable
-                    onPress={() => {}}
+                    onPress={handleShare}
                     style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
                   >
                     <SymbolView
@@ -649,18 +765,64 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                     />
                   </Pressable>
                   <View style={pillDividerStyle} />
-                  <Pressable
-                    onPress={() => {}}
-                    style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
-                  >
-                    <SymbolView
-                      name="ellipsis"
-                      size={24}
-                      tintColor={colors.text}
-                      weight="medium"
-                      fallback={<View />}
-                    />
-                  </Pressable>
+                  {ExpoUI ? (
+                    <ExpoUI.Host matchContents style={{ width: 48, height: 48 }}>
+                      <ExpoUI.Menu
+                        label={
+                          <View style={styles.headerBtnInner}>
+                            <SymbolView
+                              name="ellipsis"
+                              size={24}
+                              tintColor={colors.text}
+                              weight="medium"
+                              fallback={<View />}
+                            />
+                          </View>
+                        }
+                      >
+                        <ExpoUI.Menu label="Move to" systemImage="folder.badge.plus">
+                          {moveFolders.length > 0 ? (
+                            moveFolders.map((f: any) => (
+                              <ExpoUI.Button
+                                key={f.id}
+                                label={f.name}
+                                systemImage="folder"
+                                onPress={() => handleMoveNote(f.id)}
+                              />
+                            ))
+                          ) : (
+                            <ExpoUI.Button
+                              label="No folders available"
+                              systemImage="folder.badge.minus"
+                              onPress={() => {}}
+                            />
+                          )}
+                        </ExpoUI.Menu>
+                        <ExpoUI.Button
+                          label="Delete"
+                          systemImage="trash"
+                          role="destructive"
+                          onPress={handleDeleteNote}
+                        />
+                      </ExpoUI.Menu>
+                    </ExpoUI.Host>
+                  ) : (
+                    <Pressable
+                      onPress={handleMoreOptions}
+                      style={({ pressed }) => [
+                        styles.headerBtnInner,
+                        { opacity: pressed ? 0.5 : 1 },
+                      ]}
+                    >
+                      <SymbolView
+                        name="ellipsis"
+                        size={24}
+                        tintColor={colors.text}
+                        weight="medium"
+                        fallback={<View />}
+                      />
+                    </Pressable>
+                  )}
                 </GlassView>
               )}
             </View>
@@ -691,7 +853,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             />
           )}
         </Animated.View>
-      </Wrapper>
+      </>
     </NoteEditorContext.Provider>
   )
 }
