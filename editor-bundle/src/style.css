@@ -47,6 +47,7 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 #note-title {
   display: block;
@@ -66,7 +67,7 @@ html, body {
 #note-title::placeholder {
   color: var(--c-placeholder);
 }
-#editor { min-height: 100vh; }
+#editor { min-height: 100vh; contain: layout style; }
 
 :root {
   --editor-font-size: 17px;
@@ -83,6 +84,8 @@ html, body {
   line-height: 1.65;
   word-wrap: break-word;
   caret-color: var(--c-primary);
+  contain: style;
+  will-change: contents;
 }
 
 .tiptap p.is-editor-empty:first-child::before {

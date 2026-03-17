@@ -57,6 +57,7 @@ export interface TiptapEditorHandle {
   setHTML: (html: string) => void
   setTitle: (title: string) => void
   scrollToTop: () => void
+  setKeyboardInset: (height: number) => void
 }
 
 export interface TiptapEditorProps {
@@ -162,10 +163,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     }, [])
 
     const sendCommand = useCallback((command: object) => {
-      const js = `(function(){if(window.editorBridge){window.editorBridge.handleMessage(${JSON.stringify(
-        JSON.stringify(command),
-      )})}})();true;`
-      webViewRef.current?.injectJavaScript(js)
+      const payload = JSON.stringify(command)
+      webViewRef.current?.injectJavaScript(
+        `(function(){if(window.editorBridge){window.editorBridge.handleMessage(${JSON.stringify(payload)})}})();true;`,
+      )
     }, [])
 
     const getHTMLAsync = useCallback((): Promise<string | undefined> => {
@@ -312,6 +313,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         setHTML: (html) => sendCommand({ type: 'setContent', html }),
         setTitle: (title) => sendCommand({ type: 'setTitle', title }),
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
+        setKeyboardInset: (height: number) =>
+          webViewRef.current?.injectJavaScript(
+            `(function(){var h='${height}px';document.body.style.paddingBottom=h;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom=h;setTimeout(function(){var s=window.getSelection();if(s&&s.rangeCount){var el=s.getRangeAt(0).startContainer;if(el.nodeType===3)el=el.parentElement;if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',behavior:'smooth'})}},50)})();true;`,
+          ),
       }),
       [sendCommand, getHTMLAsync],
     )
@@ -348,6 +353,14 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             contentMode="mobile"
             setSupportMultipleWindows={false}
             hideKeyboardAccessoryView
+            cacheEnabled
+            cacheMode="LOAD_CACHE_ELSE_NETWORK"
+            startInLoadingState={false}
+            allowsInlineMediaPlayback
+            mediaPlaybackRequiresUserAction={false}
+            decelerationRate="normal"
+            allowsBackForwardNavigationGestures={false}
+            textInteractionEnabled
           />
         </View>
       </View>

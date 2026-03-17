@@ -109,10 +109,13 @@ function flushContentChange(html, text) {
   sendToRN({ type: 'contentChange', html, text })
 }
 
+let styleTimer = null
+let lastStyleJSON = ''
 function broadcastStyleState(ed) {
-  sendToRN({
-    type: 'styleState',
-    state: {
+  if (styleTimer) return
+  styleTimer = requestAnimationFrame(() => {
+    styleTimer = null
+    const state = {
       bold: { isActive: ed.isActive('bold') },
       italic: { isActive: ed.isActive('italic') },
       underline: { isActive: ed.isActive('underline') },
@@ -127,7 +130,11 @@ function broadcastStyleState(ed) {
       codeBlock: { isActive: ed.isActive('codeBlock') },
       link: { isActive: ed.isActive('link') },
       highlight: { isActive: ed.isActive('highlight') },
-    },
+    }
+    const json = JSON.stringify(state)
+    if (json === lastStyleJSON) return
+    lastStyleJSON = json
+    sendToRN({ type: 'styleState', state })
   })
 }
 

@@ -57,8 +57,12 @@ export function getEditorHtml(): string {
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
       -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
-    #editor { min-height: 100vh; }
+    #editor {
+      min-height: 100vh;
+      contain: layout style;
+    }
 
     .tiptap {
       min-height: 100vh;
@@ -71,6 +75,8 @@ export function getEditorHtml(): string {
       line-height: 1.65;
       word-wrap: break-word;
       caret-color: var(--c-primary);
+      contain: style;
+      will-change: contents;
     }
 
     .tiptap p.is-editor-empty:first-child::before {
@@ -259,10 +265,13 @@ export function getEditorHtml(): string {
       sendToRN({ type: 'contentChange', html, text });
     }
 
+    let styleTimer = null;
+    let lastStyleJSON = '';
     function broadcastStyleState(ed) {
-      sendToRN({
-        type: 'styleState',
-        state: {
+      if (styleTimer) return;
+      styleTimer = requestAnimationFrame(() => {
+        styleTimer = null;
+        const state = {
           bold:          { isActive: ed.isActive('bold') },
           italic:        { isActive: ed.isActive('italic') },
           underline:     { isActive: ed.isActive('underline') },
@@ -277,7 +286,11 @@ export function getEditorHtml(): string {
           codeBlock:     { isActive: ed.isActive('codeBlock') },
           link:          { isActive: ed.isActive('link') },
           highlight:     { isActive: ed.isActive('highlight') },
-        },
+        };
+        const json = JSON.stringify(state);
+        if (json === lastStyleJSON) return;
+        lastStyleJSON = json;
+        sendToRN({ type: 'styleState', state });
       });
     }
 
@@ -363,9 +376,36 @@ export function getEditorHtml(): string {
             ch().setImage({ src: msg.url, width: msg.width, height: msg.height }).run();
             break;
 
+          case 'updateImageSrc': {
+            const { state, dispatch } = editor.view;
+            state.doc.descendants((node, pos) => {
+              if (node.type.name === 'image' && node.attrs.src === msg.oldSrc) {
+                dispatch(state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, src: msg.newSrc }));
+                return false;
+              }
+            });
+            break;
+          }
+
           case 'focus':
-            editor.view.dom.dispatchEvent(new MouseEvent('click', { bubbles: true }));
             editor.commands.focus();
+            break;
+
+          case 'blur':
+            editor.commands.blur();
+            break;
+
+          case 'setTitle':
+            break;
+
+          case 'setFontSettings':
+            if (msg.fontSize) {
+              document.querySelector('.tiptap').style.fontSize = msg.fontSize + 'px';
+            }
+            break;
+
+          case 'scrollToTop':
+            window.scrollTo(0, 0);
             break;
         }
       },

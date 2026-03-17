@@ -21,6 +21,7 @@ import React, {
 import {
   Animated,
   Dimensions,
+  InteractionManager,
   Keyboard,
   Linking,
   Platform,
@@ -60,20 +61,24 @@ const ToolbarBtn = memo(function ToolbarBtn({
   sf,
   onPress,
   active,
-  colors,
+  tintActive,
+  tintDefault,
+  primaryColor,
 }: {
   sf: string
   onPress: () => void
   active?: boolean
-  colors: any
+  tintActive: string
+  tintDefault: string
+  primaryColor: string
 }) {
   const btnStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
       styles.toolbarBtn,
-      active && { backgroundColor: colors.primary + '33' },
+      active && { backgroundColor: primaryColor + '33' },
       { opacity: pressed ? 0.5 : 1 },
     ],
-    [active, colors.primary],
+    [active, primaryColor],
   )
 
   return (
@@ -81,11 +86,180 @@ const ToolbarBtn = memo(function ToolbarBtn({
       <SymbolView
         name={sf as any}
         size={22}
-        tintColor={active ? colors.primary : colors.text}
+        tintColor={active ? tintActive : tintDefault}
         weight="regular"
         fallback={<View style={styles.fallbackIcon} />}
       />
     </Pressable>
+  )
+})
+
+const EditorToolbar = memo(function EditorToolbar({
+  isEditing,
+  isActive,
+  colors,
+  editorRef,
+  toolbarBottom,
+  onPickImage,
+}: {
+  isEditing: boolean
+  isActive: (key: keyof TiptapStyleState) => boolean
+  colors: any
+  editorRef: React.RefObject<TiptapEditorHandle | null>
+  toolbarBottom: number
+  onPickImage: () => void
+}) {
+  const run = useCallback((action: () => void) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    action()
+  }, [])
+
+  const toolbarStyle = useMemo(
+    () => [styles.floatingToolbar, { bottom: toolbarBottom }],
+    [toolbarBottom],
+  )
+
+  const toolbarRowStyle = useMemo(
+    () => [
+      styles.toolbarRow,
+      { justifyContent: 'flex-start' as const, gap: 24, paddingHorizontal: 8 },
+    ],
+    [],
+  )
+
+  const handleFocusEdit = useCallback(() => {
+    setTimeout(() => editorRef.current?.focus(), 100)
+  }, [editorRef])
+
+  const handlePickImageEdit = useCallback(() => {
+    setTimeout(() => onPickImage(), 100)
+  }, [onPickImage])
+
+  return (
+    <View style={toolbarStyle}>
+      <GlassView intensity={5} borderRadius={28} style={styles.glassBar}>
+        {isEditing ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.toolbarRow}
+          >
+            <ToolbarBtn
+              sf="checkmark.square"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('checkboxList')}
+              onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
+            />
+            <ToolbarBtn
+              sf="paperclip"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              onPress={onPickImage}
+            />
+            <ToolbarBtn
+              sf="square.and.pencil"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              onPress={() => {}}
+            />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <ToolbarBtn
+              sf="textformat.size.larger"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('h1')}
+              onPress={() => run(() => editorRef.current?.toggleH1())}
+            />
+            <ToolbarBtn
+              sf="textformat.size"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('h2')}
+              onPress={() => run(() => editorRef.current?.toggleH2())}
+            />
+            <ToolbarBtn
+              sf="bold"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('bold')}
+              onPress={() => run(() => editorRef.current?.toggleBold())}
+            />
+            <ToolbarBtn
+              sf="italic"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('italic')}
+              onPress={() => run(() => editorRef.current?.toggleItalic())}
+            />
+            <ToolbarBtn
+              sf="list.bullet"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('unorderedList')}
+              onPress={() => run(() => editorRef.current?.toggleUnorderedList())}
+            />
+            <ToolbarBtn
+              sf="list.number"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('orderedList')}
+              onPress={() => run(() => editorRef.current?.toggleOrderedList())}
+            />
+            <ToolbarBtn
+              sf="checklist"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('checkboxList')}
+              onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
+            />
+            <ToolbarBtn
+              sf="text.quote"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('blockQuote')}
+              onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
+            />
+            <ToolbarBtn
+              sf="chevron.left.forwardslash.chevron.right"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              active={isActive('codeBlock')}
+              onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
+            />
+          </ScrollView>
+        ) : (
+          <View style={toolbarRowStyle}>
+            <ToolbarBtn
+              sf="paperclip"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              onPress={handlePickImageEdit}
+            />
+            <ToolbarBtn
+              sf="square.and.pencil"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              primaryColor={colors.primary}
+              onPress={handleFocusEdit}
+            />
+          </View>
+        )}
+      </GlassView>
+    </View>
   )
 })
 
@@ -100,14 +274,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isOpen, setIsOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
-  const [styleState, setStyleState] = useState<TiptapStyleState | null>(null)
+  const styleStateRef = useRef<TiptapStyleState | null>(null)
+  const [styleStateVersion, setStyleStateVersion] = useState(0)
 
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current
   const titleRef = useRef<string>('')
   const noteContentRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
 
-  const rawNoteData = useSelector(getNoteData(noteId ?? ''))
+  const noteSelector = useMemo(() => getNoteData(noteId ?? ''), [noteId])
+  const rawNoteData = useSelector(noteSelector)
   const noteData = useMemo(() => (rawNoteData || {}) as any, [rawNoteData])
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
 
@@ -147,12 +323,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       )
     }
 
-    editorRef.current?.setHTML(content)
+    editorRef.current?.scrollToTop()
     editorRef.current?.setTitle(noteData?.title || '')
-
-    setTimeout(() => {
-      editorRef.current?.scrollToTop()
-    }, 150)
 
     Animated.spring(slideAnim, {
       toValue: 0,
@@ -160,6 +332,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       damping: 20,
       stiffness: 200,
     }).start()
+
+    InteractionManager.runAfterInteractions(() => {
+      editorRef.current?.setHTML(content)
+    })
   }, [noteId, noteData, hyperdriveServerAddress, slideAnim])
 
   useEffect(() => {
@@ -168,6 +344,19 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       setKeyboardHeight(0)
     }
   }, [isOpen])
+
+  const TOOLBAR_HEIGHT = 52
+  const editorBottomInset = useMemo(() => {
+    if (keyboardHeight > 0) {
+      return keyboardHeight + 12 + TOOLBAR_HEIGHT + 8
+    }
+    return (Platform.OS === 'ios' ? 32 : 16) + TOOLBAR_HEIGHT + 8
+  }, [keyboardHeight])
+
+  useEffect(() => {
+    const inset = keyboardHeight > 0 ? keyboardHeight + 12 + TOOLBAR_HEIGHT + 16 : 0
+    editorRef.current?.setKeyboardInset(inset)
+  }, [keyboardHeight])
 
   const handleUpdate = useCallback(
     (html: string) => {
@@ -200,14 +389,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleDone = useCallback(async () => {
     await editorRef.current?.save()
+    editorRef.current?.blur()
     Keyboard.dismiss()
     setIsEditing(false)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-  }, [])
-
-  const run = useCallback((action: () => void) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    action()
   }, [])
 
   const handlePickImage = useCallback(async () => {
@@ -276,8 +461,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const closeNote = useCallback(async () => {
-    await editorRef.current?.save()
+    editorRef.current?.blur()
     Keyboard.dismiss()
+    await editorRef.current?.save()
     const w = Dimensions.get('window').width
     Animated.timing(slideAnim, {
       toValue: w,
@@ -295,9 +481,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [openNote, closeNote, isOpen],
   )
 
+  const handleStyleStateChange = useCallback((state: TiptapStyleState) => {
+    styleStateRef.current = state
+    setStyleStateVersion((v) => v + 1)
+  }, [])
+
   const isActive = useCallback(
-    (key: keyof TiptapStyleState) => styleState?.[key]?.isActive ?? false,
-    [styleState],
+    (key: keyof TiptapStyleState) => styleStateRef.current?.[key]?.isActive ?? false,
+    [styleStateVersion],
   )
   const toolbarBottom = useMemo(
     () => (keyboardHeight > 0 ? keyboardHeight + 12 : Platform.OS === 'ios' ? 32 : 16),
@@ -327,17 +518,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [themeIsDark],
   )
 
-  const toolbarStyle = useMemo(
-    () => [styles.floatingToolbar, { bottom: toolbarBottom }],
-    [toolbarBottom],
-  )
-  const toolbarRowStyle = useMemo(
-    () => [
-      styles.toolbarRow,
-      { justifyContent: 'flex-start' as const, gap: 24, paddingHorizontal: 8 },
-    ],
-    [],
-  )
+  const handleEditorFocus = useCallback(() => setIsEditing(true), [])
 
   const handleOpenAttachment = useCallback((url: string) => {
     if (url) Linking.openURL(url).catch(console.error)
@@ -431,110 +612,24 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             initialContent=""
             initialTitle=""
             safeAreaTop={floatingHeaderHeight}
-            safeAreaBottom={isOpen ? toolbarBottom + 56 : 0}
+            safeAreaBottom={editorBottomInset}
             onContentChange={handleUpdate}
             onTitleChange={handleTitleChange}
-            onStyleStateChange={setStyleState}
-            onEditorFocus={() => setIsEditing(true)}
+            onStyleStateChange={handleStyleStateChange}
+            onEditorFocus={handleEditorFocus}
             onOpenAttachment={handleOpenAttachment}
             onDeleteAttachment={handleDeleteAttachment}
           />
 
           {isOpen && (
-            <View style={toolbarStyle}>
-              <GlassView intensity={5} borderRadius={28} style={styles.glassBar}>
-                {isEditing ? (
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.toolbarRow}
-                  >
-                    <ToolbarBtn
-                      sf="checkmark.square"
-                      colors={colors}
-                      active={isActive('checkboxList')}
-                      onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
-                    />
-                    <ToolbarBtn sf="paperclip" colors={colors} onPress={handlePickImage} />
-                    <ToolbarBtn sf="square.and.pencil" colors={colors} onPress={() => {}} />
-                    <View style={[styles.divider, { backgroundColor: colors.border }]} />
-                    <ToolbarBtn
-                      sf="textformat.size.larger"
-                      colors={colors}
-                      active={isActive('h1')}
-                      onPress={() => run(() => editorRef.current?.toggleH1())}
-                    />
-                    <ToolbarBtn
-                      sf="textformat.size"
-                      colors={colors}
-                      active={isActive('h2')}
-                      onPress={() => run(() => editorRef.current?.toggleH2())}
-                    />
-                    <ToolbarBtn
-                      sf="bold"
-                      colors={colors}
-                      active={isActive('bold')}
-                      onPress={() => run(() => editorRef.current?.toggleBold())}
-                    />
-                    <ToolbarBtn
-                      sf="italic"
-                      colors={colors}
-                      active={isActive('italic')}
-                      onPress={() => run(() => editorRef.current?.toggleItalic())}
-                    />
-                    <ToolbarBtn
-                      sf="list.bullet"
-                      colors={colors}
-                      active={isActive('unorderedList')}
-                      onPress={() => run(() => editorRef.current?.toggleUnorderedList())}
-                    />
-                    <ToolbarBtn
-                      sf="list.number"
-                      colors={colors}
-                      active={isActive('orderedList')}
-                      onPress={() => run(() => editorRef.current?.toggleOrderedList())}
-                    />
-                    <ToolbarBtn
-                      sf="checklist"
-                      colors={colors}
-                      active={isActive('checkboxList')}
-                      onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
-                    />
-                    <ToolbarBtn
-                      sf="text.quote"
-                      colors={colors}
-                      active={isActive('blockQuote')}
-                      onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
-                    />
-                    <ToolbarBtn
-                      sf="chevron.left.forwardslash.chevron.right"
-                      colors={colors}
-                      active={isActive('codeBlock')}
-                      onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
-                    />
-                  </ScrollView>
-                ) : (
-                  <View style={toolbarRowStyle}>
-                    <ToolbarBtn
-                      sf="paperclip"
-                      colors={colors}
-                      onPress={() => {
-                        setIsEditing(true)
-                        setTimeout(() => handlePickImage(), 100)
-                      }}
-                    />
-                    <ToolbarBtn
-                      sf="square.and.pencil"
-                      colors={colors}
-                      onPress={() => {
-                        setIsEditing(true)
-                        setTimeout(() => editorRef.current?.focus(), 100)
-                      }}
-                    />
-                  </View>
-                )}
-              </GlassView>
-            </View>
+            <EditorToolbar
+              isEditing={isEditing}
+              isActive={isActive}
+              colors={colors}
+              editorRef={editorRef}
+              toolbarBottom={toolbarBottom}
+              onPickImage={handlePickImage}
+            />
           )}
         </Animated.View>
       </Wrapper>
