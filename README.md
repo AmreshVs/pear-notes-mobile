@@ -7,16 +7,19 @@ This project uses **Pear Technology** and **Bare Runtime** for decentralized bac
 ## 🏁 Getting Started
 
 ### 1. Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### 2. Generate Backend Bundle
+
 ```bash
 npm run bare-bundle
 ```
 
 ### 3. Run the App
+
 ```bash
 # Android
 npm run android
@@ -26,11 +29,13 @@ npm run ios
 ```
 
 ## 🏗 Project Structure
+
 - `app/`: Frontend (React Native / Expo)
 - `backend/`: Backend (Bare Runtime)
 - `spec/`: HRPC Schemas
 - `utils/`: RPC & Worklet Utilities
 
 ## 🧼 Code Quality
+
 - `npm run lint`: Linting with ESLint
 - `npm run format`: Formatting with Prettier (no semicolons)

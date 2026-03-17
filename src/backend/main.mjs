@@ -1,2 +1,1 @@
-import '@pear-notes/core/backend/main.js';
-
+import '@pear-notes/core/backend/main.js'

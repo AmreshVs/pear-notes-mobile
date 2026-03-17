@@ -14,7 +14,8 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.amreshvs.pearnotes"
+      "bundleIdentifier": "com.amreshvs.pearnotes",
+      "appleTeamId": "65S93235JA"
     },
     "android": {
       "adaptiveIcon": {
@@ -35,7 +36,6 @@
       "expo-system-ui",
       "expo-image"
     ],
-
     "experiments": {
       "typedRoutes": true
     }

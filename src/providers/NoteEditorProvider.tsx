@@ -43,6 +43,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
+import ExpoNativeShareModule from '../../modules/expo-native-share'
+
 import { GlassView } from '@/components/GlassView'
 import { useTheme } from '@/components/Themed'
 import {
@@ -579,7 +581,61 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     const title = titleRef.current || 'Untitled'
     const html = noteContentRef.current || ''
-    const plainText = html
+
+    const urls: string[] = []
+
+    const processLink = async (link: string, defaultExt: string, tagContent: string) => {
+      let cleanLink = link.replace(/&amp;/g, '&')
+      if (hyperdriveServerAddress && cleanLink.includes(HYPERDRIVE_URL_PREFIX)) {
+        cleanLink = cleanLink.replace(HYPERDRIVE_URL_PREFIX, hyperdriveServerAddress.replace(/\/$/, ''))
+      }
+      
+      try {
+        let filename = `file_${Date.now()}`
+        
+        const nameMatch = tagContent.match(/fileName="([^">]+)"/)
+        if (nameMatch && nameMatch[1]) {
+          filename = nameMatch[1].replace(/&amp;/g, '&')
+        } else {
+          const urlFilename = cleanLink.split('/').pop()?.split('?')[0]
+          if (urlFilename && urlFilename.length > 0) {
+            filename = urlFilename
+            const matchType = cleanLink.match(/type=([^&]+)/)
+            if (!filename.includes('.') && matchType) {
+              const mime = decodeURIComponent(matchType[1])
+              if (mime.includes('png')) filename += '.png'
+              else if (mime.includes('jpeg') || mime.includes('jpg')) filename += '.jpg'
+              else if (mime.includes('video/mp4')) filename += '.mp4'
+              else if (mime.includes('audio/x-m4a')) filename += '.m4a'
+              else if (mime.includes('audio/mpeg')) filename += '.mp3'
+            }
+          }
+        }
+        
+        if (!filename.includes('.')) {
+          filename += `.${defaultExt}`
+        }
+
+        const localUri = `${FileSystem.cacheDirectory}${filename}`
+        const { uri } = await FileSystem.downloadAsync(cleanLink, localUri)
+        urls.push(uri)
+      } catch (err) {
+        console.error('Failed to download attachment for sharing:', err)
+      }
+    }
+
+    const imgRegex = /<img[^>]+src="([^">]+)"[^>]*>/g
+    let match
+    while ((match = imgRegex.exec(html)) !== null) {
+      if (match[1]) await processLink(match[1], 'jpg', match[0])
+    }
+    
+    const attachmentRegex = /<div[^>]+url="([^">]+)"[^>]*>/g
+    while ((match = attachmentRegex.exec(html)) !== null) {
+      if (match[1]) await processLink(match[1], 'bin', match[0])
+    }
+
+    let plainText = html
       .replace(/<br\s*\/?>/gi, '\n')
       .replace(/<\/p>/gi, '\n')
       .replace(/<\/h[1-6]>/gi, '\n')
@@ -591,13 +647,30 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
+    
+    // Remove local server links from plain text as they won't work for the recipient
+    if (hyperdriveServerAddress) {
+      const serverBase = hyperdriveServerAddress.replace(/\/$/, '')
+      const serverRegex = new RegExp(`${serverBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\s]*`, 'gi')
+      plainText = plainText.replace(serverRegex, '')
+    }
+    plainText = plainText.replace(new RegExp(`${HYPERDRIVE_URL_PREFIX}[^\\s]*`, 'gi'), '')
+    
+    plainText = plainText
       .replace(/\n{3,}/g, '\n\n')
       .trim()
+
     const message = title ? `${title}\n\n${plainText}` : plainText
     try {
-      await Share.share({ title, message })
-    } catch {}
-  }, [])
+      if (ExpoNativeShareModule && typeof ExpoNativeShareModule.share === 'function') {
+        await ExpoNativeShareModule.share({ message, urls })
+      } else {
+        await Share.share({ title, message })
+      }
+    } catch (e) {
+      console.error('Error sharing node:', e)
+    }
+  }, [hyperdriveServerAddress])
 
   const showMoveToSheet = useCallback(() => {
     if (moveFolders.length === 0) return

@@ -72,7 +72,9 @@ export default function SearchScreen() {
             ) : (
               <>
                 <Text style={common.emptyTitle}>Search your notes</Text>
-                <Text style={common.emptySubtitle}>Type above to find notes across your library</Text>
+                <Text style={common.emptySubtitle}>
+                  Type above to find notes across your library
+                </Text>
               </>
             )}
           </View>

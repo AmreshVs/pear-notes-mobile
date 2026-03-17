@@ -27,6 +27,7 @@ import React, { memo, useCallback, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Animated,
+  KeyboardAvoidingView,
   Modal,
   Pressable,
   View as RNView,
@@ -96,108 +97,113 @@ export default function SyncScreen() {
   }, [])
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      style={styles.container}
-      contentContainerStyle={styles.scroll}
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView
+      behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={process.env.EXPO_OS === 'ios' ? 100 : 0}
+      style={common.flex1}
     >
-      <RNView style={styles.segRow}>
-        {(['link', 'devices'] as const).map((t) => {
-          const active = tab === t
-          return (
-            <Pressable
-              key={t}
-              onPress={() => setTab(t)}
-              style={[styles.segPill, active && styles.segPillActive]}
-            >
-              <Text
-                style={[styles.segLabel, active ? styles.segLabelActive : styles.segLabelInactive]}
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={styles.container}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <RNView style={styles.segRow}>
+          {(['link', 'devices'] as const).map((t) => {
+            const active = tab === t
+            return (
+              <Pressable
+                key={t}
+                onPress={() => setTab(t)}
+                style={[styles.segPill, active && styles.segPillActive]}
               >
-                {t === 'link' ? 'Link Device' : 'My Devices'}
-              </Text>
-            </Pressable>
-          )
-        })}
-      </RNView>
-
-      {tab === 'link' ? (
-        <RNView style={styles.pad}>
-          <RNView style={styles.heroCard}>
-            {!inviteCode ? (
-              <>
-                <RNView style={styles.iconRing}>
-                  <Globe size={26} color={colors.primary} strokeWidth={1.5} />
-                </RNView>
-
-                <Text style={styles.heroTitle}>Link Your Devices</Text>
-                <Text style={styles.heroDesc}>
-                  Create a secure, end-to-end encrypted connection to sync your notes across devices
-                  instantly.
+                <Text
+                  style={[styles.segLabel, active ? styles.segLabelActive : styles.segLabelInactive]}
+                >
+                  {t === 'link' ? 'Link Device' : 'My Devices'}
                 </Text>
+              </Pressable>
+            )
+          })}
+        </RNView>
 
-                <Pressable
-                  onPress={() => dispatch(createInvite())}
-                  disabled={isLoading}
-                  style={({ pressed }) => [
-                    styles.generateBtn,
-                    { backgroundColor: colors.primary, opacity: isLoading || pressed ? 0.7 : 1 },
-                  ]}
-                >
-                  {isLoading && (
-                    <ActivityIndicator size="small" color="#000" style={styles.indicatorMargin} />
-                  )}
-                  <Text style={styles.btnText}>{isLoading ? 'Preparing…' : 'Generate Invite'}</Text>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <RNView style={styles.inviteHeader}>
-                  <RNView style={styles.iconPill}>
-                    <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
+        {tab === 'link' ? (
+          <RNView style={styles.pad}>
+            <RNView style={styles.heroCard}>
+              {!inviteCode ? (
+                <>
+                  <RNView style={styles.iconRing}>
+                    <Globe size={26} color={colors.primary} strokeWidth={1.5} />
                   </RNView>
-                  <RNView style={common.flex1}>
-                    <Text style={styles.inviteTitle}>Invitation Ready</Text>
-                    <Text style={styles.inviteSub}>{formatExpiry(expiresAt)}</Text>
-                  </RNView>
-                </RNView>
 
-                <Text style={styles.codeLabel}>SECURE PAIR CODE</Text>
-
-                <RNView style={styles.codeBox}>
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.codeScrollContent}
-                  >
-                    <Text selectable style={styles.codeText}>
-                      {inviteCode}
-                    </Text>
-                  </ScrollView>
-                </RNView>
-
-                <Pressable
-                  onPress={handleCopy}
-                  style={({ pressed }) => [
-                    styles.copyBtn,
-                    {
-                      backgroundColor: copied ? '#22C55E' : colors.primary,
-                      opacity: pressed ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  {copied ? (
-                    <Check size={16} color="#fff" strokeWidth={2.5} />
-                  ) : (
-                    <Link2 size={16} color="#000" strokeWidth={2.2} />
-                  )}
-                  <Text style={[styles.btnText, copied && styles.btnTextCopied]}>
-                    {copied ? 'Copied!' : 'Copy Invite Code'}
+                  <Text style={styles.heroTitle}>Link Your Devices</Text>
+                  <Text style={styles.heroDesc}>
+                    Create a secure, end-to-end encrypted connection to sync your notes across devices
+                    instantly.
                   </Text>
-                </Pressable>
-              </>
-            )}
-          </RNView>
+
+                  <Pressable
+                    onPress={() => dispatch(createInvite())}
+                    disabled={isLoading}
+                    style={({ pressed }) => [
+                      styles.generateBtn,
+                      { backgroundColor: colors.primary, opacity: isLoading || pressed ? 0.7 : 1 },
+                    ]}
+                  >
+                    {isLoading && (
+                      <ActivityIndicator size="small" color="#000" style={styles.indicatorMargin} />
+                    )}
+                    <Text style={styles.btnText}>{isLoading ? 'Preparing…' : 'Generate Invite'}</Text>
+                  </Pressable>
+                </>
+              ) : (
+                <>
+                  <RNView style={styles.inviteHeader}>
+                    <RNView style={styles.iconPill}>
+                      <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
+                    </RNView>
+                    <RNView style={common.flex1}>
+                      <Text style={styles.inviteTitle}>Invitation Ready</Text>
+                      <Text style={styles.inviteSub}>{formatExpiry(expiresAt)}</Text>
+                    </RNView>
+                  </RNView>
+
+                  <Text style={styles.codeLabel}>SECURE PAIR CODE</Text>
+
+                  <RNView style={styles.codeBox}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.codeScrollContent}
+                    >
+                      <Text selectable style={styles.codeText}>
+                        {inviteCode}
+                      </Text>
+                    </ScrollView>
+                  </RNView>
+
+                  <Pressable
+                    onPress={handleCopy}
+                    style={({ pressed }) => [
+                      styles.copyBtn,
+                      {
+                        backgroundColor: copied ? '#22C55E' : colors.primary,
+                        opacity: pressed ? 0.7 : 1,
+                      },
+                    ]}
+                  >
+                    {copied ? (
+                      <Check size={16} color="#fff" strokeWidth={2.5} />
+                    ) : (
+                      <Link2 size={16} color="#000" strokeWidth={2.2} />
+                    )}
+                    <Text style={[styles.btnText, copied && styles.btnTextCopied]}>
+                      {copied ? 'Copied!' : 'Copy Invite Code'}
+                    </Text>
+                  </Pressable>
+                </>
+              )}
+            </RNView>
 
           {inviteCode && (
             <RNView style={styles.warningCard}>
@@ -305,6 +311,7 @@ export default function SyncScreen() {
         </RNView>
       )}
     </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 

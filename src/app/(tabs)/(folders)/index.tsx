@@ -21,7 +21,13 @@ import { useDispatch, useSelector } from 'react-redux'
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
 import { Text, Theme, useColors, useThemedStyles, View } from '@/components/Themed'
-import { FontSize, FontWeight, LetterSpacing, Space, useCommonStyles } from '@/constants/commonStyles'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Space,
+  useCommonStyles,
+} from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorProvider'
 
 export default function FoldersScreen() {
