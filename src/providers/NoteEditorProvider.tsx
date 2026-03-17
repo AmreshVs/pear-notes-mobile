@@ -4,6 +4,8 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import * as DocumentPicker from 'expo-document-picker'
+import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
 import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
@@ -19,6 +21,7 @@ import React, {
   useState,
 } from 'react'
 import {
+  ActionSheetIOS,
   Animated,
   Dimensions,
   InteractionManager,
@@ -31,7 +34,6 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { FullWindowOverlay } from 'react-native-screens'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
@@ -100,14 +102,14 @@ const EditorToolbar = memo(function EditorToolbar({
   colors,
   editorRef,
   toolbarBottom,
-  onPickImage,
+  onAttach,
 }: {
   isEditing: boolean
   isActive: (key: keyof TiptapStyleState) => boolean
   colors: any
   editorRef: React.RefObject<TiptapEditorHandle | null>
   toolbarBottom: number
-  onPickImage: () => void
+  onAttach: () => void
 }) {
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -131,9 +133,9 @@ const EditorToolbar = memo(function EditorToolbar({
     setTimeout(() => editorRef.current?.focus(), 100)
   }, [editorRef])
 
-  const handlePickImageEdit = useCallback(() => {
-    setTimeout(() => onPickImage(), 100)
-  }, [onPickImage])
+  const handleAttachEdit = useCallback(() => {
+    setTimeout(() => onAttach(), 100)
+  }, [onAttach])
 
   return (
     <View style={toolbarStyle}>
@@ -157,7 +159,7 @@ const EditorToolbar = memo(function EditorToolbar({
               tintActive={colors.primary}
               tintDefault={colors.text}
               primaryColor={colors.primary}
-              onPress={onPickImage}
+              onPress={onAttach}
             />
             <ToolbarBtn
               sf="square.and.pencil"
@@ -247,7 +249,7 @@ const EditorToolbar = memo(function EditorToolbar({
               tintActive={colors.primary}
               tintDefault={colors.text}
               primaryColor={colors.primary}
-              onPress={handlePickImageEdit}
+              onPress={handleAttachEdit}
             />
             <ToolbarBtn
               sf="square.and.pencil"
@@ -450,6 +452,63 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [noteId, hyperdriveServerAddress])
 
+  const handlePickFile = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const result = await DocumentPicker.getDocumentAsync({
+      copyToCacheDirectory: true,
+      multiple: false,
+    })
+    if (result.canceled || !result.assets?.[0]) return
+
+    const { uri, name, size, mimeType } = result.assets[0]
+    try {
+      const base64 = await FileSystem.readAsStringAsync(uri, {
+        encoding: 'base64',
+      })
+      const buffer = Buffer.from(base64, 'base64')
+      const { link } = await backendApi.insertFile({
+        key: noteId!,
+        fileName: name || `file-${Date.now()}`,
+        buffer,
+      })
+      if (link) {
+        let resolvedLink = link
+        if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
+          resolvedLink = link.replace(
+            HYPERDRIVE_URL_PREFIX,
+            hyperdriveServerAddress.replace(/\/$/, ''),
+          )
+        }
+        const isAudio = mimeType?.startsWith('audio/')
+        if (isAudio) {
+          editorRef.current?.insertAudioAttachment(resolvedLink, name || 'Audio')
+        } else {
+          editorRef.current?.insertFileAttachment(resolvedLink, name || 'File', size || 0, mimeType || '')
+        }
+      }
+    } catch (error) {
+      console.error('Error uploading file:', error)
+    }
+  }, [noteId, hyperdriveServerAddress])
+
+  const handleAttach = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Photo Library', 'Choose File'],
+          cancelButtonIndex: 0,
+        },
+        (index) => {
+          if (index === 1) handlePickImage()
+          else if (index === 2) handlePickFile()
+        },
+      )
+    } else {
+      handlePickFile()
+    }
+  }, [handlePickImage, handlePickFile])
+
   const openNote = useCallback((id: string) => {
     Keyboard.dismiss()
     setIsEditing(false)
@@ -494,7 +553,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     () => (keyboardHeight > 0 ? keyboardHeight + 12 : Platform.OS === 'ios' ? 32 : 16),
     [keyboardHeight],
   )
-  const Wrapper = Platform.OS === 'ios' ? FullWindowOverlay : React.Fragment
+  const Wrapper = React.Fragment
 
   const animatedViewStyle = useMemo(
     () => [
@@ -628,7 +687,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               colors={colors}
               editorRef={editorRef}
               toolbarBottom={toolbarBottom}
-              onPickImage={handlePickImage}
+              onAttach={handleAttach}
             />
           )}
         </Animated.View>

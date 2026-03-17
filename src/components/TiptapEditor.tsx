@@ -49,6 +49,8 @@ export interface TiptapEditorHandle {
   toggleHighlight: () => void
   setTextAlign: (align: 'left' | 'center' | 'right' | 'justify') => void
   insertImage: (url: string, width: number, height: number) => void
+  insertFileAttachment: (url: string, fileName: string, fileSize: number, fileType: string) => void
+  insertAudioAttachment: (url: string, fileName: string, duration?: number) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
   blur: () => void
@@ -302,6 +304,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         setTextAlign: (align) => sendCommand({ type: 'setTextAlign', align }),
         insertImage: (url, width, height) =>
           sendCommand({ type: 'insertImage', url, width, height }),
+        insertFileAttachment: (url, fileName, fileSize, fileType) =>
+          sendCommand({ type: 'insertFileAttachment', url, fileName, fileSize, fileType }),
+        insertAudioAttachment: (url, fileName, duration) =>
+          sendCommand({ type: 'insertAudioAttachment', url, fileName, duration }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => sendCommand({ type: 'focus' }),
         blur: () => sendCommand({ type: 'blur' }),

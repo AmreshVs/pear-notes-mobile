@@ -376,6 +376,20 @@ export function getEditorHtml(): string {
             ch().setImage({ src: msg.url, width: msg.width, height: msg.height }).run();
             break;
 
+          case 'insertFileAttachment':
+            editor.chain().focus(undefined, { scrollIntoView: false }).insertContent({
+              type: 'fileAttachment',
+              attrs: { fileName: msg.fileName || 'Untitled', fileSize: msg.fileSize || null, fileType: msg.fileType || null, url: msg.url || null },
+            }).run();
+            break;
+
+          case 'insertAudioAttachment':
+            editor.chain().focus(undefined, { scrollIntoView: false }).insertContent({
+              type: 'audioAttachment',
+              attrs: { url: msg.url || null, fileName: msg.fileName || 'Audio', duration: msg.duration || 0 },
+            }).run();
+            break;
+
           case 'updateImageSrc': {
             const { state, dispatch } = editor.view;
             state.doc.descendants((node, pos) => {
