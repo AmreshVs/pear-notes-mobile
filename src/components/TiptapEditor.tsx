@@ -59,6 +59,7 @@ export interface TiptapEditorHandle {
   setHTML: (html: string) => void
   setTitle: (title: string) => void
   scrollToTop: () => void
+  scrollToEnd: () => void
   setKeyboardInset: (height: number) => void
 }
 
@@ -319,9 +320,15 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         setHTML: (html) => sendCommand({ type: 'setContent', html }),
         setTitle: (title) => sendCommand({ type: 'setTitle', title }),
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
+        scrollToEnd: () =>
+          webViewRef.current?.injectJavaScript(
+            `(function(){var pm=document.querySelector('.ProseMirror');if(pm&&pm.lastElementChild){pm.lastElementChild.scrollIntoView({block:'end',behavior:'smooth'})}else{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}})();true;`,
+          ),
         setKeyboardInset: (height: number) =>
           webViewRef.current?.injectJavaScript(
-            `(function(){var h='${height}px';document.body.style.paddingBottom=h;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom=h;setTimeout(function(){var s=window.getSelection();if(s&&s.rangeCount){var el=s.getRangeAt(0).startContainer;if(el.nodeType===3)el=el.parentElement;if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',behavior:'smooth'})}},50)})();true;`,
+            height > 0
+              ? `(function(){var h='${height}px';document.body.style.paddingBottom=h;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom=h;setTimeout(function(){var s=window.getSelection();if(s&&s.rangeCount){var el=s.getRangeAt(0).startContainer;if(el.nodeType===3)el=el.parentElement;if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',behavior:'smooth'})}},50)})();true;`
+              : `(function(){document.body.style.paddingBottom='0px';var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom='0px'})();true;`,
           ),
       }),
       [sendCommand, getHTMLAsync],

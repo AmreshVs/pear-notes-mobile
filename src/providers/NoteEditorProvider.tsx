@@ -467,6 +467,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           )
         }
         editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
+        setTimeout(() => editorRef.current?.scrollToEnd(), 300)
       }
     } catch (error) {
       console.error('Error uploading image:', error)
@@ -511,6 +512,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             mimeType || '',
           )
         }
+        setTimeout(() => editorRef.current?.scrollToEnd(), 300)
       }
     } catch (error) {
       console.error('Error uploading file:', error)
@@ -519,20 +521,27 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleAttach = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Photo Library', 'Choose File'],
-          cancelButtonIndex: 0,
-        },
-        (index) => {
-          if (index === 1) handlePickImage()
-          else if (index === 2) handlePickFile()
-        },
-      )
-    } else {
-      handlePickFile()
+    Keyboard.dismiss()
+    editorRef.current?.blur()
+
+    const showPicker = () => {
+      if (Platform.OS === 'ios') {
+        ActionSheetIOS.showActionSheetWithOptions(
+          {
+            options: ['Cancel', 'Photo Library', 'Choose File'],
+            cancelButtonIndex: 0,
+          },
+          (index) => {
+            if (index === 1) handlePickImage()
+            else if (index === 2) handlePickFile()
+          },
+        )
+      } else {
+        handlePickFile()
+      }
     }
+
+    setTimeout(showPicker, 100)
   }, [handlePickImage, handlePickFile])
 
   const openNote = useCallback((id: string) => {

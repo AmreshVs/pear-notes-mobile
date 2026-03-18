@@ -640,7 +640,7 @@ window.editorBridge = {
     } catch {
       return
     }
-    const ch = () => editor.chain().focus()
+    const ch = () => editor.chain().focus(null, { scrollIntoView: false })
 
     switch (msg.type) {
       case 'init':
@@ -729,38 +729,39 @@ window.editorBridge = {
         break
 
       case 'insertImage':
-        ch().setImage({ src: msg.url, width: msg.width, height: msg.height }).run()
+        editor.commands.setImage({ src: msg.url, width: msg.width, height: msg.height })
+        if (editor.state.selection.node) {
+          editor.commands.setTextSelection(editor.state.selection.to)
+        }
         break
 
       case 'insertFileAttachment':
-        editor
-          .chain()
-          .focus(undefined, { scrollIntoView: false })
-          .insertContent({
-            type: 'fileAttachment',
-            attrs: {
-              fileName: msg.fileName || 'Untitled',
-              fileSize: msg.fileSize || null,
-              fileType: msg.fileType || null,
-              url: msg.url || null,
-            },
-          })
-          .run()
+        editor.commands.insertContent({
+          type: 'fileAttachment',
+          attrs: {
+            fileName: msg.fileName || 'Untitled',
+            fileSize: msg.fileSize || null,
+            fileType: msg.fileType || null,
+            url: msg.url || null,
+          }
+        })
+        if (editor.state.selection.node) {
+          editor.commands.setTextSelection(editor.state.selection.to)
+        }
         break
 
       case 'insertAudioAttachment':
-        editor
-          .chain()
-          .focus(undefined, { scrollIntoView: false })
-          .insertContent({
-            type: 'audioAttachment',
-            attrs: {
-              url: msg.url || null,
-              fileName: msg.fileName || 'Audio',
-              duration: msg.duration || 0,
-            },
-          })
-          .run()
+        editor.commands.insertContent({
+          type: 'audioAttachment',
+          attrs: {
+            url: msg.url || null,
+            fileName: msg.fileName || 'Audio',
+            duration: msg.duration || 0,
+          }
+        })
+        if (editor.state.selection.node) {
+          editor.commands.setTextSelection(editor.state.selection.to)
+        }
         break
 
       case 'updateImageSrc': {
