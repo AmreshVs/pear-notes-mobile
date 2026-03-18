@@ -369,17 +369,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [isOpen])
 
   const TOOLBAR_HEIGHT = 52
-  const editorBottomInset = useMemo(() => {
-    if (keyboardHeight > 0) {
-      return keyboardHeight + 12 + TOOLBAR_HEIGHT + 8
-    }
-    return (Platform.OS === 'ios' ? 32 : 16) + TOOLBAR_HEIGHT + 8
-  }, [keyboardHeight])
+  const editorBottomInset = 0
 
   useEffect(() => {
-    const inset = keyboardHeight > 0 ? keyboardHeight + 12 + TOOLBAR_HEIGHT + 16 : 0
-    editorRef.current?.setKeyboardInset(inset)
-  }, [keyboardHeight])
+    const defaultBottom = TOOLBAR_HEIGHT + (Platform.OS === 'ios' ? insets.bottom : 16)
+    const inset = keyboardHeight > 0 ? keyboardHeight + 12 + TOOLBAR_HEIGHT + 16 : defaultBottom
+    editorRef.current?.setKeyboardInset(inset, keyboardHeight > 0)
+  }, [keyboardHeight, insets.bottom])
 
   const handleUpdate = useCallback(
     (html: string) => {

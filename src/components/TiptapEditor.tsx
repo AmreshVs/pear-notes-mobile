@@ -60,7 +60,7 @@ export interface TiptapEditorHandle {
   setTitle: (title: string) => void
   scrollToTop: () => void
   scrollToEnd: () => void
-  setKeyboardInset: (height: number) => void
+  setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
 }
 
 export interface TiptapEditorProps {
@@ -324,11 +324,11 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           webViewRef.current?.injectJavaScript(
             `(function(){var pm=document.querySelector('.ProseMirror');if(pm&&pm.lastElementChild){pm.lastElementChild.scrollIntoView({block:'end',behavior:'smooth'})}else{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}})();true;`,
           ),
-        setKeyboardInset: (height: number) =>
+        setKeyboardInset: (height: number, scrollToCursor?: boolean) =>
           webViewRef.current?.injectJavaScript(
-            height > 0
+            scrollToCursor
               ? `(function(){var h='${height}px';document.body.style.paddingBottom=h;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom=h;setTimeout(function(){var s=window.getSelection();if(s&&s.rangeCount){var el=s.getRangeAt(0).startContainer;if(el.nodeType===3)el=el.parentElement;if(el&&el.scrollIntoView)el.scrollIntoView({block:'center',behavior:'smooth'})}},50)})();true;`
-              : `(function(){document.body.style.paddingBottom='0px';var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom='0px'})();true;`,
+              : `(function(){var h='${height}px';document.body.style.paddingBottom=h;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom=h})();true;`,
           ),
       }),
       [sendCommand, getHTMLAsync],
