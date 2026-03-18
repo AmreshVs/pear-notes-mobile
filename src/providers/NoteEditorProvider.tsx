@@ -12,7 +12,6 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
-import * as ImageManipulator from 'expo-image-manipulator'
 import * as ImagePicker from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
 import React, {
@@ -39,6 +38,7 @@ import {
   ScrollView,
   Share,
   StyleSheet,
+  Text,
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -289,6 +289,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [isSharing, setIsSharing] = useState(false)
+  const [uploadInfo, setUploadInfo] = useState<{ fileName: string; status: string } | null>(null)
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
 
@@ -417,13 +418,72 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handlePickImage = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
       quality: 0.8,
     })
     if (result.canceled || !result.assets[0]) return
 
-    const { uri, width, height, fileName } = result.assets[0]
+    const asset = result.assets[0]
+
+    if (asset.type === 'video') {
+      const displayName = asset.fileName || `video-${Date.now()}.mp4`
+      setUploadInfo({ fileName: displayName, status: 'Preparing...' })
+      try {
+        const ext = displayName.split('.').pop() || 'mp4'
+        const cachePath = `${FileSystem.cacheDirectory}upload-${Date.now()}.${ext}`
+        await FileSystem.copyAsync({ from: asset.uri, to: cachePath })
+
+        const info = await FileSystem.getInfoAsync(cachePath)
+        const fileSize = (info as any).size || 0
+        const sizeStr = fileSize
+          ? fileSize < 1048576
+            ? `${(fileSize / 1024).toFixed(0)} KB`
+            : `${(fileSize / 1048576).toFixed(1)} MB`
+          : ''
+        setUploadInfo({
+          fileName: displayName,
+          status: sizeStr ? `Reading ${sizeStr}...` : 'Reading...',
+        })
+
+        const base64 = await FileSystem.readAsStringAsync(cachePath, { encoding: 'base64' })
+        setUploadInfo({ fileName: displayName, status: 'Uploading...' })
+        const buffer = Buffer.from(base64, 'base64')
+        const { link } = await backendApi.insertFile({
+          key: noteId!,
+          fileName: displayName,
+          buffer,
+        })
+        if (link) {
+          let resolvedLink = link
+          if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
+            resolvedLink = link.replace(
+              HYPERDRIVE_URL_PREFIX,
+              hyperdriveServerAddress.replace(/\/$/, ''),
+            )
+          }
+          editorRef.current?.insertFileAttachment(
+            resolvedLink,
+            displayName,
+            fileSize,
+            asset.mimeType || 'video/mp4',
+          )
+          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+        }
+        await FileSystem.deleteAsync(cachePath, { idempotent: true })
+      } catch (error) {
+        console.error('Error uploading video:', error)
+        Alert.alert('Upload Failed', 'Could not upload the video. Try using "Choose File" instead.')
+      } finally {
+        setUploadInfo(null)
+      }
+      return
+    }
+
+    const { uri, width, height, fileName } = asset
+    const displayName = fileName || 'Photo'
+    setUploadInfo({ fileName: displayName, status: 'Processing...' })
+
     const screenW = Dimensions.get('window').width
     const maxWidth = screenW - 40
     const maxHeight = 400
@@ -441,14 +501,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
 
     try {
-      const manipulated = await ImageManipulator.manipulateAsync(
-        uri,
-        [{ resize: { width: finalWidth, height: finalHeight } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG, base64: true },
-      )
-      if (!manipulated.base64) return
-
-      const buffer = Buffer.from(manipulated.base64, 'base64')
+      setUploadInfo({ fileName: displayName, status: 'Uploading...' })
+      const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
+      const buffer = Buffer.from(base64Data, 'base64')
       const { link } = await backendApi.insertFile({
         key: noteId!,
         fileName: fileName || `image-${Date.now()}.jpg`,
@@ -467,6 +522,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
     } catch (error) {
       console.error('Error uploading image:', error)
+    } finally {
+      setUploadInfo(null)
     }
   }, [noteId, hyperdriveServerAddress])
 
@@ -479,10 +536,22 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (result.canceled || !result.assets?.[0]) return
 
     const { uri, name, size, mimeType } = result.assets[0]
+    const displayName = name || 'File'
+    const sizeStr = size
+      ? size < 1048576
+        ? `${(size / 1024).toFixed(0)} KB`
+        : `${(size / 1048576).toFixed(1)} MB`
+      : ''
+    setUploadInfo({
+      fileName: displayName,
+      status: sizeStr ? `Reading ${sizeStr}...` : 'Reading...',
+    })
+
     try {
       const base64 = await FileSystem.readAsStringAsync(uri, {
         encoding: 'base64',
       })
+      setUploadInfo({ fileName: displayName, status: 'Uploading...' })
       const buffer = Buffer.from(base64, 'base64')
       const { link } = await backendApi.insertFile({
         key: noteId!,
@@ -512,6 +581,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
     } catch (error) {
       console.error('Error uploading file:', error)
+    } finally {
+      setUploadInfo(null)
     }
   }, [noteId, hyperdriveServerAddress])
 
@@ -524,7 +595,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       if (Platform.OS === 'ios') {
         ActionSheetIOS.showActionSheetWithOptions(
           {
-            options: ['Cancel', 'Photo Library', 'Choose File'],
+            options: ['Cancel', 'Photo & Video', 'Choose File'],
             cancelButtonIndex: 0,
           },
           (index) => {
@@ -950,6 +1021,22 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onAttach={handleAttach}
             />
           )}
+
+          {uploadInfo && (
+            <View style={[uploadStyles.container, { bottom: toolbarBottom + 64 }]}>
+              <GlassView intensity={12} borderRadius={16} style={uploadStyles.toast}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <View style={uploadStyles.textWrap}>
+                  <Text style={[uploadStyles.fileName, { color: colors.text }]} numberOfLines={1}>
+                    {uploadInfo.fileName}
+                  </Text>
+                  <Text style={[uploadStyles.status, { color: colors.textSecondary }]}>
+                    {uploadInfo.status}
+                  </Text>
+                </View>
+              </GlassView>
+            </View>
+          )}
         </Animated.View>
       </>
     </NoteEditorContext.Provider>
@@ -1027,4 +1114,33 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   fallbackIcon: { width: 22, height: 22 },
+})
+
+const uploadStyles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: Space.base,
+    right: Space.base,
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  toast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    overflow: 'hidden',
+  },
+  textWrap: {
+    flex: 1,
+    gap: 2,
+  },
+  fileName: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  status: {
+    fontSize: 12,
+  },
 })
