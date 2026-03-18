@@ -27,6 +27,7 @@ import React, {
 } from 'react'
 import {
   ActionSheetIOS,
+  ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
@@ -287,6 +288,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isOpen, setIsOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const [isSharing, setIsSharing] = useState(false)
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
 
@@ -578,7 +580,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 
   const handleShare = useCallback(async () => {
+    if (isSharing) return
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    setIsSharing(true)
     const title = titleRef.current || 'Untitled'
     const html = noteContentRef.current || ''
 
@@ -587,15 +591,20 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     const processLink = async (link: string, defaultExt: string, tagContent: string) => {
       let cleanLink = link.replace(/&amp;/g, '&')
       if (hyperdriveServerAddress && cleanLink.includes(HYPERDRIVE_URL_PREFIX)) {
-        cleanLink = cleanLink.replace(HYPERDRIVE_URL_PREFIX, hyperdriveServerAddress.replace(/\/$/, ''))
+        cleanLink = cleanLink.replace(
+          HYPERDRIVE_URL_PREFIX,
+          hyperdriveServerAddress.replace(/\/$/, ''),
+        )
       }
-      
+
       try {
         let filename = `file_${Date.now()}`
-        
-        const nameMatch = tagContent.match(/fileName="([^">]+)"/)
+
+        const nameMatch = tagContent.match(/filename="([^">]+)"/i)
         if (nameMatch && nameMatch[1]) {
           filename = nameMatch[1].replace(/&amp;/g, '&')
+          // Optional: replace spaces with '_' if you run into any Swift issues on device later
+          // filename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_')
         } else {
           const urlFilename = cleanLink.split('/').pop()?.split('?')[0]
           if (urlFilename && urlFilename.length > 0) {
@@ -611,7 +620,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             }
           }
         }
-        
+
         if (!filename.includes('.')) {
           filename += `.${defaultExt}`
         }
@@ -629,7 +638,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     while ((match = imgRegex.exec(html)) !== null) {
       if (match[1]) await processLink(match[1], 'jpg', match[0])
     }
-    
+
     const attachmentRegex = /<div[^>]+url="([^">]+)"[^>]*>/g
     while ((match = attachmentRegex.exec(html)) !== null) {
       if (match[1]) await processLink(match[1], 'bin', match[0])
@@ -647,18 +656,19 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
-    
+
     // Remove local server links from plain text as they won't work for the recipient
     if (hyperdriveServerAddress) {
       const serverBase = hyperdriveServerAddress.replace(/\/$/, '')
-      const serverRegex = new RegExp(`${serverBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\s]*`, 'gi')
+      const serverRegex = new RegExp(
+        `${serverBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\s]*`,
+        'gi',
+      )
       plainText = plainText.replace(serverRegex, '')
     }
     plainText = plainText.replace(new RegExp(`${HYPERDRIVE_URL_PREFIX}[^\\s]*`, 'gi'), '')
-    
-    plainText = plainText
-      .replace(/\n{3,}/g, '\n\n')
-      .trim()
+
+    plainText = plainText.replace(/\n{3,}/g, '\n\n').trim()
 
     const message = title ? `${title}\n\n${plainText}` : plainText
     try {
@@ -669,8 +679,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
     } catch (e) {
       console.error('Error sharing node:', e)
+    } finally {
+      setIsSharing(false)
     }
-  }, [hyperdriveServerAddress])
+  }, [hyperdriveServerAddress, isSharing])
 
   const showMoveToSheet = useCallback(() => {
     if (moveFolders.length === 0) return
@@ -827,15 +839,23 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                 <GlassView intensity={5} borderRadius={24} style={styles.headerPill}>
                   <Pressable
                     onPress={handleShare}
-                    style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
+                    disabled={isSharing}
+                    style={({ pressed }) => [
+                      styles.headerBtnInner,
+                      { opacity: pressed || isSharing ? 0.5 : 1 },
+                    ]}
                   >
-                    <SymbolView
-                      name="square.and.arrow.up"
-                      size={24}
-                      tintColor={colors.text}
-                      weight="medium"
-                      fallback={<View />}
-                    />
+                    {isSharing ? (
+                      <ActivityIndicator size="small" color={colors.text} />
+                    ) : (
+                      <SymbolView
+                        name="square.and.arrow.up"
+                        size={24}
+                        tintColor={colors.text}
+                        weight="medium"
+                        fallback={<View />}
+                      />
+                    )}
                   </Pressable>
                   <View style={pillDividerStyle} />
                   {ExpoUI ? (

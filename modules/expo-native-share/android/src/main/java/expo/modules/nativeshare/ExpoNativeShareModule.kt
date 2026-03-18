@@ -30,14 +30,17 @@ class ExpoNativeShareModule : Module() {
       if (urls.isNotEmpty()) {
         val uris = ArrayList<Uri>()
         urls.forEach { urlString ->
-          val uri = if (urlString.startsWith("file://")) {
-            val file = File(Uri.parse(urlString).path!!)
-            val authority = "${context.packageName}.FileSystemFileProvider"
-            FileProvider.getUriForFile(context, authority, file)
-          } else {
-            Uri.parse(urlString)
-          }
-          uris.add(uri)
+          try {
+            val uri = if (urlString.startsWith("file://")) {
+              val path = Uri.parse(urlString).path ?: return@forEach
+              val file = File(path)
+              val authority = "${context.packageName}.FileSystemFileProvider"
+              FileProvider.getUriForFile(context, authority, file)
+            } else {
+              Uri.parse(urlString)
+            }
+            uris.add(uri)
+          } catch (_: Exception) {}
         }
         
         if (uris.size > 1) {
