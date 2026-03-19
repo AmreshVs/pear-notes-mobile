@@ -1,3 +1,5 @@
+/* @refresh reset */
+
 import { Buffer } from 'buffer'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
@@ -15,10 +17,8 @@ import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
 import React, {
-  createContext,
   memo,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -30,6 +30,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  PanResponder,
   InteractionManager,
   Keyboard,
   Linking,
@@ -54,22 +55,9 @@ import {
   type TiptapStyleState,
 } from '@/components/TiptapEditor'
 import { Radii, Space } from '@/constants/commonStyles'
+import { NoteEditorContext } from '@/providers/NoteEditorContext'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
-
-interface NoteEditorContextType {
-  openNote: (id: string) => void
-  closeNote: () => void
-  isOpen: boolean
-}
-
-const NoteEditorContext = createContext<NoteEditorContextType>({
-  openNote: () => {},
-  closeNote: () => {},
-  isOpen: false,
-})
-
-export const useNoteEditor = () => useContext(NoteEditorContext)
 
 const ToolbarBtn = memo(function ToolbarBtn({
   sf,
@@ -287,6 +275,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [noteId, setNoteId] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [isEdgeSwipeActive, setIsEdgeSwipeActive] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [isSharing, setIsSharing] = useState(false)
   const [uploadInfo, setUploadInfo] = useState<{ fileName: string; status: string } | null>(null)
@@ -294,6 +283,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [styleStateVersion, setStyleStateVersion] = useState(0)
 
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current
+  const isClosingRef = useRef(false)
   const titleRef = useRef<string>('')
   const noteContentRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
@@ -365,6 +355,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false)
+      setIsEdgeSwipeActive(false)
       setKeyboardHeight(0)
     }
   }, [isOpen])
@@ -733,7 +724,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
 
-    // Remove local server links from plain text as they won't work for the recipient
     if (hyperdriveServerAddress) {
       const serverBase = hyperdriveServerAddress.replace(/\/$/, '')
       const serverRegex = new RegExp(
@@ -797,21 +787,31 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [noteId, showMoveToSheet, handleDeleteNote])
 
-  const closeNote = useCallback(async () => {
-    editorRef.current?.blur()
-    Keyboard.dismiss()
-    await editorRef.current?.save()
+  const resetEditorState = useCallback(() => {
+    setIsOpen(false)
+    setNoteId(null)
+    setIsEdgeSwipeActive(false)
+    loadedNoteRef.current = null
+    isClosingRef.current = false
+  }, [])
+
+  const animateClose = useCallback(() => {
+    if (isClosingRef.current) return
+    isClosingRef.current = true
     const w = Dimensions.get('window').width
     Animated.timing(slideAnim, {
       toValue: w,
       duration: 250,
       useNativeDriver: true,
-    }).start(() => {
-      setIsOpen(false)
-      setNoteId(null)
-      loadedNoteRef.current = null
-    })
-  }, [slideAnim])
+    }).start(resetEditorState)
+  }, [resetEditorState, slideAnim])
+
+  const closeNote = useCallback(() => {
+    editorRef.current?.blur()
+    Keyboard.dismiss()
+    void editorRef.current?.save()
+    animateClose()
+  }, [animateClose])
 
   const contextValue = useMemo(
     () => ({ openNote, closeNote, isOpen }),
@@ -843,7 +843,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [colors.background, slideAnim],
   )
 
-  const headerStyle = useMemo(() => [styles.header, { paddingTop: insets.top }], [insets.top])
+  const headerStyle = useMemo(() => [styles.header, { paddingTop: insets.top - 5 }], [insets.top])
   const pillDividerStyle = useMemo(
     () => [
       styles.pillDivider,
@@ -872,11 +872,73 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [])
 
+  const edgeSwipeResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponderCapture: (event) =>
+          isOpen && Platform.OS === 'ios' && event.nativeEvent.pageX <= 28,
+        onMoveShouldSetPanResponderCapture: (_, gestureState) =>
+          isOpen &&
+          Platform.OS === 'ios' &&
+          gestureState.moveX <= 36 &&
+          gestureState.dx > 8 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.2,
+        onPanResponderGrant: () => {
+          setIsEdgeSwipeActive(true)
+          slideAnim.stopAnimation()
+        },
+        onPanResponderMove: (_, gestureState) => {
+          if (!isOpen || gestureState.dx <= 0) return
+          const width = Dimensions.get('window').width
+          slideAnim.setValue(Math.min(gestureState.dx, width))
+        },
+        onPanResponderRelease: (_, gestureState) => {
+          if (!isOpen) return
+          const width = Dimensions.get('window').width
+          const shouldClose = gestureState.dx > width * 0.3 || gestureState.vx > 0.75
+
+          if (shouldClose) {
+            closeNote()
+            return
+          }
+
+          setIsEdgeSwipeActive(false)
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            damping: 24,
+            stiffness: 260,
+          }).start()
+        },
+        onPanResponderTerminate: () => {
+          setIsEdgeSwipeActive(false)
+          Animated.spring(slideAnim, {
+            toValue: 0,
+            useNativeDriver: true,
+            damping: 24,
+            stiffness: 260,
+          }).start()
+        },
+      }),
+    [closeNote, isOpen, slideAnim],
+  )
+
   return (
     <NoteEditorContext.Provider value={contextValue}>
       {children}
       <>
-        <Animated.View style={animatedViewStyle} pointerEvents={isOpen ? 'auto' : 'none'}>
+        <Animated.View
+          style={animatedViewStyle}
+          pointerEvents={isOpen ? 'auto' : 'none'}
+        >
+          {Platform.OS === 'ios' && isOpen ? (
+            <View
+              style={styles.edgeSwipeZone}
+              pointerEvents="box-only"
+              {...edgeSwipeResponder.panHandlers}
+            />
+          ) : null}
+
           <View style={headerStyle}>
             <View style={styles.headerRow}>
               <GlassView intensity={5} borderRadius={24} style={styles.headerBtn}>
@@ -1003,6 +1065,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             initialTitle=""
             safeAreaTop={floatingHeaderHeight}
             safeAreaBottom={editorBottomInset}
+            scrollEnabled={!isEdgeSwipeActive}
             onContentChange={handleUpdate}
             onTitleChange={handleTitleChange}
             onStyleStateChange={handleStyleStateChange}
@@ -1050,6 +1113,11 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     zIndex: 10,
+  },
+  edgeSwipeZone: {
+    ...StyleSheet.absoluteFillObject,
+    width: 32,
+    zIndex: 30,
   },
   headerRow: {
     flexDirection: 'row',

@@ -28,7 +28,7 @@ import {
   Space,
   useCommonStyles,
 } from '@/constants/commonStyles'
-import { useNoteEditor } from '@/providers/NoteEditorProvider'
+import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function FoldersScreen() {
   const styles = useThemedStyles(createStyles)

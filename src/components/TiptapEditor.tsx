@@ -68,6 +68,7 @@ export interface TiptapEditorProps {
   initialTitle?: string
   safeAreaTop?: number
   safeAreaBottom?: number
+  scrollEnabled?: boolean
   onContentChange: (html: string) => void
   onTitleChange?: (title: string) => void
   onStyleStateChange?: (state: TiptapStyleState) => void
@@ -98,6 +99,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       initialTitle,
       safeAreaTop,
       safeAreaBottom,
+      scrollEnabled = true,
       onContentChange,
       onTitleChange,
       onStyleStateChange,
@@ -352,7 +354,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onMessage={handleMessage}
             onError={handleError}
             style={styles.webView}
-            scrollEnabled
+            scrollEnabled={scrollEnabled}
             keyboardDisplayRequiresUserAction={false}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}

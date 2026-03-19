@@ -9,7 +9,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { NoteCard } from '@/components/NoteCard'
 import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
 import { Space, useCommonStyles } from '@/constants/commonStyles'
-import { useNoteEditor } from '@/providers/NoteEditorProvider'
+import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function SearchScreen() {
   const theme = useTheme()

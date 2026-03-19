@@ -3,7 +3,7 @@ import React, { useEffect } from 'react'
 import { StyleSheet } from 'react-native'
 
 import { Theme, useThemedStyles, View } from '@/components/Themed'
-import { useNoteEditor } from '@/providers/NoteEditorProvider'
+import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function NoteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()

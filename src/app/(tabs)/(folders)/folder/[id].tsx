@@ -26,7 +26,7 @@ import {
   Space,
   useCommonStyles,
 } from '@/constants/commonStyles'
-import { useNoteEditor } from '@/providers/NoteEditorProvider'
+import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 // Replace HTML tags with a space so words don't run together, then normalize whitespace
 const getPreview = (html: string): string => {
