@@ -12,16 +12,19 @@ import {
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { BlurView } from 'expo-blur'
+import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
 import {
   Check,
   Globe,
   Link2,
   Monitor,
+  ScanLine,
   ShieldAlert,
   ShieldCheck,
   Smartphone,
   Trash2,
+  X,
 } from 'lucide-react-native'
 import React, { memo, useCallback, useRef, useState } from 'react'
 import {
@@ -35,6 +38,8 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native'
+import QRCode from 'react-native-qrcode-svg'
+import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
@@ -74,6 +79,10 @@ export default function SyncScreen() {
   const [tab, setTab] = useState<'link' | 'devices'>('link')
   const [copied, setCopied] = useState(false)
   const [pasteCode, setPasteCode] = useState('')
+  const [scannerVisible, setScannerVisible] = useState(false)
+  const [hasScanned, setHasScanned] = useState(false)
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions()
+  const scrollRef = useRef<ScrollView>(null)
 
   const handleCopy = useCallback(async () => {
     if (!inviteCode) return
@@ -88,6 +97,31 @@ export default function SyncScreen() {
     setPasteCode('')
   }, [dispatch, pasteCode])
 
+  const handleOpenScanner = useCallback(async () => {
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission()
+      if (!result.granted) return
+    }
+    setHasScanned(false)
+    setScannerVisible(true)
+  }, [cameraPermission?.granted, requestCameraPermission])
+
+  const handleCloseScanner = useCallback(() => {
+    setScannerVisible(false)
+    setHasScanned(false)
+  }, [])
+
+  const handleBarcodeScanned = useCallback(
+    ({ data }: { data: string }) => {
+      if (!data || hasScanned) return
+      setHasScanned(true)
+      setPasteCode(data.trim())
+      setScannerVisible(false)
+      setTimeout(() => setHasScanned(false), 500)
+    },
+    [hasScanned],
+  )
+
   const formatExpiry = useCallback((ts: number | null) => {
     if (!ts) return 'Permanent Link'
     const ms = ts < 10000000000 ? ts * 1000 : ts
@@ -99,16 +133,18 @@ export default function SyncScreen() {
   return (
     <KeyboardAvoidingView
       behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={process.env.EXPO_OS === 'ios' ? 100 : 0}
+      keyboardVerticalOffset={process.env.EXPO_OS === 'ios' ? 96 : 0}
       style={common.flex1}
     >
       <ScrollView
+        ref={scrollRef}
         contentInsetAdjustmentBehavior="automatic"
         style={styles.container}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <RNView style={styles.segRow}>
+        <Reanimated.View entering={FadeIn.duration(220)} style={styles.segRow}>
           {(['link', 'devices'] as const).map((t) => {
             const active = tab === t
             return (
@@ -118,18 +154,26 @@ export default function SyncScreen() {
                 style={[styles.segPill, active && styles.segPillActive]}
               >
                 <Text
-                  style={[styles.segLabel, active ? styles.segLabelActive : styles.segLabelInactive]}
+                  style={[
+                    styles.segLabel,
+                    active ? styles.segLabelActive : styles.segLabelInactive,
+                  ]}
                 >
                   {t === 'link' ? 'Link Device' : 'My Devices'}
                 </Text>
               </Pressable>
             )
           })}
-        </RNView>
+        </Reanimated.View>
 
         {tab === 'link' ? (
-          <RNView style={styles.pad}>
-            <RNView style={styles.heroCard}>
+          <Reanimated.View
+            key="link-tab"
+            entering={FadeIn.duration(220)}
+            layout={LinearTransition.springify().damping(20).stiffness(220)}
+            style={styles.pad}
+          >
+            <Reanimated.View entering={FadeInDown.duration(240).delay(40)} style={styles.heroCard}>
               {!inviteCode ? (
                 <>
                   <RNView style={styles.iconRing}>
@@ -138,8 +182,8 @@ export default function SyncScreen() {
 
                   <Text style={styles.heroTitle}>Link Your Devices</Text>
                   <Text style={styles.heroDesc}>
-                    Create a secure, end-to-end encrypted connection to sync your notes across devices
-                    instantly.
+                    Create a secure, end-to-end encrypted connection to sync your notes across
+                    devices instantly.
                   </Text>
 
                   <Pressable
@@ -153,7 +197,9 @@ export default function SyncScreen() {
                     {isLoading && (
                       <ActivityIndicator size="small" color="#000" style={styles.indicatorMargin} />
                     )}
-                    <Text style={styles.btnText}>{isLoading ? 'Preparing…' : 'Generate Invite'}</Text>
+                    <Text style={styles.btnText}>
+                      {isLoading ? 'Preparing…' : 'Generate Invite'}
+                    </Text>
                   </Pressable>
                 </>
               ) : (
@@ -167,6 +213,27 @@ export default function SyncScreen() {
                       <Text style={styles.inviteSub}>{formatExpiry(expiresAt)}</Text>
                     </RNView>
                   </RNView>
+
+                  {inviteCode ? (
+                    <Reanimated.View
+                      entering={FadeIn.duration(220).delay(70)}
+                      style={styles.qrSection}
+                    >
+                      <RNView style={styles.qrImageWrap}>
+                        <QRCode
+                          value={inviteCode}
+                          size={184}
+                          backgroundColor="#FFFFFF"
+                          color="#111111"
+                        />
+                      </RNView>
+                      <Text style={styles.qrTitle}>Scan to link faster</Text>
+                      <Text style={styles.qrDescription}>
+                        Open the link screen on your other device and scan this QR code to paste the
+                        invite instantly.
+                      </Text>
+                    </Reanimated.View>
+                  ) : null}
 
                   <Text style={styles.codeLabel}>SECURE PAIR CODE</Text>
 
@@ -203,114 +270,215 @@ export default function SyncScreen() {
                   </Pressable>
                 </>
               )}
-            </RNView>
+            </Reanimated.View>
 
-          {inviteCode && (
-            <RNView style={styles.warningCard}>
-              <ShieldCheck
-                size={14}
-                color={colors.primary}
-                strokeWidth={1.8}
-                style={styles.iconTopFix}
-              />
-              <Text style={styles.warningText}>
-                For security, don't share this code in public channels as it grants full access to
-                your notes.
-              </Text>
-            </RNView>
-          )}
-
-          {!isSynced && (
-            <RNView style={styles.invitePasteSection}>
-              <RNView style={styles.invitePasteHeader}>
-                <Text style={styles.plusIcon}>+</Text>
-                <Text style={styles.invitePasteText}>Already have an invite?</Text>
-              </RNView>
-
-              <RNView style={styles.inputRow}>
-                <TextInput
-                  value={pasteCode}
-                  onChangeText={setPasteCode}
-                  onSubmitEditing={handleConnect}
-                  placeholder="Paste invite code here..."
-                  placeholderTextColor={colors.textMuted}
-                  style={styles.codeInput}
-                  autoCapitalize="none"
-                  autoCorrect={false}
+            {inviteCode && (
+              <Reanimated.View entering={FadeIn.duration(220).delay(80)} style={styles.warningCard}>
+                <ShieldCheck
+                  size={14}
+                  color={colors.primary}
+                  strokeWidth={1.8}
+                  style={styles.iconTopFix}
                 />
-                <Pressable
-                  onPress={handleConnect}
-                  disabled={isLoading || pasteCode.trim().length === 0}
-                  style={({ pressed }) => [
-                    styles.linkBtn,
-                    {
-                      backgroundColor: colors.primary,
-                      opacity: isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
-                    },
-                  ]}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color="#000" />
-                  ) : (
-                    <Text style={styles.linkBtnText}>Link</Text>
-                  )}
-                </Pressable>
-              </RNView>
-            </RNView>
-          )}
+                <Text style={styles.warningText}>
+                  For security, don't share this code in public channels as it grants full access to
+                  your notes.
+                </Text>
+              </Reanimated.View>
+            )}
 
-          <RNView style={styles.footNoteRow}>
-            <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
-            <Text style={styles.footNote}>
-              Your data moves directly between devices using encrypted Hypercore logs. No central
-              server involved.
-            </Text>
-          </RNView>
-        </RNView>
-      ) : (
-        <RNView style={styles.pad}>
-          <Text style={styles.sectionCap}>THIS DEVICE</Text>
+            {!isSynced && (
+              <Reanimated.View
+                entering={FadeInDown.duration(220).delay(110)}
+                style={styles.invitePasteSection}
+              >
+                <RNView style={styles.invitePasteHeader}>
+                  <Text style={styles.plusIcon}>+</Text>
+                  <Text style={styles.invitePasteText}>Already have an invite?</Text>
+                </RNView>
 
-          <RNView style={styles.deviceGroup}>
-            {syncedDevices
-              .filter((d: any) => d.isLocal)
-              .map((device: any, index: number, arr: any[]) => (
-                <DeviceCard key={device.key} device={device} showSep={index < arr.length - 1} />
-              ))}
-          </RNView>
+                <RNView style={styles.inputRow}>
+                  <TextInput
+                    value={pasteCode}
+                    onChangeText={setPasteCode}
+                    onSubmitEditing={handleConnect}
+                    onFocus={() =>
+                      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
+                    }
+                    placeholder="Paste invite code here..."
+                    placeholderTextColor={colors.textMuted}
+                    style={styles.codeInput}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
 
-          <Text style={styles.sectionCapDevice}>OTHER DEVICES</Text>
+                  <Pressable
+                    onPress={handleOpenScanner}
+                    hitSlop={8}
+                    style={({ pressed }) => [
+                      styles.scanBtn,
+                      { opacity: pressed ? 0.7 : 1, borderColor: colors.inputBorder },
+                    ]}
+                  >
+                    <ScanLine size={18} color={colors.primary} strokeWidth={1.9} />
+                  </Pressable>
 
-          {syncedDevices.filter((d: any) => !d.isLocal).length > 0 ? (
-            <RNView style={styles.deviceGroup}>
+                  <Pressable
+                    onPress={handleConnect}
+                    disabled={isLoading || pasteCode.trim().length === 0}
+                    style={({ pressed }) => [
+                      styles.linkBtn,
+                      {
+                        backgroundColor: colors.primary,
+                        opacity:
+                          isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
+                      },
+                    ]}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color="#000" />
+                    ) : (
+                      <Text style={styles.linkBtnText}>Link</Text>
+                    )}
+                  </Pressable>
+                </RNView>
+              </Reanimated.View>
+            )}
+
+            <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
+              <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
+              <Text style={styles.footNote}>
+                Your data moves directly between devices using encrypted Hypercore logs. No central
+                server involved.
+              </Text>
+            </Reanimated.View>
+          </Reanimated.View>
+        ) : (
+          <Reanimated.View
+            key="devices-tab"
+            entering={FadeIn.duration(220)}
+            layout={LinearTransition.springify().damping(20).stiffness(220)}
+            style={styles.pad}
+          >
+            <Reanimated.View entering={FadeIn.duration(200)}>
+              <Text style={styles.sectionCap}>THIS DEVICE</Text>
+            </Reanimated.View>
+
+            <Reanimated.View
+              entering={FadeInDown.duration(220).delay(30)}
+              style={styles.deviceGroup}
+            >
               {syncedDevices
-                .filter((d: any) => !d.isLocal)
+                .filter((d: any) => d.isLocal)
                 .map((device: any, index: number, arr: any[]) => (
                   <DeviceCard
                     key={device.key}
                     device={device}
-                    isOther
                     showSep={index < arr.length - 1}
+                    animationIndex={index}
                   />
                 ))}
-            </RNView>
+            </Reanimated.View>
+
+            <Reanimated.View entering={FadeIn.duration(200).delay(70)}>
+              <Text style={styles.sectionCapDevice}>OTHER DEVICES</Text>
+            </Reanimated.View>
+
+            {syncedDevices.filter((d: any) => !d.isLocal).length > 0 ? (
+              <Reanimated.View
+                entering={FadeInDown.duration(220).delay(100)}
+                style={styles.deviceGroup}
+              >
+                {syncedDevices
+                  .filter((d: any) => !d.isLocal)
+                  .map((device: any, index: number, arr: any[]) => (
+                    <DeviceCard
+                      key={device.key}
+                      device={device}
+                      isOther
+                      showSep={index < arr.length - 1}
+                      animationIndex={index + 1}
+                    />
+                  ))}
+              </Reanimated.View>
+            ) : (
+              <Reanimated.View
+                entering={FadeInDown.duration(220).delay(100)}
+                style={styles.emptyCard}
+              >
+                <Smartphone size={22} color={colors.textMuted} strokeWidth={1.5} />
+                <Text style={styles.emptyText}>No other devices connected yet.</Text>
+              </Reanimated.View>
+            )}
+
+            <Reanimated.View
+              entering={FadeIn.duration(220).delay(140)}
+              style={styles.footNoteRowDevice}
+            >
+              <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
+              <Text style={styles.footNote}>
+                Your data moves directly between devices using encrypted Hypercore logs. No central
+                server involved.
+              </Text>
+            </Reanimated.View>
+          </Reanimated.View>
+        )}
+      </ScrollView>
+
+      <Modal
+        visible={scannerVisible}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={handleCloseScanner}
+      >
+        <RNView style={styles.scannerScreen}>
+          {cameraPermission?.granted ? (
+            <>
+              <CameraView
+                style={StyleSheet.absoluteFill}
+                facing="back"
+                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                onBarcodeScanned={hasScanned ? undefined : handleBarcodeScanned}
+              />
+              <RNView style={styles.scannerOverlay} pointerEvents="none">
+                <RNView style={styles.scannerFrame} />
+              </RNView>
+              <RNView style={styles.scannerHeader}>
+                <Pressable onPress={handleCloseScanner} style={styles.scannerCloseBtn}>
+                  <X size={20} color="#fff" strokeWidth={2.2} />
+                </Pressable>
+              </RNView>
+              <RNView style={styles.scannerFooter}>
+                <Text style={styles.scannerTitle}>Scan invite QR code</Text>
+                <Text style={styles.scannerDescription}>
+                  Point your camera at the QR code shown on your other device to fill the invite
+                  automatically.
+                </Text>
+              </RNView>
+            </>
           ) : (
-            <RNView style={styles.emptyCard}>
-              <Smartphone size={22} color={colors.textMuted} strokeWidth={1.5} />
-              <Text style={styles.emptyText}>No other devices connected yet.</Text>
+            <RNView style={styles.scannerPermissionCard}>
+              <Text style={styles.scannerTitle}>Camera access needed</Text>
+              <Text style={styles.scannerDescription}>
+                Allow camera access to scan an invite QR code and fill the pairing code
+                automatically.
+              </Text>
+              <Pressable
+                onPress={requestCameraPermission}
+                style={({ pressed }) => [
+                  styles.permissionBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
+                ]}
+              >
+                <Text style={styles.permissionBtnText}>Allow Camera</Text>
+              </Pressable>
+              <Pressable onPress={handleCloseScanner} style={styles.permissionCancelBtn}>
+                <Text style={styles.permissionCancelText}>Not now</Text>
+              </Pressable>
             </RNView>
           )}
-
-          <RNView style={styles.footNoteRowDevice}>
-            <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
-            <Text style={styles.footNote}>
-              Your data moves directly between devices using encrypted Hypercore logs. No central
-              server involved.
-            </Text>
-          </RNView>
         </RNView>
-      )}
-    </ScrollView>
+      </Modal>
     </KeyboardAvoidingView>
   )
 }
@@ -319,10 +487,12 @@ const DeviceCard = memo(function DeviceCard({
   device,
   isOther,
   showSep,
+  animationIndex = 0,
 }: {
   device: any
   isOther?: boolean
   showSep: boolean
+  animationIndex?: number
 }) {
   const theme = useTheme()
   const { colors } = theme
@@ -376,7 +546,10 @@ const DeviceCard = memo(function DeviceCard({
 
   return (
     <>
-      <RNView>
+      <Reanimated.View
+        entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
+        layout={LinearTransition.springify().damping(20).stiffness(220)}
+      >
         <RNView style={styles.deviceRow}>
           <RNView style={styles.deviceIcon}>
             <Icon size={18} color={colors.primary} strokeWidth={1.5} />
@@ -423,7 +596,7 @@ const DeviceCard = memo(function DeviceCard({
         </RNView>
 
         {showSep && <RNView style={styles.deviceSep} />}
-      </RNView>
+      </Reanimated.View>
 
       <DeleteModal
         visible={showDeleteModal}
@@ -647,6 +820,33 @@ const createStyles = (theme: Theme) => {
       letterSpacing: 1,
       color: theme.colors.text,
     },
+    qrSection: {
+      width: '100%',
+      alignItems: 'center',
+      marginBottom: Space.md,
+    },
+    qrImageWrap: {
+      width: 200,
+      height: 200,
+      borderRadius: Radii.md,
+      marginBottom: Space.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#fff',
+    },
+    qrTitle: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.bold,
+      marginBottom: Space.xs,
+      color: theme.colors.text,
+    },
+    qrDescription: {
+      fontSize: FontSize.small,
+      lineHeight: 18,
+      textAlign: 'center',
+      color: textMuted,
+      paddingHorizontal: Space.sm,
+    },
     copyBtn: {
       borderRadius: 14,
       width: '100%',
@@ -690,6 +890,15 @@ const createStyles = (theme: Theme) => {
       borderColor: theme.colors.inputBorder,
     },
     codeInput: { flex: 1, fontSize: FontSize.body, paddingVertical: 9, color: theme.colors.text },
+    scanBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: Radii.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.7)',
+    },
     linkBtn: {
       borderRadius: Space.md,
       paddingHorizontal: Space.base,
@@ -811,6 +1020,93 @@ const createStyles = (theme: Theme) => {
       borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
     },
     emptyText: { fontSize: FontSize.small, marginTop: Space.md, color: textMuted },
+
+    scannerScreen: {
+      flex: 1,
+      backgroundColor: '#000',
+    },
+    scannerOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: Space.xl,
+    },
+    scannerFrame: {
+      width: '100%',
+      maxWidth: 280,
+      aspectRatio: 1,
+      borderRadius: Radii.card,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.92)',
+      backgroundColor: 'transparent',
+    },
+    scannerHeader: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      paddingTop: 56,
+      paddingHorizontal: Space.lg,
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    scannerCloseBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.45)',
+    },
+    scannerFooter: {
+      position: 'absolute',
+      left: Space.lg,
+      right: Space.lg,
+      bottom: 56,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.lg,
+      borderRadius: Radii.card,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      gap: Space.sm,
+    },
+    scannerPermissionCard: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: Space.xl,
+      gap: Space.md,
+    },
+    scannerTitle: {
+      fontSize: FontSize.heading,
+      fontWeight: FontWeight.bold,
+      textAlign: 'center',
+      color: '#fff',
+    },
+    scannerDescription: {
+      fontSize: FontSize.body,
+      lineHeight: 21,
+      textAlign: 'center',
+      color: 'rgba(255,255,255,0.82)',
+    },
+    permissionBtn: {
+      marginTop: Space.sm,
+      borderRadius: Radii.md,
+      paddingHorizontal: Space.xl,
+      paddingVertical: Space.base,
+    },
+    permissionBtnText: {
+      color: '#000',
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.bold,
+    },
+    permissionCancelBtn: {
+      paddingHorizontal: Space.base,
+      paddingVertical: Space.sm,
+    },
+    permissionCancelText: {
+      fontSize: FontSize.body,
+      color: 'rgba(255,255,255,0.72)',
+    },
 
     modalFill: {
       ...StyleSheet.absoluteFillObject,

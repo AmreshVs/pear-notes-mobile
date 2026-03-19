@@ -13,6 +13,7 @@ import { BlurView } from 'expo-blur'
 import { Check, Globe, Link2, ShieldCheck } from 'lucide-react-native'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, Pressable, StyleSheet, TextInput } from 'react-native'
+import Reanimated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from './GlassView'
@@ -320,9 +321,14 @@ export const PairingOverlay = memo(function PairingOverlay() {
       <Pressable onPress={handleClose} style={StyleSheet.absoluteFill} />
 
       <View style={styles.center} pointerEvents="box-none">
-        <GlassView intensity={40} borderRadius={32} style={styles.card}>
-          {renderContent()}
-        </GlassView>
+        <Reanimated.View
+          key={`${step}-${showPairingInput ? 'input' : 'flow'}`}
+          entering={FadeInDown.duration(240)}
+        >
+          <GlassView intensity={40} borderRadius={32} style={styles.card}>
+            <Reanimated.View entering={FadeIn.duration(220)}>{renderContent()}</Reanimated.View>
+          </GlassView>
+        </Reanimated.View>
       </View>
     </Animated.View>
   )

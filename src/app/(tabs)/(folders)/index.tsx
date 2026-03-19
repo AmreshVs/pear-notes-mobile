@@ -159,8 +159,8 @@ export default function FoldersScreen() {
   )
 
   const renderFolders = useCallback(
-    (foldersToRender: any[]) =>
-      foldersToRender.map((folder: any) => (
+    (foldersToRender: any[], startIndex = 0) =>
+      foldersToRender.map((folder: any, index: number) => (
         <FolderRow
           key={folder.id || folder.key}
           id={folder.id || folder.key}
@@ -168,6 +168,7 @@ export default function FoldersScreen() {
           count={noteCounts[folder.id || folder.key] ?? 0}
           icon={getFolderIcon(folder)}
           isSystem={folder.isSystem}
+          animationIndex={startIndex + index}
           onPress={handleSelectFolder}
           onRename={folder.isSystem ? undefined : handleRenameFolder}
           onDelete={folder.isSystem ? undefined : handleDeleteFolder}
@@ -201,7 +202,7 @@ export default function FoldersScreen() {
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
             <Text style={[common.sectionCap, styles.sectionHeaderMargin]}>ARCHIVE</Text>
-            {renderFolders(archiveFolders)}
+            {renderFolders(archiveFolders, topFolders.length)}
           </View>
         )}
       </ScrollView>

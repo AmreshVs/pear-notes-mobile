@@ -218,7 +218,7 @@ export default function FolderNotesScreen() {
             )}
           </View>
         ) : (
-          groupedNotes.map((section) => (
+          groupedNotes.map((section, sectionIndex) => (
             <View key={section.title} style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={common.sectionCap}>{section.title}</Text>
@@ -239,6 +239,7 @@ export default function FolderNotesScreen() {
                     }
                     selected={false}
                     isLast={index === section.data.length - 1}
+                    animationIndex={sectionIndex * 3 + index}
                     onPress={() => handleSelectNote(note.key)}
                     onDelete={() => handleDeleteNote(note.key)}
                     onCopy={() => handleCopyNote(note.value?.title, note.value?.note)}

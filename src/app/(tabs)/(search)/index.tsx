@@ -93,6 +93,7 @@ export default function SearchScreen() {
                 folderName={note.value?.folderName}
                 selected={false}
                 isLast={index === notes.length - 1}
+                animationIndex={index}
                 onPress={() => handleSelectNote(note.key)}
               />
             ))}

@@ -19,6 +19,7 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native'
+import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { Text, Theme, useTheme, useThemedStyles } from '@/components/Themed'
@@ -103,113 +104,129 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.sectionCap}>GENERAL</Text>
+        <Animated.View entering={FadeIn.duration(220)}>
+          <Text style={styles.sectionCap}>GENERAL</Text>
+        </Animated.View>
 
-        <RNView style={common.card}>
-          <RNView style={styles.rowUnderline}>
-            <Text style={styles.rowLabel}>App Theme</Text>
-            <RNView style={styles.segCtrl}>
-              {(['system', 'light', 'dark'] as const).map((t, i) => {
-                const isActive = currentTheme === t
-                return (
-                  <Pressable
-                    key={t}
-                    onPress={() => dispatch(setTheme(t))}
-                    style={[
-                      styles.segPill,
-                      isActive && styles.segPillActive,
-                      i === 0 && styles.radiusLeft,
-                      i === 2 && styles.radiusRight,
-                    ]}
-                  >
-                    <Text style={[styles.segText, isActive && styles.segTextActive]}>
-                      {t.charAt(0).toUpperCase() + t.slice(1)}
-                    </Text>
-                  </Pressable>
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(40)}
+          layout={LinearTransition.springify().damping(20).stiffness(220)}
+        >
+          <RNView style={common.card}>
+            <RNView style={styles.rowUnderline}>
+              <Text style={styles.rowLabel}>App Theme</Text>
+              <RNView style={styles.segCtrl}>
+                {(['system', 'light', 'dark'] as const).map((t, i) => {
+                  const isActive = currentTheme === t
+                  return (
+                    <Pressable
+                      key={t}
+                      onPress={() => dispatch(setTheme(t))}
+                      style={[
+                        styles.segPill,
+                        isActive && styles.segPillActive,
+                        i === 0 && styles.radiusLeft,
+                        i === 2 && styles.radiusRight,
+                      ]}
+                    >
+                      <Text style={[styles.segText, isActive && styles.segTextActive]}>
+                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </RNView>
+            </RNView>
+
+            <Pressable
+              onPress={() =>
+                showPicker('Sort Notes By', SORT_OPTIONS, (val) =>
+                  dispatch(updateSetting({ key: 'sortBy', value: val })),
                 )
-              })}
-            </RNView>
-          </RNView>
+              }
+              style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
+            >
+              <Text style={styles.rowLabel}>Sort Notes By</Text>
+              <RNView style={common.settingsRowRight}>
+                <Text style={styles.rowVal}>
+                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Date Edited'}
+                </Text>
+                <ChevronRight size={15} color={colors.textMuted} />
+              </RNView>
+            </Pressable>
 
-          <Pressable
-            onPress={() =>
-              showPicker('Sort Notes By', SORT_OPTIONS, (val) =>
-                dispatch(updateSetting({ key: 'sortBy', value: val })),
-              )
-            }
-            style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
-          >
-            <Text style={styles.rowLabel}>Sort Notes By</Text>
-            <RNView style={common.settingsRowRight}>
-              <Text style={styles.rowVal}>
-                {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Date Edited'}
-              </Text>
-              <ChevronRight size={15} color={colors.textMuted} />
-            </RNView>
-          </Pressable>
+            <Pressable
+              onPress={() =>
+                showPicker('Font Family', FONT_OPTIONS, (val) =>
+                  dispatch(updateSetting({ key: 'fontFamily', value: val })),
+                )
+              }
+              style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
+            >
+              <Text style={styles.rowLabel}>Font Family</Text>
+              <RNView style={common.settingsRowRight}>
+                <Text style={styles.rowVal}>
+                  {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
+                </Text>
+                <ChevronRight size={15} color={colors.textMuted} />
+              </RNView>
+            </Pressable>
 
-          <Pressable
-            onPress={() =>
-              showPicker('Font Family', FONT_OPTIONS, (val) =>
-                dispatch(updateSetting({ key: 'fontFamily', value: val })),
-              )
-            }
-            style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
-          >
-            <Text style={styles.rowLabel}>Font Family</Text>
-            <RNView style={common.settingsRowRight}>
-              <Text style={styles.rowVal}>
-                {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
-              </Text>
-              <ChevronRight size={15} color={colors.textMuted} />
-            </RNView>
-          </Pressable>
-
-          <RNView style={styles.sliderRow}>
-            <RNView style={styles.sliderHeader}>
-              <Text style={styles.rowLabel}>Text Size</Text>
-              <RNView style={styles.badge}>
-                <Text style={styles.badgeText}>{editorFontSize}</Text>
+            <RNView style={styles.sliderRow}>
+              <RNView style={styles.sliderHeader}>
+                <Text style={styles.rowLabel}>Text Size</Text>
+                <RNView style={styles.badge}>
+                  <Text style={styles.badgeText}>{editorFontSize}</Text>
+                </RNView>
+              </RNView>
+              <RNView style={styles.sliderContainer}>
+                <Text style={styles.sizeSm}>A</Text>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={12}
+                  maximumValue={24}
+                  step={1}
+                  value={editorFontSize}
+                  onValueChange={(val) =>
+                    dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
+                  }
+                  minimumTrackTintColor={colors.primary}
+                  maximumTrackTintColor={colors.borderSecondary}
+                  thumbTintColor="#FFFFFF"
+                />
+                <Text style={styles.sizeLg}>A</Text>
               </RNView>
             </RNView>
-            <RNView style={styles.sliderContainer}>
-              <Text style={styles.sizeSm}>A</Text>
-              <Slider
-                style={styles.slider}
-                minimumValue={12}
-                maximumValue={24}
-                step={1}
-                value={editorFontSize}
-                onValueChange={(val) =>
-                  dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
-                }
-                minimumTrackTintColor={colors.primary}
-                maximumTrackTintColor={colors.borderSecondary}
-                thumbTintColor="#FFFFFF"
-              />
-              <Text style={styles.sizeLg}>A</Text>
-            </RNView>
           </RNView>
-        </RNView>
+        </Animated.View>
 
-        <Text style={styles.sectionCapMargin}>SYNC & DEVICES</Text>
+        <Animated.View entering={FadeIn.duration(220).delay(90)}>
+          <Text style={styles.sectionCapMargin}>SYNC & DEVICES</Text>
+        </Animated.View>
 
-        <RNView style={common.card}>
-          <Pressable
-            onPress={() => router.push('/settings/sync')}
-            style={({ pressed }) => [styles.syncRow, pressed && styles.rowPressed]}
-          >
-            <RNView style={common.settingsRowLeft}>
-              <RNView style={common.iconBox34}>
-                <RefreshCw size={17} color={colors.primary} strokeWidth={1.8} />
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(120)}
+          layout={LinearTransition.springify().damping(20).stiffness(220)}
+        >
+          <RNView style={common.card}>
+            <Pressable
+              onPress={() => router.push('/settings/sync')}
+              style={({ pressed }) => [styles.syncRow, pressed && styles.rowPressed]}
+            >
+              <RNView style={common.settingsRowLeft}>
+                <RNView style={common.iconBox34}>
+                  <RefreshCw size={17} color={colors.primary} strokeWidth={1.8} />
+                </RNView>
+                <Text style={styles.rowLabelSemiBold}>Link and Sync</Text>
               </RNView>
-              <Text style={styles.rowLabelSemiBold}>Link and Sync</Text>
-            </RNView>
-            <ChevronRight size={16} color={colors.textMuted} />
-          </Pressable>
-        </RNView>
+              <ChevronRight size={16} color={colors.textMuted} />
+            </Pressable>
+          </RNView>
+        </Animated.View>
 
-        <Text style={styles.footer}>End-to-end encrypted • Fully private</Text>
+        <Animated.View entering={FadeIn.duration(220).delay(160)}>
+          <Text style={styles.footer}>End-to-end encrypted • Fully private</Text>
+        </Animated.View>
       </ScrollView>
     </RNView>
   )

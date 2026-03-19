@@ -34,7 +34,13 @@
       "expo-router",
       "expo-font",
       "expo-system-ui",
-      "expo-image"
+      "expo-image",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Pear Notes to use the camera to scan invite QR codes."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

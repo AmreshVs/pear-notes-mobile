@@ -7,6 +7,7 @@ import {
 } from 'lucide-react-native'
 import React, { memo, useCallback } from 'react'
 import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
 
 import { Text, Theme, useThemedStyles } from './Themed'
 
@@ -28,6 +29,7 @@ interface FolderRowProps {
   icon?: string
   selected?: boolean
   isSystem?: boolean
+  animationIndex?: number
   onPress: (id: string) => void
   onRename?: (id: string, currentName: string) => void
   onDelete?: (id: string) => void
@@ -40,6 +42,7 @@ export const FolderRow = memo(function FolderRow({
   icon,
   selected,
   isSystem,
+  animationIndex = 0,
   onPress,
   onRename,
   onDelete,
@@ -57,20 +60,26 @@ export const FolderRow = memo(function FolderRow({
   )
 
   const row = (
-    <Pressable onPress={() => onPress(id)} style={containerStyle}>
-      <RNView style={styles.leftContent}>
-        <Icon size={20} color={styles.icon.color} strokeWidth={1.8} />
+    <Animated.View
+      entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
+      exiting={FadeOut.duration(160)}
+      layout={LinearTransition.springify().damping(20).stiffness(220)}
+    >
+      <Pressable onPress={() => onPress(id)} style={containerStyle}>
+        <RNView style={styles.leftContent}>
+          <Icon size={20} color={styles.icon.color} strokeWidth={1.8} />
 
-        <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
-      </RNView>
-
-      <RNView style={styles.rightContent}>
-        {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
-        <RNView style={styles.chevronWrap}>
-          <ChevronRight size={14} color={styles.count.color} />
+          <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
         </RNView>
-      </RNView>
-    </Pressable>
+
+        <RNView style={styles.rightContent}>
+          {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
+          <RNView style={styles.chevronWrap}>
+            <ChevronRight size={14} color={styles.count.color} />
+          </RNView>
+        </RNView>
+      </Pressable>
+    </Animated.View>
   )
 
   // System folders and Android: plain row, no context menu

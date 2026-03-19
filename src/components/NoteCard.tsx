@@ -9,6 +9,11 @@ import {
   StyleSheet,
   type ViewStyle,
 } from 'react-native'
+import Animated, {
+  FadeIn,
+  FadeOutUp,
+  LinearTransition,
+} from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 
 import { Text, Theme, useColors, useThemedStyles } from './Themed'
@@ -31,6 +36,7 @@ interface NoteCardProps {
   folderName?: string
   selected?: boolean
   isLast?: boolean
+  animationIndex?: number
   onPress: () => void
   onDelete?: () => void
   onCopy?: () => void
@@ -46,6 +52,7 @@ export const NoteCard = memo(function NoteCard({
   folderName,
   selected,
   isLast,
+  animationIndex = 0,
   onPress,
   onDelete,
   onCopy,
@@ -88,47 +95,53 @@ export const NoteCard = memo(function NoteCard({
   const showThumbnail = !!imageUrl && !thumbError
 
   const card = (
-    <Pressable onPress={onPress} style={getPressableStyle}>
-      <RNView style={styles.row}>
-        <RNView style={styles.content}>
-          <Text variant="bodyBold" numberOfLines={1} style={titleStyle}>
-            {title || 'Untitled'}
-          </Text>
-
-          <Text variant="caption" numberOfLines={2} style={styles.summary}>
-            {summary || 'No additional text'}
-          </Text>
-
-          <RNView style={styles.metadata}>
-            {folderName && (
-              <>
-                <RNView style={styles.folderTag}>
-                  <Folder size={11} color={colors.textSecondary} style={styles.folderIcon} />
-                  <Text variant="caption" style={styles.metadataText}>
-                    {folderName}
-                  </Text>
-                </RNView>
-                <Text variant="caption" style={styles.separator}>
-                  {'  ·  '}
-                </Text>
-              </>
-            )}
-            <Text variant="caption" style={styles.metadataText}>
-              {date}
+    <Animated.View
+      entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
+      exiting={FadeOutUp.duration(180)}
+      layout={LinearTransition.springify().damping(20).stiffness(220)}
+    >
+      <Pressable onPress={onPress} style={getPressableStyle}>
+        <RNView style={styles.row}>
+          <RNView style={styles.content}>
+            <Text variant="bodyBold" numberOfLines={1} style={titleStyle}>
+              {title || 'Untitled'}
             </Text>
-          </RNView>
-        </RNView>
 
-        {showThumbnail && (
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-            onError={() => setThumbError(true)}
-          />
-        )}
-      </RNView>
-    </Pressable>
+            <Text variant="caption" numberOfLines={2} style={styles.summary}>
+              {summary || 'No additional text'}
+            </Text>
+
+            <RNView style={styles.metadata}>
+              {folderName && (
+                <>
+                  <RNView style={styles.folderTag}>
+                    <Folder size={11} color={colors.textSecondary} style={styles.folderIcon} />
+                    <Text variant="caption" style={styles.metadataText}>
+                      {folderName}
+                    </Text>
+                  </RNView>
+                  <Text variant="caption" style={styles.separator}>
+                    {'  ·  '}
+                  </Text>
+                </>
+              )}
+              <Text variant="caption" style={styles.metadataText}>
+                {date}
+              </Text>
+            </RNView>
+          </RNView>
+
+          {showThumbnail && (
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.thumbnail}
+              resizeMode="cover"
+              onError={() => setThumbError(true)}
+            />
+          )}
+        </RNView>
+      </Pressable>
+    </Animated.View>
   )
 
   const hasActions = onDelete || onCopy || onMoveTo
