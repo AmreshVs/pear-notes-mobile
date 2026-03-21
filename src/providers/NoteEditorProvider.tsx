@@ -16,24 +16,17 @@ import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
 import * as ImagePicker from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
   Animated,
   Dimensions,
-  PanResponder,
   InteractionManager,
   Keyboard,
   Linking,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
@@ -287,6 +280,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const titleRef = useRef<string>('')
   const noteContentRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
+  const isLoadingNoteRef = useRef(false)
 
   const noteSelector = useMemo(() => getNoteData(noteId ?? ''), [noteId])
   const rawNoteData = useSelector(noteSelector)
@@ -347,6 +341,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       stiffness: 200,
     }).start()
 
+    isLoadingNoteRef.current = true
     InteractionManager.runAfterInteractions(() => {
       editorRef.current?.setHTML(content)
     })
@@ -378,6 +373,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           hyperdriveServerAddress.replace(/\/$/, ''),
           HYPERDRIVE_URL_PREFIX,
         )
+      }
+
+      if (isLoadingNoteRef.current) {
+        isLoadingNoteRef.current = false
+        noteContentRef.current = finalHtml
+        return
       }
 
       if (finalHtml === noteContentRef.current) return
@@ -927,10 +928,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     <NoteEditorContext.Provider value={contextValue}>
       {children}
       <>
-        <Animated.View
-          style={animatedViewStyle}
-          pointerEvents={isOpen ? 'auto' : 'none'}
-        >
+        <Animated.View style={animatedViewStyle} pointerEvents={isOpen ? 'auto' : 'none'}>
           {Platform.OS === 'ios' && isOpen ? (
             <View
               style={styles.edgeSwipeZone}
