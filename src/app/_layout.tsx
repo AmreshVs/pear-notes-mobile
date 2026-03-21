@@ -8,12 +8,11 @@ import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
-import { useCallback, useEffect, useState } from 'react'
-import { LogBox } from 'react-native'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { LogBox, View } from 'react-native'
 import 'react-native-reanimated'
 import { Provider } from 'react-redux'
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon'
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import { useResolvedColorScheme } from '@/components/Themed'
@@ -34,6 +33,7 @@ const storage = documentDir.uri.replace(/^file:\/+/, '/')
 export default function RootLayout() {
   const [worketLoaded, setWorkletLoaded] = useState(false)
   const [fatalError, setFatalError] = useState<string | null>(null)
+  const splashHidden = useRef(false)
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
 
@@ -70,7 +70,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded && worketLoaded) {
-      SplashScreen.hideAsync()
       store.dispatch(appReady())
       store.dispatch(initApp())
     }
@@ -84,9 +83,18 @@ export default function RootLayout() {
     return null
   }
 
+  const handleLayout = () => {
+    if (!splashHidden.current) {
+      splashHidden.current = true
+      SplashScreen.hideAsync()
+    }
+  }
+
   return (
     <Provider store={store}>
-      <RootLayoutNav />
+      <View style={{ flex: 1 }} onLayout={handleLayout}>
+        <RootLayoutNav />
+      </View>
     </Provider>
   )
 }
@@ -119,7 +127,6 @@ function RootLayoutNav() {
         </Stack>
 
         <PairingOverlay />
-        <AnimatedSplashOverlay />
       </NoteEditorProvider>
     </ThemeProvider>
   )
