@@ -313,7 +313,12 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'insertAudioAttachment', url, fileName, duration }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => sendCommand({ type: 'focus' }),
-        blur: () => sendCommand({ type: 'blur' }),
+        blur: () => {
+          sendCommand({ type: 'blur' })
+          webViewRef.current?.injectJavaScript(
+            `(function(){try{document.activeElement&&document.activeElement.blur()}catch(e){}})();true;`,
+          )
+        },
         save: async () => {
           const html = await getHTMLAsync()
           if (html !== undefined) onContentChangeRef.current(html)

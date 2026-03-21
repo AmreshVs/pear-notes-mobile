@@ -281,6 +281,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const noteContentRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
   const isLoadingNoteRef = useRef(false)
+  const isEditorFocusedRef = useRef(false)
 
   const noteSelector = useMemo(() => getNoteData(noteId ?? ''), [noteId])
   const rawNoteData = useSelector(noteSelector)
@@ -361,7 +362,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     const defaultBottom = TOOLBAR_HEIGHT + (Platform.OS === 'ios' ? insets.bottom : 16)
     const inset = keyboardHeight > 0 ? keyboardHeight + 12 + TOOLBAR_HEIGHT + 16 : defaultBottom
-    editorRef.current?.setKeyboardInset(inset, keyboardHeight > 0)
+    editorRef.current?.setKeyboardInset(inset, keyboardHeight > 0 && isEditorFocusedRef.current)
   }, [keyboardHeight, insets.bottom])
 
   const handleUpdate = useCallback(
@@ -855,7 +856,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [themeIsDark],
   )
 
-  const handleEditorFocus = useCallback(() => setIsEditing(true), [])
+  const handleEditorFocus = useCallback(() => {
+    isEditorFocusedRef.current = true
+    setIsEditing(true)
+  }, [])
+
+  const handleEditorBlur = useCallback(() => {
+    isEditorFocusedRef.current = false
+  }, [])
 
   const handleOpenAttachment = useCallback((url: string) => {
     if (url) Linking.openURL(url).catch(console.error)
@@ -1068,6 +1076,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onTitleChange={handleTitleChange}
             onStyleStateChange={handleStyleStateChange}
             onEditorFocus={handleEditorFocus}
+            onEditorBlur={handleEditorBlur}
             onOpenAttachment={handleOpenAttachment}
             onDeleteAttachment={handleDeleteAttachment}
           />
