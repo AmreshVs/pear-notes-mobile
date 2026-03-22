@@ -1,5 +1,10 @@
 import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
-import { getFolders, setSelectedFolder } from '@pear-notes/core/store/slices/foldersSlice.js'
+import {
+  deleteFolder,
+  getFolders,
+  setSelectedFolder,
+  updateFolder,
+} from '@pear-notes/core/store/slices/foldersSlice.js'
 import {
   createNote,
   deleteNote,
@@ -11,10 +16,9 @@ import {
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 import * as Clipboard from 'expo-clipboard'
-import { Stack, useLocalSearchParams } from 'expo-router'
-import { SquarePen } from 'lucide-react-native'
+import { Stack, router, useLocalSearchParams } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { Alert, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
@@ -149,6 +153,36 @@ export default function FolderNotesScreen() {
     await Clipboard.setStringAsync(plain)
   }, [])
 
+  const handleRenameFolder = useCallback(() => {
+    if (!folder) return
+    Alert.prompt(
+      'Rename Folder',
+      undefined,
+      (newName) => {
+        const trimmed = newName?.trim()
+        if (trimmed && trimmed !== folder.name) {
+          dispatch(updateFolder({ id, name: trimmed } as any))
+        }
+      },
+      'plain-text',
+      folder.name,
+    )
+  }, [dispatch, folder, id])
+
+  const handleDeleteFolder = useCallback(() => {
+    Alert.alert('Delete Folder', 'This folder and its notes will be deleted.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          dispatch(deleteFolder(id as any))
+          router.back()
+        },
+      },
+    ])
+  }, [dispatch, id])
+
   useEffect(() => {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
@@ -171,14 +205,6 @@ export default function FolderNotesScreen() {
           headerLargeTitle: false,
           headerTransparent: true,
           headerBlurEffect: isDark ? 'dark' : 'light',
-          headerRight: () => (
-            <Pressable
-              onPress={handleCreateNote}
-              style={({ pressed }) => [common.headerBtn, pressed && common.pressed]}
-            >
-              <SquarePen size={22} color={colors.text} strokeWidth={1.8} />
-            </Pressable>
-          ),
           headerSearchBarOptions: {
             placeholder: 'Search notes...',
             hideWhenScrolling: false,
@@ -191,6 +217,19 @@ export default function FolderNotesScreen() {
           },
         }}
       />
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button icon="square.and.pencil" onPress={handleCreateNote} />
+        {!folder?.isSystem && (
+          <Stack.Toolbar.Menu icon="ellipsis">
+            <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
+              Rename
+            </Stack.Toolbar.MenuAction>
+            <Stack.Toolbar.MenuAction icon="trash" destructive onPress={handleDeleteFolder}>
+              Delete
+            </Stack.Toolbar.MenuAction>
+          </Stack.Toolbar.Menu>
+        )}
+      </Stack.Toolbar>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
