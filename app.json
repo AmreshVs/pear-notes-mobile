@@ -15,7 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.amreshvs.pearnotes",
-      "appleTeamId": "65S93235JA"
+      "appleTeamId": "65S93235JA",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Allow Pear Notes to access your microphone to record voice notes."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +26,10 @@
         "backgroundColor": "#ffffff"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.amreshvs.pearnotes"
+      "package": "com.amreshvs.pearnotes",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -39,6 +45,12 @@
         "expo-camera",
         {
           "cameraPermission": "Allow Pear Notes to use the camera to scan invite QR codes."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow Pear Notes to access your microphone to record voice notes."
         }
       ]
     ],

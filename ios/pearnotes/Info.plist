@@ -45,6 +45,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Allow Pear Notes to access your microphone to record voice notes.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow Pear Notes to use the camera to scan invite QR codes.</string>
 	<key>NSUserActivityTypes</key>

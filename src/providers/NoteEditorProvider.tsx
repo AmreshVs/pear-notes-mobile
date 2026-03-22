@@ -11,6 +11,7 @@ import {
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { deleteNote, getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { AudioModule } from 'expo-audio'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
@@ -40,6 +41,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
+import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
 import { useTheme } from '@/components/Themed'
 import {
@@ -95,14 +97,18 @@ const EditorToolbar = memo(function EditorToolbar({
   colors,
   editorRef,
   toolbarBottom,
-  onAttach,
+  onPickImage,
+  onPickFile,
+  onRecordAudio,
 }: {
   isEditing: boolean
   isActive: (key: keyof TiptapStyleState) => boolean
   colors: any
   editorRef: React.RefObject<TiptapEditorHandle | null>
   toolbarBottom: number
-  onAttach: () => void
+  onPickImage: () => void
+  onPickFile: () => void
+  onRecordAudio: () => void
 }) {
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -126,9 +132,17 @@ const EditorToolbar = memo(function EditorToolbar({
     setTimeout(() => editorRef.current?.focus(), 100)
   }, [editorRef])
 
-  const handleAttachEdit = useCallback(() => {
-    setTimeout(() => onAttach(), 100)
-  }, [onAttach])
+  const handlePickImageEdit = useCallback(() => {
+    setTimeout(() => onPickImage(), 100)
+  }, [onPickImage])
+
+  const handlePickFileEdit = useCallback(() => {
+    setTimeout(() => onPickFile(), 100)
+  }, [onPickFile])
+
+  const handleRecordAudioEdit = useCallback(() => {
+    setTimeout(() => onRecordAudio(), 100)
+  }, [onRecordAudio])
 
   return (
     <View style={toolbarStyle}>
@@ -147,13 +161,39 @@ const EditorToolbar = memo(function EditorToolbar({
               active={isActive('checkboxList')}
               onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
             />
-            <ToolbarBtn
-              sf="paperclip"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              primaryColor={colors.primary}
-              onPress={onAttach}
-            />
+            {ExpoUI ? (
+              <ExpoUI.Host matchContents style={{ width: 44, height: 52 }}>
+                <ExpoUI.Menu
+                  label={
+                    <View style={styles.toolbarBtn}>
+                      <SymbolView
+                        name="paperclip"
+                        size={22}
+                        tintColor={colors.text}
+                        weight="regular"
+                        fallback={<View style={styles.fallbackIcon} />}
+                      />
+                    </View>
+                  }
+                >
+                  <ExpoUI.Button
+                    label="Photo & Video"
+                    systemImage="photo.on.rectangle"
+                    onPress={onPickImage}
+                  />
+                  <ExpoUI.Button label="Record Audio" systemImage="mic" onPress={onRecordAudio} />
+                  <ExpoUI.Button label="Choose File" systemImage="folder" onPress={onPickFile} />
+                </ExpoUI.Menu>
+              </ExpoUI.Host>
+            ) : (
+              <ToolbarBtn
+                sf="paperclip"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                primaryColor={colors.primary}
+                onPress={onPickFile}
+              />
+            )}
             <ToolbarBtn
               sf="square.and.pencil"
               tintActive={colors.primary}
@@ -237,13 +277,47 @@ const EditorToolbar = memo(function EditorToolbar({
           </ScrollView>
         ) : (
           <View style={toolbarRowStyle}>
-            <ToolbarBtn
-              sf="paperclip"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              primaryColor={colors.primary}
-              onPress={handleAttachEdit}
-            />
+            {ExpoUI ? (
+              <ExpoUI.Host matchContents style={{ width: 44, height: 52 }}>
+                <ExpoUI.Menu
+                  label={
+                    <View style={styles.toolbarBtn}>
+                      <SymbolView
+                        name="paperclip"
+                        size={22}
+                        tintColor={colors.text}
+                        weight="regular"
+                        fallback={<View style={styles.fallbackIcon} />}
+                      />
+                    </View>
+                  }
+                >
+                  <ExpoUI.Button
+                    label="Photo & Video"
+                    systemImage="photo.on.rectangle"
+                    onPress={handlePickImageEdit}
+                  />
+                  <ExpoUI.Button
+                    label="Record Audio"
+                    systemImage="mic"
+                    onPress={handleRecordAudioEdit}
+                  />
+                  <ExpoUI.Button
+                    label="Choose File"
+                    systemImage="folder"
+                    onPress={handlePickFileEdit}
+                  />
+                </ExpoUI.Menu>
+              </ExpoUI.Host>
+            ) : (
+              <ToolbarBtn
+                sf="paperclip"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                primaryColor={colors.primary}
+                onPress={handlePickFileEdit}
+              />
+            )}
             <ToolbarBtn
               sf="square.and.pencil"
               tintActive={colors.primary}
@@ -271,6 +345,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isEdgeSwipeActive, setIsEdgeSwipeActive] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [isSharing, setIsSharing] = useState(false)
+  const [isRecorderVisible, setIsRecorderVisible] = useState(false)
   const [uploadInfo, setUploadInfo] = useState<{ fileName: string; status: string } | null>(null)
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
@@ -579,30 +654,54 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [noteId, hyperdriveServerAddress])
 
-  const handleAttach = useCallback(() => {
+  const handleRecordAudio = useCallback(async () => {
+    const { granted, canAskAgain } = await AudioModule.requestRecordingPermissionsAsync()
+    if (!granted) {
+      if (!canAskAgain) {
+        Alert.alert(
+          'Permission Required',
+          'Please enable microphone access in your device settings to record audio.',
+          [{ text: 'OK' }],
+        )
+      }
+      return
+    }
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     Keyboard.dismiss()
     editorRef.current?.blur()
+    setTimeout(() => setIsRecorderVisible(true), 100)
+  }, [])
 
-    const showPicker = () => {
-      if (Platform.OS === 'ios') {
-        ActionSheetIOS.showActionSheetWithOptions(
-          {
-            options: ['Cancel', 'Photo & Video', 'Choose File'],
-            cancelButtonIndex: 0,
-          },
-          (index) => {
-            if (index === 1) handlePickImage()
-            else if (index === 2) handlePickFile()
-          },
-        )
-      } else {
-        handlePickFile()
+  const handleRecordingDone = useCallback(
+    async (uri: string, durationMs: number) => {
+      setIsRecorderVisible(false)
+      const fileName = `recording-${Date.now()}.m4a`
+      setUploadInfo({ fileName, status: 'Uploading...' })
+      try {
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
+        const buffer = Buffer.from(base64, 'base64')
+        const { link } = await backendApi.insertFile({ key: noteId!, fileName, buffer })
+        if (link) {
+          let resolvedLink = link
+          if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
+            resolvedLink = link.replace(
+              HYPERDRIVE_URL_PREFIX,
+              hyperdriveServerAddress.replace(/\/$/, ''),
+            )
+          }
+          editorRef.current?.insertAudioAttachment(resolvedLink, fileName)
+          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+        }
+      } catch (error) {
+        console.error('Error uploading recording:', error)
+        Alert.alert('Upload Failed', 'Could not upload the recording.')
+      } finally {
+        setUploadInfo(null)
       }
-    }
-
-    setTimeout(showPicker, 100)
-  }, [handlePickImage, handlePickFile])
+    },
+    [noteId, hyperdriveServerAddress],
+  )
 
   const openNote = useCallback((id: string) => {
     Keyboard.dismiss()
@@ -1088,9 +1187,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               colors={colors}
               editorRef={editorRef}
               toolbarBottom={toolbarBottom}
-              onAttach={handleAttach}
+              onPickImage={handlePickImage}
+              onPickFile={handlePickFile}
+              onRecordAudio={handleRecordAudio}
             />
           )}
+
+          <AudioRecorderModal
+            visible={isRecorderVisible}
+            onDone={handleRecordingDone}
+            onCancel={() => setIsRecorderVisible(false)}
+          />
 
           {uploadInfo && (
             <View style={[uploadStyles.container, { bottom: toolbarBottom + 64 }]}>
