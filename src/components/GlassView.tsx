@@ -9,6 +9,7 @@ interface GlassViewProps extends ViewProps {
   intensity?: number
   borderRadius?: number
   style?: ViewStyle
+  isInteractive?: boolean
 }
 
 export const GlassView = memo(function GlassView({

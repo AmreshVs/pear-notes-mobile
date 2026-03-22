@@ -132,7 +132,7 @@ const EditorToolbar = memo(function EditorToolbar({
 
   return (
     <View style={toolbarStyle}>
-      <GlassView intensity={5} borderRadius={28} style={styles.glassBar}>
+      <GlassView intensity={40} borderRadius={28} style={styles.glassBar} isInteractive>
         {isEditing ? (
           <ScrollView
             horizontal
@@ -947,7 +947,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
           <View style={headerStyle}>
             <View style={styles.headerRow}>
-              <GlassView intensity={5} borderRadius={24} style={styles.headerBtn}>
+              <GlassView intensity={40} borderRadius={24} style={styles.headerBtn}>
                 <Pressable
                   onPress={closeNote}
                   style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
@@ -965,7 +965,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               <View style={{ flex: 1 }} />
 
               {isEditing ? (
-                <GlassView intensity={5} borderRadius={22} style={styles.headerBtn}>
+                <GlassView intensity={40} borderRadius={22} style={styles.headerBtn}>
                   <Pressable
                     onPress={handleDone}
                     style={({ pressed }) => [styles.headerBtnInner, { opacity: pressed ? 0.5 : 1 }]}
@@ -980,7 +980,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   </Pressable>
                 </GlassView>
               ) : (
-                <GlassView intensity={5} borderRadius={24} style={styles.headerPill}>
+                <GlassView intensity={40} borderRadius={24} style={styles.headerPill} isInteractive>
                   <Pressable
                     onPress={handleShare}
                     disabled={isSharing}
@@ -1094,7 +1094,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
           {uploadInfo && (
             <View style={[uploadStyles.container, { bottom: toolbarBottom + 64 }]}>
-              <GlassView intensity={12} borderRadius={16} style={uploadStyles.toast}>
+              <GlassView intensity={12} borderRadius={16} style={uploadStyles.toast} isInteractive>
                 <ActivityIndicator size="small" color={colors.primary} />
                 <View style={uploadStyles.textWrap}>
                   <Text style={[uploadStyles.fileName, { color: colors.text }]} numberOfLines={1}>
