@@ -299,9 +299,9 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   })
 
   const stopEvent = (e) => e.stopPropagation()
-  playBtn.addEventListener('mousedown', stopEvent)
+  playBtn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
   playBtn.addEventListener('touchstart', stopEvent)
-  rangeInput.addEventListener('mousedown', stopEvent)
+  rangeInput.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
   rangeInput.addEventListener('touchstart', stopEvent)
 
   return { container, actionsContainer }
@@ -352,6 +352,17 @@ const FileAttachment = Node.create({
         dlBtn.className = 'dl-btn'
         dlBtn.style.cssText = btnStyle
         dlBtn.innerHTML = dlIcon
+        dlBtn.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        dlBtn.addEventListener(
+          'touchstart',
+          (e) => {
+            e.stopPropagation()
+          },
+          { passive: true },
+        )
         dlBtn.onclick = (e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -362,6 +373,17 @@ const FileAttachment = Node.create({
         delBtn.className = 'del-btn'
         delBtn.style.cssText = btnStyle
         delBtn.innerHTML = delIcon
+        delBtn.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        delBtn.addEventListener(
+          'touchstart',
+          (e) => {
+            e.stopPropagation()
+          },
+          { passive: true },
+        )
         delBtn.onclick = (e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -375,9 +397,14 @@ const FileAttachment = Node.create({
         player.actionsContainer.appendChild(dlBtn)
         player.actionsContainer.appendChild(delBtn)
 
+        dom.style.userSelect = 'none'
+        dom.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+        })
+
         return {
           dom,
-          stopEvent: (event) => !!event.target.closest('button, input[type="range"]'),
+          stopEvent: () => true,
           ignoreMutation: () => true,
         }
       }
@@ -386,7 +413,10 @@ const FileAttachment = Node.create({
       dom.setAttribute('data-file-attachment', '')
       dom.className = 'file-attachment-container'
       dom.style.cssText =
-        'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif;'
+        'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none;'
+      dom.addEventListener('mousedown', (e) => {
+        if (!e.target.closest('video')) e.preventDefault()
+      })
 
       if (isVideo) {
         const videoContainer = document.createElement('div')
@@ -472,6 +502,17 @@ const FileAttachment = Node.create({
       dlBtn.className = 'dl-btn'
       dlBtn.style.cssText = genericBtnStyle
       dlBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
+      dlBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      dlBtn.addEventListener(
+        'touchstart',
+        (e) => {
+          e.stopPropagation()
+        },
+        { passive: true },
+      )
       dlBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -482,6 +523,17 @@ const FileAttachment = Node.create({
       delBtn.className = 'del-btn'
       delBtn.style.cssText = genericBtnStyle
       delBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
+      delBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      delBtn.addEventListener(
+        'touchstart',
+        (e) => {
+          e.stopPropagation()
+        },
+        { passive: true },
+      )
       delBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -500,7 +552,7 @@ const FileAttachment = Node.create({
 
       return {
         dom,
-        stopEvent: (event) => !!event.target.closest('video, .dl-btn, .del-btn'),
+        stopEvent: () => true,
         ignoreMutation: () => true,
       }
     }
@@ -547,6 +599,17 @@ const AudioAttachment = Node.create({
       dlBtn.className = 'dl-btn'
       dlBtn.style.cssText = btnStyle
       dlBtn.innerHTML = dlIcon
+      dlBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      dlBtn.addEventListener(
+        'touchstart',
+        (e) => {
+          e.stopPropagation()
+        },
+        { passive: true },
+      )
       dlBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -560,6 +623,17 @@ const AudioAttachment = Node.create({
       delBtn.className = 'del-btn'
       delBtn.style.cssText = btnStyle
       delBtn.innerHTML = delIcon
+      delBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      delBtn.addEventListener(
+        'touchstart',
+        (e) => {
+          e.stopPropagation()
+        },
+        { passive: true },
+      )
       delBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -573,9 +647,14 @@ const AudioAttachment = Node.create({
       player.actionsContainer.appendChild(dlBtn)
       player.actionsContainer.appendChild(delBtn)
 
+      dom.style.userSelect = 'none'
+      dom.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+      })
+
       return {
         dom,
-        stopEvent: (event) => !!event.target.closest('button, input[type="range"]'),
+        stopEvent: () => true,
         ignoreMutation: () => true,
       }
     }
@@ -743,7 +822,7 @@ window.editorBridge = {
             fileSize: msg.fileSize || null,
             fileType: msg.fileType || null,
             url: msg.url || null,
-          }
+          },
         })
         if (editor.state.selection.node) {
           editor.commands.setTextSelection(editor.state.selection.to)
@@ -757,7 +836,7 @@ window.editorBridge = {
             url: msg.url || null,
             fileName: msg.fileName || 'Audio',
             duration: msg.duration || 0,
-          }
+          },
         })
         if (editor.state.selection.node) {
           editor.commands.setTextSelection(editor.state.selection.to)
