@@ -104,6 +104,8 @@ type AttachMenuProps = {
   onPickFile: () => void
   onRecordAudio: () => void
   onScanDocument: () => void
+  onTakePhoto: () => void
+  onTakeVideo: () => void
 }
 
 const AttachMenu = memo(function AttachMenu({
@@ -112,6 +114,8 @@ const AttachMenu = memo(function AttachMenu({
   onPickFile,
   onRecordAudio,
   onScanDocument,
+  onTakePhoto,
+  onTakeVideo,
 }: AttachMenuProps) {
   return ExpoUI ? (
     <ExpoUI.Host matchContents style={{ width: 44, height: 52 }}>
@@ -135,6 +139,8 @@ const AttachMenu = memo(function AttachMenu({
           onPress={onScanDocument}
         />
         <ExpoUI.Button label="Choose File" systemImage="folder" onPress={onPickFile} />
+        <ExpoUI.Button label="Take Video" systemImage="video" onPress={onTakeVideo} />
+        <ExpoUI.Button label="Take Photo" systemImage="camera" onPress={onTakePhoto} />
         <ExpoUI.Button
           label="Photo & Video"
           systemImage="photo.on.rectangle"
@@ -163,6 +169,8 @@ const EditorToolbar = memo(function EditorToolbar({
   onPickFile,
   onRecordAudio,
   onScanDocument,
+  onTakePhoto,
+  onTakeVideo,
 }: {
   isEditing: boolean
   isActive: (key: keyof TiptapStyleState) => boolean
@@ -173,6 +181,8 @@ const EditorToolbar = memo(function EditorToolbar({
   onPickFile: () => void
   onRecordAudio: () => void
   onScanDocument: () => void
+  onTakePhoto: () => void
+  onTakeVideo: () => void
 }) {
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -212,6 +222,14 @@ const EditorToolbar = memo(function EditorToolbar({
     setTimeout(() => onScanDocument(), 100)
   }, [onScanDocument])
 
+  const handleTakePhotoEdit = useCallback(() => {
+    setTimeout(() => onTakePhoto(), 100)
+  }, [onTakePhoto])
+
+  const handleTakeVideoEdit = useCallback(() => {
+    setTimeout(() => onTakeVideo(), 100)
+  }, [onTakeVideo])
+
   return (
     <View style={toolbarStyle}>
       <GlassView intensity={40} borderRadius={28} style={styles.glassBar} isInteractive>
@@ -235,6 +253,8 @@ const EditorToolbar = memo(function EditorToolbar({
               onPickFile={handlePickFileEdit}
               onRecordAudio={handleRecordAudioEdit}
               onScanDocument={handleScanDocumentEdit}
+              onTakePhoto={handleTakePhotoEdit}
+              onTakeVideo={handleTakeVideoEdit}
             />
             <ToolbarBtn
               sf="square.and.pencil"
@@ -325,6 +345,8 @@ const EditorToolbar = memo(function EditorToolbar({
               onPickFile={handlePickFileEdit}
               onRecordAudio={handleRecordAudioEdit}
               onScanDocument={handleScanDocumentEdit}
+              onTakePhoto={handleTakePhotoEdit}
+              onTakeVideo={handleTakeVideoEdit}
             />
             <ToolbarBtn
               sf="square.and.pencil"
@@ -491,43 +513,92 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
   }, [])
 
-  const handlePickImage = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: false,
-      quality: 0.8,
-    })
-    if (result.canceled || !result.assets[0]) return
+  const processMediaAsset = useCallback(
+    async (asset: ImagePicker.ImagePickerAsset) => {
+      if (asset.type === 'video') {
+        const displayName = asset.fileName || `video-${Date.now()}.mp4`
+        setUploadInfo({ fileName: displayName, status: 'Preparing...' })
+        try {
+          const ext = displayName.split('.').pop() || 'mp4'
+          const cachePath = `${FileSystem.cacheDirectory}upload-${Date.now()}.${ext}`
+          await FileSystem.copyAsync({ from: asset.uri, to: cachePath })
 
-    const asset = result.assets[0]
+          const info = await FileSystem.getInfoAsync(cachePath)
+          const fileSize = (info as any).size || 0
+          const sizeStr = fileSize
+            ? fileSize < 1048576
+              ? `${(fileSize / 1024).toFixed(0)} KB`
+              : `${(fileSize / 1048576).toFixed(1)} MB`
+            : ''
+          setUploadInfo({
+            fileName: displayName,
+            status: sizeStr ? `Reading ${sizeStr}...` : 'Reading...',
+          })
 
-    if (asset.type === 'video') {
-      const displayName = asset.fileName || `video-${Date.now()}.mp4`
-      setUploadInfo({ fileName: displayName, status: 'Preparing...' })
+          const base64 = await FileSystem.readAsStringAsync(cachePath, { encoding: 'base64' })
+          setUploadInfo({ fileName: displayName, status: 'Uploading...' })
+          const buffer = Buffer.from(base64, 'base64')
+          const { link } = await backendApi.insertFile({
+            key: noteId!,
+            fileName: displayName,
+            buffer,
+          })
+          if (link) {
+            let resolvedLink = link
+            if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
+              resolvedLink = link.replace(
+                HYPERDRIVE_URL_PREFIX,
+                hyperdriveServerAddress.replace(/\/$/, ''),
+              )
+            }
+            editorRef.current?.insertFileAttachment(
+              resolvedLink,
+              displayName,
+              fileSize,
+              asset.mimeType || 'video/mp4',
+            )
+            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+          }
+          await FileSystem.deleteAsync(cachePath, { idempotent: true })
+        } catch (error) {
+          console.error('Error uploading video:', error)
+          Alert.alert(
+            'Upload Failed',
+            'Could not upload the video. Try using "Choose File" instead.',
+          )
+        } finally {
+          setUploadInfo(null)
+        }
+        return
+      }
+
+      const { uri, width, height, fileName } = asset
+      const displayName = fileName || 'Photo'
+      setUploadInfo({ fileName: displayName, status: 'Processing...' })
+
+      const screenW = Dimensions.get('window').width
+      const maxWidth = screenW - 40
+      const maxHeight = 400
+      let finalWidth = width
+      let finalHeight = height
+      if (width > maxWidth) {
+        const ratio = maxWidth / width
+        finalWidth = maxWidth
+        finalHeight = height * ratio
+      }
+      if (finalHeight > maxHeight) {
+        const ratio = maxHeight / finalHeight
+        finalHeight = maxHeight
+        finalWidth = finalWidth * ratio
+      }
+
       try {
-        const ext = displayName.split('.').pop() || 'mp4'
-        const cachePath = `${FileSystem.cacheDirectory}upload-${Date.now()}.${ext}`
-        await FileSystem.copyAsync({ from: asset.uri, to: cachePath })
-
-        const info = await FileSystem.getInfoAsync(cachePath)
-        const fileSize = (info as any).size || 0
-        const sizeStr = fileSize
-          ? fileSize < 1048576
-            ? `${(fileSize / 1024).toFixed(0)} KB`
-            : `${(fileSize / 1048576).toFixed(1)} MB`
-          : ''
-        setUploadInfo({
-          fileName: displayName,
-          status: sizeStr ? `Reading ${sizeStr}...` : 'Reading...',
-        })
-
-        const base64 = await FileSystem.readAsStringAsync(cachePath, { encoding: 'base64' })
         setUploadInfo({ fileName: displayName, status: 'Uploading...' })
-        const buffer = Buffer.from(base64, 'base64')
+        const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
+        const buffer = Buffer.from(base64Data, 'base64')
         const { link } = await backendApi.insertFile({
           key: noteId!,
-          fileName: displayName,
+          fileName: fileName || `image-${Date.now()}.jpg`,
           buffer,
         })
         if (link) {
@@ -538,70 +609,50 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               hyperdriveServerAddress.replace(/\/$/, ''),
             )
           }
-          editorRef.current?.insertFileAttachment(
-            resolvedLink,
-            displayName,
-            fileSize,
-            asset.mimeType || 'video/mp4',
-          )
+          editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
           setTimeout(() => editorRef.current?.scrollToEnd(), 300)
         }
-        await FileSystem.deleteAsync(cachePath, { idempotent: true })
       } catch (error) {
-        console.error('Error uploading video:', error)
-        Alert.alert('Upload Failed', 'Could not upload the video. Try using "Choose File" instead.')
+        console.error('Error uploading image:', error)
       } finally {
         setUploadInfo(null)
       }
-      return
-    }
+    },
+    [noteId, hyperdriveServerAddress],
+  )
 
-    const { uri, width, height, fileName } = asset
-    const displayName = fileName || 'Photo'
-    setUploadInfo({ fileName: displayName, status: 'Processing...' })
+  const handlePickImage = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      quality: 0.8,
+    })
+    if (result.canceled || !result.assets[0]) return
+    await processMediaAsset(result.assets[0])
+  }, [processMediaAsset])
 
-    const screenW = Dimensions.get('window').width
-    const maxWidth = screenW - 40
-    const maxHeight = 400
-    let finalWidth = width
-    let finalHeight = height
-    if (width > maxWidth) {
-      const ratio = maxWidth / width
-      finalWidth = maxWidth
-      finalHeight = height * ratio
-    }
-    if (finalHeight > maxHeight) {
-      const ratio = maxHeight / finalHeight
-      finalHeight = maxHeight
-      finalWidth = finalWidth * ratio
-    }
+  const handleTakePhoto = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.8,
+    })
+    if (result.canceled || !result.assets[0]) return
+    await processMediaAsset(result.assets[0])
+  }, [processMediaAsset])
 
-    try {
-      setUploadInfo({ fileName: displayName, status: 'Uploading...' })
-      const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
-      const buffer = Buffer.from(base64Data, 'base64')
-      const { link } = await backendApi.insertFile({
-        key: noteId!,
-        fileName: fileName || `image-${Date.now()}.jpg`,
-        buffer,
-      })
-      if (link) {
-        let resolvedLink = link
-        if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
-          resolvedLink = link.replace(
-            HYPERDRIVE_URL_PREFIX,
-            hyperdriveServerAddress.replace(/\/$/, ''),
-          )
-        }
-        editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
-        setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-      }
-    } catch (error) {
-      console.error('Error uploading image:', error)
-    } finally {
-      setUploadInfo(null)
-    }
-  }, [noteId, hyperdriveServerAddress])
+  const handleTakeVideo = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      allowsEditing: false,
+      quality: 0.8,
+    })
+    if (result.canceled || !result.assets[0]) return
+    await processMediaAsset(result.assets[0])
+  }, [processMediaAsset])
 
   const handleScanDocument = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -1265,6 +1316,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onPickFile={handlePickFile}
               onRecordAudio={handleRecordAudio}
               onScanDocument={handleScanDocument}
+              onTakePhoto={handleTakePhoto}
+              onTakeVideo={handleTakeVideo}
             />
           )}
 

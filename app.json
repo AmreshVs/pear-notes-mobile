@@ -28,7 +28,8 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.amreshvs.pearnotes",
       "permissions": [
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "CAMERA"
       ]
     },
     "web": {
