@@ -374,6 +374,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isEdgeSwipeActive, setIsEdgeSwipeActive] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [isSharing, setIsSharing] = useState(false)
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [isRecorderVisible, setIsRecorderVisible] = useState(false)
   const [uploadInfo, setUploadInfo] = useState<{ fileName: string; status: string } | null>(null)
   const styleStateRef = useRef<TiptapStyleState | null>(null)
@@ -1088,10 +1089,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isEditorFocusedRef.current = false
   }, [])
 
-  const handleOpenAttachment = useCallback(
-    async (url: string, fileName: string) => {
-      if (!url) return
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+  const downloadAttachmentToCache = useCallback(
+    async (url: string, fileName: string): Promise<string> => {
+      const safeFileName = fileName || `file_${Date.now()}`
+      const localUri = `${FileSystem.cacheDirectory}${safeFileName}`
+
+      if (url.startsWith('data:')) {
+        const base64 = url.split(',')[1] || ''
+        await FileSystem.writeAsStringAsync(localUri, base64, { encoding: 'base64' })
+        return localUri
+      }
 
       let cleanUrl = url
       if (hyperdriveServerAddress && cleanUrl.includes(HYPERDRIVE_URL_PREFIX)) {
@@ -1100,34 +1107,60 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           hyperdriveServerAddress.replace(/\/$/, ''),
         )
       }
-
-      try {
-        const safeFileName =
-          fileName || cleanUrl.split('/').pop()?.split('?')[0] || `file_${Date.now()}`
-        const localUri = `${FileSystem.cacheDirectory}${safeFileName}`
-
-        const response = await fetch(cleanUrl)
-        const blob = await response.blob()
-        const base64 = await new Promise<string>((resolve, reject) => {
-          const reader = new FileReader()
-          reader.onloadend = () => {
-            const result = reader.result as string
-            resolve(result.split(',')[1] || '')
-          }
-          reader.onerror = reject
-          reader.readAsDataURL(blob)
-        })
-        await FileSystem.writeAsStringAsync(localUri, base64, { encoding: 'base64' })
-
-        if (ExpoNativeShareModule && typeof ExpoNativeShareModule.share === 'function') {
-          await ExpoNativeShareModule.share({ message: '', urls: [localUri] })
+      const response = await fetch(cleanUrl)
+      const blob = await response.blob()
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          const result = reader.result as string
+          resolve(result.split(',')[1] || '')
         }
-      } catch (err) {
-        console.error('Failed to download attachment:', err)
-        Alert.alert('Download failed', 'Could not download the file.')
-      }
+        reader.onerror = reject
+        reader.readAsDataURL(blob)
+      })
+      await FileSystem.writeAsStringAsync(localUri, base64, { encoding: 'base64' })
+      return localUri
     },
     [hyperdriveServerAddress],
+  )
+
+  const handleOpenAttachment = useCallback(
+    async (url: string, fileName: string) => {
+      if (!url) return
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      try {
+        const localUri = await downloadAttachmentToCache(url, fileName)
+        if (ExpoNativeShareModule && typeof ExpoNativeShareModule.share === 'function') {
+          await ExpoNativeShareModule.share({ message: '', urls: [localUri], resolveOnDismiss: true })
+        }
+        FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+      } catch (err) {
+        console.error('Failed to share attachment:', err)
+        Alert.alert('Error', 'Could not prepare the file for sharing.')
+      }
+    },
+    [downloadAttachmentToCache],
+  )
+
+  const handlePreviewAttachment = useCallback(
+    async (url: string, fileName: string) => {
+      if (!url || isPreviewLoading) return
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      setIsPreviewLoading(true)
+      try {
+        const localUri = await downloadAttachmentToCache(url, fileName)
+        setIsPreviewLoading(false)
+        if (ExpoNativeShareModule && typeof ExpoNativeShareModule.preview === 'function') {
+          await ExpoNativeShareModule.preview({ url: localUri })
+        }
+        FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+      } catch (err) {
+        console.error('Failed to preview attachment:', err)
+        setIsPreviewLoading(false)
+        Alert.alert('Error', 'Could not open the file for preview.')
+      }
+    },
+    [downloadAttachmentToCache, isPreviewLoading],
   )
 
   const handleDeleteAttachment = useCallback(async (url: string) => {
@@ -1339,6 +1372,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onEditorFocus={handleEditorFocus}
             onEditorBlur={handleEditorBlur}
             onOpenAttachment={handleOpenAttachment}
+            onPreviewAttachment={handlePreviewAttachment}
             onDeleteAttachment={handleDeleteAttachment}
           />
 
@@ -1380,12 +1414,33 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </View>
           )}
         </Animated.View>
+        {isPreviewLoading && (
+          <View style={styles.previewLoadingOverlay} pointerEvents="none">
+            <View style={styles.previewLoadingBox}>
+              <ActivityIndicator size="large" color="#fff" />
+            </View>
+          </View>
+        )}
       </>
     </NoteEditorContext.Provider>
   )
 }
 
 const styles = StyleSheet.create({
+  previewLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100,
+  },
+  previewLoadingBox: {
+    width: 72,
+    height: 72,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   header: {
     position: 'absolute',
     top: 0,

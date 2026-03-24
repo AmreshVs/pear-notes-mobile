@@ -61,6 +61,7 @@ export interface TiptapEditorHandle {
   scrollToTop: () => void
   scrollToEnd: () => void
   setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
+  setAttachmentLoading: (url: string, loading: boolean) => void
 }
 
 export interface TiptapEditorProps {
@@ -75,6 +76,7 @@ export interface TiptapEditorProps {
   onEditorFocus?: () => void
   onEditorBlur?: () => void
   onOpenAttachment?: (url: string, fileName: string) => void
+  onPreviewAttachment?: (url: string, fileName: string) => void
   onDeleteAttachment?: (url: string) => void
 }
 
@@ -88,6 +90,7 @@ type WebViewMsg =
   | { type: 'focus' }
   | { type: 'blur' }
   | { type: 'openAttachment'; url: string; fileName: string }
+  | { type: 'previewAttachment'; url: string; fileName: string }
   | { type: 'deleteAttachment'; url: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
@@ -106,6 +109,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onEditorFocus,
       onEditorBlur,
       onOpenAttachment,
+      onPreviewAttachment,
       onDeleteAttachment,
     },
     ref,
@@ -123,6 +127,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onEditorFocusRef = useRef(onEditorFocus)
     const onEditorBlurRef = useRef(onEditorBlur)
     const onOpenAttachmentRef = useRef(onOpenAttachment)
+    const onPreviewAttachmentRef = useRef(onPreviewAttachment)
     const onDeleteAttachmentRef = useRef(onDeleteAttachment)
 
     onContentChangeRef.current = onContentChange
@@ -131,6 +136,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onEditorFocusRef.current = onEditorFocus
     onEditorBlurRef.current = onEditorBlur
     onOpenAttachmentRef.current = onOpenAttachment
+    onPreviewAttachmentRef.current = onPreviewAttachment
     onDeleteAttachmentRef.current = onDeleteAttachment
 
     const colorsRef = useRef(colors)
@@ -250,6 +256,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onOpenAttachmentRef.current?.(msg.url, msg.fileName)
             break
 
+          case 'previewAttachment':
+            onPreviewAttachmentRef.current?.(msg.url, msg.fileName)
+            break
+
           case 'deleteAttachment':
             onDeleteAttachmentRef.current?.(msg.url)
             break
@@ -327,6 +337,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         setHTML: (html) => sendCommand({ type: 'setContent', html }),
         setTitle: (title) => sendCommand({ type: 'setTitle', title }),
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
+        setAttachmentLoading: (url, loading) =>
+          sendCommand({ type: 'setAttachmentLoading', url, loading }),
         scrollToEnd: () =>
           webViewRef.current?.injectJavaScript(
             `(function(){var pm=document.querySelector('.ProseMirror');if(pm&&pm.lastElementChild){pm.lastElementChild.scrollIntoView({block:'end',behavior:'smooth'})}else{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}})();true;`,

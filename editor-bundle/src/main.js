@@ -97,6 +97,36 @@ const ImageWithSize = Image.extend({
   addAttributes() {
     return { ...this.parent?.(), width: { default: null }, height: { default: null } }
   },
+  addNodeView() {
+    return ({ node }) => {
+      const wrapper = document.createElement('div')
+      wrapper.style.cssText = 'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
+      wrapper.addEventListener('mousedown', (e) => { e.preventDefault() })
+      wrapper.addEventListener('contextmenu', (e) => { e.preventDefault() })
+      wrapper.addEventListener('click', () => {
+        const src = node.attrs.src
+        if (!src) return
+        const fileName = src.startsWith('data:')
+          ? `image_${Date.now()}.jpg`
+          : (src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`)
+        window.editorBridge.previewAttachment(src, fileName)
+      })
+
+      const img = document.createElement('img')
+      if (node.attrs.src) img.src = node.attrs.src
+      if (node.attrs.width) img.style.width = typeof node.attrs.width === 'number' ? `${node.attrs.width}px` : node.attrs.width
+      if (node.attrs.height) img.style.height = typeof node.attrs.height === 'number' ? `${node.attrs.height}px` : node.attrs.height
+      img.style.cssText += 'display: block; max-width: 100%; height: auto; border-radius: 8px;'
+      img.draggable = false
+
+      wrapper.appendChild(img)
+      return {
+        dom: wrapper,
+        stopEvent: () => true,
+        ignoreMutation: () => true,
+      }
+    }
+  },
 }).configure({ inline: false, allowBase64: true })
 
 let contentTimer = null
@@ -142,7 +172,8 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   const container = document.createElement('div')
   container.className = 'audio-player-container'
   container.style.cssText =
-    'display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; margin: 12px 0; font-family: sans-serif;'
+    'display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; margin: 12px 0; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
+  container.addEventListener('contextmenu', (e) => { e.preventDefault() })
 
   const topRow = document.createElement('div')
   topRow.style.cssText =
@@ -398,9 +429,9 @@ const FileAttachment = Node.create({
         player.actionsContainer.appendChild(delBtn)
 
         dom.style.userSelect = 'none'
-        dom.addEventListener('mousedown', (e) => {
-          e.preventDefault()
-        })
+        dom.style.webkitUserSelect = 'none'
+        dom.addEventListener('mousedown', (e) => { e.preventDefault() })
+        dom.addEventListener('contextmenu', (e) => { e.preventDefault() })
 
         return {
           dom,
@@ -413,30 +444,14 @@ const FileAttachment = Node.create({
       dom.setAttribute('data-file-attachment', '')
       dom.className = 'file-attachment-container'
       dom.style.cssText =
-        'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none;'
-      dom.addEventListener('mousedown', (e) => {
-        if (!e.target.closest('video')) e.preventDefault()
+        'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;'
+      dom.addEventListener('mousedown', (e) => { e.preventDefault() })
+      dom.addEventListener('contextmenu', (e) => { e.preventDefault() })
+      dom.addEventListener('click', (e) => {
+        if (!e.target.closest('button')) {
+          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName)
+        }
       })
-
-      if (isVideo) {
-        const videoContainer = document.createElement('div')
-        videoContainer.style.cssText =
-          'position: relative; background: #000; width: 100%; aspect-ratio: 16/9; display: flex;'
-        const video = document.createElement('video')
-        video.src = node.attrs.url || ''
-        video.controls = true
-        video.playsInline = true
-        video.preload = 'metadata'
-        video.style.cssText = 'width: 100%; height: 100%; object-fit: contain;'
-
-        const stopEvent = (e) => e.stopPropagation()
-        video.addEventListener('mousedown', stopEvent)
-        video.addEventListener('click', stopEvent)
-        video.addEventListener('touchstart', stopEvent)
-
-        videoContainer.appendChild(video)
-        dom.appendChild(videoContainer)
-      }
 
       const content = document.createElement('div')
       content.style.cssText =
@@ -498,21 +513,30 @@ const FileAttachment = Node.create({
       const genericBtnStyle =
         'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
 
+      const makeBtnListeners = (btn) => {
+        btn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
+        btn.addEventListener('touchstart', (e) => { e.stopPropagation() }, { passive: true })
+      }
+
+      if (isVideo) {
+        const playBtn = document.createElement('button')
+        playBtn.className = 'play-btn'
+        playBtn.style.cssText = genericBtnStyle
+        playBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
+        makeBtnListeners(playBtn)
+        playBtn.onclick = (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName)
+        }
+        actions.appendChild(playBtn)
+      }
+
       const dlBtn = document.createElement('button')
       dlBtn.className = 'dl-btn'
       dlBtn.style.cssText = genericBtnStyle
       dlBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
-      dlBtn.addEventListener('mousedown', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      })
-      dlBtn.addEventListener(
-        'touchstart',
-        (e) => {
-          e.stopPropagation()
-        },
-        { passive: true },
-      )
+      makeBtnListeners(dlBtn)
       dlBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -523,17 +547,7 @@ const FileAttachment = Node.create({
       delBtn.className = 'del-btn'
       delBtn.style.cssText = genericBtnStyle
       delBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
-      delBtn.addEventListener('mousedown', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      })
-      delBtn.addEventListener(
-        'touchstart',
-        (e) => {
-          e.stopPropagation()
-        },
-        { passive: true },
-      )
+      makeBtnListeners(delBtn)
       delBtn.onclick = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -708,6 +722,9 @@ const editor = new Editor({
 window.editorBridge = {
   openAttachment(url, fileName) {
     sendToRN({ type: 'openAttachment', url, fileName })
+  },
+  previewAttachment(url, fileName) {
+    if (url) sendToRN({ type: 'previewAttachment', url, fileName })
   },
   deleteAttachment(url) {
     if (url) sendToRN({ type: 'deleteAttachment', url })

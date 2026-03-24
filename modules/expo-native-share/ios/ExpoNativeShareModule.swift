@@ -1,8 +1,30 @@
 import ExpoModulesCore
+import QuickLook
 import UIKit
+
+private class QuickLookDelegate: NSObject, QLPreviewControllerDataSource, QLPreviewControllerDelegate {
+  var fileUrl: URL
+  var onDismiss: () -> Void
+
+  init(fileUrl: URL, onDismiss: @escaping () -> Void) {
+    self.fileUrl = fileUrl
+    self.onDismiss = onDismiss
+  }
+
+  func numberOfPreviewItems(in controller: QLPreviewController) -> Int { 1 }
+
+  func previewController(_ controller: QLPreviewController, previewItemAt index: Int) -> QLPreviewItem {
+    return fileUrl as QLPreviewItem
+  }
+
+  func previewControllerDidDismiss(_ controller: QLPreviewController) {
+    onDismiss()
+  }
+}
 
 public class ExpoNativeShareModule: Module {
   private var activityViewController: UIActivityViewController?
+  private var quickLookDelegate: QuickLookDelegate?
 
   public func definition() -> ModuleDefinition {
     Name("ExpoNativeShare")
@@ -62,13 +84,49 @@ public class ExpoNativeShareModule: Module {
           popover.permittedArrowDirections = []
         }
 
+        let resolveOnDismiss = options["resolveOnDismiss"] as? Bool ?? false
+
         avc.completionWithItemsHandler = { [weak self] _, _, _, _ in
           self?.activityViewController = nil
+          if resolveOnDismiss {
+            promise.resolve(nil)
+          }
         }
 
         presentingVC.present(avc, animated: true) {
+          if !resolveOnDismiss {
+            promise.resolve(nil)
+          }
+        }
+      }
+    }
+
+    AsyncFunction("preview") { (options: [String: Any], promise: Promise) in
+      guard let urlString = options["url"] as? String,
+            let fileUrl = URL(string: urlString) else {
+        promise.reject(Exception(name: "InvalidArguments", description: "A valid file URL is required."))
+        return
+      }
+
+      DispatchQueue.main.async {
+        guard var presentingVC = self.appContext?.utilities?.currentViewController() else {
+          promise.reject(Exception(name: "NoPresentingViewController", description: "Could not find a view controller to present from."))
+          return
+        }
+
+        while let presented = presentingVC.presentedViewController {
+          presentingVC = presented
+        }
+
+        let delegate = QuickLookDelegate(fileUrl: fileUrl) {
           promise.resolve(nil)
         }
+        self.quickLookDelegate = delegate
+
+        let ql = QLPreviewController()
+        ql.dataSource = delegate
+        ql.delegate = delegate
+        presentingVC.present(ql, animated: true)
       }
     }
   }
