@@ -44,7 +44,13 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow Pear Notes to use the camera to scan invite QR codes."
+          "cameraPermission": "Allow Pear Notes to use the camera to scan QR codes and documents."
+        }
+      ],
+      [
+        "react-native-document-scanner-plugin",
+        {
+          "cameraPermission": "Allow Pear Notes to use the camera to scan documents."
         }
       ],
       [

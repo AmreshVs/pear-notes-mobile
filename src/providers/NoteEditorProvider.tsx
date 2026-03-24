@@ -24,6 +24,7 @@ import {
   Alert,
   Animated,
   Dimensions,
+  Image,
   InteractionManager,
   Keyboard,
   Linking,
@@ -36,6 +37,7 @@ import {
   Text,
   View,
 } from 'react-native'
+import DocumentScanner, { ScanDocumentResponseStatus } from 'react-native-document-scanner-plugin'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -53,6 +55,11 @@ import { Radii, Space } from '@/constants/commonStyles'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
+
+const getImageSize = (uri: string): Promise<{ width: number; height: number }> =>
+  new Promise((resolve, reject) =>
+    Image.getSize(uri, (w, h) => resolve({ width: w, height: h }), reject),
+  )
 
 const ToolbarBtn = memo(function ToolbarBtn({
   sf,
@@ -91,6 +98,61 @@ const ToolbarBtn = memo(function ToolbarBtn({
   )
 })
 
+type AttachMenuProps = {
+  colors: any
+  onPickImage: () => void
+  onPickFile: () => void
+  onRecordAudio: () => void
+  onScanDocument: () => void
+}
+
+const AttachMenu = memo(function AttachMenu({
+  colors,
+  onPickImage,
+  onPickFile,
+  onRecordAudio,
+  onScanDocument,
+}: AttachMenuProps) {
+  return ExpoUI ? (
+    <ExpoUI.Host matchContents style={{ width: 44, height: 52 }}>
+      <ExpoUI.Menu
+        label={
+          <View style={styles.toolbarBtn}>
+            <SymbolView
+              name="paperclip"
+              size={22}
+              tintColor={colors.text}
+              weight="regular"
+              fallback={<View style={styles.fallbackIcon} />}
+            />
+          </View>
+        }
+      >
+        <ExpoUI.Button label="Record Audio" systemImage="mic" onPress={onRecordAudio} />
+        <ExpoUI.Button
+          label="Scan Document"
+          systemImage="doc.viewfinder"
+          onPress={onScanDocument}
+        />
+        <ExpoUI.Button label="Choose File" systemImage="folder" onPress={onPickFile} />
+        <ExpoUI.Button
+          label="Photo & Video"
+          systemImage="photo.on.rectangle"
+          onPress={onPickImage}
+        />
+      </ExpoUI.Menu>
+    </ExpoUI.Host>
+  ) : (
+    <ToolbarBtn
+      sf="paperclip"
+      tintActive={colors.primary}
+      tintDefault={colors.text}
+      primaryColor={colors.primary}
+      onPress={onPickFile}
+    />
+  )
+})
+
 const EditorToolbar = memo(function EditorToolbar({
   isEditing,
   isActive,
@@ -100,6 +162,7 @@ const EditorToolbar = memo(function EditorToolbar({
   onPickImage,
   onPickFile,
   onRecordAudio,
+  onScanDocument,
 }: {
   isEditing: boolean
   isActive: (key: keyof TiptapStyleState) => boolean
@@ -109,6 +172,7 @@ const EditorToolbar = memo(function EditorToolbar({
   onPickImage: () => void
   onPickFile: () => void
   onRecordAudio: () => void
+  onScanDocument: () => void
 }) {
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -144,6 +208,10 @@ const EditorToolbar = memo(function EditorToolbar({
     setTimeout(() => onRecordAudio(), 100)
   }, [onRecordAudio])
 
+  const handleScanDocumentEdit = useCallback(() => {
+    setTimeout(() => onScanDocument(), 100)
+  }, [onScanDocument])
+
   return (
     <View style={toolbarStyle}>
       <GlassView intensity={40} borderRadius={28} style={styles.glassBar} isInteractive>
@@ -161,39 +229,13 @@ const EditorToolbar = memo(function EditorToolbar({
               active={isActive('checkboxList')}
               onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
             />
-            {ExpoUI ? (
-              <ExpoUI.Host matchContents style={{ width: 44, height: 52 }}>
-                <ExpoUI.Menu
-                  label={
-                    <View style={styles.toolbarBtn}>
-                      <SymbolView
-                        name="paperclip"
-                        size={22}
-                        tintColor={colors.text}
-                        weight="regular"
-                        fallback={<View style={styles.fallbackIcon} />}
-                      />
-                    </View>
-                  }
-                >
-                  <ExpoUI.Button
-                    label="Photo & Video"
-                    systemImage="photo.on.rectangle"
-                    onPress={onPickImage}
-                  />
-                  <ExpoUI.Button label="Record Audio" systemImage="mic" onPress={onRecordAudio} />
-                  <ExpoUI.Button label="Choose File" systemImage="folder" onPress={onPickFile} />
-                </ExpoUI.Menu>
-              </ExpoUI.Host>
-            ) : (
-              <ToolbarBtn
-                sf="paperclip"
-                tintActive={colors.primary}
-                tintDefault={colors.text}
-                primaryColor={colors.primary}
-                onPress={onPickFile}
-              />
-            )}
+            <AttachMenu
+              colors={colors}
+              onPickImage={handlePickImageEdit}
+              onPickFile={handlePickFileEdit}
+              onRecordAudio={handleRecordAudioEdit}
+              onScanDocument={handleScanDocumentEdit}
+            />
             <ToolbarBtn
               sf="square.and.pencil"
               tintActive={colors.primary}
@@ -277,47 +319,13 @@ const EditorToolbar = memo(function EditorToolbar({
           </ScrollView>
         ) : (
           <View style={toolbarRowStyle}>
-            {ExpoUI ? (
-              <ExpoUI.Host matchContents style={{ width: 44, height: 52 }}>
-                <ExpoUI.Menu
-                  label={
-                    <View style={styles.toolbarBtn}>
-                      <SymbolView
-                        name="paperclip"
-                        size={22}
-                        tintColor={colors.text}
-                        weight="regular"
-                        fallback={<View style={styles.fallbackIcon} />}
-                      />
-                    </View>
-                  }
-                >
-                  <ExpoUI.Button
-                    label="Photo & Video"
-                    systemImage="photo.on.rectangle"
-                    onPress={handlePickImageEdit}
-                  />
-                  <ExpoUI.Button
-                    label="Record Audio"
-                    systemImage="mic"
-                    onPress={handleRecordAudioEdit}
-                  />
-                  <ExpoUI.Button
-                    label="Choose File"
-                    systemImage="folder"
-                    onPress={handlePickFileEdit}
-                  />
-                </ExpoUI.Menu>
-              </ExpoUI.Host>
-            ) : (
-              <ToolbarBtn
-                sf="paperclip"
-                tintActive={colors.primary}
-                tintDefault={colors.text}
-                primaryColor={colors.primary}
-                onPress={handlePickFileEdit}
-              />
-            )}
+            <AttachMenu
+              colors={colors}
+              onPickImage={handlePickImageEdit}
+              onPickFile={handlePickFileEdit}
+              onRecordAudio={handleRecordAudioEdit}
+              onScanDocument={handleScanDocumentEdit}
+            />
             <ToolbarBtn
               sf="square.and.pencil"
               tintActive={colors.primary}
@@ -590,6 +598,72 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
     } catch (error) {
       console.error('Error uploading image:', error)
+    } finally {
+      setUploadInfo(null)
+    }
+  }, [noteId, hyperdriveServerAddress])
+
+  const handleScanDocument = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    try {
+      const { scannedImages, status } = await DocumentScanner.scanDocument()
+
+      if (status !== ScanDocumentResponseStatus.Success || !scannedImages?.length) return
+
+      const screenW = Dimensions.get('window').width
+      const maxWidth = screenW - 40
+      const maxHeight = 400
+
+      for (let i = 0; i < scannedImages.length; i++) {
+        const uri = scannedImages[i]
+        const pageLabel =
+          scannedImages.length > 1 ? `Page ${i + 1} of ${scannedImages.length}` : 'Scanned document'
+        const displayName = `scan-${Date.now()}-page${i + 1}.jpg`
+
+        setUploadInfo({ fileName: pageLabel, status: 'Processing...' })
+
+        try {
+          const { width, height } = await getImageSize(uri)
+
+          let finalWidth = width
+          let finalHeight = height
+          if (width > maxWidth) {
+            const ratio = maxWidth / width
+            finalWidth = maxWidth
+            finalHeight = height * ratio
+          }
+          if (finalHeight > maxHeight) {
+            const ratio = maxHeight / finalHeight
+            finalHeight = maxHeight
+            finalWidth = finalWidth * ratio
+          }
+
+          setUploadInfo({ fileName: pageLabel, status: 'Uploading...' })
+          const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
+          const buffer = Buffer.from(base64Data, 'base64')
+          const { link } = await backendApi.insertFile({
+            key: noteId!,
+            fileName: displayName,
+            buffer,
+          })
+
+          if (link) {
+            let resolvedLink = link
+            if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
+              resolvedLink = link.replace(
+                HYPERDRIVE_URL_PREFIX,
+                hyperdriveServerAddress.replace(/\/$/, ''),
+              )
+            }
+            editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
+            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+          }
+        } catch (pageError) {
+          console.error(`Error uploading scanned page ${i + 1}:`, pageError)
+        }
+      }
+    } catch (error) {
+      console.error('Error scanning document:', error)
     } finally {
       setUploadInfo(null)
     }
@@ -1190,6 +1264,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onPickImage={handlePickImage}
               onPickFile={handlePickFile}
               onRecordAudio={handleRecordAudio}
+              onScanDocument={handleScanDocument}
             />
           )}
 

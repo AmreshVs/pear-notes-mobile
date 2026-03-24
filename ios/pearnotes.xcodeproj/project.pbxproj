@@ -23,9 +23,9 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = pearnotes/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = pearnotes/Info.plist; sourceTree = "<group>"; };
 		58E94FA66FC710E6C25923E2 /* Pods-pearnotes.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pearnotes.release.xcconfig"; path = "Target Support Files/Pods-pearnotes/Pods-pearnotes.release.xcconfig"; sourceTree = "<group>"; };
-		937D81F116D3496D9052CA20 /* expo.icon */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = expo.icon; path = pearnotes/expo.icon; sourceTree = "<group>"; };
+		937D81F116D3496D9052CA20 /* expo.icon */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = expo.icon; path = pearnotes/expo.icon; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = pearnotes/SplashScreen.storyboard; sourceTree = "<group>"; };
-		B29E0CD3379DCBF7050756CC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = pearnotes/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		B29E0CD3379DCBF7050756CC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = pearnotes/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = pearnotes/AppDelegate.swift; sourceTree = "<group>"; };
@@ -114,7 +114,6 @@
 				F4B5F5BACA37C55C32ACF26B /* Pods-pearnotes.debug.xcconfig */,
 				58E94FA66FC710E6C25923E2 /* Pods-pearnotes.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -169,9 +168,7 @@
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
 					13B07F861A680F5B00A75B9A = {
-						DevelopmentTeam = 65S93235JA;
 						LastSwiftMigration = 1250;
-						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -319,6 +316,7 @@
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/BareKit.framework/BareKit",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-buffer.3.4.4.framework/bare-buffer.3.4.4",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-buffer.3.5.0.framework/bare-buffer.3.5.0",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-buffer.3.6.0.framework/bare-buffer.3.6.0",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-crypto.1.13.4.framework/bare-crypto.1.13.4",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-dns.2.1.4.framework/bare-dns.2.1.4",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-fs.4.5.5.framework/bare-fs.4.5.5",
@@ -345,6 +343,7 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/BareKit.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-buffer.3.4.4.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-buffer.3.5.0.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-buffer.3.6.0.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-crypto.1.13.4.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-dns.2.1.4.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-fs.4.5.5.framework",
@@ -414,6 +413,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.amreshvs.pearnotes;
 				PRODUCT_NAME = pearnotes;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "pearnotes/pearnotes-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -448,6 +448,7 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.amreshvs.pearnotes;
 				PRODUCT_NAME = pearnotes;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "pearnotes/pearnotes-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
