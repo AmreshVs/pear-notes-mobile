@@ -27,7 +27,6 @@ import {
   Image,
   InteractionManager,
   Keyboard,
-  Linking,
   PanResponder,
   Platform,
   Pressable,
@@ -1089,9 +1088,47 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isEditorFocusedRef.current = false
   }, [])
 
-  const handleOpenAttachment = useCallback((url: string) => {
-    if (url) Linking.openURL(url).catch(console.error)
-  }, [])
+  const handleOpenAttachment = useCallback(
+    async (url: string, fileName: string) => {
+      if (!url) return
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+
+      let cleanUrl = url
+      if (hyperdriveServerAddress && cleanUrl.includes(HYPERDRIVE_URL_PREFIX)) {
+        cleanUrl = cleanUrl.replace(
+          HYPERDRIVE_URL_PREFIX,
+          hyperdriveServerAddress.replace(/\/$/, ''),
+        )
+      }
+
+      try {
+        const safeFileName =
+          fileName || cleanUrl.split('/').pop()?.split('?')[0] || `file_${Date.now()}`
+        const localUri = `${FileSystem.cacheDirectory}${safeFileName}`
+
+        const response = await fetch(cleanUrl)
+        const blob = await response.blob()
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onloadend = () => {
+            const result = reader.result as string
+            resolve(result.split(',')[1] || '')
+          }
+          reader.onerror = reject
+          reader.readAsDataURL(blob)
+        })
+        await FileSystem.writeAsStringAsync(localUri, base64, { encoding: 'base64' })
+
+        if (ExpoNativeShareModule && typeof ExpoNativeShareModule.share === 'function') {
+          await ExpoNativeShareModule.share({ message: '', urls: [localUri] })
+        }
+      } catch (err) {
+        console.error('Failed to download attachment:', err)
+        Alert.alert('Download failed', 'Could not download the file.')
+      }
+    },
+    [hyperdriveServerAddress],
+  )
 
   const handleDeleteAttachment = useCallback(async (url: string) => {
     if (!url) return
