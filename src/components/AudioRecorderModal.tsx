@@ -91,10 +91,6 @@ function fmtShort(sec: number) {
   return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`
 }
 
-// ---------------------------------------------------------------------------
-// SheetBody — the entire interior of the bottom sheet, passed to either
-// GlassView (dark) or a plain View (light) to avoid duplicating JSX.
-// ---------------------------------------------------------------------------
 interface SheetBodyProps {
   styles: ReturnType<typeof createStyles>
   colors: Theme['colors']
@@ -284,9 +280,17 @@ function SheetBody({
               <Pressable
                 hitSlop={12}
                 onPress={() => onSkip(-15)}
-                style={({ pressed }) => [styles.secondaryTransport, pressed && styles.transportPressed]}
+                style={({ pressed }) => [
+                  styles.secondaryTransport,
+                  pressed && styles.transportPressed,
+                ]}
               >
-                <SymbolView name="gobackward.15" size={24} tintColor={colors.text} weight="regular" />
+                <SymbolView
+                  name="gobackward.15"
+                  size={24}
+                  tintColor={colors.text}
+                  weight="regular"
+                />
               </Pressable>
 
               <Pressable
@@ -308,9 +312,17 @@ function SheetBody({
               <Pressable
                 hitSlop={12}
                 onPress={() => onSkip(15)}
-                style={({ pressed }) => [styles.secondaryTransport, pressed && styles.transportPressed]}
+                style={({ pressed }) => [
+                  styles.secondaryTransport,
+                  pressed && styles.transportPressed,
+                ]}
               >
-                <SymbolView name="goforward.15" size={24} tintColor={colors.text} weight="regular" />
+                <SymbolView
+                  name="goforward.15"
+                  size={24}
+                  tintColor={colors.text}
+                  weight="regular"
+                />
               </Pressable>
             </View>
 
@@ -322,7 +334,12 @@ function SheetBody({
                 pressed && styles.transportPressed,
               ]}
             >
-              <SymbolView name="arrow.clockwise" size={16} tintColor={colors.text} weight="semibold" />
+              <SymbolView
+                name="arrow.clockwise"
+                size={16}
+                tintColor={colors.text}
+                weight="semibold"
+              />
               <Text style={[styles.rerecordText, { color: colors.text }]}>Re-record</Text>
             </Pressable>
           </>
@@ -331,7 +348,10 @@ function SheetBody({
             <View style={styles.recordStage}>
               <Pressable
                 onPress={isRecording ? onStop : onRecord}
-                style={({ pressed }) => [styles.recordButton, pressed && styles.recordButtonPressed]}
+                style={({ pressed }) => [
+                  styles.recordButton,
+                  pressed && styles.recordButtonPressed,
+                ]}
               >
                 <View style={[styles.recordOuterRing, { borderColor: colors.error }]}>
                   <View
@@ -382,10 +402,11 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
   const durationRef = useRef(0)
   const resumeAfterSeekRef = useRef(false)
   const isSeekingRef = useRef(false)
-  // Keep a stable ref to onCancel so the unmount cleanup can always reach it
-  // even after Fast Refresh tears down the component mid-session.
+
   const onCancelRef = useRef(onCancel)
-  useEffect(() => { onCancelRef.current = onCancel }, [onCancel])
+  useEffect(() => {
+    onCancelRef.current = onCancel
+  }, [onCancel])
   const liveBars = useSharedValue<number[]>(Array.from({ length: RECORDING_BARS }, () => 0.16))
   const sheetProgress = useSharedValue(visible ? 1 : 0)
 
@@ -419,18 +440,13 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     ],
   }))
 
-  // ── Hot-reload / navigation safety ──────────────────────────────────────────
-  // When Fast Refresh tears this component down (e.g. you save the file while
-  // the sheet is open), call onCancel so the parent resets `visible` to false.
-  // Without this the parent keeps visible=true and the sheet reopens immediately
-  // after the reload — or worse, a transparent Modal blocks all input.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     return () => {
       sheetProgress.value = 0
       onCancelRef.current?.()
     }
-  }, []) // intentionally empty — only fires on true unmount
+  }, [])
 
   useEffect(() => {
     if (!visible) return
@@ -455,8 +471,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     liveBars.value = Array.from({ length: RECORDING_BARS }, () => 0.16)
   }, [visible])
 
-  // Called by Modal's onShow — fires only after the native layer is fully visible,
-  // eliminating the mount-timing race that caused stutter.
   const handleSheetShow = useCallback(() => {
     sheetProgress.value = withTiming(1, {
       duration: 340,
@@ -466,8 +480,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
 
   useEffect(() => {
     if (visible) {
-      // Pin the sheet fully off-screen before the Modal mounts so there is no
-      // visible flash, then let onShow kick off the open animation.
       sheetProgress.value = 0
       setIsPresented(true)
       return
@@ -756,9 +768,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
       onShow={handleSheetShow}
       onRequestClose={handleCancel}
     >
-      {/* box-none: the overlay container itself never intercepts touches —
-          only its children (backdrop Pressable and sheet) do.
-          Falls back to 'none' when not visible so nothing can ever get stuck. */}
       <View style={styles.overlay} pointerEvents={visible ? 'box-none' : 'none'}>
         <Animated.View
           style={[styles.backdrop, backdropAnimatedStyle]}
@@ -771,9 +780,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
           style={[styles.sheetWrap, { paddingTop: insets.top + 18 }, sheetAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
-          {/* On light theme, UIVisualEffectView (used by GlassView/ExpoGlassView) renders a
-              native system blur that can't be overridden with backgroundColor — it always
-              bleeds through. Use a plain solid View instead so the sheet looks clean. */}
           {isDark ? (
             <GlassView intensity={26} borderRadius={34} style={styles.sheet}>
               <SheetBody
@@ -854,12 +860,9 @@ const createStyles = (theme: Theme) =>
     overlay: {
       flex: 1,
       justifyContent: 'flex-end',
-      // No backgroundColor here — all dimming lives on the animated backdrop
-      // so it disappears correctly when sheetProgress reaches 0.
     },
     backdrop: {
       ...StyleSheet.absoluteFillObject,
-      // Light theme needs more scrim so the white sheet reads against white content behind it
       backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.38)',
     },
     sheetWrap: {
@@ -877,11 +880,8 @@ const createStyles = (theme: Theme) =>
       borderTopRightRadius: 34,
       borderBottomLeftRadius: 0,
       borderBottomRightRadius: 0,
-      boxShadow: theme.isDark
-        ? '0 -10px 32px rgba(0,0,0,0.45)'
-        : '0 -12px 40px rgba(0,0,0,0.22)',
+      boxShadow: theme.isDark ? '0 -10px 32px rgba(0,0,0,0.45)' : '0 -12px 40px rgba(0,0,0,0.22)',
     },
-    // Applied only on light theme where GlassView is replaced by a plain View
     sheetLight: {
       backgroundColor: '#f2f2f7',
       borderTopWidth: StyleSheet.hairlineWidth,
@@ -911,11 +911,7 @@ const createStyles = (theme: Theme) =>
       borderCurve: 'continuous',
       alignItems: 'center',
       justifyContent: 'center',
-      // controlBackground is rgba(0,0,0,0.07) on light — too faint against white glass.
-      // Use a more visible token on light so the circle buttons read clearly.
-      backgroundColor: theme.isDark
-        ? theme.colors.controlBackground
-        : 'rgba(0,0,0,0.08)',
+      backgroundColor: theme.isDark ? theme.colors.controlBackground : 'rgba(0,0,0,0.08)',
       borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
       borderColor: 'rgba(0,0,0,0.1)',
     },
@@ -1100,7 +1096,6 @@ const createStyles = (theme: Theme) =>
       paddingVertical: 12,
       borderRadius: 999,
       borderCurve: 'continuous',
-      // Use a visible border on both themes so the pill shape is clear
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)',
     },
