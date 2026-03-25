@@ -100,22 +100,31 @@ const ImageWithSize = Image.extend({
   addNodeView() {
     return ({ node }) => {
       const wrapper = document.createElement('div')
-      wrapper.style.cssText = 'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
-      wrapper.addEventListener('mousedown', (e) => { e.preventDefault() })
-      wrapper.addEventListener('contextmenu', (e) => { e.preventDefault() })
+      wrapper.style.cssText =
+        'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
+      wrapper.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+      })
+      wrapper.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+      })
       wrapper.addEventListener('click', () => {
         const src = node.attrs.src
         if (!src) return
         const fileName = src.startsWith('data:')
           ? `image_${Date.now()}.jpg`
-          : (src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`)
+          : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
         window.editorBridge.previewAttachment(src, fileName)
       })
 
       const img = document.createElement('img')
       if (node.attrs.src) img.src = node.attrs.src
-      if (node.attrs.width) img.style.width = typeof node.attrs.width === 'number' ? `${node.attrs.width}px` : node.attrs.width
-      if (node.attrs.height) img.style.height = typeof node.attrs.height === 'number' ? `${node.attrs.height}px` : node.attrs.height
+      if (node.attrs.width)
+        img.style.width =
+          typeof node.attrs.width === 'number' ? `${node.attrs.width}px` : node.attrs.width
+      if (node.attrs.height)
+        img.style.height =
+          typeof node.attrs.height === 'number' ? `${node.attrs.height}px` : node.attrs.height
       img.style.cssText += 'display: block; max-width: 100%; height: auto; border-radius: 8px;'
       img.draggable = false
 
@@ -173,7 +182,9 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   container.className = 'audio-player-container'
   container.style.cssText =
     'display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; margin: 12px 0; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
-  container.addEventListener('contextmenu', (e) => { e.preventDefault() })
+  container.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+  })
 
   const topRow = document.createElement('div')
   topRow.style.cssText =
@@ -330,9 +341,15 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   })
 
   const stopEvent = (e) => e.stopPropagation()
-  playBtn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
+  playBtn.addEventListener('mousedown', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  })
   playBtn.addEventListener('touchstart', stopEvent)
-  rangeInput.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
+  rangeInput.addEventListener('mousedown', (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+  })
   rangeInput.addEventListener('touchstart', stopEvent)
 
   return { container, actionsContainer }
@@ -430,8 +447,12 @@ const FileAttachment = Node.create({
 
         dom.style.userSelect = 'none'
         dom.style.webkitUserSelect = 'none'
-        dom.addEventListener('mousedown', (e) => { e.preventDefault() })
-        dom.addEventListener('contextmenu', (e) => { e.preventDefault() })
+        dom.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+        })
+        dom.addEventListener('contextmenu', (e) => {
+          e.preventDefault()
+        })
 
         return {
           dom,
@@ -442,11 +463,25 @@ const FileAttachment = Node.create({
 
       const dom = document.createElement('div')
       dom.setAttribute('data-file-attachment', '')
+      dom.dataset.url = node.attrs.url || ''
       dom.className = 'file-attachment-container'
       dom.style.cssText =
         'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;'
-      dom.addEventListener('mousedown', (e) => { e.preventDefault() })
-      dom.addEventListener('contextmenu', (e) => { e.preventDefault() })
+
+      const loadingOverlay = document.createElement('div')
+      loadingOverlay.className = 'attachment-loading-overlay'
+      loadingOverlay.style.cssText =
+        'display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.35); border-radius: 12px; align-items: center; justify-content: center; z-index: 10;'
+      const spinner = document.createElement('div')
+      spinner.style.cssText =
+        'width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: attachment-spin 0.6s linear infinite;'
+      loadingOverlay.appendChild(spinner)
+      dom.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+      })
+      dom.addEventListener('contextmenu', (e) => {
+        e.preventDefault()
+      })
       dom.addEventListener('click', (e) => {
         if (!e.target.closest('button')) {
           window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName)
@@ -514,8 +549,17 @@ const FileAttachment = Node.create({
         'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
 
       const makeBtnListeners = (btn) => {
-        btn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation() })
-        btn.addEventListener('touchstart', (e) => { e.stopPropagation() }, { passive: true })
+        btn.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        btn.addEventListener(
+          'touchstart',
+          (e) => {
+            e.stopPropagation()
+          },
+          { passive: true },
+        )
       }
 
       if (isVideo) {
@@ -563,6 +607,7 @@ const FileAttachment = Node.create({
       content.appendChild(info)
       content.appendChild(actions)
       dom.appendChild(content)
+      dom.appendChild(loadingOverlay)
 
       return {
         dom,
@@ -879,6 +924,17 @@ window.editorBridge = {
             }),
           )
         }
+        break
+      }
+
+      case 'setAttachmentLoading': {
+        const els = document.querySelectorAll('[data-file-attachment][data-url]')
+        els.forEach((el) => {
+          if (el.dataset.url === msg.url) {
+            const overlay = el.querySelector('.attachment-loading-overlay')
+            if (overlay) overlay.style.display = msg.loading ? 'flex' : 'none'
+          }
+        })
         break
       }
 

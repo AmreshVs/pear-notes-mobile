@@ -374,7 +374,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isEdgeSwipeActive, setIsEdgeSwipeActive] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [isSharing, setIsSharing] = useState(false)
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
   const [isRecorderVisible, setIsRecorderVisible] = useState(false)
   const [uploadInfo, setUploadInfo] = useState<{ fileName: string; status: string } | null>(null)
   const styleStateRef = useRef<TiptapStyleState | null>(null)
@@ -1131,7 +1130,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       try {
         const localUri = await downloadAttachmentToCache(url, fileName)
         if (ExpoNativeShareModule && typeof ExpoNativeShareModule.share === 'function') {
-          await ExpoNativeShareModule.share({ message: '', urls: [localUri], resolveOnDismiss: true })
+          await ExpoNativeShareModule.share({
+            message: '',
+            urls: [localUri],
+            resolveOnDismiss: true,
+          })
         }
         FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
       } catch (err) {
@@ -1144,23 +1147,23 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handlePreviewAttachment = useCallback(
     async (url: string, fileName: string) => {
-      if (!url || isPreviewLoading) return
+      if (!url) return
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-      setIsPreviewLoading(true)
+      editorRef.current?.setAttachmentLoading(url, true)
       try {
         const localUri = await downloadAttachmentToCache(url, fileName)
-        setIsPreviewLoading(false)
+        editorRef.current?.setAttachmentLoading(url, false)
         if (ExpoNativeShareModule && typeof ExpoNativeShareModule.preview === 'function') {
           await ExpoNativeShareModule.preview({ url: localUri })
         }
         FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
       } catch (err) {
         console.error('Failed to preview attachment:', err)
-        setIsPreviewLoading(false)
+        editorRef.current?.setAttachmentLoading(url, false)
         Alert.alert('Error', 'Could not open the file for preview.')
       }
     },
-    [downloadAttachmentToCache, isPreviewLoading],
+    [downloadAttachmentToCache],
   )
 
   const handleDeleteAttachment = useCallback(async (url: string) => {
@@ -1414,33 +1417,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </View>
           )}
         </Animated.View>
-        {isPreviewLoading && (
-          <View style={styles.previewLoadingOverlay} pointerEvents="none">
-            <View style={styles.previewLoadingBox}>
-              <ActivityIndicator size="large" color="#fff" />
-            </View>
-          </View>
-        )}
       </>
     </NoteEditorContext.Provider>
   )
 }
 
 const styles = StyleSheet.create({
-  previewLoadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100,
-  },
-  previewLoadingBox: {
-    width: 72,
-    height: 72,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   header: {
     position: 'absolute',
     top: 0,

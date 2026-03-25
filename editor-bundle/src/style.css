@@ -39,6 +39,12 @@
   }
 }
 
+@keyframes attachment-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 *,
 *::before,
 *::after {
