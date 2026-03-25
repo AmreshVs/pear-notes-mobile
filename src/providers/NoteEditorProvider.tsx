@@ -534,14 +534,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             status: sizeStr ? `Reading ${sizeStr}...` : 'Reading...',
           })
 
-          const base64 = await FileSystem.readAsStringAsync(cachePath, { encoding: 'base64' })
-          setUploadInfo({ fileName: displayName, status: 'Uploading...' })
-          const buffer = Buffer.from(base64, 'base64')
           const { link } = await backendApi.insertFile({
             key: noteId!,
             fileName: displayName,
-            buffer,
-          })
+            path: asset.uri.replace('file://', ''),
+          } as any)
           if (link) {
             let resolvedLink = link
             if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
@@ -593,13 +590,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
       try {
         setUploadInfo({ fileName: displayName, status: 'Uploading...' })
-        const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
-        const buffer = Buffer.from(base64Data, 'base64')
         const { link } = await backendApi.insertFile({
           key: noteId!,
           fileName: fileName || `image-${Date.now()}.jpg`,
-          buffer,
-        })
+          path: uri.replace('file://', ''),
+        } as any)
         if (link) {
           let resolvedLink = link
           if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
@@ -689,13 +684,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           }
 
           setUploadInfo({ fileName: pageLabel, status: 'Uploading...' })
-          const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
-          const buffer = Buffer.from(base64Data, 'base64')
           const { link } = await backendApi.insertFile({
             key: noteId!,
             fileName: displayName,
-            buffer,
-          })
+            path: uri.replace('file://', ''),
+          } as any)
 
           if (link) {
             let resolvedLink = link
@@ -740,16 +733,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     })
 
     try {
-      const base64 = await FileSystem.readAsStringAsync(uri, {
-        encoding: 'base64',
-      })
       setUploadInfo({ fileName: displayName, status: 'Uploading...' })
-      const buffer = Buffer.from(base64, 'base64')
       const { link } = await backendApi.insertFile({
         key: noteId!,
         fileName: name || `file-${Date.now()}`,
-        buffer,
-      })
+        path: uri.replace('file://', ''),
+      } as any)
       if (link) {
         let resolvedLink = link
         if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
