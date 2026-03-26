@@ -33,7 +33,6 @@ function sendToRN(msg) {
   } catch (_) {}
 }
 
-
 const FONT_FAMILY_MAP = {
   Inter: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
   Outfit: "'Outfit', -apple-system, sans-serif",
@@ -99,10 +98,10 @@ const ImageWithSize = Image.extend({
     return { ...this.parent?.(), width: { default: null }, height: { default: null } }
   },
   addNodeView() {
-    return ({ node }) => {
+    return ({ node, getPos, view }) => {
       const wrapper = document.createElement('div')
       wrapper.style.cssText =
-        'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
+        'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; position: relative;'
       wrapper.addEventListener('mousedown', (e) => {
         e.preventDefault()
       })
@@ -129,7 +128,33 @@ const ImageWithSize = Image.extend({
       img.style.cssText += 'display: block; max-width: 100%; height: auto; border-radius: 8px;'
       img.draggable = false
 
+      const delBtn = document.createElement('button')
+      delBtn.style.cssText =
+        'position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 6px; background: rgba(0,0,0,0.55); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;'
+      delBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
+      delBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      delBtn.addEventListener(
+        'touchstart',
+        (e) => {
+          e.stopPropagation()
+        },
+        { passive: true },
+      )
+      delBtn.onclick = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        window.editorBridge.deleteAttachment(node.attrs.src)
+        const pos = getPos()
+        if (typeof pos === 'number') {
+          view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize))
+        }
+      }
+
       wrapper.appendChild(img)
+      wrapper.appendChild(delBtn)
       return {
         dom: wrapper,
         stopEvent: () => true,
@@ -467,7 +492,7 @@ const FileAttachment = Node.create({
       const dom = document.createElement('div')
       dom.setAttribute('data-file-attachment', '')
       dom.dataset.url = node.attrs.url || ''
-      dom.dataset.attachmentId = 'att-' + (++_attachmentIdCounter)
+      dom.dataset.attachmentId = 'att-' + ++_attachmentIdCounter
       dom.className = 'file-attachment-container'
       dom.style.cssText =
         'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;'
@@ -488,7 +513,11 @@ const FileAttachment = Node.create({
       })
       dom.addEventListener('click', (e) => {
         if (!e.target.closest('button')) {
-          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName, dom.dataset.attachmentId)
+          window.editorBridge.previewAttachment(
+            node.attrs.url,
+            node.attrs.fileName,
+            dom.dataset.attachmentId,
+          )
         }
       })
 
@@ -575,7 +604,11 @@ const FileAttachment = Node.create({
         playBtn.onclick = (e) => {
           e.preventDefault()
           e.stopPropagation()
-          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName, dom.dataset.attachmentId)
+          window.editorBridge.previewAttachment(
+            node.attrs.url,
+            node.attrs.fileName,
+            dom.dataset.attachmentId,
+          )
         }
         actions.appendChild(playBtn)
       }
