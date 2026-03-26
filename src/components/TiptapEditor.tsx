@@ -61,7 +61,7 @@ export interface TiptapEditorHandle {
   scrollToTop: () => void
   scrollToEnd: () => void
   setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
-  setAttachmentLoading: (url: string, loading: boolean) => void
+  setAttachmentLoading: (url: string, loading: boolean, attachmentId?: string) => void
 }
 
 export interface TiptapEditorProps {
@@ -76,7 +76,7 @@ export interface TiptapEditorProps {
   onEditorFocus?: () => void
   onEditorBlur?: () => void
   onOpenAttachment?: (url: string, fileName: string) => void
-  onPreviewAttachment?: (url: string, fileName: string) => void
+  onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
   onDeleteAttachment?: (url: string) => void
 }
 
@@ -90,7 +90,7 @@ type WebViewMsg =
   | { type: 'focus' }
   | { type: 'blur' }
   | { type: 'openAttachment'; url: string; fileName: string }
-  | { type: 'previewAttachment'; url: string; fileName: string }
+  | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'deleteAttachment'; url: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
@@ -257,7 +257,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             break
 
           case 'previewAttachment':
-            onPreviewAttachmentRef.current?.(msg.url, msg.fileName)
+            onPreviewAttachmentRef.current?.(msg.url, msg.fileName, msg.attachmentId)
             break
 
           case 'deleteAttachment':
@@ -337,8 +337,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         setHTML: (html) => sendCommand({ type: 'setContent', html }),
         setTitle: (title) => sendCommand({ type: 'setTitle', title }),
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
-        setAttachmentLoading: (url, loading) =>
-          sendCommand({ type: 'setAttachmentLoading', url, loading }),
+        setAttachmentLoading: (url, loading, attachmentId) =>
+          sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId }),
         scrollToEnd: () =>
           webViewRef.current?.injectJavaScript(
             `(function(){var pm=document.querySelector('.ProseMirror');if(pm&&pm.lastElementChild){pm.lastElementChild.scrollIntoView({block:'end',behavior:'smooth'})}else{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}})();true;`,

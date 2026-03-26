@@ -33,6 +33,7 @@ function sendToRN(msg) {
   } catch (_) {}
 }
 
+
 const FONT_FAMILY_MAP = {
   Inter: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
   Outfit: "'Outfit', -apple-system, sans-serif",
@@ -355,6 +356,8 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   return { container, actionsContainer }
 }
 
+let _attachmentIdCounter = 0
+
 const FileAttachment = Node.create({
   name: 'fileAttachment',
   group: 'block',
@@ -464,6 +467,7 @@ const FileAttachment = Node.create({
       const dom = document.createElement('div')
       dom.setAttribute('data-file-attachment', '')
       dom.dataset.url = node.attrs.url || ''
+      dom.dataset.attachmentId = 'att-' + (++_attachmentIdCounter)
       dom.className = 'file-attachment-container'
       dom.style.cssText =
         'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;'
@@ -484,7 +488,7 @@ const FileAttachment = Node.create({
       })
       dom.addEventListener('click', (e) => {
         if (!e.target.closest('button')) {
-          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName)
+          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName, dom.dataset.attachmentId)
         }
       })
 
@@ -571,7 +575,7 @@ const FileAttachment = Node.create({
         playBtn.onclick = (e) => {
           e.preventDefault()
           e.stopPropagation()
-          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName)
+          window.editorBridge.previewAttachment(node.attrs.url, node.attrs.fileName, dom.dataset.attachmentId)
         }
         actions.appendChild(playBtn)
       }
@@ -768,8 +772,8 @@ window.editorBridge = {
   openAttachment(url, fileName) {
     sendToRN({ type: 'openAttachment', url, fileName })
   },
-  previewAttachment(url, fileName) {
-    if (url) sendToRN({ type: 'previewAttachment', url, fileName })
+  previewAttachment(url, fileName, attachmentId) {
+    if (url) sendToRN({ type: 'previewAttachment', url, fileName, attachmentId })
   },
   deleteAttachment(url) {
     if (url) sendToRN({ type: 'deleteAttachment', url })
@@ -930,7 +934,10 @@ window.editorBridge = {
       case 'setAttachmentLoading': {
         const els = document.querySelectorAll('[data-file-attachment][data-url]')
         els.forEach((el) => {
-          if (el.dataset.url === msg.url) {
+          const matches = msg.attachmentId
+            ? el.dataset.attachmentId === msg.attachmentId
+            : el.dataset.url === msg.url
+          if (matches) {
             const overlay = el.querySelector('.attachment-loading-overlay')
             if (overlay) overlay.style.display = msg.loading ? 'flex' : 'none'
           }

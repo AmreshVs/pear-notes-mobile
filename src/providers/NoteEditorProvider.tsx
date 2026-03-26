@@ -1135,20 +1135,20 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 
   const handlePreviewAttachment = useCallback(
-    async (url: string, fileName: string) => {
+    async (url: string, fileName: string, attachmentId?: string) => {
       if (!url) return
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-      editorRef.current?.setAttachmentLoading(url, true)
+      editorRef.current?.setAttachmentLoading(url, true, attachmentId)
       try {
         const localUri = await downloadAttachmentToCache(url, fileName)
-        editorRef.current?.setAttachmentLoading(url, false)
+        editorRef.current?.setAttachmentLoading(url, false, attachmentId)
         if (ExpoNativeShareModule && typeof ExpoNativeShareModule.preview === 'function') {
           await ExpoNativeShareModule.preview({ url: localUri })
         }
         FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
       } catch (err) {
         console.error('Failed to preview attachment:', err)
-        editorRef.current?.setAttachmentLoading(url, false)
+        editorRef.current?.setAttachmentLoading(url, false, attachmentId)
         Alert.alert('Error', 'Could not open the file for preview.')
       }
     },
