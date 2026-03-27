@@ -376,6 +376,24 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isSharing, setIsSharing] = useState(false)
   const [isRecorderVisible, setIsRecorderVisible] = useState(false)
   const [uploadInfo, setUploadInfo] = useState<{ fileName: string; status: string } | null>(null)
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
+  const [imageActionRect, setImageActionRect] = useState<{
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null>(null)
+  const [isImageActionSheetOpen, setIsImageActionSheetOpen] = useState(false)
+
+  const [selectedAttachmentSrc, setSelectedAttachmentSrc] = useState<string | null>(null)
+  const [selectedAttachmentFileName, setSelectedAttachmentFileName] = useState<string | null>(null)
+  const [attachmentActionRect, setAttachmentActionRect] = useState<{
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null>(null)
+  const [isAttachmentActionSheetOpen, setIsAttachmentActionSheetOpen] = useState(false)
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
 
@@ -1171,37 +1189,89 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [])
 
+  const handleImageSaveToPhotos = useCallback(async () => {
+    if (!selectedImageSrc) return
+    setIsImageActionSheetOpen(false)
+    try {
+      const src = selectedImageSrc
+      const fileName = src.startsWith('data:')
+        ? `image_${Date.now()}.jpg`
+        : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
+      const localUri = await downloadAttachmentToCache(src, fileName)
+      await ExpoNativeShareModule.saveToPhotos({ url: localUri })
+      FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+    } catch (err) {
+      console.error('Failed to save image to photos:', err)
+      Alert.alert('Error', 'Could not save the image to Photos.')
+    }
+  }, [selectedImageSrc, downloadAttachmentToCache])
+
+  const handleImageDelete = useCallback(async () => {
+    if (!selectedImageSrc) return
+    setIsImageActionSheetOpen(false)
+    const src = selectedImageSrc
+    await handleDeleteAttachment(src)
+    editorRef.current?.deleteImage(src)
+  }, [selectedImageSrc, handleDeleteAttachment])
+
   const handleImageLongPress = useCallback(
-    (src: string) => {
+    (src: string, rect?: { x: number; y: number; width: number; height: number }) => {
       if (!src) return
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Save to Photos', 'Delete'],
-          cancelButtonIndex: 0,
-          destructiveButtonIndex: 2,
-        },
-        async (index) => {
-          if (index === 1) {
-            try {
-              const fileName = src.startsWith('data:')
-                ? `image_${Date.now()}.jpg`
-                : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
-              const localUri = await downloadAttachmentToCache(src, fileName)
-              await ExpoNativeShareModule.saveToPhotos({ url: localUri })
-              FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
-            } catch (err) {
-              console.error('Failed to save image to photos:', err)
-              Alert.alert('Error', 'Could not save the image to Photos.')
-            }
-          } else if (index === 2) {
-            await handleDeleteAttachment(src)
-            editorRef.current?.deleteImage(src)
-          }
-        },
-      )
+      setSelectedImageSrc(src)
+
+      if (Platform.OS === 'ios') {
+        setImageActionRect(rect || null)
+        setIsImageActionSheetOpen(true)
+      } else {
+        Alert.alert('Image Options', undefined, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Save to Photos', onPress: () => handleImageSaveToPhotos() },
+          { text: 'Delete', onPress: () => handleImageDelete(), style: 'destructive' },
+        ])
+      }
     },
-    [downloadAttachmentToCache, handleDeleteAttachment],
+    [handleImageSaveToPhotos, handleImageDelete],
+  )
+
+  const handleAttachmentShareAction = useCallback(async () => {
+    if (!selectedAttachmentSrc || !selectedAttachmentFileName) return
+    setIsAttachmentActionSheetOpen(false)
+    await handleOpenAttachment(selectedAttachmentSrc, selectedAttachmentFileName)
+  }, [selectedAttachmentSrc, selectedAttachmentFileName, handleOpenAttachment])
+
+  const handleAttachmentDeleteAction = useCallback(async () => {
+    if (!selectedAttachmentSrc) return
+    setIsAttachmentActionSheetOpen(false)
+    const url = selectedAttachmentSrc
+    await handleDeleteAttachment(url)
+    editorRef.current?.deleteAttachment(url)
+  }, [selectedAttachmentSrc, handleDeleteAttachment])
+
+  const handleAttachmentLongPress = useCallback(
+    (
+      url: string,
+      fileName: string,
+      rect?: { x: number; y: number; width: number; height: number },
+      attachmentId?: string,
+    ) => {
+      if (!url) return
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      setSelectedAttachmentSrc(url)
+      setSelectedAttachmentFileName(fileName)
+
+      if (Platform.OS === 'ios') {
+        setAttachmentActionRect(rect || null)
+        setIsAttachmentActionSheetOpen(true)
+      } else {
+        Alert.alert('Attachment Options', undefined, [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Share', onPress: () => handleAttachmentShareAction() },
+          { text: 'Delete', onPress: () => handleAttachmentDeleteAction(), style: 'destructive' },
+        ])
+      }
+    },
+    [handleAttachmentShareAction, handleAttachmentDeleteAction],
   )
 
   const edgeSwipeResponder = useMemo(
@@ -1404,6 +1474,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onPreviewAttachment={handlePreviewAttachment}
             onDeleteAttachment={handleDeleteAttachment}
             onImageLongPress={handleImageLongPress}
+            onAttachmentLongPress={handleAttachmentLongPress}
           />
 
           {isOpen && (
@@ -1441,6 +1512,116 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   </Text>
                 </View>
               </GlassView>
+            </View>
+          )}
+
+          {ExpoUI && (
+            <View
+              style={{
+                position: 'absolute',
+                top: imageActionRect
+                  ? Math.max(
+                      100,
+                      Math.min(
+                        Dimensions.get('window').height - 150,
+                        imageActionRect.y + imageActionRect.height / 2,
+                      ),
+                    )
+                  : 0,
+                left: imageActionRect
+                  ? imageActionRect.width < 300
+                    ? imageActionRect.x + imageActionRect.width / 2 <
+                      Dimensions.get('window').width / 2
+                      ? imageActionRect.x + imageActionRect.width - 5 // point to right edge if on left half
+                      : imageActionRect.x + 5 // point to left edge if on right half
+                    : imageActionRect.x + imageActionRect.width / 2
+                  : 0,
+                width: 1,
+                height: 1,
+                opacity: imageActionRect ? 1 : 0,
+              }}
+              pointerEvents="none"
+            >
+              <ExpoUI.Host matchContents>
+                <ExpoUI.ConfirmationDialog
+                  title="Image Options"
+                  titleVisibility="hidden"
+                  isPresented={isImageActionSheetOpen && !!imageActionRect}
+                  onIsPresentedChange={setIsImageActionSheetOpen}
+                >
+                  <ExpoUI.ConfirmationDialog.Trigger>
+                    <View style={{ width: 1, height: 1 }} />
+                  </ExpoUI.ConfirmationDialog.Trigger>
+                  <ExpoUI.ConfirmationDialog.Actions>
+                    <ExpoUI.Button
+                      label="Save to Photos"
+                      systemImage="square.and.arrow.down"
+                      onPress={handleImageSaveToPhotos}
+                    />
+                    <ExpoUI.Button
+                      label="Delete"
+                      systemImage="trash"
+                      role="destructive"
+                      onPress={handleImageDelete}
+                    />
+                  </ExpoUI.ConfirmationDialog.Actions>
+                </ExpoUI.ConfirmationDialog>
+              </ExpoUI.Host>
+            </View>
+          )}
+
+          {ExpoUI && (
+            <View
+              style={{
+                position: 'absolute',
+                top: attachmentActionRect
+                  ? Math.max(
+                      100,
+                      Math.min(
+                        Dimensions.get('window').height - 150,
+                        attachmentActionRect.y + attachmentActionRect.height / 2,
+                      ),
+                    )
+                  : 0,
+                left: attachmentActionRect
+                  ? attachmentActionRect.width < 300
+                    ? attachmentActionRect.x + attachmentActionRect.width / 2 <
+                      Dimensions.get('window').width / 2
+                      ? attachmentActionRect.x + attachmentActionRect.width - 5
+                      : attachmentActionRect.x + 5
+                    : attachmentActionRect.x + attachmentActionRect.width / 2
+                  : 0,
+                width: 1,
+                height: 1,
+                opacity: attachmentActionRect ? 1 : 0,
+              }}
+              pointerEvents="none"
+            >
+              <ExpoUI.Host matchContents>
+                <ExpoUI.ConfirmationDialog
+                  title="Attachment Options"
+                  titleVisibility="hidden"
+                  isPresented={isAttachmentActionSheetOpen && !!attachmentActionRect}
+                  onIsPresentedChange={setIsAttachmentActionSheetOpen}
+                >
+                  <ExpoUI.ConfirmationDialog.Trigger>
+                    <View style={{ width: 1, height: 1 }} />
+                  </ExpoUI.ConfirmationDialog.Trigger>
+                  <ExpoUI.ConfirmationDialog.Actions>
+                    <ExpoUI.Button
+                      label="Share"
+                      systemImage="square.and.arrow.up"
+                      onPress={handleAttachmentShareAction}
+                    />
+                    <ExpoUI.Button
+                      label="Delete"
+                      systemImage="trash"
+                      role="destructive"
+                      onPress={handleAttachmentDeleteAction}
+                    />
+                  </ExpoUI.ConfirmationDialog.Actions>
+                </ExpoUI.ConfirmationDialog>
+              </ExpoUI.Host>
             </View>
           )}
         </Animated.View>

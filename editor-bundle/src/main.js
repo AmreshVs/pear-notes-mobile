@@ -111,15 +111,26 @@ const ImageWithSize = Image.extend({
 
       let longPressTimer = null
       let didLongPress = false
+      let startX = 0, startY = 0
 
       wrapper.addEventListener(
         'touchstart',
-        () => {
+        (e) => {
+          startX = e.touches[0].clientX
+          startY = e.touches[0].clientY
           didLongPress = false
           longPressTimer = setTimeout(() => {
             didLongPress = true
             const src = node.attrs.src
-            if (src) window.editorBridge.imageLongPress(src)
+            if (src) {
+              const rect = wrapper.getBoundingClientRect()
+              window.editorBridge.imageLongPress(src, {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width,
+                height: rect.height,
+              })
+            }
           }, 500)
         },
         { passive: true },
@@ -129,8 +140,10 @@ const ImageWithSize = Image.extend({
       })
       wrapper.addEventListener(
         'touchmove',
-        () => {
-          clearTimeout(longPressTimer)
+        (e) => {
+          if (Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 10) {
+            clearTimeout(longPressTimer)
+          }
         },
         { passive: true },
       )
@@ -246,10 +259,25 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   const info = document.createElement('div')
   info.style.cssText = 'flex: 1; min-width: 0;'
 
-  const title = document.createElement('p')
+  const titleTextSafe = titleText || 'Audio Recording'
+  const titleParts = titleTextSafe.split('.')
+  const titleBase = titleParts.length > 1 ? titleParts.slice(0, -1).join('.') : titleTextSafe
+  const titleExt = titleParts.length > 1 ? '.' + titleParts[titleParts.length - 1] : ''
+
+  const title = document.createElement('div')
   title.style.cssText =
-    'font-weight: 600; font-size: 14px; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 4px 0;'
-  title.textContent = titleText || 'Audio Recording'
+    'display: flex; font-weight: 600; font-size: 14px; color: var(--c-text); margin: 0 0 4px 0; overflow: hidden; width: 100%;'
+
+  const titleBaseSpan = document.createElement('span')
+  titleBaseSpan.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;'
+  titleBaseSpan.textContent = titleBase
+
+  const titleExtSpan = document.createElement('span')
+  titleExtSpan.style.cssText = 'white-space: nowrap; flex-shrink: 0;'
+  titleExtSpan.textContent = titleExt
+
+  title.appendChild(titleBaseSpan)
+  title.appendChild(titleExtSpan)
 
   const meta = document.createElement('div')
   meta.style.cssText = 'display: flex; align-items: center; gap: 8px;'
@@ -416,11 +444,6 @@ const FileAttachment = Node.create({
       const isVideo = node.attrs.fileType?.startsWith('video/')
       const isAudio = node.attrs.fileType?.startsWith('audio/')
 
-      const btnStyle =
-        'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
-      const dlIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
-      const delIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
-
       if (isAudio) {
         const parts = (node.attrs.fileName || '').split('.')
         const ext = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'AUDIO'
@@ -433,54 +456,32 @@ const FileAttachment = Node.create({
         const dom = player.container
         dom.setAttribute('data-file-attachment', '')
 
-        const dlBtn = document.createElement('button')
-        dlBtn.className = 'dl-btn'
-        dlBtn.style.cssText = btnStyle
-        dlBtn.innerHTML = dlIcon
-        dlBtn.addEventListener('mousedown', (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        })
-        dlBtn.addEventListener(
+        let longPressTimer = null
+        let startX = 0, startY = 0
+        dom.addEventListener(
           'touchstart',
           (e) => {
-            e.stopPropagation()
+            startX = e.touches[0].clientX
+            startY = e.touches[0].clientY
+            longPressTimer = setTimeout(() => {
+              const rect = dom.getBoundingClientRect()
+              const attachmentId = dom.dataset.attachmentId || ''
+              window.editorBridge.attachmentLongPress(
+                node.attrs.url || node.attrs.fileData,
+                node.attrs.fileName,
+                { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+                attachmentId,
+              )
+            }, 500)
           },
           { passive: true },
         )
-        dlBtn.onclick = (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          window.editorBridge.openAttachment(node.attrs.url, node.attrs.fileName)
-        }
-
-        const delBtn = document.createElement('button')
-        delBtn.className = 'del-btn'
-        delBtn.style.cssText = btnStyle
-        delBtn.innerHTML = delIcon
-        delBtn.addEventListener('mousedown', (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        })
-        delBtn.addEventListener(
-          'touchstart',
-          (e) => {
-            e.stopPropagation()
-          },
-          { passive: true },
-        )
-        delBtn.onclick = (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          window.editorBridge.deleteAttachment(node.attrs.url)
-          const pos = getPos()
-          if (typeof pos === 'number') {
-            view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize))
+        dom.addEventListener('touchend', () => clearTimeout(longPressTimer))
+        dom.addEventListener('touchmove', (e) => {
+          if (Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 10) {
+            clearTimeout(longPressTimer)
           }
-        }
-
-        player.actionsContainer.appendChild(dlBtn)
-        player.actionsContainer.appendChild(delBtn)
+        })
 
         dom.style.userSelect = 'none'
         dom.style.webkitUserSelect = 'none'
@@ -521,6 +522,7 @@ const FileAttachment = Node.create({
         e.preventDefault()
       })
       dom.addEventListener('click', (e) => {
+        if (window.didFileAttachmentLongPress) return
         if (!e.target.closest('button')) {
           window.editorBridge.previewAttachment(
             node.attrs.url,
@@ -549,11 +551,23 @@ const FileAttachment = Node.create({
       const fileName = node.attrs.fileName || 'Untitled File'
       const parts = fileName.split('.')
       const ext = parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'FILE'
+      const baseName = parts.length > 1 ? parts.slice(0, -1).join('.') : fileName
+      const extWithDot = parts.length > 1 ? '.' + parts[parts.length - 1] : ''
 
-      const label = document.createElement('p')
+      const label = document.createElement('div')
       label.style.cssText =
-        'font-weight: 600; font-size: 14px; color: var(--c-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 0 4px 0;'
-      label.textContent = fileName
+        'display: flex; font-weight: 600; font-size: 14px; color: var(--c-text); margin: 0 0 4px 0; overflow: hidden; width: 100%;'
+
+      const baseSpan = document.createElement('span')
+      baseSpan.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;'
+      baseSpan.textContent = baseName
+
+      const extSpanTail = document.createElement('span')
+      extSpanTail.style.cssText = 'white-space: nowrap; flex-shrink: 0;'
+      extSpanTail.textContent = extWithDot
+
+      label.appendChild(baseSpan)
+      label.appendChild(extSpanTail)
       info.appendChild(label)
 
       const meta = document.createElement('div')
@@ -587,29 +601,48 @@ const FileAttachment = Node.create({
       const actions = document.createElement('div')
       actions.style.cssText = 'display: flex; align-items: center; gap: 6px;'
 
+      let longPressTimer = null
+      let startX = 0, startY = 0
+      dom.addEventListener(
+        'touchstart',
+        (e) => {
+          startX = e.touches[0].clientX
+          startY = e.touches[0].clientY
+          window.didFileAttachmentLongPress = false
+          longPressTimer = setTimeout(() => {
+            window.didFileAttachmentLongPress = true
+            const rect = dom.getBoundingClientRect()
+            const attachmentId = dom.dataset.attachmentId || ''
+            window.editorBridge.attachmentLongPress(
+              node.attrs.url || node.attrs.fileData,
+              node.attrs.fileName,
+              { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+              attachmentId,
+            )
+          }, 500)
+        },
+        { passive: true },
+      )
+      dom.addEventListener('touchend', () => clearTimeout(longPressTimer))
+      dom.addEventListener('touchmove', (e) => {
+        if (Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 10) {
+          clearTimeout(longPressTimer)
+        }
+      })
+
       const genericBtnStyle =
         'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
-
-      const makeBtnListeners = (btn) => {
-        btn.addEventListener('mousedown', (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-        })
-        btn.addEventListener(
-          'touchstart',
-          (e) => {
-            e.stopPropagation()
-          },
-          { passive: true },
-        )
-      }
 
       if (isVideo) {
         const playBtn = document.createElement('button')
         playBtn.className = 'play-btn'
         playBtn.style.cssText = genericBtnStyle
         playBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><polygon points="5 3 19 12 5 21 5 3"/></svg>`
-        makeBtnListeners(playBtn)
+        playBtn.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+        })
+        playBtn.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: true })
         playBtn.onclick = (e) => {
           e.preventDefault()
           e.stopPropagation()
@@ -621,35 +654,6 @@ const FileAttachment = Node.create({
         }
         actions.appendChild(playBtn)
       }
-
-      const dlBtn = document.createElement('button')
-      dlBtn.className = 'dl-btn'
-      dlBtn.style.cssText = genericBtnStyle
-      dlBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
-      makeBtnListeners(dlBtn)
-      dlBtn.onclick = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        window.editorBridge.openAttachment(node.attrs.url, node.attrs.fileName)
-      }
-
-      const delBtn = document.createElement('button')
-      delBtn.className = 'del-btn'
-      delBtn.style.cssText = genericBtnStyle
-      delBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
-      makeBtnListeners(delBtn)
-      delBtn.onclick = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        window.editorBridge.deleteAttachment(node.attrs.url)
-        const pos = getPos()
-        if (typeof pos === 'number') {
-          view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize))
-        }
-      }
-
-      actions.appendChild(dlBtn)
-      actions.appendChild(delBtn)
       content.appendChild(info)
       content.appendChild(actions)
       dom.appendChild(content)
@@ -695,62 +699,34 @@ const AudioAttachment = Node.create({
       const dom = player.container
       dom.setAttribute('data-audio-attachment', '')
 
-      const btnStyle =
-        'padding: 10px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; background: transparent; border: none;'
-      const dlIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--c-text-secondary)"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>`
-      const delIcon = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
 
-      const dlBtn = document.createElement('button')
-      dlBtn.className = 'dl-btn'
-      dlBtn.style.cssText = btnStyle
-      dlBtn.innerHTML = dlIcon
-      dlBtn.addEventListener('mousedown', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      })
-      dlBtn.addEventListener(
+
+      let longPressTimer = null
+      let startX = 0, startY = 0
+      dom.addEventListener(
         'touchstart',
         (e) => {
-          e.stopPropagation()
+          startX = e.touches[0].clientX
+          startY = e.touches[0].clientY
+          longPressTimer = setTimeout(() => {
+            const rect = dom.getBoundingClientRect()
+            const attachmentId = dom.dataset.attachmentId || ''
+            window.editorBridge.attachmentLongPress(
+              node.attrs.url || node.attrs.audioData,
+              node.attrs.fileName,
+              { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+              attachmentId,
+            )
+          }, 500)
         },
         { passive: true },
       )
-      dlBtn.onclick = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        window.editorBridge.openAttachment(
-          node.attrs.url || node.attrs.audioData,
-          node.attrs.fileName,
-        )
-      }
-
-      const delBtn = document.createElement('button')
-      delBtn.className = 'del-btn'
-      delBtn.style.cssText = btnStyle
-      delBtn.innerHTML = delIcon
-      delBtn.addEventListener('mousedown', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      })
-      delBtn.addEventListener(
-        'touchstart',
-        (e) => {
-          e.stopPropagation()
-        },
-        { passive: true },
-      )
-      delBtn.onclick = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        window.editorBridge.deleteAttachment(node.attrs.url)
-        const pos = getPos()
-        if (typeof pos === 'number') {
-          view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize))
+      dom.addEventListener('touchend', () => clearTimeout(longPressTimer))
+      dom.addEventListener('touchmove', (e) => {
+        if (Math.hypot(e.touches[0].clientX - startX, e.touches[0].clientY - startY) > 10) {
+          clearTimeout(longPressTimer)
         }
-      }
-
-      player.actionsContainer.appendChild(dlBtn)
-      player.actionsContainer.appendChild(delBtn)
+      })
 
       dom.style.userSelect = 'none'
       dom.addEventListener('mousedown', (e) => {
@@ -820,8 +796,11 @@ window.editorBridge = {
   deleteAttachment(url) {
     if (url) sendToRN({ type: 'deleteAttachment', url })
   },
-  imageLongPress(src) {
-    if (src) sendToRN({ type: 'imageLongPress', src })
+  imageLongPress(src, rect) {
+    if (src) sendToRN({ type: 'imageLongPress', src, rect })
+  },
+  attachmentLongPress(url, fileName, rect, attachmentId) {
+    if (url) sendToRN({ type: 'attachmentLongPress', url, fileName, rect, attachmentId })
   },
   handleMessage(raw) {
     let msg
@@ -958,6 +937,22 @@ window.editorBridge = {
         const { src: srcToDelete } = msg
         editor.state.doc.descendants((node, pos) => {
           if (node.type.name === 'image' && node.attrs.src === srcToDelete) {
+            editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize))
+            return false
+          }
+        })
+        break
+      }
+
+      case 'deleteAttachment': {
+        const { url: urlToDelete } = msg
+        editor.state.doc.descendants((node, pos) => {
+          if (
+            (node.type.name === 'fileAttachment' || node.type.name === 'audioAttachment') &&
+            (node.attrs.url === urlToDelete ||
+              node.attrs.fileData === urlToDelete ||
+              node.attrs.audioData === urlToDelete)
+          ) {
             editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize))
             return false
           }

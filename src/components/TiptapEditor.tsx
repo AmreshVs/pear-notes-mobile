@@ -63,6 +63,7 @@ export interface TiptapEditorHandle {
   setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
   setAttachmentLoading: (url: string, loading: boolean, attachmentId?: string) => void
   deleteImage: (src: string) => void
+  deleteAttachment: (url: string) => void
 }
 
 export interface TiptapEditorProps {
@@ -79,7 +80,16 @@ export interface TiptapEditorProps {
   onOpenAttachment?: (url: string, fileName: string) => void
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
   onDeleteAttachment?: (url: string) => void
-  onImageLongPress?: (src: string) => void
+  onImageLongPress?: (
+    src: string,
+    rect?: { x: number; y: number; width: number; height: number },
+  ) => void
+  onAttachmentLongPress?: (
+    url: string,
+    fileName: string,
+    rect?: { x: number; y: number; width: number; height: number },
+    attachmentId?: string,
+  ) => void
 }
 
 type WebViewMsg =
@@ -94,7 +104,18 @@ type WebViewMsg =
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'deleteAttachment'; url: string }
-  | { type: 'imageLongPress'; src: string }
+  | {
+      type: 'imageLongPress'
+      src: string
+      rect?: { x: number; y: number; width: number; height: number }
+    }
+  | {
+      type: 'attachmentLongPress'
+      url: string
+      fileName: string
+      rect?: { x: number; y: number; width: number; height: number }
+      attachmentId?: string
+    }
 
 type EditorState = 'loading' | 'ready' | 'error'
 
@@ -115,6 +136,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onPreviewAttachment,
       onDeleteAttachment,
       onImageLongPress,
+      onAttachmentLongPress,
     },
     ref,
   ) => {
@@ -134,6 +156,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
     const onDeleteAttachmentRef = useRef(onDeleteAttachment)
     const onImageLongPressRef = useRef(onImageLongPress)
+    const onAttachmentLongPressRef = useRef(onAttachmentLongPress)
 
     onContentChangeRef.current = onContentChange
     onTitleChangeRef.current = onTitleChange
@@ -144,6 +167,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onPreviewAttachmentRef.current = onPreviewAttachment
     onDeleteAttachmentRef.current = onDeleteAttachment
     onImageLongPressRef.current = onImageLongPress
+    onAttachmentLongPressRef.current = onAttachmentLongPress
 
     const colorsRef = useRef(colors)
     const isDarkRef = useRef(theme.isDark)
@@ -271,7 +295,11 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             break
 
           case 'imageLongPress':
-            onImageLongPressRef.current?.(msg.src)
+            onImageLongPressRef.current?.(msg.src, msg.rect)
+            break
+
+          case 'attachmentLongPress':
+            onAttachmentLongPressRef.current?.(msg.url, msg.fileName, msg.rect, msg.attachmentId)
             break
         }
       },
@@ -350,6 +378,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         setAttachmentLoading: (url, loading, attachmentId) =>
           sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId }),
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),
+        deleteAttachment: (url) => sendCommand({ type: 'deleteAttachment', url }),
         scrollToEnd: () =>
           webViewRef.current?.injectJavaScript(
             `(function(){var pm=document.querySelector('.ProseMirror');if(pm&&pm.lastElementChild){pm.lastElementChild.scrollIntoView({block:'end',behavior:'smooth'})}else{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}})();true;`,
