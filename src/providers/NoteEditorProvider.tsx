@@ -1171,6 +1171,39 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [])
 
+  const handleImageLongPress = useCallback(
+    (src: string) => {
+      if (!src) return
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Save to Photos', 'Delete'],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: 2,
+        },
+        async (index) => {
+          if (index === 1) {
+            try {
+              const fileName = src.startsWith('data:')
+                ? `image_${Date.now()}.jpg`
+                : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
+              const localUri = await downloadAttachmentToCache(src, fileName)
+              await ExpoNativeShareModule.saveToPhotos({ url: localUri })
+              FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+            } catch (err) {
+              console.error('Failed to save image to photos:', err)
+              Alert.alert('Error', 'Could not save the image to Photos.')
+            }
+          } else if (index === 2) {
+            await handleDeleteAttachment(src)
+            editorRef.current?.deleteImage(src)
+          }
+        },
+      )
+    },
+    [downloadAttachmentToCache, handleDeleteAttachment],
+  )
+
   const edgeSwipeResponder = useMemo(
     () =>
       PanResponder.create({
@@ -1370,6 +1403,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onOpenAttachment={handleOpenAttachment}
             onPreviewAttachment={handlePreviewAttachment}
             onDeleteAttachment={handleDeleteAttachment}
+            onImageLongPress={handleImageLongPress}
           />
 
           {isOpen && (

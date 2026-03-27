@@ -9,11 +9,7 @@ import {
   StyleSheet,
   type ViewStyle,
 } from 'react-native'
-import Animated, {
-  FadeIn,
-  FadeOutUp,
-  LinearTransition,
-} from 'react-native-reanimated'
+import Animated, { FadeIn, FadeOutUp, LinearTransition } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 
 import { Text, Theme, useColors, useThemedStyles } from './Themed'

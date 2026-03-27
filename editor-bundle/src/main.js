@@ -101,14 +101,45 @@ const ImageWithSize = Image.extend({
     return ({ node, getPos, view }) => {
       const wrapper = document.createElement('div')
       wrapper.style.cssText =
-        'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; position: relative;'
+        'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
       wrapper.addEventListener('mousedown', (e) => {
         e.preventDefault()
       })
       wrapper.addEventListener('contextmenu', (e) => {
         e.preventDefault()
       })
+
+      let longPressTimer = null
+      let didLongPress = false
+
+      wrapper.addEventListener(
+        'touchstart',
+        () => {
+          didLongPress = false
+          longPressTimer = setTimeout(() => {
+            didLongPress = true
+            const src = node.attrs.src
+            if (src) window.editorBridge.imageLongPress(src)
+          }, 500)
+        },
+        { passive: true },
+      )
+      wrapper.addEventListener('touchend', () => {
+        clearTimeout(longPressTimer)
+      })
+      wrapper.addEventListener(
+        'touchmove',
+        () => {
+          clearTimeout(longPressTimer)
+        },
+        { passive: true },
+      )
+      wrapper.addEventListener('touchcancel', () => {
+        clearTimeout(longPressTimer)
+      })
+
       wrapper.addEventListener('click', () => {
+        if (didLongPress) return
         const src = node.attrs.src
         if (!src) return
         const fileName = src.startsWith('data:')
@@ -116,6 +147,9 @@ const ImageWithSize = Image.extend({
           : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
         window.editorBridge.previewAttachment(src, fileName)
       })
+
+      const inner = document.createElement('div')
+      inner.style.cssText = 'display: inline-block; position: relative;'
 
       const img = document.createElement('img')
       if (node.attrs.src) img.src = node.attrs.src
@@ -128,33 +162,8 @@ const ImageWithSize = Image.extend({
       img.style.cssText += 'display: block; max-width: 100%; height: auto; border-radius: 8px;'
       img.draggable = false
 
-      const delBtn = document.createElement('button')
-      delBtn.style.cssText =
-        'position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; border-radius: 6px; background: rgba(0,0,0,0.55); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;'
-      delBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF453A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`
-      delBtn.addEventListener('mousedown', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-      })
-      delBtn.addEventListener(
-        'touchstart',
-        (e) => {
-          e.stopPropagation()
-        },
-        { passive: true },
-      )
-      delBtn.onclick = (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        window.editorBridge.deleteAttachment(node.attrs.src)
-        const pos = getPos()
-        if (typeof pos === 'number') {
-          view.dispatch(view.state.tr.delete(pos, pos + node.nodeSize))
-        }
-      }
-
-      wrapper.appendChild(img)
-      wrapper.appendChild(delBtn)
+      inner.appendChild(img)
+      wrapper.appendChild(inner)
       return {
         dom: wrapper,
         stopEvent: () => true,
@@ -811,6 +820,9 @@ window.editorBridge = {
   deleteAttachment(url) {
     if (url) sendToRN({ type: 'deleteAttachment', url })
   },
+  imageLongPress(src) {
+    if (src) sendToRN({ type: 'imageLongPress', src })
+  },
   handleMessage(raw) {
     let msg
     try {
@@ -941,6 +953,17 @@ window.editorBridge = {
           editor.commands.setTextSelection(editor.state.selection.to)
         }
         break
+
+      case 'deleteImage': {
+        const { src: srcToDelete } = msg
+        editor.state.doc.descendants((node, pos) => {
+          if (node.type.name === 'image' && node.attrs.src === srcToDelete) {
+            editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize))
+            return false
+          }
+        })
+        break
+      }
 
       case 'updateImageSrc': {
         const { oldSrc, newSrc } = msg

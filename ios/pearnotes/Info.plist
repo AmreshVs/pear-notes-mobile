@@ -49,6 +49,8 @@
 	<string>Allow Pear Notes to access your microphone to record voice notes.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Allow Pear Notes to use the camera to scan invite QR codes.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Allow Pear Notes to save images to your photo library.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

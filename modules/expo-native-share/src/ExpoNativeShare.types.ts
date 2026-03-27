@@ -7,3 +7,7 @@ export interface ExpoNativeShareOptions {
 export interface ExpoNativePreviewOptions {
   url: string
 }
+
+export interface ExpoNativeSaveToPhotosOptions {
+  url: string
+}

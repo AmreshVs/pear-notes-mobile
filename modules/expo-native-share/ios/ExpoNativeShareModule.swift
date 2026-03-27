@@ -1,4 +1,5 @@
 import ExpoModulesCore
+import Photos
 import QuickLook
 import UIKit
 
@@ -127,6 +128,31 @@ public class ExpoNativeShareModule: Module {
         ql.dataSource = delegate
         ql.delegate = delegate
         presentingVC.present(ql, animated: true)
+      }
+    }
+
+    AsyncFunction("saveToPhotos") { (options: [String: Any], promise: Promise) in
+      guard let urlString = options["url"] as? String,
+            let fileUrl = URL(string: urlString),
+            let image = UIImage(contentsOfFile: fileUrl.path) else {
+        promise.reject(Exception(name: "InvalidArguments", description: "A valid image file URL is required."))
+        return
+      }
+
+      PHPhotoLibrary.requestAuthorization(for: .addOnly) { status in
+        guard status == .authorized || status == .limited else {
+          promise.reject(Exception(name: "PermissionDenied", description: "Photo library access was denied."))
+          return
+        }
+        PHPhotoLibrary.shared().performChanges({
+          PHAssetChangeRequest.creationRequestForAsset(from: image)
+        }) { success, error in
+          if success {
+            promise.resolve(nil)
+          } else {
+            promise.reject(Exception(name: "SaveFailed", description: error?.localizedDescription ?? "Failed to save image."))
+          }
+        }
       }
     }
   }
