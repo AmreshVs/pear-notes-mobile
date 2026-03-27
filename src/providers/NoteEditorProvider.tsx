@@ -41,6 +41,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
+import { isImageFile } from '../utils/media'
 
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
@@ -754,38 +755,61 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
     try {
       setUploadInfo({ fileName: displayName, status: 'Uploading...' })
-      const { link } = await backendApi.insertFile({
-        key: noteId!,
-        fileName: name || `file-${Date.now()}`,
-        path: decodeURIComponent(uri.replace('file://', '')),
-      } as any)
-      if (link) {
-        let resolvedLink = link
-        if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
-          resolvedLink = link.replace(
-            HYPERDRIVE_URL_PREFIX,
-            hyperdriveServerAddress.replace(/\/$/, ''),
+
+      if (isImageFile(name, mimeType)) {
+        const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+          Image.getSize(
+            uri,
+            (width, height) => resolve({ width, height }),
+            () => resolve({ width: 0, height: 0 }),
           )
+        })
+
+        if (dimensions.width > 0) {
+          await processMediaAsset({
+            type: 'image',
+            uri,
+            width: dimensions.width,
+            height: dimensions.height,
+            fileName: name,
+            mimeType,
+          } as ImagePicker.ImagePickerAsset)
         }
-        const isAudio = mimeType?.startsWith('audio/')
-        if (isAudio) {
-          editorRef.current?.insertAudioAttachment(resolvedLink, name || 'Audio')
-        } else {
-          editorRef.current?.insertFileAttachment(
-            resolvedLink,
-            name || 'File',
-            size || 0,
-            mimeType || '',
-          )
+      } else {
+        const { link } = await backendApi.insertFile({
+          key: noteId!,
+          fileName: name || `file-${Date.now()}`,
+          path: decodeURIComponent(uri.replace('file://', '')),
+        } as any)
+
+        if (link) {
+          let resolvedLink = link
+          if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
+            resolvedLink = link.replace(
+              HYPERDRIVE_URL_PREFIX,
+              hyperdriveServerAddress.replace(/\/$/, ''),
+            )
+          }
+          const isAudio = mimeType?.startsWith('audio/')
+          if (isAudio) {
+            editorRef.current?.insertAudioAttachment(resolvedLink, name || 'Audio')
+          } else {
+            editorRef.current?.insertFileAttachment(
+              resolvedLink,
+              name || 'File',
+              size || 0,
+              mimeType || '',
+            )
+          }
+          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
         }
-        setTimeout(() => editorRef.current?.scrollToEnd(), 300)
       }
     } catch (error) {
       console.error('Error uploading file:', error)
     } finally {
       setUploadInfo(null)
     }
-  }, [noteId, hyperdriveServerAddress])
+  }, [noteId, hyperdriveServerAddress, processMediaAsset])
 
   const handleRecordAudio = useCallback(async () => {
     const { granted, canAskAgain } = await AudioModule.requestRecordingPermissionsAsync()
@@ -1532,8 +1556,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   ? imageActionRect.width < 300
                     ? imageActionRect.x + imageActionRect.width / 2 <
                       Dimensions.get('window').width / 2
-                      ? imageActionRect.x + imageActionRect.width - 5 // point to right edge if on left half
-                      : imageActionRect.x + 5 // point to left edge if on right half
+                      ? imageActionRect.x + imageActionRect.width - 5
+                      : imageActionRect.x + 5
                     : imageActionRect.x + imageActionRect.width / 2
                   : 0,
                 width: 1,
