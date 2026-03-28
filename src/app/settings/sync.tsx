@@ -292,9 +292,15 @@ export default function SyncScreen() {
                 entering={FadeInDown.duration(220).delay(110)}
                 style={styles.invitePasteSection}
               >
-                <RNView style={styles.invitePasteHeader}>
-                  <Text style={styles.plusIcon}>+</Text>
-                  <Text style={styles.invitePasteText}>Already have an invite?</Text>
+                <RNView style={[styles.invitePasteHeader, { justifyContent: 'space-between' }]}>
+                  <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={styles.plusIcon}>+</Text>
+                    <Text style={styles.invitePasteText}>Already have an invite?</Text>
+                  </RNView>
+                  <Pressable onPress={handleOpenScanner} style={styles.scanPillBtn}>
+                    <ScanLine size={16} color={colors.primary} />
+                    <Text style={styles.scanPillBtnText}>Scan QR</Text>
+                  </Pressable>
                 </RNView>
 
                 <RNView style={styles.inputRow}>
@@ -311,17 +317,6 @@ export default function SyncScreen() {
                     autoCapitalize="none"
                     autoCorrect={false}
                   />
-
-                  <Pressable
-                    onPress={handleOpenScanner}
-                    hitSlop={8}
-                    style={({ pressed }) => [
-                      styles.scanBtn,
-                      { opacity: pressed ? 0.7 : 1, borderColor: colors.inputBorder },
-                    ]}
-                  >
-                    <ScanLine size={18} color={colors.primary} strokeWidth={1.9} />
-                  </Pressable>
 
                   <Pressable
                     onPress={handleConnect}
@@ -890,14 +885,19 @@ const createStyles = (theme: Theme) => {
       borderColor: theme.colors.inputBorder,
     },
     codeInput: { flex: 1, fontSize: FontSize.body, paddingVertical: 9, color: theme.colors.text },
-    scanBtn: {
-      width: 42,
-      height: 42,
-      borderRadius: Radii.md,
+    scanPillBtn: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.7)',
+      gap: 4,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      borderRadius: 6,
+      backgroundColor: `${theme.colors.primary}1A`,
+    },
+    scanPillBtnText: {
+      fontSize: FontSize.micro,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.primary,
     },
     linkBtn: {
       borderRadius: Space.md,

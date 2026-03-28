@@ -13,9 +13,10 @@ import {
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getFingerprint } from '@pear-notes/core/utils.js'
 import { BlurView } from 'expo-blur'
-import { Check, Globe, Link2, ShieldAlert, ShieldCheck } from 'lucide-react-native'
+import { CameraView, useCameraPermissions } from 'expo-camera'
+import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, Pressable, StyleSheet, TextInput } from 'react-native'
+import { ActivityIndicator, Animated, Modal, Pressable, StyleSheet, TextInput } from 'react-native'
 import Reanimated, { FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -36,6 +37,9 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const styles = useThemedStyles(createStyles)
   const colors = useColors()
   const [pasteCode, setPasteCode] = useState('')
+  const [isScanning, setIsScanning] = useState(false)
+  const [hasScanned, setHasScanned] = useState(false)
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const fadeAnim = useMemo(() => new Animated.Value(0), [])
 
   const inviterStatus = useSelector(getInviterStatus)
@@ -67,6 +71,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     if (isInviter) dispatch(resetInvite())
     else if (isReceiverActive) dispatch(resetReceiverStatus())
     else dispatch(setShowPairingInput(false))
+    setIsScanning(false)
   }, [dispatch, isInviter, isReceiverActive, deviceRemoved])
 
   const handleConnect = useCallback(() => {
@@ -74,8 +79,30 @@ export const PairingOverlay = memo(function PairingOverlay() {
       dispatch(subscribePairUser({ invite: pasteCode.trim() } as any))
       dispatch(setShowPairingInput(false))
       setPasteCode('')
+      setIsScanning(false)
     }
   }, [dispatch, pasteCode])
+
+  const handleOpenScanner = useCallback(async () => {
+    if (!cameraPermission?.granted) {
+      const result = await requestCameraPermission()
+      if (!result.granted) return
+    }
+    setHasScanned(false)
+    setIsScanning(true)
+  }, [cameraPermission?.granted, requestCameraPermission])
+
+  const handleBarcodeScanned = useCallback(
+    ({ data }: { data: string }) => {
+      if (!data || hasScanned) return
+      setHasScanned(true)
+      dispatch(subscribePairUser({ invite: data.trim() } as any))
+      dispatch(setShowPairingInput(false))
+      setIsScanning(false)
+      setTimeout(() => setHasScanned(false), 1000)
+    },
+    [dispatch, hasScanned],
+  )
 
   const renderIcon = useCallback(() => {
     if (step === 'done') {
@@ -244,7 +271,13 @@ export const PairingOverlay = memo(function PairingOverlay() {
             Enter the invite code from your other device to sync your notes securely.
           </Text>
           <View style={styles.inputArea}>
-            <Text style={styles.inputLabelText}>Invite Code</Text>
+            <View style={styles.inputHeader}>
+              <Text style={styles.inputLabelText}>Invite Code</Text>
+              <Pressable onPress={handleOpenScanner} style={styles.scanBtn}>
+                <ScanLine size={16} color={colors.primary} />
+                <Text style={styles.scanBtnText}>Scan QR</Text>
+              </Pressable>
+            </View>
             <TextInput
               value={pasteCode}
               onChangeText={setPasteCode}
@@ -353,6 +386,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     showPairingInput,
     styles,
     deviceRemoved,
+    handleOpenScanner,
   ])
 
   const fadeStyle = useMemo(
@@ -380,6 +414,60 @@ export const PairingOverlay = memo(function PairingOverlay() {
           </Reanimated.View>
         </Reanimated.View>
       </View>
+      <Modal
+        visible={isScanning}
+        animationType="slide"
+        presentationStyle="fullScreen"
+        onRequestClose={() => setIsScanning(false)}
+      >
+        <View style={styles.scannerScreen}>
+          {cameraPermission?.granted ? (
+            <>
+              <CameraView
+                style={StyleSheet.absoluteFill}
+                facing="back"
+                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
+                onBarcodeScanned={hasScanned ? undefined : handleBarcodeScanned}
+              />
+              <View style={styles.scannerOverlay} pointerEvents="none">
+                <View style={styles.scannerFrame} />
+              </View>
+              <View style={styles.scannerHeader}>
+                <Pressable onPress={() => setIsScanning(false)} style={styles.scannerCloseBtn}>
+                  <X size={20} color="#fff" strokeWidth={2.2} />
+                </Pressable>
+              </View>
+              <View style={styles.scannerFooter}>
+                <Text style={styles.scannerTitle}>Scan invite QR code</Text>
+                <Text style={styles.scannerDescription}>
+                  Point your camera at the QR code shown on your other device to fill the invite
+                  automatically.
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.scannerPermissionCard}>
+              <Text style={styles.scannerTitle}>Camera access needed</Text>
+              <Text style={styles.scannerDescription}>
+                Allow camera access to scan an invite QR code and fill the pairing code
+                automatically.
+              </Text>
+              <Pressable
+                onPress={requestCameraPermission}
+                style={({ pressed }) => [
+                  styles.permissionBtn,
+                  { backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
+                ]}
+              >
+                <Text style={styles.permissionBtnText}>Allow Camera</Text>
+              </Pressable>
+              <Pressable onPress={() => setIsScanning(false)} style={styles.permissionCancelBtn}>
+                <Text style={styles.permissionCancelText}>Not now</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </Modal>
     </Animated.View>
   )
 })
@@ -500,11 +588,94 @@ const createStyles = (theme: Theme) => {
       textAlign: 'center',
     },
     idHex: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.heavy,
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
       fontFamily: MonoFontFamily,
+      letterSpacing: 2,
       textAlign: 'center',
-      color: theme.colors.text,
+    },
+    scannerScreen: {
+      flex: 1,
+      backgroundColor: '#000',
+    },
+    scannerHeader: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      paddingTop: 56,
+      paddingHorizontal: Space.lg,
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+    },
+    scannerCloseBtn: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'rgba(0,0,0,0.45)',
+    },
+    scannerFooter: {
+      position: 'absolute',
+      left: Space.lg,
+      right: Space.lg,
+      bottom: 56,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.lg,
+      borderRadius: Radii.card,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      gap: Space.sm,
+    },
+    scannerTitle: {
+      fontSize: FontSize.heading,
+      fontWeight: FontWeight.bold,
+      color: '#ffffff',
+      textAlign: 'center',
+      letterSpacing: -0.4,
+    },
+    scannerDescription: {
+      fontSize: FontSize.body,
+      color: 'rgba(255,255,255,0.8)',
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    scannerPermissionCard: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: Space.xl,
+      gap: Space.md,
+    },
+    permissionBtn: {
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+    },
+    permissionBtnText: {
+      color: '#fff',
+      fontWeight: FontWeight.bold,
+    },
+    permissionCancelBtn: {
+      marginTop: 16,
+    },
+    permissionCancelText: {
+      color: 'rgba(255,255,255,0.5)',
+    },
+    scannerOverlay: {
+      ...StyleSheet.absoluteFillObject,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: Space.xl,
+    },
+    scannerFrame: {
+      width: '100%',
+      maxWidth: 280,
+      aspectRatio: 1,
+      borderRadius: Radii.card,
+      borderWidth: 2,
+      borderColor: 'rgba(255,255,255,0.92)',
+      backgroundColor: 'transparent',
     },
     fingerprintContainer: {
       alignItems: 'center',
@@ -556,10 +727,27 @@ const createStyles = (theme: Theme) => {
       marginLeft: 1,
       color: theme.colors.textSecondary,
     },
-    subFpWrapper: { opacity: 0.4, marginBottom: Space.base },
-    progressWrap: { width: '100%', paddingTop: Space.sm },
-    fill: { height: '100%', borderRadius: 3 },
-    inputArea: { width: '100%', marginBottom: Space.xl },
+    inputHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: Space.sm,
+      width: '100%',
+    },
+    scanBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      borderRadius: 6,
+      backgroundColor: `${theme.colors.primary}1A`,
+    },
+    scanBtnText: {
+      fontSize: FontSize.micro,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.primary,
+    },
     input: {
       width: '100%',
       height: 44,
@@ -574,6 +762,10 @@ const createStyles = (theme: Theme) => {
       borderColor: theme.colors.borderSecondary,
       backgroundColor: theme.colors.cardPressed,
     },
+    subFpWrapper: { opacity: 0.4, marginBottom: Space.base },
+    progressWrap: { width: '100%', paddingTop: Space.sm },
+    fill: { height: '100%', borderRadius: 3 },
+    inputArea: { width: '100%', marginBottom: Space.xl },
     greenBtn: {
       width: '100%',
       height: 50,

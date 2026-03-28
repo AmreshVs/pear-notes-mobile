@@ -13,12 +13,14 @@ import {
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 import * as Clipboard from 'expo-clipboard'
 import { Stack, router, useLocalSearchParams } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Alert, ScrollView, StyleSheet } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
@@ -60,6 +62,7 @@ const getFirstImageUrl = (html: string): string | undefined => {
 }
 
 export default function FolderNotesScreen() {
+  const { height } = useWindowDimensions()
   const { id } = useLocalSearchParams<{ id: string }>()
   const theme = useTheme()
   const { colors, isDark } = theme
@@ -71,9 +74,13 @@ export default function FolderNotesScreen() {
   const notes = useSelector(getFilteredNotes)
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote)
-
+  const localPreferences = useSelector(getLocalPreferences)
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote || null)
+
+  const handleLinkDevice = useCallback(() => {
+    dispatch(setShowPairingInput(true))
+  }, [dispatch])
 
   const folder = useMemo(
     () => allFolders.find((f: any) => f.id === id || f.key === id),
@@ -232,7 +239,10 @@ export default function FolderNotesScreen() {
       </Stack.Toolbar>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: groupedNotes.length > 0 ? Space.scrollBottom : Space.xl },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.pageTitle}>{folder?.name || 'Notes'}</Text>
@@ -243,7 +253,7 @@ export default function FolderNotesScreen() {
         </View>
 
         {groupedNotes.length === 0 ? (
-          <View style={common.emptyContainer}>
+          <View style={[styles.emptyStateWrapper, { marginTop: height * 0.18 }]}>
             {searchQuery.trim().length > 0 ? (
               <>
                 <Text style={common.emptyTitle}>No matches found</Text>
@@ -253,6 +263,23 @@ export default function FolderNotesScreen() {
               <>
                 <Text style={common.emptyTitle}>No Notes</Text>
                 <Text style={common.emptySubtitle}>Tap the compose button to create one</Text>
+                {localPreferences['isSynced'] !== true && (
+                  <View style={styles.linkContainer}>
+                    <View style={styles.linkDivider} />
+                    <Text style={styles.linkTitle}>Link Existing Device</Text>
+                    <Text style={styles.linkSub}>Already have notes elsewhere?</Text>
+                    <Pressable
+                      onPress={handleLinkDevice}
+                      style={({ pressed }) => [
+                        common.primaryBtn,
+                        { backgroundColor: colors.primary, width: '100%', marginTop: Space.xl },
+                        pressed && common.pressed,
+                      ]}
+                    >
+                      <Text style={styles.linkBtnText}>Connect Device</Text>
+                    </Pressable>
+                  </View>
+                )}
               </>
             )}
           </View>
@@ -303,7 +330,6 @@ const createStyles = (theme: Theme) =>
     },
     scrollContent: {
       flexGrow: 1,
-      paddingBottom: Space.scrollBottom,
       paddingHorizontal: 0,
       paddingTop: Space.lg,
     },
@@ -330,5 +356,42 @@ const createStyles = (theme: Theme) =>
     },
     listContainer: {
       backgroundColor: 'transparent',
+    },
+    emptyStateWrapper: {
+      alignItems: 'center',
+      paddingHorizontal: Space.xxxl,
+    },
+    linkContainer: {
+      width: '100%',
+      marginTop: Space.xxxl,
+      alignItems: 'center',
+    },
+    linkDivider: {
+      width: 32,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: theme.colors.borderSecondary,
+      marginBottom: Space.xl,
+    },
+    linkTitle: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.heavy,
+      letterSpacing: LetterSpacing.caps,
+      textTransform: 'uppercase',
+      color: theme.colors.text,
+      marginBottom: Space.xs,
+    },
+    linkSub: {
+      fontSize: FontSize.micro,
+      fontWeight: FontWeight.bold,
+      letterSpacing: LetterSpacing.wide,
+      textTransform: 'uppercase',
+      opacity: 0.4,
+      color: theme.colors.textSecondary,
+    },
+    linkBtnText: {
+      color: '#fff',
+      fontWeight: FontWeight.bold,
+      fontSize: 15,
     },
   })
