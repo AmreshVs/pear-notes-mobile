@@ -11,11 +11,8 @@ import {
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { deleteNote, getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { AudioModule } from 'expo-audio'
-import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
-import * as ImagePicker from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -36,7 +33,6 @@ import {
   Text,
   View,
 } from 'react-native'
-import DocumentScanner, { ScanDocumentResponseStatus } from 'react-native-document-scanner-plugin'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -46,15 +42,15 @@ import { isImageFile } from '../utils/media'
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
 import { useTheme } from '@/components/Themed'
-import {
-  TiptapEditor,
-  type TiptapEditorHandle,
-  type TiptapStyleState,
-} from '@/components/TiptapEditor'
+import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 import { Radii, Space } from '@/constants/commonStyles'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 
-const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
+const TiptapEditor = React.lazy(() =>
+  import('@/components/TiptapEditor').then((m) => ({ default: m.TiptapEditor })),
+)
+
+const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 const getImageSize = (uri: string): Promise<{ width: number; height: number }> =>
   new Promise((resolve, reject) =>
@@ -398,6 +394,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
 
+  useEffect(() => {
+    import('@/components/TiptapEditor').catch(() => {})
+  }, [])
+
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current
   const isClosingRef = useRef(false)
   const titleRef = useRef<string>('')
@@ -638,6 +638,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handlePickImage = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const ImagePicker = await import('expo-image-picker')
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: false,
@@ -649,6 +650,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleTakePhoto = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const ImagePicker = await import('expo-image-picker')
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
@@ -660,6 +662,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleTakeVideo = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const ImagePicker = await import('expo-image-picker')
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Videos,
       allowsEditing: false,
@@ -672,6 +675,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleScanDocument = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     try {
+      const { default: DocumentScanner, ScanDocumentResponseStatus } =
+        await import('react-native-document-scanner-plugin')
       const { scannedImages, status } = await DocumentScanner.scanDocument()
 
       if (status !== ScanDocumentResponseStatus.Success || !scannedImages?.length) return
@@ -735,6 +740,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handlePickFile = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    const DocumentPicker = await import('expo-document-picker')
     const result = await DocumentPicker.getDocumentAsync({
       copyToCacheDirectory: true,
       multiple: false,
@@ -812,6 +818,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [noteId, hyperdriveServerAddress, processMediaAsset])
 
   const handleRecordAudio = useCallback(async () => {
+    const { AudioModule } = await import('expo-audio')
     const { granted, canAskAgain } = await AudioModule.requestRecordingPermissionsAsync()
     if (!granted) {
       if (!canAskAgain) {
@@ -930,8 +937,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         const nameMatch = tagContent.match(/filename="([^">]+)"/i)
         if (nameMatch && nameMatch[1]) {
           filename = nameMatch[1].replace(/&amp;/g, '&')
-          // Optional: replace spaces with '_' if you run into any Swift issues on device later
-          // filename = filename.replace(/[^a-zA-Z0-9.\-_]/g, '_')
         } else {
           const urlFilename = cleanLink.split('/').pop()?.split('?')[0]
           if (urlFilename && urlFilename.length > 0) {
@@ -1482,24 +1487,26 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </View>
           </View>
 
-          <TiptapEditor
-            ref={editorRef}
-            initialContent=""
-            initialTitle=""
-            safeAreaTop={floatingHeaderHeight}
-            safeAreaBottom={editorBottomInset}
-            scrollEnabled={!isEdgeSwipeActive}
-            onContentChange={handleUpdate}
-            onTitleChange={handleTitleChange}
-            onStyleStateChange={handleStyleStateChange}
-            onEditorFocus={handleEditorFocus}
-            onEditorBlur={handleEditorBlur}
-            onOpenAttachment={handleOpenAttachment}
-            onPreviewAttachment={handlePreviewAttachment}
-            onDeleteAttachment={handleDeleteAttachment}
-            onImageLongPress={handleImageLongPress}
-            onAttachmentLongPress={handleAttachmentLongPress}
-          />
+          <React.Suspense fallback={null}>
+            <TiptapEditor
+              ref={editorRef}
+              initialContent=""
+              initialTitle=""
+              safeAreaTop={floatingHeaderHeight}
+              safeAreaBottom={editorBottomInset}
+              scrollEnabled={!isEdgeSwipeActive}
+              onContentChange={handleUpdate}
+              onTitleChange={handleTitleChange}
+              onStyleStateChange={handleStyleStateChange}
+              onEditorFocus={handleEditorFocus}
+              onEditorBlur={handleEditorBlur}
+              onOpenAttachment={handleOpenAttachment}
+              onPreviewAttachment={handlePreviewAttachment}
+              onDeleteAttachment={handleDeleteAttachment}
+              onImageLongPress={handleImageLongPress}
+              onAttachmentLongPress={handleAttachmentLongPress}
+            />
+          </React.Suspense>
 
           {isOpen && (
             <EditorToolbar

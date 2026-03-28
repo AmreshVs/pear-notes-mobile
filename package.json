@@ -14,6 +14,7 @@
     "android:release": "cd android && ./gradlew assembleRelease",
     "android:bundle": "cd android && ./gradlew bundleRelease",
     "ios": "expo run:ios --device",
+    "ios:release": "expo run:ios --device --configuration Release",
     "schema": "node ./src/spec/schema.js",
     "bare-bundle": " npx bare-pack --host ios --host android  --linked --out src/backend/backend.bundle.js src/backend/main.mjs",
     "lint": "eslint . --fix",

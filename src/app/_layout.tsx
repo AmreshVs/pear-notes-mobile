@@ -1,15 +1,13 @@
-import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { Directory, Paths } from 'expo-file-system'
-import { useFonts } from 'expo-font'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LogBox, NativeModules, View } from 'react-native'
+import { Appearance, LogBox, NativeModules, View } from 'react-native'
 import 'react-native-reanimated'
 import RNRestart from 'react-native-restart'
 import { Provider, useSelector } from 'react-redux'
@@ -26,62 +24,44 @@ export { ErrorBoundary } from 'expo-router'
 
 LogBox.ignoreAllLogs()
 
+const _initialScheme = Appearance.getColorScheme()
+SystemUI.setBackgroundColorAsync(
+  _initialScheme === 'dark' ? Colors.dark.background : Colors.light.background,
+)
+
+SplashScreen.setOptions({ duration: 200, fade: true })
 SplashScreen.preventAutoHideAsync()
 
 const documentDir = new Directory(Paths.document)
 const storage = documentDir.uri.replace(/^file:\/+/, '/')
 
 export default function RootLayout() {
-  const [worketLoaded, setWorkletLoaded] = useState(false)
   const [fatalError, setFatalError] = useState<string | null>(null)
   const splashHidden = useRef(false)
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
-
-  const [loaded, fontError] = useFonts({
-    SpaceMono: require('../../assets/fonts/SpaceMono-Regular.ttf'),
-    ...FontAwesome.font,
-  })
 
   const initWorklet = useCallback(async () => {
     try {
       setFatalError(null)
       await startWorklet(storage)
       await backendApi.ready({ storage, encryption: 'amresh' })
-      console.log('Backend runtime initialized')
-      setWorkletLoaded(true)
+      store.dispatch(appReady())
+      store.dispatch(initApp())
     } catch (e) {
       console.error('Error in initWorklet', e)
       setFatalError(e instanceof Error ? e.message : 'Failed to initialize backend runtime.')
-      setWorkletLoaded(false)
     }
   }, [])
-
-  useEffect(() => {
-    if (fontError) setFatalError('Failed to load system fonts.')
-  }, [fontError])
 
   useEffect(() => {
     initWorklet()
   }, [initWorklet])
 
-  useEffect(() => {
-    SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
-  }, [isDark])
-
-  useEffect(() => {
-    if (loaded && worketLoaded) {
-      store.dispatch(appReady())
-      store.dispatch(initApp())
-    }
-  }, [loaded, worketLoaded])
+  const bgColor = isDark ? Colors.dark.background : Colors.light.background
 
   if (fatalError) {
     return <ErrorScreen message={fatalError} onRetry={initWorklet} />
-  }
-
-  if (!loaded || !worketLoaded) {
-    return null
   }
 
   const handleLayout = () => {
@@ -93,7 +73,7 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <View style={{ flex: 1 }} onLayout={handleLayout}>
+      <View style={{ flex: 1, backgroundColor: bgColor }} onLayout={handleLayout}>
         <RootLayoutNav />
       </View>
     </Provider>
