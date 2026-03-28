@@ -9,9 +9,10 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { LogBox, View } from 'react-native'
+import { LogBox, NativeModules, View } from 'react-native'
 import 'react-native-reanimated'
-import { Provider } from 'react-redux'
+import RNRestart from 'react-native-restart'
+import { Provider, useSelector } from 'react-redux'
 
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { PairingOverlay } from '@/components/PairingOverlay'
@@ -102,6 +103,17 @@ export default function RootLayout() {
 function RootLayoutNav() {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
+  const needsReload = useSelector((state: any) => state.sync.needsReload)
+
+  useEffect(() => {
+    if (needsReload) {
+      if (__DEV__ && NativeModules.DevSettings) {
+        NativeModules.DevSettings.reload()
+      } else {
+        RNRestart.restart()
+      }
+    }
+  }, [needsReload])
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)

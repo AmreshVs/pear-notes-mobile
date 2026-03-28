@@ -1,19 +1,22 @@
 import {
+  clearStorage,
   confirmPairing,
+  getDeviceRemoved,
   getInviterStatus,
   getReceiverStatus,
   getShowPairingInput,
   resetInvite,
   resetReceiverStatus,
+  setDeviceRemoved,
   setShowPairingInput,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getFingerprint } from '@pear-notes/core/utils.js'
 import { BlurView } from 'expo-blur'
-import { Check, Globe, Link2, ShieldCheck } from 'lucide-react-native'
+import { Check, Globe, Link2, ShieldAlert, ShieldCheck } from 'lucide-react-native'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { ActivityIndicator, Animated, Pressable, StyleSheet, TextInput } from 'react-native'
-import Reanimated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import Reanimated, { FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from './GlassView'
@@ -38,10 +41,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const inviterStatus = useSelector(getInviterStatus)
   const receiverStatus = useSelector(getReceiverStatus)
   const showPairingInput = useSelector(getShowPairingInput)
+  const deviceRemoved = useSelector(getDeviceRemoved)
 
   const isInviterActive = inviterStatus.step !== 'idle'
   const isReceiverActive = receiverStatus.step !== 'idle'
-  const isVisible = isInviterActive || isReceiverActive || showPairingInput
+  const isVisible = isInviterActive || isReceiverActive || showPairingInput || deviceRemoved
 
   const activeStatus = isInviterActive ? inviterStatus : receiverStatus
   const isInviter = isInviterActive
@@ -56,10 +60,14 @@ export const PairingOverlay = memo(function PairingOverlay() {
   }, [isVisible, fadeAnim])
 
   const handleClose = useCallback(() => {
+    if (deviceRemoved) {
+      dispatch(setDeviceRemoved(false))
+      return
+    }
     if (isInviter) dispatch(resetInvite())
     else if (isReceiverActive) dispatch(resetReceiverStatus())
     else dispatch(setShowPairingInput(false))
-  }, [dispatch, isInviter, isReceiverActive])
+  }, [dispatch, isInviter, isReceiverActive, deviceRemoved])
 
   const handleConnect = useCallback(() => {
     if (pasteCode.trim()) {
@@ -141,8 +149,47 @@ export const PairingOverlay = memo(function PairingOverlay() {
     }
   }, [step, data])
 
+  const renderFingerprint = (fp: string) => {
+    const parts = fp.split(' (')
+    if (parts.length < 2) return <Text style={styles.idValue}>{fp.toUpperCase()}</Text>
+
+    const emojis = parts[0]
+    const hex = parts[1].replace(')', '')
+
+    return (
+      <View style={styles.fingerprintContainer}>
+        <Text style={styles.idEmojis}>{emojis}</Text>
+        <Text style={styles.idHex}>({hex.split('').join(' ').toUpperCase()})</Text>
+      </View>
+    )
+  }
+
   const renderContent = useCallback(() => {
     const isDone = step === 'done'
+
+    if (deviceRemoved) {
+      return (
+        <View style={styles.cardInner}>
+          <View style={[styles.icon, styles.errorIcon]}>
+            <ShieldAlert size={40} color={colors.error} strokeWidth={2.5} />
+          </View>
+          <Text style={styles.title}>Device Removed</Text>
+          <Text style={styles.sub}>
+            This device has been removed from the synced cluster by another device. Press Okay to
+            clear local synced data and reset common storage.
+          </Text>
+          <Pressable
+            onPress={() => {
+              dispatch(clearStorage())
+              dispatch(setDeviceRemoved(false))
+            }}
+            style={[styles.btn, styles.errorBtn]}
+          >
+            <Text style={styles.errorBtnText}>Okay</Text>
+          </Pressable>
+        </View>
+      )
+    }
 
     if (isDone) {
       return (
@@ -244,7 +291,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
         {mainFp ? (
           <View style={styles.idCard}>
             <Text style={styles.idLabel}>{mainLabel}</Text>
-            <Text style={styles.idValue}>{mainFp.toUpperCase()}</Text>
+            {renderFingerprint(mainFp)}
           </View>
         ) : null}
 
@@ -305,6 +352,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     subLabel,
     showPairingInput,
     styles,
+    deviceRemoved,
   ])
 
   const fadeStyle = useMemo(
@@ -325,9 +373,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
           key={`${step}-${showPairingInput ? 'input' : 'flow'}`}
           entering={FadeInDown.duration(240)}
         >
-          <GlassView intensity={40} borderRadius={32} style={styles.card}>
-            <Reanimated.View entering={FadeIn.duration(220)}>{renderContent()}</Reanimated.View>
-          </GlassView>
+          <Reanimated.View entering={FadeInDown.springify()} style={styles.card}>
+            <GlassView intensity={50} style={{ borderRadius: Radii.card }}>
+              {renderContent()}
+            </GlassView>
+          </Reanimated.View>
         </Reanimated.View>
       </View>
     </Animated.View>
@@ -352,7 +402,7 @@ const createStyles = (theme: Theme) => {
       shadowRadius: 40,
       elevation: 20,
     },
-    cardInner: { padding: Space.xxxl, alignItems: 'center', width: '100%' },
+    cardInner: { padding: Space.xl, alignItems: 'center', width: '100%' },
     icon: {
       width: 80,
       height: 80,
@@ -426,9 +476,8 @@ const createStyles = (theme: Theme) => {
       paddingVertical: Space.base,
       borderRadius: Space.base,
       borderWidth: 1,
-      backgroundColor: theme.colors.cardSelected,
       borderColor: theme.colors.borderSecondary,
-      marginBottom: Space.xs,
+      marginBottom: Space.lg,
     },
     idLabel: {
       fontSize: FontSize.micro,
@@ -445,6 +494,23 @@ const createStyles = (theme: Theme) => {
       fontFamily: MonoFontFamily,
       textAlign: 'center',
       color: theme.colors.text,
+    },
+    idEmojis: {
+      fontSize: 24,
+      textAlign: 'center',
+    },
+    idHex: {
+      fontSize: FontSize.title,
+      fontWeight: FontWeight.heavy,
+      fontFamily: MonoFontFamily,
+      textAlign: 'center',
+      color: theme.colors.text,
+    },
+    fingerprintContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'transparent',
+      gap: Space.xs,
     },
     row: { flexDirection: 'row', gap: Space.md, width: '100%', paddingTop: Space.sm },
     btn: {
@@ -517,6 +583,7 @@ const createStyles = (theme: Theme) => {
       borderColor: `${theme.colors.success}33`,
       alignItems: 'center',
       justifyContent: 'center',
+      flex: 0,
     },
     trackContainer: {
       width: '100%',
@@ -526,6 +593,20 @@ const createStyles = (theme: Theme) => {
       borderWidth: 1,
       backgroundColor: theme.colors.cardPressed,
       borderColor: theme.colors.borderSecondary,
+    },
+    errorIcon: {
+      backgroundColor: `${theme.colors.error}26`,
+      borderColor: `${theme.colors.error}4D`,
+    },
+    errorBtn: {
+      backgroundColor: theme.colors.error,
+      width: '100%',
+      flex: 0,
+    },
+    errorBtnText: {
+      color: '#fff',
+      fontWeight: FontWeight.bold,
+      fontSize: 15,
     },
     progressLabel: { marginTop: Space.md, alignItems: 'center' },
     labelText: {
