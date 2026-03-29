@@ -1,24 +1,22 @@
 {
-  "fill" : {
-    "automatic-gradient" : "extended-srgb:0.00000,0.47843,1.00000,1.00000"
-  },
+  "fill" : "automatic",
   "groups" : [
     {
       "layers" : [
         {
-          "image-name" : "expo-symbol 2.svg",
-          "name" : "expo-symbol 2",
+          "blend-mode" : "normal",
+          "fill" : "none",
+          "glass" : false,
+          "hidden" : false,
+          "image-name" : "Pear Notes Icon.png",
+          "name" : "Pear Notes Icon",
           "position" : {
-            "scale" : 1,
+            "scale" : 1.11,
             "translation-in-points" : [
-              1.1008400065293245e-05,
-              -16.046875
+              0,
+              22
             ]
           }
-        },
-        {
-          "image-name" : "grid.png",
-          "name" : "grid"
         }
       ],
       "shadow" : {

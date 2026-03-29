@@ -1,4 +1,5 @@
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
@@ -37,7 +38,6 @@ const storage = documentDir.uri.replace(/^file:\/+/, '/')
 
 export default function RootLayout() {
   const [fatalError, setFatalError] = useState<string | null>(null)
-  const splashHidden = useRef(false)
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
 
@@ -64,20 +64,33 @@ export default function RootLayout() {
     return <ErrorScreen message={fatalError} onRetry={initWorklet} />
   }
 
-  const handleLayout = () => {
-    if (!splashHidden.current) {
-      splashHidden.current = true
-      SplashScreen.hideAsync()
-    }
-  }
-
   return (
     <Provider store={store}>
-      <View style={{ flex: 1, backgroundColor: bgColor }} onLayout={handleLayout}>
+      <View style={{ flex: 1, backgroundColor: bgColor }}>
         <RootLayoutNav />
       </View>
     </Provider>
   )
+}
+
+function SplashGate() {
+  const notesLoading = useSelector(getNotesLoading)
+  const hiddenRef = useRef(false)
+
+  const hide = useCallback(() => {
+    if (!hiddenRef.current) {
+      hiddenRef.current = true
+      setTimeout(() => {
+        SplashScreen.hideAsync()
+      })
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!notesLoading) hide()
+  }, [notesLoading, hide])
+
+  return null
 }
 
 function RootLayoutNav() {
@@ -101,6 +114,7 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+      <SplashGate />
       <NoteEditorProvider>
         <Stack
           screenOptions={{

@@ -181,6 +181,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     safeAreaTopRef.current = safeAreaTop ?? 100
 
     const editorReadyRef = useRef(false)
+    const editorInitializedRef = useRef(false)
+    const pendingContentRef = useRef<string | null>(null)
+    const pendingTitleRef = useRef<string | null>(null)
 
     const initialTitleRef = useRef(initialTitle ?? '')
     const initialContentRef = useRef(initialContent)
@@ -250,7 +253,16 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             break
 
           case 'initialized':
+            editorInitializedRef.current = true
             revealEditor()
+            if (pendingTitleRef.current !== null) {
+              sendCommand({ type: 'setTitle', title: pendingTitleRef.current })
+              pendingTitleRef.current = null
+            }
+            if (pendingContentRef.current !== null) {
+              sendCommand({ type: 'setContent', html: pendingContentRef.current })
+              pendingContentRef.current = null
+            }
             break
 
           case 'contentChange':
@@ -332,6 +344,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     const handleRetry = useCallback(() => {
       editorReadyRef.current = false
+      editorInitializedRef.current = false
+      pendingContentRef.current = null
+      pendingTitleRef.current = null
       setEditorState('loading')
       webViewRef.current?.reload()
     }, [])
@@ -372,8 +387,20 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           if (html !== undefined) onContentChangeRef.current(html)
         },
         getHTML: getHTMLAsync,
-        setHTML: (html) => sendCommand({ type: 'setContent', html }),
-        setTitle: (title) => sendCommand({ type: 'setTitle', title }),
+        setHTML: (html) => {
+          if (!editorInitializedRef.current) {
+            pendingContentRef.current = html
+          } else {
+            sendCommand({ type: 'setContent', html })
+          }
+        },
+        setTitle: (title) => {
+          if (!editorInitializedRef.current) {
+            pendingTitleRef.current = title
+          } else {
+            sendCommand({ type: 'setTitle', title })
+          }
+        },
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
         setAttachmentLoading: (url, loading, attachmentId) =>
           sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId }),

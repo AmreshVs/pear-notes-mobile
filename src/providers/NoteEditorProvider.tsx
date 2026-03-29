@@ -42,13 +42,13 @@ import { isImageFile } from '../utils/media'
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
 import { useTheme } from '@/components/Themed'
-import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
+import {
+  TiptapEditor,
+  type TiptapEditorHandle,
+  type TiptapStyleState,
+} from '@/components/TiptapEditor'
 import { Radii, Space } from '@/constants/commonStyles'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
-
-const TiptapEditor = React.lazy(() =>
-  import('@/components/TiptapEditor').then((m) => ({ default: m.TiptapEditor })),
-)
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -393,10 +393,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [isAttachmentActionSheetOpen, setIsAttachmentActionSheetOpen] = useState(false)
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
-
-  useEffect(() => {
-    import('@/components/TiptapEditor').catch(() => {})
-  }, [])
 
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current
   const isClosingRef = useRef(false)
@@ -1487,26 +1483,24 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </View>
           </View>
 
-          <React.Suspense fallback={null}>
-            <TiptapEditor
-              ref={editorRef}
-              initialContent=""
-              initialTitle=""
-              safeAreaTop={floatingHeaderHeight}
-              safeAreaBottom={editorBottomInset}
-              scrollEnabled={!isEdgeSwipeActive}
-              onContentChange={handleUpdate}
-              onTitleChange={handleTitleChange}
-              onStyleStateChange={handleStyleStateChange}
-              onEditorFocus={handleEditorFocus}
-              onEditorBlur={handleEditorBlur}
-              onOpenAttachment={handleOpenAttachment}
-              onPreviewAttachment={handlePreviewAttachment}
-              onDeleteAttachment={handleDeleteAttachment}
-              onImageLongPress={handleImageLongPress}
-              onAttachmentLongPress={handleAttachmentLongPress}
-            />
-          </React.Suspense>
+          <TiptapEditor
+            ref={editorRef}
+            initialContent=""
+            initialTitle=""
+            safeAreaTop={floatingHeaderHeight}
+            safeAreaBottom={editorBottomInset}
+            scrollEnabled={!isEdgeSwipeActive}
+            onContentChange={handleUpdate}
+            onTitleChange={handleTitleChange}
+            onStyleStateChange={handleStyleStateChange}
+            onEditorFocus={handleEditorFocus}
+            onEditorBlur={handleEditorBlur}
+            onOpenAttachment={handleOpenAttachment}
+            onPreviewAttachment={handlePreviewAttachment}
+            onDeleteAttachment={handleDeleteAttachment}
+            onImageLongPress={handleImageLongPress}
+            onAttachmentLongPress={handleAttachmentLongPress}
+          />
 
           {isOpen && (
             <EditorToolbar
