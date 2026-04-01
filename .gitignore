@@ -46,3 +46,4 @@ ios/Podfile.lock
 .agents/
 .claude/
 .agent/
+modules/expo-native-share/android/build/
