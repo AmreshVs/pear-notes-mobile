@@ -31,6 +31,7 @@ import {
   Space,
   useCommonStyles,
 } from '@/constants/commonStyles'
+import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
 
 const SORT_OPTIONS = [
   { label: 'Date Edited', value: 'updatedAt' },
@@ -81,6 +82,9 @@ export default function SettingsScreen() {
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
+  const androidColorTheme = useSelector(
+    (state: any): AndroidColorTheme => state.settings?.androidColorTheme ?? 'pear',
+  )
 
   return (
     <RNView style={styles.container}>
@@ -137,6 +141,38 @@ export default function SettingsScreen() {
                 })}
               </RNView>
             </RNView>
+
+            {Platform.OS === 'android' && (
+              <RNView style={styles.rowUnderline}>
+                <Text style={styles.rowLabel}>Color Theme</Text>
+                <RNView style={styles.segCtrl}>
+                  {[
+                    { label: 'Pear', value: 'pear' as AndroidColorTheme },
+                    { label: 'Material You', value: 'material-you' as AndroidColorTheme },
+                  ].map((opt, i) => {
+                    const isActive = androidColorTheme === opt.value
+                    return (
+                      <Pressable
+                        key={opt.value}
+                        onPress={() =>
+                          dispatch(updateSetting({ key: 'androidColorTheme', value: opt.value }))
+                        }
+                        style={[
+                          styles.segPill,
+                          isActive && styles.segPillActive,
+                          i === 0 && styles.radiusLeft,
+                          i === 1 && styles.radiusRight,
+                        ]}
+                      >
+                        <Text style={[styles.segText, isActive && styles.segTextActive]}>
+                          {opt.label}
+                        </Text>
+                      </Pressable>
+                    )
+                  })}
+                </RNView>
+              </RNView>
+            )}
 
             <Pressable
               onPress={() =>

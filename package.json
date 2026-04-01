@@ -25,6 +25,7 @@
   "dependencies": {
     "@expo/ui": "~55.0.2",
     "@expo/vector-icons": "^15.0.3",
+    "@pchmn/expo-material3-theme": "^1.4.0",
     "@pear-notes/core": "git+https://github.com/AmreshVs/pear-notes-core.git",
     "@react-native-community/slider": "^5.1.2",
     "@react-navigation/bottom-tabs": "^7.7.3",
@@ -64,6 +65,7 @@
     "react-native-document-scanner-plugin": "^2.0.4",
     "react-native-enriched": "^0.4.1",
     "react-native-gesture-handler": "~2.30.0",
+    "react-native-paper": "^5.15.0",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-reanimated": "4.2.1",
     "react-native-restart": "^0.0.27",

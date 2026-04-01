@@ -18,6 +18,7 @@ import { PairingOverlay } from '@/components/PairingOverlay'
 import { useResolvedColorScheme } from '@/components/Themed'
 import { useColorScheme } from '@/components/useColorScheme'
 import Colors from '@/constants/Colors'
+import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { startWorklet } from '@/utils/worklet'
 
@@ -114,26 +115,28 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
-      <SplashGate />
-      <NoteEditorProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        >
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="note" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="settings"
-            options={{
-              presentation: 'modal',
+      <AndroidPaperProvider>
+        <SplashGate />
+        <NoteEditorProvider>
+          <Stack
+            screenOptions={{
               headerShown: false,
             }}
-          />
-        </Stack>
+          >
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="note" options={{ headerShown: false }} />
+            <Stack.Screen
+              name="settings"
+              options={{
+                presentation: 'modal',
+                headerShown: false,
+              }}
+            />
+          </Stack>
 
-        <PairingOverlay />
-      </NoteEditorProvider>
+          <PairingOverlay />
+        </NoteEditorProvider>
+      </AndroidPaperProvider>
     </ThemeProvider>
   )
 }
