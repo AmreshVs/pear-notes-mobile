@@ -18,6 +18,11 @@ expo-env.d.ts
 *.p12
 *.key
 *.mobileprovision
+android/build/
+android/app/build/
+android/.gradle/
+android/app/.cxx/
+ios/build/
 
 # Metro
 .metro-health-check*
@@ -42,8 +47,11 @@ src/backend/backend.bundle.js
 
 # iOS
 ios/Podfile.lock
+ios/Pods/
 
 .agents/
 .claude/
 .agent/
+editor-bundle/node_modules/
+package-lock.json
 modules/expo-native-share/android/build/

@@ -8,7 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
 
@@ -105,19 +105,34 @@ type WebViewMsg =
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'deleteAttachment'; url: string }
   | {
-      type: 'imageLongPress'
-      src: string
-      rect?: { x: number; y: number; width: number; height: number }
-    }
+    type: 'imageLongPress'
+    src: string
+    rect?: { x: number; y: number; width: number; height: number }
+  }
   | {
-      type: 'attachmentLongPress'
-      url: string
-      fileName: string
-      rect?: { x: number; y: number; width: number; height: number }
-      attachmentId?: string
-    }
+    type: 'attachmentLongPress'
+    url: string
+    fileName: string
+    rect?: { x: number; y: number; width: number; height: number }
+    attachmentId?: string
+  }
 
 type EditorState = 'loading' | 'ready' | 'error'
+
+const iosWebViewProps =
+  Platform.OS === 'ios'
+    ? {
+      keyboardDisplayRequiresUserAction: false as const,
+      bounces: false,
+      contentMode: 'mobile' as const,
+      hideKeyboardAccessoryView: true,
+      allowsInlineMediaPlayback: true,
+      mediaPlaybackRequiresUserAction: false,
+      decelerationRate: 'normal' as const,
+      allowsBackForwardNavigationGestures: false,
+      textInteractionEnabled: true,
+    }
+    : {}
 
 const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   (
@@ -439,27 +454,19 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onError={handleError}
             style={styles.webView}
             scrollEnabled={scrollEnabled}
-            keyboardDisplayRequiresUserAction={false}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
-            bounces={false}
             overScrollMode="never"
             originWhitelist={['*']}
             javaScriptEnabled
             domStorageEnabled
             contentInsetAdjustmentBehavior="never"
             automaticallyAdjustContentInsets={false}
-            contentMode="mobile"
             setSupportMultipleWindows={false}
-            hideKeyboardAccessoryView
             cacheEnabled
             cacheMode="LOAD_CACHE_ELSE_NETWORK"
             startInLoadingState={false}
-            allowsInlineMediaPlayback
-            mediaPlaybackRequiresUserAction={false}
-            decelerationRate="normal"
-            allowsBackForwardNavigationGestures={false}
-            textInteractionEnabled
+            {...iosWebViewProps}
           />
         </View>
       </View>

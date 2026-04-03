@@ -8,7 +8,9 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Appearance, LogBox, NativeModules, View } from 'react-native'
+import { Appearance, LogBox, NativeModules } from 'react-native'
+import 'react-native-gesture-handler'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import RNRestart from 'react-native-restart'
 import { Provider, useSelector } from 'react-redux'
@@ -20,6 +22,7 @@ import { useColorScheme } from '@/components/useColorScheme'
 import Colors from '@/constants/Colors'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
+import { SheetProvider } from '@/providers/SheetProvider'
 import { startWorklet } from '@/utils/worklet'
 
 export { ErrorBoundary } from 'expo-router'
@@ -67,9 +70,9 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <View style={{ flex: 1, backgroundColor: bgColor }}>
+      <GestureHandlerRootView style={{ flex: 1, backgroundColor: bgColor }}>
         <RootLayoutNav />
-      </View>
+      </GestureHandlerRootView>
     </Provider>
   )
 }
@@ -116,26 +119,28 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
       <AndroidPaperProvider>
-        <SplashGate />
-        <NoteEditorProvider>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="note" options={{ headerShown: false }} />
-            <Stack.Screen
-              name="settings"
-              options={{
-                presentation: 'modal',
+        <SheetProvider>
+          <SplashGate />
+          <NoteEditorProvider>
+            <Stack
+              screenOptions={{
                 headerShown: false,
               }}
-            />
-          </Stack>
+            >
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="note" options={{ headerShown: false }} />
+              <Stack.Screen
+                name="settings"
+                options={{
+                  presentation: 'modal',
+                  headerShown: false,
+                }}
+              />
+            </Stack>
 
-          <PairingOverlay />
-        </NoteEditorProvider>
+            <PairingOverlay />
+          </NoteEditorProvider>
+        </SheetProvider>
       </AndroidPaperProvider>
     </ThemeProvider>
   )

@@ -3,5 +3,31 @@
     "source.fixAll": "explicit",
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
+  },
+  "java.compile.nullAnalysis.mode": "disabled",
+  "files.exclude": {
+    "node_modules/": true,
+    "android/": true,
+    "ios/": true,
+    ".expo/": true,
+    "**/build/": true,
+    "**/dist/": true
+  },
+  "search.exclude": {
+    "node_modules/": true,
+    "android/": true,
+    "ios/": true,
+    ".expo/": true,
+    "**/build/": true,
+    "**/dist/": true,
+    "package-lock.json": true
+  },
+  "files.watcherExclude": {
+    "node_modules/**": true,
+    "android/**": true,
+    "ios/**": true,
+    ".expo/**": true,
+    "**/build/**": true,
+    "**/dist/**": true
   }
 }

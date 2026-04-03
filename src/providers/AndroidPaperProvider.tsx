@@ -1,4 +1,12 @@
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans'
 import { useMaterial3Theme } from '@pchmn/expo-material3-theme'
+import { useFonts } from 'expo-font'
 import React, { useMemo } from 'react'
 import { Platform } from 'react-native'
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper'
@@ -22,6 +30,14 @@ export function AndroidPaperProvider({ children }: AndroidPaperProviderProps) {
   const androidColorTheme = useSelector(getAndroidColorTheme)
 
   const { theme: m3Theme } = useMaterial3Theme({ fallbackSourceColor: pearGold })
+
+  useFonts({
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
+  })
 
   const paperTheme = useMemo(() => {
     if (androidColorTheme === 'material-you') {

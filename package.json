@@ -10,7 +10,7 @@
   "private": true,
   "scripts": {
     "start:clean": "watchman watch-del $PWD; watchman watch-project $PWD && expo start --dev-client --clear",
-    "android": "expo run:android",
+    "android": "expo run:android --device",
     "android:release": "cd android && ./gradlew assembleRelease",
     "android:bundle": "cd android && ./gradlew bundleRelease",
     "ios": "expo run:ios --device",
@@ -23,8 +23,10 @@
     "build:editor": "cd editor-bundle && npm install && npm run build"
   },
   "dependencies": {
+    "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~55.0.2",
     "@expo/vector-icons": "^15.0.3",
+    "@gorhom/bottom-sheet": "^5.2.8",
     "@pchmn/expo-material3-theme": "^1.4.0",
     "@pear-notes/core": "git+https://github.com/AmreshVs/pear-notes-core.git",
     "@react-native-community/slider": "^5.1.2",
@@ -85,6 +87,7 @@
     "eslint-config-universe": "^12.0.1",
     "eslint-plugin-import": "^2.29.1",
     "prettier": "^3.2.5",
+    "react-refresh": "^0.18.0",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   }
