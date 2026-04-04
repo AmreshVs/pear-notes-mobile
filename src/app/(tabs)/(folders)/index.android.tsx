@@ -259,7 +259,10 @@ export default function AndroidFoldersScreen() {
         </Animated.View>
 
         {archiveFolders.length > 0 && (
-          <Animated.View entering={FadeInDown.duration(240).delay(120)}>
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(120)}
+            style={staticStyles.archiveSection}
+          >
             <View style={staticStyles.sectionHeader}>
               <MaterialCommunityIcons name="archive-outline" size={20} color={c.onSurfaceVariant} />
               <Text style={dynStyles.sectionTitle}>Archive</Text>
@@ -386,12 +389,12 @@ const VaultFolderRow = memo(function VaultFolderRow({
     : hexWithAlpha(c.primaryContainer, 0.3)
   const countLabel = count > 0 ? `${count} ${count === 1 ? 'item' : 'items'}` : null
 
-  const borderStyle = useMemo(
+  const dividerStyle = useMemo(
     () =>
       !isLast
         ? {
             borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: hexWithAlpha(c.outlineVariant, 0.15),
+            borderBottomColor: hexWithAlpha(c.outlineVariant, 0.2),
           }
         : null,
     [isLast, c.outlineVariant],
@@ -400,10 +403,10 @@ const VaultFolderRow = memo(function VaultFolderRow({
   const getPressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
       rowStyles.row,
-      borderStyle,
-      pressed && { backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surface, 0.8) },
+      dividerStyle,
+      pressed && { backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surface, 0.5) },
     ],
-    [borderStyle, c.surfaceContainerHighest, c.surface],
+    [dividerStyle, c.surfaceContainerHighest, c.surface],
   )
 
   return (
@@ -420,7 +423,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
       >
         <View style={rowStyles.rowLeft}>
           <View style={[rowStyles.iconWrap, { backgroundColor: iconBgColor }]}>
-            <MaterialCommunityIcons name={iconName as any} size={20} color={iconColor} />
+            <MaterialCommunityIcons name={iconName as any} size={22} color={iconColor} />
           </View>
           <Text style={[rowStyles.rowName, { color: c.onSurface }]}>{name}</Text>
         </View>
@@ -429,13 +432,19 @@ const VaultFolderRow = memo(function VaultFolderRow({
             <View
               style={[
                 rowStyles.countBadge,
-                { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant },
+                {
+                  backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.8),
+                },
               ]}
             >
               <Text style={[rowStyles.countText, { color: c.onSurfaceVariant }]}>{countLabel}</Text>
             </View>
           )}
-          <MaterialCommunityIcons name="chevron-right" size={18} color={c.onSurfaceVariant} />
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={18}
+            color={hexWithAlpha(c.onSurfaceVariant, 0.5)}
+          />
         </View>
       </Pressable>
     </Animated.View>
@@ -458,10 +467,13 @@ const staticStyles = StyleSheet.create({
     marginTop: -4,
   },
   searchWrap: {
-    marginBottom: 8,
+    marginBottom: 16,
   },
   searchIcon: {
     marginRight: 10,
+  },
+  archiveSection: {
+    marginTop: 20,
   },
   emptyRow: {
     paddingVertical: 20,
@@ -471,9 +483,8 @@ const staticStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 20,
-    marginBottom: 14,
-    paddingHorizontal: 4,
+    marginBottom: 10,
+    paddingHorizontal: 6,
   },
   dialogBtn: {
     paddingHorizontal: 16,
@@ -490,7 +501,8 @@ const rowStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 14,
+    paddingVertical: 13,
+    paddingHorizontal: 16,
   },
   rowLeft: {
     flexDirection: 'row',
@@ -499,9 +511,9 @@ const rowStyles = StyleSheet.create({
     flex: 1,
   },
   iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 9999,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -518,12 +530,13 @@ const rowStyles = StyleSheet.create({
   },
   countBadge: {
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 9999,
   },
   countText: {
     fontSize: 11,
     fontWeight: '600',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
   },
 })
 
@@ -572,11 +585,9 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
       padding: 0,
     },
     listCard: {
-      backgroundColor: c.surfaceContainerLow ?? c.elevation?.level1 ?? c.surface,
-      borderRadius: 28,
+      backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: 24,
       overflow: 'hidden' as const,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: hexWithAlpha(c.outlineVariant, 0.1),
     },
     emptyText: {
       color: c.onSurfaceVariant,
