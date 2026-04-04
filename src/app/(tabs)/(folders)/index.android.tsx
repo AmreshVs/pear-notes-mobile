@@ -385,8 +385,8 @@ const VaultFolderRow = memo(function VaultFolderRow({
   const iconName = isAll ? 'folder-account' : isTrash ? 'delete-outline' : 'folder-outline'
   const iconColor = isTrash ? c.error : c.primary
   const iconBgColor = isTrash
-    ? hexWithAlpha(c.errorContainer ?? '#871c34', 0.2)
-    : hexWithAlpha(c.primaryContainer, 0.3)
+    ? hexWithAlpha(c.errorContainer ?? '#871c34', 0.1)
+    : hexWithAlpha(c.primaryContainer, 0.08)
   const countLabel = count > 0 ? `${count} ${count === 1 ? 'item' : 'items'}` : null
 
   const dividerStyle = useMemo(
@@ -511,9 +511,9 @@ const rowStyles = StyleSheet.create({
     flex: 1,
   },
   iconWrap: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+    width: 48,
+    height: 48,
+    borderRadius: 9999, // Perfect circle as per gold Note design screenshot
     alignItems: 'center',
     justifyContent: 'center',
   },

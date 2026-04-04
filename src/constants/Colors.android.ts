@@ -1,4 +1,4 @@
-const pearGold = '#EAB308'
+const pearGold = '#DCA323'
 
 export default {
   light: {
@@ -30,8 +30,8 @@ export default {
     text: '#FFFFFF',
     textSecondary: '#A1A1AA',
     background: '#090909',
-    surface: '#121212',
-    surfaceSecondary: '#1E1E1E',
+    surface: '#1a1a1a',
+    surfaceSecondary: '#2a2a2a',
     primary: pearGold,
     border: '#272727',
     tint: pearGold,

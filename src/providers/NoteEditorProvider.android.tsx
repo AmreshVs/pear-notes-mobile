@@ -120,7 +120,10 @@ const EditorToolbar = memo(function EditorToolbar({
       toolbarStyles.container,
       {
         bottom: toolbarBottom,
-        backgroundColor: hexWithAlpha(isDark ? '#1a1a1a' : (c.surfaceContainerHigh ?? c.surfaceVariant), 0.98),
+        backgroundColor: hexWithAlpha(
+          isDark ? '#1a1a1a' : (c.surfaceContainerHigh ?? c.surfaceVariant),
+          0.98,
+        ),
         borderColor: hexWithAlpha(c.outlineVariant, 0.15),
         elevation: 6,
         shadowColor: '#000',
@@ -568,7 +571,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
             setTimeout(() => editorRef.current?.scrollToEnd(), 300)
           }
-        } catch { }
+        } catch {}
       }
     } catch {
     } finally {
@@ -656,7 +659,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         const key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
         await backendApi.deleteFile(key)
       }
-    } catch { }
+    } catch {}
   }, [])
 
   const downloadToCache = useCallback(
@@ -712,7 +715,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       } else {
         await ExpoNativeShareModule.share({ message: cleanUrl, urls: [] })
       }
-    } catch { }
+    } catch {}
   }, [selectedImageSrc, hyperdriveServerAddress, downloadToCache])
 
   const handleAttachmentLongPress = useCallback(
@@ -751,7 +754,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       } else {
         await ExpoNativeShareModule.share({ message: cleanUrl, urls: [] })
       }
-    } catch { }
+    } catch {}
   }, [selectedAttachmentSrc, selectedAttachmentFileName, hyperdriveServerAddress, downloadToCache])
 
   const handleAttachmentMenuDelete = useCallback(async () => {
@@ -782,7 +785,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         } else {
           await ExpoNativeShareModule.share({ message: cleanUrl, urls: [] })
         }
-      } catch { }
+      } catch {}
     },
     [hyperdriveServerAddress, downloadToCache],
   )
@@ -896,7 +899,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     const message = title ? `${title}\n\n${plainText}` : plainText
     try {
       await ExpoNativeShareModule.share({ message })
-    } catch { }
+    } catch {}
     setIsSharing(false)
   }, [isSharing])
 
@@ -974,8 +977,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 
   const saveBtnStyle = useMemo(
-    () => [staticStyles.saveBtn, { backgroundColor: c.primaryContainer }],
-    [c.primaryContainer],
+    () => [staticStyles.saveBtn, { backgroundColor: c.primary }],
+    [c.primary],
   )
 
   const floatingLeftStyle = useMemo(
@@ -1163,7 +1166,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               </Pressable>
             </Dialog.Actions>
           </Dialog>
-
         </Portal>
       </Animated.View>
 
@@ -1335,12 +1337,12 @@ const toolbarStyles = StyleSheet.create({
     flexShrink: 0,
   },
   addBtn: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 2,
+    marginHorizontal: 4,
     flexShrink: 0,
   },
 })
