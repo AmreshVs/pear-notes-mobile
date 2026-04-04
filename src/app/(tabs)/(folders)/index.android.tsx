@@ -571,7 +571,7 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
     searchBar: {
       flexDirection: 'row' as const,
       alignItems: 'center' as const,
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      backgroundColor: c.surfaceContainer,
       borderRadius: 9999,
       paddingHorizontal: 20,
       paddingVertical: 14,
@@ -585,7 +585,7 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
       padding: 0,
     },
     listCard: {
-      backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
+      backgroundColor: c.surfaceContainer,
       borderRadius: 24,
       overflow: 'hidden' as const,
     },

@@ -153,7 +153,7 @@ export default function AndroidFolderNotesScreen() {
   const toggleSearch = useCallback(() => {
     const next = !searchVisible
     setSearchVisible(next)
-    searchBarHeight.value = withSpring(next ? 52 : 0, { damping: 20, stiffness: 300 })
+    searchBarHeight.value = withTiming(next ? 64 : 0, { duration: 220 })
     searchBarOpacity.value = withTiming(next ? 1 : 0, { duration: 180 })
     if (!next) dispatch(setSearchQuery(''))
     else setTimeout(() => searchInputRef.current?.focus(), 150)
@@ -333,10 +333,14 @@ export default function AndroidFolderNotesScreen() {
         destructive: true as const,
       },
     ],
-    [handleNoteSheetCopy, handleNoteSheetMove, handleNoteSheetDelete, moveFolders.length, isTrashFolder],
+    [
+      handleNoteSheetCopy,
+      handleNoteSheetMove,
+      handleNoteSheetDelete,
+      moveFolders.length,
+      isTrashFolder,
+    ],
   )
-
-
 
   const dynamicStyles = useMemo(() => createDynamicStyles(c, insets.top), [c, insets.top])
 
@@ -362,9 +366,6 @@ export default function AndroidFolderNotesScreen() {
           >
             <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
           </Pressable>
-          <Text style={[staticStyles.appBarTitle, { color: c.primary }]} numberOfLines={1}>
-            {folder?.name || 'Notes'}
-          </Text>
         </View>
 
         <View style={staticStyles.appBarRight}>
@@ -407,27 +408,37 @@ export default function AndroidFolderNotesScreen() {
         </View>
       </View>
 
-      <Animated.View style={[dynamicStyles.searchBar, searchBarAnimStyle]}>
-        <MaterialCommunityIcons
-          name="magnify"
-          size={18}
-          color={c.onSurfaceVariant}
-          style={staticStyles.searchIcon}
-        />
-        <TextInput
-          ref={searchInputRef}
-          style={[staticStyles.searchInput, { color: c.onSurface }]}
-          placeholder="Search notes…"
-          placeholderTextColor={hexWithAlpha(c.onSurfaceVariant, 0.5)}
-          value={searchQuery}
-          onChangeText={(text) => dispatch(setSearchQuery(text))}
-          returnKeyType="search"
-        />
-        {searchQuery.length > 0 && (
-          <Pressable onPress={() => dispatch(setSearchQuery(''))} hitSlop={8}>
-            <MaterialCommunityIcons name="close-circle" size={16} color={c.onSurfaceVariant} />
-          </Pressable>
-        )}
+      <Animated.View style={[staticStyles.searchWrap, searchBarAnimStyle]}>
+        <View
+          style={[
+            staticStyles.searchPill,
+            {
+              backgroundColor: c.surfaceContainer,
+              borderColor: hexWithAlpha(c.outlineVariant, 0.15),
+            },
+          ]}
+        >
+          <MaterialCommunityIcons
+            name="magnify"
+            size={20}
+            color={c.onSurfaceVariant}
+            style={staticStyles.searchIcon}
+          />
+          <TextInput
+            ref={searchInputRef}
+            style={[staticStyles.searchInput, { color: c.onSurface }]}
+            placeholder="Search notes…"
+            placeholderTextColor={c.onSurfaceVariant + '80'}
+            value={searchQuery}
+            onChangeText={(text) => dispatch(setSearchQuery(text))}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <Pressable onPress={() => dispatch(setSearchQuery(''))} hitSlop={8}>
+              <MaterialCommunityIcons name="close-circle" size={16} color={c.onSurfaceVariant} />
+            </Pressable>
+          )}
+        </View>
       </Animated.View>
 
       <FlatList
@@ -438,6 +449,11 @@ export default function AndroidFolderNotesScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews
+        ListHeaderComponent={
+          <Text style={[staticStyles.pageTitle, { color: c.onBackground ?? c.onSurface }]}>
+            {folder?.name || 'Notes'}
+          </Text>
+        }
         ListEmptyComponent={
           <EmptyState
             hasSearch={searchQuery.trim().length > 0}
@@ -565,17 +581,6 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
     scale.value = withSpring(1, { damping: 16, stiffness: 300 })
   }, [scale])
 
-  const rowBorderStyle = useMemo(
-    () =>
-      !isLast
-        ? {
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: hexWithAlpha(c.outlineVariant, 0.2),
-          }
-        : null,
-    [isLast, c.outlineVariant],
-  )
-
   const thumbStyle = useMemo(
     () => ({
       backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
@@ -598,9 +603,12 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
         onPressOut={handlePressOut}
         style={({ pressed }) => [
           rowStyles.row,
-          rowBorderStyle,
+          { backgroundColor: c.surfaceContainer },
           pressed && {
-            backgroundColor: hexWithAlpha((c as any).surfaceContainerLow ?? c.surface, 0.4),
+            backgroundColor: hexWithAlpha(
+              (c as any).surfaceContainerHighest ?? c.surfaceVariant,
+              0.6,
+            ),
           },
         ]}
       >
@@ -738,9 +746,6 @@ const createDynamicStyles = (c: ExtendedColors, topInset: number) => ({
     paddingTop: topInset + 4,
     backgroundColor: c.background,
   },
-  searchBar: {
-    backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
-  },
 })
 
 const staticStyles = StyleSheet.create({
@@ -752,20 +757,12 @@ const staticStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 8,
-    paddingBottom: 4,
   },
   appBarLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     flex: 1,
-  },
-  appBarTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: -0.5,
-    flexShrink: 1,
   },
   appBarRight: {
     flexDirection: 'row',
@@ -775,19 +772,37 @@ const staticStyles = StyleSheet.create({
     padding: 8,
     borderRadius: 9999,
   },
+  searchWrap: {
+    paddingHorizontal: 20,
+    overflow: 'hidden',
+  },
+  searchPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 9999,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'PlusJakartaSans_400Regular',
-    height: 44,
     padding: 0,
+  },
+  pageTitle: {
+    fontSize: 36,
+    fontWeight: '800',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
+    letterSpacing: -0.5,
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingTop: 8,
   },
   fab: {
     position: 'absolute',
@@ -810,8 +825,10 @@ const rowStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
+    paddingVertical: 20,
+    paddingHorizontal: 24,
+    marginBottom: 8,
+    borderRadius: 32,
     gap: 14,
   },
   content: {
