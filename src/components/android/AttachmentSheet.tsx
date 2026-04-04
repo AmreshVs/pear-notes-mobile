@@ -1,7 +1,7 @@
 import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 
@@ -49,6 +49,7 @@ export function AttachmentSheet({
   const ref = useRef<BottomSheetModal>(null)
   const { colors } = useMD3Theme()
   const c = colors as ExtendedColors
+  const pendingActionRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     if (visible) {
@@ -58,12 +59,23 @@ export function AttachmentSheet({
     }
   }, [visible])
 
+  const handleSheetDismiss = useCallback(() => {
+    const action = pendingActionRef.current
+    pendingActionRef.current = null
+    onDismiss()
+    if (action) {
+      InteractionManager.runAfterInteractions(() => {
+        setTimeout(action, 80)
+      })
+    }
+  }, [onDismiss])
+
   const dismiss = useCallback(
     (action: () => void) => {
-      onDismiss()
-      setTimeout(action, 120)
+      pendingActionRef.current = action
+      ref.current?.dismiss()
     },
-    [onDismiss],
+    [],
   )
 
   const items: AttachItem[] = useMemo(
@@ -102,7 +114,7 @@ export function AttachmentSheet({
         styles.handle,
         { backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.3) },
       ]}
-      onDismiss={onDismiss}
+      onDismiss={handleSheetDismiss}
     >
       <BottomSheetView style={styles.container}>
         <Text style={[styles.title, { color: c.onSurface }]}>Add Attachment</Text>

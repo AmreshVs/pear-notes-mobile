@@ -38,6 +38,7 @@ import { AudioRecorderModal } from '../components/AudioRecorderModal'
 import { isImageFile } from '../utils/media'
 
 import { AttachmentSheet } from '@/components/android/AttachmentSheet'
+import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import {
   TiptapEditor,
@@ -210,7 +211,7 @@ const EditorToolbar = memo(function EditorToolbar({
       <View style={dividerStyle} />
 
       <Pressable onPress={onAttachPress} style={addBtnStyle}>
-        <MaterialCommunityIcons name="plus" size={22} color={c.onPrimaryContainer} />
+        <MaterialCommunityIcons name="plus" size={24} color={c.onPrimaryContainer} />
       </Pressable>
     </View>
   )
@@ -256,8 +257,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [moreMenuVisible, setMoreMenuVisible] = useState(false)
   const [moveDialogVisible, setMoveDialogVisible] = useState(false)
   const [attachSheetVisible, setAttachSheetVisible] = useState(false)
-  const [imageMenuPos, setImageMenuPos] = useState<{ x: number; y: number } | null>(null)
-  const [attachmentMenuPos, setAttachmentMenuPos] = useState<{ x: number; y: number } | null>(null)
+  const [imageSheetVisible, setImageSheetVisible] = useState(false)
+  const [attachmentSheetVisible2, setAttachmentSheetVisible2] = useState(false)
   const [isRecorderVisible, setIsRecorderVisible] = useState(false)
   const [recorderEverOpened, setRecorderEverOpened] = useState(false)
 
@@ -671,18 +672,18 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 
   const handleImageLongPress = useCallback(
-    (src: string, rect?: { x: number; y: number; width: number; height: number }) => {
+    (src: string, _rect?: { x: number; y: number; width: number; height: number }) => {
       if (!src) return
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       setSelectedImageSrc(src)
-      setImageMenuPos({ x: rect?.x ?? 0, y: rect?.y ?? 0 })
+      setImageSheetVisible(true)
     },
     [],
   )
 
   const handleImageMenuDelete = useCallback(async () => {
     if (!selectedImageSrc) return
-    setImageMenuPos(null)
+    setImageSheetVisible(false)
     const src = selectedImageSrc
     await handleDeleteAttachment(src)
     editorRef.current?.deleteImage(src)
@@ -691,7 +692,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleImageMenuShare = useCallback(async () => {
     if (!selectedImageSrc) return
-    setImageMenuPos(null)
+    setImageSheetVisible(false)
     const src = selectedImageSrc
     setSelectedImageSrc(null)
     try {
@@ -716,20 +717,20 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     (
       url: string,
       fileName: string,
-      rect?: { x: number; y: number; width: number; height: number },
+      _rect?: { x: number; y: number; width: number; height: number },
     ) => {
       if (!url) return
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
       setSelectedAttachmentSrc(url)
       setSelectedAttachmentFileName(fileName)
-      setAttachmentMenuPos({ x: rect?.x ?? 0, y: rect?.y ?? 0 })
+      setAttachmentSheetVisible2(true)
     },
     [],
   )
 
   const handleAttachmentMenuShare = useCallback(async () => {
     if (!selectedAttachmentSrc) return
-    setAttachmentMenuPos(null)
+    setAttachmentSheetVisible2(false)
     const src = selectedAttachmentSrc
     const fileName = selectedAttachmentFileName || src.split('/').pop() || 'file'
     setSelectedAttachmentSrc(null)
@@ -753,7 +754,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleAttachmentMenuDelete = useCallback(async () => {
     if (!selectedAttachmentSrc) return
-    setAttachmentMenuPos(null)
+    setAttachmentSheetVisible2(false)
     const url = selectedAttachmentSrc
     await handleDeleteAttachment(url)
     editorRef.current?.deleteAttachment(url)
@@ -970,9 +971,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const floatingHeaderHeight = useMemo(() => insets.top + 52, [insets.top])
 
-  const appBarStyle = useMemo(
-    () => [staticStyles.appBar, { paddingTop: insets.top + 4, backgroundColor: c.background }],
-    [insets.top, c.background],
+  const floatingBtnBg = useMemo(
+    () => hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.82),
+    [c.surfaceContainerHighest, c.surfaceVariant],
   )
 
   const saveBtnStyle = useMemo(
@@ -980,94 +981,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [c.primaryContainer],
   )
 
+  const floatingLeftStyle = useMemo(
+    () => [staticStyles.floatingLeft, { top: insets.top + 8 }],
+    [insets.top],
+  )
+
+  const floatingRightStyle = useMemo(
+    () => [staticStyles.floatingRight, { top: insets.top + 8 }],
+    [insets.top],
+  )
+
   return (
     <NoteEditorContext.Provider value={contextValue}>
       {children}
       <Animated.View style={animatedViewStyle} pointerEvents={isOpen ? 'auto' : 'none'}>
-        <StatusBar barStyle="light-content" backgroundColor={c.background} />
-
-        <View style={appBarStyle}>
-          <View style={staticStyles.appBarLeft}>
-            <Pressable
-              onPress={closeNote}
-              style={({ pressed }) => [
-                staticStyles.iconBtn,
-                pressed && {
-                  backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
-                },
-              ]}
-              hitSlop={8}
-            >
-              <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
-            </Pressable>
-            <Text style={[staticStyles.appBarTitle, { color: c.onSurface }]} numberOfLines={1}>
-              {noteData?.title || 'Untitled'}
-            </Text>
-          </View>
-
-          <View style={staticStyles.appBarRight}>
-            <Pressable
-              onPress={handleShare}
-              style={({ pressed }) => [
-                staticStyles.iconBtn,
-                pressed && {
-                  backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
-                },
-              ]}
-              hitSlop={8}
-            >
-              <MaterialCommunityIcons name="export-variant" size={22} color={c.primary} />
-            </Pressable>
-
-            <Menu
-              visible={moreMenuVisible}
-              onDismiss={() => setMoreMenuVisible(false)}
-              contentStyle={{ borderRadius: 12, overflow: 'hidden' }}
-              anchor={
-                <Pressable
-                  onPress={() => setMoreMenuVisible(true)}
-                  style={({ pressed }) => [
-                    staticStyles.iconBtn,
-                    pressed && {
-                      backgroundColor: hexWithAlpha(
-                        c.surfaceContainerHighest ?? c.surfaceVariant,
-                        0.6,
-                      ),
-                    },
-                  ]}
-                  hitSlop={8}
-                >
-                  <MaterialCommunityIcons name="dots-vertical" size={24} color={c.primary} />
-                </Pressable>
-              }
-            >
-              {moveFolders.length > 0 && (
-                <Menu.Item
-                  leadingIcon="folder-move-outline"
-                  title="Move to…"
-                  onPress={() => {
-                    setMoreMenuVisible(false)
-                    setMoveDialogVisible(true)
-                  }}
-                />
-              )}
-              {moveFolders.length > 0 && <Divider />}
-              <Menu.Item
-                leadingIcon="delete-outline"
-                title="Delete"
-                onPress={handleDeleteNote}
-                titleStyle={{ color: c.error }}
-              />
-            </Menu>
-
-            <Pressable
-              onPress={handleDone}
-              style={({ pressed }) => [saveBtnStyle, pressed && { opacity: 0.8 }]}
-            >
-              <MaterialCommunityIcons name="check" size={20} color={c.onPrimaryContainer} />
-            </Pressable>
-          </View>
-        </View>
+        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
 
         <TiptapEditor
           ref={editorRef}
@@ -1075,6 +1003,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           initialTitle=""
           safeAreaTop={floatingHeaderHeight}
           safeAreaBottom={0}
+          backgroundColor={c.background}
           onContentChange={handleUpdate}
           onTitleChange={handleTitleChange}
           onStyleStateChange={handleStyleStateChange}
@@ -1086,6 +1015,88 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           onImageLongPress={handleImageLongPress}
           onAttachmentLongPress={handleAttachmentLongPress}
         />
+
+        <View style={floatingLeftStyle} pointerEvents="box-none">
+          <Pressable
+            onPress={closeNote}
+            style={({ pressed }) => [
+              staticStyles.floatingIconBtn,
+              { backgroundColor: floatingBtnBg },
+              pressed && { opacity: 0.7 },
+            ]}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={22} color={c.primary} />
+          </Pressable>
+        </View>
+
+        <View style={floatingRightStyle} pointerEvents="box-none">
+          <Pressable
+            onPress={handleShare}
+            style={({ pressed }) => [
+              staticStyles.floatingIconBtn,
+              { backgroundColor: floatingBtnBg },
+              pressed && { opacity: 0.7 },
+            ]}
+            hitSlop={8}
+          >
+            <MaterialCommunityIcons name="export-variant" size={20} color={c.primary} />
+          </Pressable>
+
+          <Menu
+            visible={moreMenuVisible}
+            onDismiss={() => setMoreMenuVisible(false)}
+            contentStyle={{ borderRadius: 12, overflow: 'hidden' }}
+            anchor={
+              <Pressable
+                onPress={() => setMoreMenuVisible(true)}
+                style={({ pressed }) => [
+                  staticStyles.floatingIconBtn,
+                  { backgroundColor: floatingBtnBg },
+                  pressed && { opacity: 0.7 },
+                ]}
+                hitSlop={8}
+              >
+                <MaterialCommunityIcons name="dots-vertical" size={22} color={c.primary} />
+              </Pressable>
+            }
+          >
+            {moveFolders.length > 0 && (
+              <Menu.Item
+                leadingIcon="folder-move-outline"
+                title="Move to…"
+                onPress={() => {
+                  setMoreMenuVisible(false)
+                  setMoveDialogVisible(true)
+                }}
+              />
+            )}
+            {moveFolders.length > 0 && <Divider />}
+            <Menu.Item
+              leadingIcon="delete-outline"
+              title="Delete"
+              onPress={handleDeleteNote}
+              titleStyle={{ color: c.error }}
+            />
+          </Menu>
+
+          <Pressable
+            onPress={() => {
+              if (isEditing) {
+                handleDone()
+              } else {
+                setTimeout(() => editorRef.current?.focus(), 100)
+              }
+            }}
+            style={({ pressed }) => [saveBtnStyle, pressed && { opacity: 0.8 }]}
+          >
+            <MaterialCommunityIcons
+              name={isEditing ? 'check' : 'pencil-outline'}
+              size={20}
+              color={c.onPrimaryContainer}
+            />
+          </Pressable>
+        </View>
 
         <EditorToolbar
           isActive={isActive}
@@ -1155,43 +1166,46 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </Dialog.Actions>
           </Dialog>
 
-          <Menu
-            visible={!!imageMenuPos}
-            onDismiss={() => setImageMenuPos(null)}
-            anchor={imageMenuPos ?? { x: 0, y: 0 }}
-            contentStyle={{ borderRadius: 12, overflow: 'hidden' }}
-          >
-            <Menu.Item leadingIcon="share-variant" title="Share" onPress={handleImageMenuShare} />
-            <Divider />
-            <Menu.Item
-              leadingIcon="delete-outline"
-              title="Delete"
-              onPress={handleImageMenuDelete}
-              titleStyle={{ color: c.error }}
-            />
-          </Menu>
-
-          <Menu
-            visible={!!attachmentMenuPos}
-            onDismiss={() => setAttachmentMenuPos(null)}
-            anchor={attachmentMenuPos ?? { x: 0, y: 0 }}
-            contentStyle={{ borderRadius: 12, overflow: 'hidden' }}
-          >
-            <Menu.Item
-              leadingIcon="share-variant"
-              title="Share"
-              onPress={handleAttachmentMenuShare}
-            />
-            <Divider />
-            <Menu.Item
-              leadingIcon="delete-outline"
-              title="Delete"
-              onPress={handleAttachmentMenuDelete}
-              titleStyle={{ color: c.error }}
-            />
-          </Menu>
         </Portal>
       </Animated.View>
+
+      <BottomActionSheet
+        visible={imageSheetVisible}
+        onDismiss={() => setImageSheetVisible(false)}
+        title="Image"
+        actions={[
+          {
+            icon: 'share-variant-outline',
+            label: 'Share',
+            onPress: handleImageMenuShare,
+          },
+          {
+            icon: 'delete-outline',
+            label: 'Delete',
+            onPress: handleImageMenuDelete,
+            destructive: true,
+          },
+        ]}
+      />
+
+      <BottomActionSheet
+        visible={attachmentSheetVisible2}
+        onDismiss={() => setAttachmentSheetVisible2(false)}
+        title={selectedAttachmentFileName || 'Attachment'}
+        actions={[
+          {
+            icon: 'share-variant-outline',
+            label: 'Share',
+            onPress: handleAttachmentMenuShare,
+          },
+          {
+            icon: 'delete-outline',
+            label: 'Delete',
+            onPress: handleAttachmentMenuDelete,
+            destructive: true,
+          },
+        ]}
+      />
 
       {recorderEverOpened && (
         <AudioRecorderModal
@@ -1205,44 +1219,32 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 }
 
 const staticStyles = StyleSheet.create({
-  appBar: {
+  floatingLeft: {
+    position: 'absolute',
+    left: 12,
+    zIndex: 20,
+  },
+  floatingRight: {
+    position: 'absolute',
+    right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingBottom: 4,
-    zIndex: 10,
+    gap: 6,
+    zIndex: 20,
   },
-  appBarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-    minWidth: 0,
-  },
-  appBarTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: -0.3,
-    flexShrink: 1,
-  },
-  appBarRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 2,
-  },
-  iconBtn: {
-    padding: 8,
-    borderRadius: 9999,
-  },
-  saveBtn: {
-    width: 40,
-    height: 40,
+  floatingIconBtn: {
+    width: 38,
+    height: 38,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 4,
+  },
+  saveBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   uploadBanner: {
     position: 'absolute',
@@ -1309,34 +1311,34 @@ const toolbarStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 9999,
-    paddingVertical: 6,
-    paddingLeft: 6,
-    paddingRight: 6,
+    paddingVertical: 8,
+    paddingLeft: 8,
+    paddingRight: 8,
     borderWidth: StyleSheet.hairlineWidth,
     zIndex: 10,
   },
   scrollContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 1,
+    gap: 2,
     paddingHorizontal: 2,
   },
   btn: {
-    width: 42,
-    height: 42,
+    width: 44,
+    height: 44,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
   },
   divider: {
     width: 1,
-    height: 22,
+    height: 24,
     marginHorizontal: 4,
     flexShrink: 0,
   },
   addBtn: {
-    width: 40,
-    height: 40,
+    width: 48,
+    height: 48,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',

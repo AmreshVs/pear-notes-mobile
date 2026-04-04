@@ -72,6 +72,7 @@ export interface TiptapEditorProps {
   safeAreaTop?: number
   safeAreaBottom?: number
   scrollEnabled?: boolean
+  backgroundColor?: string
   onContentChange: (html: string) => void
   onTitleChange?: (title: string) => void
   onStyleStateChange?: (state: TiptapStyleState) => void
@@ -105,33 +106,33 @@ type WebViewMsg =
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'deleteAttachment'; url: string }
   | {
-    type: 'imageLongPress'
-    src: string
-    rect?: { x: number; y: number; width: number; height: number }
-  }
+      type: 'imageLongPress'
+      src: string
+      rect?: { x: number; y: number; width: number; height: number }
+    }
   | {
-    type: 'attachmentLongPress'
-    url: string
-    fileName: string
-    rect?: { x: number; y: number; width: number; height: number }
-    attachmentId?: string
-  }
+      type: 'attachmentLongPress'
+      url: string
+      fileName: string
+      rect?: { x: number; y: number; width: number; height: number }
+      attachmentId?: string
+    }
 
 type EditorState = 'loading' | 'ready' | 'error'
 
 const iosWebViewProps =
   Platform.OS === 'ios'
     ? {
-      keyboardDisplayRequiresUserAction: false as const,
-      bounces: false,
-      contentMode: 'mobile' as const,
-      hideKeyboardAccessoryView: true,
-      allowsInlineMediaPlayback: true,
-      mediaPlaybackRequiresUserAction: false,
-      decelerationRate: 'normal' as const,
-      allowsBackForwardNavigationGestures: false,
-      textInteractionEnabled: true,
-    }
+        keyboardDisplayRequiresUserAction: false as const,
+        bounces: false,
+        contentMode: 'mobile' as const,
+        hideKeyboardAccessoryView: true,
+        allowsInlineMediaPlayback: true,
+        mediaPlaybackRequiresUserAction: false,
+        decelerationRate: 'normal' as const,
+        allowsBackForwardNavigationGestures: false,
+        textInteractionEnabled: true,
+      }
     : {}
 
 const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
@@ -142,6 +143,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       safeAreaTop,
       safeAreaBottom,
       scrollEnabled = true,
+      backgroundColor,
       onContentChange,
       onTitleChange,
       onStyleStateChange,
@@ -189,11 +191,13 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const fontSizeRef = useRef(fontSize)
     const fontFamilyRef = useRef(fontFamily)
     const safeAreaTopRef = useRef(safeAreaTop ?? 100)
+    const backgroundColorRef = useRef(backgroundColor)
     colorsRef.current = colors
     isDarkRef.current = theme.isDark
     fontSizeRef.current = fontSize
     fontFamilyRef.current = fontFamily
     safeAreaTopRef.current = safeAreaTop ?? 100
+    backgroundColorRef.current = backgroundColor
 
     const editorReadyRef = useRef(false)
     const editorInitializedRef = useRef(false)
@@ -225,6 +229,12 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       const payload = JSON.stringify(command)
       webViewRef.current?.injectJavaScript(
         `(function(){if(window.editorBridge){window.editorBridge.handleMessage(${JSON.stringify(payload)})}})();true;`,
+      )
+    }, [])
+
+    const injectBackgroundColor = useCallback((color: string) => {
+      webViewRef.current?.injectJavaScript(
+        `(function(){var c=${JSON.stringify(color)};document.documentElement.style.backgroundColor=c;document.body.style.backgroundColor=c;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.backgroundColor=c;})();true;`,
       )
     }, [])
 
@@ -270,6 +280,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           case 'initialized':
             editorInitializedRef.current = true
             revealEditor()
+            if (backgroundColorRef.current) {
+              injectBackgroundColor(backgroundColorRef.current)
+            }
             if (pendingTitleRef.current !== null) {
               sendCommand({ type: 'setTitle', title: pendingTitleRef.current })
               pendingTitleRef.current = null
@@ -330,8 +343,14 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             break
         }
       },
-      [revealEditor, sendCommand],
+      [revealEditor, sendCommand, injectBackgroundColor],
     )
+
+    useEffect(() => {
+      if (backgroundColor && editorInitializedRef.current) {
+        injectBackgroundColor(backgroundColor)
+      }
+    }, [backgroundColor, injectBackgroundColor])
 
     const prevIsDarkRef = useRef(theme.isDark)
     useEffect(() => {
@@ -436,7 +455,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     )
 
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
         {editorState === 'error' && (
           <View style={styles.overlay}>
             <Text style={styles.errorText}>Editor failed to load</Text>
@@ -452,7 +471,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
             onMessage={handleMessage}
             onError={handleError}
-            style={styles.webView}
+            style={[styles.webView, backgroundColor ? { backgroundColor } : null]}
             scrollEnabled={scrollEnabled}
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}

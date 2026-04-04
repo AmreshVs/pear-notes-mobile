@@ -8,7 +8,6 @@ import {
   updateFolder,
 } from '@pear-notes/core/store/slices/foldersSlice.js'
 import {
-  createNote,
   getNoteCountsPerFolder,
   getSelectedNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -133,11 +132,6 @@ export default function AndroidFoldersScreen() {
     },
     [dispatch],
   )
-
-  const handleCreateNote = useCallback(() => {
-    creatingNoteRef.current = true
-    dispatch(createNote({ title: '', note: '' } as any))
-  }, [dispatch])
 
   const handleCreateFolder = useCallback(() => {
     dispatch(createFolder({ name: 'Untitled' } as any))
@@ -285,7 +279,6 @@ export default function AndroidFoldersScreen() {
                   onLongPress={handleFolderLongPress}
                 />
               ))}
-
             </View>
           </Animated.View>
         )}
@@ -293,8 +286,7 @@ export default function AndroidFoldersScreen() {
 
       <FAB
         icon="plus"
-        onPress={handleCreateNote}
-        onLongPress={handleCreateFolder}
+        onPress={handleCreateFolder}
         style={[dynStyles.fab, { bottom: insets.bottom + 24 }]}
         color={c.onPrimaryContainer}
         customSize={64}
@@ -337,7 +329,12 @@ export default function AndroidFoldersScreen() {
         subtitle="Folder options"
         actions={[
           { icon: 'pencil-outline', label: 'Rename', onPress: handleSheetRename },
-          { icon: 'delete-outline', label: 'Delete', onPress: handleSheetDelete, destructive: true },
+          {
+            icon: 'delete-outline',
+            label: 'Delete',
+            onPress: handleSheetDelete,
+            destructive: true,
+          },
         ]}
       />
     </View>
@@ -461,7 +458,7 @@ const staticStyles = StyleSheet.create({
     marginTop: -4,
   },
   searchWrap: {
-    marginBottom: 24,
+    marginBottom: 8,
   },
   searchIcon: {
     marginRight: 10,
@@ -474,7 +471,7 @@ const staticStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 40,
+    marginTop: 20,
     marginBottom: 14,
     paddingHorizontal: 4,
   },
@@ -493,9 +490,7 @@ const rowStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
     paddingVertical: 14,
-    minHeight: 58,
   },
   rowLeft: {
     flexDirection: 'row',
