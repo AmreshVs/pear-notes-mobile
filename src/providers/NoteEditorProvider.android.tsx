@@ -99,6 +99,7 @@ type EditorToolbarProps = {
   toolbarBottom: number
   onAttachPress: () => void
   c: ExtendedColors
+  isDark: boolean
 }
 
 const EditorToolbar = memo(function EditorToolbar({
@@ -107,6 +108,7 @@ const EditorToolbar = memo(function EditorToolbar({
   toolbarBottom,
   onAttachPress,
   c,
+  isDark,
 }: EditorToolbarProps) {
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -118,8 +120,8 @@ const EditorToolbar = memo(function EditorToolbar({
       toolbarStyles.container,
       {
         bottom: toolbarBottom,
-        backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surfaceVariant, 0.96),
-        borderColor: hexWithAlpha(c.outlineVariant, 0.18),
+        backgroundColor: hexWithAlpha(isDark ? '#1a1a1a' : (c.surfaceContainerHigh ?? c.surfaceVariant), 0.98),
+        borderColor: hexWithAlpha(c.outlineVariant, 0.15),
         elevation: 6,
         shadowColor: '#000',
       },
@@ -128,7 +130,7 @@ const EditorToolbar = memo(function EditorToolbar({
   )
 
   const dividerStyle = useMemo(
-    () => [toolbarStyles.divider, { backgroundColor: hexWithAlpha(c.outlineVariant, 0.35) }],
+    () => [toolbarStyles.divider, { backgroundColor: hexWithAlpha(c.outlineVariant, 0.25) }],
     [c.outlineVariant],
   )
 
@@ -956,11 +958,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isEditorFocusedRef.current = false
   }, [])
 
-  const toolbarBottom = useMemo(
-    () => (keyboardHeight > 0 ? keyboardHeight + 12 : insets.bottom + 16),
-    [keyboardHeight, insets.bottom],
-  )
-
   const animatedViewStyle = useMemo(
     () => [
       StyleSheet.absoluteFill,
@@ -1101,9 +1098,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         <EditorToolbar
           isActive={isActive}
           editorRef={editorRef}
-          toolbarBottom={toolbarBottom}
+          toolbarBottom={keyboardHeight > 0 ? 12 : insets.bottom + 12}
           onAttachPress={() => setAttachSheetVisible(true)}
           c={c}
+          isDark={theme.dark}
         />
 
         <AttachmentSheet

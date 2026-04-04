@@ -9,7 +9,6 @@ import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Appearance, LogBox, NativeModules } from 'react-native'
-import 'react-native-gesture-handler'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import RNRestart from 'react-native-restart'
@@ -116,8 +115,32 @@ function RootLayoutNav() {
     SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
   }, [isDark])
 
+  const CustomDarkTheme = {
+    ...DarkTheme,
+    colors: {
+      ...DarkTheme.colors,
+      background: Colors.dark.background,
+      card: Colors.dark.surface,
+      text: Colors.dark.text,
+      border: Colors.dark.border,
+      primary: Colors.dark.primary,
+    },
+  }
+
+  const CustomLightTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: Colors.light.background,
+      card: Colors.light.surface,
+      text: Colors.light.text,
+      border: Colors.light.border,
+      primary: Colors.light.primary,
+    },
+  }
+
   return (
-    <ThemeProvider value={isDark ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={isDark ? CustomDarkTheme : CustomLightTheme}>
       <AndroidPaperProvider>
         <SheetProvider>
           <SplashGate />
