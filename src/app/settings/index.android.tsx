@@ -12,7 +12,16 @@ import {
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
 import React, { useMemo } from 'react'
-import { Alert, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
+import {
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
@@ -68,6 +77,17 @@ export default function AndroidSettingsScreen() {
   const sortBy = useSelector(getSortBy)
   const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
 
+  const supportsDynamicColor = useMemo(() => {
+    return Platform.OS === 'android' && Number(Platform.Version) >= 31
+  }, [])
+
+  const colorThemeOptions = useMemo(() => {
+    return [
+      { label: 'Default', value: 'pear' as AndroidColorTheme },
+      { label: 'Material You', value: 'material_you' as AndroidColorTheme },
+    ]
+  }, [])
+
   const dynStyles = useMemo(() => createDynamicStyles(c, insets), [c, insets])
 
   return (
@@ -119,34 +139,31 @@ export default function AndroidSettingsScreen() {
             })}
           </View>
         </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(60)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
-          style={dynStyles.card}
-        >
-          <Text style={dynStyles.cardTitle}>Color Theme</Text>
-          <View style={dynStyles.segContainer}>
-            {[
-              { label: 'Default', value: 'pear' as AndroidColorTheme },
-              { label: 'Material You', value: 'material_you' as AndroidColorTheme },
-            ].map((opt) => {
-              const isActive = androidColorTheme === opt.value
-              return (
-                <Pressable
-                  key={opt.value}
-                  onPress={() => dispatch(setColorTheme(opt.value))}
-                  style={[dynStyles.segItem, isActive && dynStyles.segItemActive]}
-                >
-                  <Text style={[dynStyles.segText, isActive && dynStyles.segTextActive]}>
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </View>
-        </Animated.View>
-
+        {supportsDynamicColor && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(60)}
+            layout={LinearTransition.springify().damping(20).stiffness(220)}
+            style={dynStyles.card}
+          >
+            <Text style={dynStyles.cardTitle}>Color Theme</Text>
+            <View style={dynStyles.segContainer}>
+              {colorThemeOptions.map((opt) => {
+                const isActive = androidColorTheme === opt.value
+                return (
+                  <Pressable
+                    key={opt.value}
+                    onPress={() => dispatch(setColorTheme(opt.value))}
+                    style={[dynStyles.segItem, isActive && dynStyles.segItemActive]}
+                  >
+                    <Text style={[dynStyles.segText, isActive && dynStyles.segTextActive]}>
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </Animated.View>
+        )}
         <Animated.View
           entering={FadeInDown.duration(240).delay(80)}
           layout={LinearTransition.springify().damping(20).stiffness(220)}
