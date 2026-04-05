@@ -1,3 +1,4 @@
+import { extractInvite, isValidInvite } from '@pear-notes/core'
 import {
   deleteSyncedDevice,
   getLocalPreferences,
@@ -92,9 +93,11 @@ export default function SyncScreen() {
   }, [inviteCode])
 
   const handleConnect = useCallback(() => {
-    if (!pasteCode.trim()) return
-    dispatch(subscribePairUser({ invite: pasteCode.trim() } as any))
-    setPasteCode('')
+    if (isValidInvite(pasteCode)) {
+      const rawInvite = extractInvite(pasteCode)
+      dispatch(subscribePairUser({ invite: rawInvite } as any))
+      setPasteCode('')
+    }
   }, [dispatch, pasteCode])
 
   const handleOpenScanner = useCallback(async () => {
@@ -320,13 +323,12 @@ export default function SyncScreen() {
 
                   <Pressable
                     onPress={handleConnect}
-                    disabled={isLoading || pasteCode.trim().length === 0}
+                    disabled={isLoading || !isValidInvite(pasteCode)}
                     style={({ pressed }) => [
                       styles.linkBtn,
                       {
                         backgroundColor: colors.primary,
-                        opacity:
-                          isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
+                        opacity: isLoading || !isValidInvite(pasteCode) ? 0.4 : pressed ? 0.7 : 1,
                       },
                     ]}
                   >
