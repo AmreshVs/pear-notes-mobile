@@ -1,5 +1,4 @@
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
-import { useMaterial3Theme as useMD3Theme } from '@pchmn/expo-material3-theme'
 import Slider from '@react-native-community/slider'
 import {
   AudioModule,
@@ -24,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { Text, Theme, useTheme, useThemedStyles } from '@/components/Themed'
 
 const TIMELINE_H = 88
@@ -31,7 +31,6 @@ const RECORDING_WINDOW_MS = 30000
 const RECORDING_BARS = 52
 const RECORDING_BAR_W = 3
 const RECORDING_BAR_GAP = 3
-const RECORDING_BAR_STEP = RECORDING_BAR_W + RECORDING_BAR_GAP
 
 let energy = 0.4
 function sampleAmp() {
@@ -95,6 +94,7 @@ function fmtShort(sec: number) {
 interface SheetBodyProps {
   styles: ReturnType<typeof createStyles>
   colors: Theme['colors']
+  md3Theme: ReturnType<typeof useMD3Theme>
   isDark: boolean
   status: { title: string; subtitle: string }
   hasRecording: boolean
@@ -127,6 +127,7 @@ interface SheetBodyProps {
 function SheetBody({
   styles,
   colors,
+  md3Theme,
   isDark,
   status,
   hasRecording,
@@ -158,15 +159,27 @@ function SheetBody({
   const { t } = useTranslation()
   return (
     <>
-      <View style={styles.grabber} />
+      <View
+        style={[
+          styles.grabber,
+          {
+            backgroundColor: (md3Theme.colors as any).onSurfaceVariant ?? colors.text,
+            opacity: 0.4,
+          },
+        ]}
+      />
 
       <View style={styles.headerRow}>
         <Pressable
           hitSlop={12}
           onPress={onCancel}
-          style={({ pressed }) => [styles.headerIconButton, pressed && styles.headerActionPressed]}
+          style={({ pressed }) => [styles.headerIconButton, pressed && { opacity: 0.6 }]}
         >
-          <MaterialCommunityIcons name="close" size={16} color={colors.textSecondary} />
+          <MaterialCommunityIcons
+            name="close"
+            size={24}
+            color={(md3Theme.colors as any).onSurfaceVariant ?? colors.textSecondary}
+          />
         </Pressable>
 
         <Pressable
@@ -175,13 +188,17 @@ function SheetBody({
           onPress={onDone}
           style={({ pressed }) => [
             styles.headerIconButton,
-            (!hasRecording && !isRecording) || pressed ? styles.headerActionPressed : null,
+            (!hasRecording && !isRecording) || pressed ? { opacity: 0.5 } : null,
           ]}
         >
           <MaterialCommunityIcons
             name="check"
-            size={16}
-            color={!hasRecording && !isRecording ? colors.textMuted : colors.primary}
+            size={24}
+            color={
+              !hasRecording && !isRecording
+                ? ((md3Theme.colors as any).onSurfaceVariant ?? colors.textMuted)
+                : md3Theme.colors.primary
+            }
           />
         </Pressable>
       </View>
@@ -283,38 +300,40 @@ function SheetBody({
               <Pressable
                 hitSlop={12}
                 onPress={() => onSkip(-15)}
-                style={({ pressed }) => [
-                  styles.secondaryTransport,
-                  pressed && styles.transportPressed,
-                ]}
+                style={({ pressed }) => [styles.secondaryTransport, pressed && { opacity: 0.6 }]}
               >
-                <MaterialCommunityIcons name="rewind-15" size={24} color={colors.text} />
+                <MaterialCommunityIcons
+                  name="rewind-15"
+                  size={28}
+                  color={(md3Theme.colors as any).onSurfaceVariant ?? colors.text}
+                />
               </Pressable>
 
               <Pressable
                 onPress={onPlayPause}
                 style={({ pressed }) => [
                   styles.primaryTransport,
-                  { backgroundColor: colors.text },
-                  pressed && styles.transportPressed,
+                  { backgroundColor: md3Theme.colors.primaryContainer },
+                  pressed && { opacity: 0.8 },
                 ]}
               >
                 <MaterialCommunityIcons
                   name={isPlaying ? 'pause' : 'play'}
-                  size={24}
-                  color={isDark ? '#000000' : '#ffffff'}
+                  size={36}
+                  color={md3Theme.colors.onPrimaryContainer}
                 />
               </Pressable>
 
               <Pressable
                 hitSlop={12}
                 onPress={() => onSkip(15)}
-                style={({ pressed }) => [
-                  styles.secondaryTransport,
-                  pressed && styles.transportPressed,
-                ]}
+                style={({ pressed }) => [styles.secondaryTransport, pressed && { opacity: 0.6 }]}
               >
-                <MaterialCommunityIcons name="fast-forward-15" size={24} color={colors.text} />
+                <MaterialCommunityIcons
+                  name="fast-forward-15"
+                  size={28}
+                  color={(md3Theme.colors as any).onSurfaceVariant ?? colors.text}
+                />
               </Pressable>
             </View>
 
@@ -322,12 +341,16 @@ function SheetBody({
               onPress={onRecord}
               style={({ pressed }) => [
                 styles.rerecordButton,
-                { backgroundColor: isDark ? colors.surfaceSecondary : 'rgba(0,0,0,0.05)' },
-                pressed && styles.transportPressed,
+                { backgroundColor: md3Theme.colors.secondaryContainer },
+                pressed && { opacity: 0.7 },
               ]}
             >
-              <MaterialCommunityIcons name="refresh" size={16} color={colors.text} />
-              <Text style={[styles.rerecordText, { color: colors.text }]}>
+              <MaterialCommunityIcons
+                name="refresh"
+                size={20}
+                color={md3Theme.colors.onSecondaryContainer}
+              />
+              <Text style={[styles.rerecordText, { color: md3Theme.colors.onSecondaryContainer }]}>
                 {t('audioRecorder.actions.reRecord')}
               </Text>
             </Pressable>
@@ -339,15 +362,20 @@ function SheetBody({
                 onPress={isRecording ? onStop : onRecord}
                 style={({ pressed }) => [
                   styles.recordButton,
-                  pressed && styles.recordButtonPressed,
+                  pressed && { opacity: 0.8, transform: [{ scale: 0.94 }] },
                 ]}
               >
-                <View style={[styles.recordOuterRing, { borderColor: colors.error }]}>
-                  <View
+                <View
+                  style={[
+                    styles.recordOuterRing,
+                    { backgroundColor: (md3Theme.colors as any).errorContainer ?? colors.error },
+                  ]}
+                >
+                  <Animated.View
                     style={[
-                      styles.recordInnerCore,
-                      { backgroundColor: colors.error },
-                      isRecording && styles.recordStopCore,
+                      styles.recordMd3Core,
+                      { backgroundColor: md3Theme.colors.onErrorContainer ?? colors.background },
+                      isRecording && { transform: [{ scale: 0.6 }], borderRadius: 8 },
                     ]}
                   />
                 </View>
@@ -373,7 +401,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
   const { colors, isDark } = useTheme()
   const styles = useThemedStyles(createStyles)
   const insets = useSafeAreaInsets()
-  const { theme: md3Theme } = useMD3Theme()
+  const md3Theme = useMD3Theme()
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
   const player = useAudioPlayer(null)
@@ -784,6 +812,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
             <SheetBody
               styles={styles}
               colors={colors}
+              md3Theme={md3Theme}
               isDark={isDark}
               status={status}
               hasRecording={hasRecording}
@@ -834,8 +863,8 @@ function createStyles(theme: Theme) {
       justifyContent: 'flex-end',
     },
     sheet: {
-      borderTopLeftRadius: 36,
-      borderTopRightRadius: 36,
+      borderTopLeftRadius: 28,
+      borderTopRightRadius: 28,
       paddingHorizontal: 28,
       paddingTop: 12,
       shadowColor: '#000',
@@ -845,12 +874,12 @@ function createStyles(theme: Theme) {
       elevation: 24,
     },
     grabber: {
-      width: 40,
+      width: 32,
       height: 4,
-      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
-      borderRadius: 2,
+      borderRadius: 9999,
       alignSelf: 'center',
-      marginBottom: 16,
+      marginBottom: 20,
+      marginTop: 4,
     },
     headerRow: {
       flexDirection: 'row',
@@ -859,29 +888,26 @@ function createStyles(theme: Theme) {
       marginBottom: 20,
     },
     headerIconButton: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    headerActionPressed: {
-      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)',
-    },
     heroBlock: {
       alignItems: 'center',
-      marginBottom: 28,
+      marginBottom: 24,
     },
     heroTitle: {
-      fontSize: 22,
-      fontWeight: '800',
+      fontSize: 24,
+      fontFamily: 'PlusJakartaSans_700Bold',
       textAlign: 'center',
       marginBottom: 8,
-      letterSpacing: -0.5,
+      letterSpacing: -0.3,
     },
     heroSubtitle: {
       fontSize: 14,
+      fontFamily: 'PlusJakartaSans_400Regular',
       textAlign: 'center',
       lineHeight: 20,
       paddingHorizontal: 12,
@@ -937,7 +963,6 @@ function createStyles(theme: Theme) {
     },
     recordingTick: {
       fontSize: 10,
-      fontWeight: '600',
       fontFamily: 'monospace',
     },
     timelineOuter: {
@@ -950,8 +975,8 @@ function createStyles(theme: Theme) {
     },
     timelineTrack: {
       position: 'absolute',
-      left: 0,
-      right: 0,
+      left: 14,
+      right: 14,
       height: 4,
       borderRadius: 2,
     },
@@ -965,8 +990,7 @@ function createStyles(theme: Theme) {
       marginTop: 2,
     },
     playbackSideTime: {
-      fontSize: 11,
-      fontWeight: '600',
+      fontSize: 12,
       fontFamily: 'monospace',
     },
     timerBlock: {
@@ -974,18 +998,20 @@ function createStyles(theme: Theme) {
       marginBottom: 40,
     },
     timerLabel: {
-      fontSize: 11,
-      fontWeight: '800',
+      fontSize: 12,
+      fontFamily: 'PlusJakartaSans_700Bold',
       textTransform: 'uppercase',
       letterSpacing: 1.2,
       marginBottom: 8,
-      opacity: 0.6,
+      opacity: 0.7,
     },
     timer: {
-      fontSize: 48,
+      fontSize: 54,
+      lineHeight: 64,
       fontWeight: '300',
       fontFamily: 'monospace',
       letterSpacing: -1,
+      includeFontPadding: false,
     },
     controlsSection: {
       alignItems: 'center',
@@ -995,46 +1021,35 @@ function createStyles(theme: Theme) {
       paddingBottom: 20,
     },
     recordStage: {
-      marginBottom: 20,
+      marginBottom: 24,
     },
     recordButton: {
       width: 88,
       height: 88,
-      borderRadius: 44,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    recordButtonPressed: {
-      opacity: 0.82,
-      transform: [{ scale: 0.94 }],
     },
     recordOuterRing: {
       width: 80,
       height: 80,
       borderRadius: 40,
-      borderWidth: 4,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    recordInnerCore: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
-    },
-    recordStopCore: {
+    recordMd3Core: {
       width: 32,
       height: 32,
-      borderRadius: 6,
+      borderRadius: 16,
     },
     recordHint: {
-      fontSize: 13,
-      fontWeight: '500',
+      fontSize: 14,
+      fontFamily: 'PlusJakartaSans_500Medium',
       opacity: 0.8,
     },
     transportRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 32,
+      gap: 36,
       marginBottom: 32,
     },
     primaryTransport: {
@@ -1043,34 +1058,25 @@ function createStyles(theme: Theme) {
       borderRadius: 36,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      elevation: 6,
     },
     secondaryTransport: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    transportPressed: {
-      opacity: 0.7,
-      transform: [{ scale: 0.95 }],
     },
     rerecordButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 12,
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      borderRadius: 16,
       gap: 8,
     },
     rerecordText: {
-      fontSize: 14,
-      fontWeight: '700',
+      fontSize: 15,
+      fontFamily: 'PlusJakartaSans_600SemiBold',
     },
   })
 }

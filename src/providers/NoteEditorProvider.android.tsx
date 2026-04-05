@@ -5,7 +5,7 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 import {
   ALL_NOTES_KEY,
   HYPERDRIVE_URL_PREFIX,
-  RECENT_DELETED_KEY,
+  RECENTLY_DELETED_KEY,
 } from '@pear-notes/core/constant.js'
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { deleteNote, getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -149,6 +149,25 @@ const EditorToolbar = memo(function EditorToolbar({
         keyboardShouldPersistTaps="always"
       >
         <ToolbarBtn
+          icon="checkbox-marked-outline"
+          active={isActive('checkboxList')}
+          onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
+          c={c}
+        />
+        <View style={dividerStyle} />
+        <ToolbarBtn
+          icon="format-header-1"
+          active={isActive('h1')}
+          onPress={() => run(() => editorRef.current?.toggleH1())}
+          c={c}
+        />
+        <ToolbarBtn
+          icon="format-header-2"
+          active={isActive('h2')}
+          onPress={() => run(() => editorRef.current?.toggleH2())}
+          c={c}
+        />
+        <ToolbarBtn
           icon="format-bold"
           active={isActive('bold')}
           onPress={() => run(() => editorRef.current?.toggleBold())}
@@ -167,46 +186,21 @@ const EditorToolbar = memo(function EditorToolbar({
           c={c}
         />
         <ToolbarBtn
-          icon="format-quote-close"
-          active={isActive('blockQuote')}
-          onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
-          c={c}
-        />
-        <View style={dividerStyle} />
-        <ToolbarBtn
-          icon="format-header-1"
-          active={isActive('h1')}
-          onPress={() => run(() => editorRef.current?.toggleH1())}
-          c={c}
-        />
-        <ToolbarBtn
-          icon="format-header-2"
-          active={isActive('h2')}
-          onPress={() => run(() => editorRef.current?.toggleH2())}
-          c={c}
-        />
-        <ToolbarBtn
           icon="format-list-numbered"
           active={isActive('orderedList')}
           onPress={() => run(() => editorRef.current?.toggleOrderedList())}
           c={c}
         />
         <ToolbarBtn
-          icon="checkbox-marked-outline"
-          active={isActive('checkboxList')}
-          onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
+          icon="format-quote-close"
+          active={isActive('blockQuote')}
+          onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
           c={c}
         />
         <ToolbarBtn
           icon="code-tags"
           active={isActive('codeBlock')}
           onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
-          c={c}
-        />
-        <ToolbarBtn
-          icon="marker"
-          active={isActive('highlight')}
-          onPress={() => run(() => editorRef.current?.toggleHighlight())}
           c={c}
         />
       </ScrollView>
@@ -284,7 +278,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const moveFolders = useMemo(
     () =>
       allFolders.filter(
-        (f: any) => !f.isTrash && f.id !== ALL_NOTES_KEY && f.id !== RECENT_DELETED_KEY,
+        (f: any) => !f.isTrash && f.id !== ALL_NOTES_KEY && f.id !== RECENTLY_DELETED_KEY,
       ),
     [allFolders],
   )
@@ -434,7 +428,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             setTimeout(() => editorRef.current?.scrollToEnd(), 300)
           }
           await FileSystem.deleteAsync(cachePath, { idempotent: true })
-        } catch (error) {
+        } catch {
           Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedVideo'))
         } finally {
           setUploadInfo(null)
@@ -932,7 +926,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const closeNote = useCallback(() => {
     editorRef.current?.blur()
     Keyboard.dismiss()
-    void editorRef.current?.save()
+    editorRef.current?.save()
     animateClose()
   }, [animateClose])
 
