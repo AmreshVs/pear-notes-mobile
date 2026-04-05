@@ -11,6 +11,7 @@ import {
 import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
@@ -121,6 +122,7 @@ interface SheetBodyProps {
   onSeekStart: () => void
   onSeekChange: (v: number) => void
   onSeekComplete: (v: number) => Promise<void>
+  t: (key: string) => string
 }
 
 function SheetBody({
@@ -153,6 +155,7 @@ function SheetBody({
   onSeekStart,
   onSeekChange,
   onSeekComplete,
+  t,
 }: SheetBodyProps) {
   return (
     <>
@@ -268,7 +271,9 @@ function SheetBody({
 
       <View style={styles.timerBlock}>
         <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>
-          {hasRecording ? 'Playback position' : 'Recording time'}
+          {hasRecording
+            ? t('audioRecorder.timer.playbackPosition')
+            : t('audioRecorder.timer.recordingTime')}
         </Text>
         <Text style={[styles.timer, { color: timerColor }]}>{fmtTimer(timerMs)}</Text>
       </View>
@@ -340,7 +345,9 @@ function SheetBody({
                 tintColor={colors.text}
                 weight="semibold"
               />
-              <Text style={[styles.rerecordText, { color: colors.text }]}>Re-record</Text>
+              <Text style={[styles.rerecordText, { color: colors.text }]}>
+                {t('audioRecorder.actions.reRecord')}
+              </Text>
             </Pressable>
           </>
         ) : (
@@ -366,7 +373,9 @@ function SheetBody({
             </View>
 
             <Text style={[styles.recordHint, { color: colors.textSecondary }]}>
-              {isRecording ? 'Tap to stop and review your voice note.' : 'Tap to start recording.'}
+              {isRecording
+                ? t('audioRecorder.actions.stopHint')
+                : t('audioRecorder.actions.startHint')}
             </Text>
           </>
         )}
@@ -378,6 +387,7 @@ function SheetBody({
 }
 
 export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderModalProps) {
+  const { t } = useTranslation()
   const { colors, isDark } = useTheme()
   const styles = useThemedStyles(createStyles)
   const insets = useSafeAreaInsets()
@@ -555,7 +565,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
       const { granted } = await AudioModule.requestRecordingPermissionsAsync()
       setHasPermission(granted)
       if (!granted) {
-        Alert.alert('Microphone Access', 'Please enable microphone in Settings.')
+        Alert.alert(t('audioRecorder.errors.micTitle'), t('audioRecorder.errors.micMessage'))
         return
       }
     }
@@ -585,7 +595,10 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
         liveBars.value = [...liveBars.value.slice(-(RECORDING_BARS - 1)), sampleAmp()]
       }, 90)
     } catch (err: any) {
-      Alert.alert('Recording Error', err?.message ?? 'Could not start recording.')
+      Alert.alert(
+        t('audioRecorder.errors.recordTitle'),
+        err?.message ?? t('audioRecorder.errors.recordDefault'),
+      )
     }
   }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback])
 
@@ -748,13 +761,13 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
   const status = useMemo(() => {
     if (hasRecording) {
       return {
-        title: 'Voice note captured',
-        subtitle: 'Listen back, then save it into your note.',
+        title: t('audioRecorder.status.capturedTitle'),
+        subtitle: t('audioRecorder.status.capturedSubtitle'),
       }
     }
     return {
-      title: 'Capture the moment',
-      subtitle: 'Tap the red button below to start or stop recording.',
+      title: t('audioRecorder.status.idleTitle'),
+      subtitle: t('audioRecorder.status.idleSubtitle'),
     }
   }, [hasRecording])
 
@@ -812,6 +825,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
                 onSeekStart={handleSeekStart}
                 onSeekChange={handleSeekChange}
                 onSeekComplete={handleSeekComplete}
+                t={t}
               />
             </GlassView>
           ) : (
@@ -846,6 +860,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
                 onSeekStart={handleSeekStart}
                 onSeekChange={handleSeekChange}
                 onSeekComplete={handleSeekComplete}
+                t={t}
               />
             </View>
           )}

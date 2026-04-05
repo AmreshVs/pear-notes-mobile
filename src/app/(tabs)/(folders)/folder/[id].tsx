@@ -20,6 +20,7 @@ import { formatDate } from '@pear-notes/core/utils.js'
 import * as Clipboard from 'expo-clipboard'
 import { Stack, router, useLocalSearchParams } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -35,13 +36,13 @@ import {
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 // Replace HTML tags with a space so words don't run together, then normalize whitespace
-const getPreview = (html: string): string => {
-  if (!html) return 'No additional text'
+const getPreview = (html: string, fallback: string): string => {
+  if (!html) return fallback
   const text = html
     .replace(/<[^>]*>/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
-  return text.length > 100 ? text.substring(0, 100) + '…' : text || 'No additional text'
+  return text.length > 100 ? text.substring(0, 100) + '…' : text || fallback
 }
 
 const getFirstImageUrl = (html: string): string | undefined => {
@@ -60,10 +61,10 @@ const getFirstImageUrl = (html: string): string | undefined => {
   }
   return undefined
 }
-
 export default function FolderNotesScreen() {
   const { height } = useWindowDimensions()
   const { id } = useLocalSearchParams<{ id: string }>()
+  const { t } = useTranslation()
   const theme = useTheme()
   const { colors, isDark } = theme
   const styles = useThemedStyles(createStyles)
@@ -94,26 +95,26 @@ export default function FolderNotesScreen() {
 
   const groupedNotes = useMemo(() => {
     const sections: Record<string, any[]> = {
-      Today: [],
-      Yesterday: [],
-      'Last 7 Days': [],
-      Older: [],
+      [t('folderView.sections.today')]: [],
+      [t('folderView.sections.yesterday')]: [],
+      [t('folderView.sections.last7Days')]: [],
+      [t('folderView.sections.older')]: [],
     }
     const now = Date.now()
     const DAY = 86_400_000
 
     notes.forEach((note: any) => {
       const diff = now - (note.value?.updatedAt || note.value?.createdAt || 0)
-      if (diff < DAY) sections['Today'].push(note)
-      else if (diff < 2 * DAY) sections['Yesterday'].push(note)
-      else if (diff < 7 * DAY) sections['Last 7 Days'].push(note)
-      else sections['Older'].push(note)
+      if (diff < DAY) sections[t('folderView.sections.today')].push(note)
+      else if (diff < 2 * DAY) sections[t('folderView.sections.yesterday')].push(note)
+      else if (diff < 7 * DAY) sections[t('folderView.sections.last7Days')].push(note)
+      else sections[t('folderView.sections.older')].push(note)
     })
 
     return Object.entries(sections)
       .filter(([_, data]) => data.length > 0)
       .map(([title, data]) => ({ title, data }))
-  }, [notes])
+  }, [notes, t])
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -133,14 +134,18 @@ export default function FolderNotesScreen() {
     (noteId: string) => {
       const isTrash = id === RECENTLY_DELETED_KEY
       if (isTrash) {
-        Alert.alert('Permanently Delete', 'This note cannot be recovered.', [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: () => dispatch(deleteNote(noteId as any)),
-          },
-        ])
+        Alert.alert(
+          t('folderView.permanentlyDeleteTitle'),
+          t('folderView.permanentlyDeleteSubtitle'),
+          [
+            { text: t('folders.buttons.cancel'), style: 'cancel' },
+            {
+              text: t('folders.buttons.delete'),
+              style: 'destructive',
+              onPress: () => dispatch(deleteNote(noteId as any)),
+            },
+          ],
+        )
       } else {
         dispatch(deleteNote(noteId as any))
       }
@@ -155,15 +160,20 @@ export default function FolderNotesScreen() {
     [dispatch],
   )
 
-  const handleCopyNote = useCallback(async (title: string, html: string) => {
-    const plain = [title, getPreview(html)].filter(Boolean).join('\n\n')
-    await Clipboard.setStringAsync(plain)
-  }, [])
+  const handleCopyNote = useCallback(
+    async (title: string, html: string) => {
+      const plain = [title, getPreview(html, t('folderView.noAdditionalText'))]
+        .filter(Boolean)
+        .join('\n\n')
+      await Clipboard.setStringAsync(plain)
+    },
+    [t],
+  )
 
   const handleRenameFolder = useCallback(() => {
     if (!folder) return
     Alert.prompt(
-      'Rename Folder',
+      t('folders.renameTitle'),
       undefined,
       (newName) => {
         const trimmed = newName?.trim()
@@ -174,13 +184,13 @@ export default function FolderNotesScreen() {
       'plain-text',
       folder.name,
     )
-  }, [dispatch, folder, id])
+  }, [dispatch, folder, id, t])
 
   const handleDeleteFolder = useCallback(() => {
-    Alert.alert('Delete Folder', 'This folder and its notes will be deleted.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('folders.deleteTitle'), t('folders.deleteDescription'), [
+      { text: t('folders.buttons.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('folders.buttons.delete'),
         style: 'destructive',
         onPress: () => {
           dispatch(deleteFolder(id as any))
@@ -188,7 +198,7 @@ export default function FolderNotesScreen() {
         },
       },
     ])
-  }, [dispatch, id])
+  }, [dispatch, id, t])
 
   useEffect(() => {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
@@ -213,7 +223,7 @@ export default function FolderNotesScreen() {
           headerTransparent: true,
           headerBlurEffect: isDark ? 'dark' : 'light',
           headerSearchBarOptions: {
-            placeholder: 'Search notes...',
+            placeholder: t('folderView.searchPlaceholder'),
             hideWhenScrolling: false,
             textColor: colors.text,
             hintTextColor: colors.textSecondary,
@@ -229,10 +239,10 @@ export default function FolderNotesScreen() {
         {!folder?.isSystem && (
           <Stack.Toolbar.Menu icon="ellipsis">
             <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
-              Rename
+              {t('folders.buttons.rename')}
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction icon="trash" destructive onPress={handleDeleteFolder}>
-              Delete
+              {t('folders.buttons.delete')}
             </Stack.Toolbar.MenuAction>
           </Stack.Toolbar.Menu>
         )}
@@ -245,10 +255,10 @@ export default function FolderNotesScreen() {
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.pageTitle}>{folder?.name || 'Notes'}</Text>
+        <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
         <View style={styles.headerInfo}>
           <Text style={common.sectionCap}>
-            {notes.length} {notes.length === 1 ? 'NOTE' : 'NOTES'}
+            {t('folderView.noteCount', { count: notes.length })}
           </Text>
         </View>
 
@@ -266,8 +276,8 @@ export default function FolderNotesScreen() {
                 {localPreferences['isSynced'] !== true && (
                   <View style={styles.linkContainer}>
                     <View style={styles.linkDivider} />
-                    <Text style={styles.linkTitle}>Link Existing Device</Text>
-                    <Text style={styles.linkSub}>Already have notes elsewhere?</Text>
+                    <Text style={styles.linkTitle}>{t('folderView.empty.linkTitle')}</Text>
+                    <Text style={styles.linkSub}>{t('folderView.empty.linkSub')}</Text>
                     <Pressable
                       onPress={handleLinkDevice}
                       style={({ pressed }) => [
@@ -276,7 +286,7 @@ export default function FolderNotesScreen() {
                         pressed && common.pressed,
                       ]}
                     >
-                      <Text style={styles.linkBtnText}>Connect Device</Text>
+                      <Text style={styles.linkBtnText}>{t('folderView.empty.connectBtn')}</Text>
                     </Pressable>
                   </View>
                 )}
@@ -296,7 +306,7 @@ export default function FolderNotesScreen() {
                     id={note.key}
                     title={note.value?.title}
                     date={formatDate(note.value?.updatedAt || note.value?.createdAt)}
-                    summary={getPreview(note.value?.note)}
+                    summary={getPreview(note.value?.note, t('folderView.noAdditionalText'))}
                     rawImageUrl={getFirstImageUrl(note.value?.note)}
                     folderName={
                       folder?.id === ALL_NOTES_KEY

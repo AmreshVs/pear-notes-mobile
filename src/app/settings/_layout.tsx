@@ -1,9 +1,11 @@
 import { Stack } from 'expo-router'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { useTheme } from '@/components/Themed'
 
 export default function SettingsLayout() {
+  const { t } = useTranslation()
   const { colors } = useTheme()
   return (
     <Stack
@@ -12,11 +14,11 @@ export default function SettingsLayout() {
         headerTitleStyle: { color: colors.text, fontWeight: '600', fontSize: 17 },
         headerStyle: { backgroundColor: colors.background },
         headerShadowVisible: false,
-        headerBackTitle: 'Settings',
+        headerBackTitle: t('layouts.settings'),
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Settings' }} />
-      <Stack.Screen name="sync" options={{ title: 'Link and Sync' }} />
+      <Stack.Screen name="index" options={{ title: t('layouts.settings') }} />
+      <Stack.Screen name="sync" options={{ title: t('layouts.linkAndSync') }} />
     </Stack>
   )
 }

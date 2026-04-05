@@ -15,6 +15,7 @@ import { router, Stack } from 'expo-router'
 import { SymbolView } from 'expo-symbols'
 import { FolderPlus, SquarePen } from 'lucide-react-native'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -31,6 +32,7 @@ import {
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function FoldersScreen() {
+  const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
   const common = useCommonStyles()
   const colors = useColors()
@@ -82,13 +84,13 @@ export default function FoldersScreen() {
   )
 
   const handleCreateFolder = useCallback(() => {
-    dispatch(createFolder({ name: 'Untitled' } as any))
-  }, [dispatch])
+    dispatch(createFolder({ name: t('folders.untitled') } as any))
+  }, [dispatch, t])
 
   const handleRenameFolder = useCallback(
     (folderId: string, currentName: string) => {
       Alert.prompt(
-        'Rename Folder',
+        t('folders.renameTitle'),
         undefined,
         (newName) => {
           const trimmed = newName?.trim()
@@ -100,21 +102,21 @@ export default function FoldersScreen() {
         currentName,
       )
     },
-    [dispatch],
+    [dispatch, t],
   )
 
   const handleDeleteFolder = useCallback(
     (folderId: string) => {
-      Alert.alert('Delete Folder', 'This folder and its notes will be deleted.', [
-        { text: 'Cancel', style: 'cancel' },
+      Alert.alert(t('folders.deleteTitle'), t('folders.deleteDescription'), [
+        { text: t('folders.buttons.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('folders.buttons.delete'),
           style: 'destructive',
           onPress: () => dispatch(deleteFolder(folderId as any)),
         },
       ])
     },
-    [dispatch],
+    [dispatch, t],
   )
 
   const getFolderIcon = useCallback((folder: any) => {
@@ -196,12 +198,14 @@ export default function FoldersScreen() {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.pageTitle}>Folders</Text>
+        <Text style={styles.pageTitle}>{t('folders.title')}</Text>
         <View style={styles.section}>{renderFolders(topFolders)}</View>
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text style={[common.sectionCap, styles.sectionHeaderMargin]}>ARCHIVE</Text>
+            <Text style={[common.sectionCap, styles.sectionHeaderMargin]}>
+              {t('folders.archiveHeader')}
+            </Text>
             {renderFolders(archiveFolders, topFolders.length)}
           </View>
         )}

@@ -16,14 +16,15 @@ import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Animated,
   Modal,
   Pressable,
-  View as RNView,
   StyleSheet,
   TextInput,
+  View as RNView,
 } from 'react-native'
 import Reanimated, { FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
@@ -43,6 +44,7 @@ import {
 const isAndroid = process.env.EXPO_OS === 'android'
 
 export const PairingOverlay = memo(function PairingOverlay() {
+  const { t } = useTranslation()
   const dispatch = useDispatch()
   const styles = useThemedStyles(createStyles)
   const colors = useColors()
@@ -159,30 +161,34 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const myFp = useMemo(() => getFingerprint(localKey), [localKey])
   const isConfirm = step === 'confirmation'
   const mainFp = isConfirm ? peerFp : myFp
-  const mainLabel = isConfirm ? 'REMOTE ID' : 'MY ID'
-  const subLabel = isConfirm ? 'MY ID' : peerFp ? 'REMOTE ID' : null
+  const mainLabel = isConfirm ? t('pairing.overlay.remoteId') : t('pairing.overlay.myId')
+  const subLabel = isConfirm
+    ? t('pairing.overlay.myId')
+    : peerFp
+      ? t('pairing.overlay.remoteId')
+      : null
   const subFp = isConfirm ? myFp : peerFp || null
 
   const getMessage = useCallback(() => {
     switch (step) {
       case 'searching':
-        return 'Searching for device...'
+        return t('pairing.status.searching')
       case 'connected':
-        return 'Device connected'
+        return t('pairing.status.connected')
       case 'authenticating':
-        return 'Authenticating peer...'
+        return t('pairing.status.authenticating')
       case 'authorizing':
-        return 'Authorizing device...'
+        return t('pairing.status.authorizing')
       case 'initializing_storage':
-        return 'Initializing storage...'
+        return t('pairing.status.initializing')
       case 'replicating_data':
-        return 'Replicating data...'
+        return t('pairing.status.replicating')
       case 'syncing':
-        return 'Starting data replication...'
+        return t('pairing.status.startingReplication')
       case 'receiving_data':
-        return `Receiving data... (${data || 0} notes found)`
+        return t('pairing.status.receivingWithCount', { count: data || 0 })
       default:
-        return 'Establishing Link...'
+        return t('pairing.status.establishing')
     }
   }, [step, data])
 
@@ -210,11 +216,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <View style={[styles.icon, styles.errorIcon]}>
             <ShieldAlert size={40} color={colors.error} strokeWidth={2.5} />
           </View>
-          <Text style={styles.title}>Device Removed</Text>
-          <Text style={styles.sub}>
-            This device has been removed from the synced cluster by another device. Press Okay to
-            clear local synced data and reset common storage.
-          </Text>
+          <Text style={styles.title}>{t('pairing.overlay.deviceRemovedTitle')}</Text>
+          <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
           <Pressable
             onPress={() => {
               dispatch(clearStorage())
@@ -222,7 +225,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
             }}
             style={[styles.btn, styles.errorBtn]}
           >
-            <Text style={styles.errorBtnText}>Okay</Text>
+            <Text style={styles.errorBtnText}>{t('pairing.overlay.okay')}</Text>
           </Pressable>
         </View>
       )
@@ -232,15 +235,13 @@ export const PairingOverlay = memo(function PairingOverlay() {
       return (
         <View style={styles.cardInner}>
           {renderIcon()}
-          <Text style={styles.title}>Device Linked</Text>
+          <Text style={styles.title}>{t('pairing.overlay.linkedTitle')}</Text>
           <Text style={styles.sub}>
-            {isInviter
-              ? 'Your new device has been verified and linked successfully.'
-              : 'Welcome! This device is now a secure part of your notes library.'}
+            {isInviter ? t('pairing.overlay.linkedInviter') : t('pairing.overlay.linkedReceiver')}
           </Text>
           <Pressable onPress={handleClose} style={styles.greenBtn}>
             <Text style={styles.greenBtnText}>
-              {isInviter ? 'Return to Notes' : 'Open Workspace'}
+              {isInviter ? t('pairing.overlay.returnToNotes') : t('pairing.overlay.openWorkspace')}
             </Text>
           </Pressable>
         </View>
@@ -251,12 +252,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
       return (
         <View style={styles.cardInner}>
           {renderSyncIcon()}
-          <Text style={styles.title}>Syncing Data</Text>
-          <Text style={styles.sub}>Moving your notes and media to this device...</Text>
+          <Text style={styles.title}>{t('pairing.overlay.syncingTitle')}</Text>
+          <Text style={styles.sub}>{t('pairing.overlay.syncingDesc')}</Text>
           <View style={styles.progressWrap}>
             <View style={styles.progressLabel}>
               <Text style={styles.labelText}>
-                {getMessage()} • {progress ?? 0}% Complete
+                {getMessage()} • {t('pairing.overlay.complete', { progress: progress ?? 0 })}
               </Text>
             </View>
             <View style={styles.trackContainer}>
@@ -276,23 +277,21 @@ export const PairingOverlay = memo(function PairingOverlay() {
       return (
         <View style={styles.cardInner}>
           {renderIcon()}
-          <Text style={styles.title}>Link Your Device</Text>
-          <Text style={styles.sub}>
-            Enter the invite code from your other device to sync your notes securely.
-          </Text>
+          <Text style={styles.title}>{t('pairing.overlay.linkTitle')}</Text>
+          <Text style={styles.sub}>{t('pairing.overlay.linkDesc')}</Text>
           <View style={styles.inputArea}>
             <View style={styles.inputHeader}>
-              <Text style={styles.inputLabelText}>Invite Code</Text>
+              <Text style={styles.inputLabelText}>{t('pairing.overlay.inviteCode')}</Text>
               <Pressable onPress={handleOpenScanner} style={styles.scanBtn}>
                 <ScanLine size={16} color={colors.primary} />
-                <Text style={styles.scanBtnText}>Scan QR</Text>
+                <Text style={styles.scanBtnText}>{t('pairing.overlay.scanBtn')}</Text>
               </Pressable>
             </View>
             <TextInput
               value={pasteCode}
               onChangeText={setPasteCode}
               onSubmitEditing={handleConnect}
-              placeholder="Paste your code here..."
+              placeholder={t('pairing.overlay.placeholder')}
               placeholderTextColor={colors.textSecondary}
               style={styles.input}
               autoFocus
@@ -302,7 +301,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           </View>
           <View style={styles.row}>
             <Pressable onPress={handleClose} style={styles.cancelPressable}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={handleConnect}
@@ -312,7 +311,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
                 { backgroundColor: colors.primary, opacity: !pasteCode.trim() ? 0.3 : 1 },
               ]}
             >
-              <Text style={styles.confirmBtnText}>Connect</Text>
+              <Text style={styles.confirmBtnText}>{t('pairing.overlay.connectBtn')}</Text>
             </Pressable>
           </View>
         </View>
@@ -323,12 +322,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
       <View style={styles.cardInner}>
         {renderIcon()}
         <Text style={styles.title}>
-          {isConfirm ? 'Verify Secure Code' : 'Identity Verification'}
+          {isConfirm ? t('pairing.overlay.verifyTitle') : t('pairing.overlay.identityTitle')}
         </Text>
         <Text style={styles.sub}>
-          {isConfirm
-            ? 'Ensure both devices display the same identification code.'
-            : 'Verifying connection. Please authorize on your other device.'}
+          {isConfirm ? t('pairing.overlay.verifyDesc') : t('pairing.overlay.identityDesc')}
         </Text>
 
         {mainFp ? (
@@ -349,13 +346,13 @@ export const PairingOverlay = memo(function PairingOverlay() {
         {isConfirm ? (
           <View style={styles.row}>
             <Pressable onPress={handleClose} style={styles.cancelPressable}>
-              <Text style={styles.cancelBtnText}>Cancel</Text>
+              <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={() => dispatch(confirmPairing())}
               style={[styles.btn, { backgroundColor: colors.primary }]}
             >
-              <Text style={styles.confirmBtnText}>Verify Code</Text>
+              <Text style={styles.confirmBtnText}>{t('pairing.overlay.verifyBtn')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -458,19 +455,15 @@ export const PairingOverlay = memo(function PairingOverlay() {
                 </Pressable>
               </View>
               <View style={styles.scannerFooter}>
-                <Text style={styles.scannerTitle}>Scan invite QR code</Text>
-                <Text style={styles.scannerDescription}>
-                  Point your camera at the QR code shown on your other device to fill the invite
-                  automatically.
-                </Text>
+                <Text style={styles.scannerTitle}>{t('sync.scanner.title')}</Text>
+                <Text style={styles.scannerDescription}>{t('sync.scanner.description')}</Text>
               </View>
             </>
           ) : (
             <View style={styles.scannerPermissionCard}>
-              <Text style={styles.scannerTitle}>Camera access needed</Text>
+              <Text style={styles.scannerTitle}>{t('sync.permissions.cameraTitle')}</Text>
               <Text style={styles.scannerDescription}>
-                Allow camera access to scan an invite QR code and fill the pairing code
-                automatically.
+                {t('sync.permissions.cameraDescription')}
               </Text>
               <Pressable
                 onPress={requestCameraPermission}
@@ -479,10 +472,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
                   { backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
                 ]}
               >
-                <Text style={styles.permissionBtnText}>Allow Camera</Text>
+                <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
               </Pressable>
               <Pressable onPress={() => setIsScanning(false)} style={styles.permissionCancelBtn}>
-                <Text style={styles.permissionCancelText}>Not now</Text>
+                <Text style={styles.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
               </Pressable>
             </View>
           )}

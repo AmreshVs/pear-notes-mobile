@@ -28,6 +28,7 @@ import {
   X,
 } from 'lucide-react-native'
 import React, { memo, useCallback, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Animated,
@@ -55,15 +56,16 @@ import {
   useCommonStyles,
 } from '@/constants/commonStyles'
 
-const PLATFORM_NAMES: Record<string, string> = {
-  darwin: 'macOS',
-  win32: 'Windows',
-  linux: 'Linux',
-  android: 'Android',
-  ios: 'iOS',
-}
+const GET_PLATFORM_NAMES = (t: any): Record<string, string> => ({
+  darwin: t('sync.platforms.macOS'),
+  win32: t('sync.platforms.Windows'),
+  linux: t('sync.platforms.Linux'),
+  android: t('sync.platforms.Android'),
+  ios: t('sync.platforms.iOS'),
+})
 
 export default function SyncScreen() {
+  const { t } = useTranslation()
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
@@ -125,13 +127,17 @@ export default function SyncScreen() {
     [hasScanned],
   )
 
-  const formatExpiry = useCallback((ts: number | null) => {
-    if (!ts) return 'Permanent Link'
-    const ms = ts < 10000000000 ? ts * 1000 : ts
-    const d = new Date(ms)
-    if (isNaN(d.getTime())) return 'Permanent Link'
-    return `Expires ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-  }, [])
+  const formatExpiry = useCallback(
+    (ts: number | null) => {
+      if (!ts) return t('sync.invite.permanent')
+      const ms = ts < 10000000000 ? ts * 1000 : ts
+      const d = new Date(ms)
+      if (isNaN(d.getTime())) return t('sync.invite.permanent')
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      return t('sync.invite.expiry', { time: timeStr })
+    },
+    [t],
+  )
 
   return (
     <KeyboardAvoidingView
@@ -148,12 +154,12 @@ export default function SyncScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Reanimated.View entering={FadeIn.duration(220)} style={styles.segRow}>
-          {(['link', 'devices'] as const).map((t) => {
-            const active = tab === t
+          {(['link', 'devices'] as const).map((tabKey) => {
+            const active = tab === tabKey
             return (
               <Pressable
-                key={t}
-                onPress={() => setTab(t)}
+                key={tabKey}
+                onPress={() => setTab(tabKey)}
                 style={[styles.segPill, active && styles.segPillActive]}
               >
                 <Text
@@ -162,7 +168,7 @@ export default function SyncScreen() {
                     active ? styles.segLabelActive : styles.segLabelInactive,
                   ]}
                 >
-                  {t === 'link' ? 'Link Device' : 'My Devices'}
+                  {tabKey === 'link' ? t('sync.tabs.link') : t('sync.tabs.devices')}
                 </Text>
               </Pressable>
             )
@@ -183,11 +189,8 @@ export default function SyncScreen() {
                     <Globe size={26} color={colors.primary} strokeWidth={1.5} />
                   </RNView>
 
-                  <Text style={styles.heroTitle}>Link Your Devices</Text>
-                  <Text style={styles.heroDesc}>
-                    Create a secure, end-to-end encrypted connection to sync your notes across
-                    devices instantly.
-                  </Text>
+                  <Text style={styles.heroTitle}>{t('sync.hero.title')}</Text>
+                  <Text style={styles.heroDesc}>{t('sync.hero.description')}</Text>
 
                   <Pressable
                     onPress={() => dispatch(createInvite())}
@@ -201,7 +204,7 @@ export default function SyncScreen() {
                       <ActivityIndicator size="small" color="#000" style={styles.indicatorMargin} />
                     )}
                     <Text style={styles.btnText}>
-                      {isLoading ? 'Preparing…' : 'Generate Invite'}
+                      {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateInvite')}
                     </Text>
                   </Pressable>
                 </>
@@ -212,7 +215,7 @@ export default function SyncScreen() {
                       <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
                     </RNView>
                     <RNView style={common.flex1}>
-                      <Text style={styles.inviteTitle}>Invitation Ready</Text>
+                      <Text style={styles.inviteTitle}>{t('sync.invite.header')}</Text>
                       <Text style={styles.inviteSub}>{formatExpiry(expiresAt)}</Text>
                     </RNView>
                   </RNView>
@@ -230,15 +233,12 @@ export default function SyncScreen() {
                           color="#111111"
                         />
                       </RNView>
-                      <Text style={styles.qrTitle}>Scan to link faster</Text>
-                      <Text style={styles.qrDescription}>
-                        Open the link screen on your other device and scan this QR code to paste the
-                        invite instantly.
-                      </Text>
+                      <Text style={styles.qrTitle}>{t('sync.invite.qrTitle')}</Text>
+                      <Text style={styles.qrDescription}>{t('sync.invite.qrDescription')}</Text>
                     </Reanimated.View>
                   ) : null}
 
-                  <Text style={styles.codeLabel}>SECURE PAIR CODE</Text>
+                  <Text style={styles.codeLabel}>{t('sync.invite.codeLabel')}</Text>
 
                   <RNView style={styles.codeBox}>
                     <ScrollView
@@ -268,7 +268,7 @@ export default function SyncScreen() {
                       <Link2 size={16} color="#000" strokeWidth={2.2} />
                     )}
                     <Text style={[styles.btnText, copied && styles.btnTextCopied]}>
-                      {copied ? 'Copied!' : 'Copy Invite Code'}
+                      {copied ? t('sync.invite.copied') : t('sync.invite.copyBtn')}
                     </Text>
                   </Pressable>
                 </>
@@ -283,10 +283,7 @@ export default function SyncScreen() {
                   strokeWidth={1.8}
                   style={styles.iconTopFix}
                 />
-                <Text style={styles.warningText}>
-                  For security, don't share this code in public channels as it grants full access to
-                  your notes.
-                </Text>
+                <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
               </Reanimated.View>
             )}
 
@@ -298,11 +295,11 @@ export default function SyncScreen() {
                 <RNView style={[styles.invitePasteHeader, { justifyContent: 'space-between' }]}>
                   <RNView style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Text style={styles.plusIcon}>+</Text>
-                    <Text style={styles.invitePasteText}>Already have an invite?</Text>
+                    <Text style={styles.invitePasteText}>{t('sync.paste.header')}</Text>
                   </RNView>
                   <Pressable onPress={handleOpenScanner} style={styles.scanPillBtn}>
                     <ScanLine size={16} color={colors.primary} />
-                    <Text style={styles.scanPillBtnText}>Scan QR</Text>
+                    <Text style={styles.scanPillBtnText}>{t('sync.paste.scanBtn')}</Text>
                   </Pressable>
                 </RNView>
 
@@ -314,7 +311,7 @@ export default function SyncScreen() {
                     onFocus={() =>
                       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
                     }
-                    placeholder="Paste invite code here..."
+                    placeholder={t('sync.paste.placeholder')}
                     placeholderTextColor={colors.textMuted}
                     style={styles.codeInput}
                     autoCapitalize="none"
@@ -335,7 +332,7 @@ export default function SyncScreen() {
                     {isLoading ? (
                       <ActivityIndicator size="small" color="#000" />
                     ) : (
-                      <Text style={styles.linkBtnText}>Link</Text>
+                      <Text style={styles.linkBtnText}>{t('sync.paste.linkBtn')}</Text>
                     )}
                   </Pressable>
                 </RNView>
@@ -344,10 +341,7 @@ export default function SyncScreen() {
 
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
               <ShieldCheck size={13} color={colors.primary} style={{ marginTop: 2 }} />
-              <Text style={styles.footNote}>
-                Your data moves directly between devices using encrypted Hypercore logs. No central
-                server involved.
-              </Text>
+              <Text style={styles.footNote}>{t('sync.footer')}</Text>
             </Reanimated.View>
           </Reanimated.View>
         ) : (
@@ -358,7 +352,7 @@ export default function SyncScreen() {
             style={styles.pad}
           >
             <Reanimated.View entering={FadeIn.duration(200)}>
-              <Text style={styles.sectionCap}>THIS DEVICE</Text>
+              <Text style={styles.sectionCap}>{t('sync.devices.thisDevice')}</Text>
             </Reanimated.View>
 
             <Reanimated.View
@@ -378,7 +372,7 @@ export default function SyncScreen() {
             </Reanimated.View>
 
             <Reanimated.View entering={FadeIn.duration(200).delay(70)}>
-              <Text style={styles.sectionCapDevice}>OTHER DEVICES</Text>
+              <Text style={styles.sectionCapDevice}>{t('sync.devices.otherDevices')}</Text>
             </Reanimated.View>
 
             {syncedDevices.filter((d: any) => !d.isLocal).length > 0 ? (
@@ -404,7 +398,7 @@ export default function SyncScreen() {
                 style={styles.emptyCard}
               >
                 <Smartphone size={22} color={colors.textMuted} strokeWidth={1.5} />
-                <Text style={styles.emptyText}>No other devices connected yet.</Text>
+                <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
               </Reanimated.View>
             )}
 
@@ -446,19 +440,15 @@ export default function SyncScreen() {
                 </Pressable>
               </RNView>
               <RNView style={styles.scannerFooter}>
-                <Text style={styles.scannerTitle}>Scan invite QR code</Text>
-                <Text style={styles.scannerDescription}>
-                  Point your camera at the QR code shown on your other device to fill the invite
-                  automatically.
-                </Text>
+                <Text style={styles.scannerTitle}>{t('sync.scanner.title')}</Text>
+                <Text style={styles.scannerDescription}>{t('sync.scanner.description')}</Text>
               </RNView>
             </>
           ) : (
             <RNView style={styles.scannerPermissionCard}>
-              <Text style={styles.scannerTitle}>Camera access needed</Text>
+              <Text style={styles.scannerTitle}>{t('sync.permissions.cameraTitle')}</Text>
               <Text style={styles.scannerDescription}>
-                Allow camera access to scan an invite QR code and fill the pairing code
-                automatically.
+                {t('sync.permissions.cameraDescription')}
               </Text>
               <Pressable
                 onPress={requestCameraPermission}
@@ -467,10 +457,10 @@ export default function SyncScreen() {
                   { backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
                 ]}
               >
-                <Text style={styles.permissionBtnText}>Allow Camera</Text>
+                <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
               </Pressable>
               <Pressable onPress={handleCloseScanner} style={styles.permissionCancelBtn}>
-                <Text style={styles.permissionCancelText}>Not now</Text>
+                <Text style={styles.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
               </Pressable>
             </RNView>
           )}
@@ -496,6 +486,7 @@ const DeviceCard = memo(function DeviceCard({
   const styles = useThemedStyles(createStyles)
   const common = useCommonStyles()
   const dispatch = useDispatch()
+  const { t } = useTranslation()
   const Icon = device.deviceType === 'desktop' ? Monitor : Smartphone
 
   const [isEditing, setIsEditing] = useState(false)
@@ -571,13 +562,15 @@ const DeviceCard = memo(function DeviceCard({
             ) : (
               <Pressable onPress={!isOther ? startEditing : undefined}>
                 <Text numberOfLines={1} style={styles.deviceName}>
-                  {device.title || device.key || 'Unknown Device'}
+                  {device.title || device.key || t('sync.platforms.unknown')}
                 </Text>
               </Pressable>
             )}
             <Text style={styles.deviceSub}>
-              {PLATFORM_NAMES[device.platform || ''] || device.platform || '—'}
-              {!isOther && !isEditing && <Text style={styles.tapToRename}> · Tap to rename</Text>}
+              {GET_PLATFORM_NAMES(t)[device.platform || ''] || device.platform || '—'}
+              {!isOther && !isEditing && (
+                <Text style={styles.tapToRename}>{t('sync.platforms.renameHint')}</Text>
+              )}
             </Text>
           </RNView>
 
@@ -621,6 +614,7 @@ const DeleteModal = memo(function DeleteModal({
   const { colors } = useTheme()
   const styles = useThemedStyles(createStyles)
   const common = useCommonStyles()
+  const { t } = useTranslation()
 
   return (
     <Modal
@@ -643,10 +637,8 @@ const DeleteModal = memo(function DeleteModal({
                 <ShieldAlert size={40} color={colors.error} />
               </RNView>
 
-              <Text style={styles.modalTitle}>Remove Device?</Text>
-              <Text style={styles.modalSub}>
-                The device will lose the data sync and all data will be removed from that device.
-              </Text>
+              <Text style={styles.modalTitle}>{t('sync.delete.title')}</Text>
+              <Text style={styles.modalSub}>{t('sync.delete.description')}</Text>
 
               <RNView style={styles.modalRow}>
                 <Pressable
@@ -657,7 +649,7 @@ const DeleteModal = memo(function DeleteModal({
                     pressed && common.pressed,
                   ]}
                 >
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text style={styles.cancelText}>{t('sync.delete.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   onPress={onConfirm}
@@ -667,7 +659,7 @@ const DeleteModal = memo(function DeleteModal({
                     pressed && common.pressed,
                   ]}
                 >
-                  <Text style={styles.removeText}>Remove</Text>
+                  <Text style={styles.removeText}>{t('sync.delete.remove')}</Text>
                 </Pressable>
               </RNView>
             </RNView>

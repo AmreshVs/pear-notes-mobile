@@ -6,6 +6,7 @@ import {
   Trash2,
 } from 'lucide-react-native'
 import React, { memo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
 
@@ -47,6 +48,7 @@ export const FolderRow = memo(function FolderRow({
   onRename,
   onDelete,
 }: FolderRowProps) {
+  const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
   const Icon = ICON_MAP[icon || 'Folder'] || FolderIcon
 
@@ -94,11 +96,15 @@ export const FolderRow = memo(function FolderRow({
       <ContextMenu>
         <ContextMenu.Items>
           {onRename && (
-            <Button label="Rename" systemImage="pencil" onPress={() => onRename(id, name)} />
+            <Button
+              label={t('folders.buttons.rename')}
+              systemImage="pencil"
+              onPress={() => onRename(id, name)}
+            />
           )}
           {onDelete && (
             <Button
-              label="Delete"
+              label={t('folders.buttons.delete')}
               systemImage="trash"
               role="destructive"
               onPress={() => onDelete(id)}

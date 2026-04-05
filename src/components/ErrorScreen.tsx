@@ -1,5 +1,6 @@
 import { AlertCircle, RotateCcw } from 'lucide-react-native'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity } from 'react-native'
 
 import { Text, Theme, View, useThemedStyles } from './Themed'
@@ -12,17 +13,18 @@ interface ErrorScreenProps {
 }
 
 export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) => {
+  const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
 
   return (
     <View style={styles.container}>
       <AlertCircle size={64} color={styles.icon.color} strokeWidth={1.5} style={styles.icon} />
-      <Text style={styles.title}>Initialization Failed</Text>
+      <Text style={styles.title}>{t('error.initFailed')}</Text>
       <Text style={styles.message}>{message}</Text>
 
       <TouchableOpacity style={styles.button} onPress={onRetry} activeOpacity={0.7}>
         <RotateCcw size={20} color={styles.buttonText.color} style={styles.buttonIcon} />
-        <Text style={styles.buttonText}>Retry</Text>
+        <Text style={styles.buttonText}>{t('error.retry')}</Text>
       </TouchableOpacity>
     </View>
   )

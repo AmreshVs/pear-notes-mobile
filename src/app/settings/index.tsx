@@ -10,6 +10,7 @@ import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
 import { ChevronRight, RefreshCw, X } from 'lucide-react-native'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { ActionSheetIOS, Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
@@ -24,29 +25,30 @@ import {
   useCommonStyles,
 } from '@/constants/commonStyles'
 
-const SORT_OPTIONS = [
-  { label: 'Date Edited', value: 'updatedAt' },
-  { label: 'Date Created', value: 'createdAt' },
-  { label: 'Title', value: 'title' },
+const GET_SORT_OPTIONS = (t: any) => [
+  { label: t('settings.general.sortOptions.updatedAt'), value: 'updatedAt' },
+  { label: t('settings.general.sortOptions.createdAt'), value: 'createdAt' },
+  { label: t('settings.general.sortOptions.title'), value: 'title' },
 ]
 
-const FONT_OPTIONS = [
-  { label: 'Inter', value: 'Inter' },
-  { label: 'Outfit', value: 'Outfit' },
-  { label: 'Lora', value: 'Lora' },
-  { label: 'Newsreader', value: 'Newsreader' },
-  { label: 'IBM Plex Mono', value: 'IBM Plex Mono' },
-  { label: 'System Default', value: 'System' },
-  { label: 'Serif', value: 'Serif' },
-  { label: 'Monospace', value: 'Mono' },
+const GET_FONT_OPTIONS = (t: any) => [
+  { label: t('settings.general.fontOptions.Inter'), value: 'Inter' },
+  { label: t('settings.general.fontOptions.Outfit'), value: 'Outfit' },
+  { label: t('settings.general.fontOptions.Lora'), value: 'Lora' },
+  { label: t('settings.general.fontOptions.Newsreader'), value: 'Newsreader' },
+  { label: t('settings.general.fontOptions.IBM Plex Mono'), value: 'IBM Plex Mono' },
+  { label: t('settings.general.fontOptions.System'), value: 'System' },
+  { label: t('settings.general.fontOptions.Serif'), value: 'Serif' },
+  { label: t('settings.general.fontOptions.Mono'), value: 'Mono' },
 ]
 
 function showPicker(
   title: string,
   options: { label: string; value: string }[],
   onSelect: (value: string) => void,
+  cancelLabel: string,
 ) {
-  const labels = [...options.map((o) => o.label), 'Cancel']
+  const labels = [...options.map((o) => o.label), cancelLabel]
   ActionSheetIOS.showActionSheetWithOptions(
     { options: labels, cancelButtonIndex: labels.length - 1, title },
     (index) => {
@@ -56,6 +58,7 @@ function showPicker(
 }
 
 export default function SettingsScreen() {
+  const { t } = useTranslation()
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
@@ -71,7 +74,7 @@ export default function SettingsScreen() {
     <RNView style={styles.container}>
       <Stack.Screen
         options={{
-          title: 'Settings',
+          title: t('settings.title'),
           headerRight: () => (
             <Pressable
               onPress={() => router.back()}
@@ -90,7 +93,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeIn.duration(220)}>
-          <Text style={styles.sectionCap}>GENERAL</Text>
+          <Text style={styles.sectionCap}>{t('settings.general.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -99,14 +102,14 @@ export default function SettingsScreen() {
         >
           <RNView style={common.card}>
             <RNView style={styles.rowUnderline}>
-              <Text style={styles.rowLabel}>App Theme</Text>
+              <Text style={styles.rowLabel}>{t('settings.general.appTheme')}</Text>
               <RNView style={styles.segCtrl}>
-                {(['system', 'light', 'dark'] as const).map((t, i) => {
-                  const isActive = currentTheme === t
+                {(['system', 'light', 'dark'] as const).map((themeKey, i) => {
+                  const isActive = currentTheme === themeKey
                   return (
                     <Pressable
-                      key={t}
-                      onPress={() => dispatch(setTheme(t))}
+                      key={themeKey}
+                      onPress={() => dispatch(setTheme(themeKey))}
                       style={[
                         styles.segPill,
                         isActive && styles.segPillActive,
@@ -115,7 +118,7 @@ export default function SettingsScreen() {
                       ]}
                     >
                       <Text style={[styles.segText, isActive && styles.segTextActive]}>
-                        {t.charAt(0).toUpperCase() + t.slice(1)}
+                        {t(`settings.general.themes.${themeKey}`)}
                       </Text>
                     </Pressable>
                   )
@@ -125,16 +128,20 @@ export default function SettingsScreen() {
 
             <Pressable
               onPress={() =>
-                showPicker('Sort Notes By', SORT_OPTIONS, (val) =>
-                  dispatch(updateSetting({ key: 'sortBy', value: val })),
+                showPicker(
+                  t('settings.general.sortNotesBy'),
+                  GET_SORT_OPTIONS(t),
+                  (val) => dispatch(updateSetting({ key: 'sortBy', value: val })),
+                  t('common.cancel'),
                 )
               }
               style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
             >
-              <Text style={styles.rowLabel}>Sort Notes By</Text>
+              <Text style={styles.rowLabel}>{t('settings.general.sortNotesBy')}</Text>
               <RNView style={common.settingsRowRight}>
                 <Text style={styles.rowVal}>
-                  {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Date Edited'}
+                  {GET_SORT_OPTIONS(t).find((o) => o.value === sortBy)?.label ??
+                    t('settings.general.sortOptions.updatedAt')}
                 </Text>
                 <ChevronRight size={15} color={colors.textMuted} />
               </RNView>
@@ -142,16 +149,19 @@ export default function SettingsScreen() {
 
             <Pressable
               onPress={() =>
-                showPicker('Font Family', FONT_OPTIONS, (val) =>
-                  dispatch(updateSetting({ key: 'fontFamily', value: val })),
+                showPicker(
+                  t('settings.general.fontFamily'),
+                  GET_FONT_OPTIONS(t),
+                  (val) => dispatch(updateSetting({ key: 'fontFamily', value: val })),
+                  t('common.cancel'),
                 )
               }
               style={({ pressed }) => [styles.rowUnderline, pressed && styles.rowPressed]}
             >
-              <Text style={styles.rowLabel}>Font Family</Text>
+              <Text style={styles.rowLabel}>{t('settings.general.fontFamily')}</Text>
               <RNView style={common.settingsRowRight}>
                 <Text style={styles.rowVal}>
-                  {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
+                  {GET_FONT_OPTIONS(t).find((o) => o.value === fontFamily)?.label ?? fontFamily}
                 </Text>
                 <ChevronRight size={15} color={colors.textMuted} />
               </RNView>
@@ -159,7 +169,7 @@ export default function SettingsScreen() {
 
             <RNView style={styles.sliderRow}>
               <RNView style={styles.sliderHeader}>
-                <Text style={styles.rowLabel}>Text Size</Text>
+                <Text style={styles.rowLabel}>{t('settings.general.textSize')}</Text>
                 <RNView style={styles.badge}>
                   <Text style={styles.badgeText}>{editorFontSize}</Text>
                 </RNView>
@@ -186,7 +196,7 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(90)}>
-          <Text style={styles.sectionCapMargin}>SYNC & DEVICES</Text>
+          <Text style={styles.sectionCapMargin}>{t('settings.sync.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -202,7 +212,7 @@ export default function SettingsScreen() {
                 <RNView style={common.iconBox34}>
                   <RefreshCw size={17} color={colors.primary} strokeWidth={1.8} />
                 </RNView>
-                <Text style={styles.rowLabelSemiBold}>Link and Sync</Text>
+                <Text style={styles.rowLabelSemiBold}>{t('settings.sync.linkAndSync')}</Text>
               </RNView>
               <ChevronRight size={16} color={colors.textMuted} />
             </Pressable>
@@ -210,7 +220,7 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(160)}>
-          <Text style={styles.footer}>End-to-end encrypted • Fully private</Text>
+          <Text style={styles.footer}>{t('settings.footer')}</Text>
         </Animated.View>
       </ScrollView>
     </RNView>

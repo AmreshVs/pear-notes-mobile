@@ -1,4 +1,5 @@
 import React, { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   EnrichedTextInput,
   type EnrichedTextInputInstance,
@@ -34,6 +35,7 @@ export interface NoteEditorHandle {
 
 const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
   ({ initialContent, onContentChange, onStyleStateChange }, ref) => {
+    const { t } = useTranslation()
     const styles = useThemedStyles(createStyles)
     const colors = useColors()
     const inputRef = useRef<EnrichedTextInputInstance>(null)
@@ -87,7 +89,7 @@ const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
         defaultValue={sanitizedContent}
         style={styles.input}
         autoCapitalize="sentences"
-        placeholder="Start writing..."
+        placeholder={t('noteEditor.placeholder')}
         placeholderTextColor={colors.separator}
         onBlur={doSave}
         onChangeState={handleStyleStateChange}

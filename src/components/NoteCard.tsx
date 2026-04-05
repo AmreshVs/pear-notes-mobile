@@ -2,6 +2,7 @@ import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { Folder } from 'lucide-react-native'
 import React, { memo, useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Image,
   Platform,
@@ -56,6 +57,7 @@ export const NoteCard = memo(function NoteCard({
   moveFolders,
   onMoveTo,
 }: NoteCardProps) {
+  const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
   const colors = useColors()
   const [thumbError, setThumbError] = useState(false)
@@ -103,11 +105,11 @@ export const NoteCard = memo(function NoteCard({
         <RNView style={styles.row}>
           <RNView style={styles.content}>
             <Text variant="bodyBold" numberOfLines={1} style={titleStyle}>
-              {title || 'Untitled'}
+              {title || t('noteCard.untitled')}
             </Text>
 
             <Text variant="caption" numberOfLines={2} style={styles.summary}>
-              {summary || 'No additional text'}
+              {summary || t('noteCard.noAdditionalText')}
             </Text>
 
             <RNView style={styles.metadata}>
@@ -162,7 +164,7 @@ export const NoteCard = memo(function NoteCard({
       <ContextMenu>
         <ContextMenu.Items>
           {onMoveTo && (
-            <Menu label="Move to" systemImage="folder.badge.plus">
+            <Menu label={t('noteCard.actions.moveTo')} systemImage="folder.badge.plus">
               {moveFolders && moveFolders.length > 0 ? (
                 moveFolders.map((folder) => (
                   <Button
@@ -174,7 +176,7 @@ export const NoteCard = memo(function NoteCard({
                 ))
               ) : (
                 <Button
-                  label="No folders available"
+                  label={t('noteCard.actions.noFolders')}
                   systemImage="folder.badge.minus"
                   onPress={() => {}}
                 />
@@ -182,10 +184,21 @@ export const NoteCard = memo(function NoteCard({
             </Menu>
           )}
 
-          {onCopy && <Button label="Copy Note" systemImage="doc.on.doc" onPress={onCopy} />}
+          {onCopy && (
+            <Button
+              label={t('noteCard.actions.copyNote')}
+              systemImage="doc.on.doc"
+              onPress={onCopy}
+            />
+          )}
 
           {onDelete && (
-            <Button label="Delete" systemImage="trash" role="destructive" onPress={onDelete} />
+            <Button
+              label={t('noteCard.actions.delete')}
+              systemImage="trash"
+              role="destructive"
+              onPress={onDelete}
+            />
           )}
         </ContextMenu.Items>
         <ContextMenu.Trigger>{card}</ContextMenu.Trigger>

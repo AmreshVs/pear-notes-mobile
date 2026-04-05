@@ -1,3 +1,4 @@
+import '@/locales/i18n'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -7,7 +8,8 @@ import { Directory, Paths } from 'expo-file-system'
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Appearance, LogBox, NativeModules } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
@@ -40,6 +42,7 @@ const documentDir = new Directory(Paths.document)
 const storage = documentDir.uri.replace(/^file:\/+/, '/')
 
 export default function RootLayout() {
+  const { t } = useTranslation()
   const [fatalError, setFatalError] = useState<string | null>(null)
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
@@ -53,7 +56,7 @@ export default function RootLayout() {
       store.dispatch(initApp())
     } catch (e) {
       console.error('Error in initWorklet', e)
-      setFatalError(e instanceof Error ? e.message : 'Failed to initialize backend runtime.')
+      setFatalError(e instanceof Error ? e.message : t('error.backendFailed'))
     }
   }, [])
 

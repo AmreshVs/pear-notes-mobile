@@ -3,6 +3,7 @@ import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/ui
 import { format } from 'date-fns'
 import { Stack } from 'expo-router'
 import React, { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -12,6 +13,7 @@ import { Space, useCommonStyles } from '@/constants/commonStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function SearchScreen() {
+  const { t } = useTranslation()
   const theme = useTheme()
   const { colors, isDark } = theme
   const styles = useThemedStyles(createStyles)
@@ -30,7 +32,7 @@ export default function SearchScreen() {
   )
 
   const getPreviewText = (html: string) => {
-    if (!html) return 'No additional text'
+    if (!html) return t('folderView.noAdditionalText')
     return html
       .replace(/<[^>]*>?/gm, '')
       .substring(0, 100)
@@ -41,12 +43,12 @@ export default function SearchScreen() {
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          headerTitle: 'Search',
+          headerTitle: t('search.title'),
           headerLargeTitle: true,
           headerTransparent: true,
           headerBlurEffect: isDark ? 'dark' : 'light',
           headerSearchBarOptions: {
-            placeholder: 'Search all notes...',
+            placeholder: t('search.placeholder'),
             autoFocus: true,
             textColor: colors.text,
             hintTextColor: colors.textSecondary,
@@ -66,15 +68,13 @@ export default function SearchScreen() {
           <View style={common.emptyContainer}>
             {searchQuery.trim().length > 0 ? (
               <>
-                <Text style={common.emptyTitle}>No matches found</Text>
-                <Text style={common.emptySubtitle}>Try a different search term</Text>
+                <Text style={common.emptyTitle}>{t('search.empty.noMatches')}</Text>
+                <Text style={common.emptySubtitle}>{t('search.empty.tryDifferent')}</Text>
               </>
             ) : (
               <>
-                <Text style={common.emptyTitle}>Search your notes</Text>
-                <Text style={common.emptySubtitle}>
-                  Type above to find notes across your library
-                </Text>
+                <Text style={common.emptyTitle}>{t('search.empty.searchNotes')}</Text>
+                <Text style={common.emptySubtitle}>{t('search.empty.typeToFind')}</Text>
               </>
             )}
           </View>

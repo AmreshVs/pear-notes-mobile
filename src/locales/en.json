@@ -1,0 +1,237 @@
+{
+  "settings": {
+    "title": "Settings",
+    "general": {
+      "header": "GENERAL",
+      "appTheme": "App Theme",
+      "sortNotesBy": "Sort Notes By",
+      "fontFamily": "Font Family",
+      "textSize": "Text Size",
+      "sortOptions": {
+        "updatedAt": "Date Edited",
+        "createdAt": "Date Created",
+        "title": "Title"
+      },
+      "fontOptions": {
+        "Inter": "Inter",
+        "Outfit": "Outfit",
+        "Lora": "Lora",
+        "Newsreader": "Newsreader",
+        "IBM Plex Mono": "IBM Plex Mono",
+        "System": "System Default",
+        "Serif": "Serif",
+        "Mono": "Monospace"
+      },
+      "themes": {
+        "system": "System",
+        "light": "Light",
+        "dark": "Dark"
+      }
+    },
+    "sync": {
+      "header": "SYNC & DEVICES",
+      "linkAndSync": "Link and Sync"
+    },
+    "footer": "End-to-end encrypted • Fully private"
+  },
+  "sync": {
+    "title": "Link and Sync",
+    "tabs": {
+      "link": "Link Device",
+      "devices": "My Devices"
+    },
+    "platforms": {
+      "macOS": "macOS",
+      "Windows": "Windows",
+      "Linux": "Linux",
+      "Android": "Android",
+      "iOS": "iOS",
+      "unknown": "Unknown Device",
+      "renameHint": " · Tap to rename"
+    },
+    "hero": {
+      "title": "Link Your Devices",
+      "description": "Create a secure, end-to-end encrypted connection to sync your notes across devices instantly.",
+      "generateBtn": "Generate Invite",
+      "preparing": "Preparing…"
+    },
+    "invite": {
+      "header": "Invitation Ready",
+      "permanent": "Permanent Link",
+      "expiry": "Expires {{time}}",
+      "qrTitle": "Scan to link faster",
+      "qrDescription": "Open the link screen on your other device and scan this QR code to paste the invite instantly.",
+      "codeLabel": "SECURE PAIR CODE",
+      "copyBtn": "Copy Invite Code",
+      "copied": "Copied!",
+      "warning": "For security, don't share this code in public channels as it grants full access to your notes."
+    },
+    "paste": {
+      "header": "Already have an invite?",
+      "scanBtn": "Scan QR",
+      "placeholder": "Paste invite code here...",
+      "linkBtn": "Link"
+    },
+    "footer": "Your data moves directly between devices using encrypted Hypercore logs. No central server involved.",
+    "devices": {
+      "thisDevice": "THIS DEVICE",
+      "otherDevices": "OTHER DEVICES",
+      "empty": "No other devices connected yet."
+    },
+    "permissions": {
+      "cameraTitle": "Camera access needed",
+      "cameraDescription": "Allow camera access to scan an invite QR code and fill the pairing code automatically.",
+      "allowBtn": "Allow Camera",
+      "cancelBtn": "Not now"
+    },
+    "scanner": {
+      "title": "Scan invite QR code",
+      "description": "Point your camera at the QR code shown on your other device to fill the invite automatically."
+    },
+    "delete": {
+      "title": "Remove Device?",
+      "description": "The device will lose the data sync and all data will be removed from that device.",
+      "cancel": "Cancel",
+      "remove": "Remove"
+    }
+  },
+  "folders": {
+    "title": "Folders",
+    "archiveHeader": "ARCHIVE",
+    "renameTitle": "Rename Folder",
+    "deleteTitle": "Delete Folder",
+    "deleteDescription": "This folder and its notes will be deleted.",
+    "buttons": {
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "rename": "Rename"
+    },
+    "systemIcons": {
+      "all": "All",
+      "trash": "Trash",
+      "folder": "Folder"
+    },
+    "untitled": "Untitled"
+  },
+  "folderView": {
+    "searchPlaceholder": "Search notes...",
+    "noteCount_one": "{{count}} NOTE",
+    "noteCount_other": "{{count}} NOTES",
+    "empty": {
+      "noMatchesTitle": "No matches found",
+      "noMatchesSubtitle": "Try a different search term",
+      "noNotesTitle": "No Notes",
+      "noNotesSubtitle": "Tap the compose button to create one",
+      "linkTitle": "Link Existing Device",
+      "linkSub": "Already have notes elsewhere?",
+      "connectBtn": "Connect Device"
+    },
+    "sections": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7Days": "Last 7 Days",
+      "older": "Older"
+    },
+    "permanentlyDeleteTitle": "Permanently Delete",
+    "permanentlyDeleteSubtitle": "This note cannot be recovered.",
+    "noAdditionalText": "No additional text"
+  },
+  "noteCard": {
+    "untitled": "Untitled",
+    "noAdditionalText": "No additional text",
+    "actions": {
+      "moveTo": "Move to",
+      "copyNote": "Copy Note",
+      "delete": "Delete",
+      "noFolders": "No folders available"
+    }
+  },
+  "audioRecorder": {
+    "status": {
+      "capturedTitle": "Voice note captured",
+      "capturedSubtitle": "Listen back, then save it into your note.",
+      "idleTitle": "Capture the moment",
+      "idleSubtitle": "Tap the red button below to start or stop recording."
+    },
+    "timer": {
+      "playbackPosition": "Playback position",
+      "recordingTime": "Recording time"
+    },
+    "actions": {
+      "reRecord": "Re-record",
+      "stopHint": "Tap to stop and review your voice note.",
+      "startHint": "Tap to start recording."
+    },
+    "errors": {
+      "micTitle": "Microphone Access",
+      "micMessage": "Please enable microphone in Settings.",
+      "recordTitle": "Recording Error",
+      "recordDefault": "Could not start recording."
+    }
+  },
+  "error": {
+    "initFailed": "Initialization Failed",
+    "retry": "Retry",
+    "backendFailed": "Failed to initialize backend runtime."
+  },
+  "noteEditor": {
+    "placeholder": "Start writing..."
+  },
+  "pairing": {
+    "status": {
+      "searching": "Searching for device...",
+      "connected": "Device connected",
+      "authenticating": "Authenticating peer...",
+      "authorizing": "Authorizing device...",
+      "initializing": "Initializing storage...",
+      "replicating": "Replicating data...",
+      "startingReplication": "Starting data replication...",
+      "receiving": "Receiving data...",
+      "receivingWithCount": "Receiving data... ({{count}} notes found)",
+      "establishing": "Establishing Link..."
+    },
+    "overlay": {
+      "deviceRemovedTitle": "Device Removed",
+      "deviceRemovedDesc": "This device has been removed from the synced cluster by another device. Press Okay to clear local synced data and reset common storage.",
+      "okay": "Okay",
+      "linkedTitle": "Device Linked",
+      "linkedInviter": "Your new device has been verified and linked successfully.",
+      "linkedReceiver": "Welcome! This device is now a secure part of your notes library.",
+      "returnToNotes": "Return to Notes",
+      "openWorkspace": "Open Workspace",
+      "syncingTitle": "Syncing Data",
+      "syncingDesc": "Moving your notes and media to this device...",
+      "complete": "{{progress}}% Complete",
+      "linkTitle": "Link Your Device",
+      "linkDesc": "Enter the invite code from your other device to sync your notes securely.",
+      "inviteCode": "Invite Code",
+      "scanBtn": "Scan QR",
+      "placeholder": "Paste your code here...",
+      "connectBtn": "Connect",
+      "verifyTitle": "Verify Secure Code",
+      "identityTitle": "Identity Verification",
+      "verifyDesc": "Ensure both devices display the same identification code.",
+      "identityDesc": "Verifying connection. Please authorize on your other device.",
+      "remoteId": "REMOTE ID",
+      "myId": "MY ID",
+      "verifyBtn": "Verify Code"
+    }
+  },
+  "search": {
+    "title": "Search",
+    "placeholder": "Search all notes...",
+    "empty": {
+      "noMatches": "No matches found",
+      "tryDifferent": "Try a different search term",
+      "searchNotes": "Search your notes",
+      "typeToFind": "Type above to find notes across your library"
+    }
+  },
+  "layouts": {
+    "settings": "Settings",
+    "linkAndSync": "Link and Sync"
+  },
+  "common": {
+    "cancel": "Cancel"
+  }
+}
