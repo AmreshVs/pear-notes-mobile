@@ -14,6 +14,7 @@ import {
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import {
@@ -569,6 +570,8 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
   const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
 
   const resolvedImageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
+  const colorTheme = useSelector(getColorTheme)
+  const isPearTheme = colorTheme === 'pear'
   const [thumbError, setThumbError] = useState(false)
   const showThumb = !!resolvedImageUrl && !thumbError
 
@@ -643,7 +646,13 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
             {folderName && (
               <>
                 <Text style={[rowStyles.metaDot, { color: c.onSurfaceVariant }]}>{'  •  '}</Text>
-                <Text style={[rowStyles.metaTag, { color: c.onSurfaceVariant }]}>
+                <Text
+                  style={[
+                    rowStyles.metaTag,
+                    { color: isPearTheme ? c.primary : c.onSurfaceVariant },
+                    isPearTheme && { opacity: 1 },
+                  ]}
+                >
                   {folderName.toUpperCase()}
                 </Text>
               </>

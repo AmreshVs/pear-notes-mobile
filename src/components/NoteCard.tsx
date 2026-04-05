@@ -1,3 +1,4 @@
+import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { Folder } from 'lucide-react-native'
 import React, { memo, useCallback, useMemo, useState } from 'react'
@@ -60,6 +61,8 @@ export const NoteCard = memo(function NoteCard({
   const [thumbError, setThumbError] = useState(false)
 
   const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
+  const colorTheme = useSelector(getColorTheme)
+  const isPearTheme = colorTheme === 'pear'
 
   const getPressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }): ViewStyle[] => [
@@ -112,12 +115,18 @@ export const NoteCard = memo(function NoteCard({
                 <>
                   <RNView style={styles.folderTag}>
                     <Folder size={11} color={colors.textSecondary} style={styles.folderIcon} />
-                    <Text variant="caption" style={styles.metadataText}>
+                    <Text
+                      variant="caption"
+                      style={[
+                        styles.metadataText,
+                        isPearTheme && { color: colors.primary, opacity: 1 },
+                      ]}
+                    >
                       {folderName}
                     </Text>
                   </RNView>
                   <Text variant="caption" style={styles.separator}>
-                    {'  ·  '}
+                    {'  •  '}
                   </Text>
                 </>
               )}
