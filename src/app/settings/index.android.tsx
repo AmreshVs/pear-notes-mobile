@@ -72,7 +72,7 @@ export default function AndroidSettingsScreen() {
 
   return (
     <View style={dynStyles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={c.background} />
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={dynStyles.header}>
@@ -147,6 +147,7 @@ export default function AndroidSettingsScreen() {
         <Animated.View
           entering={FadeInDown.duration(240).delay(80)}
           layout={LinearTransition.springify().damping(20).stiffness(220)}
+          style={dynStyles.groupCard}
         >
           <Pressable
             onPress={() =>
@@ -154,7 +155,7 @@ export default function AndroidSettingsScreen() {
                 dispatch(updateSetting({ key: 'sortBy', value: val })),
               )
             }
-            style={({ pressed }) => [dynStyles.cardRow, pressed && dynStyles.cardPressed]}
+            style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
           >
             <View style={{ flex: 1 }}>
               <Text style={dynStyles.rowTitle}>Sort Notes By</Text>
@@ -164,19 +165,16 @@ export default function AndroidSettingsScreen() {
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.onSurfaceVariant} />
           </Pressable>
-        </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(100)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
-        >
+          <View style={dynStyles.groupDivider} />
+
           <Pressable
             onPress={() =>
               showAndroidPicker('Font Family', FONT_OPTIONS, (val) =>
                 dispatch(updateSetting({ key: 'fontFamily', value: val })),
               )
             }
-            style={({ pressed }) => [dynStyles.cardRow, pressed && dynStyles.cardPressed]}
+            style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
           >
             <View style={{ flex: 1 }}>
               <Text style={dynStyles.rowTitle}>Font Family</Text>
@@ -186,33 +184,31 @@ export default function AndroidSettingsScreen() {
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.onSurfaceVariant} />
           </Pressable>
-        </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(120)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
-          style={dynStyles.card}
-        >
-          <View style={dynStyles.sliderTitleContainer}>
-            <Text style={dynStyles.rowTitle}>Text Size</Text>
-            <Text style={dynStyles.sliderValueText}>{editorFontSize}</Text>
-          </View>
-          <View style={dynStyles.sliderRow}>
-            <MaterialCommunityIcons name="format-size" size={16} color={c.onSurfaceVariant} />
-            <Slider
-              style={dynStyles.slider}
-              minimumValue={12}
-              maximumValue={24}
-              step={1}
-              value={editorFontSize}
-              onValueChange={(val) =>
-                dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
-              }
-              minimumTrackTintColor={c.primary}
-              maximumTrackTintColor={hexWithAlpha(c.primary, 0.2)}
-              thumbTintColor={c.primary}
-            />
-            <MaterialCommunityIcons name="format-size" size={24} color={c.onSurfaceVariant} />
+          <View style={dynStyles.groupDivider} />
+
+          <View style={dynStyles.groupContentRow}>
+            <View style={dynStyles.sliderTitleContainer}>
+              <Text style={dynStyles.rowTitle}>Text Size</Text>
+              <Text style={dynStyles.sliderValueText}>{editorFontSize}</Text>
+            </View>
+            <View style={dynStyles.sliderRow}>
+              <MaterialCommunityIcons name="format-size" size={16} color={c.onSurfaceVariant} />
+              <Slider
+                style={dynStyles.slider}
+                minimumValue={12}
+                maximumValue={24}
+                step={1}
+                value={editorFontSize}
+                onValueChange={(val) =>
+                  dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
+                }
+                minimumTrackTintColor={c.primary}
+                maximumTrackTintColor={hexWithAlpha(c.primary, 0.2)}
+                thumbTintColor={c.primary}
+              />
+              <MaterialCommunityIcons name="format-size" size={24} color={c.onSurfaceVariant} />
+            </View>
           </View>
         </Animated.View>
 
@@ -294,8 +290,8 @@ function createDynamicStyles(c: any, insets: any) {
       marginBottom: 16,
     },
     card: {
-      backgroundColor: c.surfaceContainer,
-      borderRadius: 36,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: 28,
       paddingHorizontal: 20,
       paddingVertical: 16,
       marginBottom: 12,
@@ -303,14 +299,38 @@ function createDynamicStyles(c: any, insets: any) {
     cardRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: c.surfaceContainer,
-      borderRadius: 36,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: 28,
       paddingHorizontal: 20,
-      paddingVertical: 16,
+      paddingVertical: 18,
       marginBottom: 12,
     },
     cardPressed: {
-      backgroundColor: hexWithAlpha(c.surfaceContainer, 0.6),
+      backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
+    },
+    groupCard: {
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: 28,
+      marginBottom: 12,
+      overflow: 'hidden' as const,
+    },
+    groupPressRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      paddingHorizontal: 20,
+      paddingVertical: 18,
+    },
+    groupContentRow: {
+      paddingHorizontal: 20,
+      paddingVertical: 18,
+    },
+    groupRowPressed: {
+      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
+    },
+    groupDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: hexWithAlpha(c.outlineVariant, 0.5),
+      marginLeft: 20,
     },
     cardTitle: {
       fontSize: 16,
@@ -333,7 +353,7 @@ function createDynamicStyles(c: any, insets: any) {
       justifyContent: 'center',
     },
     segItemActive: {
-      backgroundColor: c.primary,
+      backgroundColor: c.primaryContainer,
     },
     segText: {
       fontSize: 14,
@@ -342,7 +362,7 @@ function createDynamicStyles(c: any, insets: any) {
       color: c.onSurfaceVariant,
     },
     segTextActive: {
-      color: c.onPrimaryContainer || '#000000',
+      color: c.onPrimaryContainer,
       fontWeight: '700',
       fontFamily: 'PlusJakartaSans_700Bold',
     },
@@ -355,7 +375,7 @@ function createDynamicStyles(c: any, insets: any) {
     },
     rowSubtitle: {
       fontSize: 14,
-      color: hexWithAlpha(c.onSurface, 0.4),
+      color: c.onSurfaceVariant,
       fontFamily: 'PlusJakartaSans_500Medium',
       fontWeight: '500',
     },
@@ -363,7 +383,7 @@ function createDynamicStyles(c: any, insets: any) {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: 16,
     },
     sliderValueText: {
       fontSize: 16,

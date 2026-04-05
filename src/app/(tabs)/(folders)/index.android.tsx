@@ -72,7 +72,7 @@ function hexWithAlpha(hex: string, alpha: number): string {
 }
 
 export default function AndroidFoldersScreen() {
-  const { c } = useVaultColors()
+  const { c, theme } = useVaultColors()
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -186,7 +186,7 @@ export default function AndroidFoldersScreen() {
 
   return (
     <View style={dynStyles.root}>
-      <StatusBar barStyle="light-content" backgroundColor={c.background} />
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
@@ -587,7 +587,7 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
       padding: 0,
     },
     listCard: {
-      backgroundColor: c.surfaceContainer,
+      backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: 24,
       overflow: 'hidden' as const,
     },

@@ -148,7 +148,7 @@ export default function AndroidSyncScreen() {
 
   return (
     <View style={[ss.root, { backgroundColor: c.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor={c.background} />
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={[ss.appBar, { paddingTop: insets.top + 4 }]}>
@@ -166,19 +166,19 @@ export default function AndroidSyncScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View entering={FadeIn.duration(220)} style={ss.segRow}>
-            <View style={[ss.segTrack, { backgroundColor: c.surfaceContainer }]}>
+            <View style={[ss.segTrack, { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant }]}>
               {(['link', 'devices'] as const).map((t) => {
                 const active = tab === t
                 return (
                   <Pressable
                     key={t}
                     onPress={() => setTab(t)}
-                    style={[ss.segPill, active && { backgroundColor: c.primary }]}
+                    style={[ss.segPill, active && { backgroundColor: c.primaryContainer }]}
                   >
                     <Text
                       style={[
                         ss.segLabel,
-                        { color: active ? c.onPrimary || '#000' : c.onSurfaceVariant },
+                        { color: active ? c.onPrimaryContainer : c.onSurfaceVariant },
                       ]}
                     >
                       {t === 'link' ? 'Link Device' : 'My Devices'}
@@ -598,9 +598,9 @@ const AndroidDeviceCard = memo(function AndroidDeviceCard({
         onPress={!isLocal ? undefined : startEditing}
         style={({ pressed }) => [
           ds.card,
-          { backgroundColor: c.surfaceContainer },
+          { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant },
           pressed && {
-            backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
+            backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
           },
         ]}
       >

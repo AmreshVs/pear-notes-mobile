@@ -346,7 +346,7 @@ export default function AndroidFolderNotesScreen() {
 
   return (
     <View style={[staticStyles.root, { backgroundColor: c.background }]}>
-      <StatusBar barStyle="light-content" backgroundColor={c.background} />
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={[staticStyles.appBar, dynamicStyles.appBar]}>
@@ -603,7 +603,7 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
         onPressOut={handlePressOut}
         style={({ pressed }) => [
           rowStyles.row,
-          { backgroundColor: c.surfaceContainer },
+          { backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant },
           pressed && {
             backgroundColor: hexWithAlpha(
               (c as any).surfaceContainerHighest ?? c.surfaceVariant,
@@ -636,15 +636,15 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
           )}
 
           <View style={rowStyles.meta}>
-            <Text style={[rowStyles.metaDate, { color: hexWithAlpha(c.onSurfaceVariant, 0.5) }]}>
+            <Text style={[rowStyles.metaDate, { color: hexWithAlpha(c.onSurfaceVariant, 0.7) }]}>
               {dateLabel}
             </Text>
             {folderName && (
               <>
-                <Text style={[rowStyles.metaDot, { color: hexWithAlpha(c.primary, 0.6) }]}>
+                <Text style={[rowStyles.metaDot, { color: hexWithAlpha(c.onSurfaceVariant, 0.5) }]}>
                   {'  •  '}
                 </Text>
-                <Text style={[rowStyles.metaTag, { color: hexWithAlpha(c.primary, 0.7) }]}>
+                <Text style={[rowStyles.metaTag, { color: hexWithAlpha(c.onSurfaceVariant, 0.7) }]}>
                   {folderName.toUpperCase()}
                 </Text>
               </>
