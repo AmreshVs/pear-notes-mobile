@@ -13,34 +13,14 @@ import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
-
-function showAndroidPicker(
-  title: string,
-  options: { label: string; value: string }[],
-  onSelect: (value: string) => void,
-  cancelText: string,
-) {
-  Alert.alert(title, undefined, [
-    ...options.map((o) => ({ text: o.label, onPress: () => onSelect(o.value) })),
-    { text: cancelText, style: 'cancel' },
-  ])
-}
 
 function hexWithAlpha(hex: string, alpha: number): string {
   const a = Math.round(alpha * 255)
@@ -62,6 +42,9 @@ export default function AndroidSettingsScreen() {
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
   const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
+
+  const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
+  const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
 
   const supportsDynamicColor = useMemo(() => {
     return Platform.OS === 'android' && Number(Platform.Version) >= 31
@@ -90,6 +73,49 @@ export default function AndroidSettingsScreen() {
     [t],
   )
 
+  const sortByActions = useMemo(
+    () => [
+      {
+        icon: 'clock-outline',
+        label: t('settings.general.sortOptions.updatedAt'),
+        onPress: () => {
+          dispatch(updateSetting({ key: 'sortBy', value: 'updatedAt' }))
+          setSortBySheetVisible(false)
+        },
+      },
+      {
+        icon: 'calendar-plus',
+        label: t('settings.general.sortOptions.createdAt'),
+        onPress: () => {
+          dispatch(updateSetting({ key: 'sortBy', value: 'createdAt' }))
+          setSortBySheetVisible(false)
+        },
+      },
+      {
+        icon: 'sort-alphabetical-variant',
+        label: t('settings.general.sortOptions.title'),
+        onPress: () => {
+          dispatch(updateSetting({ key: 'sortBy', value: 'title' }))
+          setSortBySheetVisible(false)
+        },
+      },
+    ],
+    [dispatch, t],
+  )
+
+  const fontActions = useMemo(
+    () =>
+      FONT_OPTIONS.map((f) => ({
+        icon: 'format-font',
+        label: f.label,
+        onPress: () => {
+          dispatch(updateSetting({ key: 'fontFamily', value: f.value }))
+          setFontSheetVisible(false)
+        },
+      })),
+    [dispatch, FONT_OPTIONS],
+  )
+
   const colorThemeOptions = useMemo(() => {
     return [
       { label: t('settings.general.colorOptions.pear'), value: 'pear' as AndroidColorTheme },
@@ -115,9 +141,6 @@ export default function AndroidSettingsScreen() {
           <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
         </Pressable>
         <Text style={dynStyles.headerTitle}>{t('settings.title')}</Text>
-        <Pressable hitSlop={12} style={dynStyles.iconBtn}>
-          <MaterialCommunityIcons name="magnify" size={24} color={c.primary} />
-        </Pressable>
       </View>
 
       <ScrollView
@@ -182,14 +205,7 @@ export default function AndroidSettingsScreen() {
           style={dynStyles.groupCard}
         >
           <Pressable
-            onPress={() =>
-              showAndroidPicker(
-                t('settings.general.sortNotesBy'),
-                SORT_OPTIONS,
-                (val) => dispatch(updateSetting({ key: 'sortBy', value: val })),
-                t('common.cancel'),
-              )
-            }
+            onPress={() => setSortBySheetVisible(true)}
             style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
           >
             <View style={{ flex: 1 }}>
@@ -205,14 +221,7 @@ export default function AndroidSettingsScreen() {
           <View style={dynStyles.groupDivider} />
 
           <Pressable
-            onPress={() =>
-              showAndroidPicker(
-                t('settings.general.fontFamily'),
-                FONT_OPTIONS,
-                (val) => dispatch(updateSetting({ key: 'fontFamily', value: val })),
-                t('common.cancel'),
-              )
-            }
+            onPress={() => setFontSheetVisible(true)}
             style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
           >
             <View style={{ flex: 1 }}>
@@ -268,7 +277,6 @@ export default function AndroidSettingsScreen() {
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
               <Text style={dynStyles.rowTitle}>{t('settings.sync.linkAndSync')}</Text>
-              <Text style={dynStyles.rowSubtitle}>{t('settings.sync.cloudBackupStatus')}</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
           </Pressable>
@@ -278,6 +286,20 @@ export default function AndroidSettingsScreen() {
           <Text style={dynStyles.footerText}>{t('settings.footer')}</Text>
         </Animated.View>
       </ScrollView>
+
+      <BottomActionSheet
+        visible={sortBySheetVisible}
+        onDismiss={() => setSortBySheetVisible(false)}
+        title={t('settings.general.sortNotesBy')}
+        actions={sortByActions}
+      />
+
+      <BottomActionSheet
+        visible={fontSheetVisible}
+        onDismiss={() => setFontSheetVisible(false)}
+        title={t('settings.general.fontFamily')}
+        actions={fontActions}
+      />
     </View>
   )
 }
@@ -291,7 +313,6 @@ function createDynamicStyles(c: any, insets: any) {
     header: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       paddingTop: insets.top + 16,
       paddingHorizontal: 20,
       paddingBottom: 16,
@@ -307,6 +328,7 @@ function createDynamicStyles(c: any, insets: any) {
       fontWeight: '700',
       fontFamily: 'PlusJakartaSans_700Bold',
       color: c.onSurface,
+      textAlign: 'left',
     },
     scrollContent: {
       paddingHorizontal: 20,

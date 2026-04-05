@@ -35,8 +35,7 @@
     },
     "sync": {
       "header": "SYNC & DEVICES",
-      "linkAndSync": "Link and Sync",
-      "cloudBackupStatus": "Cloud backup enabled"
+      "linkAndSync": "Link and Sync"
     },
     "footer": "End-to-end encrypted • Fully private"
   },
