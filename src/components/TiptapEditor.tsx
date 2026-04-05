@@ -233,8 +233,17 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     }, [])
 
     const injectBackgroundColor = useCallback((color: string) => {
+      const c = JSON.stringify(color)
       webViewRef.current?.injectJavaScript(
-        `(function(){var c=${JSON.stringify(color)};document.documentElement.style.backgroundColor=c;document.body.style.backgroundColor=c;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.backgroundColor=c;})();true;`,
+        `(function(){` +
+        `var c=${c};` +
+        `document.documentElement.style.backgroundColor=c;` +
+        `document.body.style.backgroundColor=c;` +
+        `var pm=document.querySelector('.ProseMirror');if(pm)pm.style.backgroundColor=c;` +
+        `var s=document.getElementById('__pear_bg');` +
+        `if(!s){s=document.createElement('style');s.id='__pear_bg';document.head.appendChild(s);}` +
+        `s.textContent='html,body,.ProseMirror,.tiptap,#root,#app{background-color:'+c+' !important}';` +
+        `})();true;`,
       )
     }, [])
 
@@ -267,7 +276,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             editorReadyRef.current = true
             sendCommand({
               type: 'init',
-              colors: colorsRef.current,
+              colors: backgroundColorRef.current
+                ? { ...colorsRef.current, background: backgroundColorRef.current }
+                : colorsRef.current,
               isDark: isDarkRef.current,
               fontSize: fontSizeRef.current,
               fontFamily: fontFamilyRef.current,

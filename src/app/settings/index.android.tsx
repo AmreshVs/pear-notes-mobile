@@ -1,9 +1,11 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import {
+  getColorTheme,
   getEditorFontSize,
   getFontFamily,
   getSortBy,
   getTheme,
+  setColorTheme,
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
@@ -64,9 +66,7 @@ export default function AndroidSettingsScreen() {
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
-  const androidColorTheme = useSelector(
-    (state: any): AndroidColorTheme => state.settings?.androidColorTheme ?? 'pear',
-  )
+  const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
 
   const dynStyles = useMemo(() => createDynamicStyles(c, insets), [c, insets])
 
@@ -126,15 +126,13 @@ export default function AndroidSettingsScreen() {
           <View style={dynStyles.segContainer}>
             {[
               { label: 'Pear', value: 'pear' as AndroidColorTheme },
-              { label: 'Material You', value: 'material-you' as AndroidColorTheme },
+              { label: 'Material You', value: 'material_you' as AndroidColorTheme },
             ].map((opt) => {
               const isActive = androidColorTheme === opt.value
               return (
                 <Pressable
                   key={opt.value}
-                  onPress={() =>
-                    dispatch(updateSetting({ key: 'androidColorTheme', value: opt.value }))
-                  }
+                  onPress={() => dispatch(setColorTheme(opt.value))}
                   style={[dynStyles.segItem, isActive && dynStyles.segItemActive]}
                 >
                   <Text style={[dynStyles.segText, isActive && dynStyles.segTextActive]}>

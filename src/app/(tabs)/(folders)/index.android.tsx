@@ -367,6 +367,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
   onPress,
   onLongPress,
 }: VaultFolderRowProps) {
+  const { dark: isDark } = useMD3Theme()
   const scale = useSharedValue(1)
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -384,9 +385,10 @@ const VaultFolderRow = memo(function VaultFolderRow({
 
   const iconName = isAll ? 'folder-account' : isTrash ? 'delete-outline' : 'folder-outline'
   const iconColor = isTrash ? c.error : c.primary
+  const iconBgAlpha = isDark ? 0.18 : 0.22
   const iconBgColor = isTrash
-    ? hexWithAlpha(c.errorContainer ?? '#871c34', 0.1)
-    : hexWithAlpha(c.primaryContainer, 0.08)
+    ? hexWithAlpha(c.errorContainer ?? '#871c34', iconBgAlpha)
+    : hexWithAlpha(c.primaryContainer, iconBgAlpha)
   const countLabel = count > 0 ? `${count} ${count === 1 ? 'item' : 'items'}` : null
 
   const dividerStyle = useMemo(
@@ -571,12 +573,12 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
     searchBar: {
       flexDirection: 'row' as const,
       alignItems: 'center' as const,
-      backgroundColor: c.surfaceContainer,
+      backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: 9999,
       paddingHorizontal: 20,
       paddingVertical: 14,
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: hexWithAlpha(c.outlineVariant, 0.15),
+      borderColor: hexWithAlpha(c.outlineVariant, 0.3),
     },
     searchInput: {
       flex: 1,

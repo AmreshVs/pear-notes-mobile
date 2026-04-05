@@ -77,7 +77,7 @@ const ToolbarBtn = memo(function ToolbarBtn({ icon, onPress, active, c }: Toolba
   const style = useCallback(
     ({ pressed }: { pressed: boolean }) => [
       toolbarStyles.btn,
-      active && { backgroundColor: hexWithAlpha(c.primaryContainer, 0.28) },
+      active && { backgroundColor: hexWithAlpha(c.primaryContainer, 0.35) },
       pressed && { opacity: 0.5 },
     ],
     [active, c.primaryContainer],
@@ -120,16 +120,13 @@ const EditorToolbar = memo(function EditorToolbar({
       toolbarStyles.container,
       {
         bottom: toolbarBottom,
-        backgroundColor: hexWithAlpha(
-          isDark ? '#1a1a1a' : (c.surfaceContainerHigh ?? c.surfaceVariant),
-          0.98,
-        ),
-        borderColor: hexWithAlpha(c.outlineVariant, 0.15),
+        backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surface, 0.98),
+        borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),
         elevation: 6,
         shadowColor: '#000',
       },
     ],
-    [toolbarBottom, c.surfaceContainerHigh, c.surfaceVariant, c.outlineVariant],
+    [toolbarBottom, isDark, c.surfaceContainerHigh, c.surface, c.outlineVariant],
   )
 
   const dividerStyle = useMemo(
@@ -972,13 +969,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const floatingHeaderHeight = useMemo(() => insets.top + 52, [insets.top])
 
   const floatingBtnBg = useMemo(
-    () => hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.82),
-    [c.surfaceContainerHighest, c.surfaceVariant],
+    () => hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, theme.dark ? 0.82 : 0.92),
+    [c.surfaceContainerHighest, c.surfaceVariant, theme.dark],
+  )
+
+  const floatingBtnBorderStyle = useMemo(
+    () =>
+      theme.dark
+        ? undefined
+        : { borderWidth: 1, borderColor: hexWithAlpha(c.outline, 0.5) },
+    [theme.dark, c.outline],
   )
 
   const saveBtnStyle = useMemo(
-    () => [staticStyles.saveBtn, { backgroundColor: c.primary }],
-    [c.primary],
+    () => [staticStyles.saveBtn, { backgroundColor: c.primaryContainer }],
+    [c.primaryContainer],
   )
 
   const floatingLeftStyle = useMemo(
@@ -995,7 +1000,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     <NoteEditorContext.Provider value={contextValue}>
       {children}
       <Animated.View style={animatedViewStyle} pointerEvents={isOpen ? 'auto' : 'none'}>
-        <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
+        <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
 
         <TiptapEditor
           ref={editorRef}
@@ -1022,6 +1027,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             style={({ pressed }) => [
               staticStyles.floatingIconBtn,
               { backgroundColor: floatingBtnBg },
+              floatingBtnBorderStyle,
               pressed && { opacity: 0.7 },
             ]}
             hitSlop={8}
@@ -1036,6 +1042,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             style={({ pressed }) => [
               staticStyles.floatingIconBtn,
               { backgroundColor: floatingBtnBg },
+              floatingBtnBorderStyle,
               pressed && { opacity: 0.7 },
             ]}
             hitSlop={8}
@@ -1053,6 +1060,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                 style={({ pressed }) => [
                   staticStyles.floatingIconBtn,
                   { backgroundColor: floatingBtnBg },
+                  floatingBtnBorderStyle,
                   pressed && { opacity: 0.7 },
                 ]}
                 hitSlop={8}
