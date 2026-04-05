@@ -1,10 +1,8 @@
 import {
-  getColorTheme,
   getEditorFontSize,
   getFontFamily,
   getSortBy,
   getTheme,
-  setColorTheme,
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
@@ -12,15 +10,7 @@ import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
 import { ChevronRight, RefreshCw, X } from 'lucide-react-native'
 import React from 'react'
-import {
-  ActionSheetIOS,
-  Alert,
-  Platform,
-  Pressable,
-  View as RNView,
-  ScrollView,
-  StyleSheet,
-} from 'react-native'
+import { ActionSheetIOS, Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -33,7 +23,6 @@ import {
   Space,
   useCommonStyles,
 } from '@/constants/commonStyles'
-import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
 
 const SORT_OPTIONS = [
   { label: 'Date Edited', value: 'updatedAt' },
@@ -57,20 +46,13 @@ function showPicker(
   options: { label: string; value: string }[],
   onSelect: (value: string) => void,
 ) {
-  if (Platform.OS === 'ios') {
-    const labels = [...options.map((o) => o.label), 'Cancel']
-    ActionSheetIOS.showActionSheetWithOptions(
-      { options: labels, cancelButtonIndex: labels.length - 1, title },
-      (index) => {
-        if (index < options.length) onSelect(options[index].value)
-      },
-    )
-  } else {
-    Alert.alert(title, undefined, [
-      ...options.map((o) => ({ text: o.label, onPress: () => onSelect(o.value) })),
-      { text: 'Cancel', style: 'cancel' },
-    ])
-  }
+  const labels = [...options.map((o) => o.label), 'Cancel']
+  ActionSheetIOS.showActionSheetWithOptions(
+    { options: labels, cancelButtonIndex: labels.length - 1, title },
+    (index) => {
+      if (index < options.length) onSelect(options[index].value)
+    },
+  )
 }
 
 export default function SettingsScreen() {
@@ -84,7 +66,6 @@ export default function SettingsScreen() {
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
-  const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
 
   return (
     <RNView style={styles.container}>
@@ -141,36 +122,6 @@ export default function SettingsScreen() {
                 })}
               </RNView>
             </RNView>
-
-            {Platform.OS === 'android' && (
-              <RNView style={styles.rowUnderline}>
-                <Text style={styles.rowLabel}>Color Theme</Text>
-                <RNView style={styles.segCtrl}>
-                  {[
-                    { label: 'Pear', value: 'pear' as AndroidColorTheme },
-                    { label: 'Material You', value: 'material_you' as AndroidColorTheme },
-                  ].map((opt, i) => {
-                    const isActive = androidColorTheme === opt.value
-                    return (
-                      <Pressable
-                        key={opt.value}
-                        onPress={() => dispatch(setColorTheme(opt.value))}
-                        style={[
-                          styles.segPill,
-                          isActive && styles.segPillActive,
-                          i === 0 && styles.radiusLeft,
-                          i === 1 && styles.radiusRight,
-                        ]}
-                      >
-                        <Text style={[styles.segText, isActive && styles.segTextActive]}>
-                          {opt.label}
-                        </Text>
-                      </Pressable>
-                    )
-                  })}
-                </RNView>
-              </RNView>
-            )}
 
             <Pressable
               onPress={() =>

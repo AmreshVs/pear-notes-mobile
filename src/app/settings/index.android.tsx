@@ -128,7 +128,7 @@ export default function AndroidSettingsScreen() {
           <Text style={dynStyles.cardTitle}>Color Theme</Text>
           <View style={dynStyles.segContainer}>
             {[
-              { label: 'Pear', value: 'pear' as AndroidColorTheme },
+              { label: 'Default', value: 'pear' as AndroidColorTheme },
               { label: 'Material You', value: 'material_you' as AndroidColorTheme },
             ].map((opt) => {
               const isActive = androidColorTheme === opt.value
