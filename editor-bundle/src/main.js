@@ -111,7 +111,8 @@ const ImageWithSize = Image.extend({
 
       let longPressTimer = null
       let didLongPress = false
-      let startX = 0, startY = 0
+      let startX = 0,
+        startY = 0
 
       wrapper.addEventListener(
         'touchstart',
@@ -269,7 +270,8 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
     'display: flex; font-weight: 600; font-size: 14px; color: var(--c-text); margin: 0 0 4px 0; overflow: hidden; width: 100%;'
 
   const titleBaseSpan = document.createElement('span')
-  titleBaseSpan.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;'
+  titleBaseSpan.style.cssText =
+    'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;'
   titleBaseSpan.textContent = titleBase
 
   const titleExtSpan = document.createElement('span')
@@ -457,7 +459,8 @@ const FileAttachment = Node.create({
         dom.setAttribute('data-file-attachment', '')
 
         let longPressTimer = null
-        let startX = 0, startY = 0
+        let startX = 0,
+          startY = 0
         dom.addEventListener(
           'touchstart',
           (e) => {
@@ -559,7 +562,8 @@ const FileAttachment = Node.create({
         'display: flex; font-weight: 600; font-size: 14px; color: var(--c-text); margin: 0 0 4px 0; overflow: hidden; width: 100%;'
 
       const baseSpan = document.createElement('span')
-      baseSpan.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;'
+      baseSpan.style.cssText =
+        'white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 1;'
       baseSpan.textContent = baseName
 
       const extSpanTail = document.createElement('span')
@@ -602,7 +606,8 @@ const FileAttachment = Node.create({
       actions.style.cssText = 'display: flex; align-items: center; gap: 6px;'
 
       let longPressTimer = null
-      let startX = 0, startY = 0
+      let startX = 0,
+        startY = 0
       dom.addEventListener(
         'touchstart',
         (e) => {
@@ -699,10 +704,9 @@ const AudioAttachment = Node.create({
       const dom = player.container
       dom.setAttribute('data-audio-attachment', '')
 
-
-
       let longPressTimer = null
-      let startX = 0, startY = 0
+      let startX = 0,
+        startY = 0
       dom.addEventListener(
         'touchstart',
         (e) => {

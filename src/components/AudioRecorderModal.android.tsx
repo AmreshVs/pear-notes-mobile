@@ -12,6 +12,7 @@ import {
 } from 'expo-audio'
 import * as Haptics from 'expo-haptics'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
@@ -154,6 +155,7 @@ function SheetBody({
   onSeekChange,
   onSeekComplete,
 }: SheetBodyProps) {
+  const { t } = useTranslation()
   return (
     <>
       <View style={styles.grabber} />
@@ -267,7 +269,9 @@ function SheetBody({
 
       <View style={styles.timerBlock}>
         <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>
-          {hasRecording ? 'Playback position' : 'Recording time'}
+          {hasRecording
+            ? t('audioRecorder.timer.playbackPosition')
+            : t('audioRecorder.timer.recordingTime')}
         </Text>
         <Text style={[styles.timer, { color: timerColor }]}>{fmtTimer(timerMs)}</Text>
       </View>
@@ -323,7 +327,9 @@ function SheetBody({
               ]}
             >
               <MaterialCommunityIcons name="refresh" size={16} color={colors.text} />
-              <Text style={[styles.rerecordText, { color: colors.text }]}>Re-record</Text>
+              <Text style={[styles.rerecordText, { color: colors.text }]}>
+                {t('audioRecorder.actions.reRecord')}
+              </Text>
             </Pressable>
           </>
         ) : (
@@ -349,7 +355,9 @@ function SheetBody({
             </View>
 
             <Text style={[styles.recordHint, { color: colors.textSecondary }]}>
-              {isRecording ? 'Tap to stop and review your voice note.' : 'Tap to start recording.'}
+              {isRecording
+                ? t('audioRecorder.actions.stopHint')
+                : t('audioRecorder.actions.startHint')}
             </Text>
           </>
         )}
@@ -361,6 +369,7 @@ function SheetBody({
 }
 
 export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderModalProps) {
+  const { t } = useTranslation()
   const { colors, isDark } = useTheme()
   const styles = useThemedStyles(createStyles)
   const insets = useSafeAreaInsets()
@@ -539,7 +548,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
       const { granted } = await AudioModule.requestRecordingPermissionsAsync()
       setHasPermission(granted)
       if (!granted) {
-        Alert.alert('Microphone Access', 'Please enable microphone in Settings.')
+        Alert.alert(t('audioRecorder.errors.micTitle'), t('audioRecorder.errors.micMessage'))
         return
       }
     }
@@ -569,9 +578,12 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
         liveBars.value = [...liveBars.value.slice(-(RECORDING_BARS - 1)), sampleAmp()]
       }, 90)
     } catch (err: any) {
-      Alert.alert('Recording Error', err?.message ?? 'Could not start recording.')
+      Alert.alert(
+        t('audioRecorder.errors.recordTitle'),
+        err?.message ?? t('audioRecorder.errors.recordDefault'),
+      )
     }
-  }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback])
+  }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback, t])
 
   const handleStop = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -732,15 +744,15 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
   const status = useMemo(() => {
     if (hasRecording) {
       return {
-        title: 'Voice note captured',
-        subtitle: 'Listen back, then save it into your note.',
+        title: t('audioRecorder.status.capturedTitle'),
+        subtitle: t('audioRecorder.status.capturedSubtitle'),
       }
     }
     return {
-      title: 'Capture the moment',
-      subtitle: 'Tap the red button below to start or stop recording.',
+      title: t('audioRecorder.status.idleTitle'),
+      subtitle: t('audioRecorder.status.idleSubtitle'),
     }
-  }, [hasRecording])
+  }, [hasRecording, t])
 
   const sheetBg = isDark
     ? ((md3Theme.colors as any).surfaceContainerHighest ?? '#2C2C2E')
@@ -807,277 +819,258 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
   )
 }
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
     overlay: {
       flex: 1,
       justifyContent: 'flex-end',
     },
     backdrop: {
       ...StyleSheet.absoluteFillObject,
-      backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.38)',
+      backgroundColor: 'rgba(0,0,0,0.45)',
     },
     sheetWrap: {
       flex: 1,
       justifyContent: 'flex-end',
-      paddingHorizontal: 0,
     },
     sheet: {
-      paddingHorizontal: 18,
-      paddingTop: 10,
-      paddingBottom: 4,
-      gap: 14,
-      borderTopLeftRadius: 28,
-      borderTopRightRadius: 28,
-      borderBottomLeftRadius: 0,
-      borderBottomRightRadius: 0,
-      boxShadow: theme.isDark ? '0 -10px 32px rgba(0,0,0,0.45)' : '0 -12px 40px rgba(0,0,0,0.22)',
+      borderTopLeftRadius: 36,
+      borderTopRightRadius: 36,
+      paddingHorizontal: 28,
+      paddingTop: 12,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -12 },
+      shadowOpacity: 0.15,
+      shadowRadius: 28,
+      elevation: 24,
     },
     grabber: {
+      width: 40,
+      height: 4,
+      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+      borderRadius: 2,
       alignSelf: 'center',
-      width: 38,
-      height: 5,
-      borderRadius: 999,
-      backgroundColor: theme.isDark ? theme.colors.border : 'rgba(0,0,0,0.2)',
+      marginBottom: 16,
     },
     headerRow: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'space-between',
-    },
-    headerActionPressed: {
-      opacity: 0.48,
+      alignItems: 'center',
+      marginBottom: 20,
     },
     headerIconButton: {
-      width: 36,
-      height: 36,
-      borderRadius: 999,
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.isDark ? theme.colors.controlBackground : 'rgba(0,0,0,0.08)',
-      borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
-      borderColor: 'rgba(0,0,0,0.1)',
+    },
+    headerActionPressed: {
+      backgroundColor: theme.isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.08)',
     },
     heroBlock: {
       alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 14,
-      minHeight: 80,
-      justifyContent: 'center',
+      marginBottom: 28,
     },
     heroTitle: {
-      fontSize: 29,
-      lineHeight: 34,
-      fontWeight: '700',
+      fontSize: 22,
+      fontWeight: '800',
       textAlign: 'center',
-      letterSpacing: -0.7,
+      marginBottom: 8,
+      letterSpacing: -0.5,
     },
     heroSubtitle: {
-      fontSize: 15,
-      lineHeight: 21,
+      fontSize: 14,
       textAlign: 'center',
-      maxWidth: 290,
+      lineHeight: 20,
+      paddingHorizontal: 12,
     },
     timelineWrap: {
-      gap: 6,
-      paddingHorizontal: 6,
-      minHeight: TIMELINE_H + 48,
+      height: TIMELINE_H,
+      marginBottom: 32,
+      justifyContent: 'center',
     },
     timelineWrapPlayback: {
-      minHeight: 84,
-      gap: 8,
+      height: 72,
     },
     recordingWave: {
-      height: TIMELINE_H + 28,
-      position: 'relative',
+      height: 84,
       justifyContent: 'center',
-      overflow: 'hidden',
+      position: 'relative',
     },
     recordingBarsLane: {
-      position: 'absolute',
-      left: 0,
-      width: '50%',
-      top: 0,
-      bottom: 0,
-      justifyContent: 'center',
-      alignItems: 'flex-end',
+      height: 84,
       overflow: 'hidden',
     },
     recordingBarsRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: RECORDING_BAR_GAP,
-      width: RECORDING_BARS * RECORDING_BAR_STEP,
       justifyContent: 'flex-end',
+      height: '100%',
+      gap: RECORDING_BAR_GAP,
     },
     recordingNeedle: {
       position: 'absolute',
-      top: 2,
-      bottom: 2,
-      left: '50%',
+      right: 0,
+      top: -4,
+      bottom: -4,
       width: 2,
       alignItems: 'center',
-      marginLeft: -1,
     },
     recordingNeedleCap: {
-      width: 12,
-      height: 12,
-      borderRadius: 999,
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      marginBottom: -1,
     },
     recordingNeedleStem: {
       flex: 1,
       width: 2,
-      borderRadius: 999,
+      borderRadius: 1,
     },
     recordingRuler: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'space-between',
-      paddingTop: 6,
+      marginTop: 10,
       paddingHorizontal: 2,
-      minHeight: 22,
     },
     recordingTick: {
-      fontSize: 11,
-      fontVariant: ['tabular-nums'],
-      minWidth: 36,
-      textAlign: 'center',
-      opacity: 0.78,
+      fontSize: 10,
+      fontWeight: '600',
+      fontFamily: 'monospace',
     },
     timelineOuter: {
-      height: 54,
-      gap: 8,
+      width: '100%',
     },
     playbackTrackWrap: {
-      height: 24,
-      position: 'relative',
+      width: '100%',
+      height: 32,
       justifyContent: 'center',
     },
     timelineTrack: {
-      height: 2,
-      borderRadius: 999,
-      width: '100%',
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      height: 4,
+      borderRadius: 2,
     },
     playbackSlider: {
-      position: 'absolute',
-      left: -12,
-      right: -12,
-      height: 30,
-      top: -3,
+      width: '100%',
+      height: 32,
     },
     playbackTimeRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      alignItems: 'center',
+      marginTop: 2,
     },
     playbackSideTime: {
       fontSize: 11,
-      fontVariant: ['tabular-nums'],
-      minWidth: 40,
+      fontWeight: '600',
+      fontFamily: 'monospace',
     },
     timerBlock: {
       alignItems: 'center',
-      gap: 4,
-      minHeight: 74,
-      justifyContent: 'center',
+      marginBottom: 40,
     },
     timerLabel: {
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: 11,
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: 1.2,
+      marginBottom: 8,
+      opacity: 0.6,
     },
     timer: {
-      fontSize: 50,
-      lineHeight: 56,
-      fontWeight: '200',
-      fontVariant: ['tabular-nums'],
-      letterSpacing: -1.8,
+      fontSize: 48,
+      fontWeight: '300',
+      fontFamily: 'monospace',
+      letterSpacing: -1,
     },
     controlsSection: {
       alignItems: 'center',
-      gap: 12,
-      paddingBottom: 0,
-      minHeight: 142,
-      justifyContent: 'center',
+      paddingBottom: 24,
     },
     controlsSectionPlayback: {
-      minHeight: 148,
-    },
-    transportRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 18,
-    },
-    secondaryTransport: {
-      width: 54,
-      height: 54,
-      borderRadius: 999,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.isDark ? theme.colors.controlBackground : 'rgba(0,0,0,0.07)',
-      borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
-      borderColor: 'rgba(0,0,0,0.1)',
-    },
-    primaryTransport: {
-      width: 78,
-      height: 78,
-      borderRadius: 999,
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: theme.isDark ? '0 10px 24px rgba(0,0,0,0.3)' : '0 10px 24px rgba(15,23,42,0.16)',
-    },
-    transportPressed: {
-      opacity: 0.78,
-      transform: [{ scale: 0.98 }],
-    },
-    rerecordButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      paddingHorizontal: 18,
-      paddingVertical: 12,
-      borderRadius: 999,
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: theme.isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)',
-    },
-    rerecordText: {
-      fontSize: 15,
-      fontWeight: '600',
+      paddingBottom: 20,
     },
     recordStage: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 84,
+      marginBottom: 20,
     },
     recordButton: {
-      padding: 10,
-      borderRadius: 999,
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     recordButtonPressed: {
       opacity: 0.82,
-      transform: [{ scale: 0.98 }],
+      transform: [{ scale: 0.94 }],
     },
     recordOuterRing: {
-      width: 88,
-      height: 88,
-      borderRadius: 999,
-      borderWidth: 3,
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      borderWidth: 4,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.isDark ? 'rgba(255,69,58,0.08)' : 'rgba(255,69,58,0.06)',
     },
     recordInnerCore: {
       width: 64,
       height: 64,
-      borderRadius: 999,
+      borderRadius: 32,
     },
     recordStopCore: {
-      width: 28,
-      height: 28,
-      borderRadius: 8,
+      width: 32,
+      height: 32,
+      borderRadius: 6,
     },
     recordHint: {
-      fontSize: 15,
-      lineHeight: 20,
-      textAlign: 'center',
+      fontSize: 13,
+      fontWeight: '500',
+      opacity: 0.8,
+    },
+    transportRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 32,
+      marginBottom: 32,
+    },
+    primaryTransport: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 6,
+    },
+    secondaryTransport: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    transportPressed: {
+      opacity: 0.7,
+      transform: [{ scale: 0.95 }],
+    },
+    rerecordButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 12,
+      gap: 8,
+    },
+    rerecordText: {
+      fontSize: 14,
+      fontWeight: '700',
     },
   })
+}

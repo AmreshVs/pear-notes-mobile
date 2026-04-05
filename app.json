@@ -27,10 +27,7 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.amreshvs.pearnotes",
-      "permissions": [
-        "RECORD_AUDIO",
-        "CAMERA"
-      ]
+      "permissions": ["RECORD_AUDIO", "CAMERA"]
     },
     "web": {
       "bundler": "metro",

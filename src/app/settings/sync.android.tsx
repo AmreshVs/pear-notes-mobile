@@ -17,6 +17,7 @@ import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack } from 'expo-router'
 import React, { memo, useCallback, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Alert,
@@ -44,14 +45,6 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   onBackground: string
 }
 
-const PLATFORM_NAMES: Record<string, string> = {
-  darwin: 'MACOS',
-  win32: 'WINDOWS',
-  linux: 'LINUX',
-  android: 'ANDROID',
-  ios: 'IOS',
-}
-
 function hexWithAlpha(hex: string, alpha: number): string {
   const a = Math.round(alpha * 255)
     .toString(16)
@@ -60,6 +53,7 @@ function hexWithAlpha(hex: string, alpha: number): string {
 }
 
 export default function AndroidSyncScreen() {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const theme = useMD3Theme()
   const c = theme.colors as ExtendedColors
@@ -120,30 +114,31 @@ export default function AndroidSyncScreen() {
     [hasScanned],
   )
 
-  const formatExpiry = useCallback((ts: number | null) => {
-    if (!ts) return 'Permanent Link'
-    const ms = ts < 10000000000 ? ts * 1000 : ts
-    const d = new Date(ms)
-    if (isNaN(d.getTime())) return 'Permanent Link'
-    return `Expires ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-  }, [])
+  const formatExpiry = useCallback(
+    (ts: number | null) => {
+      if (!ts) return t('sync.invite.permanent')
+      const ms = ts < 10000000000 ? ts * 1000 : ts
+      const d = new Date(ms)
+      if (isNaN(d.getTime())) return t('sync.invite.permanent')
+      return t('sync.invite.expiry', {
+        time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      })
+    },
+    [t],
+  )
 
   const handleDeleteDevice = useCallback(
     (deviceKey: string) => {
-      Alert.alert(
-        'Remove Device?',
-        'The device will lose data sync and all data will be removed.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Remove',
-            style: 'destructive',
-            onPress: () => dispatch(deleteSyncedDevice({ key: deviceKey } as any)),
-          },
-        ],
-      )
+      Alert.alert(t('sync.delete.title'), t('sync.delete.description'), [
+        { text: t('sync.delete.cancel'), style: 'cancel' },
+        {
+          text: t('sync.delete.remove'),
+          style: 'destructive',
+          onPress: () => dispatch(deleteSyncedDevice({ key: deviceKey } as any)),
+        },
+      ])
     },
-    [dispatch],
+    [dispatch, t],
   )
 
   const otherDevices = syncedDevices.filter((d: any) => !d.isLocal)
@@ -161,7 +156,7 @@ export default function AndroidSyncScreen() {
         <Pressable onPress={() => router.back()} hitSlop={8} style={ss.iconBtn}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
         </Pressable>
-        <Text style={[ss.appBarTitle, { color: c.onSurface }]}>Link and Sync</Text>
+        <Text style={[ss.appBarTitle, { color: c.onSurface }]}>{t('sync.title')}</Text>
       </View>
 
       <KeyboardAvoidingView behavior="height" style={ss.flex1}>
@@ -175,12 +170,12 @@ export default function AndroidSyncScreen() {
             <View
               style={[ss.segTrack, { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant }]}
             >
-              {(['link', 'devices'] as const).map((t) => {
-                const active = tab === t
+              {(['link', 'devices'] as const).map((tValue) => {
+                const active = tab === tValue
                 return (
                   <Pressable
-                    key={t}
-                    onPress={() => setTab(t)}
+                    key={tValue}
+                    onPress={() => setTab(tValue)}
                     style={[ss.segPill, active && { backgroundColor: c.primaryContainer }]}
                   >
                     <Text
@@ -189,7 +184,7 @@ export default function AndroidSyncScreen() {
                         { color: active ? c.onPrimaryContainer : c.onSurfaceVariant },
                       ]}
                     >
-                      {t === 'link' ? 'Link Device' : 'My Devices'}
+                      {tValue === 'link' ? t('sync.tabs.link') : t('sync.tabs.devices')}
                     </Text>
                   </Pressable>
                 )
@@ -220,10 +215,9 @@ export default function AndroidSyncScreen() {
                     </View>
                   </View>
 
-                  <Text style={[ss.heroTitle, { color: c.onSurface }]}>Link Your Devices</Text>
+                  <Text style={[ss.heroTitle, { color: c.onSurface }]}>{t('sync.hero.title')}</Text>
                   <Text style={[ss.heroDesc, { color: c.onSurfaceVariant }]}>
-                    Securely extend your digital vault by connecting your laptop, tablet, or phone
-                    to your encrypted cloud.
+                    {t('sync.hero.description')}
                   </Text>
 
                   <Pressable
@@ -239,7 +233,7 @@ export default function AndroidSyncScreen() {
                   >
                     {isLoading && <ActivityIndicator size="small" color="#000" style={ss.mr8} />}
                     <Text style={[ss.generateBtnText, { color: c.onPrimary || '#000' }]}>
-                      {isLoading ? 'Preparing…' : 'Generate Invite'}
+                      {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateBtn')}
                     </Text>
                   </Pressable>
                 </Animated.View>
@@ -260,7 +254,9 @@ export default function AndroidSyncScreen() {
                     </View>
                   </View>
 
-                  <Text style={[ss.heroTitle, { color: c.onSurface }]}>Invitation Ready</Text>
+                  <Text style={[ss.heroTitle, { color: c.onSurface }]}>
+                    {t('sync.invite.header')}
+                  </Text>
                   <Text style={[ss.heroDesc, { color: c.onSurfaceVariant }]}>
                     {formatExpiry(expiresAt)}
                   </Text>
@@ -277,7 +273,7 @@ export default function AndroidSyncScreen() {
                   </View>
 
                   <Text style={[ss.codeLabelText, { color: c.onSurfaceVariant }]}>
-                    SECURE PAIR CODE
+                    {t('sync.invite.codeLabel')}
                   </Text>
                   <View style={[ss.codeBox, { borderColor: hexWithAlpha(c.outlineVariant, 0.25) }]}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -308,7 +304,7 @@ export default function AndroidSyncScreen() {
                         { color: copied ? '#fff' : c.onPrimary || '#000', marginLeft: 8 },
                       ]}
                     >
-                      {copied ? 'Copied!' : 'Copy Invite Code'}
+                      {copied ? t('sync.invite.copied') : t('sync.invite.copyBtn')}
                     </Text>
                   </Pressable>
 
@@ -328,7 +324,7 @@ export default function AndroidSyncScreen() {
                       style={{ marginTop: 2 }}
                     />
                     <Text style={[ss.warningText, { color: c.onSurfaceVariant }]}>
-                      For security, don't share this code in public channels.
+                      {t('sync.invite.warning')}
                     </Text>
                   </View>
                 </Animated.View>
@@ -343,7 +339,7 @@ export default function AndroidSyncScreen() {
                     <View style={ss.invitePasteLeft}>
                       <Text style={[ss.plusIcon, { color: c.primary }]}>+</Text>
                       <Text style={[ss.invitePasteTitle, { color: c.onSurface }]}>
-                        Already have an invite?
+                        {t('sync.alreadyHaveInvite')}
                       </Text>
                     </View>
                     <Pressable
@@ -351,7 +347,9 @@ export default function AndroidSyncScreen() {
                       style={[ss.scanPillSmall, { backgroundColor: hexWithAlpha(c.primary, 0.1) }]}
                     >
                       <MaterialCommunityIcons name="qrcode-scan" size={14} color={c.primary} />
-                      <Text style={[ss.scanPillSmallText, { color: c.primary }]}>Scan QR</Text>
+                      <Text style={[ss.scanPillSmallText, { color: c.primary }]}>
+                        {t('sync.paste.scanBtn')}
+                      </Text>
                     </Pressable>
                   </View>
 
@@ -371,7 +369,7 @@ export default function AndroidSyncScreen() {
                       onFocus={() =>
                         setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
                       }
-                      placeholder="Paste invite code here..."
+                      placeholder={t('sync.paste.placeholder')}
                       placeholderTextColor={hexWithAlpha(c.onSurfaceVariant, 0.4)}
                       style={[ss.pasteInput, { color: c.onSurface }]}
                       autoCapitalize="none"
@@ -392,7 +390,7 @@ export default function AndroidSyncScreen() {
                         <ActivityIndicator size="small" color="#000" />
                       ) : (
                         <Text style={[ss.linkPillText, { color: c.onPrimary || '#000' }]}>
-                          Link
+                          {t('sync.paste.linkBtn')}
                         </Text>
                       )}
                     </Pressable>
@@ -408,8 +406,7 @@ export default function AndroidSyncScreen() {
                   style={{ marginTop: 2 }}
                 />
                 <Text style={[ss.footNoteText, { color: c.onSurfaceVariant }]}>
-                  Your data moves directly between devices using encrypted Hypercore logs. No
-                  central server involved.
+                  {t('sync.footer')}
                 </Text>
               </Animated.View>
             </Animated.View>
@@ -423,7 +420,7 @@ export default function AndroidSyncScreen() {
               {localDevices.length > 0 && (
                 <>
                   <Text style={[ss.sectionCap, { color: hexWithAlpha(c.onSurfaceVariant, 0.6) }]}>
-                    THIS DEVICE
+                    {t('sync.devices.thisDevice')}
                   </Text>
                   {localDevices.map((device: any, index: number) => (
                     <AndroidDeviceCard
@@ -447,7 +444,7 @@ export default function AndroidSyncScreen() {
                   },
                 ]}
               >
-                OTHER DEVICES
+                {t('sync.devices.otherDevices')}
               </Text>
 
               {otherDevices.length > 0 ? (
@@ -471,7 +468,7 @@ export default function AndroidSyncScreen() {
                     color={c.onSurfaceVariant}
                   />
                   <Text style={[ss.emptyText, { color: c.onSurfaceVariant }]}>
-                    No other devices connected yet
+                    {t('sync.devices.empty')}
                   </Text>
                 </Animated.View>
               )}
@@ -480,14 +477,15 @@ export default function AndroidSyncScreen() {
                 <View style={[ss.encryptedBadge, { backgroundColor: c.surfaceContainer }]}>
                   <MaterialCommunityIcons name="shield-lock" size={16} color={c.primary} />
                   <Text style={[ss.encryptedText, { color: c.onSurfaceVariant }]}>
-                    END-TO-END ENCRYPTED
+                    {t('settings.footer')
+                      ? t('settings.footer').split(' • ')[0].toUpperCase()
+                      : 'END-TO-END ENCRYPTED'}
                   </Text>
                 </View>
               </View>
 
               <Text style={[ss.footerText, { color: c.onSurfaceVariant }]}>
-                Only linked devices can decrypt your personal vault data. To remove access, revoke
-                the device token immediately from settings.
+                {t('sync.invite.warning')}
               </Text>
             </Animated.View>
           )}
@@ -518,16 +516,14 @@ export default function AndroidSyncScreen() {
                 </Pressable>
               </View>
               <View style={[ss.scannerFooter, { paddingBottom: insets.bottom + 24 }]}>
-                <Text style={ss.scannerTitle}>Scan invite QR code</Text>
-                <Text style={ss.scannerDesc}>
-                  Point your camera at the QR code shown on your other device.
-                </Text>
+                <Text style={ss.scannerTitle}>{t('sync.scanner.title')}</Text>
+                <Text style={ss.scannerDesc}>{t('sync.scanner.description')}</Text>
               </View>
             </>
           ) : (
             <View style={ss.permissionCard}>
-              <Text style={ss.scannerTitle}>Camera access needed</Text>
-              <Text style={ss.scannerDesc}>Allow camera access to scan an invite QR code.</Text>
+              <Text style={ss.scannerTitle}>{t('sync.permissions.cameraTitle')}</Text>
+              <Text style={ss.scannerDesc}>{t('sync.permissions.cameraDescription')}</Text>
               <Pressable
                 onPress={requestCameraPermission}
                 style={({ pressed }) => [
@@ -536,11 +532,11 @@ export default function AndroidSyncScreen() {
                 ]}
               >
                 <Text style={[ss.permissionBtnText, { color: c.onPrimary || '#000' }]}>
-                  Allow Camera
+                  {t('sync.permissions.allowBtn')}
                 </Text>
               </Pressable>
               <Pressable onPress={handleCloseScanner} style={ss.permissionCancelBtn}>
-                <Text style={ss.permissionCancelText}>Not now</Text>
+                <Text style={ss.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
               </Pressable>
             </View>
           )}
@@ -565,9 +561,24 @@ const AndroidDeviceCard = memo(function AndroidDeviceCard({
   index,
   onDelete,
 }: DeviceCardProps) {
+  const { t } = useTranslation()
   const dispatch = useDispatch()
-  const platformLabel =
-    PLATFORM_NAMES[device.platform || ''] || device.platform?.toUpperCase() || '—'
+
+  const platformKey =
+    device.platform === 'darwin'
+      ? 'macOS'
+      : device.platform === 'win32'
+        ? 'Windows'
+        : device.platform === 'linux'
+          ? 'Linux'
+          : device.platform === 'android'
+            ? 'Android'
+            : device.platform === 'ios'
+              ? 'iOS'
+              : 'unknown'
+
+  const platformLabel = t(`sync.platforms.${platformKey}`)
+
   const iconName =
     device.deviceType === 'mobile' || device.platform === 'android' || device.platform === 'ios'
       ? 'cellphone'
@@ -649,7 +660,7 @@ const AndroidDeviceCard = memo(function AndroidDeviceCard({
             {platformLabel}
             {isLocal && !isEditing && (
               <Text style={[ds.tapToRename, { color: c.onSurfaceVariant }]}>
-                {' · Tap to rename'}
+                {t('sync.platforms.renameHint')}
               </Text>
             )}
           </Text>

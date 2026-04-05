@@ -13,6 +13,7 @@ import {
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import { router, Stack } from 'expo-router'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Alert,
   Pressable,
@@ -72,6 +73,7 @@ function hexWithAlpha(hex: string, alpha: number): string {
 }
 
 export default function AndroidFoldersScreen() {
+  const { t } = useTranslation()
   const { c, theme } = useVaultColors()
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
@@ -134,8 +136,8 @@ export default function AndroidFoldersScreen() {
   )
 
   const handleCreateFolder = useCallback(() => {
-    dispatch(createFolder({ name: 'Untitled' } as any))
-  }, [dispatch])
+    dispatch(createFolder({ name: t('folders.untitled') } as any))
+  }, [dispatch, t])
 
   const openRenameDialog = useCallback((id: string, name: string) => {
     setRenameText(name)
@@ -172,15 +174,15 @@ export default function AndroidFoldersScreen() {
     if (!folderSheet) return
     const folderId = folderSheet
     setFolderSheet(null)
-    Alert.alert('Delete Folder', 'This folder and its notes will be deleted.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('folders.deleteTitle'), t('folders.deleteDescription'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('folders.buttons.delete'),
         style: 'destructive',
         onPress: () => dispatch(deleteFolder(folderId as any)),
       },
     ])
-  }, [folderSheet, dispatch])
+  }, [folderSheet, dispatch, t])
 
   const dynStyles = useMemo(() => createDynamicStyles(c, insets.bottom), [c, insets.bottom])
 
@@ -200,8 +202,8 @@ export default function AndroidFoldersScreen() {
       >
         <Animated.View entering={FadeIn.duration(200)} style={staticStyles.header}>
           <View>
-            <Text style={dynStyles.pageTitle}>Folders</Text>
-            <Text style={dynStyles.pageSubtitle}>Your note collections</Text>
+            <Text style={dynStyles.pageTitle}>{t('folders.title')}</Text>
+            <Text style={dynStyles.pageSubtitle}>{t('folders.subtitle')}</Text>
           </View>
           <Pressable
             onPress={() => router.push('/settings')}
@@ -225,7 +227,7 @@ export default function AndroidFoldersScreen() {
             />
             <TextInput
               style={dynStyles.searchInput}
-              placeholder="Search folders…"
+              placeholder={t('folders.searchPlaceholder')}
               placeholderTextColor={c.onSurfaceVariant + '80'}
               value={searchQuery}
               onChangeText={setSearchQuery}
@@ -256,7 +258,7 @@ export default function AndroidFoldersScreen() {
 
           {topFolders.length === 0 && (
             <View style={staticStyles.emptyRow}>
-              <Text style={dynStyles.emptyText}>No folders found</Text>
+              <Text style={dynStyles.emptyText}>{t('folders.noFoldersFound')}</Text>
             </View>
           )}
         </Animated.View>
@@ -268,7 +270,7 @@ export default function AndroidFoldersScreen() {
           >
             <View style={staticStyles.sectionHeader}>
               <MaterialCommunityIcons name="archive-outline" size={20} color={c.onSurfaceVariant} />
-              <Text style={dynStyles.sectionTitle}>Archive</Text>
+              <Text style={dynStyles.sectionTitle}>{t('folders.archiveHeader')}</Text>
             </View>
             <View style={dynStyles.listCard}>
               {archiveFolders.map((folder, index) => (
@@ -305,24 +307,26 @@ export default function AndroidFoldersScreen() {
           onDismiss={() => setRenameDialog(null)}
           style={{ backgroundColor: c.surfaceContainerHighest ?? c.surface }}
         >
-          <Dialog.Title style={{ color: c.onSurface }}>Rename Folder</Dialog.Title>
+          <Dialog.Title style={{ color: c.onSurface }}>{t('folders.renameTitle')}</Dialog.Title>
           <Dialog.Content>
             <PaperTextInput
               value={renameText}
               onChangeText={setRenameText}
               autoFocus
               mode="outlined"
-              label="Folder name"
+              label={t('folders.renameLabel')}
             />
           </Dialog.Content>
           <Dialog.Actions>
             <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
               <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
-                Cancel
+                {t('common.cancel')}
               </Text>
             </Pressable>
             <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
-              <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>Rename</Text>
+              <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
+                {t('folders.buttons.rename')}
+              </Text>
             </Pressable>
           </Dialog.Actions>
         </Dialog>
@@ -331,13 +335,20 @@ export default function AndroidFoldersScreen() {
       <BottomActionSheet
         visible={!!folderSheet}
         onDismiss={() => setFolderSheet(null)}
-        title={folders.find((f) => f.id === folderSheet || f.key === folderSheet)?.name ?? 'Folder'}
-        subtitle="Folder options"
+        title={
+          folders.find((f) => f.id === folderSheet || f.key === folderSheet)?.name ??
+          t('folders.untitled')
+        }
+        subtitle={t('folders.options')}
         actions={[
-          { icon: 'pencil-outline', label: 'Rename', onPress: handleSheetRename },
+          {
+            icon: 'pencil-outline',
+            label: t('folders.buttons.rename'),
+            onPress: handleSheetRename,
+          },
           {
             icon: 'delete-outline',
-            label: 'Delete',
+            label: t('folders.buttons.delete'),
             onPress: handleSheetDelete,
             destructive: true,
           },
@@ -370,6 +381,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
   onPress,
   onLongPress,
 }: VaultFolderRowProps) {
+  const { t } = useTranslation()
   const { dark: isDark } = useMD3Theme()
   const scale = useSharedValue(1)
 
@@ -392,7 +404,10 @@ const VaultFolderRow = memo(function VaultFolderRow({
   const iconBgColor = isTrash
     ? hexWithAlpha(c.errorContainer ?? '#871c34', iconBgAlpha)
     : hexWithAlpha(c.primaryContainer, iconBgAlpha)
-  const countLabel = count > 0 ? `${count} ${count === 1 ? 'item' : 'items'}` : null
+  const countLabel =
+    count > 0
+      ? t(count === 1 ? 'folderView.noteCount_one' : 'folderView.noteCount_other', { count })
+      : null
 
   const dividerStyle = useMemo(
     () =>
@@ -498,6 +513,7 @@ const staticStyles = StyleSheet.create({
   dialogBtnText: {
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
   },
 })
 
@@ -518,7 +534,7 @@ const rowStyles = StyleSheet.create({
   iconWrap: {
     width: 48,
     height: 48,
-    borderRadius: 9999, // Perfect circle as per gold Note design screenshot
+    borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -587,6 +603,7 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
       flex: 1,
       fontSize: 15,
       color: c.onSurface,
+      fontFamily: 'PlusJakartaSans_500Medium',
       padding: 0,
     },
     listCard: {
@@ -597,6 +614,7 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
     emptyText: {
       color: c.onSurfaceVariant,
       fontSize: 14,
+      fontFamily: 'PlusJakartaSans_400Regular',
     },
     sectionTitle: {
       fontSize: 18,

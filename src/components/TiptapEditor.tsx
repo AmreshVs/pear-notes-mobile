@@ -236,14 +236,14 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       const c = JSON.stringify(color)
       webViewRef.current?.injectJavaScript(
         `(function(){` +
-        `var c=${c};` +
-        `document.documentElement.style.backgroundColor=c;` +
-        `document.body.style.backgroundColor=c;` +
-        `var pm=document.querySelector('.ProseMirror');if(pm)pm.style.backgroundColor=c;` +
-        `var s=document.getElementById('__pear_bg');` +
-        `if(!s){s=document.createElement('style');s.id='__pear_bg';document.head.appendChild(s);}` +
-        `s.textContent='html,body,.ProseMirror,.tiptap,#root,#app{background-color:'+c+' !important}';` +
-        `})();true;`,
+          `var c=${c};` +
+          `document.documentElement.style.backgroundColor=c;` +
+          `document.body.style.backgroundColor=c;` +
+          `var pm=document.querySelector('.ProseMirror');if(pm)pm.style.backgroundColor=c;` +
+          `var s=document.getElementById('__pear_bg');` +
+          `if(!s){s=document.createElement('style');s.id='__pear_bg';document.head.appendChild(s);}` +
+          `s.textContent='html,body,.ProseMirror,.tiptap,#root,#app{background-color:'+c+' !important}';` +
+          `})();true;`,
       )
     }, [])
 

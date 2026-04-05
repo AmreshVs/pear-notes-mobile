@@ -12,6 +12,11 @@
         "createdAt": "Date Created",
         "title": "Title"
       },
+      "colorTheme": "Color Theme",
+      "colorOptions": {
+        "pear": "Default",
+        "material_you": "Material You"
+      },
       "fontOptions": {
         "Inter": "Inter",
         "Outfit": "Outfit",
@@ -30,7 +35,8 @@
     },
     "sync": {
       "header": "SYNC & DEVICES",
-      "linkAndSync": "Link and Sync"
+      "linkAndSync": "Link and Sync",
+      "cloudBackupStatus": "Cloud backup enabled"
     },
     "footer": "End-to-end encrypted • Fully private"
   },
@@ -40,6 +46,7 @@
       "link": "Link Device",
       "devices": "My Devices"
     },
+    "alreadyHaveInvite": "Already have an invite?",
     "platforms": {
       "macOS": "macOS",
       "Windows": "Windows",
@@ -106,12 +113,17 @@
       "delete": "Delete",
       "rename": "Rename"
     },
+    "renameLabel": "Folder name",
+    "options": "Folder options",
     "systemIcons": {
       "all": "All",
       "trash": "Trash",
       "folder": "Folder"
     },
-    "untitled": "Untitled"
+    "untitled": "Untitled",
+    "subtitle": "Your note collections",
+    "searchPlaceholder": "Search folders…",
+    "noFoldersFound": "No folders found"
   },
   "folderView": {
     "searchPlaceholder": "Search notes...",
@@ -143,8 +155,11 @@
       "moveTo": "Move to",
       "copyNote": "Copy Note",
       "delete": "Delete",
-      "noFolders": "No folders available"
-    }
+      "noFolders": "No folders available",
+      "options": "Note options",
+      "share": "Share"
+    },
+    "deleteConfirmation": "Are you sure you want to delete this note?"
   },
   "audioRecorder": {
     "status": {
@@ -175,7 +190,25 @@
     "backendFailed": "Failed to initialize backend runtime."
   },
   "noteEditor": {
-    "placeholder": "Start writing..."
+    "placeholder": "Start writing...",
+    "upload": {
+      "preparing": "Preparing...",
+      "reading": "Reading...",
+      "readingWithSize": "Reading {{size}}...",
+      "processing": "Processing...",
+      "uploading": "Uploading...",
+      "failedTitle": "Upload Failed",
+      "failedVideo": "Could not upload the video.",
+      "photo": "Photo",
+      "scannedDoc": "Scanned document",
+      "pageCount": "Page {{count}} of {{total}}",
+      "file": "File",
+      "audio": "Audio"
+    },
+    "menu": {
+      "image": "Image",
+      "attachment": "Attachment"
+    }
   },
   "pairing": {
     "status": {

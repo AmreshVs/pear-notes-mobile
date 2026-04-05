@@ -26,6 +26,7 @@ import { formatDate } from '@pear-notes/core/utils.js'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Alert,
   FlatList,
@@ -100,6 +101,7 @@ function noteKey(note: any): string {
 }
 
 export default function AndroidFolderNotesScreen() {
+  const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
@@ -201,19 +203,23 @@ export default function AndroidFolderNotesScreen() {
   const handleDeleteNote = useCallback(
     (noteId: string) => {
       if (isTrashFolder) {
-        Alert.alert('Permanently Delete', 'This note cannot be recovered.', [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Delete',
-            style: 'destructive',
-            onPress: () => dispatch(deleteNote(noteId as any)),
-          },
-        ])
+        Alert.alert(
+          t('folderView.permanentlyDeleteTitle'),
+          t('folderView.permanentlyDeleteSubtitle'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('folders.buttons.delete'),
+              style: 'destructive',
+              onPress: () => dispatch(deleteNote(noteId as any)),
+            },
+          ],
+        )
       } else {
         dispatch(deleteNote(noteId as any))
       }
     },
-    [dispatch, isTrashFolder],
+    [dispatch, isTrashFolder, t],
   )
 
   const handleMoveNote = useCallback(
@@ -280,10 +286,10 @@ export default function AndroidFolderNotesScreen() {
 
   const handleFolderSheetDelete = useCallback(() => {
     setFolderOptionsSheet(false)
-    Alert.alert('Delete Folder', 'This folder and its notes will be deleted.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('folders.deleteTitle'), t('folders.deleteDescription'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('folders.buttons.delete'),
         style: 'destructive',
         onPress: () => {
           dispatch(deleteFolder(id as any))
@@ -291,7 +297,7 @@ export default function AndroidFolderNotesScreen() {
         },
       },
     ])
-  }, [dispatch, id])
+  }, [dispatch, id, t])
 
   const confirmRename = useCallback(() => {
     if (!renameDialog) return
@@ -323,13 +329,21 @@ export default function AndroidFolderNotesScreen() {
 
   const noteSheetActions = useMemo(
     () => [
-      { icon: 'content-copy', label: 'Copy', onPress: handleNoteSheetCopy },
+      { icon: 'content-copy', label: t('noteCard.actions.copyNote'), onPress: handleNoteSheetCopy },
       ...(moveFolders.length > 0
-        ? [{ icon: 'folder-move-outline', label: 'Move to Folder', onPress: handleNoteSheetMove }]
+        ? [
+            {
+              icon: 'folder-move-outline',
+              label: t('noteCard.actions.moveTo'),
+              onPress: handleNoteSheetMove,
+            },
+          ]
         : []),
       {
         icon: 'delete-outline',
-        label: isTrashFolder ? 'Delete Permanently' : 'Delete',
+        label: isTrashFolder
+          ? t('folderView.permanentlyDeleteTitle')
+          : t('noteCard.actions.delete'),
         onPress: handleNoteSheetDelete,
         destructive: true as const,
       },
@@ -340,6 +354,7 @@ export default function AndroidFolderNotesScreen() {
       handleNoteSheetDelete,
       moveFolders.length,
       isTrashFolder,
+      t,
     ],
   )
 
@@ -431,7 +446,7 @@ export default function AndroidFolderNotesScreen() {
           <TextInput
             ref={searchInputRef}
             style={[staticStyles.searchInput, { color: c.onSurface }]}
-            placeholder="Search notes…"
+            placeholder={t('folderView.searchPlaceholder')}
             placeholderTextColor={c.onSurfaceVariant + '80'}
             value={searchQuery}
             onChangeText={(text) => dispatch(setSearchQuery(text))}
@@ -455,7 +470,7 @@ export default function AndroidFolderNotesScreen() {
         removeClippedSubviews
         ListHeaderComponent={
           <Text style={[staticStyles.pageTitle, { color: c.onSurface }]}>
-            {folder?.name || 'Notes'}
+            {folder?.name || t('folders.untitled')}
           </Text>
         }
         ListEmptyComponent={
@@ -486,24 +501,26 @@ export default function AndroidFolderNotesScreen() {
           onDismiss={() => setRenameDialog(null)}
           style={{ backgroundColor: (c as any).surfaceContainerHighest ?? c.surface }}
         >
-          <Dialog.Title style={{ color: c.onSurface }}>Rename Folder</Dialog.Title>
+          <Dialog.Title style={{ color: c.onSurface }}>{t('folders.renameTitle')}</Dialog.Title>
           <Dialog.Content>
             <PaperTextInput
               value={renameText}
               onChangeText={setRenameText}
               autoFocus
               mode="outlined"
-              label="Folder name"
+              label={t('folders.renameLabel')}
             />
           </Dialog.Content>
           <Dialog.Actions>
             <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
               <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
-                Cancel
+                {t('common.cancel')}
               </Text>
             </Pressable>
             <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
-              <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>Rename</Text>
+              <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
+                {t('folders.buttons.rename')}
+              </Text>
             </Pressable>
           </Dialog.Actions>
         </Dialog>
@@ -512,21 +529,27 @@ export default function AndroidFolderNotesScreen() {
       <BottomActionSheet
         visible={noteSheetVisible}
         onDismiss={() => setNoteSheetVisible(false)}
-        title={notes.find((n: any) => n.key === activeNoteId)?.value?.title || 'Untitled'}
-        subtitle="Note options"
+        title={
+          notes.find((n: any) => n.key === activeNoteId)?.value?.title || t('noteCard.untitled')
+        }
+        subtitle={t('noteCard.actions.options')}
         actions={noteSheetActions}
       />
 
       <BottomActionSheet
         visible={folderOptionsSheet}
         onDismiss={() => setFolderOptionsSheet(false)}
-        title={folder?.name ?? 'Folder'}
-        subtitle="Folder options"
+        title={folder?.name ?? t('folders.untitled')}
+        subtitle={t('folders.options')}
         actions={[
-          { icon: 'pencil-outline', label: 'Rename', onPress: handleFolderSheetRename },
+          {
+            icon: 'pencil-outline',
+            label: t('folders.buttons.rename'),
+            onPress: handleFolderSheetRename,
+          },
           {
             icon: 'delete-outline',
-            label: 'Delete Folder',
+            label: t('folders.deleteTitle'),
             onPress: handleFolderSheetDelete,
             destructive: true,
           },
@@ -562,9 +585,10 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
   onPress,
   onLongPress,
 }: NoteRowProps) {
-  const title = note.value?.title || 'Untitled'
+  const { t } = useTranslation()
+  const title = note.value?.title || t('noteCard.untitled')
   const html = note.value?.note || ''
-  const preview = getPreview(html)
+  const preview = getPreview(html) || t('noteCard.noAdditionalText')
   const rawImageUrl = getFirstImageUrl(html)
   const hasChecklist = isChecklistNote(html)
   const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
@@ -688,6 +712,7 @@ const EmptyState = memo(function EmptyState({
   height,
   colors: c,
 }: EmptyStateProps) {
+  const { t } = useTranslation()
   return (
     <Animated.View
       entering={FadeIn.duration(300)}
@@ -700,9 +725,11 @@ const EmptyState = memo(function EmptyState({
             size={48}
             color={hexWithAlpha(c.onSurfaceVariant, 0.3)}
           />
-          <Text style={[emptyStyles.title, { color: c.onSurface }]}>No matches found</Text>
+          <Text style={[emptyStyles.title, { color: c.onSurface }]}>
+            {t('folderView.empty.noMatchesTitle')}
+          </Text>
           <Text style={[emptyStyles.subtitle, { color: c.onSurfaceVariant }]}>
-            Try a different search term
+            {t('folderView.empty.noMatchesSubtitle')}
           </Text>
         </>
       ) : (
@@ -712,9 +739,11 @@ const EmptyState = memo(function EmptyState({
             size={48}
             color={hexWithAlpha(c.onSurfaceVariant, 0.3)}
           />
-          <Text style={[emptyStyles.title, { color: c.onSurface }]}>No Notes</Text>
+          <Text style={[emptyStyles.title, { color: c.onSurface }]}>
+            {t('folderView.empty.noNotesTitle')}
+          </Text>
           <Text style={[emptyStyles.subtitle, { color: c.onSurfaceVariant }]}>
-            Tap + to create your first note
+            {t('folderView.empty.noNotesSubtitle')}
           </Text>
           {!isSynced && (
             <View style={emptyStyles.linkBox}>
@@ -725,10 +754,10 @@ const EmptyState = memo(function EmptyState({
                 ]}
               />
               <Text style={[emptyStyles.linkTitle, { color: c.onSurface }]}>
-                LINK EXISTING DEVICE
+                {t('folderView.empty.linkTitle')}
               </Text>
               <Text style={[emptyStyles.linkSub, { color: c.onSurfaceVariant }]}>
-                Already have notes elsewhere?
+                {t('folderView.empty.linkSub')}
               </Text>
               <Pressable
                 onPress={onLinkDevice}
@@ -738,7 +767,7 @@ const EmptyState = memo(function EmptyState({
                 ]}
               >
                 <Text style={[emptyStyles.linkBtnText, { color: c.onPrimaryContainer }]}>
-                  Connect Device
+                  {t('folderView.empty.connectBtn')}
                 </Text>
               </Pressable>
             </View>
@@ -798,24 +827,30 @@ const staticStyles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 15,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    padding: 0,
-  },
-  pageTitle: {
-    fontSize: 36,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: -0.5,
-    marginBottom: 12,
-    paddingHorizontal: 4,
+    fontFamily: 'PlusJakartaSans_500Medium',
+    paddingVertical: 0,
   },
   listContent: {
     paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
+    marginBottom: 20,
+    marginTop: 10,
+    letterSpacing: -0.5,
   },
   fab: {
     position: 'absolute',
     right: 24,
-    borderRadius: 9999,
+    borderRadius: 20,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   dialogBtn: {
     paddingHorizontal: 16,
@@ -823,46 +858,43 @@ const staticStyles = StyleSheet.create({
   },
   dialogBtnText: {
     fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
+    fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
   },
 })
 
 const rowStyles = StyleSheet.create({
   row: {
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    marginBottom: 8,
-    borderRadius: 32,
-    gap: 14,
+    gap: 16,
   },
   content: {
     flex: 1,
-    minWidth: 0,
   },
   title: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: -0.3,
     marginBottom: 4,
+    letterSpacing: -0.2,
   },
   preview: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
     fontFamily: 'PlusJakartaSans_400Regular',
-    marginBottom: 6,
+    marginBottom: 10,
+    lineHeight: 20,
   },
   checklistRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 6,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   checkboxIcon: {
-    marginRight: 5,
+    marginRight: 6,
     marginTop: 1,
   },
   meta: {
@@ -871,25 +903,24 @@ const rowStyles = StyleSheet.create({
   },
   metaDate: {
     fontSize: 10,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: 1,
+    fontWeight: '800',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
+    letterSpacing: 0.5,
   },
   metaDot: {
     fontSize: 10,
   },
   metaTag: {
     fontSize: 10,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: 1,
+    fontWeight: '800',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
+    letterSpacing: 0.5,
   },
   thumbnail: {
     width: 60,
     height: 60,
-    borderRadius: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-    flexShrink: 0,
+    borderRadius: 14,
+    borderWidth: 1,
   },
 })
 
@@ -899,48 +930,48 @@ const emptyStyles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
+    fontSize: 20,
+    fontWeight: '800',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     marginTop: 16,
-    marginBottom: 6,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 13,
-    fontFamily: 'PlusJakartaSans_400Regular',
+    fontSize: 14,
     textAlign: 'center',
+    fontFamily: 'PlusJakartaSans_400Regular',
+    lineHeight: 20,
   },
   linkBox: {
-    width: '100%',
-    marginTop: 40,
     alignItems: 'center',
+    marginTop: 32,
+    width: '100%',
   },
   divider: {
-    width: 32,
+    width: 40,
     height: 3,
-    borderRadius: 9999,
+    borderRadius: 2,
     marginBottom: 24,
   },
   linkTitle: {
     fontSize: 11,
     fontWeight: '800',
     fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: 1.5,
-    marginBottom: 6,
+    letterSpacing: 1.2,
+    marginBottom: 8,
   },
   linkSub: {
-    fontSize: 11,
+    fontSize: 13,
+    marginBottom: 18,
     fontFamily: 'PlusJakartaSans_400Regular',
-    marginBottom: 20,
   },
   linkBtn: {
-    width: '100%',
-    paddingVertical: 14,
-    borderRadius: 9999,
-    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   linkBtnText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans_700Bold',
   },

@@ -12,6 +12,7 @@ import {
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
 import React, { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Alert,
   Platform,
@@ -29,31 +30,15 @@ import { useDispatch, useSelector } from 'react-redux'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
 
-const SORT_OPTIONS = [
-  { label: 'Date Edited', value: 'updatedAt' },
-  { label: 'Date Created', value: 'createdAt' },
-  { label: 'Title', value: 'title' },
-]
-
-const FONT_OPTIONS = [
-  { label: 'Inter', value: 'Inter' },
-  { label: 'Outfit', value: 'Outfit' },
-  { label: 'Lora', value: 'Lora' },
-  { label: 'Newsreader', value: 'Newsreader' },
-  { label: 'IBM Plex Mono', value: 'IBM Plex Mono' },
-  { label: 'System Default', value: 'System' },
-  { label: 'Serif', value: 'Serif' },
-  { label: 'Monospace', value: 'Mono' },
-]
-
 function showAndroidPicker(
   title: string,
   options: { label: string; value: string }[],
   onSelect: (value: string) => void,
+  cancelText: string,
 ) {
   Alert.alert(title, undefined, [
     ...options.map((o) => ({ text: o.label, onPress: () => onSelect(o.value) })),
-    { text: 'Cancel', style: 'cancel' },
+    { text: cancelText, style: 'cancel' },
   ])
 }
 
@@ -66,6 +51,7 @@ function hexWithAlpha(hex: string, alpha: number): string {
 }
 
 export default function AndroidSettingsScreen() {
+  const { t } = useTranslation()
   const insets = useSafeAreaInsets()
   const theme = useMD3Theme()
   const c = theme.colors as any
@@ -81,12 +67,38 @@ export default function AndroidSettingsScreen() {
     return Platform.OS === 'android' && Number(Platform.Version) >= 31
   }, [])
 
+  const SORT_OPTIONS = useMemo(
+    () => [
+      { label: t('settings.general.sortOptions.updatedAt'), value: 'updatedAt' },
+      { label: t('settings.general.sortOptions.createdAt'), value: 'createdAt' },
+      { label: t('settings.general.sortOptions.title'), value: 'title' },
+    ],
+    [t],
+  )
+
+  const FONT_OPTIONS = useMemo(
+    () => [
+      { label: t('settings.general.fontOptions.Inter'), value: 'Inter' },
+      { label: t('settings.general.fontOptions.Outfit'), value: 'Outfit' },
+      { label: t('settings.general.fontOptions.Lora'), value: 'Lora' },
+      { label: t('settings.general.fontOptions.Newsreader'), value: 'Newsreader' },
+      { label: t('settings.general.fontOptions.IBM Plex Mono'), value: 'IBM Plex Mono' },
+      { label: t('settings.general.fontOptions.System'), value: 'System' },
+      { label: t('settings.general.fontOptions.Serif'), value: 'Serif' },
+      { label: t('settings.general.fontOptions.Mono'), value: 'Mono' },
+    ],
+    [t],
+  )
+
   const colorThemeOptions = useMemo(() => {
     return [
-      { label: 'Default', value: 'pear' as AndroidColorTheme },
-      { label: 'Material You', value: 'material_you' as AndroidColorTheme },
+      { label: t('settings.general.colorOptions.pear'), value: 'pear' as AndroidColorTheme },
+      {
+        label: t('settings.general.colorOptions.material_you'),
+        value: 'material_you' as AndroidColorTheme,
+      },
     ]
-  }, [])
+  }, [t])
 
   const dynStyles = useMemo(() => createDynamicStyles(c, insets), [c, insets])
 
@@ -102,7 +114,7 @@ export default function AndroidSettingsScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12} style={dynStyles.iconBtn}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
         </Pressable>
-        <Text style={dynStyles.headerTitle}>Settings</Text>
+        <Text style={dynStyles.headerTitle}>{t('settings.title')}</Text>
         <Pressable hitSlop={12} style={dynStyles.iconBtn}>
           <MaterialCommunityIcons name="magnify" size={24} color={c.primary} />
         </Pressable>
@@ -113,7 +125,7 @@ export default function AndroidSettingsScreen() {
         contentContainerStyle={dynStyles.scrollContent}
       >
         <Animated.View entering={FadeIn.duration(220).delay(20)}>
-          <Text style={dynStyles.sectionCap}>GENERAL</Text>
+          <Text style={dynStyles.sectionCap}>{t('settings.general.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -121,18 +133,18 @@ export default function AndroidSettingsScreen() {
           layout={LinearTransition.springify().damping(20).stiffness(220)}
           style={dynStyles.card}
         >
-          <Text style={dynStyles.cardTitle}>App Theme</Text>
+          <Text style={dynStyles.cardTitle}>{t('settings.general.appTheme')}</Text>
           <View style={dynStyles.segContainer}>
-            {(['system', 'light', 'dark'] as const).map((t, i) => {
-              const isActive = currentTheme === t
+            {(['system', 'light', 'dark'] as const).map((tValue, i) => {
+              const isActive = currentTheme === tValue
               return (
                 <Pressable
-                  key={t}
-                  onPress={() => dispatch(setTheme(t))}
+                  key={tValue}
+                  onPress={() => dispatch(setTheme(tValue))}
                   style={[dynStyles.segItem, isActive && dynStyles.segItemActive]}
                 >
                   <Text style={[dynStyles.segText, isActive && dynStyles.segTextActive]}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                    {t(`settings.general.themes.${tValue}`)}
                   </Text>
                 </Pressable>
               )
@@ -145,7 +157,7 @@ export default function AndroidSettingsScreen() {
             layout={LinearTransition.springify().damping(20).stiffness(220)}
             style={dynStyles.card}
           >
-            <Text style={dynStyles.cardTitle}>Color Theme</Text>
+            <Text style={dynStyles.cardTitle}>{t('settings.general.colorTheme')}</Text>
             <View style={dynStyles.segContainer}>
               {colorThemeOptions.map((opt) => {
                 const isActive = androidColorTheme === opt.value
@@ -171,16 +183,20 @@ export default function AndroidSettingsScreen() {
         >
           <Pressable
             onPress={() =>
-              showAndroidPicker('Sort Notes By', SORT_OPTIONS, (val) =>
-                dispatch(updateSetting({ key: 'sortBy', value: val })),
+              showAndroidPicker(
+                t('settings.general.sortNotesBy'),
+                SORT_OPTIONS,
+                (val) => dispatch(updateSetting({ key: 'sortBy', value: val })),
+                t('common.cancel'),
               )
             }
             style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
           >
             <View style={{ flex: 1 }}>
-              <Text style={dynStyles.rowTitle}>Sort Notes By</Text>
+              <Text style={dynStyles.rowTitle}>{t('settings.general.sortNotesBy')}</Text>
               <Text style={dynStyles.rowSubtitle}>
-                {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ?? 'Date Edited'}
+                {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ??
+                  t('settings.general.sortOptions.updatedAt')}
               </Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.onSurfaceVariant} />
@@ -190,14 +206,17 @@ export default function AndroidSettingsScreen() {
 
           <Pressable
             onPress={() =>
-              showAndroidPicker('Font Family', FONT_OPTIONS, (val) =>
-                dispatch(updateSetting({ key: 'fontFamily', value: val })),
+              showAndroidPicker(
+                t('settings.general.fontFamily'),
+                FONT_OPTIONS,
+                (val) => dispatch(updateSetting({ key: 'fontFamily', value: val })),
+                t('common.cancel'),
               )
             }
             style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
           >
             <View style={{ flex: 1 }}>
-              <Text style={dynStyles.rowTitle}>Font Family</Text>
+              <Text style={dynStyles.rowTitle}>{t('settings.general.fontFamily')}</Text>
               <Text style={dynStyles.rowSubtitle}>
                 {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
               </Text>
@@ -209,7 +228,7 @@ export default function AndroidSettingsScreen() {
 
           <View style={dynStyles.groupContentRow}>
             <View style={dynStyles.sliderTitleContainer}>
-              <Text style={dynStyles.rowTitle}>Text Size</Text>
+              <Text style={dynStyles.rowTitle}>{t('settings.general.textSize')}</Text>
               <Text style={dynStyles.sliderValueText}>{editorFontSize}</Text>
             </View>
             <View style={dynStyles.sliderRow}>
@@ -233,7 +252,7 @@ export default function AndroidSettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(140)}>
-          <Text style={dynStyles.sectionCapMargin}>SYNC & DEVICES</Text>
+          <Text style={dynStyles.sectionCapMargin}>{t('settings.sync.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -248,15 +267,15 @@ export default function AndroidSettingsScreen() {
               <MaterialCommunityIcons name="sync" size={22} color={c.primary} />
             </View>
             <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={dynStyles.rowTitle}>Link and Sync</Text>
-              <Text style={dynStyles.rowSubtitle}>Cloud backup enabled</Text>
+              <Text style={dynStyles.rowTitle}>{t('settings.sync.linkAndSync')}</Text>
+              <Text style={dynStyles.rowSubtitle}>{t('settings.sync.cloudBackupStatus')}</Text>
             </View>
             <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
           </Pressable>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(180)}>
-          <Text style={dynStyles.footerText}>End-to-end encrypted • Fully private</Text>
+          <Text style={dynStyles.footerText}>{t('settings.footer')}</Text>
         </Animated.View>
       </ScrollView>
     </View>

@@ -5,7 +5,7 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 import {
   ALL_NOTES_KEY,
   HYPERDRIVE_URL_PREFIX,
-  RECENTLY_DELETED_KEY,
+  RECENT_DELETED_KEY,
 } from '@pear-notes/core/constant.js'
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { deleteNote, getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -14,6 +14,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Alert,
@@ -241,6 +242,7 @@ const UploadBanner = memo(function UploadBanner({ fileName, status, c }: UploadB
 })
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
+  const { t } = useTranslation()
   const theme = useMD3Theme()
   const c = theme.colors as ExtendedColors
   const insets = useSafeAreaInsets()
@@ -282,7 +284,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const moveFolders = useMemo(
     () =>
       allFolders.filter(
-        (f: any) => !f.isTrash && f.id !== ALL_NOTES_KEY && f.id !== RECENTLY_DELETED_KEY,
+        (f: any) => !f.isTrash && f.id !== ALL_NOTES_KEY && f.id !== RECENT_DELETED_KEY,
       ),
     [allFolders],
   )
@@ -392,7 +394,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     async (asset: ImagePickerAsset) => {
       if (asset.type === 'video') {
         const displayName = asset.fileName || `video-${Date.now()}.mp4`
-        setUploadInfo({ fileName: displayName, status: 'Preparing...' })
+        setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.preparing') })
         try {
           const ext = displayName.split('.').pop() || 'mp4'
           const cachePath = `${FileSystem.cacheDirectory}upload-${Date.now()}.${ext}`
@@ -406,7 +408,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             : ''
           setUploadInfo({
             fileName: displayName,
-            status: sizeStr ? `Reading ${sizeStr}...` : 'Reading...',
+            status: sizeStr
+              ? t('noteEditor.upload.readingWithSize', { size: sizeStr })
+              : t('noteEditor.upload.reading'),
           })
           const { link } = await backendApi.insertFile({
             key: noteId!,
@@ -431,7 +435,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           }
           await FileSystem.deleteAsync(cachePath, { idempotent: true })
         } catch (error) {
-          Alert.alert('Upload Failed', 'Could not upload the video.')
+          Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedVideo'))
         } finally {
           setUploadInfo(null)
         }
@@ -439,8 +443,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
 
       const { uri, width, height, fileName } = asset
-      const displayName = fileName || 'Photo'
-      setUploadInfo({ fileName: displayName, status: 'Processing...' })
+      const displayName = fileName || t('noteEditor.upload.photo')
+      setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.processing') })
       const screenW = Dimensions.get('window').width
       const maxWidth = screenW - 40
       const maxHeight = 400
@@ -457,7 +461,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         finalWidth = finalWidth * ratio
       }
       try {
-        setUploadInfo({ fileName: displayName, status: 'Uploading...' })
+        setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.uploading') })
         const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
         const buffer = Buffer.from(base64Data, 'base64')
         const { link } = await backendApi.insertFile({
@@ -482,7 +486,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         setUploadInfo(null)
       }
     },
-    [noteId, hyperdriveServerAddress],
+    [noteId, hyperdriveServerAddress, t],
   )
 
   const handlePickImage = useCallback(async () => {
@@ -534,9 +538,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       for (let i = 0; i < scannedImages.length; i++) {
         const uri = scannedImages[i]
         const pageLabel =
-          scannedImages.length > 1 ? `Page ${i + 1} of ${scannedImages.length}` : 'Scanned document'
+          scannedImages.length > 1
+            ? t('noteEditor.upload.pageCount', { count: i + 1, total: scannedImages.length })
+            : t('noteEditor.upload.scannedDoc')
         const displayName = `scan-${Date.now()}-page${i + 1}.jpg`
-        setUploadInfo({ fileName: pageLabel, status: 'Processing...' })
+        setUploadInfo({ fileName: pageLabel, status: t('noteEditor.upload.processing') })
         try {
           const { width, height } = await getImageSize(uri)
           let finalWidth = width
@@ -551,7 +557,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             finalHeight = maxHeight
             finalWidth = finalWidth * ratio
           }
-          setUploadInfo({ fileName: pageLabel, status: 'Uploading...' })
+          setUploadInfo({ fileName: pageLabel, status: t('noteEditor.upload.uploading') })
           const { link } = await backendApi.insertFile({
             key: noteId!,
             fileName: displayName,
@@ -574,7 +580,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     } finally {
       setUploadInfo(null)
     }
-  }, [noteId, hyperdriveServerAddress])
+  }, [noteId, hyperdriveServerAddress, t])
 
   const handlePickFile = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -585,7 +591,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     })
     if (result.canceled || !result.assets?.[0]) return
     const { uri, name, size, mimeType } = result.assets[0]
-    const displayName = name || 'File'
+    const displayName = name || t('noteEditor.upload.file')
     const sizeStr = size
       ? size < 1048576
         ? `${(size / 1024).toFixed(0)} KB`
@@ -593,10 +599,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       : ''
     setUploadInfo({
       fileName: displayName,
-      status: sizeStr ? `Reading ${sizeStr}...` : 'Reading...',
+      status: sizeStr
+        ? t('noteEditor.upload.readingWithSize', { size: sizeStr })
+        : t('noteEditor.upload.reading'),
     })
     try {
-      setUploadInfo({ fileName: displayName, status: 'Uploading...' })
+      setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.uploading') })
       if (isImageFile(name, mimeType)) {
         const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
           Image.getSize(
@@ -631,11 +639,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           }
           const isAudio = mimeType?.startsWith('audio/')
           if (isAudio) {
-            editorRef.current?.insertAudioAttachment(resolvedLink, name || 'Audio')
+            editorRef.current?.insertAudioAttachment(
+              resolvedLink,
+              name || t('noteEditor.upload.audio'),
+            )
           } else {
             editorRef.current?.insertFileAttachment(
               resolvedLink,
-              name || 'File',
+              name || t('noteEditor.upload.file'),
               size || 0,
               mimeType || '',
             )
@@ -647,7 +658,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     } finally {
       setUploadInfo(null)
     }
-  }, [noteId, hyperdriveServerAddress, processMediaAsset])
+  }, [noteId, hyperdriveServerAddress, processMediaAsset, t])
 
   const handleDeleteAttachment = useCallback(async (url: string) => {
     if (!url) return
@@ -818,10 +829,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const handleRecordingDone = useCallback(
-    async (uri: string, durationMs: number) => {
+    async (uri: string, _durationMs: number) => {
       setIsRecorderVisible(false)
       const fileName = `voice-note-${Date.now()}.m4a`
-      setUploadInfo({ fileName, status: 'Uploading...' })
+      setUploadInfo({ fileName, status: t('noteEditor.upload.uploading') })
       try {
         const { link } = await backendApi.insertFile({
           key: noteId!,
@@ -844,17 +855,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         setUploadInfo(null)
       }
     },
-    [noteId, hyperdriveServerAddress],
+    [noteId, hyperdriveServerAddress, t],
   )
 
   const handleDeleteNote = useCallback(() => {
     if (!noteId) return
     setMoreMenuVisible(false)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    Alert.alert('Delete Note', 'Are you sure you want to delete this note?', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('noteCard.actions.delete'), t('noteCard.deleteConfirmation'), [
+      { text: t('common.cancel'), style: 'cancel' },
       {
-        text: 'Delete',
+        text: t('noteCard.actions.delete'),
         style: 'destructive',
         onPress: () => {
           dispatch(deleteNote(noteId as any))
@@ -871,13 +882,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         },
       },
     ])
-  }, [noteId, dispatch, slideAnim])
+  }, [noteId, dispatch, slideAnim, t])
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     setIsSharing(true)
-    const title = titleRef.current || 'Untitled'
+    const title = titleRef.current || t('noteCard.untitled')
     const html = noteContentRef.current || ''
     const plainText = html
       .replace(/<br\s*\/?>/gi, '\n')
@@ -898,7 +909,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       await ExpoNativeShareModule.share({ message })
     } catch {}
     setIsSharing(false)
-  }, [isSharing])
+  }, [isSharing, t])
 
   const resetEditorState = useCallback(() => {
     setIsOpen(false)
@@ -974,10 +985,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 
   const floatingBtnBorderStyle = useMemo(
-    () =>
-      theme.dark
-        ? undefined
-        : { borderWidth: 1, borderColor: hexWithAlpha(c.outline, 0.5) },
+    () => (theme.dark ? undefined : { borderWidth: 1, borderColor: hexWithAlpha(c.outline, 0.5) }),
     [theme.dark, c.outline],
   )
 
@@ -1000,7 +1008,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     <NoteEditorContext.Provider value={contextValue}>
       {children}
       <Animated.View style={animatedViewStyle} pointerEvents={isOpen ? 'auto' : 'none'}>
-        <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor="transparent" translucent />
+        <StatusBar
+          barStyle={theme.dark ? 'light-content' : 'dark-content'}
+          backgroundColor="transparent"
+          translucent
+        />
 
         <TiptapEditor
           ref={editorRef}
@@ -1072,7 +1084,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             {moveFolders.length > 0 && (
               <Menu.Item
                 leadingIcon="folder-move-outline"
-                title="Move to…"
+                title={t('noteCard.actions.moveTo')}
                 onPress={() => {
                   setMoreMenuVisible(false)
                   setMoveDialogVisible(true)
@@ -1082,7 +1094,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             {moveFolders.length > 0 && <Divider />}
             <Menu.Item
               leadingIcon="delete-outline"
-              title="Delete"
+              title={t('noteCard.actions.delete')}
               onPress={handleDeleteNote}
               titleStyle={{ color: c.error }}
             />
@@ -1136,7 +1148,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onDismiss={() => setMoveDialogVisible(false)}
             style={{ backgroundColor: c.surfaceContainerHighest ?? c.surface }}
           >
-            <Dialog.Title style={{ color: c.onSurface }}>Move to Folder</Dialog.Title>
+            <Dialog.Title style={{ color: c.onSurface }}>
+              {t('noteCard.actions.moveTo')}
+            </Dialog.Title>
             <Dialog.Content style={staticStyles.moveDialogContent}>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {moveFolders.map((f: any) => (
@@ -1169,7 +1183,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             <Dialog.Actions>
               <Pressable onPress={() => setMoveDialogVisible(false)} style={staticStyles.dialogBtn}>
                 <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
-                  Cancel
+                  {t('common.cancel')}
                 </Text>
               </Pressable>
             </Dialog.Actions>
@@ -1180,16 +1194,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       <BottomActionSheet
         visible={imageSheetVisible}
         onDismiss={() => setImageSheetVisible(false)}
-        title="Image"
+        title={t('noteEditor.menu.image')}
         actions={[
           {
             icon: 'share-variant-outline',
-            label: 'Share',
+            label: t('noteCard.actions.share'),
             onPress: handleImageMenuShare,
           },
           {
             icon: 'delete-outline',
-            label: 'Delete',
+            label: t('noteCard.actions.delete'),
             onPress: handleImageMenuDelete,
             destructive: true,
           },
@@ -1199,16 +1213,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       <BottomActionSheet
         visible={attachmentSheetVisible2}
         onDismiss={() => setAttachmentSheetVisible2(false)}
-        title={selectedAttachmentFileName || 'Attachment'}
+        title={selectedAttachmentFileName || t('noteEditor.menu.attachment')}
         actions={[
           {
             icon: 'share-variant-outline',
-            label: 'Share',
+            label: t('noteCard.actions.share'),
             onPress: handleAttachmentMenuShare,
           },
           {
             icon: 'delete-outline',
-            label: 'Delete',
+            label: t('noteCard.actions.delete'),
             onPress: handleAttachmentMenuDelete,
             destructive: true,
           },
