@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import {
   deleteSyncedDevice,
+  getLocalPreferences,
   getSyncedDevices,
   updateSyncedDevice,
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
@@ -67,6 +68,8 @@ export default function AndroidSyncScreen() {
   const expiresAt = useSelector(getInviteExpiresAt)
   const isLoading = useSelector(getSyncIsLoading)
   const syncedDevices = useSelector(getSyncedDevices) as any[]
+  const localPreferences = useSelector(getLocalPreferences)
+  const isSynced = localPreferences['isSynced'] === 'true'
 
   const [tab, setTab] = useState<'link' | 'devices'>('link')
   const [copied, setCopied] = useState(false)
@@ -323,68 +326,70 @@ export default function AndroidSyncScreen() {
                 </Animated.View>
               )}
 
-              <Animated.View
-                entering={FadeInDown.duration(220).delay(80)}
-                style={ss.invitePasteSection}
-              >
-                <View style={ss.invitePasteHeader}>
-                  <View style={ss.invitePasteLeft}>
-                    <Text style={[ss.plusIcon, { color: c.primary }]}>+</Text>
-                    <Text style={[ss.invitePasteTitle, { color: c.onSurface }]}>
-                      Already have an invite?
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={handleOpenScanner}
-                    style={[ss.scanPillSmall, { backgroundColor: hexWithAlpha(c.primary, 0.1) }]}
-                  >
-                    <MaterialCommunityIcons name="qrcode-scan" size={14} color={c.primary} />
-                    <Text style={[ss.scanPillSmallText, { color: c.primary }]}>Scan QR</Text>
-                  </Pressable>
-                </View>
-
-                <View
-                  style={[
-                    ss.pasteRow,
-                    {
-                      backgroundColor: c.surfaceContainer,
-                      borderColor: hexWithAlpha(c.outlineVariant, 0.15),
-                    },
-                  ]}
+              {!isSynced && (
+                <Animated.View
+                  entering={FadeInDown.duration(220).delay(80)}
+                  style={ss.invitePasteSection}
                 >
-                  <TextInput
-                    value={pasteCode}
-                    onChangeText={setPasteCode}
-                    onSubmitEditing={handleConnect}
-                    onFocus={() =>
-                      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
-                    }
-                    placeholder="Paste invite code here..."
-                    placeholderTextColor={hexWithAlpha(c.onSurfaceVariant, 0.4)}
-                    style={[ss.pasteInput, { color: c.onSurface }]}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                  />
-                  <Pressable
-                    onPress={handleConnect}
-                    disabled={isLoading || pasteCode.trim().length === 0}
-                    style={({ pressed }) => [
-                      ss.linkPillBtn,
+                  <View style={ss.invitePasteHeader}>
+                    <View style={ss.invitePasteLeft}>
+                      <Text style={[ss.plusIcon, { color: c.primary }]}>+</Text>
+                      <Text style={[ss.invitePasteTitle, { color: c.onSurface }]}>
+                        Already have an invite?
+                      </Text>
+                    </View>
+                    <Pressable
+                      onPress={handleOpenScanner}
+                      style={[ss.scanPillSmall, { backgroundColor: hexWithAlpha(c.primary, 0.1) }]}
+                    >
+                      <MaterialCommunityIcons name="qrcode-scan" size={14} color={c.primary} />
+                      <Text style={[ss.scanPillSmallText, { color: c.primary }]}>Scan QR</Text>
+                    </Pressable>
+                  </View>
+
+                  <View
+                    style={[
+                      ss.pasteRow,
                       {
-                        backgroundColor: c.primary,
-                        opacity:
-                          isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
+                        backgroundColor: c.surfaceContainer,
+                        borderColor: hexWithAlpha(c.outlineVariant, 0.15),
                       },
                     ]}
                   >
-                    {isLoading ? (
-                      <ActivityIndicator size="small" color="#000" />
-                    ) : (
-                      <Text style={[ss.linkPillText, { color: c.onPrimary || '#000' }]}>Link</Text>
-                    )}
-                  </Pressable>
-                </View>
-              </Animated.View>
+                    <TextInput
+                      value={pasteCode}
+                      onChangeText={setPasteCode}
+                      onSubmitEditing={handleConnect}
+                      onFocus={() =>
+                        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
+                      }
+                      placeholder="Paste invite code here..."
+                      placeholderTextColor={hexWithAlpha(c.onSurfaceVariant, 0.4)}
+                      style={[ss.pasteInput, { color: c.onSurface }]}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                    />
+                    <Pressable
+                      onPress={handleConnect}
+                      disabled={isLoading || pasteCode.trim().length === 0}
+                      style={({ pressed }) => [
+                        ss.linkPillBtn,
+                        {
+                          backgroundColor: c.primary,
+                          opacity:
+                            isLoading || pasteCode.trim().length === 0 ? 0.4 : pressed ? 0.7 : 1,
+                        },
+                      ]}
+                    >
+                      {isLoading ? (
+                        <ActivityIndicator size="small" color="#000" />
+                      ) : (
+                        <Text style={[ss.linkPillText, { color: c.onPrimary || '#000' }]}>Link</Text>
+                      )}
+                    </Pressable>
+                  </View>
+                </Animated.View>
+              )}
 
               <Animated.View entering={FadeIn.duration(220).delay(140)} style={ss.footNoteRow}>
                 <MaterialCommunityIcons

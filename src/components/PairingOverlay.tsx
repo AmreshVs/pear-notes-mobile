@@ -16,7 +16,15 @@ import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { ActivityIndicator, Animated, Modal, Pressable, StyleSheet, TextInput } from 'react-native'
+import {
+  ActivityIndicator,
+  Animated,
+  Modal,
+  Pressable,
+  View as RNView,
+  StyleSheet,
+  TextInput,
+} from 'react-native'
 import Reanimated, { FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -31,6 +39,8 @@ import {
   Radii,
   Space,
 } from '@/constants/commonStyles'
+
+const isAndroid = process.env.EXPO_OS === 'android'
 
 export const PairingOverlay = memo(function PairingOverlay() {
   const dispatch = useDispatch()
@@ -398,9 +408,15 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   return (
     <Animated.View style={fadeStyle}>
-      <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
-      <View style={styles.overlay} />
-      <Pressable onPress={handleClose} style={StyleSheet.absoluteFill} />
+      {isAndroid ? (
+        <RNView style={styles.androidScrim} />
+      ) : (
+        <>
+          <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
+          <View style={styles.overlay} />
+        </>
+      )}
+      <Pressable style={StyleSheet.absoluteFill} />
 
       <View style={styles.center} pointerEvents="box-none">
         <Reanimated.View
@@ -408,9 +424,13 @@ export const PairingOverlay = memo(function PairingOverlay() {
           entering={FadeInDown.duration(240)}
         >
           <Reanimated.View entering={FadeInDown.springify()} style={styles.card}>
-            <GlassView intensity={50} style={{ borderRadius: Radii.card }}>
-              {renderContent()}
-            </GlassView>
+            {isAndroid ? (
+              <RNView style={styles.androidCard}>{renderContent()}</RNView>
+            ) : (
+              <GlassView intensity={50} style={{ borderRadius: Radii.card }}>
+                {renderContent()}
+              </GlassView>
+            )}
           </Reanimated.View>
         </Reanimated.View>
       </View>
@@ -490,7 +510,24 @@ const createStyles = (theme: Theme) => {
       shadowRadius: 40,
       elevation: 20,
     },
-    cardInner: { padding: Space.xl, alignItems: 'center', width: '100%' },
+    androidScrim: {
+      ...StyleSheet.absoluteFillObject,
+      backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)',
+    },
+    androidCard: {
+      borderRadius: 28,
+      backgroundColor: theme.isDark ? '#1e1e20' : '#FFFFFF',
+      borderWidth: 1,
+      borderColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+      overflow: 'hidden',
+      elevation: 6,
+    },
+    cardInner: {
+      padding: isAndroid ? 28 : Space.xl,
+      alignItems: 'center',
+      width: '100%',
+      backgroundColor: 'transparent',
+    },
     icon: {
       width: 80,
       height: 80,
@@ -501,25 +538,25 @@ const createStyles = (theme: Theme) => {
       marginBottom: Space.sm,
     },
     iconDone: {
-      width: 80,
-      height: 80,
-      borderRadius: Space.xl,
+      width: isAndroid ? 72 : 80,
+      height: isAndroid ? 72 : 80,
+      borderRadius: isAndroid ? 36 : Space.xl,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
-      marginBottom: Space.sm,
-      backgroundColor: `${theme.colors.success}26`,
+      borderWidth: isAndroid ? 0 : 1,
+      marginBottom: isAndroid ? Space.md : Space.sm,
+      backgroundColor: isAndroid ? `${theme.colors.success}1A` : `${theme.colors.success}26`,
       borderColor: `${theme.colors.success}4D`,
     },
     iconGold: {
-      width: 80,
-      height: 80,
-      borderRadius: Space.xl,
+      width: isAndroid ? 72 : 80,
+      height: isAndroid ? 72 : 80,
+      borderRadius: isAndroid ? 36 : Space.xl,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
-      marginBottom: Space.sm,
-      backgroundColor: `${theme.colors.primary}26`,
+      borderWidth: isAndroid ? 0 : 1,
+      marginBottom: isAndroid ? Space.md : Space.sm,
+      backgroundColor: isAndroid ? `${theme.colors.primary}1A` : `${theme.colors.primary}26`,
       borderColor: `${theme.colors.primary}4D`,
     },
     syncIconWrapper: {
@@ -542,18 +579,18 @@ const createStyles = (theme: Theme) => {
       marginBottom: Space.sm,
     },
     title: {
-      fontSize: FontSize.heading,
-      fontWeight: FontWeight.bold,
+      fontSize: isAndroid ? 22 : FontSize.heading,
+      fontWeight: isAndroid ? ('600' as any) : FontWeight.bold,
       textAlign: 'center',
-      letterSpacing: LetterSpacing.tight,
-      marginBottom: Space.sm,
+      letterSpacing: isAndroid ? 0 : LetterSpacing.tight,
+      marginBottom: isAndroid ? 4 : Space.sm,
       color: theme.colors.text,
     },
     sub: {
-      fontSize: FontSize.body,
+      fontSize: isAndroid ? 14 : FontSize.body,
       textAlign: 'center',
-      lineHeight: 22,
-      opacity: 0.7,
+      lineHeight: isAndroid ? 20 : 22,
+      opacity: isAndroid ? 0.64 : 0.7,
       marginBottom: Space.xl,
       maxWidth: 280,
       color: theme.colors.textSecondary,
@@ -561,19 +598,28 @@ const createStyles = (theme: Theme) => {
     idCard: {
       width: '100%',
       paddingHorizontal: Space.xl,
-      paddingVertical: Space.base,
-      borderRadius: Space.base,
-      borderWidth: 1,
+      paddingVertical: isAndroid ? Space.md : Space.base,
+      borderRadius: isAndroid ? 16 : Space.base,
+      borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
       marginBottom: Space.lg,
+      ...(isAndroid
+        ? {
+            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+          }
+        : {}),
     },
     idLabel: {
       fontSize: FontSize.micro,
-      fontWeight: FontWeight.bold,
+      fontWeight: isAndroid ? ('900' as any) : FontWeight.bold,
       letterSpacing: 2,
       marginBottom: Space.xs,
       textAlign: 'center',
-      color: `${theme.colors.primary}99`,
+      color: isAndroid
+        ? theme.isDark
+          ? '#FFFFFF'
+          : theme.colors.text
+        : `${theme.colors.primary}99`,
     },
     idValue: {
       fontSize: FontSize.heading,
@@ -589,7 +635,8 @@ const createStyles = (theme: Theme) => {
     },
     idHex: {
       fontSize: FontSize.caption,
-      color: theme.colors.textMuted,
+      color: isAndroid ? '#FFFFFF' : theme.colors.textMuted,
+      fontWeight: isAndroid ? ('bold' as any) : undefined,
       fontFamily: MonoFontFamily,
       letterSpacing: 2,
       textAlign: 'center',
@@ -683,11 +730,17 @@ const createStyles = (theme: Theme) => {
       backgroundColor: 'transparent',
       gap: Space.xs,
     },
-    row: { flexDirection: 'row', gap: Space.md, width: '100%', paddingTop: Space.sm },
+    row: {
+      flexDirection: 'row',
+      gap: isAndroid ? 12 : Space.md,
+      width: '100%',
+      paddingTop: isAndroid ? Space.md : Space.sm,
+      backgroundColor: 'transparent',
+    },
     btn: {
       flex: 1,
-      height: 50,
-      borderRadius: Radii.md,
+      height: isAndroid ? 48 : 50,
+      borderRadius: isAndroid ? 9999 : Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -699,23 +752,29 @@ const createStyles = (theme: Theme) => {
     greenBtnText: { color: theme.colors.success, fontWeight: FontWeight.bold, fontSize: 15 },
     cancelPressable: {
       flex: 1,
-      height: 50,
-      borderRadius: Radii.md,
+      height: isAndroid ? 48 : 50,
+      borderRadius: isAndroid ? 9999 : Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.colors.cardPressed,
-      borderWidth: 1,
+      backgroundColor: isAndroid
+        ? theme.isDark
+          ? 'rgba(255,255,255,0.08)'
+          : 'rgba(0,0,0,0.05)'
+        : theme.colors.cardPressed,
+      borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
     },
     cancelBtnText: {
       color: theme.colors.textSecondary,
-      fontWeight: FontWeight.bold,
-      fontSize: FontSize.body,
+      fontWeight: isAndroid ? ('500' as any) : FontWeight.bold,
+      fontSize: isAndroid ? 14 : FontSize.body,
+      letterSpacing: isAndroid ? 0.1 : 0,
     },
     confirmBtnText: {
       color: theme.isDark ? '#000' : '#fff',
-      fontWeight: FontWeight.bold,
-      fontSize: 15,
+      fontWeight: isAndroid ? ('500' as any) : FontWeight.bold,
+      fontSize: isAndroid ? 14 : 15,
+      letterSpacing: isAndroid ? 0.1 : 0,
     },
     inputLabelText: {
       fontSize: FontSize.caption,
@@ -733,14 +792,15 @@ const createStyles = (theme: Theme) => {
       alignItems: 'center',
       marginBottom: Space.sm,
       width: '100%',
+      backgroundColor: 'transparent',
     },
     scanBtn: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 4,
-      paddingVertical: 4,
-      paddingHorizontal: 8,
-      borderRadius: 6,
+      gap: isAndroid ? 6 : 4,
+      paddingVertical: isAndroid ? 6 : 4,
+      paddingHorizontal: isAndroid ? 12 : 8,
+      borderRadius: isAndroid ? 9999 : 6,
       backgroundColor: `${theme.colors.primary}1A`,
     },
     scanBtnText: {
@@ -750,28 +810,36 @@ const createStyles = (theme: Theme) => {
     },
     input: {
       width: '100%',
-      height: 44,
-      borderRadius: Radii.md,
-      borderWidth: 1,
+      height: isAndroid ? 52 : 44,
+      borderRadius: isAndroid ? 12 : Radii.md,
+      borderWidth: isAndroid ? StyleSheet.hairlineWidth : 1,
       paddingHorizontal: Space.base,
       fontSize: FontSize.small,
       textAlign: 'center',
       fontFamily: MonoFontFamily,
       letterSpacing: 1,
       color: theme.colors.text,
-      borderColor: theme.colors.borderSecondary,
-      backgroundColor: theme.colors.cardPressed,
+      borderColor: isAndroid
+        ? theme.isDark
+          ? 'rgba(255,255,255,0.12)'
+          : 'rgba(0,0,0,0.12)'
+        : theme.colors.borderSecondary,
+      backgroundColor: isAndroid
+        ? theme.isDark
+          ? 'rgba(255,255,255,0.04)'
+          : 'rgba(0,0,0,0.03)'
+        : theme.colors.cardPressed,
     },
-    subFpWrapper: { opacity: 0.4, marginBottom: Space.base },
-    progressWrap: { width: '100%', paddingTop: Space.sm },
+    subFpWrapper: { opacity: 0.4, marginBottom: Space.base, backgroundColor: 'transparent' },
+    progressWrap: { width: '100%', paddingTop: Space.sm, backgroundColor: 'transparent' },
     fill: { height: '100%', borderRadius: 3 },
-    inputArea: { width: '100%', marginBottom: Space.xl },
+    inputArea: { width: '100%', marginBottom: Space.xl, backgroundColor: 'transparent' },
     greenBtn: {
       width: '100%',
-      height: 50,
-      borderRadius: Radii.md,
-      borderWidth: 1,
-      backgroundColor: `${theme.colors.success}1A`,
+      height: isAndroid ? 48 : 50,
+      borderRadius: isAndroid ? 9999 : Radii.md,
+      borderWidth: isAndroid ? 0 : 1,
+      backgroundColor: isAndroid ? `${theme.colors.success}1A` : `${theme.colors.success}1A`,
       borderColor: `${theme.colors.success}33`,
       alignItems: 'center',
       justifyContent: 'center',
@@ -779,11 +847,15 @@ const createStyles = (theme: Theme) => {
     },
     trackContainer: {
       width: '100%',
-      height: 6,
-      borderRadius: 3,
+      height: isAndroid ? 4 : 6,
+      borderRadius: isAndroid ? 2 : 3,
       overflow: 'hidden',
-      borderWidth: 1,
-      backgroundColor: theme.colors.cardPressed,
+      borderWidth: isAndroid ? 0 : 1,
+      backgroundColor: isAndroid
+        ? theme.isDark
+          ? 'rgba(255,255,255,0.08)'
+          : 'rgba(0,0,0,0.06)'
+        : theme.colors.cardPressed,
       borderColor: theme.colors.borderSecondary,
     },
     errorIcon: {
@@ -792,6 +864,7 @@ const createStyles = (theme: Theme) => {
     },
     errorBtn: {
       backgroundColor: theme.colors.error,
+      borderRadius: isAndroid ? 9999 : Radii.md,
       width: '100%',
       flex: 0,
     },
