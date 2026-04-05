@@ -72,7 +72,10 @@ export default function AndroidSettingsScreen() {
 
   return (
     <View style={dynStyles.root}>
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
+      <StatusBar
+        barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        backgroundColor={c.background}
+      />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={dynStyles.header}>
@@ -267,7 +270,7 @@ function createDynamicStyles(c: any, insets: any) {
       fontSize: 20,
       fontWeight: '700',
       fontFamily: 'PlusJakartaSans_700Bold',
-      color: c.onBackground || c.onSurface,
+      color: c.onSurface,
     },
     scrollContent: {
       paddingHorizontal: 20,

@@ -346,7 +346,10 @@ export default function AndroidFolderNotesScreen() {
 
   return (
     <View style={[staticStyles.root, { backgroundColor: c.background }]}>
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
+      <StatusBar
+        barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        backgroundColor={c.background}
+      />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={[staticStyles.appBar, dynamicStyles.appBar]}>
@@ -450,7 +453,7 @@ export default function AndroidFolderNotesScreen() {
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews
         ListHeaderComponent={
-          <Text style={[staticStyles.pageTitle, { color: c.onBackground ?? c.onSurface }]}>
+          <Text style={[staticStyles.pageTitle, { color: c.onSurface }]}>
             {folder?.name || 'Notes'}
           </Text>
         }
@@ -622,7 +625,7 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
               <MaterialCommunityIcons
                 name="checkbox-blank-outline"
                 size={13}
-                color={hexWithAlpha(c.onSurfaceVariant, 0.6)}
+                color={c.onSurfaceVariant}
                 style={rowStyles.checkboxIcon}
               />
               <Text style={[rowStyles.preview, { color: c.onSurfaceVariant }]} numberOfLines={1}>
@@ -636,15 +639,11 @@ const AndroidNoteRow = memo(function AndroidNoteRow({
           )}
 
           <View style={rowStyles.meta}>
-            <Text style={[rowStyles.metaDate, { color: hexWithAlpha(c.onSurfaceVariant, 0.7) }]}>
-              {dateLabel}
-            </Text>
+            <Text style={[rowStyles.metaDate, { color: c.onSurfaceVariant }]}>{dateLabel}</Text>
             {folderName && (
               <>
-                <Text style={[rowStyles.metaDot, { color: hexWithAlpha(c.onSurfaceVariant, 0.5) }]}>
-                  {'  •  '}
-                </Text>
-                <Text style={[rowStyles.metaTag, { color: hexWithAlpha(c.onSurfaceVariant, 0.7) }]}>
+                <Text style={[rowStyles.metaDot, { color: c.onSurfaceVariant }]}>{'  •  '}</Text>
+                <Text style={[rowStyles.metaTag, { color: c.onSurfaceVariant }]}>
                   {folderName.toUpperCase()}
                 </Text>
               </>

@@ -148,7 +148,10 @@ export default function AndroidSyncScreen() {
 
   return (
     <View style={[ss.root, { backgroundColor: c.background }]}>
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
+      <StatusBar
+        barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        backgroundColor={c.background}
+      />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={[ss.appBar, { paddingTop: insets.top + 4 }]}>
@@ -166,7 +169,9 @@ export default function AndroidSyncScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <Animated.View entering={FadeIn.duration(220)} style={ss.segRow}>
-            <View style={[ss.segTrack, { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant }]}>
+            <View
+              style={[ss.segTrack, { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant }]}
+            >
               {(['link', 'devices'] as const).map((t) => {
                 const active = tab === t
                 return (
@@ -384,7 +389,9 @@ export default function AndroidSyncScreen() {
                       {isLoading ? (
                         <ActivityIndicator size="small" color="#000" />
                       ) : (
-                        <Text style={[ss.linkPillText, { color: c.onPrimary || '#000' }]}>Link</Text>
+                        <Text style={[ss.linkPillText, { color: c.onPrimary || '#000' }]}>
+                          Link
+                        </Text>
                       )}
                     </Pressable>
                   </View>
@@ -433,7 +440,7 @@ export default function AndroidSyncScreen() {
                 style={[
                   ss.sectionCap,
                   {
-                    color: hexWithAlpha(c.onSurfaceVariant, 0.6),
+                    color: c.onSurfaceVariant,
                     marginTop: localDevices.length > 0 ? 28 : 0,
                   },
                 ]}
@@ -459,7 +466,7 @@ export default function AndroidSyncScreen() {
                   <MaterialCommunityIcons
                     name="cellphone-link"
                     size={28}
-                    color={hexWithAlpha(c.onSurfaceVariant, 0.3)}
+                    color={c.onSurfaceVariant}
                   />
                   <Text style={[ss.emptyText, { color: c.onSurfaceVariant }]}>
                     No other devices connected yet
@@ -476,7 +483,7 @@ export default function AndroidSyncScreen() {
                 </View>
               </View>
 
-              <Text style={[ss.footerText, { color: hexWithAlpha(c.onSurfaceVariant, 0.5) }]}>
+              <Text style={[ss.footerText, { color: c.onSurfaceVariant }]}>
                 Only linked devices can decrypt your personal vault data. To remove access, revoke
                 the device token immediately from settings.
               </Text>
@@ -639,7 +646,7 @@ const AndroidDeviceCard = memo(function AndroidDeviceCard({
           <Text style={[ds.platform, { color: c.onSurfaceVariant }]}>
             {platformLabel}
             {isLocal && !isEditing && (
-              <Text style={[ds.tapToRename, { color: hexWithAlpha(c.primary, 0.6) }]}>
+              <Text style={[ds.tapToRename, { color: c.onSurfaceVariant }]}>
                 {' · Tap to rename'}
               </Text>
             )}

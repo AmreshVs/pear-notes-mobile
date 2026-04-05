@@ -186,7 +186,10 @@ export default function AndroidFoldersScreen() {
 
   return (
     <View style={dynStyles.root}>
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={c.background} />
+      <StatusBar
+        barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        backgroundColor={c.background}
+      />
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
@@ -558,7 +561,7 @@ function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
       fontWeight: '800' as const,
       fontFamily: 'PlusJakartaSans_800ExtraBold',
       letterSpacing: -0.5,
-      color: c.onBackground ?? c.onSurface,
+      color: c.onSurface,
       marginBottom: 4,
     },
     pageSubtitle: {
