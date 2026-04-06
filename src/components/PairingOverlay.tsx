@@ -14,6 +14,7 @@ import {
 import { getFingerprint } from '@pear-notes/core/utils.js'
 import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
+import { router } from 'expo-router'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -22,9 +23,9 @@ import {
   Animated,
   Modal,
   Pressable,
+  View as RNView,
   StyleSheet,
   TextInput,
-  View as RNView,
 } from 'react-native'
 import Reanimated, { FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
@@ -220,6 +221,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
           <Pressable
             onPress={() => {
+              router.replace('/(tabs)/(folders)')
               dispatch(clearStorage())
               dispatch(setDeviceRemoved(false))
             }}
@@ -570,6 +572,7 @@ const createStyles = (theme: Theme) => {
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: Space.sm,
+      backgroundColor: 'transparent',
     },
     title: {
       fontSize: isAndroid ? 22 : FontSize.heading,
@@ -866,7 +869,7 @@ const createStyles = (theme: Theme) => {
       fontWeight: FontWeight.bold,
       fontSize: 15,
     },
-    progressLabel: { marginTop: Space.md, alignItems: 'center' },
+    progressLabel: { marginTop: Space.md, alignItems: 'center', backgroundColor: 'transparent' },
     labelText: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,

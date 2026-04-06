@@ -6,7 +6,6 @@
   },
   "java.compile.nullAnalysis.mode": "disabled",
   "files.exclude": {
-    "node_modules/": true,
     "android/": true,
     "ios/": true,
     ".expo/": true,

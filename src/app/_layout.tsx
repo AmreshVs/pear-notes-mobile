@@ -1,19 +1,19 @@
 import '@/locales/i18n'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
+import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
 import { Directory, Paths } from 'expo-file-system'
-import { Stack } from 'expo-router'
+import { router, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Appearance, LogBox, NativeModules } from 'react-native'
+import { Appearance, LogBox } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
-import RNRestart from 'react-native-restart'
 import { Provider, useSelector } from 'react-redux'
 
 import { ErrorScreen } from '@/components/ErrorScreen'
@@ -44,6 +44,7 @@ const storage = documentDir.uri.replace(/^file:\/+/, '/')
 export default function RootLayout() {
   const { t } = useTranslation()
   const [fatalError, setFatalError] = useState<string | null>(null)
+  const [remountKey, setRemountKey] = useState(0)
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
 
@@ -64,6 +65,19 @@ export default function RootLayout() {
     initWorklet()
   }, [initWorklet])
 
+  useEffect(() => {
+    const unsubscribe = store.subscribe(() => {
+      const state = store.getState()
+      if (state.sync.needsReload) {
+        store.dispatch(setNeedsReload(false))
+        router.replace('/(tabs)/(folders)')
+        setRemountKey((k) => k + 1)
+        initWorklet()
+      }
+    })
+    return unsubscribe
+  }, [initWorklet])
+
   const bgColor = isDark ? Colors.dark.background : Colors.light.background
 
   if (fatalError) {
@@ -71,7 +85,7 @@ export default function RootLayout() {
   }
 
   return (
-    <Provider store={store}>
+    <Provider key={remountKey} store={store}>
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: bgColor }}>
         <RootLayoutNav />
       </GestureHandlerRootView>
@@ -102,17 +116,6 @@ function SplashGate() {
 function RootLayoutNav() {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
-  const needsReload = useSelector((state: any) => state.sync.needsReload)
-
-  useEffect(() => {
-    if (needsReload) {
-      if (__DEV__ && NativeModules.DevSettings) {
-        NativeModules.DevSettings.reload()
-      } else {
-        RNRestart.restart()
-      }
-    }
-  }, [needsReload])
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
