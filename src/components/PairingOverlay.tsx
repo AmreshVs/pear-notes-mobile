@@ -11,10 +11,9 @@ import {
   setShowPairingInput,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
-import { getFingerprint } from '@pear-notes/core/utils.js'
+import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
-import { router } from 'expo-router'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -88,8 +87,9 @@ export const PairingOverlay = memo(function PairingOverlay() {
   }, [dispatch, isInviter, isReceiverActive, deviceRemoved])
 
   const handleConnect = useCallback(() => {
-    if (pasteCode.trim()) {
-      dispatch(subscribePairUser({ invite: pasteCode.trim() } as any))
+    if (isValidInvite(pasteCode)) {
+      const rawInvite = extractInvite(pasteCode)
+      dispatch(subscribePairUser({ invite: rawInvite } as any))
       dispatch(setShowPairingInput(false))
       setPasteCode('')
       setIsScanning(false)
@@ -109,9 +109,15 @@ export const PairingOverlay = memo(function PairingOverlay() {
     ({ data }: { data: string }) => {
       if (!data || hasScanned) return
       setHasScanned(true)
-      dispatch(subscribePairUser({ invite: data.trim() } as any))
-      dispatch(setShowPairingInput(false))
-      setIsScanning(false)
+      if (isValidInvite(data)) {
+        const rawInvite = extractInvite(data)
+        dispatch(subscribePairUser({ invite: rawInvite } as any))
+        dispatch(setShowPairingInput(false))
+        setIsScanning(false)
+      } else {
+        setPasteCode(data.trim())
+        setIsScanning(false)
+      }
       setTimeout(() => setHasScanned(false), 1000)
     },
     [dispatch, hasScanned],
@@ -221,7 +227,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
           <Pressable
             onPress={() => {
-              router.replace('/(tabs)/(folders)')
               dispatch(clearStorage())
               dispatch(setDeviceRemoved(false))
             }}
@@ -307,10 +312,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
             </Pressable>
             <Pressable
               onPress={handleConnect}
-              disabled={!pasteCode.trim()}
+              disabled={!isValidInvite(pasteCode)}
               style={[
                 styles.btn,
-                { backgroundColor: colors.primary, opacity: !pasteCode.trim() ? 0.3 : 1 },
+                { backgroundColor: colors.primary, opacity: !isValidInvite(pasteCode) ? 0.3 : 1 },
               ]}
             >
               <Text style={styles.confirmBtnText}>{t('pairing.overlay.connectBtn')}</Text>

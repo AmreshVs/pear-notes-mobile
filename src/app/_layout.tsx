@@ -1,7 +1,7 @@
 import '@/locales/i18n'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
-import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import { getDeviceRemoved, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
@@ -11,7 +11,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Appearance, LogBox } from 'react-native'
+import { ActivityIndicator, Appearance, LogBox, StyleSheet, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import { Provider, useSelector } from 'react-redux'
@@ -45,8 +45,10 @@ export default function RootLayout() {
   const { t } = useTranslation()
   const [fatalError, setFatalError] = useState<string | null>(null)
   const [remountKey, setRemountKey] = useState(0)
+  const [isResetting, setIsResetting] = useState(false)
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
+  const prevDeviceRemovedRef = useRef(false)
 
   const initWorklet = useCallback(async () => {
     try {
@@ -68,8 +70,16 @@ export default function RootLayout() {
   useEffect(() => {
     const unsubscribe = store.subscribe(() => {
       const state = store.getState()
+      const deviceRemoved = getDeviceRemoved(state)
+
+      if (prevDeviceRemovedRef.current && !deviceRemoved) {
+        setIsResetting(true)
+      }
+      prevDeviceRemovedRef.current = deviceRemoved
+
       if (state.sync.needsReload) {
         store.dispatch(setNeedsReload(false))
+        router.dismissAll()
         router.replace('/(tabs)/(folders)')
         setRemountKey((k) => k + 1)
         initWorklet()
@@ -78,20 +88,73 @@ export default function RootLayout() {
     return unsubscribe
   }, [initWorklet])
 
+  useEffect(() => {
+    if (!isResetting) return
+    let wasLoading = false
+    const fallback = setTimeout(() => setIsResetting(false), 15000)
+    const unsubscribe = store.subscribe(() => {
+      const notesLoading = getNotesLoading(store.getState())
+      if (notesLoading) wasLoading = true
+      if (wasLoading && !notesLoading) {
+        clearTimeout(fallback)
+        setIsResetting(false)
+      }
+    })
+    return () => {
+      unsubscribe()
+      clearTimeout(fallback)
+    }
+  }, [isResetting])
+
   const bgColor = isDark ? Colors.dark.background : Colors.light.background
+  const textColor = isDark ? Colors.dark.text : Colors.light.text
+  const subtextColor = isDark ? Colors.dark.textSecondary : Colors.light.textSecondary
 
   if (fatalError) {
     return <ErrorScreen message={fatalError} onRetry={initWorklet} />
   }
 
   return (
-    <Provider key={remountKey} store={store}>
-      <GestureHandlerRootView style={{ flex: 1, backgroundColor: bgColor }}>
-        <RootLayoutNav />
-      </GestureHandlerRootView>
-    </Provider>
+    <>
+      <Provider key={remountKey} store={store}>
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: bgColor }}>
+          <RootLayoutNav />
+        </GestureHandlerRootView>
+      </Provider>
+      {isResetting && (
+        <View style={[StyleSheet.absoluteFill, styles.resetOverlay, { backgroundColor: bgColor }]}>
+          <ActivityIndicator size="large" color={Colors.dark.primary} />
+          <Text style={[styles.resetTitle, { color: textColor }]}>
+            {t('pairing.overlay.resettingTitle')}
+          </Text>
+          <Text style={[styles.resetDesc, { color: subtextColor }]}>
+            {t('pairing.overlay.resettingDesc')}
+          </Text>
+        </View>
+      )}
+    </>
   )
 }
+
+const styles = StyleSheet.create({
+  resetOverlay: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    gap: 12,
+  },
+  resetTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  resetDesc: {
+    fontSize: 14,
+    opacity: 0.7,
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+})
 
 function SplashGate() {
   const notesLoading = useSelector(getNotesLoading)

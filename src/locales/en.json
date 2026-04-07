@@ -226,6 +226,8 @@
       "deviceRemovedTitle": "Device Removed",
       "deviceRemovedDesc": "This device has been removed from the synced cluster by another device. Press Okay to clear local synced data and reset common storage.",
       "okay": "Okay",
+      "resettingTitle": "Clearing Data",
+      "resettingDesc": "Removing synced data from this device...",
       "linkedTitle": "Device Linked",
       "linkedInviter": "Your new device has been verified and linked successfully.",
       "linkedReceiver": "Welcome! This device is now a secure part of your notes library.",
