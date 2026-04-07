@@ -794,9 +794,26 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handlePreviewAttachment = useCallback(
     async (url: string, fileName: string) => {
-      handleOpenAttachment(url, fileName)
+      if (!isImageFile(fileName) && !url.startsWith('data:image/')) {
+        handleOpenAttachment(url, fileName)
+        return
+      }
+      try {
+        let cleanUrl = url
+        if (hyperdriveServerAddress && cleanUrl.includes(HYPERDRIVE_URL_PREFIX)) {
+          cleanUrl = cleanUrl.replace(
+            HYPERDRIVE_URL_PREFIX,
+            hyperdriveServerAddress.replace(/\/$/, ''),
+          )
+        }
+        const name = fileName || cleanUrl.split('/').pop() || 'image.jpg'
+        const localPath = await downloadToCache(cleanUrl, name)
+        if (localPath) {
+          await ExpoNativeShareModule.preview({ url: localPath })
+        }
+      } catch {}
     },
-    [handleOpenAttachment],
+    [handleOpenAttachment, hyperdriveServerAddress, downloadToCache],
   )
 
   const handleMoveNote = useCallback(

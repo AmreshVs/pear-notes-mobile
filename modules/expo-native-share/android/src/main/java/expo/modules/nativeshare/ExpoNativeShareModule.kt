@@ -56,5 +56,27 @@ class ExpoNativeShareModule : Module() {
       val chooser = Intent.createChooser(intent, "Share Note")
       currentActivity.startActivity(chooser)
     }
+
+    AsyncFunction("preview") { options: Map<String, Any?> ->
+      val currentActivity = appContext.currentActivity ?: throw Exceptions.MissingActivity()
+      val context = appContext.reactContext ?: throw Exceptions.ReactContextLost()
+      val urlString = options["url"] as? String ?: throw Exception("A valid file URL is required.")
+
+      val uri = if (urlString.startsWith("file://")) {
+        val path = Uri.parse(urlString).path ?: throw Exception("Invalid file path.")
+        val file = File(path)
+        val authority = "${context.packageName}.FileSystemFileProvider"
+        FileProvider.getUriForFile(context, authority, file)
+      } else {
+        Uri.parse(urlString)
+      }
+
+      val mimeType = context.contentResolver.getType(uri) ?: "*/*"
+      val intent = Intent(Intent.ACTION_VIEW).apply {
+        setDataAndType(uri, mimeType)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      }
+      currentActivity.startActivity(Intent.createChooser(intent, null))
+    }
   }
 }
