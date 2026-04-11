@@ -283,6 +283,28 @@ export default function AndroidSettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(180)}>
+          <Text style={dynStyles.sectionCapMargin}>{t('settings.backup.header')}</Text>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(200)}
+          layout={LinearTransition.springify().damping(20).stiffness(220)}
+        >
+          <Pressable
+            onPress={() => router.push('/settings/backup' as any)}
+            style={({ pressed }) => [dynStyles.cardRow, pressed && dynStyles.cardPressed]}
+          >
+            <View style={dynStyles.syncIconWrap}>
+              <MaterialCommunityIcons name="cloud-download-outline" size={22} color={c.primary} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={dynStyles.rowTitle}>{t('settings.backup.backupAndRestore')}</Text>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View entering={FadeIn.duration(220).delay(220)}>
           <Text style={dynStyles.footerText}>{t('settings.footer')}</Text>
         </Animated.View>
       </ScrollView>

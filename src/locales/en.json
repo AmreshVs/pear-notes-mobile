@@ -37,6 +37,10 @@
       "header": "SYNC & DEVICES",
       "linkAndSync": "Link and Sync"
     },
+    "backup": {
+      "header": "BACKUP",
+      "backupAndRestore": "Backup / Restore"
+    },
     "footer": "End-to-end encrypted • Fully private"
   },
   "sync": {
@@ -263,9 +267,38 @@
   },
   "layouts": {
     "settings": "Settings",
-    "linkAndSync": "Link and Sync"
+    "linkAndSync": "Link and Sync",
+    "backupRestore": "Backup / Restore"
   },
   "common": {
     "cancel": "Cancel"
+  },
+  "backup": {
+    "title": "Backup / Restore",
+    "subtitle": "Export or import your data",
+    "hero": {
+      "title": "Secure Your Vault",
+      "description": "Backing up your data ensures you never lose your notes and files. All backups are encrypted with your private key and can be safely restored to any of your devices."
+    },
+    "createBackup": "Create Backup",
+    "restoreData": "Restore Data",
+    "lastBackup": "Last Backup",
+    "noBackup": "Never",
+    "notesSize": "Notes Size",
+    "encryption": "Encryption",
+    "encryptionValue": "AES-256 Bit",
+    "progress": {
+      "creatingTitle": "Creating Backup...",
+      "restoringTitle": "Restoring Data...",
+      "creatingDesc": "Encrypting and uploading your vault data...",
+      "restoringDesc": "Decrypting and restoring your vault data...",
+      "cancel": "Cancel",
+      "dismiss": "Dismiss"
+    },
+    "restoreComplete": "Restore Complete",
+    "restoreCompleteDesc": "Your notes and data have been restored successfully.",
+    "invalidFile": "Invalid File",
+    "invalidFileDesc": "Please select a .pnbk backup file.",
+    "restoreError": "Restore Failed"
   }
 }

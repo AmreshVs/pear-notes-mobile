@@ -8,7 +8,7 @@ import {
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
-import { ChevronRight, RefreshCw, X } from 'lucide-react-native'
+import { ChevronRight, Download, RefreshCw, X } from 'lucide-react-native'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActionSheetIOS, Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
@@ -219,7 +219,31 @@ export default function SettingsScreen() {
           </RNView>
         </Animated.View>
 
-        <Animated.View entering={FadeIn.duration(220).delay(160)}>
+        <Animated.View entering={FadeIn.duration(220).delay(130)}>
+          <Text style={styles.sectionCapMargin}>{t('settings.backup.header')}</Text>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(150)}
+          layout={LinearTransition.springify().damping(20).stiffness(220)}
+        >
+          <RNView style={common.card}>
+            <Pressable
+              onPress={() => router.push('/settings/backup' as any)}
+              style={({ pressed }) => [styles.syncRow, pressed && styles.rowPressed]}
+            >
+              <RNView style={common.settingsRowLeft}>
+                <RNView style={common.iconBox34}>
+                  <Download size={17} color={colors.primary} strokeWidth={1.8} />
+                </RNView>
+                <Text style={styles.rowLabelSemiBold}>{t('settings.backup.backupAndRestore')}</Text>
+              </RNView>
+              <ChevronRight size={16} color={colors.textMuted} />
+            </Pressable>
+          </RNView>
+        </Animated.View>
+
+        <Animated.View entering={FadeIn.duration(220).delay(180)}>
           <Text style={styles.footer}>{t('settings.footer')}</Text>
         </Animated.View>
       </ScrollView>
