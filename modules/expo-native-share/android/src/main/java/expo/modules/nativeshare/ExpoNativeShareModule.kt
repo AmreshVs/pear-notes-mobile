@@ -78,5 +78,21 @@ class ExpoNativeShareModule : Module() {
       }
       currentActivity.startActivity(Intent.createChooser(intent, null))
     }
+
+    AsyncFunction("copyFile") { options: Map<String, Any?> ->
+      val context = appContext.reactContext ?: throw Exceptions.ReactContextLost()
+      val sourceUriStr = options["sourceUri"] as? String ?: throw Exception("Source URI missing")
+      val destUriStr = options["destUri"] as? String ?: throw Exception("Destination URI missing")
+
+      val contentResolver = context.contentResolver
+      val sourceUri = Uri.parse(sourceUriStr)
+      val destUri = Uri.parse(destUriStr)
+
+      contentResolver.openInputStream(sourceUri)?.use { input ->
+        contentResolver.openOutputStream(destUri)?.use { output ->
+          input.copyTo(output)
+        } ?: throw Exception("Could not open output stream to destination")
+      } ?: throw Exception("Could not open input stream from source")
+    }
   }
 }

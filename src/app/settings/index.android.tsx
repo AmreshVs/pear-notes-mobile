@@ -369,7 +369,7 @@ function createDynamicStyles(c: any, insets: any) {
       fontWeight: '800',
       letterSpacing: 1.2,
       color: c.primary,
-      marginTop: 32,
+      marginTop: 12,
       marginBottom: 16,
     },
     card: {
@@ -386,7 +386,6 @@ function createDynamicStyles(c: any, insets: any) {
       borderRadius: 28,
       paddingHorizontal: 20,
       paddingVertical: 18,
-      marginBottom: 12,
     },
     cardPressed: {
       backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,

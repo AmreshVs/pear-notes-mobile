@@ -11,3 +11,8 @@ export interface ExpoNativePreviewOptions {
 export interface ExpoNativeSaveToPhotosOptions {
   url: string
 }
+
+export interface ExpoNativeCopyFileOptions {
+  sourceUri: string
+  destUri: string
+}

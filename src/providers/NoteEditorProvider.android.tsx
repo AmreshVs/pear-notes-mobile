@@ -15,10 +15,11 @@ import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { StyleProp, ViewStyle } from 'react-native'
 import {
   ActivityIndicator,
-  Alert,
   Animated,
+  BackHandler,
   Dimensions,
   Image,
   InteractionManager,
@@ -66,6 +67,15 @@ const getImageSize = (uri: string): Promise<{ width: number; height: number }> =
   new Promise((resolve, reject) =>
     Image.getSize(uri, (w, h) => resolve({ width: w, height: h }), reject),
   )
+
+const MIME_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  pdf: 'application/pdf',
+  m4a: 'audio/mp4',
+  mp4: 'video/mp4',
+}
 
 type ToolbarBtnProps = {
   icon: string
@@ -207,29 +217,42 @@ const EditorToolbar = memo(function EditorToolbar({
 
       <View style={dividerStyle} />
 
-      <Pressable onPress={onAttachPress} style={addBtnStyle}>
+      <Pressable
+        onPress={() => run(onAttachPress)}
+        style={({ pressed }) => [addBtnStyle, pressed && { opacity: 0.5 }]}
+      >
         <MaterialCommunityIcons name="plus" size={24} color={c.onPrimaryContainer} />
       </Pressable>
     </View>
   )
 })
 
-type UploadBannerProps = { fileName: string; status: string; c: ExtendedColors }
+type UploadBannerProps = {
+  fileName: string
+  status: string
+  c: ExtendedColors
+  style?: StyleProp<ViewStyle>
+}
 
-const UploadBanner = memo(function UploadBanner({ fileName, status, c }: UploadBannerProps) {
+const UploadBanner = memo(function UploadBanner({ fileName, status, c, style }: UploadBannerProps) {
+  const dynamicStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: { backgroundColor: c.surfaceContainerHighest ?? c.surface },
+        name: { color: c.onSurface },
+        status: { color: c.onSurfaceVariant },
+      }),
+    [c],
+  )
+
   return (
-    <View
-      style={[
-        staticStyles.uploadBanner,
-        { backgroundColor: c.surfaceContainerHighest ?? c.surface },
-      ]}
-    >
+    <View style={[staticStyles.uploadBanner, dynamicStyles.container, style]}>
       <ActivityIndicator size="small" color={c.primary} style={staticStyles.uploadSpinner} />
       <View style={staticStyles.uploadText}>
-        <Text style={[staticStyles.uploadName, { color: c.onSurface }]} numberOfLines={1}>
+        <Text style={[staticStyles.uploadName, dynamicStyles.name]} numberOfLines={1}>
           {fileName}
         </Text>
-        <Text style={[staticStyles.uploadStatus, { color: c.onSurfaceVariant }]}>{status}</Text>
+        <Text style={[staticStyles.uploadStatus, dynamicStyles.status]}>{status}</Text>
       </View>
     </View>
   )
@@ -259,6 +282,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [attachmentSheetVisible2, setAttachmentSheetVisible2] = useState(false)
   const [isRecorderVisible, setIsRecorderVisible] = useState(false)
   const [recorderEverOpened, setRecorderEverOpened] = useState(false)
+  const [dialogInfo, setDialogInfo] = useState<{
+    title: string
+    message: string
+    onConfirm?: () => void
+    confirmText?: string
+    isDestructive?: boolean
+  } | null>(null)
 
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
@@ -288,6 +318,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       if (!isOpen) return
       setKeyboardHeight(e.endCoordinates.height)
       setIsEditing(true)
+      setTimeout(() => {
+        editorRef.current?.setKeyboardInset(50, true)
+      }, 50)
     })
     const hide = Keyboard.addListener('keyboardDidHide', () => {
       if (!isOpen) return
@@ -329,12 +362,56 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     })
   }, [noteId, noteData, hyperdriveServerAddress, slideAnim])
 
+  const resetEditorState = useCallback(() => {
+    setIsOpen(false)
+    setNoteId(null)
+    loadedNoteRef.current = null
+    isClosingRef.current = false
+  }, [])
+
+  const animateClose = useCallback(() => {
+    if (isClosingRef.current) return
+    isClosingRef.current = true
+    const w = Dimensions.get('window').width
+    Animated.timing(slideAnim, {
+      toValue: w,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(resetEditorState)
+  }, [resetEditorState, slideAnim])
+
+  const closeNote = useCallback(() => {
+    editorRef.current?.blur()
+    Keyboard.dismiss()
+    editorRef.current?.save()
+    animateClose()
+  }, [animateClose])
+
+  const openNote = useCallback((id: string) => {
+    Keyboard.dismiss()
+    setIsEditing(false)
+    editorRef.current?.blur()
+    loadedNoteRef.current = null
+    setNoteId(id)
+    setIsOpen(true)
+  }, [])
+
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false)
       setKeyboardHeight(0)
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const onBackPress = () => {
+      closeNote()
+      return true
+    }
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress)
+    return () => sub.remove()
+  }, [isOpen, closeNote])
 
   const TOOLBAR_HEIGHT = 72
 
@@ -412,13 +489,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             path: decodeURIComponent(cachePath.replace('file://', '')),
           } as any)
           if (link) {
-            let resolvedLink = link
-            if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
-              resolvedLink = link.replace(
-                HYPERDRIVE_URL_PREFIX,
-                hyperdriveServerAddress.replace(/\/$/, ''),
-              )
-            }
+            const resolvedLink = resolveHyperdriveUrl(link)
             editorRef.current?.insertFileAttachment(
               resolvedLink,
               displayName,
@@ -429,7 +500,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           }
           await FileSystem.deleteAsync(cachePath, { idempotent: true })
         } catch {
-          Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedVideo'))
+          setDialogInfo({
+            title: t('noteEditor.upload.failedTitle'),
+            message: t('noteEditor.upload.failedVideo'),
+          })
         } finally {
           setUploadInfo(null)
         }
@@ -439,7 +513,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       const { uri, width, height, fileName } = asset
       const displayName = fileName || t('noteEditor.upload.photo')
       setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.processing') })
-      const screenW = Dimensions.get('window').width
       const maxWidth = screenW - 40
       const maxHeight = 400
       let finalWidth = width
@@ -464,13 +537,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           buffer,
         } as any)
         if (link) {
-          let resolvedLink = link
-          if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
-            resolvedLink = link.replace(
-              HYPERDRIVE_URL_PREFIX,
-              hyperdriveServerAddress.replace(/\/$/, ''),
-            )
-          }
+          const resolvedLink = resolveHyperdriveUrl(link)
           editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
           setTimeout(() => editorRef.current?.scrollToEnd(), 300)
         }
@@ -558,13 +625,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             path: decodeURIComponent(uri.replace('file://', '')),
           } as any)
           if (link) {
-            let resolvedLink = link
-            if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
-              resolvedLink = link.replace(
-                HYPERDRIVE_URL_PREFIX,
-                hyperdriveServerAddress.replace(/\/$/, ''),
-              )
-            }
+            const resolvedLink = resolveHyperdriveUrl(link)
             editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
             setTimeout(() => editorRef.current?.scrollToEnd(), 300)
           }
@@ -624,13 +685,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           path: decodeURIComponent(uri.replace('file://', '')),
         } as any)
         if (link) {
-          let resolvedLink = link
-          if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
-            resolvedLink = link.replace(
-              HYPERDRIVE_URL_PREFIX,
-              hyperdriveServerAddress.replace(/\/$/, ''),
-            )
-          }
+          const resolvedLink = resolveHyperdriveUrl(link)
           const isAudio = mimeType?.startsWith('audio/')
           if (isAudio) {
             editorRef.current?.insertAudioAttachment(
@@ -678,6 +733,73 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [],
   )
 
+  const resolveHyperdriveUrl = useCallback(
+    (url: string) => {
+      if (hyperdriveServerAddress && url.includes(HYPERDRIVE_URL_PREFIX)) {
+        return url.replace(HYPERDRIVE_URL_PREFIX, hyperdriveServerAddress.replace(/\/$/, ''))
+      }
+      return url
+    },
+    [hyperdriveServerAddress],
+  )
+
+  const executeShare = useCallback(
+    async (src: string, fileName: string) => {
+      try {
+        const cleanUrl = resolveHyperdriveUrl(src)
+        const localPath = await downloadToCache(cleanUrl, fileName)
+        if (localPath) {
+          await ExpoNativeShareModule.share({ message: '', urls: [localPath] })
+        } else {
+          await ExpoNativeShareModule.share({ message: cleanUrl, urls: [] })
+        }
+      } catch {}
+    },
+    [resolveHyperdriveUrl, downloadToCache],
+  )
+
+  const executeDownload = useCallback(
+    async (src: string, fileName: string) => {
+      try {
+        const cleanUrl = resolveHyperdriveUrl(src)
+        const permissions =
+          await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync()
+        if (permissions.granted) {
+          setUploadInfo({ fileName, status: t('noteCard.actions.downloading', 'Downloading...') })
+          const localPath = await downloadToCache(cleanUrl, fileName)
+          if (localPath) {
+            const ext = fileName.split('.').pop()?.toLowerCase() || ''
+            const mimeType = MIME_TYPES[ext] || 'application/octet-stream'
+
+            const uri = await FileSystem.StorageAccessFramework.createFileAsync(
+              permissions.directoryUri,
+              fileName,
+              mimeType,
+            )
+
+            await ExpoNativeShareModule.copyFile({ sourceUri: localPath, destUri: uri })
+
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+            setDialogInfo({
+              title: t('common.success', 'Success'),
+              message: t('noteCard.downloadComplete', 'File downloaded successfully.'),
+            })
+          } else {
+            setDialogInfo({
+              title: t('common.error', 'Error'),
+              message: t('noteEditor.upload.failedDownload', 'Could not download the file.'),
+            })
+          }
+        }
+      } catch (e) {
+        setDialogInfo({ title: t('common.error', 'Error'), message: String(e) })
+      } finally {
+        setUploadInfo(null)
+      }
+    },
+    [resolveHyperdriveUrl, downloadToCache, t],
+  )
+
   const handleImageLongPress = useCallback(
     (src: string, _rect?: { x: number; y: number; width: number; height: number }) => {
       if (!src) return
@@ -702,23 +824,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setImageSheetVisible(false)
     const src = selectedImageSrc
     setSelectedImageSrc(null)
-    try {
-      let cleanUrl = src
-      if (hyperdriveServerAddress && cleanUrl.includes(HYPERDRIVE_URL_PREFIX)) {
-        cleanUrl = cleanUrl.replace(
-          HYPERDRIVE_URL_PREFIX,
-          hyperdriveServerAddress.replace(/\/$/, ''),
-        )
-      }
-      const fileName = cleanUrl.split('/').pop() || 'image.jpg'
-      const localPath = await downloadToCache(cleanUrl, fileName)
-      if (localPath) {
-        await ExpoNativeShareModule.share({ message: '', urls: [localPath] })
-      } else {
-        await ExpoNativeShareModule.share({ message: cleanUrl, urls: [] })
-      }
-    } catch {}
-  }, [selectedImageSrc, hyperdriveServerAddress, downloadToCache])
+    await executeShare(src, src.split('/').pop() || 'image.jpg')
+  }, [selectedImageSrc, executeShare])
+
+  const handleImageMenuDownload = useCallback(async () => {
+    if (!selectedImageSrc) return
+    setImageSheetVisible(false)
+    const src = selectedImageSrc
+    setSelectedImageSrc(null)
+    await executeDownload(src, src.split('/').pop() || 'image.jpg')
+  }, [selectedImageSrc, executeDownload])
 
   const handleAttachmentLongPress = useCallback(
     (
@@ -742,22 +857,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     const fileName = selectedAttachmentFileName || src.split('/').pop() || 'file'
     setSelectedAttachmentSrc(null)
     setSelectedAttachmentFileName(null)
-    try {
-      let cleanUrl = src
-      if (hyperdriveServerAddress && cleanUrl.includes(HYPERDRIVE_URL_PREFIX)) {
-        cleanUrl = cleanUrl.replace(
-          HYPERDRIVE_URL_PREFIX,
-          hyperdriveServerAddress.replace(/\/$/, ''),
-        )
-      }
-      const localPath = await downloadToCache(cleanUrl, fileName)
-      if (localPath) {
-        await ExpoNativeShareModule.share({ message: '', urls: [localPath] })
-      } else {
-        await ExpoNativeShareModule.share({ message: cleanUrl, urls: [] })
-      }
-    } catch {}
-  }, [selectedAttachmentSrc, selectedAttachmentFileName, hyperdriveServerAddress, downloadToCache])
+    await executeShare(src, fileName)
+  }, [selectedAttachmentSrc, selectedAttachmentFileName, executeShare])
 
   const handleAttachmentMenuDelete = useCallback(async () => {
     if (!selectedAttachmentSrc) return
@@ -769,27 +870,31 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setSelectedAttachmentFileName(null)
   }, [selectedAttachmentSrc, handleDeleteAttachment])
 
+  const handleAttachmentMenuDownload = useCallback(async () => {
+    if (!selectedAttachmentSrc) return
+    setAttachmentSheetVisible2(false)
+    const src = selectedAttachmentSrc
+    const fileName = selectedAttachmentFileName || src.split('/').pop() || 'file'
+    setSelectedAttachmentSrc(null)
+    setSelectedAttachmentFileName(null)
+    await executeDownload(src, fileName)
+  }, [selectedAttachmentSrc, selectedAttachmentFileName, executeDownload])
+
   const handleOpenAttachment = useCallback(
     async (url: string, fileName: string) => {
       if (!url) return
       try {
-        let cleanUrl = url
-        if (hyperdriveServerAddress && cleanUrl.includes(HYPERDRIVE_URL_PREFIX)) {
-          cleanUrl = cleanUrl.replace(
-            HYPERDRIVE_URL_PREFIX,
-            hyperdriveServerAddress.replace(/\/$/, ''),
-          )
-        }
+        const cleanUrl = resolveHyperdriveUrl(url)
         const name = fileName || cleanUrl.split('/').pop() || 'file'
         const localPath = await downloadToCache(cleanUrl, name)
         if (localPath) {
-          await ExpoNativeShareModule.share({ message: '', urls: [localPath] })
+          await ExpoNativeShareModule.preview({ url: localPath })
         } else {
-          await ExpoNativeShareModule.share({ message: cleanUrl, urls: [] })
+          await ExpoNativeShareModule.preview({ url: cleanUrl })
         }
       } catch {}
     },
-    [hyperdriveServerAddress, downloadToCache],
+    [resolveHyperdriveUrl, downloadToCache],
   )
 
   const handlePreviewAttachment = useCallback(
@@ -799,13 +904,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         return
       }
       try {
-        let cleanUrl = url
-        if (hyperdriveServerAddress && cleanUrl.includes(HYPERDRIVE_URL_PREFIX)) {
-          cleanUrl = cleanUrl.replace(
-            HYPERDRIVE_URL_PREFIX,
-            hyperdriveServerAddress.replace(/\/$/, ''),
-          )
-        }
+        const cleanUrl = resolveHyperdriveUrl(url)
         const name = fileName || cleanUrl.split('/').pop() || 'image.jpg'
         const localPath = await downloadToCache(cleanUrl, name)
         if (localPath) {
@@ -813,7 +912,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         }
       } catch {}
     },
-    [handleOpenAttachment, hyperdriveServerAddress, downloadToCache],
+    [handleOpenAttachment, resolveHyperdriveUrl, downloadToCache],
   )
 
   const handleMoveNote = useCallback(
@@ -851,13 +950,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           path: decodeURIComponent(uri.replace('file://', '')),
         } as any)
         if (link) {
-          let resolvedLink = link
-          if (hyperdriveServerAddress && link.includes(HYPERDRIVE_URL_PREFIX)) {
-            resolvedLink = link.replace(
-              HYPERDRIVE_URL_PREFIX,
-              hyperdriveServerAddress.replace(/\/$/, ''),
-            )
-          }
+          const resolvedLink = resolveHyperdriveUrl(link)
           editorRef.current?.insertAudioAttachment(resolvedLink, fileName)
           setTimeout(() => editorRef.current?.scrollToEnd(), 300)
         }
@@ -873,26 +966,25 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!noteId) return
     setMoreMenuVisible(false)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    Alert.alert(t('noteCard.actions.delete'), t('noteCard.deleteConfirmation'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('noteCard.actions.delete'),
-        style: 'destructive',
-        onPress: () => {
-          dispatch(deleteNote(noteId as any))
-          const w = Dimensions.get('window').width
-          Animated.timing(slideAnim, {
-            toValue: w,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(() => {
-            setIsOpen(false)
-            setNoteId(null)
-            loadedNoteRef.current = null
-          })
-        },
+    setDialogInfo({
+      title: t('noteCard.actions.delete'),
+      message: t('noteCard.deleteConfirmation'),
+      confirmText: t('noteCard.actions.delete'),
+      isDestructive: true,
+      onConfirm: () => {
+        dispatch(deleteNote(noteId as any))
+        const w = Dimensions.get('window').width
+        Animated.timing(slideAnim, {
+          toValue: w,
+          duration: 250,
+          useNativeDriver: true,
+        }).start(() => {
+          setIsOpen(false)
+          setNoteId(null)
+          loadedNoteRef.current = null
+        })
       },
-    ])
+    })
   }, [noteId, dispatch, slideAnim, t])
 
   const handleShare = useCallback(async () => {
@@ -921,40 +1013,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     } catch {}
     setIsSharing(false)
   }, [isSharing, t])
-
-  const resetEditorState = useCallback(() => {
-    setIsOpen(false)
-    setNoteId(null)
-    loadedNoteRef.current = null
-    isClosingRef.current = false
-  }, [])
-
-  const animateClose = useCallback(() => {
-    if (isClosingRef.current) return
-    isClosingRef.current = true
-    const w = Dimensions.get('window').width
-    Animated.timing(slideAnim, {
-      toValue: w,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(resetEditorState)
-  }, [resetEditorState, slideAnim])
-
-  const closeNote = useCallback(() => {
-    editorRef.current?.blur()
-    Keyboard.dismiss()
-    editorRef.current?.save()
-    animateClose()
-  }, [animateClose])
-
-  const openNote = useCallback((id: string) => {
-    Keyboard.dismiss()
-    setIsEditing(false)
-    editorRef.current?.blur()
-    loadedNoteRef.current = null
-    setNoteId(id)
-    setIsOpen(true)
-  }, [])
 
   const contextValue = useMemo(
     () => ({ openNote, closeNote, isOpen }),
@@ -1015,6 +1073,35 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [insets.top],
   )
 
+  const dynamicStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        menuItemDelete: { color: c.error },
+        moveDialog: { backgroundColor: c.surfaceContainerHighest ?? c.surface },
+        moveDialogTitle: { color: c.onSurface },
+        moveFolderText: { color: c.onSurface },
+        dialogBtnText: { color: c.onSurfaceVariant },
+        infoDialog: { backgroundColor: c.surfaceContainerHigh },
+        infoDialogTitle: { color: c.onSurface },
+        infoDialogMessage: { color: c.onSurfaceVariant, fontSize: 16 },
+        infoDialogCancelText: { color: c.onSurfaceVariant, fontWeight: '600' },
+        infoDialogConfirmTextInfo: { color: c.primary, fontWeight: '600' },
+        infoDialogConfirmTextDestructive: { color: c.error, fontWeight: '600' },
+        infoDialogOkayText: { color: c.primary, fontWeight: '600' },
+        moveFolderItemPressed: {
+          backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surfaceVariant, 0.5),
+        },
+      }),
+    [c],
+  )
+
+  const uploadBannerStyle = useMemo(
+    () => ({
+      bottom: (keyboardHeight > 0 ? keyboardHeight + 42 : insets.bottom + 12) + TOOLBAR_HEIGHT,
+    }),
+    [keyboardHeight, insets.bottom],
+  )
+
   return (
     <NoteEditorContext.Provider value={contextValue}>
       {children}
@@ -1030,7 +1117,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           initialContent=""
           initialTitle=""
           safeAreaTop={floatingHeaderHeight}
-          safeAreaBottom={0}
+          safeAreaBottom={
+            keyboardHeight > 0 ? 42 + 24 + TOOLBAR_HEIGHT : insets.bottom + 12 + TOOLBAR_HEIGHT
+          }
           backgroundColor={c.background}
           onContentChange={handleUpdate}
           onTitleChange={handleTitleChange}
@@ -1107,7 +1196,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               leadingIcon="delete-outline"
               title={t('noteCard.actions.delete')}
               onPress={handleDeleteNote}
-              titleStyle={{ color: c.error }}
+              titleStyle={dynamicStyles.menuItemDelete}
             />
           </Menu>
 
@@ -1132,7 +1221,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         <EditorToolbar
           isActive={isActive}
           editorRef={editorRef}
-          toolbarBottom={keyboardHeight > 0 ? 12 : insets.bottom + 12}
+          toolbarBottom={keyboardHeight > 0 ? keyboardHeight + 42 : insets.bottom + 12}
           onAttachPress={() => setAttachSheetVisible(true)}
           c={c}
           isDark={theme.dark}
@@ -1150,16 +1239,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         />
 
         {uploadInfo && (
-          <UploadBanner fileName={uploadInfo.fileName} status={uploadInfo.status} c={c} />
+          <UploadBanner
+            fileName={uploadInfo.fileName}
+            status={uploadInfo.status}
+            c={c}
+            style={uploadBannerStyle}
+          />
         )}
 
         <Portal>
           <Dialog
             visible={moveDialogVisible}
             onDismiss={() => setMoveDialogVisible(false)}
-            style={{ backgroundColor: c.surfaceContainerHighest ?? c.surface }}
+            style={dynamicStyles.moveDialog}
           >
-            <Dialog.Title style={{ color: c.onSurface }}>
+            <Dialog.Title style={dynamicStyles.moveDialogTitle}>
               {t('noteCard.actions.moveTo')}
             </Dialog.Title>
             <Dialog.Content style={staticStyles.moveDialogContent}>
@@ -1170,12 +1264,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                     onPress={() => handleConfirmMove(f.id)}
                     style={({ pressed }) => [
                       staticStyles.moveFolderItem,
-                      pressed && {
-                        backgroundColor: hexWithAlpha(
-                          c.surfaceContainerHigh ?? c.surfaceVariant,
-                          0.5,
-                        ),
-                      },
+                      pressed && dynamicStyles.moveFolderItemPressed,
                     ]}
                   >
                     <MaterialCommunityIcons
@@ -1184,7 +1273,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       color={c.primary}
                       style={staticStyles.moveFolderIcon}
                     />
-                    <Text style={[staticStyles.moveFolderText, { color: c.onSurface }]}>
+                    <Text style={[staticStyles.moveFolderText, dynamicStyles.moveFolderText]}>
                       {f.name}
                     </Text>
                   </Pressable>
@@ -1193,10 +1282,55 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </Dialog.Content>
             <Dialog.Actions>
               <Pressable onPress={() => setMoveDialogVisible(false)} style={staticStyles.dialogBtn}>
-                <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
+                <Text style={[staticStyles.dialogBtnText, dynamicStyles.dialogBtnText]}>
                   {t('common.cancel')}
                 </Text>
               </Pressable>
+            </Dialog.Actions>
+          </Dialog>
+
+          <Dialog
+            visible={!!dialogInfo}
+            onDismiss={() => setDialogInfo(null)}
+            style={dynamicStyles.infoDialog}
+          >
+            <Dialog.Title style={dynamicStyles.infoDialogTitle}>{dialogInfo?.title}</Dialog.Title>
+            <Dialog.Content>
+              <Text style={dynamicStyles.infoDialogMessage}>{dialogInfo?.message}</Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Pressable onPress={() => setDialogInfo(null)} style={staticStyles.dialogBtn}>
+                <Text
+                  style={
+                    dialogInfo?.onConfirm
+                      ? dynamicStyles.infoDialogCancelText
+                      : dynamicStyles.infoDialogOkayText
+                  }
+                >
+                  {dialogInfo?.onConfirm
+                    ? t('common.cancel', 'Cancel')
+                    : t('pairing.overlay.okay', 'Okay')}
+                </Text>
+              </Pressable>
+              {dialogInfo?.onConfirm && (
+                <Pressable
+                  onPress={() => {
+                    dialogInfo.onConfirm!()
+                    setDialogInfo(null)
+                  }}
+                  style={staticStyles.dialogBtn}
+                >
+                  <Text
+                    style={
+                      dialogInfo.isDestructive
+                        ? dynamicStyles.infoDialogConfirmTextDestructive
+                        : dynamicStyles.infoDialogConfirmTextInfo
+                    }
+                  >
+                    {dialogInfo.confirmText ?? t('common.confirm', 'Confirm')}
+                  </Text>
+                </Pressable>
+              )}
             </Dialog.Actions>
           </Dialog>
         </Portal>
@@ -1207,6 +1341,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         onDismiss={() => setImageSheetVisible(false)}
         title={t('noteEditor.menu.image')}
         actions={[
+          {
+            icon: 'download-outline',
+            label: t('noteEditor.menu.download', 'Download'),
+            onPress: handleImageMenuDownload,
+          },
           {
             icon: 'share-variant-outline',
             label: t('noteCard.actions.share'),
@@ -1226,6 +1365,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         onDismiss={() => setAttachmentSheetVisible2(false)}
         title={selectedAttachmentFileName || t('noteEditor.menu.attachment')}
         actions={[
+          {
+            icon: 'download-outline',
+            label: t('noteEditor.menu.download', 'Download'),
+            onPress: handleAttachmentMenuDownload,
+          },
           {
             icon: 'share-variant-outline',
             label: t('noteCard.actions.share'),
