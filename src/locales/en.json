@@ -271,7 +271,8 @@
     "backupRestore": "Backup / Restore"
   },
   "common": {
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "clear": "Clear"
   },
   "backup": {
     "title": "Backup / Restore",
@@ -287,6 +288,19 @@
     "notesSize": "Notes Size",
     "encryption": "Encryption",
     "encryptionValue": "AES-256 Bit",
+    "diskFootprint": "On-disk footprint",
+    "reclaimable": "Reclaimable",
+    "breakdownByType": "BREAKDOWN BY TYPE",
+    "images": "Images",
+    "videos": "Videos",
+    "voiceNotes": "Voice notes",
+    "files": "Files",
+    "text": "Text",
+    "textAllNotesDesc": "(all notes)",
+    "items": "{{count}} items",
+    "clearStorage": "Clear Storage",
+    "clearAllDataTitle": "Clear All Data?",
+    "clearAllDataDesc": "This will permanently delete ALL notes, folders, settings, and media. This cannot be undone.",
     "progress": {
       "creatingTitle": "Creating Backup...",
       "restoringTitle": "Restoring Data...",

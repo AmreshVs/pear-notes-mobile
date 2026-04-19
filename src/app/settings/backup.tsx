@@ -7,12 +7,38 @@ import {
   startExportBackup,
   startImportBackup,
 } from '@pear-notes/core/store/slices/backupSlice.js'
-import { getTotalStorageSize } from '@pear-notes/core/store/slices/storageSlice.js'
-import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import {
+  subscribeStorageInfo,
+  getTotalBlobBytes,
+  getTotalOnDiskBytes,
+  getReclaimableBytes,
+  getNotesStorageInfo,
+  getStorageIsLoading,
+  deleteNoteMedia,
+  selectStorageByKind,
+  mediaKind,
+} from '@pear-notes/core/store/slices/storageSlice.js'
+import { clearStorage, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import { router, Stack } from 'expo-router'
-import { Check, CloudUpload, HardDrive, Lock, RotateCcw, X } from 'lucide-react-native'
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  CloudUpload,
+  Database,
+  HardDrive,
+  Lock,
+  RotateCcw,
+  Trash2,
+  X,
+  Image as ImageIcon,
+  Film,
+  Mic,
+  FileText,
+  PenLine,
+} from 'lucide-react-native'
 import React, { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -21,10 +47,11 @@ import {
   Modal,
   Platform,
   Pressable,
-  View as RNView,
   ScrollView,
   Share,
   StyleSheet,
+  Text as RNText,
+  View as RNView,
 } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
@@ -108,9 +135,19 @@ export default function BackupScreen() {
   const exportStatus = useSelector(getExportStatus) as BackupStatus
   const importStatus = useSelector(getImportStatus) as BackupStatus
   const exportBuffer = useSelector(getExportBuffer) as any
-  const totalSize = (useSelector(getTotalStorageSize) as number) ?? 0
+  const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
+  const totalOnDiskBytes = (useSelector(getTotalOnDiskBytes) as number) ?? 0
+  const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
+  const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
+  const buckets = useSelector(selectStorageByKind) as any
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
+  const [expandedNote, setExpandedNote] = useState<string | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
+
+  useEffect(() => {
+    dispatch(subscribeStorageInfo())
+  }, [])
 
   useEffect(() => {
     loadLastBackupDate().then(setLastBackupDate)
@@ -209,6 +246,18 @@ export default function BackupScreen() {
     dispatch(setNeedsReload(true))
   }, [dispatch])
 
+  const handleClearStorage = useCallback(() => {
+    setConfirmClear(false)
+    dispatch(clearStorage())
+  }, [dispatch])
+
+  const handleDeleteMedia = useCallback(
+    (noteKey: string, mediaPath: string) => {
+      dispatch(deleteNoteMedia({ noteKey, mediaPath }))
+    },
+    [dispatch],
+  )
+
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
   return (
@@ -293,7 +342,7 @@ export default function BackupScreen() {
               <HardDrive size={16} color={colors.primary} strokeWidth={1.8} />
             </RNView>
             <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
-            <Text style={styles.statValue}>{formatBytes(totalSize)}</Text>
+            <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
           </RNView>
           <RNView style={[common.card, styles.statCard]}>
             <RNView style={[common.iconBox34, styles.goldIconBox]}>
@@ -303,6 +352,178 @@ export default function BackupScreen() {
             <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>
           </RNView>
         </Animated.View>
+
+        {totalOnDiskBytes > 0 && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(150)}
+            style={[common.card, styles.perNoteSection]}
+          >
+            <RNView style={styles.diskRow}>
+              <RNText style={styles.diskLabel}>{t('backup.diskFootprint')}</RNText>
+              <RNText style={styles.diskValue}>{formatBytes(totalOnDiskBytes)}</RNText>
+            </RNView>
+            {reclaimableBytes > 0 && (
+              <RNView style={styles.diskRow}>
+                <RNText style={styles.diskLabel}>{t('backup.reclaimable')}</RNText>
+                <RNText style={styles.diskValuePrimary}>{formatBytes(reclaimableBytes)}</RNText>
+              </RNView>
+            )}
+          </Animated.View>
+        )}
+
+        {buckets && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(160)}
+            style={styles.breakdownSection}
+          >
+            <Text style={styles.sectionCapMargin}>{t('backup.breakdownByType')}</Text>
+            <RNView style={common.card}>
+              {buckets.image.count > 0 && (
+                <RNView style={styles.breakdownRow}>
+                  <RNView style={styles.breakdownRowMeta}>
+                    <ImageIcon size={18} color={colors.textMuted} strokeWidth={2} />
+                    <RNText style={styles.breakdownTitle}>{t('backup.images')}</RNText>
+                    <RNText style={styles.breakdownCount}>
+                      {t('backup.items', { count: buckets.image.count })}
+                    </RNText>
+                  </RNView>
+                  <RNText style={styles.breakdownSize}>{formatBytes(buckets.image.size)}</RNText>
+                </RNView>
+              )}
+              {buckets.video.count > 0 && (
+                <RNView style={styles.breakdownRow}>
+                  <RNView style={styles.breakdownRowMeta}>
+                    <Film size={18} color={colors.textMuted} strokeWidth={2} />
+                    <RNText style={styles.breakdownTitle}>{t('backup.videos')}</RNText>
+                    <RNText style={styles.breakdownCount}>
+                      {t('backup.items', { count: buckets.video.count })}
+                    </RNText>
+                  </RNView>
+                  <RNText style={styles.breakdownSize}>{formatBytes(buckets.video.size)}</RNText>
+                </RNView>
+              )}
+              {buckets.audio.count > 0 && (
+                <RNView style={styles.breakdownRow}>
+                  <RNView style={styles.breakdownRowMeta}>
+                    <Mic size={18} color={colors.textMuted} strokeWidth={2} />
+                    <RNText style={styles.breakdownTitle}>{t('backup.voiceNotes')}</RNText>
+                    <RNText style={styles.breakdownCount}>
+                      {t('backup.items', { count: buckets.audio.count })}
+                    </RNText>
+                  </RNView>
+                  <RNText style={styles.breakdownSize}>{formatBytes(buckets.audio.size)}</RNText>
+                </RNView>
+              )}
+              {buckets.file.count > 0 && (
+                <RNView style={styles.breakdownRow}>
+                  <RNView style={styles.breakdownRowMeta}>
+                    <FileText size={18} color={colors.textMuted} strokeWidth={2} />
+                    <RNText style={styles.breakdownTitle}>{t('backup.files')}</RNText>
+                    <RNText style={styles.breakdownCount}>
+                      {t('backup.items', { count: buckets.file.count })}
+                    </RNText>
+                  </RNView>
+                  <RNText style={styles.breakdownSize}>{formatBytes(buckets.file.size)}</RNText>
+                </RNView>
+              )}
+              {buckets.text.count > 0 && (
+                <RNView style={styles.breakdownRow}>
+                  <RNView style={styles.breakdownRowMeta}>
+                    <PenLine size={18} color={colors.textMuted} strokeWidth={2} />
+                    <RNText style={styles.breakdownTitle}>{t('backup.text')}</RNText>
+                    <RNText style={styles.breakdownCount}>{t('backup.textAllNotesDesc')}</RNText>
+                  </RNView>
+                  <RNText style={styles.breakdownSize}>{formatBytes(buckets.text.size)}</RNText>
+                </RNView>
+              )}
+            </RNView>
+          </Animated.View>
+        )}
+
+        {notesStorageInfo.length > 0 && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(170)}
+            style={styles.perNoteSection}
+          >
+            <Text style={styles.sectionCapMargin}>
+              {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
+            </Text>
+            {notesStorageInfo.map((note: any) => (
+              <RNView key={note.key} style={[common.card, { marginBottom: 8 }]}>
+                <Pressable
+                  onPress={() => setExpandedNote(expandedNote === note.key ? null : note.key)}
+                  style={({ pressed }) => [styles.noteRow, pressed && { opacity: 0.7 }]}
+                >
+                  <RNText style={styles.noteTitle} numberOfLines={1}>
+                    {note.title || t('noteCard.untitled')}
+                  </RNText>
+                  <RNView style={styles.noteHeaderActions}>
+                    <RNText style={styles.noteSize}>{formatBytes(note.totalSize)}</RNText>
+                    {expandedNote === note.key ? (
+                      <ChevronDown size={16} color={colors.textMuted} strokeWidth={2} />
+                    ) : (
+                      <ChevronRight size={16} color={colors.textMuted} strokeWidth={2} />
+                    )}
+                  </RNView>
+                </Pressable>
+                {expandedNote === note.key && (
+                  <RNView>
+                    <RNView style={styles.mediaRow}>
+                      <RNView style={styles.mediaHeaderActions}>
+                        <PenLine size={14} color={colors.textMuted} strokeWidth={2} />
+                        <RNText style={styles.mediaName} numberOfLines={1}>
+                          {t('backup.text')}
+                        </RNText>
+                      </RNView>
+                      <RNText style={styles.mediaSize}>{formatBytes(note.contentSize)}</RNText>
+                      <RNView style={{ width: 14, marginLeft: 8 }} />
+                    </RNView>
+                    {note.media?.map((m: any) => {
+                      const kind = mediaKind(m.name)
+                      let Icon = FileText
+                      if (kind === 'image') Icon = ImageIcon
+                      else if (kind === 'video') Icon = Film
+                      else if (kind === 'audio') Icon = Mic
+
+                      return (
+                        <RNView key={m.path} style={styles.mediaRow}>
+                          <RNView style={styles.mediaHeaderActions}>
+                            <Icon size={14} color={colors.textMuted} strokeWidth={2} />
+                            <RNText style={styles.mediaName} numberOfLines={1}>
+                              {m.name}
+                            </RNText>
+                          </RNView>
+                          <RNView style={styles.noteHeaderActions}>
+                            <RNText style={styles.mediaSize}>{formatBytes(m.size)}</RNText>
+                            <Pressable
+                              onPress={() => handleDeleteMedia(note.key, m.path)}
+                              hitSlop={8}
+                              style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+                            >
+                              <X size={14} color={colors.textMuted} strokeWidth={2} />
+                            </Pressable>
+                          </RNView>
+                        </RNView>
+                      )
+                    })}
+                  </RNView>
+                )}
+              </RNView>
+            ))}
+          </Animated.View>
+        )}
+
+        {reclaimableBytes > 0 && (
+          <Animated.View entering={FadeInDown.duration(240).delay(190)} style={styles.clearSection}>
+            <Pressable
+              onPress={() => setConfirmClear(true)}
+              style={({ pressed }) => [styles.clearBtn, pressed && { opacity: 0.7 }]}
+            >
+              <Trash2 size={16} color={colors.error ?? '#ff453a'} strokeWidth={2} />
+              <RNText style={styles.clearBtnText}>{t('backup.clearStorage')}</RNText>
+            </Pressable>
+          </Animated.View>
+        )}
       </ScrollView>
 
       <Modal visible={showProgressModal} transparent animationType="fade" statusBarTranslucent>
@@ -366,6 +587,33 @@ export default function BackupScreen() {
                   </Text>
                 </Pressable>
               )}
+            </RNView>
+          </RNView>
+        </RNView>
+      </Modal>
+
+      <Modal visible={confirmClear} transparent animationType="fade" statusBarTranslucent>
+        <RNView style={[common.modalOverlay, styles.overlayCenter]}>
+          <RNView style={styles.confirmCard}>
+            <RNText style={styles.progressTitle}>{t('backup.clearAllDataTitle')}</RNText>
+            <RNText style={styles.progressDesc}>{t('backup.clearAllDataDesc')}</RNText>
+            <RNView style={styles.clearActionRow}>
+              <Pressable
+                onPress={() => setConfirmClear(false)}
+                style={({ pressed }) => [
+                  styles.secondaryBtn,
+                  { flex: 1 },
+                  pressed && styles.btnPressed,
+                ]}
+              >
+                <RNText style={styles.secondaryBtnText}>{t('common.cancel')}</RNText>
+              </Pressable>
+              <Pressable
+                onPress={handleClearStorage}
+                style={({ pressed }) => [styles.clearConfirmBtn, pressed && styles.btnPressed]}
+              >
+                <RNText style={styles.clearConfirmText}>{t('common.clear')}</RNText>
+              </Pressable>
             </RNView>
           </RNView>
         </RNView>
@@ -509,6 +757,12 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.surface,
       marginHorizontal: Space.xl,
     },
+    confirmCard: {
+      borderRadius: Radii.xl,
+      backgroundColor: theme.colors.surface,
+      marginHorizontal: Space.xl,
+      padding: Space.xl,
+    },
     progressIconWrap: {
       width: 72,
       height: 72,
@@ -573,5 +827,145 @@ const createStyles = (theme: Theme) =>
       marginTop: Space.xxxl,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
+    },
+    breakdownRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'center' as const,
+      paddingHorizontal: Space.lg,
+      paddingVertical: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.colors.borderSecondary,
+    },
+    breakdownTitle: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
+      color: theme.colors.text,
+    },
+    breakdownCount: {
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+    },
+    breakdownSize: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
+    },
+    diskRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'center' as const,
+      paddingHorizontal: Space.base,
+      paddingVertical: Space.sm,
+    },
+    diskLabel: {
+      fontSize: FontSize.body,
+      color: theme.colors.textMuted,
+    },
+    diskValue: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
+    },
+    diskValuePrimary: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.primary,
+    },
+    breakdownSection: {
+      marginTop: 24,
+      marginBottom: 8,
+    },
+    perNoteSection: {
+      marginTop: 12,
+    },
+    breakdownRowMeta: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 12,
+    },
+    noteHeaderActions: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+    },
+    mediaHeaderActions: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+      flex: 1,
+    },
+    clearSection: {
+      marginTop: 4,
+      marginBottom: 8,
+    },
+    clearActionRow: {
+      flexDirection: 'row' as const,
+      gap: Space.md,
+      marginTop: Space.md,
+    },
+    noteRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      padding: Space.base,
+    },
+    noteTitle: {
+      flex: 1,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
+      marginRight: Space.md,
+    },
+    noteSize: {
+      fontSize: FontSize.body,
+      color: theme.colors.textMuted,
+    },
+    mediaRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      paddingHorizontal: Space.base,
+      paddingVertical: Space.sm,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.borderSecondary,
+    },
+    mediaName: {
+      flex: 1,
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+      marginRight: Space.md,
+    },
+    mediaSize: {
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+    },
+    clearBtn: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: Space.sm,
+      paddingVertical: 14,
+      borderRadius: Radii.pill,
+      borderWidth: 1,
+      borderColor: theme.colors.error ?? '#ff453a',
+    },
+    clearBtnText: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.error ?? '#ff453a',
+    },
+    clearConfirmBtn: {
+      flex: 1,
+      height: 54,
+      borderRadius: Radii.pill,
+      backgroundColor: theme.colors.error ?? '#ff453a',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    clearConfirmText: {
+      fontSize: FontSize.base,
+      fontWeight: FontWeight.semibold,
+      color: '#fff',
     },
   })

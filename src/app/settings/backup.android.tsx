@@ -8,8 +8,17 @@ import {
   startExportBackup,
   startImportBackup,
 } from '@pear-notes/core/store/slices/backupSlice.js'
-import { getTotalStorageSize } from '@pear-notes/core/store/slices/storageSlice.js'
-import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import {
+  subscribeStorageInfo,
+  getTotalBlobBytes,
+  getTotalOnDiskBytes,
+  getReclaimableBytes,
+  getNotesStorageInfo,
+  deleteNoteMedia,
+  selectStorageByKind,
+  mediaKind,
+} from '@pear-notes/core/store/slices/storageSlice.js'
+import { clearStorage, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import { router, Stack } from 'expo-router'
@@ -109,9 +118,19 @@ export default function AndroidBackupScreen() {
   const exportStatus = useSelector(getExportStatus) as BackupStatus
   const importStatus = useSelector(getImportStatus) as BackupStatus
   const exportBuffer = useSelector(getExportBuffer) as any
-  const totalSize = (useSelector(getTotalStorageSize) as number) ?? 0
+  const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
+  const totalOnDiskBytes = (useSelector(getTotalOnDiskBytes) as number) ?? 0
+  const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
+  const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
+  const buckets = useSelector(selectStorageByKind) as any
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
+  const [expandedNote, setExpandedNote] = useState<string | null>(null)
+  const [confirmClear, setConfirmClear] = useState(false)
+
+  useEffect(() => {
+    dispatch(subscribeStorageInfo())
+  }, [])
 
   useEffect(() => {
     loadLastBackupDate().then(setLastBackupDate)
@@ -210,6 +229,18 @@ export default function AndroidBackupScreen() {
     dispatch(setNeedsReload(true))
   }, [dispatch])
 
+  const handleClearStorage = useCallback(() => {
+    setConfirmClear(false)
+    dispatch(clearStorage())
+  }, [dispatch])
+
+  const handleDeleteMedia = useCallback(
+    (noteKey: string, mediaPath: string) => {
+      dispatch(deleteNoteMedia({ noteKey, mediaPath }))
+    },
+    [dispatch],
+  )
+
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
   const dynStyles = useMemo(() => createDynamicStyles(c, insets), [c, insets])
@@ -290,7 +321,7 @@ export default function AndroidBackupScreen() {
               <MaterialCommunityIcons name="database-outline" size={22} color={c.primary} />
             </View>
             <Text style={dynStyles.statLabel}>{t('backup.notesSize')}</Text>
-            <Text style={dynStyles.statValue}>{formatBytes(totalSize)}</Text>
+            <Text style={dynStyles.statValue}>{formatBytes(totalBlobBytes)}</Text>
           </View>
           <View style={dynStyles.statCard}>
             <View style={dynStyles.statIconWrap}>
@@ -300,6 +331,210 @@ export default function AndroidBackupScreen() {
             <Text style={dynStyles.statValue}>{t('backup.encryptionValue')}</Text>
           </View>
         </Animated.View>
+
+        {totalOnDiskBytes > 0 && (
+          <Animated.View entering={FadeInDown.duration(240).delay(150)} style={dynStyles.diskCard}>
+            <View style={dynStyles.diskRow}>
+              <Text style={dynStyles.diskLabel}>{t('backup.diskFootprint')}</Text>
+              <Text style={dynStyles.diskValue}>{formatBytes(totalOnDiskBytes)}</Text>
+            </View>
+            {reclaimableBytes > 0 && (
+              <View style={dynStyles.diskRow}>
+                <Text style={dynStyles.diskLabel}>{t('backup.reclaimable')}</Text>
+                <Text style={dynStyles.diskValuePrimary}>{formatBytes(reclaimableBytes)}</Text>
+              </View>
+            )}
+          </Animated.View>
+        )}
+
+        {buckets && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(160)}
+            style={dynStyles.breakdownSection}
+          >
+            <Text style={dynStyles.sectionTitle}>{t('backup.breakdownByType')}</Text>
+            <View style={dynStyles.breakdownCard}>
+              {buckets.image.count > 0 && (
+                <View style={dynStyles.breakdownRow}>
+                  <View style={dynStyles.breakdownRowMeta}>
+                    <MaterialCommunityIcons
+                      name="image-outline"
+                      size={18}
+                      color={c.onSurfaceVariant}
+                    />
+                    <Text style={dynStyles.breakdownTitle}>{t('backup.images')}</Text>
+                    <Text style={dynStyles.breakdownCount}>
+                      {t('backup.items', { count: buckets.image.count })}
+                    </Text>
+                  </View>
+                  <Text style={dynStyles.breakdownSize}>{formatBytes(buckets.image.size)}</Text>
+                </View>
+              )}
+              {buckets.video.count > 0 && (
+                <View style={dynStyles.breakdownRow}>
+                  <View style={dynStyles.breakdownRowMeta}>
+                    <MaterialCommunityIcons
+                      name="movie-open-outline"
+                      size={18}
+                      color={c.onSurfaceVariant}
+                    />
+                    <Text style={dynStyles.breakdownTitle}>{t('backup.videos')}</Text>
+                    <Text style={dynStyles.breakdownCount}>
+                      {t('backup.items', { count: buckets.video.count })}
+                    </Text>
+                  </View>
+                  <Text style={dynStyles.breakdownSize}>{formatBytes(buckets.video.size)}</Text>
+                </View>
+              )}
+              {buckets.audio.count > 0 && (
+                <View style={dynStyles.breakdownRow}>
+                  <View style={dynStyles.breakdownRowMeta}>
+                    <MaterialCommunityIcons
+                      name="microphone-outline"
+                      size={18}
+                      color={c.onSurfaceVariant}
+                    />
+                    <Text style={dynStyles.breakdownTitle}>{t('backup.voiceNotes')}</Text>
+                    <Text style={dynStyles.breakdownCount}>
+                      {t('backup.items', { count: buckets.audio.count })}
+                    </Text>
+                  </View>
+                  <Text style={dynStyles.breakdownSize}>{formatBytes(buckets.audio.size)}</Text>
+                </View>
+              )}
+              {buckets.file.count > 0 && (
+                <View style={dynStyles.breakdownRow}>
+                  <View style={dynStyles.breakdownRowMeta}>
+                    <MaterialCommunityIcons
+                      name="file-document-outline"
+                      size={18}
+                      color={c.onSurfaceVariant}
+                    />
+                    <Text style={dynStyles.breakdownTitle}>{t('backup.files')}</Text>
+                    <Text style={dynStyles.breakdownCount}>
+                      {t('backup.items', { count: buckets.file.count })}
+                    </Text>
+                  </View>
+                  <Text style={dynStyles.breakdownSize}>{formatBytes(buckets.file.size)}</Text>
+                </View>
+              )}
+              {buckets.text.count > 0 && (
+                <View style={dynStyles.breakdownRow}>
+                  <View style={dynStyles.breakdownRowMeta}>
+                    <MaterialCommunityIcons
+                      name="pencil-outline"
+                      size={18}
+                      color={c.onSurfaceVariant}
+                    />
+                    <Text style={dynStyles.breakdownTitle}>{t('backup.text')}</Text>
+                    <Text style={dynStyles.breakdownCount}>{t('backup.textAllNotesDesc')}</Text>
+                  </View>
+                  <Text style={dynStyles.breakdownSize}>{formatBytes(buckets.text.size)}</Text>
+                </View>
+              )}
+            </View>
+          </Animated.View>
+        )}
+
+        {notesStorageInfo.length > 0 && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(170)}
+            style={dynStyles.perNoteSection}
+          >
+            <Text style={dynStyles.sectionTitle}>
+              {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
+            </Text>
+            {notesStorageInfo.map((note: any) => (
+              <View key={note.key} style={dynStyles.noteCard}>
+                <Pressable
+                  onPress={() => setExpandedNote(expandedNote === note.key ? null : note.key)}
+                  style={({ pressed }) => [dynStyles.noteRow, pressed && { opacity: 0.7 }]}
+                >
+                  <Text style={dynStyles.noteTitle} numberOfLines={1}>
+                    {note.title || t('noteCard.untitled')}
+                  </Text>
+                  <View style={dynStyles.noteHeaderActions}>
+                    <Text style={dynStyles.noteSize}>{formatBytes(note.totalSize)}</Text>
+                    <MaterialCommunityIcons
+                      name={expandedNote === note.key ? 'chevron-down' : 'chevron-right'}
+                      size={16}
+                      color={c.onSurfaceVariant}
+                    />
+                  </View>
+                </Pressable>
+                {expandedNote === note.key && (
+                  <View>
+                    <View style={dynStyles.mediaRow}>
+                      <View style={dynStyles.mediaHeaderActions}>
+                        <MaterialCommunityIcons
+                          name="pencil-outline"
+                          size={14}
+                          color={c.onSurfaceVariant}
+                        />
+                        <Text style={dynStyles.mediaName} numberOfLines={1}>
+                          {t('backup.text')}
+                        </Text>
+                      </View>
+                      <Text style={dynStyles.mediaSize}>{formatBytes(note.contentSize)}</Text>
+                      <View style={{ width: 14, marginLeft: 8 }} />
+                    </View>
+                    {note.media?.map((m: any) => {
+                      const kind = mediaKind(m.name)
+                      let iconName: any = 'file-document-outline'
+                      if (kind === 'image') iconName = 'image-outline'
+                      else if (kind === 'video') iconName = 'movie-open-outline'
+                      else if (kind === 'audio') iconName = 'microphone-outline'
+
+                      return (
+                        <View key={m.path} style={dynStyles.mediaRow}>
+                          <View style={dynStyles.mediaHeaderActions}>
+                            <MaterialCommunityIcons
+                              name={iconName}
+                              size={14}
+                              color={c.onSurfaceVariant}
+                            />
+                            <Text style={dynStyles.mediaName} numberOfLines={1}>
+                              {m.name}
+                            </Text>
+                          </View>
+                          <View style={dynStyles.noteHeaderActions}>
+                            <Text style={dynStyles.mediaSize}>{formatBytes(m.size)}</Text>
+                            <Pressable
+                              onPress={() => handleDeleteMedia(note.key, m.path)}
+                              hitSlop={8}
+                              style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+                            >
+                              <MaterialCommunityIcons
+                                name="close"
+                                size={14}
+                                color={c.onSurfaceVariant}
+                              />
+                            </Pressable>
+                          </View>
+                        </View>
+                      )
+                    })}
+                  </View>
+                )}
+              </View>
+            ))}
+          </Animated.View>
+        )}
+
+        {reclaimableBytes > 0 && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(190)}
+            style={dynStyles.clearSection}
+          >
+            <Pressable
+              onPress={() => setConfirmClear(true)}
+              style={({ pressed }) => [dynStyles.clearBtn, pressed && { opacity: 0.7 }]}
+            >
+              <MaterialCommunityIcons name="trash-can-outline" size={18} color={c.error} />
+              <Text style={dynStyles.clearBtnText}>{t('backup.clearStorage')}</Text>
+            </Pressable>
+          </Animated.View>
+        )}
       </ScrollView>
 
       <Modal visible={showProgressModal} transparent animationType="fade" statusBarTranslucent>
@@ -373,6 +608,33 @@ export default function AndroidBackupScreen() {
                   </Text>
                 </Pressable>
               )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal visible={confirmClear} transparent animationType="fade" statusBarTranslucent>
+        <View style={dynStyles.overlayCenter}>
+          <View style={dynStyles.confirmCard}>
+            <Text style={dynStyles.progressTitle}>{t('backup.clearAllDataTitle')}</Text>
+            <Text style={dynStyles.progressDesc}>{t('backup.clearAllDataDesc')}</Text>
+            <View style={dynStyles.clearActionRow}>
+              <Pressable
+                onPress={() => setConfirmClear(false)}
+                style={({ pressed }) => [
+                  dynStyles.secondaryBtn,
+                  { flex: 1 },
+                  pressed && { opacity: 0.7 },
+                ]}
+              >
+                <Text style={dynStyles.secondaryBtnText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleClearStorage}
+                style={({ pressed }) => [dynStyles.clearConfirmBtn, pressed && { opacity: 0.7 }]}
+              >
+                <Text style={dynStyles.clearConfirmText}>{t('common.clear')}</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -542,6 +804,182 @@ function createDynamicStyles(c: any, insets: any) {
       color: c.onSurfaceVariant,
       fontFamily: 'PlusJakartaSans_400Regular',
     },
+    sectionTitle: {
+      fontSize: 12,
+      fontWeight: '700',
+      fontFamily: 'PlusJakartaSans_700Bold',
+      color: c.onSurfaceVariant,
+      marginBottom: 8,
+      marginLeft: 8,
+      letterSpacing: 0.5,
+    },
+    breakdownCard: {
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: 28,
+      paddingVertical: 8,
+    },
+    breakdownRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'center' as const,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+    },
+    breakdownTitle: {
+      fontSize: 14,
+      fontWeight: '500',
+      fontFamily: 'PlusJakartaSans_500Medium',
+      color: c.onSurface,
+    },
+    breakdownCount: {
+      fontSize: 12,
+      fontFamily: 'PlusJakartaSans_400Regular',
+      color: c.onSurfaceVariant,
+    },
+    breakdownSize: {
+      fontSize: 14,
+      fontWeight: '600',
+      fontFamily: 'PlusJakartaSans_600SemiBold',
+      color: c.onSurface,
+    },
+    diskCard: {
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: 28,
+      padding: 8,
+      marginTop: 12,
+    },
+    diskRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-between' as const,
+      alignItems: 'center' as const,
+      paddingHorizontal: 12,
+      paddingVertical: 10,
+    },
+    diskLabel: {
+      fontSize: 14,
+      color: c.onSurfaceVariant,
+      fontFamily: 'PlusJakartaSans_400Regular',
+    },
+    diskValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      fontFamily: 'PlusJakartaSans_600SemiBold',
+      color: c.onSurface,
+    },
+    diskValuePrimary: {
+      fontSize: 14,
+      fontWeight: '600',
+      fontFamily: 'PlusJakartaSans_600SemiBold',
+      color: c.primary,
+    },
+    breakdownSection: {
+      marginTop: 24,
+      marginBottom: 8,
+    },
+    perNoteSection: {
+      marginTop: 12,
+    },
+    breakdownRowMeta: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 12,
+    },
+    noteHeaderActions: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+    },
+    mediaHeaderActions: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 8,
+      flex: 1,
+    },
+    clearSection: {
+      marginTop: 8,
+      marginBottom: 8,
+    },
+    clearActionRow: {
+      flexDirection: 'row' as const,
+      gap: 12,
+      marginTop: 8,
+    },
+    noteCard: {
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: 20,
+      marginBottom: 8,
+      overflow: 'hidden' as const,
+    },
+    noteRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      padding: 16,
+    },
+    noteTitle: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '600',
+      fontFamily: 'PlusJakartaSans_600SemiBold',
+      color: c.onSurface,
+      marginRight: 8,
+    },
+    noteSize: {
+      fontSize: 13,
+      color: c.onSurfaceVariant,
+      fontFamily: 'PlusJakartaSans_400Regular',
+    },
+    mediaRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: hexWithAlpha(c.outlineVariant, 0.5),
+    },
+    mediaName: {
+      flex: 1,
+      fontSize: 13,
+      color: c.onSurfaceVariant,
+      fontFamily: 'PlusJakartaSans_400Regular',
+      marginRight: 8,
+    },
+    mediaSize: {
+      fontSize: 12,
+      color: c.onSurfaceVariant,
+      fontFamily: 'PlusJakartaSans_400Regular',
+    },
+    clearBtn: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: 8,
+      paddingVertical: 14,
+      borderRadius: 9999,
+      borderWidth: 1,
+      borderColor: c.error ?? '#ff453a',
+    },
+    clearBtnText: {
+      fontSize: 16,
+      fontWeight: '600',
+      fontFamily: 'PlusJakartaSans_600SemiBold',
+      color: c.error ?? '#ff453a',
+    },
+    clearConfirmBtn: {
+      flex: 1,
+      height: 54,
+      borderRadius: 9999,
+      backgroundColor: c.error ?? '#ff453a',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    clearConfirmText: {
+      fontSize: 16,
+      fontWeight: '600',
+      fontFamily: 'PlusJakartaSans_600SemiBold',
+      color: '#fff',
+    },
     overlayCenter: {
       flex: 1,
       backgroundColor: 'rgba(0,0,0,0.5)',
@@ -554,6 +992,13 @@ function createDynamicStyles(c: any, insets: any) {
       backgroundColor: c.surfaceContainerHigh ?? c.surface,
       borderRadius: 28,
       overflow: 'hidden',
+    },
+    confirmCard: {
+      width: '100%',
+      backgroundColor: c.surfaceContainerHigh ?? c.surface,
+      borderRadius: 28,
+      overflow: 'hidden',
+      padding: 28,
     },
     progressModalInner: {
       padding: 32,
