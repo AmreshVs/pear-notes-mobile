@@ -513,6 +513,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       const { uri, width, height, fileName } = asset
       const displayName = fileName || t('noteEditor.upload.photo')
       setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.processing') })
+      const screenW = Dimensions.get('window').width
       const maxWidth = screenW - 40
       const maxHeight = 400
       let finalWidth = width
