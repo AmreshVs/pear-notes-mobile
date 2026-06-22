@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 import {
   getColorTheme,
   getEditorFontSize,
@@ -10,6 +9,7 @@ import {
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 import Slider from '@react-native-community/slider'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'

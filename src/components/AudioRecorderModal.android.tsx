@@ -1,5 +1,5 @@
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
 import Slider from '@react-native-community/slider'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import {
   AudioModule,
   RecordingPresets,

@@ -4,7 +4,7 @@ import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/n
 import { getDeviceRemoved, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native'
+import { DarkTheme, DefaultTheme, ThemeProvider } from "expo-router/react-navigation"
 import { Directory, Paths } from 'expo-file-system'
 import { router, Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'

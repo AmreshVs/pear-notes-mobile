@@ -7,11 +7,6 @@
     "icon": "./assets/images/icon.png",
     "scheme": "pearnotes",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/images/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#202020"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.amreshvs.pearnotes",
@@ -27,7 +22,10 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.amreshvs.pearnotes",
-      "permissions": ["RECORD_AUDIO", "CAMERA"]
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -56,7 +54,12 @@
         {
           "microphonePermission": "Allow Pear Notes to access your microphone to record voice notes."
         }
-      ]
+      ],
+      "expo-localization",
+      "expo-splash-screen",
+      "expo-status-bar",
+      "expo-web-browser",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

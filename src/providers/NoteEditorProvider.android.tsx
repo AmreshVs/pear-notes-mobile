@@ -1,6 +1,5 @@
 import { Buffer } from 'buffer'
 
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import {
   ALL_NOTES_KEY,
@@ -10,6 +9,7 @@ import {
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { deleteNote, getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'

@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 import {
   getExportBuffer,
   getExportStatus,
@@ -19,6 +18,7 @@ import {
   mediaKind,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { clearStorage, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import { router, Stack } from 'expo-router'

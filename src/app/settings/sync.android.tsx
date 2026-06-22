@@ -1,4 +1,3 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 import {
   deleteSyncedDevice,
   getLocalPreferences,
@@ -13,6 +12,7 @@ import {
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, isValidInvite } from '@pear-notes/core/utils.js'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack } from 'expo-router'
