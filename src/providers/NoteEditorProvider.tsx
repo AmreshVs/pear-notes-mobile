@@ -117,15 +117,17 @@ const AttachMenu = memo(function AttachMenu({
     <ExpoUI.Host matchContents style={{ width: 44, height: 52 }}>
       <ExpoUI.Menu
         label={
-          <View style={styles.toolbarBtn}>
-            <SymbolView
-              name="paperclip"
-              size={22}
-              tintColor={colors.text}
-              weight="regular"
-              fallback={<View style={styles.fallbackIcon} />}
-            />
-          </View>
+          <ExpoUI.RNHostView matchContents>
+            <View style={styles.toolbarBtn}>
+              <SymbolView
+                name="paperclip"
+                size={22}
+                tintColor={colors.text}
+                weight="regular"
+                fallback={<View style={styles.fallbackIcon} />}
+              />
+            </View>
+          </ExpoUI.RNHostView>
         }
       >
         <ExpoUI.Button label="Record Audio" systemImage="mic" onPress={onRecordAudio} />
@@ -1424,15 +1426,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                     <ExpoUI.Host matchContents style={{ width: 48, height: 48 }}>
                       <ExpoUI.Menu
                         label={
-                          <View style={styles.headerBtnInner}>
-                            <SymbolView
-                              name="ellipsis"
-                              size={24}
-                              tintColor={colors.text}
-                              weight="medium"
-                              fallback={<View />}
-                            />
-                          </View>
+                          <ExpoUI.RNHostView matchContents>
+                            <View style={styles.headerBtnInner}>
+                              <SymbolView
+                                name="ellipsis"
+                                size={24}
+                                tintColor={colors.text}
+                                weight="medium"
+                                fallback={<View />}
+                              />
+                            </View>
+                          </ExpoUI.RNHostView>
                         }
                       >
                         <ExpoUI.Menu label="Move to" systemImage="folder.badge.plus">
@@ -1575,7 +1579,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   onIsPresentedChange={setIsImageActionSheetOpen}
                 >
                   <ExpoUI.ConfirmationDialog.Trigger>
-                    <View style={{ width: 1, height: 1 }} />
+                    <ExpoUI.RNHostView matchContents>
+                      <View style={{ width: 1, height: 1 }} />
+                    </ExpoUI.RNHostView>
                   </ExpoUI.ConfirmationDialog.Trigger>
                   <ExpoUI.ConfirmationDialog.Actions>
                     <ExpoUI.Button
@@ -1630,7 +1636,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   onIsPresentedChange={setIsAttachmentActionSheetOpen}
                 >
                   <ExpoUI.ConfirmationDialog.Trigger>
-                    <View style={{ width: 1, height: 1 }} />
+                    <ExpoUI.RNHostView matchContents>
+                      <View style={{ width: 1, height: 1 }} />
+                    </ExpoUI.RNHostView>
                   </ExpoUI.ConfirmationDialog.Trigger>
                   <ExpoUI.ConfirmationDialog.Actions>
                     <ExpoUI.Button
@@ -1718,7 +1726,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   toolbarBtn: {
-    width: 44,
+    width: 42,
     height: 52,
     justifyContent: 'center',
     alignItems: 'center',

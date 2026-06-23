@@ -4,20 +4,45 @@
     {
       "layers" : [
         {
-          "blend-mode" : "normal",
-          "fill" : "none",
           "glass" : false,
           "hidden" : false,
-          "image-name" : "Pear Notes Icon.png",
-          "name" : "Pear Notes Icon",
-          "position" : {
-            "scale" : 1.11,
-            "translation-in-points" : [
-              0,
-              22
-            ]
-          }
+          "image-name-specializations" : [
+            {
+              "value" : "pear-notes-logo.png"
+            },
+            {
+              "appearance" : "dark",
+              "value" : "pear-notes-logo-dark.png"
+            }
+          ],
+          "name" : "pear-notes-logo-dark"
         }
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+
+      ],
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "layers" : [
+
       ],
       "shadow" : {
         "kind" : "neutral",
@@ -33,6 +58,9 @@
     "circles" : [
       "watchOS"
     ],
-    "squares" : "shared"
+    "squares" : [
+      "iOS",
+      "macOS"
+    ]
   }
 }

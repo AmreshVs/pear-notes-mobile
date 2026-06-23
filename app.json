@@ -16,16 +16,11 @@
       }
     },
     "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
+      "icon": "./assets/images/icon.png",
       "predictiveBackGestureEnabled": false,
       "package": "com.amreshvs.pearnotes",
-      "permissions": [
-        "RECORD_AUDIO",
-        "CAMERA"
-      ]
+      "allowBackup": false,
+      "permissions": ["RECORD_AUDIO", "CAMERA"]
     },
     "web": {
       "bundler": "metro",
@@ -55,8 +50,19 @@
           "microphonePermission": "Allow Pear Notes to access your microphone to record voice notes."
         }
       ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#f2f2f7",
+          "image": "./assets/images/icon.png",
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#202020",
+            "image": "./assets/images/icon.png"
+          }
+        }
+      ],
       "expo-localization",
-      "expo-splash-screen",
       "expo-status-bar",
       "expo-web-browser",
       "expo-asset"

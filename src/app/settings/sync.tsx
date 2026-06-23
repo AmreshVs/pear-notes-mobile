@@ -27,7 +27,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react-native'
-import React, { memo, useCallback, useRef, useState } from 'react'
+import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -204,7 +204,7 @@ export default function SyncScreen() {
                       <ActivityIndicator size="small" color="#000" style={styles.indicatorMargin} />
                     )}
                     <Text style={styles.btnText}>
-                      {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateInvite')}
+                      {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateBtn')}
                     </Text>
                   </Pressable>
                 </>
