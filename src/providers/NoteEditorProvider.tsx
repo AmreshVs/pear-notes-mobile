@@ -1144,18 +1144,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           hyperdriveServerAddress.replace(/\/$/, ''),
         )
       }
-      const response = await fetch(cleanUrl)
-      const blob = await response.blob()
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          const result = reader.result as string
-          resolve(result.split(',')[1] || '')
-        }
-        reader.onerror = reject
-        reader.readAsDataURL(blob)
-      })
-      await FileSystem.writeAsStringAsync(localUri, base64, { encoding: 'base64' })
+      await FileSystem.downloadAsync(cleanUrl, localUri)
       return localUri
     },
     [hyperdriveServerAddress],
