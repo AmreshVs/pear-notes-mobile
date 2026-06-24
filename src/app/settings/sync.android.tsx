@@ -330,7 +330,7 @@ export default function AndroidSyncScreen() {
                 </Animated.View>
               )}
 
-              {true && (
+              {!isSynced && (
                 <Animated.View
                   entering={FadeInDown.duration(220).delay(80)}
                   style={ss.invitePasteSection}
