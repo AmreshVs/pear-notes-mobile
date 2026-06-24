@@ -4,9 +4,11 @@ import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/n
 import { getDeviceRemoved, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
+import * as Crypto from 'expo-crypto'
 import { Directory, Paths } from 'expo-file-system'
 import { router, Stack } from 'expo-router'
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation'
+import * as SecureStore from 'expo-secure-store'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -49,12 +51,22 @@ export default function RootLayout() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const prevDeviceRemovedRef = useRef(false)
+  const savedEncryptionKeyRef = useRef<string | null>(null)
 
   const initWorklet = useCallback(async () => {
     try {
       setFatalError(null)
       await startWorklet(storage)
-      await backendApi.ready({ storage, encryption: 'amresh' })
+      let key = await SecureStore.getItemAsync('db_encryption_key')
+      if (!key) {
+        const bytes = new Uint8Array(32)
+        Crypto.getRandomValues(bytes)
+        key = Array.from(bytes)
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('')
+        await SecureStore.setItemAsync('db_encryption_key', key)
+      }
+      await backendApi.ready({ storage, encryption: key })
       store.dispatch(appReady())
       store.dispatch(initApp())
     } catch (e) {
@@ -76,6 +88,13 @@ export default function RootLayout() {
         setIsResetting(true)
       }
       prevDeviceRemovedRef.current = deviceRemoved
+
+      const receiverStatus = state.sync.receiverStatus as any
+      const newEncryptionKey = receiverStatus?.encryptionKey
+      if (newEncryptionKey && newEncryptionKey !== savedEncryptionKeyRef.current) {
+        savedEncryptionKeyRef.current = newEncryptionKey
+        SecureStore.setItemAsync('db_encryption_key', newEncryptionKey).catch(console.error)
+      }
 
       if (state.sync.needsReload) {
         store.dispatch(setNeedsReload(false))

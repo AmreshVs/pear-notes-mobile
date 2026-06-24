@@ -14,6 +14,7 @@ import {
 import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
+import * as SecureStore from 'expo-secure-store'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -227,6 +228,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
           <Pressable
             onPress={() => {
+              SecureStore.deleteItemAsync('db_encryption_key').catch(console.error)
               dispatch(clearStorage())
               dispatch(setDeviceRemoved(false))
             }}
@@ -617,11 +619,7 @@ const createStyles = (theme: Theme) => {
       letterSpacing: 2,
       marginBottom: Space.xs,
       textAlign: 'center',
-      color: isAndroid
-        ? theme.isDark
-          ? '#FFFFFF'
-          : theme.colors.text
-        : `${theme.colors.primary}99`,
+      color: theme.colors.text,
     },
     idValue: {
       fontSize: FontSize.heading,
@@ -637,8 +635,8 @@ const createStyles = (theme: Theme) => {
     },
     idHex: {
       fontSize: FontSize.caption,
-      color: isAndroid ? '#FFFFFF' : theme.colors.textMuted,
-      fontWeight: isAndroid ? ('bold' as any) : undefined,
+      color: theme.colors.text,
+      fontWeight: 'bold',
       fontFamily: MonoFontFamily,
       letterSpacing: 2,
       textAlign: 'center',
@@ -885,8 +883,7 @@ const createStyles = (theme: Theme) => {
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
       textTransform: 'uppercase',
-      opacity: 0.6,
-      color: theme.colors.textSecondary,
+      color: theme.colors.text,
     },
   })
 }

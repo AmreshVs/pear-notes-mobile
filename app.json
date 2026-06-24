@@ -20,7 +20,10 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.amreshvs.pearnotes",
       "allowBackup": false,
-      "permissions": ["RECORD_AUDIO", "CAMERA"]
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -65,7 +68,8 @@
       "expo-localization",
       "expo-status-bar",
       "expo-web-browser",
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

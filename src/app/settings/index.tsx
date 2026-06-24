@@ -13,6 +13,7 @@ import {
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
+import * as SecureStore from 'expo-secure-store'
 import { ChevronRight, Download, RefreshCw, Trash2, X } from 'lucide-react-native'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -313,6 +314,7 @@ export default function SettingsScreen() {
           if (syncedDevices.length > 1 && localDeviceKey) {
             dispatch(deleteSyncedDevice({ key: localDeviceKey } as any))
           } else {
+            SecureStore.deleteItemAsync('db_encryption_key').catch(console.error)
             dispatch(clearStorage())
           }
           router.back()
