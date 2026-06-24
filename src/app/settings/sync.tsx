@@ -1020,7 +1020,9 @@ const createStyles = (theme: Theme) => {
       backgroundColor: '#000',
     },
     scannerOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: Space.xl,
@@ -1028,6 +1030,7 @@ const createStyles = (theme: Theme) => {
     scannerFrame: {
       width: '100%',
       maxWidth: 280,
+      maxHeight: 280,
       aspectRatio: 1,
       borderRadius: Radii.card,
       borderWidth: 2,
@@ -1103,7 +1106,7 @@ const createStyles = (theme: Theme) => {
     },
 
     modalFill: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
     },
     modalCenter: {
       flex: 1,

@@ -713,7 +713,7 @@ const createStyles = (theme: Theme) => {
       color: 'rgba(255,255,255,0.5)',
     },
     scannerOverlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: Space.xl,
@@ -748,7 +748,7 @@ const createStyles = (theme: Theme) => {
       justifyContent: 'center',
     },
     overlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0,0,0,0.35)',
     },
     globeIcon: { opacity: 0.2 },

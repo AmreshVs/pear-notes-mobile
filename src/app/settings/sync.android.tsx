@@ -16,7 +16,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack } from 'expo-router'
-import React, { memo, useCallback, useRef, useState } from 'react'
+import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -330,7 +330,7 @@ export default function AndroidSyncScreen() {
                 </Animated.View>
               )}
 
-              {!isSynced && (
+              {true && (
                 <Animated.View
                   entering={FadeInDown.duration(220).delay(80)}
                   style={ss.invitePasteSection}
@@ -510,12 +510,12 @@ export default function AndroidSyncScreen() {
               <View style={ss.scannerOverlay} pointerEvents="none">
                 <View style={ss.scannerFrame} />
               </View>
-              <View style={[ss.scannerHeader, { paddingTop: insets.top + 16 }]}>
+              <View style={[ss.scannerHeader, { top: insets.top + 16 }]}>
                 <Pressable onPress={handleCloseScanner} style={ss.scannerCloseBtn}>
                   <MaterialCommunityIcons name="close" size={20} color="#fff" />
                 </Pressable>
               </View>
-              <View style={[ss.scannerFooter, { paddingBottom: insets.bottom + 24 }]}>
+              <View style={[ss.scannerFooter, { bottom: insets.bottom + 24 }]}>
                 <Text style={ss.scannerTitle}>{t('sync.scanner.title')}</Text>
                 <Text style={ss.scannerDesc}>{t('sync.scanner.description')}</Text>
               </View>
@@ -978,7 +978,7 @@ const ss = StyleSheet.create({
   },
   scannerScreen: { flex: 1, backgroundColor: '#000' },
   scannerOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
@@ -986,6 +986,7 @@ const ss = StyleSheet.create({
   scannerFrame: {
     width: '100%',
     maxWidth: 280,
+    maxHeight: 280,
     aspectRatio: 1,
     borderRadius: 20,
     borderWidth: 2,

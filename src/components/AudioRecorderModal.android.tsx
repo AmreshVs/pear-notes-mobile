@@ -10,7 +10,7 @@ import {
   useAudioRecorder,
 } from 'expo-audio'
 import * as Haptics from 'expo-haptics'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
@@ -801,7 +801,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
           style={[styles.backdrop, backdropAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={handleCancel} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} />
         </Animated.View>
 
         <Animated.View
@@ -855,7 +855,7 @@ function createStyles(theme: Theme) {
       justifyContent: 'flex-end',
     },
     backdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: 'rgba(0,0,0,0.45)',
     },
     sheetWrap: {

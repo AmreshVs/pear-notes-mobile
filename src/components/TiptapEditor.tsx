@@ -1,5 +1,5 @@
 import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
-import React, {
+import {
   forwardRef,
   memo,
   useCallback,
@@ -514,7 +514,7 @@ const createStyles = (theme: Theme) =>
     flex: { flex: 1 },
     webView: { flex: 1, backgroundColor: theme.colors.background },
     overlay: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       justifyContent: 'center',
       alignItems: 'center',
       zIndex: 10,

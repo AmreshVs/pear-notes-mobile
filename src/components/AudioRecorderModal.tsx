@@ -10,7 +10,7 @@ import {
 } from 'expo-audio'
 import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
@@ -786,7 +786,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
           style={[styles.backdrop, backdropAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
-          <Pressable style={StyleSheet.absoluteFillObject} onPress={handleCancel} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} />
         </Animated.View>
 
         <Animated.View
@@ -794,7 +794,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
           pointerEvents={visible ? 'auto' : 'none'}
         >
           {isDark ? (
-            <GlassView intensity={26} borderRadius={34} style={styles.sheet}>
+            <GlassView intensity={70} borderRadius={34} style={styles.sheet}>
               <SheetBody
                 styles={styles}
                 colors={colors}
@@ -877,7 +877,7 @@ const createStyles = (theme: Theme) =>
       justifyContent: 'flex-end',
     },
     backdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.38)',
     },
     sheetWrap: {

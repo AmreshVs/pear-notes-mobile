@@ -1661,7 +1661,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   edgeSwipeZone: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     width: 32,
     zIndex: 30,
   },

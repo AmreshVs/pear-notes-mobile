@@ -9,7 +9,6 @@ import {
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
 import { ChevronRight, Download, RefreshCw, X } from 'lucide-react-native'
-import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActionSheetIOS, Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
@@ -275,7 +274,7 @@ const createStyles = (theme: Theme) =>
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
       marginBottom: Space.md,
-      marginTop: Space.xxxl,
+      marginTop: Space.xl,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },
