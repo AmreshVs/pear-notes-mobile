@@ -1,6 +1,6 @@
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
+import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
 import MaterialCommunityIcons from "@react-native-vector-icons/material-design-icons/static"
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -90,13 +90,6 @@ export function AttachmentSheet({
     [dismiss, onPickImage, onTakePhoto, onTakeVideo, onPickFile, onScanDocument, onRecordAudio],
   )
 
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
-    ),
-    [],
-  )
-
   const sheetBg = (c as any).surfaceContainerLow ?? c.surface
 
   const backgroundStyle = useMemo(
@@ -108,7 +101,7 @@ export function AttachmentSheet({
     <BottomSheetModal
       ref={ref}
       enableDynamicSizing
-      backdropComponent={renderBackdrop}
+      enablePanDownToClose
       backgroundStyle={backgroundStyle}
       handleIndicatorStyle={[
         styles.handle,
@@ -162,7 +155,6 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: 20,
-    paddingTop: 8,
   },
   title: {
     fontSize: 20,
@@ -171,6 +163,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
     paddingVertical: 14,
     paddingHorizontal: 4,
+    paddingTop: 0,
   },
   grid: {
     flexDirection: 'row',

@@ -8,15 +8,14 @@ import {
   startImportBackup,
 } from '@pear-notes/core/store/slices/backupSlice.js'
 import {
-  subscribeStorageInfo,
+  deleteNoteMedia,
+  getNotesStorageInfo,
+  getReclaimableBytes,
   getTotalBlobBytes,
   getTotalOnDiskBytes,
-  getReclaimableBytes,
-  getNotesStorageInfo,
-  getStorageIsLoading,
-  deleteNoteMedia,
-  selectStorageByKind,
   mediaKind,
+  selectStorageByKind,
+  subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { clearStorage, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import * as DocumentPicker from 'expo-document-picker'
@@ -27,19 +26,18 @@ import {
   ChevronDown,
   ChevronRight,
   CloudUpload,
-  Database,
+  FileText,
+  Film,
   HardDrive,
+  Image as ImageIcon,
   Lock,
+  Mic,
+  PenLine,
   RotateCcw,
   Trash2,
   X,
-  Image as ImageIcon,
-  Film,
-  Mic,
-  FileText,
-  PenLine,
 } from 'lucide-react-native'
-import React, { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -47,11 +45,11 @@ import {
   Modal,
   Platform,
   Pressable,
+  Text as RNText,
+  View as RNView,
   ScrollView,
   Share,
   StyleSheet,
-  Text as RNText,
-  View as RNView,
 } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'

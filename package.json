@@ -25,7 +25,6 @@
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~56.0.18",
-    "@gorhom/bottom-sheet": "^5.2.8",
     "@pchmn/expo-material3-theme": "^1.4.0",
     "@pear-notes/core": "git+https://github.com/AmreshVs/pear-notes-core.git",
     "@react-native-community/slider": "^5.1.2",

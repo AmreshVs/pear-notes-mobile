@@ -369,7 +369,7 @@ function createDynamicStyles(c: any, insets: any) {
       fontWeight: '800',
       letterSpacing: 1.2,
       color: c.primary,
-      marginTop: 12,
+      marginTop: 24,
       marginBottom: 16,
     },
     card: {

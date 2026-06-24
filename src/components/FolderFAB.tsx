@@ -1,19 +1,17 @@
 import { FolderPlus } from 'lucide-react-native'
-import React from 'react'
 import { Pressable, StyleSheet } from 'react-native'
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
 
 import { GlassView } from '@/components/GlassView'
 import { useColors } from '@/components/Themed'
-import { Space, useCommonStyles } from '@/constants/commonStyles'
+import { Space } from '@/constants/commonStyles'
 
 interface FolderFABProps {
   onPress: () => void
 }
 
-export function FolderFAB({ onPress }: FolderFABProps) {
+export function FolderFAB({ onPress = () => {} }: FolderFABProps) {
   const colors = useColors()
-  const common = useCommonStyles()
 
   const scale = useSharedValue(1)
   const animatedStyle = useAnimatedStyle(() => ({

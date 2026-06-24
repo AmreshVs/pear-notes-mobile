@@ -1,6 +1,6 @@
-import { BottomSheetBackdrop, BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet'
+import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
 import MaterialCommunityIcons from "@react-native-vector-icons/material-design-icons/static"
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -48,13 +48,6 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
     }
   }, [visible])
 
-  const renderBackdrop = useCallback(
-    (props: any) => (
-      <BottomSheetBackdrop {...props} appearsOnIndex={0} disappearsOnIndex={-1} />
-    ),
-    [],
-  )
-
   const sheetBg = c.surfaceContainerLow ?? c.surface
 
   const backgroundStyle = useMemo(
@@ -66,7 +59,6 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
     <BottomSheetModal
       ref={ref}
       enableDynamicSizing
-      backdropComponent={renderBackdrop}
       backgroundStyle={backgroundStyle}
       handleIndicatorStyle={[
         styles.handle,

@@ -1223,7 +1223,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           isActive={isActive}
           editorRef={editorRef}
           toolbarBottom={keyboardHeight > 0 ? keyboardHeight + 42 : insets.bottom + 12}
-          onAttachPress={() => setAttachSheetVisible(true)}
+          onAttachPress={() => {
+            console.log('onAttachPress called')
+            Keyboard.dismiss()
+            editorRef.current?.blur()
+            setAttachSheetVisible(true)
+          }}
           c={c}
           isDark={theme.dark}
         />
