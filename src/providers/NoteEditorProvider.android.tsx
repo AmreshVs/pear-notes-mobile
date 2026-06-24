@@ -33,7 +33,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native'
-import { Divider, Menu } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -43,6 +42,7 @@ import { isImageFile } from '../utils/media'
 
 import { AttachmentSheet } from '@/components/android/AttachmentSheet'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
+import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import {
   TiptapEditor,
@@ -278,8 +278,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
   const [selectedAttachmentSrc, setSelectedAttachmentSrc] = useState<string | null>(null)
   const [selectedAttachmentFileName, setSelectedAttachmentFileName] = useState<string | null>(null)
-  const [moreMenuVisible, setMoreMenuVisible] = useState(false)
   const [moveDialogVisible, setMoveDialogVisible] = useState(false)
+  const [moreSheetVisible, setMoreSheetVisible] = useState(false)
   const [attachSheetVisible, setAttachSheetVisible] = useState(false)
   const [imageSheetVisible, setImageSheetVisible] = useState(false)
   const [attachmentSheetVisible2, setAttachmentSheetVisible2] = useState(false)
@@ -968,7 +968,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleDeleteNote = useCallback(() => {
     if (!noteId) return
-    setMoreMenuVisible(false)
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     setDialogInfo({
       title: t('noteCard.actions.delete'),
@@ -990,6 +989,30 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       },
     })
   }, [noteId, dispatch, slideAnim, t])
+
+  const moreSheetActions = useMemo(() => {
+    const list = []
+    if (moveFolders.length > 0) {
+      list.push({
+        icon: 'folder-move-outline',
+        label: t('noteCard.actions.moveTo'),
+        onPress: () => {
+          setMoreSheetVisible(false)
+          setMoveDialogVisible(true)
+        },
+      })
+    }
+    list.push({
+      icon: 'delete-outline',
+      label: t('noteCard.actions.delete'),
+      onPress: () => {
+        setMoreSheetVisible(false)
+        handleDeleteNote()
+      },
+      destructive: true,
+    })
+    return list
+  }, [moveFolders, t, handleDeleteNote])
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
@@ -1080,17 +1103,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const dynamicStyles = useMemo(
     () =>
       StyleSheet.create({
-        menuItemDelete: { color: c.error },
-        moveDialog: {
-          backgroundColor: c.surfaceContainerHighest ?? c.surface,
-          borderRadius: 28,
-          padding: 24,
-          width: Math.min(width - 48, 400),
-          elevation: 6,
-        },
-        moveDialogTitle: { color: c.onSurface },
-        moveFolderText: { color: c.onSurface },
-        dialogBtnText: { color: c.onSurfaceVariant },
         infoDialog: {
           backgroundColor: c.surfaceContainerHigh,
           borderRadius: 28,
@@ -1104,9 +1116,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         infoDialogConfirmTextInfo: { color: c.primary, fontWeight: '600' },
         infoDialogConfirmTextDestructive: { color: c.error, fontWeight: '600' },
         infoDialogOkayText: { color: c.primary, fontWeight: '600' },
-        moveFolderItemPressed: {
-          backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surfaceVariant, 0.5),
-        },
       }),
     [c, width, height],
   )
@@ -1178,43 +1187,26 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             <MaterialCommunityIcons name="export-variant" size={20} color={c.primary} />
           </Pressable>
 
-          <Menu
-            visible={moreMenuVisible}
-            onDismiss={() => setMoreMenuVisible(false)}
-            contentStyle={{ borderRadius: 12, overflow: 'hidden' }}
-            anchor={
-              <Pressable
-                onPress={() => setMoreMenuVisible(true)}
-                style={({ pressed }) => [
-                  staticStyles.floatingIconBtn,
-                  { backgroundColor: floatingBtnBg },
-                  floatingBtnBorderStyle,
-                  pressed && { opacity: 0.7 },
-                ]}
-                hitSlop={8}
-              >
-                <MaterialCommunityIcons name="dots-vertical" size={22} color={c.primary} />
-              </Pressable>
-            }
+          <Pressable
+            onPress={() => setMoreSheetVisible(true)}
+            style={({ pressed }) => [
+              staticStyles.floatingIconBtn,
+              { backgroundColor: floatingBtnBg },
+              floatingBtnBorderStyle,
+              pressed && { opacity: 0.7 },
+            ]}
+            hitSlop={8}
           >
-            {moveFolders.length > 0 && (
-              <Menu.Item
-                leadingIcon="folder-move-outline"
-                title={t('noteCard.actions.moveTo')}
-                onPress={() => {
-                  setMoreMenuVisible(false)
-                  setMoveDialogVisible(true)
-                }}
-              />
-            )}
-            {moveFolders.length > 0 && <Divider />}
-            <Menu.Item
-              leadingIcon="delete-outline"
-              title={t('noteCard.actions.delete')}
-              onPress={handleDeleteNote}
-              titleStyle={dynamicStyles.menuItemDelete}
-            />
-          </Menu>
+            <MaterialCommunityIcons name="dots-vertical" size={22} color={c.primary} />
+          </Pressable>
+
+          <BottomActionSheet
+            visible={moreSheetVisible}
+            onDismiss={() => setMoreSheetVisible(false)}
+            title={titleRef.current || t('noteCard.untitled')}
+            subtitle={t('noteCard.actions.options')}
+            actions={moreSheetActions}
+          />
 
           <Pressable
             onPress={() => {
@@ -1268,53 +1260,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           />
         )}
 
-        <Modal
+        <FolderPickerSheet
           visible={moveDialogVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setMoveDialogVisible(false)}
-          statusBarTranslucent
-        >
-          <Pressable style={staticStyles.modalOverlay} onPress={() => setMoveDialogVisible(false)}>
-            <Pressable style={dynamicStyles.moveDialog} onPress={() => {}}>
-              <Text style={[staticStyles.dialogTitle, dynamicStyles.moveDialogTitle]}>
-                {t('noteCard.actions.moveTo')}
-              </Text>
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                style={staticStyles.moveDialogContent}
-              >
-                {moveFolders.map((f: any) => (
-                  <Pressable
-                    key={f.id}
-                    onPress={() => handleConfirmMove(f.id)}
-                    style={({ pressed }) => [
-                      staticStyles.moveFolderItem,
-                      pressed && dynamicStyles.moveFolderItemPressed,
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="folder-outline"
-                      size={20}
-                      color={c.primary}
-                      style={staticStyles.moveFolderIcon}
-                    />
-                    <Text style={[staticStyles.moveFolderText, dynamicStyles.moveFolderText]}>
-                      {f.name}
-                    </Text>
-                  </Pressable>
-                ))}
-              </ScrollView>
-              <View style={staticStyles.dialogActions}>
-                <Pressable onPress={() => setMoveDialogVisible(false)} style={staticStyles.dialogBtn}>
-                  <Text style={[staticStyles.dialogBtnText, dynamicStyles.dialogBtnText]}>
-                    {t('common.cancel')}
-                  </Text>
-                </Pressable>
-              </View>
-            </Pressable>
-          </Pressable>
-        </Modal>
+          onDismiss={() => setMoveDialogVisible(false)}
+          folders={moveFolders}
+          onSelect={(folderId) => {
+            setMoveDialogVisible(false)
+            handleConfirmMove(folderId)
+          }}
+        />
 
         <Modal
           visible={!!dialogInfo}
@@ -1483,23 +1437,6 @@ const staticStyles = StyleSheet.create({
     fontFamily: 'PlusJakartaSans_400Regular',
     marginTop: 1,
   },
-  moveDialogContent: {
-    maxHeight: 320,
-  },
-  moveFolderItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-    paddingVertical: 14,
-  },
-  moveFolderIcon: {
-    marginRight: 12,
-  },
-  moveFolderText: {
-    fontSize: 15,
-    fontFamily: 'PlusJakartaSans_500Medium',
-    fontWeight: '500',
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -1521,11 +1458,6 @@ const staticStyles = StyleSheet.create({
   dialogBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-  },
-  dialogBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
   },
 })
 
