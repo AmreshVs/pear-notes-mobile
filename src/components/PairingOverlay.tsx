@@ -301,7 +301,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
               placeholder={t('pairing.overlay.placeholder')}
               placeholderTextColor={colors.textSecondary}
               style={styles.input}
-              autoFocus
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -448,7 +447,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           {cameraPermission?.granted ? (
             <>
               <CameraView
-                style={StyleSheet.absoluteFill}
+                style={[StyleSheet.absoluteFill, { zIndex: 1 }]}
                 facing="back"
                 barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
                 onBarcodeScanned={hasScanned ? undefined : handleBarcodeScanned}
@@ -676,6 +675,7 @@ const createStyles = (theme: Theme) => {
       borderRadius: Radii.card,
       backgroundColor: 'rgba(0,0,0,0.55)',
       gap: Space.sm,
+      zIndex: 1,
     },
     scannerTitle: {
       fontSize: FontSize.heading,
@@ -717,10 +717,13 @@ const createStyles = (theme: Theme) => {
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: Space.xl,
+      backgroundColor: 'transparent',
+      zIndex: 1,
     },
     scannerFrame: {
       width: '100%',
       maxWidth: 280,
+      maxHeight: 280,
       aspectRatio: 1,
       borderRadius: Radii.card,
       borderWidth: 2,

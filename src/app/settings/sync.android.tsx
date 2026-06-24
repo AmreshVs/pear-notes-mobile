@@ -16,11 +16,10 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack } from 'expo-router'
-import { memo, useCallback, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Modal,
   Pressable,
@@ -36,6 +35,7 @@ import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -72,6 +72,8 @@ export default function AndroidSyncScreen() {
   const [scannerVisible, setScannerVisible] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
+  const [deleteSheetVisible, setDeleteSheetVisible] = useState(false)
+  const [deviceToDeleteKey, setDeviceToDeleteKey] = useState<string | null>(null)
   const scrollRef = useRef<ScrollView>(null)
 
   const handleCopy = useCallback(async () => {
@@ -127,19 +129,27 @@ export default function AndroidSyncScreen() {
     [t],
   )
 
-  const handleDeleteDevice = useCallback(
-    (deviceKey: string) => {
-      Alert.alert(t('sync.delete.title'), t('sync.delete.description'), [
-        { text: t('sync.delete.cancel'), style: 'cancel' },
-        {
-          text: t('sync.delete.remove'),
-          style: 'destructive',
-          onPress: () => dispatch(deleteSyncedDevice({ key: deviceKey } as any)),
+  const deleteActions = useMemo(
+    () => [
+      {
+        icon: 'trash-can-outline',
+        label: t('sync.delete.remove'),
+        destructive: true,
+        onPress: () => {
+          setDeleteSheetVisible(false)
+          if (deviceToDeleteKey) {
+            dispatch(deleteSyncedDevice({ key: deviceToDeleteKey } as any))
+          }
         },
-      ])
-    },
-    [dispatch, t],
+      },
+    ],
+    [dispatch, deviceToDeleteKey, t],
   )
+
+  const handleDeleteDevice = useCallback((deviceKey: string) => {
+    setDeviceToDeleteKey(deviceKey)
+    setDeleteSheetVisible(true)
+  }, [])
 
   const otherDevices = syncedDevices.filter((d: any) => !d.isLocal)
   const localDevices = syncedDevices.filter((d: any) => d.isLocal)
@@ -542,6 +552,14 @@ export default function AndroidSyncScreen() {
           )}
         </View>
       </Modal>
+
+      <BottomActionSheet
+        visible={deleteSheetVisible}
+        onDismiss={() => setDeleteSheetVisible(false)}
+        title={t('sync.delete.title')}
+        subtitle={t('sync.delete.description')}
+        actions={deleteActions}
+      />
     </View>
   )
 }

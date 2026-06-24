@@ -59,6 +59,7 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
     <BottomSheetModal
       ref={ref}
       enableDynamicSizing
+      enablePanDownToClose
       backgroundStyle={backgroundStyle}
       handleIndicatorStyle={[
         styles.handle,
@@ -161,8 +162,9 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   header: {
-    paddingVertical: 16,
+    paddingBottom: 24,
     paddingHorizontal: 4,
+    paddingTop: 0,
     gap: 4,
   },
   title: {
@@ -170,6 +172,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontFamily: 'PlusJakartaSans_700Bold',
     letterSpacing: -0.3,
+    marginBottom: 12,
   },
   subtitle: {
     fontSize: 13,

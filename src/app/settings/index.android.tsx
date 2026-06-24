@@ -8,6 +8,11 @@ import {
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
+import {
+  deleteSyncedDevice,
+  getSyncedDevices,
+} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import Slider from '@react-native-community/slider'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -42,9 +47,38 @@ export default function AndroidSettingsScreen() {
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
   const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
+  const syncedDevices = useSelector(getSyncedDevices)
+
+  const localDevice = syncedDevices.find((d: any) => d.isLocal)
+  const localDeviceKey = localDevice?.key
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
   const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
+  const [resetSheetVisible, setResetSheetVisible] = React.useState(false)
+
+  const handleResetPress = () => {
+    setResetSheetVisible(true)
+  }
+
+  const resetActions = useMemo(
+    () => [
+      {
+        icon: 'trash-can-outline',
+        label: t('settings.danger.resetApp'),
+        destructive: true,
+        onPress: () => {
+          setResetSheetVisible(false)
+          if (syncedDevices.length > 1 && localDeviceKey) {
+            dispatch(deleteSyncedDevice({ key: localDeviceKey } as any))
+          } else {
+            dispatch(clearStorage())
+          }
+          router.back()
+        },
+      },
+    ],
+    [dispatch, localDeviceKey, t],
+  )
 
   const supportsDynamicColor = useMemo(() => {
     return Platform.OS === 'android' && Number(Platform.Version) >= 31
@@ -305,6 +339,38 @@ export default function AndroidSettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(220)}>
+          <Text style={dynStyles.sectionCapMargin}>{t('settings.danger.header')}</Text>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(240)}
+          layout={LinearTransition.springify().damping(20).stiffness(220)}
+        >
+          <Pressable
+            onPress={handleResetPress}
+            style={({ pressed }) => [dynStyles.cardRow, pressed && dynStyles.cardPressed]}
+          >
+            <View
+              style={[
+                dynStyles.syncIconWrap,
+                { backgroundColor: hexWithAlpha(c.error || '#FF0000', 0.15) },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="trash-can-outline"
+                size={22}
+                color={c.error || '#FF0000'}
+              />
+            </View>
+            <View style={{ flex: 1, marginLeft: 16 }}>
+              <Text style={[dynStyles.rowTitle, { color: c.error || '#FF0000' }]}>
+                {t('settings.danger.resetApp')}
+              </Text>
+            </View>
+          </Pressable>
+        </Animated.View>
+
+        <Animated.View entering={FadeIn.duration(220).delay(260)}>
           <Text style={dynStyles.footerText}>{t('settings.footer')}</Text>
         </Animated.View>
       </ScrollView>
@@ -321,6 +387,14 @@ export default function AndroidSettingsScreen() {
         onDismiss={() => setFontSheetVisible(false)}
         title={t('settings.general.fontFamily')}
         actions={fontActions}
+      />
+
+      <BottomActionSheet
+        visible={resetSheetVisible}
+        onDismiss={() => setResetSheetVisible(false)}
+        title={t('settings.reset.confirmTitle')}
+        subtitle={t('settings.reset.confirmMessage')}
+        actions={resetActions}
       />
     </View>
   )
