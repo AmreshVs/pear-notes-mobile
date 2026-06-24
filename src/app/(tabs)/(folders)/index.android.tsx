@@ -16,15 +16,17 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Alert,
+  Modal,
   Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native'
-import { Dialog, FAB, TextInput as PaperTextInput, Portal } from 'react-native-paper'
+import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -82,6 +84,7 @@ export default function AndroidFoldersScreen() {
   const folders = useSelector(getFolders) as Folder[]
   const noteCounts = useSelector(getNoteCountsPerFolder) as Record<string, number>
   const selectedNote = useSelector(getSelectedNote) as string | null
+  const { width, height } = useWindowDimensions()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
@@ -184,7 +187,10 @@ export default function AndroidFoldersScreen() {
     ])
   }, [folderSheet, dispatch, t])
 
-  const dynStyles = useMemo(() => createDynamicStyles(c, insets.bottom), [c, insets.bottom])
+  const dynStyles = useMemo(
+    () => createDynamicStyles(c, insets.bottom, width, height),
+    [c, insets.bottom, width, height],
+  )
 
   return (
     <View style={dynStyles.root}>
@@ -301,14 +307,18 @@ export default function AndroidFoldersScreen() {
         theme={{ colors: { primaryContainer: c.primaryContainer } }}
       />
 
-      <Portal>
-        <Dialog
-          visible={!!renameDialog}
-          onDismiss={() => setRenameDialog(null)}
-          style={{ backgroundColor: c.surfaceContainerHighest ?? c.surface }}
-        >
-          <Dialog.Title style={{ color: c.onSurface }}>{t('folders.renameTitle')}</Dialog.Title>
-          <Dialog.Content>
+      <Modal
+        visible={!!renameDialog}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRenameDialog(null)}
+        statusBarTranslucent
+      >
+        <Pressable style={staticStyles.modalOverlay} onPress={() => setRenameDialog(null)}>
+          <Pressable style={dynStyles.renameDialog} onPress={() => {}}>
+            <Text style={[staticStyles.dialogTitle, { color: c.onSurface }]}>
+              {t('folders.renameTitle')}
+            </Text>
             <PaperTextInput
               value={renameText}
               onChangeText={setRenameText}
@@ -316,21 +326,21 @@ export default function AndroidFoldersScreen() {
               mode="outlined"
               label={t('folders.renameLabel')}
             />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
-              <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
-                {t('common.cancel')}
-              </Text>
-            </Pressable>
-            <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
-              <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
-                {t('folders.buttons.rename')}
-              </Text>
-            </Pressable>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+            <View style={staticStyles.dialogActions}>
+              <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
+                <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
+                  {t('common.cancel')}
+                </Text>
+              </Pressable>
+              <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
+                <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
+                  {t('folders.buttons.rename')}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <BottomActionSheet
         visible={!!folderSheet}
@@ -506,6 +516,24 @@ const staticStyles = StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 6,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dialogTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
+    marginBottom: 16,
+  },
+  dialogActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 16,
+    gap: 4,
+  },
   dialogBtn: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -561,8 +589,24 @@ const rowStyles = StyleSheet.create({
   },
 })
 
-function createDynamicStyles(c: ExtendedColors, bottomInset: number) {
+function createDynamicStyles(
+  c: ExtendedColors,
+  bottomInset: number,
+  width: number,
+  height: number,
+) {
   return {
+    renameDialog: {
+      backgroundColor: c.surfaceContainerHighest ?? c.surface,
+      borderRadius: 28,
+      padding: 24,
+      width: Math.min(width - 48, 400),
+      elevation: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+    },
     root: {
       flex: 1,
       backgroundColor: c.background,

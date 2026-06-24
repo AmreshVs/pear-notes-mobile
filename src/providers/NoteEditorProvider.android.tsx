@@ -24,14 +24,16 @@ import {
   Image,
   InteractionManager,
   Keyboard,
+  Modal,
   Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native'
-import { Dialog, Divider, Menu, Portal } from 'react-native-paper'
+import { Divider, Menu } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -265,6 +267,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const editorRef = useRef<TiptapEditorHandle>(null)
+  const { width, height } = useWindowDimensions()
 
   const [noteId, setNoteId] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -1078,11 +1081,23 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     () =>
       StyleSheet.create({
         menuItemDelete: { color: c.error },
-        moveDialog: { backgroundColor: c.surfaceContainerHighest ?? c.surface },
+        moveDialog: {
+          backgroundColor: c.surfaceContainerHighest ?? c.surface,
+          borderRadius: 28,
+          padding: 24,
+          width: Math.min(width - 48, 400),
+          elevation: 6,
+        },
         moveDialogTitle: { color: c.onSurface },
         moveFolderText: { color: c.onSurface },
         dialogBtnText: { color: c.onSurfaceVariant },
-        infoDialog: { backgroundColor: c.surfaceContainerHigh },
+        infoDialog: {
+          backgroundColor: c.surfaceContainerHigh,
+          borderRadius: 28,
+          padding: 24,
+          width: Math.min(width - 48, 400),
+          elevation: 6,
+        },
         infoDialogTitle: { color: c.onSurface },
         infoDialogMessage: { color: c.onSurfaceVariant, fontSize: 16 },
         infoDialogCancelText: { color: c.onSurfaceVariant, fontWeight: '600' },
@@ -1093,7 +1108,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surfaceVariant, 0.5),
         },
       }),
-    [c],
+    [c, width, height],
   )
 
   const uploadBannerStyle = useMemo(
@@ -1253,17 +1268,22 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           />
         )}
 
-        <Portal>
-          <Dialog
-            visible={moveDialogVisible}
-            onDismiss={() => setMoveDialogVisible(false)}
-            style={dynamicStyles.moveDialog}
-          >
-            <Dialog.Title style={dynamicStyles.moveDialogTitle}>
-              {t('noteCard.actions.moveTo')}
-            </Dialog.Title>
-            <Dialog.Content style={staticStyles.moveDialogContent}>
-              <ScrollView showsVerticalScrollIndicator={false}>
+        <Modal
+          visible={moveDialogVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setMoveDialogVisible(false)}
+          statusBarTranslucent
+        >
+          <Pressable style={staticStyles.modalOverlay} onPress={() => setMoveDialogVisible(false)}>
+            <Pressable style={dynamicStyles.moveDialog} onPress={() => {}}>
+              <Text style={[staticStyles.dialogTitle, dynamicStyles.moveDialogTitle]}>
+                {t('noteCard.actions.moveTo')}
+              </Text>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={staticStyles.moveDialogContent}
+              >
                 {moveFolders.map((f: any) => (
                   <Pressable
                     key={f.id}
@@ -1285,61 +1305,67 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   </Pressable>
                 ))}
               </ScrollView>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Pressable onPress={() => setMoveDialogVisible(false)} style={staticStyles.dialogBtn}>
-                <Text style={[staticStyles.dialogBtnText, dynamicStyles.dialogBtnText]}>
-                  {t('common.cancel')}
-                </Text>
-              </Pressable>
-            </Dialog.Actions>
-          </Dialog>
-
-          <Dialog
-            visible={!!dialogInfo}
-            onDismiss={() => setDialogInfo(null)}
-            style={dynamicStyles.infoDialog}
-          >
-            <Dialog.Title style={dynamicStyles.infoDialogTitle}>{dialogInfo?.title}</Dialog.Title>
-            <Dialog.Content>
-              <Text style={dynamicStyles.infoDialogMessage}>{dialogInfo?.message}</Text>
-            </Dialog.Content>
-            <Dialog.Actions>
-              <Pressable onPress={() => setDialogInfo(null)} style={staticStyles.dialogBtn}>
-                <Text
-                  style={
-                    dialogInfo?.onConfirm
-                      ? dynamicStyles.infoDialogCancelText
-                      : dynamicStyles.infoDialogOkayText
-                  }
-                >
-                  {dialogInfo?.onConfirm
-                    ? t('common.cancel', 'Cancel')
-                    : t('pairing.overlay.okay', 'Okay')}
-                </Text>
-              </Pressable>
-              {dialogInfo?.onConfirm && (
-                <Pressable
-                  onPress={() => {
-                    dialogInfo.onConfirm!()
-                    setDialogInfo(null)
-                  }}
-                  style={staticStyles.dialogBtn}
-                >
-                  <Text
-                    style={
-                      dialogInfo.isDestructive
-                        ? dynamicStyles.infoDialogConfirmTextDestructive
-                        : dynamicStyles.infoDialogConfirmTextInfo
-                    }
-                  >
-                    {dialogInfo.confirmText ?? t('common.confirm', 'Confirm')}
+              <View style={staticStyles.dialogActions}>
+                <Pressable onPress={() => setMoveDialogVisible(false)} style={staticStyles.dialogBtn}>
+                  <Text style={[staticStyles.dialogBtnText, dynamicStyles.dialogBtnText]}>
+                    {t('common.cancel')}
                   </Text>
                 </Pressable>
-              )}
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
+
+        <Modal
+          visible={!!dialogInfo}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setDialogInfo(null)}
+          statusBarTranslucent
+        >
+          <Pressable style={staticStyles.modalOverlay} onPress={() => setDialogInfo(null)}>
+            <Pressable style={dynamicStyles.infoDialog} onPress={() => {}}>
+              <Text style={[staticStyles.dialogTitle, dynamicStyles.infoDialogTitle]}>
+                {dialogInfo?.title}
+              </Text>
+              <Text style={dynamicStyles.infoDialogMessage}>{dialogInfo?.message}</Text>
+              <View style={staticStyles.dialogActions}>
+                <Pressable onPress={() => setDialogInfo(null)} style={staticStyles.dialogBtn}>
+                  <Text
+                    style={
+                      dialogInfo?.onConfirm
+                        ? dynamicStyles.infoDialogCancelText
+                        : dynamicStyles.infoDialogOkayText
+                    }
+                  >
+                    {dialogInfo?.onConfirm
+                      ? t('common.cancel', 'Cancel')
+                      : t('pairing.overlay.okay', 'Okay')}
+                  </Text>
+                </Pressable>
+                {dialogInfo?.onConfirm && (
+                  <Pressable
+                    onPress={() => {
+                      dialogInfo.onConfirm!()
+                      setDialogInfo(null)
+                    }}
+                    style={staticStyles.dialogBtn}
+                  >
+                    <Text
+                      style={
+                        dialogInfo.isDestructive
+                          ? dynamicStyles.infoDialogConfirmTextDestructive
+                          : dynamicStyles.infoDialogConfirmTextInfo
+                      }
+                    >
+                      {dialogInfo.confirmText ?? t('common.confirm', 'Confirm')}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </Animated.View>
 
       <BottomActionSheet
@@ -1458,13 +1484,12 @@ const staticStyles = StyleSheet.create({
     marginTop: 1,
   },
   moveDialogContent: {
-    paddingHorizontal: 0,
     maxHeight: 320,
   },
   moveFolderItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 4,
     paddingVertical: 14,
   },
   moveFolderIcon: {
@@ -1474,6 +1499,24 @@ const staticStyles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'PlusJakartaSans_500Medium',
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dialogTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
+    marginBottom: 16,
+  },
+  dialogActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 16,
+    gap: 4,
   },
   dialogBtn: {
     paddingHorizontal: 16,

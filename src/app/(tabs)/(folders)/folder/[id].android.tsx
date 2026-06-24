@@ -25,13 +25,14 @@ import { formatDate } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Alert,
   FlatList,
   Image,
   ListRenderItemInfo,
+  Modal,
   Pressable,
   StatusBar,
   StyleSheet,
@@ -40,7 +41,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native'
-import { Dialog, FAB, TextInput as PaperTextInput, Portal } from 'react-native-paper'
+import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -103,7 +104,7 @@ function noteKey(note: any): string {
 export default function AndroidFolderNotesScreen() {
   const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { height } = useWindowDimensions()
+  const { width, height } = useWindowDimensions()
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -358,7 +359,10 @@ export default function AndroidFolderNotesScreen() {
     ],
   )
 
-  const dynamicStyles = useMemo(() => createDynamicStyles(c, insets.top), [c, insets.top])
+  const dynamicStyles = useMemo(
+    () => createDynamicStyles(c, insets.top, width, height),
+    [c, insets.top, width, height],
+  )
 
   return (
     <View style={[staticStyles.root, { backgroundColor: c.background }]}>
@@ -495,14 +499,18 @@ export default function AndroidFolderNotesScreen() {
         customSize={64}
       />
 
-      <Portal>
-        <Dialog
-          visible={!!renameDialog}
-          onDismiss={() => setRenameDialog(null)}
-          style={{ backgroundColor: (c as any).surfaceContainerHighest ?? c.surface }}
-        >
-          <Dialog.Title style={{ color: c.onSurface }}>{t('folders.renameTitle')}</Dialog.Title>
-          <Dialog.Content>
+      <Modal
+        visible={!!renameDialog}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRenameDialog(null)}
+        statusBarTranslucent
+      >
+        <Pressable style={staticStyles.modalOverlay} onPress={() => setRenameDialog(null)}>
+          <Pressable style={dynamicStyles.renameDialog} onPress={() => {}}>
+            <Text style={[staticStyles.dialogTitle, { color: c.onSurface }]}>
+              {t('folders.renameTitle')}
+            </Text>
             <PaperTextInput
               value={renameText}
               onChangeText={setRenameText}
@@ -510,21 +518,21 @@ export default function AndroidFolderNotesScreen() {
               mode="outlined"
               label={t('folders.renameLabel')}
             />
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
-              <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
-                {t('common.cancel')}
-              </Text>
-            </Pressable>
-            <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
-              <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
-                {t('folders.buttons.rename')}
-              </Text>
-            </Pressable>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
+            <View style={staticStyles.dialogActions}>
+              <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
+                <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
+                  {t('common.cancel')}
+                </Text>
+              </Pressable>
+              <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
+                <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
+                  {t('folders.buttons.rename')}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <BottomActionSheet
         visible={noteSheetVisible}
@@ -778,10 +786,23 @@ const EmptyState = memo(function EmptyState({
   )
 })
 
-const createDynamicStyles = (c: ExtendedColors, topInset: number) => ({
+const createDynamicStyles = (
+  c: ExtendedColors,
+  topInset: number,
+  width: number,
+  height: number,
+) => ({
   appBar: {
     paddingTop: topInset + 4,
     backgroundColor: c.background,
+  },
+  renameDialog: {
+    backgroundColor: (c as any).surfaceContainerHighest ?? c.surface,
+    borderRadius: 28,
+    padding: 24,
+    width: Math.min(width - 48, 400),
+    elevation: 6,
+    boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
   },
 })
 
@@ -851,6 +872,24 @@ const staticStyles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dialogTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    fontFamily: 'PlusJakartaSans_700Bold',
+    marginBottom: 16,
+  },
+  dialogActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 16,
+    gap: 4,
   },
   dialogBtn: {
     paddingHorizontal: 16,
