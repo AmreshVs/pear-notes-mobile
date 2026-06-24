@@ -15,7 +15,7 @@ import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/u
 import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
-import React, { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -416,7 +416,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
         <RNView style={styles.androidScrim} />
       ) : (
         <>
-          <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
           <View style={styles.overlay} />
         </>
       )}
@@ -511,8 +511,10 @@ const createStyles = (theme: Theme) => {
       elevation: 20,
     },
     androidScrim: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.2)',
+      position: 'absolute',
+      width: '100%',
+      height: '100%',
+      backgroundColor: theme.isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0,0,0,0.4)',
     },
     androidCard: {
       borderRadius: 28,
