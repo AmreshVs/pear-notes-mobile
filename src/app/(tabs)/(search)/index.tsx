@@ -2,22 +2,24 @@ import { getFilteredNotes, setSelectedNote } from '@pear-notes/core/store/slices
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { format } from 'date-fns'
 import { Stack } from 'expo-router'
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
-import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
+import { Text, View, createThemedStylesheet, useTheme } from '@/components/Themed'
 import { Space, commonStyles } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+
+const PREVIEW_LIMIT = 100
 
 export default function SearchScreen() {
   const { t } = useTranslation()
   const theme = useTheme()
   const { colors, isDark } = theme
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles() as any
   const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -29,16 +31,46 @@ export default function SearchScreen() {
       dispatch(setSelectedNote(noteId as any))
       openNote(noteId)
     },
-    [dispatch],
+    [dispatch, openNote],
   )
 
-  const getPreviewText = (html: string) => {
-    if (!html) return t('folderView.noAdditionalText')
-    return html
-      .replace(/<[^>]*>?/gm, '')
-      .substring(0, 100)
-      .trim()
-  }
+  const getPreviewText = useCallback(
+    (html: string) => {
+      if (!html) return t('folderView.noAdditionalText')
+      return html
+        .replace(/<[^>]*>?/gm, '')
+        .substring(0, PREVIEW_LIMIT)
+        .trim()
+    },
+    [t],
+  )
+
+  const renderNoteItem = useCallback(
+    (note: any, index: number) => {
+      const handlePress = () => handleSelectNote(note.key)
+      const formattedDate = format(
+        new Date(note.value?.updatedAt || note.value?.createdAt || 0),
+        'MMM d',
+      )
+      const summary = getPreviewText(note.value?.note)
+
+      return (
+        <NoteCard
+          key={note.key}
+          id={note.key}
+          title={note.value?.title}
+          date={formattedDate}
+          summary={summary}
+          folderName={note.value?.folderName}
+          selected={false}
+          isLast={index === notes.length - 1}
+          animationIndex={index}
+          onPress={handlePress}
+        />
+      )
+    },
+    [notes.length, getPreviewText, handleSelectNote],
+  )
 
   return (
     <View style={styles.container}>
@@ -70,7 +102,9 @@ export default function SearchScreen() {
             {searchQuery.trim().length > 0 ? (
               <>
                 <Text style={commonThemedStyles.emptyTitle}>{t('search.empty.noMatches')}</Text>
-                <Text style={commonThemedStyles.emptySubtitle}>{t('search.empty.tryDifferent')}</Text>
+                <Text style={commonThemedStyles.emptySubtitle}>
+                  {t('search.empty.tryDifferent')}
+                </Text>
               </>
             ) : (
               <>
@@ -80,35 +114,17 @@ export default function SearchScreen() {
             )}
           </View>
         ) : (
-          <View style={styles.listContainer}>
-            {notes.map((note: any, index: number) => (
-              <NoteCard
-                key={note.key}
-                id={note.key}
-                title={note.value?.title}
-                date={format(
-                  new Date(note.value?.updatedAt || note.value?.createdAt || 0),
-                  'MMM d',
-                )}
-                summary={getPreviewText(note.value?.note)}
-                folderName={note.value?.folderName}
-                selected={false}
-                isLast={index === notes.length - 1}
-                animationIndex={index}
-                onPress={() => handleSelectNote(note.key)}
-              />
-            ))}
-          </View>
+          <View style={styles.listContainer}>{notes.map(renderNoteItem)}</View>
         )}
       </ScrollView>
     </View>
   )
 }
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     container: {
-      flex: 1,
+      ...commonStyles.flex1,
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
@@ -120,3 +136,5 @@ const createStyles = (theme: Theme) =>
       paddingTop: Space.sm,
     },
   })
+  return styles
+})

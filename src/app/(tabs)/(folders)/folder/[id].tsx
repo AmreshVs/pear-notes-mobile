@@ -19,50 +19,36 @@ import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/ui
 import { formatDate } from '@pear-notes/core/utils.js'
 import * as Clipboard from 'expo-clipboard'
 import { Stack, router, useLocalSearchParams } from 'expo-router'
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
-import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
-import { FontSize, FontWeight, LetterSpacing, Space, commonStyles } from '@/constants/commonStyles'
+import { Text, View, createThemedStylesheet, useTheme } from '@/components/Themed'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Space,
+  UI_SIZE_15,
+  UI_SIZE_2,
+  UI_SIZE_32,
+  UI_SIZE_4,
+  UI_SIZE_42,
+  commonStyles,
+} from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+import { getFirstImageUrl, getPreview } from '@/utils/noteUtils'
 
-// Replace HTML tags with a space so words don't run together, then normalize whitespace
-const getPreview = (html: string, fallback: string): string => {
-  if (!html) return fallback
-  const text = html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return text.length > 100 ? text.substring(0, 100) + '…' : text || fallback
-}
-
-const getFirstImageUrl = (html: string): string | undefined => {
-  if (!html) return undefined
-
-  const divMatch =
-    html.match(/<div[^>]*filetype="image\/[^"]*"[^>]*url="([^"]+)"[^>]*>/) ||
-    html.match(/<div[^>]*url="([^"]+)"[^>]*filetype="image\/[^"]*"[^>]*>/)
-  if (divMatch?.[1]) {
-    return divMatch[1].replace(/&amp;/g, '&')
-  }
-
-  const imgMatch = html.match(/<img[^>]+src="([^"]+)"/)
-  if (imgMatch?.[1]) {
-    return imgMatch[1].replace(/&amp;/g, '&')
-  }
-  return undefined
-}
 export default function FolderNotesScreen() {
   const { height } = useWindowDimensions()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t } = useTranslation()
   const theme = useTheme()
   const { colors, isDark } = theme
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles() as any
   const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -209,6 +195,89 @@ export default function FolderNotesScreen() {
     }
   }, [selectedNote])
 
+  const scrollContentStyle = useMemo(
+    () => [
+      styles.scrollContent,
+      { paddingBottom: groupedNotes.length > 0 ? Space.scrollBottom : Space.xl },
+    ],
+    [groupedNotes.length, styles.scrollContent],
+  )
+
+  const emptyStateStyle = useMemo(
+    () => [styles.emptyStateWrapper, { marginTop: height * 0.18 }],
+    [height, styles.emptyStateWrapper],
+  )
+
+  const renderNoteCard = useCallback(
+    (note: any, index: number, sectionIndex: number, sectionDataLength: number) => {
+      const isLast = index === sectionDataLength - 1
+      const animationIndex = sectionIndex * 3 + index
+
+      const handlePress = () => handleSelectNote(note.key)
+      const handleDelete = () => handleDeleteNote(note.key)
+      const handleCopy = () => handleCopyNote(note.value?.title, note.value?.note)
+      const handleMoveTo = (folderId: string) => handleMoveNote(note.key, folderId)
+
+      const folderName =
+        folder?.id === ALL_NOTES_KEY
+          ? allFolders.find((f: any) => f.id === note.value?.folderKey)?.name
+          : undefined
+
+      return (
+        <NoteCard
+          key={note.key}
+          id={note.key}
+          title={note.value?.title}
+          date={formatDate(note.value?.updatedAt || note.value?.createdAt)}
+          summary={getPreview(note.value?.note, t('folderView.noAdditionalText'))}
+          rawImageUrl={getFirstImageUrl(note.value?.note)}
+          folderName={folderName}
+          selected={false}
+          isLast={isLast}
+          animationIndex={animationIndex}
+          onPress={handlePress}
+          onDelete={handleDelete}
+          onCopy={handleCopy}
+          moveFolders={moveFolders}
+          onMoveTo={handleMoveTo}
+        />
+      )
+    },
+    [
+      allFolders,
+      folder?.id,
+      handleSelectNote,
+      handleDeleteNote,
+      handleCopyNote,
+      moveFolders,
+      handleMoveNote,
+      t,
+    ],
+  )
+
+  const renderSection = useCallback(
+    (section: any, sectionIndex: number) => {
+      const renderItem = (note: any, index: number) =>
+        renderNoteCard(note, index, sectionIndex, section.data.length)
+
+      return (
+        <View key={section.title} style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
+          </View>
+          <View style={styles.listContainer}>{section.data.map(renderItem)}</View>
+        </View>
+      )
+    },
+    [
+      renderNoteCard,
+      styles.section,
+      styles.sectionHeader,
+      styles.listContainer,
+      commonThemedStyles.sectionCap,
+    ],
+  )
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -234,20 +303,17 @@ export default function FolderNotesScreen() {
         {!folder?.isSystem && (
           <Stack.Toolbar.Menu icon="ellipsis">
             <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
-              {t('folders.buttons.rename')}
+              {t('folders.renameTitle')}
             </Stack.Toolbar.MenuAction>
             <Stack.Toolbar.MenuAction icon="trash" destructive onPress={handleDeleteFolder}>
-              {t('folders.buttons.delete')}
+              {t('folders.deleteTitle')}
             </Stack.Toolbar.MenuAction>
           </Stack.Toolbar.Menu>
         )}
       </Stack.Toolbar>
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: groupedNotes.length > 0 ? Space.scrollBottom : Space.xl },
-        ]}
+        contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
@@ -258,16 +324,24 @@ export default function FolderNotesScreen() {
         </View>
 
         {groupedNotes.length === 0 ? (
-          <View style={[styles.emptyStateWrapper, { marginTop: height * 0.18 }]}>
+          <View style={emptyStateStyle}>
             {searchQuery.trim().length > 0 ? (
               <>
-                <Text style={commonThemedStyles.emptyTitle}>No matches found</Text>
-                <Text style={commonThemedStyles.emptySubtitle}>Try a different search term</Text>
+                <Text style={commonThemedStyles.emptyTitle}>
+                  {t('folderView.empty.noMatchesTitle')}
+                </Text>
+                <Text style={commonThemedStyles.emptySubtitle}>
+                  {t('folderView.empty.noMatchesSubtitle')}
+                </Text>
               </>
             ) : (
               <>
-                <Text style={commonThemedStyles.emptyTitle}>No Notes</Text>
-                <Text style={commonThemedStyles.emptySubtitle}>Tap the compose button to create one</Text>
+                <Text style={commonThemedStyles.emptyTitle}>
+                  {t('folderView.empty.noNotesTitle')}
+                </Text>
+                <Text style={commonThemedStyles.emptySubtitle}>
+                  {t('folderView.empty.noNotesSubtitle')}
+                </Text>
                 {localPreferences['isSynced'] !== true && (
                   <View style={styles.linkContainer}>
                     <View style={styles.linkDivider} />
@@ -275,11 +349,7 @@ export default function FolderNotesScreen() {
                     <Text style={styles.linkSub}>{t('folderView.empty.linkSub')}</Text>
                     <Pressable
                       onPress={handleLinkDevice}
-                      style={({ pressed }) => [
-                        commonStyles.primaryBtn,
-                        { backgroundColor: colors.primary, width: '100%', marginTop: Space.xl },
-                        pressed && commonStyles.pressed,
-                      ]}
+                      style={({ pressed }) => [styles.connectBtn, pressed && commonStyles.pressed]}
                     >
                       <Text style={styles.linkBtnText}>{t('folderView.empty.connectBtn')}</Text>
                     </Pressable>
@@ -289,48 +359,17 @@ export default function FolderNotesScreen() {
             )}
           </View>
         ) : (
-          groupedNotes.map((section, sectionIndex) => (
-            <View key={section.title} style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
-              </View>
-              <View style={styles.listContainer}>
-                {section.data.map((note, index) => (
-                  <NoteCard
-                    key={note.key}
-                    id={note.key}
-                    title={note.value?.title}
-                    date={formatDate(note.value?.updatedAt || note.value?.createdAt)}
-                    summary={getPreview(note.value?.note, t('folderView.noAdditionalText'))}
-                    rawImageUrl={getFirstImageUrl(note.value?.note)}
-                    folderName={
-                      folder?.id === ALL_NOTES_KEY
-                        ? allFolders.find((f: any) => f.id === note.value?.folderKey)?.name
-                        : undefined
-                    }
-                    selected={false}
-                    isLast={index === section.data.length - 1}
-                    animationIndex={sectionIndex * 3 + index}
-                    onPress={() => handleSelectNote(note.key)}
-                    onDelete={() => handleDeleteNote(note.key)}
-                    onCopy={() => handleCopyNote(note.value?.title, note.value?.note)}
-                    moveFolders={moveFolders}
-                    onMoveTo={(folderId) => handleMoveNote(note.key, folderId)}
-                  />
-                ))}
-              </View>
-            </View>
-          ))
+          groupedNotes.map(renderSection)
         )}
       </ScrollView>
     </View>
   )
 }
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     container: {
-      flex: 1,
+      ...commonStyles.flex1,
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
@@ -340,7 +379,7 @@ const createStyles = (theme: Theme) =>
     },
     pageTitle: {
       fontSize: FontSize.hero,
-      lineHeight: 42,
+      lineHeight: UI_SIZE_42,
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,
@@ -357,7 +396,7 @@ const createStyles = (theme: Theme) =>
     sectionHeader: {
       marginLeft: Space.base,
       paddingVertical: Space.xs,
-      marginBottom: 2,
+      marginBottom: UI_SIZE_2,
     },
     listContainer: {
       backgroundColor: 'transparent',
@@ -372,9 +411,9 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
     },
     linkDivider: {
-      width: 32,
-      height: 4,
-      borderRadius: 2,
+      width: UI_SIZE_32,
+      height: UI_SIZE_4,
+      borderRadius: UI_SIZE_2,
       backgroundColor: theme.colors.borderSecondary,
       marginBottom: Space.xl,
     },
@@ -395,8 +434,16 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.textSecondary,
     },
     linkBtnText: {
-      color: '#fff',
+      color: theme.colors.white,
       fontWeight: FontWeight.bold,
-      fontSize: 15,
+      fontSize: UI_SIZE_15,
+    },
+    connectBtn: {
+      ...commonStyles.primaryBtn,
+      backgroundColor: theme.colors.primary,
+      width: '100%',
+      marginTop: Space.xl,
     },
   })
+  return styles
+})

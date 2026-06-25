@@ -16,29 +16,16 @@ import { router, Stack } from 'expo-router'
 import { ChevronRight, Download, RefreshCw, Trash2, X } from 'lucide-react-native'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActionSheetIOS, Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
+import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { ResetAppBottomSheet } from '@/components/bottomsheet/ResetAppBottomSheet'
-import { Text, createThemedStylesheet, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
-  FontWeight,
-  Durations,
   commonStyles,
-  UI_SIZE_3,
-  UI_SIZE_4,
-  UI_SIZE_7,
-  UI_SIZE_8,
-  UI_SIZE_12,
-  UI_SIZE_15,
-  UI_SIZE_16,
-  UI_SIZE_18,
-  UI_SIZE_20,
-  UI_SIZE_24,
-  UI_SIZE_30,
-  UI_SIZE_40,
-  UI_SIZE_60,
+  Durations,
+  FontWeight,
   UI_FONT_SIZE_11,
   UI_FONT_SIZE_12,
   UI_FONT_SIZE_14,
@@ -48,43 +35,23 @@ import {
   UI_ICON_SIZE_15,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_17,
+  UI_SIZE_12,
+  UI_SIZE_15,
+  UI_SIZE_16,
+  UI_SIZE_18,
+  UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_30,
+  UI_SIZE_4,
+  UI_SIZE_40,
+  UI_SIZE_60,
+  UI_SIZE_8,
   UI_STROKE_WIDTH_1_8,
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
-import { deleteDbEncryptionKey } from '@/lib/secureStore'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-
-const GET_SORT_OPTIONS = (t: any) => [
-  { label: t('settings.general.sortOptions.updatedAt'), value: 'updatedAt' },
-  { label: t('settings.general.sortOptions.createdAt'), value: 'createdAt' },
-  { label: t('settings.general.sortOptions.title'), value: 'title' },
-]
-
-const GET_FONT_OPTIONS = (t: any) => [
-  { label: t('settings.general.fontOptions.Inter'), value: 'Inter' },
-  { label: t('settings.general.fontOptions.Outfit'), value: 'Outfit' },
-  { label: t('settings.general.fontOptions.Lora'), value: 'Lora' },
-  { label: t('settings.general.fontOptions.Newsreader'), value: 'Newsreader' },
-  { label: t('settings.general.fontOptions.IBM Plex Mono'), value: 'IBM Plex Mono' },
-  { label: t('settings.general.fontOptions.System'), value: 'System' },
-  { label: t('settings.general.fontOptions.Serif'), value: 'Serif' },
-  { label: t('settings.general.fontOptions.Mono'), value: 'Mono' },
-]
-
-function showPicker(
-  title: string,
-  options: { label: string; value: string }[],
-  onSelect: (value: string) => void,
-  cancelLabel: string,
-) {
-  const labels = [...options.map((o) => o.label), cancelLabel]
-  ActionSheetIOS.showActionSheetWithOptions(
-    { options: labels, cancelButtonIndex: labels.length - 1, title },
-    (index) => {
-      if (index < options.length) onSelect(options[index].value)
-    },
-  )
-}
+import { deleteDbEncryptionKey } from '@/lib/secureStore'
+import { getFontOptions, getSortOptions, showPicker } from '@/utils/settingsUtils'
 
 export default function SettingsScreen() {
   const { t } = useTranslation()
@@ -125,7 +92,7 @@ export default function SettingsScreen() {
   const handleSortNotesPress = useCallback(() => {
     showPicker(
       t('settings.general.sortNotesBy'),
-      GET_SORT_OPTIONS(t),
+      getSortOptions(t),
       handleSortSelect,
       t('common.cancel'),
     )
@@ -141,7 +108,7 @@ export default function SettingsScreen() {
   const handleFontFamilyPress = useCallback(() => {
     showPicker(
       t('settings.general.fontFamily'),
-      GET_FONT_OPTIONS(t),
+      getFontOptions(t),
       handleFontSelect,
       t('common.cancel'),
     )
@@ -244,7 +211,7 @@ export default function SettingsScreen() {
               <Text style={styles.rowLabel}>{t('settings.general.sortNotesBy')}</Text>
               <RNView style={commonStyles.settingsRowRight}>
                 <Text style={styles.rowVal}>
-                  {GET_SORT_OPTIONS(t).find((o) => o.value === sortBy)?.label ??
+                  {getSortOptions(t).find((o) => o.value === sortBy)?.label ??
                     t('settings.general.sortOptions.updatedAt')}
                 </Text>
                 <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
@@ -258,7 +225,7 @@ export default function SettingsScreen() {
               <Text style={styles.rowLabel}>{t('settings.general.fontFamily')}</Text>
               <RNView style={commonStyles.settingsRowRight}>
                 <Text style={styles.rowVal}>
-                  {GET_FONT_OPTIONS(t).find((o) => o.value === fontFamily)?.label ?? fontFamily}
+                  {getFontOptions(t).find((o) => o.value === fontFamily)?.label ?? fontFamily}
                 </Text>
                 <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
               </RNView>
@@ -436,13 +403,13 @@ const useStyles = createThemedStylesheet((theme) => {
     segCtrl: {
       ...commonStyles.row,
       borderRadius: UI_SIZE_16,
-      padding: UI_SIZE_3,
+      padding: 3,
       backgroundColor: theme.colors.controlBackground,
     },
     segPill: {
       ...commonStyles.centered,
       paddingHorizontal: UI_SIZE_12,
-      paddingVertical: UI_SIZE_7,
+      paddingVertical: 7,
       borderRadius: UI_SIZE_12,
     },
     segPillActive: {

@@ -281,7 +281,8 @@
   },
   "common": {
     "cancel": "Cancel",
-    "clear": "Clear"
+    "clear": "Clear",
+    "close": "Close"
   },
   "backup": {
     "title": "Backup / Restore",
@@ -315,6 +316,9 @@
       "restoringTitle": "Restoring Data...",
       "creatingDesc": "Encrypting and uploading your vault data...",
       "restoringDesc": "Decrypting and restoring your vault data...",
+      "errorTitle": "Something went wrong",
+      "restoredTitle": "Restore Complete",
+      "restoredDesc": "Your notes and data have been restored successfully.",
       "cancel": "Cancel",
       "dismiss": "Dismiss"
     },

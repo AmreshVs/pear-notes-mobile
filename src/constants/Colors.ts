@@ -31,6 +31,7 @@ export default {
     sheetBorder: 'rgba(0, 0, 0, 0.14)',
     sheetCancelBackground: 'rgba(0, 0, 0, 0.05)',
     white: '#ffffff',
+    black: '#000000',
     qrDark: '#111111',
   },
   dark: {
@@ -63,6 +64,7 @@ export default {
     sheetBorder: 'rgba(255, 255, 255, 0.1)',
     sheetCancelBackground: 'rgba(255, 255, 255, 0.06)',
     white: '#ffffff',
+    black: '#000000',
     qrDark: '#111111',
   },
 }

@@ -1,8 +1,8 @@
 import { StyleSheet } from 'react-native'
 
-import { createThemedStylesheet, Theme } from '@/components/Themed'
+import { FontSize, FontWeight, LetterSpacing, Radii, Space } from './commonStyles'
 
-import { FontSize, FontWeight, LetterSpacing, Radii, Space, MonoFontFamily } from './commonStyles'
+import { createThemedStylesheet, Theme } from '@/components/Themed'
 
 export const createThemedStyles = (theme: Theme) => {
   const isDark = theme.isDark

@@ -9,23 +9,22 @@ import { useDispatch } from 'react-redux'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
+  commonStyles,
   Durations,
   FontFamily,
   FontWeight,
-  commonStyles,
-  UI_SIZE_2,
-  UI_SIZE_3,
-  UI_SIZE_6,
+  UI_FONT_SIZE_11,
+  UI_FONT_SIZE_15,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_18,
+  UI_SIZE_2,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_48,
+  UI_SIZE_6,
   UI_SIZE_9999,
-  UI_FONT_SIZE_11,
-  UI_FONT_SIZE_15,
 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -132,10 +131,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
         onPress={!isLocal ? undefined : startEditing}
         style={({ pressed }) => [
           styles.deviceCard,
-          { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant },
-          pressed && {
-            backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
-          },
+          pressed && styles.deviceCardPressed,
         ]}
       >
         <View style={styles.deviceIconCircle}>
@@ -151,14 +147,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
               onChangeText={setEditedTitle}
               onBlur={commitEdit}
               onSubmitEditing={commitEdit}
-              style={[
-                styles.deviceRenameInput,
-                {
-                  color: c.onSurface,
-                  borderColor: c.primary,
-                  backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
-                },
-              ]}
+              style={styles.deviceRenameInput}
               returnKeyType="done"
               autoCapitalize="words"
               onKeyPress={handleKeyPress}
@@ -205,6 +194,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingVertical: UI_SIZE_18,
       marginBottom: UI_SIZE_10,
       gap: UI_SIZE_16,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
+    deviceCardPressed: {
+      backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
     },
     deviceIconCircle: {
       width: UI_SIZE_48,
@@ -234,7 +227,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       letterSpacing: -0.3,
-      marginBottom: UI_SIZE_3,
+      marginBottom: 3,
       color: c.onSurface,
     },
     devicePlatform: {
@@ -261,6 +254,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingHorizontal: UI_SIZE_12,
       paddingVertical: UI_SIZE_6,
       marginBottom: UI_SIZE_2,
+      color: c.onSurface,
+      borderColor: c.primary,
+      backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
     },
     deviceDeleteBtn: {
       padding: UI_SIZE_6,
