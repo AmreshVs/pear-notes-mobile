@@ -49,6 +49,7 @@
       "confirmTitle": "Reset App?",
       "confirmMessage": "This will permanently delete all your notes, media, and files on this device. This action cannot be undone and your data cannot be recovered if you haven't backed it up or synced with another device."
     },
+    "e2eEncrypted": "End-to-end encrypted",
     "footer": "End-to-end encrypted • Fully private"
   },
   "sync": {

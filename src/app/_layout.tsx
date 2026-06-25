@@ -8,7 +8,6 @@ import * as Crypto from 'expo-crypto'
 import { Directory, Paths } from 'expo-file-system'
 import { router, Stack } from 'expo-router'
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation'
-import * as SecureStore from 'expo-secure-store'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -23,6 +22,7 @@ import { PairingOverlay } from '@/components/PairingOverlay'
 import { useResolvedColorScheme } from '@/components/Themed'
 import { useColorScheme } from '@/components/useColorScheme'
 import Colors from '@/constants/Colors'
+import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { SheetProvider } from '@/providers/SheetProvider'
@@ -57,14 +57,14 @@ export default function RootLayout() {
     try {
       setFatalError(null)
       await startWorklet(storage)
-      let key = await SecureStore.getItemAsync('db_encryption_key')
+      let key = await getDbEncryptionKey()
       if (!key) {
         const bytes = new Uint8Array(32)
         Crypto.getRandomValues(bytes)
         key = Array.from(bytes)
           .map((b) => b.toString(16).padStart(2, '0'))
           .join('')
-        await SecureStore.setItemAsync('db_encryption_key', key)
+        await setDbEncryptionKey(key)
       }
       await backendApi.ready({ storage, encryption: key })
       store.dispatch(appReady())
@@ -93,7 +93,7 @@ export default function RootLayout() {
       const newEncryptionKey = receiverStatus?.encryptionKey
       if (newEncryptionKey && newEncryptionKey !== savedEncryptionKeyRef.current) {
         savedEncryptionKeyRef.current = newEncryptionKey
-        SecureStore.setItemAsync('db_encryption_key', newEncryptionKey).catch(console.error)
+        setDbEncryptionKey(newEncryptionKey).catch(console.error)
       }
 
       if (state.sync.needsReload) {

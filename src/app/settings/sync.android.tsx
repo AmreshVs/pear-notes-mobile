@@ -2,7 +2,6 @@ import {
   deleteSyncedDevice,
   getLocalPreferences,
   getSyncedDevices,
-  updateSyncedDevice,
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import {
   createInvite,
@@ -13,20 +12,17 @@ import {
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, isValidInvite } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { CameraView, useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack } from 'expo-router'
-import { memo, useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
-  Modal,
   Pressable,
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native'
@@ -35,8 +31,51 @@ import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
+import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import {
+  commonStyles,
+  Durations,
+  FontFamily,
+  FontWeight,
+  UI_FONT_SIZE_11,
+  UI_FONT_SIZE_12,
+  UI_FONT_SIZE_13,
+  UI_FONT_SIZE_14,
+  UI_FONT_SIZE_15,
+  UI_FONT_SIZE_16,
+  UI_FONT_SIZE_18,
+  UI_FONT_SIZE_20,
+  UI_FONT_SIZE_28,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_24,
+  UI_SIZE_10,
+  UI_SIZE_12,
+  UI_SIZE_120,
+  UI_SIZE_14,
+  UI_SIZE_16,
+  UI_SIZE_17,
+  UI_SIZE_18,
+  UI_SIZE_180,
+  UI_SIZE_2,
+  UI_SIZE_20,
+  UI_SIZE_200,
+  UI_SIZE_22,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_30,
+  UI_SIZE_32,
+  UI_SIZE_36,
+  UI_SIZE_4,
+  UI_SIZE_40,
+  UI_SIZE_48,
+  UI_SIZE_6,
+  UI_SIZE_8,
+  UI_SIZE_9999,
+} from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string
@@ -54,10 +93,24 @@ function hexWithAlpha(hex: string, alpha: number): string {
 
 export default function AndroidSyncScreen() {
   const { t } = useTranslation()
-  const insets = useSafeAreaInsets()
-  const theme = useMD3Theme()
-  const c = theme.colors as ExtendedColors
+  const theme = useTheme()
+  const md3 = useMD3Theme()
+  const c = md3.colors as ExtendedColors
+  const styles = useStyles() as any
   const dispatch = useDispatch()
+
+  const deviceColors = useMemo(
+    () => ({
+      surfaceContainerHigh: c.surfaceContainerHigh,
+      surfaceContainerHighest: c.surfaceContainerHighest,
+      surfaceVariant: c.surfaceVariant,
+      primary: c.primary,
+      onSurface: c.onSurface,
+      onSurfaceVariant: c.onSurfaceVariant,
+      error: c.error,
+    }),
+    [c],
+  )
 
   const inviteCode = useSelector(getInvite)
   const expiresAt = useSelector(getInviteExpiresAt)
@@ -71,7 +124,6 @@ export default function AndroidSyncScreen() {
   const [pasteCode, setPasteCode] = useState('')
   const [scannerVisible, setScannerVisible] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false)
   const [deviceToDeleteKey, setDeviceToDeleteKey] = useState<string | null>(null)
   const scrollRef = useRef<ScrollView>(null)
@@ -92,13 +144,9 @@ export default function AndroidSyncScreen() {
   }, [dispatch, pasteCode])
 
   const handleOpenScanner = useCallback(async () => {
-    if (!cameraPermission?.granted) {
-      const result = await requestCameraPermission()
-      if (!result.granted) return
-    }
     setHasScanned(false)
     setScannerVisible(true)
-  }, [cameraPermission?.granted, requestCameraPermission])
+  }, [])
 
   const handleCloseScanner = useCallback(() => {
     setScannerVisible(false)
@@ -151,49 +199,75 @@ export default function AndroidSyncScreen() {
     setDeleteSheetVisible(true)
   }, [])
 
+  const handleInputFocus = useCallback(() => {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
+  }, [])
+
+  const renderLocalDeviceCard = useCallback(
+    (device: any, index: number) => (
+      <AndroidDeviceCard
+        key={device.key}
+        device={device}
+        isLocal
+        colors={deviceColors}
+        index={index}
+        onDelete={handleDeleteDevice}
+      />
+    ),
+    [deviceColors, handleDeleteDevice],
+  )
+
+  const renderOtherDeviceCard = useCallback(
+    (device: any, index: number) => (
+      <AndroidDeviceCard
+        key={device.key}
+        device={device}
+        colors={deviceColors}
+        index={index}
+        onDelete={handleDeleteDevice}
+      />
+    ),
+    [deviceColors, handleDeleteDevice],
+  )
+
   const otherDevices = syncedDevices.filter((d: any) => !d.isLocal)
   const localDevices = syncedDevices.filter((d: any) => d.isLocal)
 
+  const loaderColor = theme.isDark ? theme.colors.text : theme.colors.background
+
   return (
-    <View style={[ss.root, { backgroundColor: c.background }]}>
+    <View style={styles.root}>
       <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
         backgroundColor={c.background}
       />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={[ss.appBar, { paddingTop: insets.top + 4 }]}>
-        <Pressable onPress={() => router.back()} hitSlop={8} style={ss.iconBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
+      <View style={styles.appBar}>
+        <Pressable onPress={() => router.back()} hitSlop={UI_SIZE_8} style={styles.iconBtn}>
+          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
         </Pressable>
-        <Text style={[ss.appBarTitle, { color: c.onSurface }]}>{t('sync.title')}</Text>
+        <Text style={styles.appBarTitle}>{t('sync.title')}</Text>
       </View>
 
-      <KeyboardAvoidingView behavior="height" style={ss.flex1}>
+      <KeyboardAvoidingView behavior="height" style={styles.flex1}>
         <ScrollView
           ref={scrollRef}
-          contentContainerStyle={[ss.scrollContent, { paddingBottom: insets.bottom + 40 }]}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View entering={FadeIn.duration(220)} style={ss.segRow}>
-            <View
-              style={[ss.segTrack, { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant }]}
-            >
+          <Animated.View entering={FadeIn.duration(Durations.fade)} style={styles.segRow}>
+            <View style={styles.segTrack}>
               {(['link', 'devices'] as const).map((tValue) => {
                 const active = tab === tValue
                 return (
                   <Pressable
                     key={tValue}
                     onPress={() => setTab(tValue)}
-                    style={[ss.segPill, active && { backgroundColor: c.primaryContainer }]}
+                    style={[styles.segPill, active && styles.segPillActive]}
                   >
-                    <Text
-                      style={[
-                        ss.segLabel,
-                        { color: active ? c.onPrimaryContainer : c.onSurfaceVariant },
-                      ]}
-                    >
+                    <Text style={[styles.segLabel, active && styles.segLabelActive]}>
                       {tValue === 'link' ? t('sync.tabs.link') : t('sync.tabs.devices')}
                     </Text>
                   </Pressable>
@@ -205,89 +279,81 @@ export default function AndroidSyncScreen() {
           {tab === 'link' ? (
             <Animated.View
               key="link-tab"
-              entering={FadeIn.duration(220)}
+              entering={FadeIn.duration(Durations.fade)}
               layout={LinearTransition.springify().damping(20).stiffness(220)}
-              style={ss.tabContent}
+              style={styles.tabContent}
             >
               {!inviteCode ? (
-                <Animated.View entering={FadeInDown.duration(240).delay(40)}>
-                  <View style={ss.heroSection}>
-                    <View
-                      style={[
-                        ss.heroCircle,
-                        { backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.12) },
-                      ]}
-                    >
-                      <MaterialCommunityIcons name="devices" size={48} color={c.primary} />
+                <Animated.View
+                  entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+                >
+                  <View style={styles.heroSection}>
+                    <View style={styles.heroCircle}>
+                      <MaterialCommunityIcons name="devices" size={UI_SIZE_48} color={c.primary} />
                     </View>
-                    <View style={[ss.heroBadge, { backgroundColor: c.primary }]}>
-                      <MaterialCommunityIcons name="sync" size={18} color={c.onPrimary || '#000'} />
+                    <View style={styles.heroBadge}>
+                      <MaterialCommunityIcons
+                        name="sync"
+                        size={UI_SIZE_18}
+                        color={c.onPrimary || theme.colors.text}
+                      />
                     </View>
                   </View>
 
-                  <Text style={[ss.heroTitle, { color: c.onSurface }]}>{t('sync.hero.title')}</Text>
-                  <Text style={[ss.heroDesc, { color: c.onSurfaceVariant }]}>
-                    {t('sync.hero.description')}
-                  </Text>
+                  <Text style={styles.heroTitle}>{t('sync.hero.title')}</Text>
+                  <Text style={styles.heroDesc}>{t('sync.hero.description')}</Text>
 
                   <Pressable
                     onPress={() => dispatch(createInvite())}
                     disabled={isLoading}
                     style={({ pressed }) => [
-                      ss.generateBtn,
-                      {
-                        backgroundColor: c.primary,
-                        opacity: isLoading || pressed ? 0.7 : 1,
-                      },
+                      styles.generateBtn,
+                      pressed && commonStyles.pressed,
+                      isLoading && styles.btnDisabled,
                     ]}
                   >
-                    {isLoading && <ActivityIndicator size="small" color="#000" style={ss.mr8} />}
-                    <Text style={[ss.generateBtnText, { color: c.onPrimary || '#000' }]}>
+                    {isLoading && (
+                      <ActivityIndicator size="small" color={loaderColor} style={styles.mr8} />
+                    )}
+                    <Text style={styles.generateBtnText}>
                       {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateBtn')}
                     </Text>
                   </Pressable>
                 </Animated.View>
               ) : (
-                <Animated.View entering={FadeInDown.duration(240).delay(40)}>
-                  <View style={ss.heroSection}>
-                    <View
-                      style={[
-                        ss.heroCircle,
-                        { backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.12) },
-                      ]}
-                    >
+                <Animated.View
+                  entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+                >
+                  <View style={styles.heroSection}>
+                    <View style={styles.heroCircle}>
                       <MaterialCommunityIcons
                         name="shield-check-outline"
-                        size={48}
+                        size={UI_SIZE_48}
                         color={c.primary}
                       />
                     </View>
                   </View>
 
-                  <Text style={[ss.heroTitle, { color: c.onSurface }]}>
-                    {t('sync.invite.header')}
-                  </Text>
-                  <Text style={[ss.heroDesc, { color: c.onSurfaceVariant }]}>
-                    {formatExpiry(expiresAt)}
-                  </Text>
+                  <Text style={styles.heroTitle}>{t('sync.invite.header')}</Text>
+                  <Text style={styles.heroDesc}>{formatExpiry(expiresAt)}</Text>
 
-                  <View style={ss.qrWrap}>
-                    <View style={ss.qrBox}>
+                  <View style={styles.qrWrap}>
+                    <View style={styles.qrBox}>
                       <QRCode
                         value={inviteCode}
-                        size={180}
-                        backgroundColor="#FFFFFF"
-                        color="#111111"
+                        size={UI_SIZE_180}
+                        backgroundColor={theme.colors.white}
+                        color={theme.colors.qrDark}
                       />
                     </View>
+                    <Text style={styles.qrTitle}>{t('sync.invite.qrTitle')}</Text>
+                    <Text style={styles.qrDescription}>{t('sync.invite.qrDescription')}</Text>
                   </View>
 
-                  <Text style={[ss.codeLabelText, { color: c.onSurfaceVariant }]}>
-                    {t('sync.invite.codeLabel')}
-                  </Text>
-                  <View style={[ss.codeBox, { borderColor: hexWithAlpha(c.outlineVariant, 0.25) }]}>
+                  <Text style={styles.codeLabelText}>{t('sync.invite.codeLabel')}</Text>
+                  <View style={styles.codeBox}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <Text selectable style={[ss.codeText, { color: c.onSurface }]}>
+                      <Text selectable style={styles.codeText}>
                         {inviteCode}
                       </Text>
                     </ScrollView>
@@ -296,92 +362,67 @@ export default function AndroidSyncScreen() {
                   <Pressable
                     onPress={handleCopy}
                     style={({ pressed }) => [
-                      ss.generateBtn,
-                      {
-                        backgroundColor: copied ? '#22C55E' : c.primary,
-                        opacity: pressed ? 0.7 : 1,
-                      },
+                      styles.generateBtn,
+                      copied ? styles.copyBtnSuccess : styles.copyBtnDefault,
+                      pressed && commonStyles.pressed,
                     ]}
                   >
                     <MaterialCommunityIcons
                       name={copied ? 'check' : 'content-copy'}
-                      size={18}
-                      color={copied ? '#fff' : c.onPrimary || '#000'}
+                      size={UI_SIZE_18}
+                      color={copied ? theme.colors.white : c.onPrimary || theme.colors.text}
                     />
                     <Text
                       style={[
-                        ss.generateBtnText,
-                        { color: copied ? '#fff' : c.onPrimary || '#000', marginLeft: 8 },
+                        styles.generateBtnText,
+                        copied ? styles.copyTextSuccess : styles.copyTextDefault,
                       ]}
                     >
                       {copied ? t('sync.invite.copied') : t('sync.invite.copyBtn')}
                     </Text>
                   </Pressable>
 
-                  <View
-                    style={[
-                      ss.warningRow,
-                      {
-                        backgroundColor: hexWithAlpha(c.primary, 0.08),
-                        borderColor: hexWithAlpha(c.primary, 0.2),
-                      },
-                    ]}
-                  >
+                  <View style={styles.warningRow}>
                     <MaterialCommunityIcons
                       name="shield-check"
-                      size={14}
+                      size={UI_SIZE_14}
                       color={c.primary}
-                      style={{ marginTop: 2 }}
+                      style={styles.warningIconMargin}
                     />
-                    <Text style={[ss.warningText, { color: c.onSurfaceVariant }]}>
-                      {t('sync.invite.warning')}
-                    </Text>
+                    <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
                   </View>
                 </Animated.View>
               )}
 
               {!isSynced && (
                 <Animated.View
-                  entering={FadeInDown.duration(220).delay(80)}
-                  style={ss.invitePasteSection}
+                  entering={FadeInDown.duration(Durations.fade).delay(Durations.delayMedium)}
+                  style={styles.invitePasteSection}
                 >
-                  <View style={ss.invitePasteHeader}>
-                    <View style={ss.invitePasteLeft}>
-                      <Text style={[ss.plusIcon, { color: c.primary }]}>+</Text>
-                      <Text style={[ss.invitePasteTitle, { color: c.onSurface }]}>
-                        {t('sync.alreadyHaveInvite')}
-                      </Text>
+                  <View style={styles.invitePasteHeader}>
+                    <View style={styles.invitePasteLeft}>
+                      <Text style={styles.plusIcon}>+</Text>
+                      <Text style={styles.invitePasteTitle}>{t('sync.alreadyHaveInvite')}</Text>
                     </View>
-                    <Pressable
-                      onPress={handleOpenScanner}
-                      style={[ss.scanPillSmall, { backgroundColor: hexWithAlpha(c.primary, 0.1) }]}
-                    >
-                      <MaterialCommunityIcons name="qrcode-scan" size={14} color={c.primary} />
-                      <Text style={[ss.scanPillSmallText, { color: c.primary }]}>
-                        {t('sync.paste.scanBtn')}
-                      </Text>
+                    <Pressable onPress={handleOpenScanner} style={styles.scanPillSmall}>
+                      <MaterialCommunityIcons
+                        name="qrcode-scan"
+                        size={UI_SIZE_14}
+                        color={c.primary}
+                      />
+                      <Text style={styles.scanPillSmallText}>{t('sync.paste.scanBtn')}</Text>
                     </Pressable>
                   </View>
 
-                  <View
-                    style={[
-                      ss.pasteRow,
-                      {
-                        backgroundColor: c.surfaceContainer,
-                        borderColor: hexWithAlpha(c.outlineVariant, 0.15),
-                      },
-                    ]}
-                  >
+                  <View style={styles.pasteRow}>
                     <TextInput
                       value={pasteCode}
                       onChangeText={setPasteCode}
                       onSubmitEditing={handleConnect}
-                      onFocus={() =>
-                        setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
-                      }
+                      onFocus={handleInputFocus}
                       placeholder={t('sync.paste.placeholder')}
                       placeholderTextColor={hexWithAlpha(c.onSurfaceVariant, 0.4)}
-                      style={[ss.pasteInput, { color: c.onSurface }]}
+                      style={styles.pasteInput}
                       autoCapitalize="none"
                       autoCorrect={false}
                     />
@@ -389,169 +430,93 @@ export default function AndroidSyncScreen() {
                       onPress={handleConnect}
                       disabled={isLoading || !isValidInvite(pasteCode)}
                       style={({ pressed }) => [
-                        ss.linkPillBtn,
-                        {
-                          backgroundColor: c.primary,
-                          opacity: isLoading || !isValidInvite(pasteCode) ? 0.4 : pressed ? 0.7 : 1,
-                        },
+                        styles.linkPillBtn,
+                        pressed && commonStyles.pressed,
+                        (isLoading || !isValidInvite(pasteCode)) && styles.linkPillBtnDisabled,
                       ]}
                     >
                       {isLoading ? (
-                        <ActivityIndicator size="small" color="#000" />
+                        <ActivityIndicator size="small" color={loaderColor} />
                       ) : (
-                        <Text style={[ss.linkPillText, { color: c.onPrimary || '#000' }]}>
-                          {t('sync.paste.linkBtn')}
-                        </Text>
+                        <Text style={styles.linkPillText}>{t('sync.paste.linkBtn')}</Text>
                       )}
                     </Pressable>
                   </View>
                 </Animated.View>
               )}
 
-              <Animated.View entering={FadeIn.duration(220).delay(140)} style={ss.footNoteRow}>
+              <Animated.View
+                entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
+                style={styles.footNoteRow}
+              >
                 <MaterialCommunityIcons
                   name="shield-check"
-                  size={13}
+                  size={UI_SIZE_12}
                   color={c.primary}
-                  style={{ marginTop: 2 }}
+                  style={styles.warningIconMargin}
                 />
-                <Text style={[ss.footNoteText, { color: c.onSurfaceVariant }]}>
-                  {t('sync.footer')}
-                </Text>
+                <Text style={styles.footNoteText}>{t('sync.footer')}</Text>
               </Animated.View>
             </Animated.View>
           ) : (
             <Animated.View
               key="devices-tab"
-              entering={FadeIn.duration(220)}
+              entering={FadeIn.duration(Durations.fade)}
               layout={LinearTransition.springify().damping(20).stiffness(220)}
-              style={ss.tabContent}
+              style={styles.tabContent}
             >
               {localDevices.length > 0 && (
                 <>
-                  <Text style={[ss.sectionCap, { color: hexWithAlpha(c.onSurfaceVariant, 0.6) }]}>
-                    {t('sync.devices.thisDevice')}
-                  </Text>
-                  {localDevices.map((device: any, index: number) => (
-                    <AndroidDeviceCard
-                      key={device.key}
-                      device={device}
-                      isLocal
-                      colors={c}
-                      index={index}
-                      onDelete={handleDeleteDevice}
-                    />
-                  ))}
+                  <Text style={styles.sectionCapLocal}>{t('sync.devices.thisDevice')}</Text>
+                  {localDevices.map(renderLocalDeviceCard)}
                 </>
               )}
 
-              <Text
-                style={[
-                  ss.sectionCap,
-                  {
-                    color: c.onSurfaceVariant,
-                    marginTop: localDevices.length > 0 ? 28 : 0,
-                  },
-                ]}
-              >
+              <Text style={[styles.sectionCap, localDevices.length > 0 && styles.sectionCapMargin]}>
                 {t('sync.devices.otherDevices')}
               </Text>
 
               {otherDevices.length > 0 ? (
-                otherDevices.map((device: any, index: number) => (
-                  <AndroidDeviceCard
-                    key={device.key}
-                    device={device}
-                    colors={c}
-                    index={index}
-                    onDelete={handleDeleteDevice}
-                  />
-                ))
+                otherDevices.map(renderOtherDeviceCard)
               ) : (
                 <Animated.View
-                  entering={FadeInDown.duration(220)}
-                  style={[ss.emptyCard, { borderColor: hexWithAlpha(c.outlineVariant, 0.15) }]}
+                  entering={FadeInDown.duration(Durations.fade)}
+                  style={styles.emptyCard}
                 >
                   <MaterialCommunityIcons
                     name="cellphone-link"
-                    size={28}
+                    size={UI_SIZE_30}
                     color={c.onSurfaceVariant}
                   />
-                  <Text style={[ss.emptyText, { color: c.onSurfaceVariant }]}>
-                    {t('sync.devices.empty')}
-                  </Text>
+                  <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
                 </Animated.View>
               )}
 
-              <View style={ss.encryptedBadgeRow}>
-                <View style={[ss.encryptedBadge, { backgroundColor: c.surfaceContainer }]}>
-                  <MaterialCommunityIcons name="shield-lock" size={16} color={c.primary} />
-                  <Text style={[ss.encryptedText, { color: c.onSurfaceVariant }]}>
-                    {t('settings.footer')
-                      ? t('settings.footer').split(' • ')[0].toUpperCase()
-                      : 'END-TO-END ENCRYPTED'}
+              <View style={styles.encryptedBadgeRow}>
+                <View style={styles.encryptedBadge}>
+                  <MaterialCommunityIcons
+                    name="shield-lock"
+                    size={UI_ICON_SIZE_16}
+                    color={c.primary}
+                  />
+                  <Text style={styles.encryptedText}>
+                    {t('settings.e2eEncrypted').toUpperCase()}
                   </Text>
                 </View>
               </View>
 
-              <Text style={[ss.footerText, { color: c.onSurfaceVariant }]}>
-                {t('sync.invite.warning')}
-              </Text>
+              <Text style={styles.footerText}>{t('sync.invite.warning')}</Text>
             </Animated.View>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <Modal
+      <AndroidScannerModal
         visible={scannerVisible}
-        animationType="slide"
-        presentationStyle="fullScreen"
-        onRequestClose={handleCloseScanner}
-      >
-        <View style={ss.scannerScreen}>
-          {cameraPermission?.granted ? (
-            <>
-              <CameraView
-                style={StyleSheet.absoluteFill}
-                facing="back"
-                barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
-                onBarcodeScanned={hasScanned ? undefined : handleBarcodeScanned}
-              />
-              <View style={ss.scannerOverlay} pointerEvents="none">
-                <View style={ss.scannerFrame} />
-              </View>
-              <View style={[ss.scannerHeader, { top: insets.top + 16 }]}>
-                <Pressable onPress={handleCloseScanner} style={ss.scannerCloseBtn}>
-                  <MaterialCommunityIcons name="close" size={20} color="#fff" />
-                </Pressable>
-              </View>
-              <View style={[ss.scannerFooter, { bottom: insets.bottom + 24 }]}>
-                <Text style={ss.scannerTitle}>{t('sync.scanner.title')}</Text>
-                <Text style={ss.scannerDesc}>{t('sync.scanner.description')}</Text>
-              </View>
-            </>
-          ) : (
-            <View style={ss.permissionCard}>
-              <Text style={ss.scannerTitle}>{t('sync.permissions.cameraTitle')}</Text>
-              <Text style={ss.scannerDesc}>{t('sync.permissions.cameraDescription')}</Text>
-              <Pressable
-                onPress={requestCameraPermission}
-                style={({ pressed }) => [
-                  ss.permissionBtn,
-                  { backgroundColor: c.primary, opacity: pressed ? 0.7 : 1 },
-                ]}
-              >
-                <Text style={[ss.permissionBtnText, { color: c.onPrimary || '#000' }]}>
-                  {t('sync.permissions.allowBtn')}
-                </Text>
-              </Pressable>
-              <Pressable onPress={handleCloseScanner} style={ss.permissionCancelBtn}>
-                <Text style={ss.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
-              </Pressable>
-            </View>
-          )}
-        </View>
-      </Modal>
+        onClose={handleCloseScanner}
+        onBarcodeScanned={handleBarcodeScanned}
+        hasScanned={hasScanned}
+      />
 
       <BottomActionSheet
         visible={deleteSheetVisible}
@@ -564,586 +529,367 @@ export default function AndroidSyncScreen() {
   )
 }
 
-type DeviceCardProps = {
-  device: any
-  isLocal?: boolean
-  colors: ExtendedColors
-  index: number
-  onDelete: (key: string) => void
+const useSyncHooks = () => {
+  const md3 = useMD3Theme()
+  const insets = useSafeAreaInsets()
+  return { md3, insets }
 }
 
-const AndroidDeviceCard = memo(function AndroidDeviceCard({
-  device,
-  isLocal,
-  colors: c,
-  index,
-  onDelete,
-}: DeviceCardProps) {
-  const { t } = useTranslation()
-  const dispatch = useDispatch()
+const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
+  const c = md3.colors as ExtendedColors
+  const styles = StyleSheet.create({
+    root: {
+      ...commonStyles.flex1,
+      backgroundColor: c.background,
+    },
+    flex1: {
+      ...commonStyles.flex1,
+    },
+    appBar: {
+      ...commonStyles.row,
+      justifyContent: 'space-between',
+      paddingHorizontal: UI_SIZE_8,
+      paddingBottom: UI_SIZE_8,
+      paddingTop: insets.top + UI_SIZE_4,
+    },
+    iconBtn: {
+      padding: UI_SIZE_8,
+      borderRadius: UI_SIZE_9999,
+    },
+    appBarTitle: {
+      fontSize: UI_FONT_SIZE_20,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      ...commonStyles.flex1,
+      color: c.onSurface,
+    },
+    scrollContent: {
+      paddingHorizontal: UI_SIZE_24,
+      paddingTop: UI_SIZE_8,
+      paddingBottom: insets.bottom + UI_SIZE_40,
+    },
+    segRow: {
+      alignItems: 'center',
+      marginBottom: UI_SIZE_28,
+    },
+    segTrack: {
+      ...commonStyles.row,
+      borderRadius: UI_SIZE_9999,
+      padding: UI_SIZE_4,
+      width: '100%',
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
+    segPill: {
+      ...commonStyles.flex1,
+      paddingVertical: UI_SIZE_12,
+      borderRadius: UI_SIZE_9999,
+      ...commonStyles.centered,
+    },
+    segPillActive: {
+      backgroundColor: c.primaryContainer,
+    },
+    segLabel: {
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.onSurfaceVariant,
+    },
+    segLabelActive: {
+      color: c.onPrimaryContainer,
+    },
+    tabContent: {
+      ...commonStyles.flex1,
+    },
+    heroSection: {
+      alignItems: 'center',
+      marginBottom: UI_SIZE_8,
+      position: 'relative',
+    },
+    heroCircle: {
+      width: UI_SIZE_120,
+      height: UI_SIZE_120,
+      borderRadius: UI_SIZE_9999,
+      ...commonStyles.centered,
+      backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.12),
+    },
+    heroBadge: {
+      position: 'absolute',
+      bottom: 0,
+      right: '33%',
+      width: UI_SIZE_36,
+      height: UI_SIZE_36,
+      borderRadius: UI_SIZE_9999,
+      ...commonStyles.centered,
+      backgroundColor: c.primary,
+    },
+    heroTitle: {
+      fontSize: UI_FONT_SIZE_28,
+      fontWeight: FontWeight.black,
+      fontFamily: FontFamily.extraBold,
+      textAlign: 'center',
+      marginTop: UI_SIZE_20,
+      marginBottom: UI_SIZE_12,
+      letterSpacing: -0.5,
+      color: c.onSurface,
+    },
+    heroDesc: {
+      fontSize: UI_FONT_SIZE_14,
+      lineHeight: UI_SIZE_22,
+      textAlign: 'center',
+      marginBottom: UI_SIZE_32,
+      paddingHorizontal: UI_SIZE_16,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+    },
+    generateBtn: {
+      borderRadius: UI_SIZE_9999,
+      width: '100%',
+      ...commonStyles.row,
+      justifyContent: 'center',
+      paddingVertical: UI_SIZE_18,
+      marginBottom: UI_SIZE_12,
+      backgroundColor: c.primary,
+    },
+    generateBtnText: {
+      fontSize: UI_FONT_SIZE_16,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.onPrimary || theme.colors.text,
+    },
+    btnDisabled: {
+      opacity: 0.7,
+    },
+    mr8: {
+      marginRight: UI_SIZE_8,
+    },
+    qrWrap: {
+      alignItems: 'center',
+      marginBottom: UI_SIZE_20,
+    },
+    qrBox: {
+      width: UI_SIZE_200,
+      height: UI_SIZE_200,
+      borderRadius: UI_SIZE_16,
+      ...commonStyles.centered,
+      backgroundColor: theme.colors.white,
+    },
+    qrTitle: {
+      fontSize: UI_FONT_SIZE_16,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      marginTop: UI_SIZE_12,
+      marginBottom: UI_SIZE_4,
+      color: c.onSurface,
+    },
+    qrDescription: {
+      fontSize: UI_FONT_SIZE_13,
+      lineHeight: UI_SIZE_18,
+      textAlign: 'center',
+      color: c.onSurfaceVariant,
+      paddingHorizontal: UI_SIZE_20,
+    },
+    codeLabelText: {
+      fontSize: UI_FONT_SIZE_11,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 1.4,
+      marginBottom: UI_SIZE_10,
+      color: c.onSurfaceVariant,
+    },
+    codeBox: {
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderRadius: UI_SIZE_12,
+      paddingVertical: UI_SIZE_14,
+      paddingHorizontal: UI_SIZE_14,
+      marginBottom: UI_SIZE_16,
+      borderColor: hexWithAlpha(c.outlineVariant, 0.25),
+    },
+    codeText: {
+      fontFamily: 'monospace',
+      fontSize: UI_FONT_SIZE_12,
+      letterSpacing: 1,
+      color: c.onSurface,
+    },
+    copyBtnSuccess: {
+      backgroundColor: theme.colors.success,
+    },
+    copyBtnDefault: {
+      backgroundColor: c.primary,
+    },
+    copyTextSuccess: {
+      color: theme.colors.white,
+      marginLeft: UI_SIZE_8,
+    },
+    copyTextDefault: {
+      color: c.onPrimary || theme.colors.text,
+      marginLeft: UI_SIZE_8,
+    },
+    warningRow: {
+      ...commonStyles.row,
+      alignItems: 'flex-start',
+      gap: UI_SIZE_8,
+      borderWidth: 1,
+      borderRadius: UI_SIZE_12,
+      padding: UI_SIZE_14,
+      marginTop: UI_SIZE_12,
+      backgroundColor: hexWithAlpha(c.primary, 0.08),
+      borderColor: hexWithAlpha(c.primary, 0.2),
+    },
+    warningIconMargin: {
+      marginTop: UI_SIZE_2,
+    },
+    warningText: {
+      ...commonStyles.flex1,
+      fontSize: UI_FONT_SIZE_12,
+      lineHeight: UI_SIZE_17,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+    },
+    invitePasteSection: {
+      marginTop: UI_SIZE_28,
+    },
+    invitePasteHeader: {
+      ...commonStyles.row,
+      justifyContent: 'space-between',
+      marginBottom: UI_SIZE_14,
+    },
+    invitePasteLeft: {
+      ...commonStyles.row,
+      gap: UI_SIZE_6,
+    },
+    plusIcon: {
+      fontSize: UI_FONT_SIZE_18,
+      fontWeight: FontWeight.semibold,
+      lineHeight: UI_SIZE_20,
+      color: c.primary,
+    },
+    invitePasteTitle: {
+      fontSize: UI_FONT_SIZE_15,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurface,
+    },
+    scanPillSmall: {
+      ...commonStyles.row,
+      gap: UI_SIZE_4,
+      paddingVertical: UI_SIZE_6,
+      paddingHorizontal: UI_SIZE_10,
+      borderRadius: UI_SIZE_8,
+      backgroundColor: hexWithAlpha(c.primary, 0.1),
+    },
+    scanPillSmallText: {
+      fontSize: UI_FONT_SIZE_11,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.primary,
+    },
+    pasteRow: {
+      ...commonStyles.row,
+      borderRadius: UI_SIZE_9999,
+      paddingLeft: UI_SIZE_20,
+      paddingRight: UI_SIZE_6,
+      paddingVertical: UI_SIZE_6,
+      borderWidth: StyleSheet.hairlineWidth,
+      backgroundColor: c.surfaceContainer,
+      borderColor: hexWithAlpha(c.outlineVariant, 0.15),
+    },
+    pasteInput: {
+      ...commonStyles.flex1,
+      fontSize: UI_FONT_SIZE_14,
+      fontFamily: FontFamily.regular,
+      paddingVertical: UI_SIZE_10,
+      color: c.onSurface,
+    },
+    linkPillBtn: {
+      borderRadius: UI_SIZE_9999,
+      paddingHorizontal: UI_SIZE_24,
+      paddingVertical: UI_SIZE_12,
+      backgroundColor: c.primary,
+    },
+    linkPillBtnDisabled: {
+      opacity: 0.4,
+    },
+    linkPillText: {
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.onPrimary || theme.colors.text,
+    },
+    footNoteRow: {
+      ...commonStyles.row,
+      alignItems: 'flex-start',
+      gap: UI_SIZE_8,
+      marginTop: UI_SIZE_24,
+    },
+    footNoteText: {
+      fontSize: UI_FONT_SIZE_12,
+      ...commonStyles.flex1,
+      lineHeight: UI_SIZE_17,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+    },
+    sectionCap: {
+      fontSize: UI_FONT_SIZE_12,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
+      letterSpacing: 1.5,
+      marginBottom: UI_SIZE_12,
+      color: c.onSurfaceVariant,
+    },
+    sectionCapLocal: {
+      fontSize: UI_FONT_SIZE_12,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
+      letterSpacing: 1.5,
+      marginBottom: UI_SIZE_12,
+      color: hexWithAlpha(c.onSurfaceVariant, 0.6),
+    },
+    sectionCapMargin: {
+      marginTop: UI_SIZE_28,
+    },
+    emptyCard: {
+      borderWidth: 1,
+      borderStyle: 'dashed',
+      borderRadius: UI_SIZE_24,
+      paddingVertical: UI_SIZE_40,
+      ...commonStyles.centered,
+      gap: UI_SIZE_12,
+      borderColor: hexWithAlpha(c.outlineVariant, 0.15),
+    },
+    emptyText: {
+      fontSize: UI_FONT_SIZE_13,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+    },
+    encryptedBadgeRow: {
+      alignItems: 'center',
+      marginTop: UI_SIZE_32,
+      marginBottom: UI_SIZE_12,
+    },
+    encryptedBadge: {
+      ...commonStyles.row,
+      gap: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_10,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: c.surfaceContainer,
+    },
+    encryptedText: {
+      fontSize: UI_FONT_SIZE_11,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
+      letterSpacing: 1.5,
+      color: c.onSurfaceVariant,
+    },
+    footerText: {
+      fontSize: UI_FONT_SIZE_12,
+      lineHeight: UI_SIZE_18,
+      textAlign: 'center',
+      paddingHorizontal: UI_SIZE_20,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+    },
+  })
 
-  const platformKey =
-    device.platform === 'darwin'
-      ? 'macOS'
-      : device.platform === 'win32'
-        ? 'Windows'
-        : device.platform === 'linux'
-          ? 'Linux'
-          : device.platform === 'android'
-            ? 'Android'
-            : device.platform === 'ios'
-              ? 'iOS'
-              : 'unknown'
-
-  const platformLabel = t(`sync.platforms.${platformKey}`)
-
-  const iconName =
-    device.deviceType === 'mobile' || device.platform === 'android' || device.platform === 'ios'
-      ? 'cellphone'
-      : 'monitor'
-  const displayName =
-    device.title || (device.key ? `${device.key.slice(0, 6)}…${device.key.slice(-5)}` : 'Unknown')
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(device.title || '')
-  const inputRef = useRef<TextInput>(null)
-
-  const startEditing = useCallback(() => {
-    if (!isLocal) return
-    setEditedTitle(device.title || '')
-    setIsEditing(true)
-    setTimeout(() => inputRef.current?.focus(), 50)
-  }, [isLocal, device.title])
-
-  const commitEdit = useCallback(() => {
-    const trimmed = editedTitle.trim()
-    if (trimmed && trimmed !== device.title) {
-      dispatch(updateSyncedDevice({ key: device.key, title: trimmed } as any))
-    }
-    setIsEditing(false)
-  }, [dispatch, editedTitle, device.title, device.key])
-
-  const cancelEdit = useCallback(() => {
-    setEditedTitle(device.title || '')
-    setIsEditing(false)
-  }, [device.title])
-
-  return (
-    <Animated.View
-      entering={FadeInDown.duration(200).delay(Math.min(index, 6) * 40)}
-      layout={LinearTransition.springify().damping(20).stiffness(220)}
-    >
-      <Pressable
-        onPress={!isLocal ? undefined : startEditing}
-        style={({ pressed }) => [
-          ds.card,
-          { backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant },
-          pressed && {
-            backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
-          },
-        ]}
-      >
-        <View style={[ds.iconCircle, { backgroundColor: hexWithAlpha(c.primary, 0.12) }]}>
-          <MaterialCommunityIcons name={iconName} size={22} color={c.primary} />
-          {device.isLocal && <View style={ds.onlineDot} />}
-        </View>
-
-        <View style={ds.info}>
-          {isEditing ? (
-            <TextInput
-              ref={inputRef}
-              value={editedTitle}
-              onChangeText={setEditedTitle}
-              onBlur={commitEdit}
-              onSubmitEditing={commitEdit}
-              style={[
-                ds.renameInput,
-                {
-                  color: c.onSurface,
-                  borderColor: c.primary,
-                  backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
-                },
-              ]}
-              returnKeyType="done"
-              autoCapitalize="words"
-              onKeyPress={({ nativeEvent }) => {
-                if (nativeEvent.key === 'Escape') cancelEdit()
-              }}
-            />
-          ) : (
-            <Text style={[ds.name, { color: c.onSurface }]} numberOfLines={1}>
-              {displayName}
-            </Text>
-          )}
-          <Text style={[ds.platform, { color: c.onSurfaceVariant }]}>
-            {platformLabel}
-            {isLocal && !isEditing && (
-              <Text style={[ds.tapToRename, { color: c.onSurfaceVariant }]}>
-                {t('sync.platforms.renameHint')}
-              </Text>
-            )}
-          </Text>
-        </View>
-
-        {!isLocal && (
-          <Pressable onPress={() => onDelete(device.key)} hitSlop={12} style={ds.deleteBtn}>
-            <MaterialCommunityIcons name="delete-outline" size={18} color={c.error} />
-          </Pressable>
-        )}
-      </Pressable>
-    </Animated.View>
-  )
-})
-
-const ss = StyleSheet.create({
-  root: { flex: 1 },
-  flex1: { flex: 1 },
-  appBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-    paddingBottom: 8,
-  },
-  iconBtn: {
-    padding: 8,
-    borderRadius: 9999,
-  },
-  appBarTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-  },
-  segRow: {
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-  segTrack: {
-    flexDirection: 'row',
-    borderRadius: 9999,
-    padding: 4,
-    width: '100%',
-  },
-  segPill: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  segLabel: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  tabContent: {
-    flex: 1,
-  },
-  heroSection: {
-    alignItems: 'center',
-    marginBottom: 8,
-    position: 'relative',
-  },
-  heroCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroBadge: {
-    position: 'absolute',
-    bottom: 0,
-    right: '33%',
-    width: 36,
-    height: 36,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  heroTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 12,
-    letterSpacing: -0.5,
-  },
-  heroDesc: {
-    fontSize: 14,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginBottom: 32,
-    paddingHorizontal: 16,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  generateBtn: {
-    borderRadius: 9999,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 18,
-    marginBottom: 12,
-  },
-  generateBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  mr8: { marginRight: 8 },
-  scanBtn: {
-    borderRadius: 9999,
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    gap: 10,
-    marginBottom: 24,
-  },
-  scanBtnText: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-  orDividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    gap: 12,
-  },
-  orLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-  },
-  orText: {
-    fontSize: 11,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: 1.5,
-  },
-  pasteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 9999,
-    paddingLeft: 20,
-    paddingRight: 6,
-    paddingVertical: 6,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  pasteInput: {
-    flex: 1,
-    fontSize: 14,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    paddingVertical: 10,
-  },
-  linkPillBtn: {
-    borderRadius: 9999,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-  },
-  linkPillText: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  qrWrap: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  qrBox: {
-    width: 200,
-    height: 200,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-  },
-  codeLabelText: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    marginBottom: 10,
-  },
-  codeBox: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    marginBottom: 16,
-  },
-  codeText: {
-    fontFamily: 'monospace',
-    fontSize: 12,
-    letterSpacing: 1,
-  },
-  warningRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 12,
-  },
-  warningText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 17,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  invitePasteSection: {
-    marginTop: 28,
-  },
-  invitePasteHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 14,
-  },
-  invitePasteLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  plusIcon: {
-    fontSize: 18,
-    fontWeight: '600',
-    lineHeight: 20,
-  },
-  invitePasteTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-  scanPillSmall: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-  },
-  scanPillSmallText: {
-    fontSize: 11,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  footNoteRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginTop: 24,
-  },
-  footNoteText: {
-    fontSize: 12,
-    flex: 1,
-    lineHeight: 17,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  sectionCap: {
-    fontSize: 12,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: 1.5,
-    marginBottom: 12,
-  },
-  emptyCard: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 24,
-    paddingVertical: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-  },
-  emptyText: {
-    fontSize: 13,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  encryptedBadgeRow: {
-    alignItems: 'center',
-    marginTop: 32,
-    marginBottom: 12,
-  },
-  encryptedBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 9999,
-  },
-  encryptedText: {
-    fontSize: 11,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: 1.5,
-  },
-  footerText: {
-    fontSize: 12,
-    lineHeight: 18,
-    textAlign: 'center',
-    paddingHorizontal: 20,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  scannerScreen: { flex: 1, backgroundColor: '#000' },
-  scannerOverlay: {
-    ...StyleSheet.absoluteFill,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  scannerFrame: {
-    width: '100%',
-    maxWidth: 280,
-    maxHeight: 280,
-    aspectRatio: 1,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.92)',
-  },
-  scannerHeader: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-  },
-  scannerCloseBtn: {
-    width: 42,
-    height: 42,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)',
-  },
-  scannerFooter: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 0,
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    gap: 8,
-  },
-  scannerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    textAlign: 'center',
-    color: '#fff',
-  },
-  scannerDesc: {
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: 'center',
-    color: 'rgba(255,255,255,0.8)',
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  permissionCard: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-    gap: 12,
-  },
-  permissionBtn: {
-    marginTop: 8,
-    borderRadius: 9999,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-  },
-  permissionBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-  permissionCancelBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  permissionCancelText: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-})
-
-const ds = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 24,
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    marginBottom: 10,
-    gap: 16,
-  },
-  iconCircle: {
-    width: 48,
-    height: 48,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  onlineDot: {
-    position: 'absolute',
-    bottom: -1,
-    right: -1,
-    width: 12,
-    height: 12,
-    borderRadius: 9999,
-    backgroundColor: '#22C55E',
-    borderWidth: 2,
-    borderColor: '#121212',
-  },
-  info: {
-    flex: 1,
-    minWidth: 0,
-  },
-  name: {
-    fontSize: 15,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: -0.3,
-    marginBottom: 3,
-  },
-  platform: {
-    fontSize: 11,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
-  tapToRename: {
-    fontSize: 11,
-    fontWeight: '500',
-    textTransform: 'none',
-    letterSpacing: 0,
-  },
-  renameInput: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginBottom: 2,
-  },
-  deleteBtn: {
-    padding: 6,
-  },
-})
+  return styles
+}, useSyncHooks)

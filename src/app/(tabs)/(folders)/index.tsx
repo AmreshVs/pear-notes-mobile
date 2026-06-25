@@ -22,19 +22,14 @@ import { useDispatch, useSelector } from 'react-redux'
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
 import { Text, Theme, useColors, useThemedStyles, View } from '@/components/Themed'
-import {
-  FontSize,
-  FontWeight,
-  LetterSpacing,
-  Space,
-  useCommonStyles,
-} from '@/constants/commonStyles'
+import { FontSize, FontWeight, LetterSpacing, Space, commonStyles } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function FoldersScreen() {
   const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
-  const common = useCommonStyles()
+  const commonThemedStyles = useCommonThemedStyles()
   const colors = useColors()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -126,8 +121,8 @@ export default function FoldersScreen() {
   }, [])
 
   const iconBtnStyle = useCallback(
-    ({ pressed }: { pressed: boolean }) => [styles.iconBtn, pressed && common.pressed],
-    [styles.iconBtn, common.pressed],
+    ({ pressed }: { pressed: boolean }) => [styles.iconBtn, pressed && commonStyles.pressed],
+    [styles.iconBtn],
   )
 
   const headerLeft = useCallback(
@@ -151,13 +146,13 @@ export default function FoldersScreen() {
         <Pressable onPress={handleCreateFolder} style={iconBtnStyle}>
           <FolderPlus size={20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
-        <View style={common.pillDivider} />
+        <View style={commonThemedStyles.pillDivider} />
         <Pressable onPress={handleCreateNote} style={iconBtnStyle}>
           <SquarePen size={20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
       </GlassView>
     ),
-    [handleCreateFolder, handleCreateNote, iconBtnStyle, colors.text],
+    [handleCreateFolder, handleCreateNote, iconBtnStyle, colors.text, commonThemedStyles],
   )
 
   const renderFolders = useCallback(
@@ -203,7 +198,7 @@ export default function FoldersScreen() {
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text style={[common.sectionCap, styles.sectionHeaderMargin]}>
+            <Text style={[commonThemedStyles.sectionCap, styles.sectionHeaderMargin]}>
               {t('folders.archiveHeader')}
             </Text>
             {renderFolders(archiveFolders, topFolders.length)}

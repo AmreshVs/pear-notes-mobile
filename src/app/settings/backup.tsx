@@ -61,8 +61,9 @@ import {
   LetterSpacing,
   Radii,
   Space,
-  useCommonStyles,
+  commonStyles,
 } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
 type BackupStatus = {
   step: string
@@ -127,7 +128,7 @@ export default function BackupScreen() {
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
-  const common = useCommonStyles()
+  const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
 
   const exportStatus = useSelector(getExportStatus) as BackupStatus
@@ -228,7 +229,7 @@ export default function BackupScreen() {
       const filePath = decodedUri.startsWith('file://')
         ? decodedUri.replace('file://', '')
         : decodedUri
-      dispatch(startImportBackup({ filePath }))
+      dispatch(startImportBackup({ filePath } as any))
     } catch (e) {
       Alert.alert(t('backup.restoreError'), String(e))
     }
@@ -251,7 +252,7 @@ export default function BackupScreen() {
 
   const handleDeleteMedia = useCallback(
     (noteKey: string, mediaPath: string) => {
-      dispatch(deleteNoteMedia({ noteKey, mediaPath }))
+      dispatch(deleteNoteMedia({ noteKey, mediaPath } as any))
     },
     [dispatch],
   )
@@ -266,7 +267,7 @@ export default function BackupScreen() {
             <Pressable
               onPress={() => router.back()}
               hitSlop={8}
-              style={({ pressed }) => [styles.closeBtn, pressed && common.pressed]}
+              style={({ pressed }) => [styles.closeBtn, pressed && commonStyles.pressed]}
             >
               <X size={16} color={colors.text} strokeWidth={2.5} />
             </Pressable>
@@ -319,9 +320,9 @@ export default function BackupScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(240).delay(100)}>
-          <RNView style={common.card}>
+          <RNView style={commonThemedStyles.card}>
             <RNView style={styles.infoRow}>
-              <RNView style={[common.iconBox34, styles.goldIconBox]}>
+              <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
                 <RotateCcw size={16} color={colors.primary} strokeWidth={1.8} />
               </RNView>
               <RNView style={styles.infoText}>
@@ -335,15 +336,15 @@ export default function BackupScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(240).delay(130)} style={styles.statsRow}>
-          <RNView style={[common.card, styles.statCard]}>
-            <RNView style={[common.iconBox34, styles.goldIconBox]}>
+          <RNView style={[commonThemedStyles.card, styles.statCard]}>
+            <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
               <HardDrive size={16} color={colors.primary} strokeWidth={1.8} />
             </RNView>
             <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
             <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
           </RNView>
-          <RNView style={[common.card, styles.statCard]}>
-            <RNView style={[common.iconBox34, styles.goldIconBox]}>
+          <RNView style={[commonThemedStyles.card, styles.statCard]}>
+            <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
               <Lock size={16} color={colors.primary} strokeWidth={1.8} />
             </RNView>
             <Text style={styles.statLabel}>{t('backup.encryption')}</Text>
@@ -354,7 +355,7 @@ export default function BackupScreen() {
         {totalOnDiskBytes > 0 && (
           <Animated.View
             entering={FadeInDown.duration(240).delay(150)}
-            style={[common.card, styles.perNoteSection]}
+            style={[commonThemedStyles.card, styles.perNoteSection]}
           >
             <RNView style={styles.diskRow}>
               <RNText style={styles.diskLabel}>{t('backup.diskFootprint')}</RNText>
@@ -375,7 +376,7 @@ export default function BackupScreen() {
             style={styles.breakdownSection}
           >
             <Text style={styles.sectionCapMargin}>{t('backup.breakdownByType')}</Text>
-            <RNView style={common.card}>
+            <RNView style={commonThemedStyles.card}>
               {buckets.image.count > 0 && (
                 <RNView style={styles.breakdownRow}>
                   <RNView style={styles.breakdownRowMeta}>
@@ -447,7 +448,7 @@ export default function BackupScreen() {
               {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
             </Text>
             {notesStorageInfo.map((note: any) => (
-              <RNView key={note.key} style={[common.card, { marginBottom: 8 }]}>
+              <RNView key={note.key} style={[commonThemedStyles.card, { marginBottom: 8 }]}>
                 <Pressable
                   onPress={() => setExpandedNote(expandedNote === note.key ? null : note.key)}
                   style={({ pressed }) => [styles.noteRow, pressed && { opacity: 0.7 }]}
@@ -525,9 +526,9 @@ export default function BackupScreen() {
       </ScrollView>
 
       <Modal visible={showProgressModal} transparent animationType="fade" statusBarTranslucent>
-        <RNView style={[common.modalOverlay, styles.overlayCenter]}>
-          <RNView style={[common.modalCard, styles.progressCard]}>
-            <RNView style={common.modalInner}>
+        <RNView style={[commonStyles.modalOverlay, styles.overlayCenter]}>
+          <RNView style={[commonStyles.modalCard, styles.progressCard]}>
+            <RNView style={commonStyles.modalInner}>
               <RNView style={styles.progressIconWrap}>
                 {!isError && importStatus.step !== 'done' && (
                   <ActivityIndicator
@@ -591,7 +592,7 @@ export default function BackupScreen() {
       </Modal>
 
       <Modal visible={confirmClear} transparent animationType="fade" statusBarTranslucent>
-        <RNView style={[common.modalOverlay, styles.overlayCenter]}>
+        <RNView style={[commonStyles.modalOverlay, styles.overlayCenter]}>
           <RNView style={styles.confirmCard}>
             <RNText style={styles.progressTitle}>{t('backup.clearAllDataTitle')}</RNText>
             <RNText style={styles.progressDesc}>{t('backup.clearAllDataDesc')}</RNText>

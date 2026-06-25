@@ -9,7 +9,8 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
-import { Space, useCommonStyles } from '@/constants/commonStyles'
+import { Space, commonStyles } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function SearchScreen() {
@@ -17,7 +18,7 @@ export default function SearchScreen() {
   const theme = useTheme()
   const { colors, isDark } = theme
   const styles = useThemedStyles(createStyles)
-  const common = useCommonStyles()
+  const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const notes = useSelector(getFilteredNotes)
@@ -65,16 +66,16 @@ export default function SearchScreen() {
         showsVerticalScrollIndicator={false}
       >
         {notes.length === 0 ? (
-          <View style={common.emptyContainer}>
+          <View style={commonThemedStyles.emptyContainer}>
             {searchQuery.trim().length > 0 ? (
               <>
-                <Text style={common.emptyTitle}>{t('search.empty.noMatches')}</Text>
-                <Text style={common.emptySubtitle}>{t('search.empty.tryDifferent')}</Text>
+                <Text style={commonThemedStyles.emptyTitle}>{t('search.empty.noMatches')}</Text>
+                <Text style={commonThemedStyles.emptySubtitle}>{t('search.empty.tryDifferent')}</Text>
               </>
             ) : (
               <>
-                <Text style={common.emptyTitle}>{t('search.empty.searchNotes')}</Text>
-                <Text style={common.emptySubtitle}>{t('search.empty.typeToFind')}</Text>
+                <Text style={commonThemedStyles.emptyTitle}>{t('search.empty.searchNotes')}</Text>
+                <Text style={commonThemedStyles.emptySubtitle}>{t('search.empty.typeToFind')}</Text>
               </>
             )}
           </View>

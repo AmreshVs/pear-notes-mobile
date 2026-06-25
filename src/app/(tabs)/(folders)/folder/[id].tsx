@@ -26,13 +26,8 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
 import { Text, Theme, View, useTheme, useThemedStyles } from '@/components/Themed'
-import {
-  FontSize,
-  FontWeight,
-  LetterSpacing,
-  Space,
-  useCommonStyles,
-} from '@/constants/commonStyles'
+import { FontSize, FontWeight, LetterSpacing, Space, commonStyles } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 // Replace HTML tags with a space so words don't run together, then normalize whitespace
@@ -68,7 +63,7 @@ export default function FolderNotesScreen() {
   const theme = useTheme()
   const { colors, isDark } = theme
   const styles = useThemedStyles(createStyles)
-  const common = useCommonStyles()
+  const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const allFolders = useSelector(getFolders)
@@ -257,7 +252,7 @@ export default function FolderNotesScreen() {
       >
         <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
         <View style={styles.headerInfo}>
-          <Text style={common.sectionCap}>
+          <Text style={commonThemedStyles.sectionCap}>
             {t('folderView.noteCount', { count: notes.length })}
           </Text>
         </View>
@@ -266,13 +261,13 @@ export default function FolderNotesScreen() {
           <View style={[styles.emptyStateWrapper, { marginTop: height * 0.18 }]}>
             {searchQuery.trim().length > 0 ? (
               <>
-                <Text style={common.emptyTitle}>No matches found</Text>
-                <Text style={common.emptySubtitle}>Try a different search term</Text>
+                <Text style={commonThemedStyles.emptyTitle}>No matches found</Text>
+                <Text style={commonThemedStyles.emptySubtitle}>Try a different search term</Text>
               </>
             ) : (
               <>
-                <Text style={common.emptyTitle}>No Notes</Text>
-                <Text style={common.emptySubtitle}>Tap the compose button to create one</Text>
+                <Text style={commonThemedStyles.emptyTitle}>No Notes</Text>
+                <Text style={commonThemedStyles.emptySubtitle}>Tap the compose button to create one</Text>
                 {localPreferences['isSynced'] !== true && (
                   <View style={styles.linkContainer}>
                     <View style={styles.linkDivider} />
@@ -281,9 +276,9 @@ export default function FolderNotesScreen() {
                     <Pressable
                       onPress={handleLinkDevice}
                       style={({ pressed }) => [
-                        common.primaryBtn,
+                        commonStyles.primaryBtn,
                         { backgroundColor: colors.primary, width: '100%', marginTop: Space.xl },
-                        pressed && common.pressed,
+                        pressed && commonStyles.pressed,
                       ]}
                     >
                       <Text style={styles.linkBtnText}>{t('folderView.empty.connectBtn')}</Text>
@@ -297,7 +292,7 @@ export default function FolderNotesScreen() {
           groupedNotes.map((section, sectionIndex) => (
             <View key={section.title} style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={common.sectionCap}>{section.title}</Text>
+                <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
               </View>
               <View style={styles.listContainer}>
                 {section.data.map((note, index) => (

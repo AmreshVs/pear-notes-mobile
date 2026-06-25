@@ -20,10 +20,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.amreshvs.pearnotes",
       "allowBackup": false,
-      "permissions": [
-        "RECORD_AUDIO",
-        "CAMERA"
-      ]
+      "permissions": ["RECORD_AUDIO", "CAMERA"]
     },
     "web": {
       "bundler": "metro",

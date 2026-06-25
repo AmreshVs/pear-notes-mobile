@@ -1,6 +1,6 @@
 module.exports = {
   extends: 'universe/native',
-  plugins: ['import'],
+  plugins: ['import', 'react-native'],
   rules: {
     'import/order': [
       'error',
@@ -12,5 +12,6 @@ module.exports = {
     ],
     semi: ['error', 'never'],
     'no-extra-semi': 'error',
+    'react-native/no-unused-styles': 'error',
   },
 }

@@ -213,7 +213,7 @@ export default function AndroidBackupScreen() {
       const filePath = decodedUri.startsWith('file://')
         ? decodedUri.replace('file://', '')
         : decodedUri
-      dispatch(startImportBackup({ filePath }))
+      dispatch(startImportBackup({ filePath } as any))
     } catch (e) {
       Alert.alert(t('backup.restoreError'), String(e))
     }
@@ -236,7 +236,7 @@ export default function AndroidBackupScreen() {
 
   const handleDeleteMedia = useCallback(
     (noteKey: string, mediaPath: string) => {
-      dispatch(deleteNoteMedia({ noteKey, mediaPath }))
+      dispatch(deleteNoteMedia({ noteKey, mediaPath } as any))
     },
     [dispatch],
   )

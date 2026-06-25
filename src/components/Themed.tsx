@@ -49,6 +49,26 @@ export function useThemedStyles<T>(factory: (theme: Theme) => T): T {
   return useMemo(() => factory(theme), [factory, theme])
 }
 
+export const createThemedStylesheet = <T extends object>(builder: (theme: Theme) => T) => {
+  return () => {
+    const theme = useTheme()
+    const stylesheet = useMemo(() => builder(theme), [theme])
+    return stylesheet
+  }
+}
+
+export const createThemedStylesheetWithHooks = <T extends object, Output>(
+  builder: (theme: Theme, hooksOutput: Output) => T,
+  hooks: () => Output,
+) => {
+  return () => {
+    const theme = useTheme()
+    const hooksOutput = hooks()
+    const stylesheet = useMemo(() => builder(theme, hooksOutput), [hooksOutput, theme])
+    return stylesheet
+  }
+}
+
 type ThemeProps = {
   lightColor?: string
   darkColor?: string

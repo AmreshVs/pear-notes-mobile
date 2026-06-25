@@ -14,7 +14,6 @@ import {
 import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
-import * as SecureStore from 'expo-secure-store'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -41,6 +40,7 @@ import {
   Radii,
   Space,
 } from '@/constants/commonStyles'
+import { deleteDbEncryptionKey } from '@/lib/secureStore'
 
 const isAndroid = process.env.EXPO_OS === 'android'
 
@@ -228,7 +228,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
           <Pressable
             onPress={() => {
-              SecureStore.deleteItemAsync('db_encryption_key').catch(console.error)
+              deleteDbEncryptionKey().catch(console.error)
               dispatch(clearStorage())
               dispatch(setDeviceRemoved(false))
             }}

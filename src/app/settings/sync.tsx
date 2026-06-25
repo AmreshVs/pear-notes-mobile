@@ -53,8 +53,9 @@ import {
   MonoFontFamily,
   Radii,
   Space,
-  useCommonStyles,
+  commonStyles,
 } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
 const GET_PLATFORM_NAMES = (t: any): Record<string, string> => ({
   darwin: t('sync.platforms.macOS'),
@@ -69,7 +70,6 @@ export default function SyncScreen() {
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
-  const common = useCommonStyles()
   const dispatch = useDispatch()
 
   const inviteCode = useSelector(getInvite)
@@ -143,7 +143,7 @@ export default function SyncScreen() {
     <KeyboardAvoidingView
       behavior={process.env.EXPO_OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={process.env.EXPO_OS === 'ios' ? 96 : 0}
-      style={common.flex1}
+      style={commonStyles.flex1}
     >
       <ScrollView
         ref={scrollRef}
@@ -214,7 +214,7 @@ export default function SyncScreen() {
                     <RNView style={styles.iconPill}>
                       <ShieldCheck size={18} color={colors.primary} strokeWidth={1.5} />
                     </RNView>
-                    <RNView style={common.flex1}>
+                    <RNView style={commonStyles.flex1}>
                       <Text style={styles.inviteTitle}>{t('sync.invite.header')}</Text>
                       <Text style={styles.inviteSub}>{formatExpiry(expiresAt)}</Text>
                     </RNView>
@@ -484,7 +484,6 @@ const DeviceCard = memo(function DeviceCard({
   const theme = useTheme()
   const { colors } = theme
   const styles = useThemedStyles(createStyles)
-  const common = useCommonStyles()
   const dispatch = useDispatch()
   const { t } = useTranslation()
   const Icon = device.deviceType === 'desktop' ? Monitor : Smartphone
@@ -578,7 +577,7 @@ const DeviceCard = memo(function DeviceCard({
             <Pressable
               onPress={openDeleteModal}
               hitSlop={12}
-              style={({ pressed }) => [styles.deleteBtn, pressed && common.pressed]}
+              style={({ pressed }) => [styles.deleteBtn, pressed && commonStyles.pressed]}
             >
               <Trash2 size={17} color={colors.error} strokeWidth={1.5} />
             </Pressable>
@@ -613,7 +612,7 @@ const DeleteModal = memo(function DeleteModal({
 }) {
   const { colors } = useTheme()
   const styles = useThemedStyles(createStyles)
-  const common = useCommonStyles()
+  const commonThemedStyles = useCommonThemedStyles()
   const { t } = useTranslation()
 
   return (
@@ -626,13 +625,13 @@ const DeleteModal = memo(function DeleteModal({
     >
       <Animated.View style={[styles.modalFill, { opacity: fadeAnim }]}>
         <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
-        <RNView style={common.modalOverlay} />
+        <RNView style={commonStyles.modalOverlay} />
 
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
 
         <RNView style={styles.modalCenter} pointerEvents="box-none">
-          <GlassView intensity={40} borderRadius={32} style={common.modalCard}>
-            <RNView style={common.modalInner}>
+          <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
+            <RNView style={commonStyles.modalInner}>
               <RNView style={styles.dangerIcon}>
                 <ShieldAlert size={40} color={colors.error} />
               </RNView>
@@ -645,8 +644,8 @@ const DeleteModal = memo(function DeleteModal({
                   onPress={onCancel}
                   style={({ pressed }) => [
                     styles.modalBtn,
-                    common.cancelBtn,
-                    pressed && common.pressed,
+                    commonThemedStyles.cancelBtn,
+                    pressed && commonStyles.pressed,
                   ]}
                 >
                   <Text style={styles.cancelText}>{t('sync.delete.cancel')}</Text>
@@ -656,7 +655,7 @@ const DeleteModal = memo(function DeleteModal({
                   style={({ pressed }) => [
                     styles.modalBtn,
                     styles.removeBtn,
-                    pressed && common.pressed,
+                    pressed && commonStyles.pressed,
                   ]}
                 >
                   <Text style={styles.removeText}>{t('sync.delete.remove')}</Text>
