@@ -11,7 +11,7 @@ import {
   getSelectedNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
+import { Href, router, Stack } from 'expo-router'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -21,7 +21,6 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
-  Text,
   TextInput,
   useWindowDimensions,
   View,
@@ -40,6 +39,34 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import {
+  commonStyles,
+  FontFamily,
+  FontWeight,
+  UI_FONT_SIZE_11,
+  UI_FONT_SIZE_14,
+  UI_FONT_SIZE_15,
+  UI_FONT_SIZE_18,
+  UI_FONT_SIZE_20,
+  UI_ICON_SIZE_18,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_22,
+  UI_ICON_SIZE_24,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_8,
+  UI_SIZE_10,
+  UI_SIZE_14,
+  UI_SIZE_16,
+  UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_48,
+  UI_SIZE_9999,
+  Radii,
+} from '@/constants/commonStyles'
+import { hexWithAlpha } from '@/lib/backupUtils'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 type Folder = {
@@ -60,31 +87,18 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceTint: string
 }
 
-function useVaultColors() {
-  const theme = useMD3Theme()
-  const c = theme.colors as ExtendedColors
-  return { theme, c }
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  if (hex.length === 7) return `${hex}${a}`
-  return hex
-}
-
 export default function AndroidFoldersScreen() {
   const { t } = useTranslation()
-  const { c, theme } = useVaultColors()
-  const insets = useSafeAreaInsets()
+  const md3 = useMD3Theme()
+  const theme = useTheme()
+  const c = md3.colors as ExtendedColors
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
+  const styles = useStyles()
 
   const folders = useSelector(getFolders) as Folder[]
   const noteCounts = useSelector(getNoteCountsPerFolder) as Record<string, number>
   const selectedNote = useSelector(getSelectedNote) as string | null
-  const { width, height } = useWindowDimensions()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
@@ -114,7 +128,7 @@ export default function AndroidFoldersScreen() {
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
-      router.push(`/folder/${ALL_NOTES_KEY}` as any)
+      router.push(`/folder/${ALL_NOTES_KEY}` as Href)
     }
   }, [])
 
@@ -132,14 +146,14 @@ export default function AndroidFoldersScreen() {
 
   const handleSelectFolder = useCallback(
     (folderId: string) => {
-      dispatch(setSelectedFolder(folderId as any))
-      router.push(`/folder/${folderId}` as any)
+      dispatch(setSelectedFolder(folderId))
+      router.push(`/folder/${folderId}` as Href)
     },
     [dispatch],
   )
 
   const handleCreateFolder = useCallback(() => {
-    dispatch(createFolder({ name: t('folders.untitled') } as any))
+    dispatch(createFolder({ name: t('folders.untitled') }))
   }, [dispatch, t])
 
   const openRenameDialog = useCallback((id: string, name: string) => {
@@ -151,7 +165,7 @@ export default function AndroidFoldersScreen() {
     if (!renameDialog) return
     const trimmed = renameText.trim()
     if (trimmed && trimmed !== renameDialog.name) {
-      dispatch(updateFolder({ id: renameDialog.id, name: trimmed } as any))
+      dispatch(updateFolder({ id: renameDialog.id, name: trimmed }))
     }
     setRenameDialog(null)
   }, [dispatch, renameDialog, renameText])
@@ -182,57 +196,86 @@ export default function AndroidFoldersScreen() {
       {
         text: t('folders.buttons.delete'),
         style: 'destructive',
-        onPress: () => dispatch(deleteFolder(folderId as any)),
+        onPress: () => dispatch(deleteFolder(folderId)),
       },
     ])
   }, [folderSheet, dispatch, t])
 
-  const dynStyles = useMemo(
-    () => createDynamicStyles(c, insets.bottom, width, height),
-    [c, insets.bottom, width, height],
+  const handleOpenSettings = useCallback(() => {
+    router.push('/settings')
+  }, [])
+
+  const handleCloseRenameDialog = useCallback(() => {
+    setRenameDialog(null)
+  }, [])
+
+  const handleCloseFolderSheet = useCallback(() => {
+    setFolderSheet(null)
+  }, [])
+
+  const handleNoop = useCallback(() => {}, [])
+
+  const sheetTitle = useMemo(() => {
+    if (!folderSheet) return t('folders.untitled')
+    const folder = folders.find((f) => f.id === folderSheet || f.key === folderSheet)
+    return folder?.name ?? t('folders.untitled')
+  }, [folders, folderSheet, t])
+
+  const sheetActions = useMemo(
+    () => [
+      {
+        icon: 'pencil-outline',
+        label: t('folders.buttons.rename'),
+        onPress: handleSheetRename,
+      },
+      {
+        icon: 'delete-outline',
+        label: t('folders.buttons.delete'),
+        onPress: handleSheetDelete,
+        destructive: true,
+      },
+    ],
+    [handleSheetRename, handleSheetDelete, t],
   )
 
   return (
-    <View style={dynStyles.root}>
+    <View style={styles.root}>
       <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
         backgroundColor={c.background}
       />
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
-        style={staticStyles.scroll}
-        contentContainerStyle={dynStyles.scrollContent}
+        style={commonStyles.flex1}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Animated.View entering={FadeIn.duration(200)} style={staticStyles.header}>
+        <Animated.View entering={FadeIn.duration(200)} style={styles.header}>
           <View>
-            <Text style={dynStyles.pageTitle}>{t('folders.title')}</Text>
-            <Text style={dynStyles.pageSubtitle}>{t('folders.subtitle')}</Text>
+            <Text style={styles.pageTitle}>{t('folders.title')}</Text>
+            <Text style={styles.pageSubtitle}>{t('folders.subtitle')}</Text>
           </View>
           <Pressable
-            onPress={() => router.push('/settings')}
-            style={({ pressed }) => [staticStyles.gearBtn, pressed && dynStyles.gearBtnPressed]}
-            hitSlop={8}
+            onPress={handleOpenSettings}
+            style={({ pressed }) => [styles.gearBtn, pressed && styles.gearBtnPressed]}
+            hitSlop={UI_SIZE_8}
           >
-            <MaterialCommunityIcons name="cog-outline" size={24} color={c.onSurface} />
+            <MaterialCommunityIcons name="cog-outline" size={UI_ICON_SIZE_24} color={c.onSurface} />
           </Pressable>
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(220).delay(40)}
-          style={staticStyles.searchWrap}
-        >
-          <View style={dynStyles.searchBar}>
+        <Animated.View entering={FadeInDown.duration(220).delay(40)} style={styles.searchWrap}>
+          <View style={styles.searchBar}>
             <MaterialCommunityIcons
               name="magnify"
-              size={20}
+              size={UI_ICON_SIZE_20}
               color={c.onSurfaceVariant}
-              style={staticStyles.searchIcon}
+              style={styles.searchIcon}
             />
             <TextInput
-              style={dynStyles.searchInput}
+              style={styles.searchInput}
               placeholder={t('folders.searchPlaceholder')}
               placeholderTextColor={c.onSurfaceVariant + '80'}
               value={searchQuery}
@@ -245,7 +288,7 @@ export default function AndroidFoldersScreen() {
         <Animated.View
           entering={FadeInDown.duration(240).delay(80)}
           layout={LinearTransition.springify().damping(20).stiffness(220)}
-          style={dynStyles.listCard}
+          style={styles.listCard}
         >
           {topFolders.map((folder, index) => (
             <VaultFolderRow
@@ -263,8 +306,8 @@ export default function AndroidFoldersScreen() {
           ))}
 
           {topFolders.length === 0 && (
-            <View style={staticStyles.emptyRow}>
-              <Text style={dynStyles.emptyText}>{t('folders.noFoldersFound')}</Text>
+            <View style={styles.emptyRow}>
+              <Text style={styles.emptyText}>{t('folders.noFoldersFound')}</Text>
             </View>
           )}
         </Animated.View>
@@ -272,13 +315,17 @@ export default function AndroidFoldersScreen() {
         {archiveFolders.length > 0 && (
           <Animated.View
             entering={FadeInDown.duration(240).delay(120)}
-            style={staticStyles.archiveSection}
+            style={styles.archiveSection}
           >
-            <View style={staticStyles.sectionHeader}>
-              <MaterialCommunityIcons name="archive-outline" size={20} color={c.onSurfaceVariant} />
-              <Text style={dynStyles.sectionTitle}>{t('folders.archiveHeader')}</Text>
+            <View style={styles.sectionHeader}>
+              <MaterialCommunityIcons
+                name="archive-outline"
+                size={UI_ICON_SIZE_20}
+                color={c.onSurfaceVariant}
+              />
+              <Text style={styles.sectionTitle}>{t('folders.archiveHeader')}</Text>
             </View>
-            <View style={dynStyles.listCard}>
+            <View style={styles.listCard}>
               {archiveFolders.map((folder, index) => (
                 <VaultFolderRow
                   key={folder.id || folder.key}
@@ -301,7 +348,7 @@ export default function AndroidFoldersScreen() {
       <FAB
         icon="plus"
         onPress={handleCreateFolder}
-        style={[dynStyles.fab, { bottom: insets.bottom + 24 }]}
+        style={styles.fab}
         color={c.onPrimaryContainer}
         customSize={64}
         theme={{ colors: { primaryContainer: c.primaryContainer } }}
@@ -311,14 +358,12 @@ export default function AndroidFoldersScreen() {
         visible={!!renameDialog}
         transparent
         animationType="fade"
-        onRequestClose={() => setRenameDialog(null)}
+        onRequestClose={handleCloseRenameDialog}
         statusBarTranslucent
       >
-        <Pressable style={staticStyles.modalOverlay} onPress={() => setRenameDialog(null)}>
-          <Pressable style={dynStyles.renameDialog} onPress={() => {}}>
-            <Text style={[staticStyles.dialogTitle, { color: c.onSurface }]}>
-              {t('folders.renameTitle')}
-            </Text>
+        <Pressable style={commonStyles.modalOverlay} onPress={handleCloseRenameDialog}>
+          <Pressable style={styles.renameDialog} onPress={handleNoop}>
+            <Text style={styles.dialogTitle}>{t('folders.renameTitle')}</Text>
             <PaperTextInput
               value={renameText}
               onChangeText={setRenameText}
@@ -326,16 +371,12 @@ export default function AndroidFoldersScreen() {
               mode="outlined"
               label={t('folders.renameLabel')}
             />
-            <View style={staticStyles.dialogActions}>
-              <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
-                <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
-                  {t('common.cancel')}
-                </Text>
+            <View style={styles.dialogActions}>
+              <Pressable onPress={handleCloseRenameDialog} style={styles.dialogBtn}>
+                <Text style={styles.dialogBtnTextCancel}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
-                <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
-                  {t('folders.buttons.rename')}
-                </Text>
+              <Pressable onPress={confirmRename} style={styles.dialogBtn}>
+                <Text style={styles.dialogBtnTextRename}>{t('folders.buttons.rename')}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -344,25 +385,10 @@ export default function AndroidFoldersScreen() {
 
       <BottomActionSheet
         visible={!!folderSheet}
-        onDismiss={() => setFolderSheet(null)}
-        title={
-          folders.find((f) => f.id === folderSheet || f.key === folderSheet)?.name ??
-          t('folders.untitled')
-        }
+        onDismiss={handleCloseFolderSheet}
+        title={sheetTitle}
         subtitle={t('folders.options')}
-        actions={[
-          {
-            icon: 'pencil-outline',
-            label: t('folders.buttons.rename'),
-            onPress: handleSheetRename,
-          },
-          {
-            icon: 'delete-outline',
-            label: t('folders.buttons.delete'),
-            onPress: handleSheetDelete,
-            destructive: true,
-          },
-        ]}
+        actions={sheetActions}
       />
     </View>
   )
@@ -392,7 +418,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
   onLongPress,
 }: VaultFolderRowProps) {
   const { t } = useTranslation()
-  const { dark: isDark } = useMD3Theme()
+  const styles = useStyles()
   const scale = useSharedValue(1)
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -410,33 +436,18 @@ const VaultFolderRow = memo(function VaultFolderRow({
 
   const iconName = isAll ? 'folder-account' : isTrash ? 'delete-outline' : 'folder-outline'
   const iconColor = isTrash ? c.error : c.primary
-  const iconBgAlpha = isDark ? 0.18 : 0.22
-  const iconBgColor = isTrash
-    ? hexWithAlpha(c.errorContainer ?? '#871c34', iconBgAlpha)
-    : hexWithAlpha(c.primaryContainer, iconBgAlpha)
   const countLabel =
     count > 0
       ? t(count === 1 ? 'folderView.noteCount_one' : 'folderView.noteCount_other', { count })
       : null
 
-  const dividerStyle = useMemo(
-    () =>
-      !isLast
-        ? {
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: hexWithAlpha(c.outlineVariant, 0.2),
-          }
-        : null,
-    [isLast, c.outlineVariant],
-  )
-
   const getPressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
-      rowStyles.row,
-      dividerStyle,
-      pressed && { backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surface, 0.5) },
+      styles.row,
+      !isLast && styles.rowDivider,
+      pressed && styles.rowPressed,
     ],
-    [dividerStyle, c.surfaceContainerHighest, c.surface],
+    [isLast, styles],
   )
 
   return (
@@ -451,28 +462,21 @@ const VaultFolderRow = memo(function VaultFolderRow({
         onPressOut={handlePressOut}
         style={getPressableStyle}
       >
-        <View style={rowStyles.rowLeft}>
-          <View style={[rowStyles.iconWrap, { backgroundColor: iconBgColor }]}>
-            <MaterialCommunityIcons name={iconName as any} size={22} color={iconColor} />
+        <View style={styles.rowLeft}>
+          <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
+            <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_22} color={iconColor} />
           </View>
-          <Text style={[rowStyles.rowName, { color: c.onSurface }]}>{name}</Text>
+          <Text style={styles.rowNameText}>{name}</Text>
         </View>
-        <View style={rowStyles.rowRight}>
+        <View style={styles.rowRight}>
           {countLabel && (
-            <View
-              style={[
-                rowStyles.countBadge,
-                {
-                  backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.8),
-                },
-              ]}
-            >
-              <Text style={[rowStyles.countText, { color: c.onSurfaceVariant }]}>{countLabel}</Text>
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{countLabel}</Text>
             </View>
           )}
           <MaterialCommunityIcons
             name="chevron-right"
-            size={18}
+            size={UI_ICON_SIZE_18}
             color={hexWithAlpha(c.onSurfaceVariant, 0.5)}
           />
         </View>
@@ -481,196 +485,204 @@ const VaultFolderRow = memo(function VaultFolderRow({
   )
 })
 
-const staticStyles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 28,
-  },
-  gearBtn: {
-    padding: 8,
-    borderRadius: 9999,
-    marginTop: -4,
-  },
-  searchWrap: {
-    marginBottom: 16,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  archiveSection: {
-    marginTop: 20,
-  },
-  emptyRow: {
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-    paddingHorizontal: 6,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dialogTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    marginBottom: 16,
-  },
-  dialogActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 16,
-    gap: 4,
-  },
-  dialogBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  dialogBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-})
+const useFolderHooks = () => {
+  const md3 = useMD3Theme()
+  const insets = useSafeAreaInsets()
+  const dims = useWindowDimensions()
+  return { md3, insets, dims }
+}
 
-const rowStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 13,
-    paddingHorizontal: 16,
-  },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    flex: 1,
-  },
-  iconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  rowName: {
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-    flex: 1,
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  countBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  countText: {
-    fontSize: 11,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-})
-
-function createDynamicStyles(
-  c: ExtendedColors,
-  bottomInset: number,
-  width: number,
-  height: number,
-) {
-  return {
-    renameDialog: {
-      backgroundColor: c.surfaceContainerHighest ?? c.surface,
-      borderRadius: 28,
-      padding: 24,
-      width: Math.min(width - 48, 400),
-      elevation: 6,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 3 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-    },
+const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims }) => {
+  const c = md3.colors as ExtendedColors
+  const isDark = theme.isDark
+  const styles = StyleSheet.create({
     root: {
-      flex: 1,
+      ...commonStyles.flex1,
       backgroundColor: c.background,
     },
     scrollContent: {
-      paddingHorizontal: 20,
+      paddingHorizontal: UI_SIZE_20,
       paddingTop: 52,
-      paddingBottom: bottomInset + 100,
+      paddingBottom: insets.bottom + 100,
+    },
+    header: {
+      ...commonStyles.row,
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: UI_SIZE_28,
     },
     pageTitle: {
       fontSize: 36,
-      fontWeight: '800' as const,
-      fontFamily: 'PlusJakartaSans_800ExtraBold',
+      fontWeight: FontWeight.black,
+      fontFamily: FontFamily.extraBold,
       letterSpacing: -0.5,
       color: c.onSurface,
-      marginBottom: 4,
+      marginBottom: UI_SIZE_4,
     },
     pageSubtitle: {
-      fontSize: 14,
+      fontSize: UI_FONT_SIZE_14,
       color: c.onSurfaceVariant,
-      fontWeight: '400' as const,
-      fontFamily: 'PlusJakartaSans_400Regular',
+      fontWeight: FontWeight.regular,
+      fontFamily: FontFamily.regular,
+    },
+    gearBtn: {
+      ...commonStyles.headerBtn,
+      borderRadius: UI_SIZE_9999,
+      marginTop: -4,
     },
     gearBtnPressed: {
       backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
     },
+    searchWrap: {
+      marginBottom: UI_SIZE_16,
+    },
     searchBar: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: 9999,
-      paddingHorizontal: 20,
+      ...commonStyles.row,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: UI_SIZE_9999,
+      paddingHorizontal: UI_SIZE_20,
       paddingVertical: 14,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: hexWithAlpha(c.outlineVariant, 0.3),
     },
+    searchIcon: {
+      marginRight: UI_SIZE_10,
+    },
     searchInput: {
       flex: 1,
-      fontSize: 15,
+      fontSize: UI_FONT_SIZE_15,
       color: c.onSurface,
-      fontFamily: 'PlusJakartaSans_500Medium',
+      fontFamily: FontFamily.medium,
       padding: 0,
     },
     listCard: {
-      backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: 24,
-      overflow: 'hidden' as const,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: Radii.xl,
+      overflow: 'hidden',
+    },
+    emptyRow: {
+      paddingVertical: UI_SIZE_20,
+      ...commonStyles.centered,
     },
     emptyText: {
       color: c.onSurfaceVariant,
-      fontSize: 14,
-      fontFamily: 'PlusJakartaSans_400Regular',
+      fontSize: UI_FONT_SIZE_14,
+      fontFamily: FontFamily.regular,
+    },
+    archiveSection: {
+      marginTop: UI_SIZE_20,
+    },
+    sectionHeader: {
+      ...commonStyles.row,
+      gap: UI_SIZE_10,
+      marginBottom: UI_SIZE_10,
+      paddingHorizontal: UI_SIZE_6,
     },
     sectionTitle: {
-      fontSize: 18,
-      fontWeight: '700' as const,
-      fontFamily: 'PlusJakartaSans_700Bold',
+      fontSize: UI_FONT_SIZE_18,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: c.onSurface,
     },
     fab: {
-      position: 'absolute' as const,
-      right: 24,
+      position: 'absolute',
+      right: UI_SIZE_24,
       backgroundColor: c.primaryContainer,
-      borderRadius: 9999,
+      borderRadius: UI_SIZE_9999,
+      bottom: insets.bottom + 24,
     },
-  }
-}
+    renameDialog: {
+      backgroundColor: c.surfaceContainerHighest ?? c.surface,
+      borderRadius: Radii.xl,
+      padding: UI_SIZE_24,
+      width: Math.min(dims.width - 48, 400),
+      elevation: 6,
+      shadowColor: theme.colors.black,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+    },
+    dialogTitle: {
+      fontSize: UI_FONT_SIZE_20,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      marginBottom: UI_SIZE_16,
+      color: c.onSurface,
+    },
+    dialogActions: {
+      ...commonStyles.row,
+      justifyContent: 'flex-end',
+      marginTop: UI_SIZE_16,
+      gap: UI_SIZE_4,
+    },
+    dialogBtn: {
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_10,
+    },
+    dialogBtnTextCancel: {
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurfaceVariant,
+    },
+    dialogBtnTextRename: {
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.primary,
+    },
+    row: {
+      ...commonStyles.rowBetween,
+      paddingVertical: 13,
+      paddingHorizontal: UI_SIZE_16,
+    },
+    rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: hexWithAlpha(c.outlineVariant, 0.2),
+    },
+    rowPressed: {
+      backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surface, 0.5),
+    },
+    rowLeft: {
+      ...commonStyles.row,
+      gap: UI_SIZE_14,
+      flex: 1,
+    },
+    iconWrap: {
+      width: UI_SIZE_48,
+      height: UI_SIZE_48,
+      borderRadius: UI_SIZE_9999,
+      ...commonStyles.centered,
+    },
+    iconWrapDefault: {
+      backgroundColor: hexWithAlpha(c.primaryContainer, isDark ? 0.18 : 0.22),
+    },
+    iconWrapTrash: {
+      backgroundColor: hexWithAlpha(c.errorContainer ?? '#871c34', isDark ? 0.18 : 0.22),
+    },
+    rowNameText: {
+      fontSize: UI_FONT_SIZE_15,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurface,
+      flex: 1,
+    },
+    rowRight: {
+      ...commonStyles.row,
+      gap: UI_SIZE_10,
+    },
+    countBadge: {
+      paddingHorizontal: UI_SIZE_10,
+      paddingVertical: UI_SIZE_4,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.8),
+    },
+    countText: {
+      fontSize: UI_FONT_SIZE_11,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurfaceVariant,
+    },
+  })
+  return styles
+}, useFolderHooks)
