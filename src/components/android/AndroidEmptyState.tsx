@@ -156,6 +156,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       marginBottom: UI_SIZE_18,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
+      width: '100%',
+      textAlign: 'center'
     },
     linkBtn: {
       paddingHorizontal: UI_SIZE_24,

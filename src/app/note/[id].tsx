@@ -2,12 +2,12 @@ import { useLocalSearchParams } from 'expo-router'
 import React, { useEffect } from 'react'
 import { StyleSheet } from 'react-native'
 
-import { Theme, useThemedStyles, View } from '@/components/Themed'
+import { createThemedStylesheet, View } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function NoteScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles()
   const { openNote } = useNoteEditor()
 
   useEffect(() => {
@@ -17,10 +17,12 @@ export default function NoteScreen() {
   return <View style={styles.container} />
 }
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
   })
+  return styles
+})

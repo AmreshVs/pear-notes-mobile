@@ -220,7 +220,10 @@
     },
     "menu": {
       "image": "Image",
-      "attachment": "Attachment"
+      "attachment": "Attachment",
+      "imageOptions": "Image Options",
+      "attachmentOptions": "Attachment Options",
+      "saveToPhotos": "Save to Photos"
     }
   },
   "pairing": {
@@ -238,7 +241,7 @@
     },
     "overlay": {
       "deviceRemovedTitle": "Device Removed",
-      "deviceRemovedDesc": "This device has been removed from the synced cluster by another device. Press Okay to clear local synced data and reset common storage.",
+      "deviceRemovedDesc": "This device has been removed from the synced cluster. Press Okay to clear local synced data and reset common storage.",
       "okay": "Okay",
       "resettingTitle": "Clearing Data",
       "resettingDesc": "Removing synced data from this device...",
@@ -296,7 +299,8 @@
   "common": {
     "cancel": "Cancel",
     "clear": "Clear",
-    "close": "Close"
+    "close": "Close",
+    "ok": "OK"
   },
   "backup": {
     "title": "Backup / Restore",

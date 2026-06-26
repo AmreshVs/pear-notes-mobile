@@ -44,6 +44,7 @@ import {
   commonStyles,
   FontFamily,
   FontWeight,
+  Radii,
   UI_FONT_SIZE_11,
   UI_FONT_SIZE_14,
   UI_FONT_SIZE_15,
@@ -53,18 +54,17 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
-  UI_SIZE_4,
-  UI_SIZE_6,
-  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
+  UI_SIZE_4,
   UI_SIZE_48,
+  UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_9999,
-  Radii,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
@@ -570,7 +570,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       fontFamily: FontFamily.regular,
     },
     archiveSection: {
-      marginTop: UI_SIZE_20,
+      marginTop: UI_SIZE_48,
     },
     sectionHeader: {
       ...commonStyles.row,
