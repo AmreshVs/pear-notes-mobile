@@ -7,7 +7,7 @@ import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Dimensions, Keyboard } from 'react-native'
+import { Animated, Dimensions, InteractionManager, Keyboard } from 'react-native'
 import { useSelector } from 'react-redux'
 
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
@@ -110,6 +110,36 @@ export function useNoteEditorLogic() {
       setKeyboardHeight(0)
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (!noteId || noteId === loadedNoteRef.current) return
+    loadedNoteRef.current = noteId
+    titleRef.current = noteData?.title || ''
+    noteContentRef.current = noteData?.note || ''
+
+    let content = noteData?.note || ''
+    if (hyperdriveServerAddress && content.includes(HYPERDRIVE_URL_PREFIX)) {
+      content = content.replaceAll(
+        HYPERDRIVE_URL_PREFIX,
+        hyperdriveServerAddress.replace(/\/$/, ''),
+      )
+    }
+
+    editorRef.current?.scrollToTop()
+    editorRef.current?.setTitle(noteData?.title || '')
+
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      damping: 20,
+      stiffness: 200,
+    }).start()
+
+    isLoadingNoteRef.current = true
+    InteractionManager.runAfterInteractions(() => {
+      editorRef.current?.setHTML(content)
+    })
+  }, [noteId, noteData, hyperdriveServerAddress, slideAnim])
 
   const resetEditorState = useCallback(() => {
     setIsOpen(false)

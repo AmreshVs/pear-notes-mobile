@@ -39,7 +39,7 @@ type BackupStatus = {
   total: number
 }
 
-export function useBackupScreen() {
+function useBackupScreen() {
   const dispatch = useDispatch()
   const { t } = useTranslation()
 
@@ -200,3 +200,5 @@ export function useBackupScreen() {
     handleCancelOrDismiss,
   }
 }
+
+export default useBackupScreen

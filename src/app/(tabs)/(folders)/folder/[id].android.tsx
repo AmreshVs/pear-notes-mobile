@@ -613,7 +613,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
     },
     modalOverlay: {
       ...commonStyles.flex1,
-      backgroundColor: c.backdrop,
+      backgroundColor: theme.colors.backdrop,
       ...commonStyles.centered,
     },
     renameDialog: {

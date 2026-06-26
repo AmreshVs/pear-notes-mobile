@@ -272,6 +272,7 @@ export function useAudioRecorderModal({
         liveBars.value = [...liveBars.value.slice(-(RECORDING_BARS - 1)), sampleAmp()]
       }, 90)
     } catch (err: any) {
+      console.error('[AudioRecorderModal][handleRecord] failed:', err)
       Alert.alert(
         t('audioRecorder.errors.recordTitle'),
         err?.message ?? t('audioRecorder.errors.recordDefault'),

@@ -18,7 +18,7 @@ import { useTranslation } from 'react-i18next'
 import { Platform, ScrollView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
-export function useSyncScreen() {
+function useSyncScreen() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
 
@@ -145,3 +145,5 @@ export function useSyncScreen() {
     handleConfirmDelete,
   }
 }
+
+export default useSyncScreen

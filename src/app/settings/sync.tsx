@@ -14,7 +14,7 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
-import { useSyncScreen } from './useSyncScreen'
+import useSyncScreen from './useSyncScreen'
 
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
 import { SyncScannerModal } from '@/components/sync/SyncScannerModal'

@@ -361,7 +361,7 @@ export default function AndroidFoldersScreen() {
         onRequestClose={handleCloseRenameDialog}
         statusBarTranslucent
       >
-        <Pressable style={commonStyles.modalOverlay} onPress={handleCloseRenameDialog}>
+        <Pressable style={styles.modalOverlay} onPress={handleCloseRenameDialog}>
           <Pressable style={styles.renameDialog} onPress={handleNoop}>
             <Text style={styles.dialogTitle}>{t('folders.renameTitle')}</Text>
             <PaperTextInput
@@ -590,6 +590,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       backgroundColor: c.primaryContainer,
       borderRadius: UI_SIZE_9999,
       bottom: insets.bottom + 24,
+    },
+    modalOverlay: {
+      ...commonStyles.flex1,
+      backgroundColor: theme.colors.backdrop,
+      ...commonStyles.centered,
     },
     renameDialog: {
       backgroundColor: c.surfaceContainerHighest ?? c.surface,

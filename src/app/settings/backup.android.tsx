@@ -15,7 +15,7 @@ import {
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBackupScreen } from '@/app/settings/useBackupScreen'
+import useBackupScreen from '@/app/settings/useBackupScreen'
 import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBackupBreakdownSection'
 import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'

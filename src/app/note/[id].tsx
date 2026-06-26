@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router'
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { StyleSheet } from 'react-native'
 
 import { createThemedStylesheet, View } from '@/components/Themed'

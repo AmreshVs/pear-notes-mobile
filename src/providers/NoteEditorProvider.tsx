@@ -355,22 +355,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [noteId, resolveHyperdriveUrl, processMediaAsset, setUploadInfo, t])
 
-  const handleRecordAudio = useCallback(async () => {
-    const { AudioModule } = await import('expo-audio')
-    const { granted, canAskAgain } = await AudioModule.requestRecordingPermissionsAsync()
-    if (!granted) {
-      if (!canAskAgain) {
-        Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedAudio'), [
-          { text: t('common.ok') },
-        ])
-      }
-      return
-    }
+  const handleRecordAudio = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     Keyboard.dismiss()
     editorRef.current?.blur()
     setTimeout(() => setIsRecorderVisible(true), 100)
-  }, [setIsRecorderVisible, t])
+  }, [setIsRecorderVisible])
 
   const handleRecordingDone = useCallback(
     async (uri: string, _durationMs: number) => {
