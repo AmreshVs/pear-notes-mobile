@@ -25,7 +25,7 @@ import { useDispatch } from 'react-redux'
 
 import { isImageFile } from '../utils/media'
 
-import { useNoteEditorLogic } from './useNoteEditorLogic'
+import { useNoteEditor } from './useNoteEditor'
 
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
@@ -119,7 +119,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     resolveHyperdriveUrl,
     isEdgeSwipeActive,
     setIsEdgeSwipeActive,
-  } = useNoteEditorLogic()
+  } = useNoteEditor()
 
   const handleUpdate = useCallback(
     (html: string) => {

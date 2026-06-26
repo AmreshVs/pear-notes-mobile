@@ -6,13 +6,14 @@ import {
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { router } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, Dimensions, InteractionManager, Keyboard } from 'react-native'
+import { Animated, BackHandler, Dimensions, InteractionManager, Keyboard } from 'react-native'
 import { useSelector } from 'react-redux'
 
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 
-export function useNoteEditorLogic() {
+export function useNoteEditor() {
   const editorRef = useRef<TiptapEditorHandle>(null)
   const [noteId, setNoteId] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -165,7 +166,23 @@ export function useNoteEditorLogic() {
     Keyboard.dismiss()
     editorRef.current?.save()
     animateClose()
+    if (process.env.EXPO_OS === 'android' && router.canGoBack()) {
+      router.back()
+    }
   }, [animateClose])
+
+  useEffect(() => {
+    if (process.env.EXPO_OS === 'ios') return
+    const handleBackPress = () => {
+      if (isOpen) {
+        closeNote()
+        return true
+      }
+      return false
+    }
+    const subscription = BackHandler.addEventListener('hardwareBackPress', handleBackPress)
+    return () => subscription.remove()
+  }, [isOpen, closeNote])
 
   const openNote = useCallback((id: string) => {
     Keyboard.dismiss()

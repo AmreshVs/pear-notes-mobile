@@ -23,7 +23,7 @@ import { useDispatch } from 'react-redux'
 import { AudioRecorderModal } from '../components/AudioRecorderModal'
 import { isImageFile } from '../utils/media'
 
-import { useNoteEditorLogic } from './useNoteEditorLogic'
+import { useNoteEditor } from './useNoteEditor'
 
 import { AttachmentSheet } from '@/components/android/AttachmentSheet'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
@@ -136,7 +136,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleEditorFocus,
     handleEditorBlur,
     resolveHyperdriveUrl,
-  } = useNoteEditorLogic()
+  } = useNoteEditor()
 
   const handleUpdate = useCallback(
     (html: string) => {
