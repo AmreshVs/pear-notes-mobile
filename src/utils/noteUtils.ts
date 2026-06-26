@@ -17,3 +17,7 @@ export function getFirstImageUrl(html: string): string | undefined {
   if (imgMatch?.[1]) return imgMatch[1].replace(/&amp;/g, '&')
   return undefined
 }
+
+export function isChecklistNote(html: string): boolean {
+  return !!html && html.includes('data-type="taskItem"')
+}

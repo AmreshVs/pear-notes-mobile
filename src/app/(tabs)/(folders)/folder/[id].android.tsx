@@ -13,89 +13,59 @@ import {
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
-import {
-  getHyperdriveAddress,
-  getSearchQuery,
-  setSearchQuery,
-} from '@pear-notes/core/store/slices/uiSlice.js'
-import { formatDate } from '@pear-notes/core/utils.js'
+import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Alert,
   FlatList,
-  Image,
   ListRenderItemInfo,
   Modal,
   Pressable,
   StatusBar,
   StyleSheet,
-  Text,
   TextInput,
   useWindowDimensions,
   View,
 } from 'react-native'
 import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
-import Animated, {
-  FadeIn,
-  FadeInDown,
-  FadeOutUp,
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-  withTiming,
-} from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { AndroidEmptyState, AndroidNoteRow, useMD3Theme } from '@/components/android'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
-import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { useNoteEditor } from '@/providers/NoteEditorContext'
-
-type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
-  surfaceContainerLow: string
-  surfaceContainer: string
-  surfaceContainerHigh: string
-  surfaceContainerHighest: string
-  onBackground: string
-}
-
-const getPreview = (html: string): string => {
-  if (!html) return ''
-  const text = html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-  return text.length > 120 ? text.substring(0, 120) + '…' : text
-}
-
-const getFirstImageUrl = (html: string): string | undefined => {
-  if (!html) return undefined
-  const divMatch =
-    html.match(/<div[^>]*filetype="image\/[^"]*"[^>]*url="([^"]+)"[^>]*>/) ||
-    html.match(/<div[^>]*url="([^"]+)"[^>]*filetype="image\/[^"]*"[^>]*>/)
-  if (divMatch?.[1]) return divMatch[1].replace(/&amp;/g, '&')
-  const imgMatch = html.match(/<img[^>]+src="([^"]+)"/)
-  if (imgMatch?.[1]) return imgMatch[1].replace(/&amp;/g, '&')
-  return undefined
-}
-
-const isChecklistNote = (html: string): boolean => !!html && html.includes('data-type="taskItem"')
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
-}
+import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import {
+  commonStyles,
+  FontFamily,
+  FontWeight,
+  UI_FONT_SIZE_14,
+  UI_FONT_SIZE_15,
+  UI_FONT_SIZE_20,
+  UI_FONT_SIZE_28,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_24,
+  UI_SIZE_4,
+  UI_SIZE_8,
+  UI_SIZE_10,
+  UI_SIZE_14,
+  UI_SIZE_16,
+  UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_48,
+  UI_SIZE_9999,
+} from '@/constants/commonStyles'
+import { hexWithAlpha } from '@/lib/backupUtils'
+import { getPreview } from '@/utils/noteUtils'
 
 function noteKey(note: any): string {
   return note.key
@@ -104,12 +74,12 @@ function noteKey(note: any): string {
 export default function AndroidFolderNotesScreen() {
   const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
-  const { width, height } = useWindowDimensions()
-  const insets = useSafeAreaInsets()
+  const { height } = useWindowDimensions()
   const dispatch = useDispatch()
-  const { openNote } = useNoteEditor()
-  const theme = useMD3Theme()
-  const c = theme.colors as ExtendedColors
+  const theme = useTheme()
+  const md3 = useMD3Theme()
+  const c = md3.colors
+  const styles = useStyles()
 
   const allFolders = useSelector(getFolders) as any[]
   const notes = useSelector(getFilteredNotes) as any[]
@@ -143,7 +113,6 @@ export default function AndroidFolderNotesScreen() {
   )
 
   const isTrashFolder = id === RECENTLY_DELETED_KEY
-
   const isAllNotes = folder?.id === ALL_NOTES_KEY
 
   const folderNameMap = useMemo(() => {
@@ -179,9 +148,9 @@ export default function AndroidFolderNotesScreen() {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
       lastSelectedNoteRef.current = selectedNote
-      openNote(selectedNote)
+      router.push(`/note/${selectedNote}`)
     }
-  }, [selectedNote, openNote])
+  }, [selectedNote])
 
   useEffect(() => {
     if (selectedNote) lastSelectedNoteRef.current = selectedNote
@@ -190,9 +159,9 @@ export default function AndroidFolderNotesScreen() {
   const handleSelectNote = useCallback(
     (noteId: string) => {
       dispatch(setSelectedNote(noteId as any))
-      openNote(noteId)
+      router.push(`/note/${noteId}`)
     },
-    [dispatch, openNote],
+    [dispatch],
   )
 
   const handleCreateNote = useCallback(() => {
@@ -234,10 +203,15 @@ export default function AndroidFolderNotesScreen() {
     async (noteId: string) => {
       const note = notes.find((n: any) => n.key === noteId)
       if (!note) return
-      const plain = [note.value?.title, getPreview(note.value?.note)].filter(Boolean).join('\n\n')
+      const plain = [
+        note.value?.title,
+        getPreview(note.value?.note, t('noteCard.noAdditionalText')),
+      ]
+        .filter(Boolean)
+        .join('\n\n')
       await Clipboard.setStringAsync(plain)
     },
-    [notes],
+    [notes, t],
   )
 
   const handleNoteLongPress = useCallback(
@@ -320,12 +294,11 @@ export default function AndroidFolderNotesScreen() {
         index={index}
         isLast={index === notes.length - 1}
         folderName={isAllNotes ? folderNameMap[note.value?.folderKey] : undefined}
-        colors={c}
         onPress={handleSelectNote}
         onLongPress={handleNoteLongPress}
       />
     ),
-    [notes.length, isAllNotes, folderNameMap, c, handleSelectNote, handleNoteLongPress],
+    [notes.length, isAllNotes, folderNameMap, handleSelectNote, handleNoteLongPress],
   )
 
   const noteSheetActions = useMemo(
@@ -359,97 +332,88 @@ export default function AndroidFolderNotesScreen() {
     ],
   )
 
-  const dynamicStyles = useMemo(
-    () => createDynamicStyles(c, insets.top, width, height),
-    [c, insets.top, width, height],
-  )
+  const handleBack = useCallback(() => {
+    router.back()
+  }, [])
+
+  const handleOpenFolderOptions = useCallback(() => {
+    setFolderOptionsSheet(true)
+  }, [])
+
+  const handleClearSearch = useCallback(() => {
+    dispatch(setSearchQuery(''))
+  }, [dispatch])
+
+  const handleCloseRenameDialog = useCallback(() => {
+    setRenameDialog(null)
+  }, [])
+
+  const handleCloseFolderPicker = useCallback(() => {
+    setFolderPickerVisible(false)
+  }, [])
+
+  const handleCloseFolderOptions = useCallback(() => {
+    setFolderOptionsSheet(false)
+  }, [])
 
   return (
-    <View style={[staticStyles.root, { backgroundColor: c.background }]}>
+    <View style={styles.root}>
       <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
+        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
         backgroundColor={c.background}
       />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={[staticStyles.appBar, dynamicStyles.appBar]}>
-        <View style={staticStyles.appBarLeft}>
+      <View style={styles.appBar}>
+        <View style={styles.appBarLeft}>
           <Pressable
-            onPress={() => router.back()}
-            style={({ pressed }) => [
-              staticStyles.iconBtn,
-              pressed && {
-                backgroundColor: hexWithAlpha(
-                  (c as any).surfaceContainerHighest ?? c.surfaceVariant,
-                  0.6,
-                ),
-              },
-            ]}
-            hitSlop={8}
+            onPress={handleBack}
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+            hitSlop={UI_SIZE_8}
           >
-            <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
+            <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
           </Pressable>
         </View>
 
-        <View style={staticStyles.appBarRight}>
+        <View style={styles.appBarRight}>
           <Pressable
             onPress={toggleSearch}
-            style={({ pressed }) => [
-              staticStyles.iconBtn,
-              pressed && {
-                backgroundColor: hexWithAlpha(
-                  (c as any).surfaceContainerHighest ?? c.surfaceVariant,
-                  0.6,
-                ),
-              },
-            ]}
-            hitSlop={8}
+            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+            hitSlop={UI_SIZE_8}
           >
             <MaterialCommunityIcons
               name={searchVisible ? 'close' : 'magnify'}
-              size={24}
+              size={UI_ICON_SIZE_24}
               color={c.primary}
             />
           </Pressable>
           {!folder?.isSystem && (
             <Pressable
-              onPress={() => setFolderOptionsSheet(true)}
-              style={({ pressed }) => [
-                staticStyles.iconBtn,
-                pressed && {
-                  backgroundColor: hexWithAlpha(
-                    (c as any).surfaceContainerHighest ?? c.surfaceVariant,
-                    0.6,
-                  ),
-                },
-              ]}
-              hitSlop={8}
+              onPress={handleOpenFolderOptions}
+              style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+              hitSlop={UI_SIZE_8}
             >
-              <MaterialCommunityIcons name="dots-vertical" size={24} color={c.primary} />
+              <MaterialCommunityIcons
+                name="dots-vertical"
+                size={UI_ICON_SIZE_24}
+                color={c.primary}
+              />
             </Pressable>
           )}
         </View>
       </View>
 
-      <Animated.View style={[staticStyles.searchWrap, searchBarAnimStyle]}>
-        <View
-          style={[
-            staticStyles.searchPill,
-            {
-              backgroundColor: c.surfaceContainer,
-              borderColor: hexWithAlpha(c.outlineVariant, 0.15),
-            },
-          ]}
-        >
+      <Animated.View style={[styles.searchWrap, searchBarAnimStyle]}>
+        <View style={styles.searchPill}>
           <MaterialCommunityIcons
             name="magnify"
-            size={20}
+            size={UI_ICON_SIZE_20}
             color={c.onSurfaceVariant}
-            style={staticStyles.searchIcon}
+            style={styles.searchIcon}
           />
           <TextInput
             ref={searchInputRef}
-            style={[staticStyles.searchInput, { color: c.onSurface }]}
+            style={styles.searchInput}
             placeholder={t('folderView.searchPlaceholder')}
             placeholderTextColor={c.onSurfaceVariant + '80'}
             value={searchQuery}
@@ -457,8 +421,12 @@ export default function AndroidFolderNotesScreen() {
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <Pressable onPress={() => dispatch(setSearchQuery(''))} hitSlop={8}>
-              <MaterialCommunityIcons name="close-circle" size={16} color={c.onSurfaceVariant} />
+            <Pressable onPress={handleClearSearch} hitSlop={UI_SIZE_8}>
+              <MaterialCommunityIcons
+                name="close-circle"
+                size={UI_ICON_SIZE_16}
+                color={c.onSurfaceVariant}
+              />
             </Pressable>
           )}
         </View>
@@ -468,22 +436,19 @@ export default function AndroidFolderNotesScreen() {
         data={notes}
         keyExtractor={noteKey}
         renderItem={renderNote}
-        contentContainerStyle={[staticStyles.listContent, { paddingBottom: insets.bottom + 100 }]}
+        contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews
         ListHeaderComponent={
-          <Text style={[staticStyles.pageTitle, { color: c.onSurface }]}>
-            {folder?.name || t('folders.untitled')}
-          </Text>
+          <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
         }
         ListEmptyComponent={
-          <EmptyState
+          <AndroidEmptyState
             hasSearch={searchQuery.trim().length > 0}
             isSynced={localPreferences['isSynced'] === true}
             onLinkDevice={handleLinkDevice}
             height={height}
-            colors={c}
           />
         }
       />
@@ -491,10 +456,7 @@ export default function AndroidFolderNotesScreen() {
       <FAB
         icon="plus"
         onPress={handleCreateNote}
-        style={[
-          staticStyles.fab,
-          { backgroundColor: c.primaryContainer, bottom: insets.bottom + 24 },
-        ]}
+        style={styles.fab}
         color={c.onPrimaryContainer}
         customSize={64}
       />
@@ -503,14 +465,12 @@ export default function AndroidFolderNotesScreen() {
         visible={!!renameDialog}
         transparent
         animationType="fade"
-        onRequestClose={() => setRenameDialog(null)}
+        onRequestClose={handleCloseRenameDialog}
         statusBarTranslucent
       >
-        <Pressable style={staticStyles.modalOverlay} onPress={() => setRenameDialog(null)}>
-          <Pressable style={dynamicStyles.renameDialog} onPress={() => {}}>
-            <Text style={[staticStyles.dialogTitle, { color: c.onSurface }]}>
-              {t('folders.renameTitle')}
-            </Text>
+        <Pressable style={styles.modalOverlay} onPress={handleCloseRenameDialog}>
+          <Pressable style={styles.renameDialog} onPress={() => {}}>
+            <Text style={styles.dialogTitle}>{t('folders.renameTitle')}</Text>
             <PaperTextInput
               value={renameText}
               onChangeText={setRenameText}
@@ -518,16 +478,12 @@ export default function AndroidFolderNotesScreen() {
               mode="outlined"
               label={t('folders.renameLabel')}
             />
-            <View style={staticStyles.dialogActions}>
-              <Pressable onPress={() => setRenameDialog(null)} style={staticStyles.dialogBtn}>
-                <Text style={[staticStyles.dialogBtnText, { color: c.onSurfaceVariant }]}>
-                  {t('common.cancel')}
-                </Text>
+            <View style={styles.dialogActions}>
+              <Pressable onPress={handleCloseRenameDialog} style={styles.dialogBtn}>
+                <Text style={styles.dialogBtnCancel}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={confirmRename} style={staticStyles.dialogBtn}>
-                <Text style={[staticStyles.dialogBtnText, { color: c.primary }]}>
-                  {t('folders.buttons.rename')}
-                </Text>
+              <Pressable onPress={confirmRename} style={styles.dialogBtn}>
+                <Text style={styles.dialogBtnRename}>{t('folders.buttons.rename')}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -546,7 +502,7 @@ export default function AndroidFolderNotesScreen() {
 
       <BottomActionSheet
         visible={folderOptionsSheet}
-        onDismiss={() => setFolderOptionsSheet(false)}
+        onDismiss={handleCloseFolderOptions}
         title={folder?.name ?? t('folders.untitled')}
         subtitle={t('folders.options')}
         actions={[
@@ -566,7 +522,7 @@ export default function AndroidFolderNotesScreen() {
 
       <FolderPickerSheet
         visible={folderPickerVisible}
-        onDismiss={() => setFolderPickerVisible(false)}
+        onDismiss={handleCloseFolderPicker}
         folders={moveFolders.map((f: any) => ({ id: f.id, name: f.name }))}
         onSelect={handleConfirmMove}
       />
@@ -574,444 +530,129 @@ export default function AndroidFolderNotesScreen() {
   )
 }
 
-type NoteRowProps = {
-  note: any
-  index: number
-  isLast: boolean
-  folderName?: string
-  colors: ExtendedColors
-  onPress: (noteKey: string) => void
-  onLongPress: (noteKey: string) => void
+const useFolderHooks = () => {
+  const md3 = useMD3Theme()
+  const insets = useSafeAreaInsets()
+  const { width, height } = useWindowDimensions()
+  return { md3, insets, width, height }
 }
 
-const AndroidNoteRow = memo(function AndroidNoteRow({
-  note,
-  index,
-  isLast,
-  folderName,
-  colors: c,
-  onPress,
-  onLongPress,
-}: NoteRowProps) {
-  const { t } = useTranslation()
-  const title = note.value?.title || t('noteCard.untitled')
-  const html = note.value?.note || ''
-  const preview = getPreview(html) || t('noteCard.noAdditionalText')
-  const rawImageUrl = getFirstImageUrl(html)
-  const hasChecklist = isChecklistNote(html)
-  const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
-
-  const resolvedImageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
-  const colorTheme = useSelector(getColorTheme)
-  const isPearTheme = colorTheme === 'pear'
-  const [thumbError, setThumbError] = useState(false)
-  const showThumb = !!resolvedImageUrl && !thumbError
-
-  const scale = useSharedValue(1)
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
-
-  const handlePress = useCallback(() => onPress(note.key), [onPress, note.key])
-  const handleLongPress = useCallback(() => onLongPress(note.key), [onLongPress, note.key])
-  const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.985, { damping: 20, stiffness: 400 })
-  }, [scale])
-  const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, { damping: 16, stiffness: 300 })
-  }, [scale])
-
-  const thumbStyle = useMemo(
-    () => ({
-      backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant,
-      borderColor: hexWithAlpha(c.outlineVariant, 0.2),
-    }),
-    [c],
-  )
-
-  return (
-    <Animated.View
-      entering={FadeInDown.duration(200).delay(Math.min(index, 10) * 30)}
-      exiting={FadeOutUp.duration(160)}
-      layout={LinearTransition.springify().damping(20).stiffness(220)}
-      style={animStyle}
-    >
-      <Pressable
-        onPress={handlePress}
-        onLongPress={handleLongPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={({ pressed }) => [
-          rowStyles.row,
-          { backgroundColor: (c as any).surfaceContainerHigh ?? c.surfaceVariant },
-          pressed && {
-            backgroundColor: hexWithAlpha(
-              (c as any).surfaceContainerHighest ?? c.surfaceVariant,
-              0.6,
-            ),
-          },
-        ]}
-      >
-        <View style={rowStyles.content}>
-          <Text style={[rowStyles.title, { color: c.onSurface }]} numberOfLines={1}>
-            {title}
-          </Text>
-
-          {hasChecklist && preview ? (
-            <View style={rowStyles.checklistRow}>
-              <MaterialCommunityIcons
-                name="checkbox-blank-outline"
-                size={13}
-                color={c.onSurfaceVariant}
-                style={rowStyles.checkboxIcon}
-              />
-              <Text style={[rowStyles.preview, { color: c.onSurfaceVariant }]} numberOfLines={1}>
-                {preview}
-              </Text>
-            </View>
-          ) : (
-            <Text style={[rowStyles.preview, { color: c.onSurfaceVariant }]} numberOfLines={1}>
-              {preview}
-            </Text>
-          )}
-
-          <View style={rowStyles.meta}>
-            <Text style={[rowStyles.metaDate, { color: c.onSurfaceVariant }]}>{dateLabel}</Text>
-            {folderName && (
-              <>
-                <Text style={[rowStyles.metaDot, { color: c.onSurfaceVariant }]}>{'  •  '}</Text>
-                <Text
-                  style={[
-                    rowStyles.metaTag,
-                    { color: isPearTheme ? c.primary : c.onSurfaceVariant },
-                    isPearTheme && { opacity: 1 },
-                  ]}
-                >
-                  {folderName.toUpperCase()}
-                </Text>
-              </>
-            )}
-          </View>
-        </View>
-
-        {showThumb && (
-          <Image
-            source={{ uri: resolvedImageUrl }}
-            style={[rowStyles.thumbnail, thumbStyle]}
-            resizeMode="cover"
-            onError={() => setThumbError(true)}
-          />
-        )}
-      </Pressable>
-    </Animated.View>
-  )
-})
-
-type EmptyStateProps = {
-  hasSearch: boolean
-  isSynced: boolean
-  onLinkDevice: () => void
-  height: number
-  colors: ExtendedColors
-}
-
-const EmptyState = memo(function EmptyState({
-  hasSearch,
-  isSynced,
-  onLinkDevice,
-  height,
-  colors: c,
-}: EmptyStateProps) {
-  const { t } = useTranslation()
-  return (
-    <Animated.View
-      entering={FadeIn.duration(300)}
-      style={[emptyStyles.wrapper, { marginTop: height * 0.2 }]}
-    >
-      {hasSearch ? (
-        <>
-          <MaterialCommunityIcons
-            name="text-search"
-            size={48}
-            color={hexWithAlpha(c.onSurfaceVariant, 0.3)}
-          />
-          <Text style={[emptyStyles.title, { color: c.onSurface }]}>
-            {t('folderView.empty.noMatchesTitle')}
-          </Text>
-          <Text style={[emptyStyles.subtitle, { color: c.onSurfaceVariant }]}>
-            {t('folderView.empty.noMatchesSubtitle')}
-          </Text>
-        </>
-      ) : (
-        <>
-          <MaterialCommunityIcons
-            name="file-document-outline"
-            size={48}
-            color={hexWithAlpha(c.onSurfaceVariant, 0.3)}
-          />
-          <Text style={[emptyStyles.title, { color: c.onSurface }]}>
-            {t('folderView.empty.noNotesTitle')}
-          </Text>
-          <Text style={[emptyStyles.subtitle, { color: c.onSurfaceVariant }]}>
-            {t('folderView.empty.noNotesSubtitle')}
-          </Text>
-          {!isSynced && (
-            <View style={emptyStyles.linkBox}>
-              <View
-                style={[
-                  emptyStyles.divider,
-                  { backgroundColor: hexWithAlpha(c.outlineVariant, 0.3) },
-                ]}
-              />
-              <Text style={[emptyStyles.linkTitle, { color: c.onSurface }]}>
-                {t('folderView.empty.linkTitle')}
-              </Text>
-              <Text style={[emptyStyles.linkSub, { color: c.onSurfaceVariant }]}>
-                {t('folderView.empty.linkSub')}
-              </Text>
-              <Pressable
-                onPress={onLinkDevice}
-                style={({ pressed }) => [
-                  emptyStyles.linkBtn,
-                  { backgroundColor: c.primaryContainer, opacity: pressed ? 0.8 : 1 },
-                ]}
-              >
-                <Text style={[emptyStyles.linkBtnText, { color: c.onPrimaryContainer }]}>
-                  {t('folderView.empty.connectBtn')}
-                </Text>
-              </Pressable>
-            </View>
-          )}
-        </>
-      )}
-    </Animated.View>
-  )
-})
-
-const createDynamicStyles = (
-  c: ExtendedColors,
-  topInset: number,
-  width: number,
-  height: number,
-) => ({
-  appBar: {
-    paddingTop: topInset + 4,
-    backgroundColor: c.background,
-  },
-  renameDialog: {
-    backgroundColor: (c as any).surfaceContainerHighest ?? c.surface,
-    borderRadius: 28,
-    padding: 24,
-    width: Math.min(width - 48, 400),
-    elevation: 6,
-    boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
-  },
-})
-
-const staticStyles = StyleSheet.create({
-  root: {
-    flex: 1,
-  },
-  appBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 8,
-  },
-  appBarLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    flex: 1,
-  },
-  appBarRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconBtn: {
-    padding: 8,
-    borderRadius: 9999,
-  },
-  searchWrap: {
-    paddingHorizontal: 20,
-    overflow: 'hidden',
-  },
-  searchPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 9999,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    fontFamily: 'PlusJakartaSans_500Medium',
-    paddingVertical: 0,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    marginBottom: 20,
-    marginTop: 10,
-    letterSpacing: -0.5,
-  },
-  fab: {
-    position: 'absolute',
-    right: 24,
-    borderRadius: 20,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  dialogTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    marginBottom: 16,
-  },
-  dialogActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 16,
-    gap: 4,
-  },
-  dialogBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  dialogBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-})
-
-const rowStyles = StyleSheet.create({
-  row: {
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  content: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 17,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    marginBottom: 4,
-    letterSpacing: -0.2,
-  },
-  preview: {
-    fontSize: 14,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    marginBottom: 10,
-    lineHeight: 20,
-  },
-  checklistRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  checkboxIcon: {
-    marginRight: 6,
-    marginTop: 1,
-  },
-  meta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaDate: {
-    fontSize: 10,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: 0.5,
-  },
-  metaDot: {
-    fontSize: 10,
-  },
-  metaTag: {
-    fontSize: 10,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: 0.5,
-  },
-  thumbnail: {
-    width: 60,
-    height: 60,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-})
-
-const emptyStyles = StyleSheet.create({
-  wrapper: {
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    fontFamily: 'PlusJakartaSans_400Regular',
-    lineHeight: 20,
-  },
-  linkBox: {
-    alignItems: 'center',
-    marginTop: 32,
-    width: '100%',
-  },
-  divider: {
-    width: 40,
-    height: 3,
-    borderRadius: 2,
-    marginBottom: 24,
-  },
-  linkTitle: {
-    fontSize: 11,
-    fontWeight: '800',
-    fontFamily: 'PlusJakartaSans_800ExtraBold',
-    letterSpacing: 1.2,
-    marginBottom: 8,
-  },
-  linkSub: {
-    fontSize: 13,
-    marginBottom: 18,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  linkBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-  },
-  linkBtnText: {
-    fontSize: 13,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-  },
-})
+const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, height }) => {
+  const c = md3.colors as any
+  const styles = StyleSheet.create({
+    root: {
+      ...commonStyles.flex1,
+      backgroundColor: c.background,
+    },
+    appBar: {
+      ...commonStyles.row,
+      justifyContent: 'space-between',
+      paddingHorizontal: UI_SIZE_8,
+      paddingTop: insets.top + UI_SIZE_4,
+      backgroundColor: c.background,
+    },
+    appBarLeft: {
+      ...commonStyles.row,
+      gap: UI_SIZE_4,
+      ...commonStyles.flex1,
+    },
+    appBarRight: {
+      ...commonStyles.row,
+    },
+    iconBtn: {
+      padding: UI_SIZE_8,
+      borderRadius: UI_SIZE_9999,
+    },
+    iconBtnPressed: {
+      backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
+    },
+    searchWrap: {
+      paddingHorizontal: UI_SIZE_20,
+    },
+    searchPill: {
+      ...commonStyles.row,
+      borderRadius: UI_SIZE_9999,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_14,
+      borderWidth: StyleSheet.hairlineWidth,
+      backgroundColor: c.surfaceContainer,
+      borderColor: hexWithAlpha(c.outlineVariant, 0.15),
+    },
+    searchIcon: {
+      marginRight: UI_SIZE_10,
+    },
+    searchInput: {
+      ...commonStyles.flex1,
+      fontSize: UI_FONT_SIZE_15,
+      fontFamily: FontFamily.medium,
+      paddingVertical: 0,
+      color: c.onSurface,
+    },
+    listContent: {
+      paddingHorizontal: UI_SIZE_20,
+      paddingTop: UI_SIZE_10,
+      paddingBottom: insets.bottom + 100,
+    },
+    pageTitle: {
+      fontSize: UI_FONT_SIZE_28,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
+      marginBottom: UI_SIZE_20,
+      marginTop: UI_SIZE_10,
+      letterSpacing: -0.5,
+      color: c.onSurface,
+    },
+    fab: {
+      position: 'absolute',
+      right: UI_SIZE_24,
+      borderRadius: UI_SIZE_20,
+      elevation: 4,
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
+      backgroundColor: c.primaryContainer,
+      bottom: insets.bottom + UI_SIZE_24,
+    },
+    modalOverlay: {
+      ...commonStyles.flex1,
+      backgroundColor: c.backdrop,
+      ...commonStyles.centered,
+    },
+    renameDialog: {
+      backgroundColor: c.surfaceContainerHighest ?? c.surface,
+      borderRadius: UI_SIZE_28,
+      padding: UI_SIZE_24,
+      width: Math.min(width - UI_SIZE_48, 400),
+      elevation: 6,
+      boxShadow: '0 3px 8px rgba(0, 0, 0, 0.2)',
+    },
+    dialogTitle: {
+      fontSize: UI_FONT_SIZE_20,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      marginBottom: UI_SIZE_16,
+      color: c.onSurface,
+    },
+    dialogActions: {
+      ...commonStyles.row,
+      justifyContent: 'flex-end',
+      marginTop: UI_SIZE_16,
+      gap: UI_SIZE_4,
+    },
+    dialogBtn: {
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_10,
+    },
+    dialogBtnCancel: {
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.onSurfaceVariant,
+    },
+    dialogBtnRename: {
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.primary,
+    },
+  })
+  return styles
+}, useFolderHooks)
