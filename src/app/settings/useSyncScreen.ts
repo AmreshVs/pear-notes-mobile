@@ -50,7 +50,7 @@ export function useSyncScreen() {
   const handleConnect = useCallback(() => {
     if (isValidInvite(pasteCode)) {
       const rawInvite = extractInvite(pasteCode)
-      dispatch(subscribePairUser({ invite: rawInvite } as any))
+      dispatch(subscribePairUser({ invite: rawInvite }))
       setPasteCode('')
     }
   }, [dispatch, pasteCode])
@@ -110,7 +110,7 @@ export function useSyncScreen() {
   const handleConfirmDelete = useCallback(() => {
     setDeleteSheetVisible(false)
     if (deviceToDeleteKey) {
-      dispatch(deleteSyncedDevice({ key: deviceToDeleteKey } as any))
+      dispatch(deleteSyncedDevice({ key: deviceToDeleteKey }))
     }
   }, [dispatch, deviceToDeleteKey])
 

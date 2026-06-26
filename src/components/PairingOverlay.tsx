@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Animated,
+  DimensionValue,
   Modal,
   Pressable,
   View as RNView,
@@ -30,9 +31,10 @@ import Reanimated, { FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from './GlassView'
-import { Text, Theme, View, useColors, useThemedStyles } from './Themed'
+import { createThemedStylesheet, Text, useColors, useTheme, View } from './Themed'
 
 import {
+  commonStyles,
   FontSize,
   FontWeight,
   LetterSpacing,
@@ -47,8 +49,9 @@ const isAndroid = process.env.EXPO_OS === 'android'
 export const PairingOverlay = memo(function PairingOverlay() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles()
   const colors = useColors()
+  const theme = useTheme()
   const [pasteCode, setPasteCode] = useState('')
   const [isScanning, setIsScanning] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
@@ -90,7 +93,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const handleConnect = useCallback(() => {
     if (isValidInvite(pasteCode)) {
       const rawInvite = extractInvite(pasteCode)
-      dispatch(subscribePairUser({ invite: rawInvite } as any))
+      dispatch(subscribePairUser({ invite: rawInvite }))
       dispatch(setShowPairingInput(false))
       setPasteCode('')
       setIsScanning(false)
@@ -112,7 +115,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       setHasScanned(true)
       if (isValidInvite(data)) {
         const rawInvite = extractInvite(data)
-        dispatch(subscribePairUser({ invite: rawInvite } as any))
+        dispatch(subscribePairUser({ invite: rawInvite }))
         dispatch(setShowPairingInput(false))
         setIsScanning(false)
       } else {
@@ -146,7 +149,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
         <ShieldCheck size={40} color={colors.primary} />
       </View>
     )
-  }, [step, showPairingInput, styles.iconDone, styles.iconGold, colors])
+  }, [step, showPairingInput, styles.iconDone, styles.iconGold, colors, styles.icon])
 
   const renderSyncIcon = useCallback(
     () => (
@@ -273,7 +276,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
               <View
                 style={[
                   styles.fill,
-                  { width: `${progress ?? 0}%` as any, backgroundColor: colors.primary },
+                  styles.progressFill,
+                  { width: `${progress ?? 0}%` as DimensionValue },
                 ]}
               />
             </View>
@@ -316,7 +320,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
               disabled={!isValidInvite(pasteCode)}
               style={[
                 styles.btn,
-                { backgroundColor: colors.primary, opacity: !isValidInvite(pasteCode) ? 0.3 : 1 },
+                styles.confirmBtn,
+                !isValidInvite(pasteCode) && styles.confirmBtnDisabled,
               ]}
             >
               <Text style={styles.confirmBtnText}>{t('pairing.overlay.connectBtn')}</Text>
@@ -358,7 +363,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
             </Pressable>
             <Pressable
               onPress={() => dispatch(confirmPairing())}
-              style={[styles.btn, { backgroundColor: colors.primary }]}
+              style={[styles.btn, styles.confirmBtn]}
             >
               <Text style={styles.confirmBtnText}>{t('pairing.overlay.verifyBtn')}</Text>
             </Pressable>
@@ -369,7 +374,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
               <View
                 style={[
                   styles.fill,
-                  { width: `${progress || 25}%` as any, backgroundColor: colors.primary },
+                  styles.progressFill,
+                  { width: `${progress || 25}%` as DimensionValue },
                 ]}
               />
             </View>
@@ -405,8 +411,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
   ])
 
   const fadeStyle = useMemo(
-    () => [StyleSheet.absoluteFill, { opacity: fadeAnim, zIndex: 1000 }],
-    [fadeAnim],
+    () => [styles.fadeWrapper, { opacity: fadeAnim }],
+    [fadeAnim, styles.fadeWrapper],
   )
 
   if (!isVisible) return null
@@ -432,7 +438,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
             {isAndroid ? (
               <RNView style={styles.androidCard}>{renderContent()}</RNView>
             ) : (
-              <GlassView intensity={50} style={{ borderRadius: Radii.card }}>
+              <GlassView intensity={50} style={styles.glassCardInner}>
                 {renderContent()}
               </GlassView>
             )}
@@ -449,7 +455,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           {cameraPermission?.granted ? (
             <>
               <CameraView
-                style={[StyleSheet.absoluteFill, { zIndex: 1 }]}
+                style={styles.scannerCamera}
                 facing="back"
                 barcodeScannerSettings={{ barcodeTypes: ['qr'] }}
                 onBarcodeScanned={hasScanned ? undefined : handleBarcodeScanned}
@@ -459,7 +465,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
               </View>
               <View style={styles.scannerHeader}>
                 <Pressable onPress={() => setIsScanning(false)} style={styles.scannerCloseBtn}>
-                  <X size={20} color="#fff" strokeWidth={2.2} />
+                  <X size={20} color={theme.colors.white} strokeWidth={2.2} />
                 </Pressable>
               </View>
               <View style={styles.scannerFooter}>
@@ -475,10 +481,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
               </Text>
               <Pressable
                 onPress={requestCameraPermission}
-                style={({ pressed }) => [
-                  styles.permissionBtn,
-                  { backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
-                ]}
+                style={({ pressed }) => [styles.permissionBtn, pressed && commonStyles.pressed]}
               >
                 <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
               </Pressable>
@@ -493,19 +496,18 @@ export const PairingOverlay = memo(function PairingOverlay() {
   )
 })
 
-const createStyles = (theme: Theme) => {
-  return StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     center: {
+      ...commonStyles.centered,
       flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
       paddingHorizontal: Space.xl,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     card: {
       width: '100%',
       maxWidth: 384,
-      shadowColor: '#000',
+      shadowColor: theme.colors.black,
       shadowOffset: { width: 0, height: 20 },
       shadowOpacity: 0.5,
       shadowRadius: 40,
@@ -519,7 +521,7 @@ const createStyles = (theme: Theme) => {
     },
     androidCard: {
       borderRadius: 28,
-      backgroundColor: theme.isDark ? '#1e1e20' : '#FFFFFF',
+      backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
       overflow: 'hidden',
@@ -529,14 +531,13 @@ const createStyles = (theme: Theme) => {
       padding: isAndroid ? 28 : Space.xl,
       alignItems: 'center',
       width: '100%',
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     icon: {
       width: 80,
       height: 80,
       borderRadius: Space.xl,
-      alignItems: 'center',
-      justifyContent: 'center',
+      ...commonStyles.centered,
       borderWidth: 1,
       marginBottom: Space.sm,
     },
@@ -544,8 +545,7 @@ const createStyles = (theme: Theme) => {
       width: isAndroid ? 72 : 80,
       height: isAndroid ? 72 : 80,
       borderRadius: isAndroid ? 36 : Space.xl,
-      alignItems: 'center',
-      justifyContent: 'center',
+      ...commonStyles.centered,
       borderWidth: isAndroid ? 0 : 1,
       marginBottom: isAndroid ? Space.md : Space.sm,
       backgroundColor: isAndroid ? `${theme.colors.success}1A` : `${theme.colors.success}26`,
@@ -555,8 +555,7 @@ const createStyles = (theme: Theme) => {
       width: isAndroid ? 72 : 80,
       height: isAndroid ? 72 : 80,
       borderRadius: isAndroid ? 36 : Space.xl,
-      alignItems: 'center',
-      justifyContent: 'center',
+      ...commonStyles.centered,
       borderWidth: isAndroid ? 0 : 1,
       marginBottom: isAndroid ? Space.md : Space.sm,
       backgroundColor: isAndroid ? `${theme.colors.primary}1A` : `${theme.colors.primary}26`,
@@ -566,8 +565,7 @@ const createStyles = (theme: Theme) => {
       width: 80,
       height: 80,
       borderRadius: Space.xl,
-      alignItems: 'center',
-      justifyContent: 'center',
+      ...commonStyles.centered,
       borderWidth: 1,
       marginBottom: Space.sm,
       backgroundColor: `${theme.colors.primary}0D`,
@@ -580,11 +578,11 @@ const createStyles = (theme: Theme) => {
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: Space.sm,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     title: {
       fontSize: isAndroid ? 22 : FontSize.heading,
-      fontWeight: isAndroid ? ('600' as any) : FontWeight.bold,
+      fontWeight: isAndroid ? FontWeight.semibold : FontWeight.bold,
       textAlign: 'center',
       letterSpacing: isAndroid ? 0 : LetterSpacing.tight,
       marginBottom: isAndroid ? 4 : Space.sm,
@@ -615,7 +613,7 @@ const createStyles = (theme: Theme) => {
     },
     idLabel: {
       fontSize: FontSize.micro,
-      fontWeight: isAndroid ? ('900' as any) : FontWeight.bold,
+      fontWeight: isAndroid ? FontWeight.black : FontWeight.bold,
       letterSpacing: 2,
       marginBottom: Space.xs,
       textAlign: 'center',
@@ -643,7 +641,7 @@ const createStyles = (theme: Theme) => {
     },
     scannerScreen: {
       flex: 1,
-      backgroundColor: '#000',
+      backgroundColor: theme.colors.black,
     },
     scannerHeader: {
       position: 'absolute',
@@ -678,7 +676,7 @@ const createStyles = (theme: Theme) => {
     scannerTitle: {
       fontSize: FontSize.heading,
       fontWeight: FontWeight.bold,
-      color: '#ffffff',
+      color: theme.colors.white,
       textAlign: 'center',
       letterSpacing: -0.4,
     },
@@ -699,9 +697,10 @@ const createStyles = (theme: Theme) => {
       paddingVertical: 12,
       paddingHorizontal: 24,
       borderRadius: 8,
+      backgroundColor: theme.colors.primary,
     },
     permissionBtnText: {
-      color: '#fff',
+      color: theme.colors.white,
       fontWeight: FontWeight.bold,
     },
     permissionCancelBtn: {
@@ -712,10 +711,9 @@ const createStyles = (theme: Theme) => {
     },
     scannerOverlay: {
       ...StyleSheet.absoluteFill,
-      justifyContent: 'center',
-      alignItems: 'center',
+      ...commonStyles.centered,
       paddingHorizontal: Space.xl,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
       zIndex: 1,
     },
     scannerFrame: {
@@ -726,12 +724,11 @@ const createStyles = (theme: Theme) => {
       borderRadius: Radii.card,
       borderWidth: 2,
       borderColor: 'rgba(255,255,255,0.92)',
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     fingerprintContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: 'transparent',
+      ...commonStyles.centered,
+      backgroundColor: theme.colors.transparent,
       gap: Space.xs,
     },
     row: {
@@ -739,14 +736,13 @@ const createStyles = (theme: Theme) => {
       gap: isAndroid ? 12 : Space.md,
       width: '100%',
       paddingTop: isAndroid ? Space.md : Space.sm,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     btn: {
+      ...commonStyles.centered,
       flex: 1,
       height: isAndroid ? 48 : 50,
       borderRadius: isAndroid ? 9999 : Radii.md,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     overlay: {
       ...StyleSheet.absoluteFill,
@@ -755,11 +751,10 @@ const createStyles = (theme: Theme) => {
     globeIcon: { opacity: 0.2 },
     greenBtnText: { color: theme.colors.success, fontWeight: FontWeight.bold, fontSize: 15 },
     cancelPressable: {
+      ...commonStyles.centered,
       flex: 1,
       height: isAndroid ? 48 : 50,
       borderRadius: isAndroid ? 9999 : Radii.md,
-      alignItems: 'center',
-      justifyContent: 'center',
       backgroundColor: isAndroid
         ? theme.isDark
           ? 'rgba(255,255,255,0.08)'
@@ -770,13 +765,13 @@ const createStyles = (theme: Theme) => {
     },
     cancelBtnText: {
       color: theme.colors.textSecondary,
-      fontWeight: isAndroid ? ('500' as any) : FontWeight.bold,
+      fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
       fontSize: isAndroid ? 14 : FontSize.body,
       letterSpacing: isAndroid ? 0.1 : 0,
     },
     confirmBtnText: {
-      color: theme.isDark ? '#000' : '#fff',
-      fontWeight: isAndroid ? ('500' as any) : FontWeight.bold,
+      color: theme.isDark ? theme.colors.black : theme.colors.white,
+      fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
       fontSize: isAndroid ? 14 : 15,
       letterSpacing: isAndroid ? 0.1 : 0,
     },
@@ -796,7 +791,7 @@ const createStyles = (theme: Theme) => {
       alignItems: 'center',
       marginBottom: Space.sm,
       width: '100%',
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     scanBtn: {
       flexDirection: 'row',
@@ -834,19 +829,29 @@ const createStyles = (theme: Theme) => {
           : 'rgba(0,0,0,0.03)'
         : theme.colors.cardPressed,
     },
-    subFpWrapper: { opacity: 0.4, marginBottom: Space.base, backgroundColor: 'transparent' },
-    progressWrap: { width: '100%', paddingTop: Space.sm, backgroundColor: 'transparent' },
+    subFpWrapper: {
+      opacity: 0.4,
+      marginBottom: Space.base,
+      backgroundColor: theme.colors.transparent,
+    },
+    progressWrap: {
+      width: '100%',
+      paddingTop: Space.sm,
+      backgroundColor: theme.colors.transparent,
+    },
     fill: { height: '100%', borderRadius: 3 },
-    inputArea: { width: '100%', marginBottom: Space.xl, backgroundColor: 'transparent' },
+    progressFill: {
+      backgroundColor: theme.colors.primary,
+    },
+    inputArea: { width: '100%', marginBottom: Space.xl, backgroundColor: theme.colors.transparent },
     greenBtn: {
+      ...commonStyles.centered,
       width: '100%',
       height: isAndroid ? 48 : 50,
       borderRadius: isAndroid ? 9999 : Radii.md,
       borderWidth: isAndroid ? 0 : 1,
       backgroundColor: isAndroid ? `${theme.colors.success}1A` : `${theme.colors.success}1A`,
       borderColor: `${theme.colors.success}33`,
-      alignItems: 'center',
-      justifyContent: 'center',
       flex: 0,
     },
     trackContainer: {
@@ -873,11 +878,15 @@ const createStyles = (theme: Theme) => {
       flex: 0,
     },
     errorBtnText: {
-      color: '#fff',
+      color: theme.colors.white,
       fontWeight: FontWeight.bold,
       fontSize: 15,
     },
-    progressLabel: { marginTop: Space.md, alignItems: 'center', backgroundColor: 'transparent' },
+    progressLabel: {
+      marginTop: Space.md,
+      alignItems: 'center',
+      backgroundColor: theme.colors.transparent,
+    },
     labelText: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
@@ -885,5 +894,23 @@ const createStyles = (theme: Theme) => {
       textTransform: 'uppercase',
       color: theme.colors.text,
     },
+    fadeWrapper: {
+      ...StyleSheet.absoluteFill,
+      zIndex: 1000,
+    },
+    glassCardInner: {
+      borderRadius: Radii.card,
+    },
+    scannerCamera: {
+      ...StyleSheet.absoluteFill,
+      zIndex: 1,
+    },
+    confirmBtn: {
+      backgroundColor: theme.colors.primary,
+    },
+    confirmBtnDisabled: {
+      opacity: 0.3,
+    },
   })
-}
+  return styles
+})

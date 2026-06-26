@@ -1,6 +1,7 @@
 import { getTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import React, { memo, useMemo } from 'react'
 import {
+  StyleSheet,
   Text as DefaultText,
   View as DefaultView,
   useColorScheme as useDeviceColorScheme,
@@ -8,6 +9,7 @@ import {
 import { useSelector } from 'react-redux'
 
 import Colors from '@/constants/Colors'
+import { commonStyles } from '@/constants/commonStyles'
 import { Layout, Spacing } from '@/constants/Spacing'
 import { Typography } from '@/constants/Typography'
 
@@ -111,55 +113,50 @@ export const View = memo(function View(props: ViewProps) {
 })
 
 export const Container = memo(function Container(props: ViewProps) {
-  const theme = useTheme()
+  const styles = useStyles()
   const combinedStyle = useMemo(
-    () => [{ flex: 1, padding: theme.spacing.md }, props.style],
-    [theme.spacing.md, props.style],
+    () => [styles.container, props.style],
+    [styles.container, props.style],
   )
   return <View {...props} style={combinedStyle} />
 })
 
 export const Card = memo(function Card(props: ViewProps) {
-  const theme = useTheme()
-  const combinedStyle = useMemo(
-    () => [
-      {
-        padding: theme.spacing.md,
-        borderRadius: theme.layout.borderRadius.md,
-        backgroundColor: theme.colors.surface,
-        borderWidth: 1,
-        borderColor: theme.colors.border,
-      },
-      props.style,
-    ],
-    [
-      theme.spacing.md,
-      theme.layout.borderRadius.md,
-      theme.colors.surface,
-      theme.colors.border,
-      props.style,
-    ],
-  )
-
+  const styles = useStyles()
+  const combinedStyle = useMemo(() => [styles.card, props.style], [styles.card, props.style])
   return <View {...props} style={combinedStyle} />
 })
 
 export const GlassCard = memo(function GlassCard(props: ViewProps) {
-  const theme = useTheme()
+  const styles = useStyles()
   const combinedStyle = useMemo(
-    () => [
-      {
-        padding: theme.spacing.md,
-        borderRadius: 24,
-        backgroundColor: theme.colors.glassBackground,
-        borderWidth: 1,
-        borderColor: theme.colors.glassBorder,
-        boxShadow: `0 8px 32px ${theme.colors.glassShadow}`,
-      },
-      props.style,
-    ],
-    [theme.spacing.md, theme.colors, props.style],
+    () => [styles.glassCard, props.style],
+    [styles.glassCard, props.style],
   )
-
   return <View {...props} style={combinedStyle} />
+})
+
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    container: {
+      ...commonStyles.flex1,
+      padding: theme.spacing.md,
+    },
+    card: {
+      padding: theme.spacing.md,
+      borderRadius: theme.layout.borderRadius.md,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    glassCard: {
+      padding: theme.spacing.md,
+      borderRadius: 24,
+      backgroundColor: theme.colors.glassBackground,
+      borderWidth: 1,
+      borderColor: theme.colors.glassBorder,
+      boxShadow: `0 8px 32px ${theme.colors.glassShadow}`,
+    },
+  })
+  return styles
 })

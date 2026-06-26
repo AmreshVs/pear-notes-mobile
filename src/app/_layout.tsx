@@ -15,13 +15,13 @@ import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Appearance, LogBox, StyleSheet, Text, View } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
-import { Provider, useSelector } from 'react-redux'
+import { Provider, useDispatch, useSelector } from 'react-redux'
 
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { PairingOverlay } from '@/components/PairingOverlay'
-import { useResolvedColorScheme } from '@/components/Themed'
-import { useColorScheme } from '@/components/useColorScheme'
+import { createThemedStylesheet, useResolvedColorScheme, useTheme } from '@/components/Themed'
 import Colors from '@/constants/Colors'
+import { commonStyles, FontWeight } from '@/constants/commonStyles'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
@@ -44,14 +44,35 @@ const documentDir = new Directory(Paths.document)
 const storage = documentDir.uri.replace(/^file:\/+/, '/')
 
 export default function RootLayout() {
-  const { t } = useTranslation()
-  const [fatalError, setFatalError] = useState<string | null>(null)
   const [remountKey, setRemountKey] = useState(0)
+
+  const triggerReload = useCallback(() => {
+    setRemountKey((k) => k + 1)
+  }, [])
+
+  return (
+    <Provider key={remountKey} store={store}>
+      <RootLayoutInner triggerReload={triggerReload} />
+    </Provider>
+  )
+}
+
+function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
+  const { t } = useTranslation()
+  const dispatch = useDispatch()
+  const theme = useTheme()
+  const styles = useStyles()
+
+  const [fatalError, setFatalError] = useState<string | null>(null)
   const [isResetting, setIsResetting] = useState(false)
-  const colorScheme = useColorScheme()
-  const isDark = colorScheme === 'dark'
   const prevDeviceRemovedRef = useRef(false)
   const savedEncryptionKeyRef = useRef<string | null>(null)
+  const wasLoadingRef = useRef(false)
+
+  const deviceRemoved = useSelector(getDeviceRemoved)
+  const needsReload = useSelector((state: any) => state.sync.needsReload)
+  const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
+  const notesLoading = useSelector(getNotesLoading)
 
   const initWorklet = useCallback(async () => {
     try {
@@ -67,67 +88,59 @@ export default function RootLayout() {
         await setDbEncryptionKey(key)
       }
       await backendApi.ready({ storage, encryption: key })
-      store.dispatch(appReady())
-      store.dispatch(initApp())
+      dispatch(appReady())
+      dispatch(initApp())
     } catch (e) {
       console.error('Error in initWorklet', e)
       setFatalError(e instanceof Error ? e.message : t('error.backendFailed'))
     }
-  }, [])
+  }, [dispatch, t])
 
   useEffect(() => {
     initWorklet()
   }, [initWorklet])
 
   useEffect(() => {
-    const unsubscribe = store.subscribe(() => {
-      const state = store.getState()
-      const deviceRemoved = getDeviceRemoved(state)
+    if (prevDeviceRemovedRef.current && !deviceRemoved) {
+      setIsResetting(true)
+    }
+    prevDeviceRemovedRef.current = deviceRemoved
+  }, [deviceRemoved])
 
-      if (prevDeviceRemovedRef.current && !deviceRemoved) {
-        setIsResetting(true)
-      }
-      prevDeviceRemovedRef.current = deviceRemoved
+  const encryptionKey = receiverStatus?.encryptionKey
+  useEffect(() => {
+    if (encryptionKey && encryptionKey !== savedEncryptionKeyRef.current) {
+      savedEncryptionKeyRef.current = encryptionKey
+      setDbEncryptionKey(encryptionKey).catch(console.error)
+    }
+  }, [encryptionKey])
 
-      const receiverStatus = state.sync.receiverStatus as any
-      const newEncryptionKey = receiverStatus?.encryptionKey
-      if (newEncryptionKey && newEncryptionKey !== savedEncryptionKeyRef.current) {
-        savedEncryptionKeyRef.current = newEncryptionKey
-        setDbEncryptionKey(newEncryptionKey).catch(console.error)
-      }
+  useEffect(() => {
+    if (needsReload) {
+      dispatch(setNeedsReload(false))
+      router.dismissAll()
+      router.replace('/(tabs)/(folders)')
+      triggerReload()
+    }
+  }, [needsReload, dispatch, triggerReload])
 
-      if (state.sync.needsReload) {
-        store.dispatch(setNeedsReload(false))
-        router.dismissAll()
-        router.replace('/(tabs)/(folders)')
-        setRemountKey((k) => k + 1)
-        initWorklet()
-      }
-    })
-    return unsubscribe
-  }, [initWorklet])
+  useEffect(() => {
+    if (!isResetting) {
+      wasLoadingRef.current = false
+      return
+    }
+    if (notesLoading) {
+      wasLoadingRef.current = true
+    } else if (wasLoadingRef.current) {
+      setIsResetting(false)
+    }
+  }, [isResetting, notesLoading])
 
   useEffect(() => {
     if (!isResetting) return
-    let wasLoading = false
     const fallback = setTimeout(() => setIsResetting(false), 15000)
-    const unsubscribe = store.subscribe(() => {
-      const notesLoading = getNotesLoading(store.getState())
-      if (notesLoading) wasLoading = true
-      if (wasLoading && !notesLoading) {
-        clearTimeout(fallback)
-        setIsResetting(false)
-      }
-    })
-    return () => {
-      unsubscribe()
-      clearTimeout(fallback)
-    }
+    return () => clearTimeout(fallback)
   }, [isResetting])
-
-  const bgColor = isDark ? Colors.dark.background : Colors.light.background
-  const textColor = isDark ? Colors.dark.text : Colors.light.text
-  const subtextColor = isDark ? Colors.dark.textSecondary : Colors.light.textSecondary
 
   if (fatalError) {
     return <ErrorScreen message={fatalError} onRetry={initWorklet} />
@@ -135,44 +148,49 @@ export default function RootLayout() {
 
   return (
     <>
-      <Provider key={remountKey} store={store}>
-        <GestureHandlerRootView style={{ flex: 1, backgroundColor: bgColor }}>
-          <RootLayoutNav />
-        </GestureHandlerRootView>
-      </Provider>
+      <GestureHandlerRootView style={styles.gestureView}>
+        <RootLayoutNav />
+      </GestureHandlerRootView>
       {isResetting && (
-        <View style={[StyleSheet.absoluteFill, styles.resetOverlay, { backgroundColor: bgColor }]}>
-          <ActivityIndicator size="large" color={Colors.dark.primary} />
-          <Text style={[styles.resetTitle, { color: textColor }]}>
-            {t('pairing.overlay.resettingTitle')}
-          </Text>
-          <Text style={[styles.resetDesc, { color: subtextColor }]}>
-            {t('pairing.overlay.resettingDesc')}
-          </Text>
+        <View style={styles.resetOverlay}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.resetTitle}>{t('pairing.overlay.resettingTitle')}</Text>
+          <Text style={styles.resetDesc}>{t('pairing.overlay.resettingDesc')}</Text>
         </View>
       )}
     </>
   )
 }
 
-const styles = StyleSheet.create({
-  resetOverlay: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 9999,
-    gap: 12,
-  },
-  resetTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  resetDesc: {
-    fontSize: 14,
-    opacity: 0.7,
-    textAlign: 'center',
-    paddingHorizontal: 40,
-  },
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    gestureView: {
+      ...commonStyles.flex1,
+      backgroundColor: theme.colors.background,
+    },
+    resetOverlay: {
+      ...StyleSheet.absoluteFill,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 9999,
+      gap: 12,
+      backgroundColor: theme.colors.background,
+    },
+    resetTitle: {
+      fontSize: 18,
+      fontWeight: FontWeight.semibold,
+      marginTop: 4,
+      color: theme.colors.text,
+    },
+    resetDesc: {
+      fontSize: 14,
+      opacity: 0.7,
+      textAlign: 'center',
+      paddingHorizontal: 40,
+      color: theme.colors.textSecondary,
+    },
+  })
+  return styles
 })
 
 function SplashGate() {

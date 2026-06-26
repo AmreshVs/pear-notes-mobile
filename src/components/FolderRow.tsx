@@ -12,9 +12,18 @@ import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanim
 
 import { Text, Theme, useThemedStyles } from './Themed'
 
-import { FontSize, FontWeight, LetterSpacing, Radii, Space } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Radii,
+  Space,
+  UI_ICON_SIZE_14,
+  UI_ICON_SIZE_20,
+  UI_STROKE_WIDTH_1_8,
+} from '@/constants/commonStyles'
 
-// @expo/ui is iOS-only — import lazily so Android doesn't crash
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -69,22 +78,24 @@ export const FolderRow = memo(function FolderRow({
     >
       <Pressable onPress={() => onPress(id)} style={containerStyle}>
         <RNView style={styles.leftContent}>
-          <Icon size={20} color={styles.icon.color} strokeWidth={1.8} />
-
+          <Icon
+            size={UI_ICON_SIZE_20}
+            color={styles.icon.color}
+            strokeWidth={UI_STROKE_WIDTH_1_8}
+          />
           <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
         </RNView>
 
         <RNView style={styles.rightContent}>
           {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
           <RNView style={styles.chevronWrap}>
-            <ChevronRight size={14} color={styles.count.color} />
+            <ChevronRight size={UI_ICON_SIZE_14} color={styles.count.color} />
           </RNView>
         </RNView>
       </Pressable>
     </Animated.View>
   )
 
-  // System folders and Android: plain row, no context menu
   if (isSystem || !ExpoUI || (!onRename && !onDelete)) {
     return row
   }
@@ -120,15 +131,13 @@ export const FolderRow = memo(function FolderRow({
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      ...commonStyles.rowBetween,
       paddingVertical: Space.md,
       paddingHorizontal: Space.base,
       borderRadius: Radii.md,
       marginVertical: 1,
       minHeight: 52,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,
@@ -137,10 +146,9 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.cardPressed,
     },
     leftContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      ...commonStyles.row,
       gap: 14,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     icon: {
       color: theme.colors.primary,
@@ -156,10 +164,9 @@ const createStyles = (theme: Theme) =>
       opacity: 1,
     },
     rightContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      ...commonStyles.row,
       gap: Space.sm,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     count: {
       fontSize: FontSize.base,
