@@ -4,6 +4,7 @@ import {
   getImportStatus,
   resetExport,
   resetImport,
+  setImportStatus,
   startExportBackup,
   startImportBackup,
 } from '@pear-notes/core/store/slices/backupSlice.js'
@@ -24,12 +25,12 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import {
   InvalidBackupFileError,
-  pickAnyFilePath,
-  pickBackupFilePath,
+  pickAndReadBackupFile,
   saveBackupToDevice,
   saveBackupWithShare,
 } from '@/lib/backupFileManager'
 import { loadLastBackupDate, saveLastBackupDate } from '@/lib/backupUtils'
+import { getDbEncryptionKey } from '@/lib/secureStore'
 
 type BackupStatus = {
   step: string
@@ -54,6 +55,9 @@ function useBackupScreen() {
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [deviceRecoveryKey, setDeviceRecoveryKey] = useState<string | null>(null)
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
+  const [selectedBackupBuffer, setSelectedBackupBuffer] = useState<Uint8Array | null>(null)
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
@@ -61,6 +65,10 @@ function useBackupScreen() {
 
   useEffect(() => {
     loadLastBackupDate().then(setLastBackupDate)
+  }, [])
+
+  useEffect(() => {
+    getDbEncryptionKey().then(setDeviceRecoveryKey)
   }, [])
 
   const isExporting =
@@ -74,8 +82,24 @@ function useBackupScreen() {
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
   const handleCreateBackup = useCallback(() => {
-    dispatch(startExportBackup())
-  }, [dispatch])
+    Alert.alert(
+      t('backup.confirmExportTitle'),
+      t('backup.confirmExportDesc'),
+      [
+        {
+          text: t('backup.confirmExportNo'),
+          style: 'cancel',
+        },
+        {
+          text: t('backup.confirmExportYes'),
+          onPress: () => {
+            dispatch(startExportBackup())
+          },
+        },
+      ],
+      { cancelable: true },
+    )
+  }, [dispatch, t])
 
   const handleCancelExport = useCallback(() => {
     dispatch(resetExport())
@@ -140,28 +164,45 @@ function useBackupScreen() {
   }, [exportStatus.step, exportBuffer, handleSaveBackup])
 
   const handleRestoreData = useCallback(async () => {
-    if (Platform.OS === 'ios') {
-      try {
-        const filePath = await pickAnyFilePath()
-        if (!filePath) return
-        dispatch(startImportBackup({ filePath } as any))
-      } catch (e) {
+    try {
+      const buffer = await pickAndReadBackupFile()
+      if (!buffer) return
+      setSelectedBackupBuffer(buffer)
+      setShowRecoveryModal(true)
+    } catch (e) {
+      if (e instanceof InvalidBackupFileError) {
+        Alert.alert(t('backup.invalidFile'), t('backup.invalidFileDesc'))
+      } else {
         Alert.alert(t('backup.restoreError'), String(e))
       }
-    } else {
-      try {
-        const filePath = await pickBackupFilePath()
-        if (!filePath) return
-        dispatch(startImportBackup({ filePath } as any))
-      } catch (e) {
-        if (e instanceof InvalidBackupFileError) {
-          Alert.alert(t('backup.invalidFile'), t('backup.invalidFileDesc'))
-        } else {
-          Alert.alert(t('backup.restoreError'), String(e))
-        }
-      }
     }
-  }, [dispatch, t])
+  }, [t])
+
+  const handleConfirmRestore = useCallback(
+    async (enteredKey: string) => {
+      setShowRecoveryModal(false)
+      if (!selectedBackupBuffer) return
+      setTimeout(() => {
+        dispatch(
+          setImportStatus({
+            step: 'decrypting',
+            progress: 15,
+            message: t('backup.progress.restoringDesc'),
+          }),
+        )
+        dispatch(
+          startImportBackup({ buffer: selectedBackupBuffer, recoveryKey: enteredKey } as any),
+        )
+        setSelectedBackupBuffer(null)
+      }, 350)
+    },
+    [dispatch, selectedBackupBuffer, t],
+  )
+
+  const handleCancelRecovery = useCallback(() => {
+    setShowRecoveryModal(false)
+    setSelectedBackupBuffer(null)
+  }, [])
 
   const handleCancelOrDismiss = useCallback(() => {
     if (exportStatus.step !== 'idle') dispatch(resetExport())
@@ -198,6 +239,10 @@ function useBackupScreen() {
     handleSaveBackup,
     handleRestoreData,
     handleCancelOrDismiss,
+    deviceRecoveryKey,
+    showRecoveryModal,
+    handleConfirmRestore,
+    handleCancelRecovery,
   }
 }
 

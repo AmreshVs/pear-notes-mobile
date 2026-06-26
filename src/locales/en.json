@@ -340,10 +340,23 @@
       "cancel": "Cancel",
       "dismiss": "Dismiss"
     },
+    "readingBackup": "Reading backup file...",
     "restoreComplete": "Restore Complete",
     "restoreCompleteDesc": "Your notes and data have been restored successfully.",
     "invalidFile": "Invalid File",
     "invalidFileDesc": "Please select a .pnbk backup file.",
-    "restoreError": "Restore Failed"
+    "restoreError": "Restore Failed",
+    "confirmExportTitle": "Backup Recovery Key",
+    "confirmExportDesc": "Please make sure you have copied your Recovery Key securely. You will need it to restore this backup on other devices.",
+    "confirmExportYes": "Yes, I copied it",
+    "confirmExportNo": "Cancel",
+    "recoveryKey": "Recovery Key",
+    "recoveryKeyDesc": "Save this key securely. You will need it to restore this backup on a new device.",
+    "copyKey": "Copy Key",
+    "copied": "Copied!",
+    "enterRecoveryKeyTitle": "Enter Recovery Key",
+    "enterRecoveryKeyDesc": "Please enter the Recovery Key of the device that created this backup.",
+    "invalidKey": "Invalid Key",
+    "invalidKeyDesc": "The recovery key must be a 64-character hex string."
   }
 }

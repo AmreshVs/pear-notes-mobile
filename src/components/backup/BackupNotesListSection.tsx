@@ -8,9 +8,9 @@ import {
   PenLine,
   X,
 } from 'lucide-react-native'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, Text as RNText, View as RNView } from 'react-native'
+import { Pressable, Text as RNText, View as RNView, StyleSheet } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -148,7 +148,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
       marginBottom: Space.md,
-      marginTop: Space.xxxl,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },

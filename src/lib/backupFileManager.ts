@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer'
+
 import * as DocumentPicker from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 import { Platform, Share } from 'react-native'
@@ -40,7 +42,8 @@ export async function saveBackupToDevice(exportBuffer: any): Promise<void> {
 export async function saveBackupWithShare(exportBuffer: any, shareMessage?: string): Promise<void> {
   const uint8 = toUint8Array(exportBuffer)
   const base64 = uint8ArrayToBase64(uint8)
-  const tempFile = (FileSystem.cacheDirectory ?? '') + 'backup.pearnotes'
+  const date = new Date().toISOString().split('T')[0]
+  const tempFile = (FileSystem.cacheDirectory ?? '') + `pear-notes-${date}.pnbk`
   await FileSystem.writeAsStringAsync(tempFile, base64, {
     encoding: FileSystem.EncodingType.Base64,
   })
@@ -51,24 +54,19 @@ export async function saveBackupWithShare(exportBuffer: any, shareMessage?: stri
   }
 }
 
-export async function pickBackupFilePath(): Promise<string | null> {
+export async function pickAndReadBackupFile(): Promise<Uint8Array | null> {
   const result = await DocumentPicker.getDocumentAsync({
     type: '*/*',
     copyToCacheDirectory: true,
   })
   if (result.canceled) return null
   const asset = result.assets[0]
-  if (!asset.name?.endsWith('.pnbk')) {
+  const name = asset.name || asset.uri.split('/').pop() || ''
+  if (!name.endsWith('.pnbk') && !name.endsWith('.pearnotes')) {
     throw new InvalidBackupFileError()
   }
-  const decodedUri = decodeURI(asset.uri)
-  return decodedUri.startsWith('file://') ? decodedUri.replace('file://', '') : decodedUri
-}
-
-export async function pickAnyFilePath(): Promise<string | null> {
-  const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true })
-  if (result.canceled) return null
-  const file = result.assets[0]
-  const decodedUri = decodeURIComponent(file.uri)
-  return decodedUri.startsWith('file://') ? decodedUri.replace('file://', '') : decodedUri
+  const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+    encoding: FileSystem.EncodingType.Base64,
+  })
+  return Buffer.from(base64, 'base64')
 }

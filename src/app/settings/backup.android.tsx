@@ -1,6 +1,9 @@
 import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import * as Clipboard from 'expo-clipboard'
+import * as Haptics from 'expo-haptics'
 import { router, Stack } from 'expo-router'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -20,6 +23,7 @@ import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBacku
 import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { RecoveryKeyModal } from '@/components/backup/RecoveryKeyModal'
 import { createThemedStylesheetWithHooks, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -51,6 +55,7 @@ import {
   UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { formatBackupDate, formatBytes, hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -91,7 +96,29 @@ export default function AndroidBackupScreen() {
     handleDeleteMedia,
     handleRestoreData,
     handleCancelOrDismiss,
+    deviceRecoveryKey,
+    showRecoveryModal,
+    handleConfirmRestore,
+    handleCancelRecovery,
   } = useBackupScreen()
+
+  const commonThemedStyles = useCommonThemedStyles()
+
+  const [copied, setCopied] = useState(false)
+  const [isKeyVisible, setIsKeyVisible] = useState(false)
+
+  const toggleKeyVisibility = useCallback(() => {
+    setIsKeyVisible((prev) => !prev)
+  }, [])
+
+  const handleCopyRecoveryKey = useCallback(async () => {
+    if (deviceRecoveryKey) {
+      await Clipboard.setStringAsync(deviceRecoveryKey)
+      setCopied(true)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }, [deviceRecoveryKey])
 
   const progressTitle =
     exportStatus.step !== 'idle' && exportStatus.step !== 'done' && exportStatus.step !== 'error'
@@ -159,6 +186,42 @@ export default function AndroidBackupScreen() {
             <MaterialCommunityIcons name="restore" size={UI_ICON_SIZE_20} color={c.onSurface} />
             <Text style={styles.secondaryBtnText}>{t('backup.restoreData')}</Text>
           </Pressable>
+        </Animated.View>
+
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(120)}
+          style={[commonThemedStyles.card, styles.recoveryCard]}
+        >
+          <View style={styles.recoveryHeader}>
+            <MaterialCommunityIcons name="key-outline" size={UI_ICON_SIZE_20} color={c.primary} />
+            <Text style={styles.recoveryTitle}>{t('backup.recoveryKey')}</Text>
+          </View>
+          <Text style={styles.recoveryDesc}>{t('backup.recoveryKeyDesc')}</Text>
+          <View style={styles.keyContainer}>
+            <Text numberOfLines={1} ellipsizeMode="middle" style={styles.keyText}>
+              {isKeyVisible
+                ? deviceRecoveryKey
+                : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
+            </Text>
+            <Pressable
+              onPress={toggleKeyVisibility}
+              style={({ pressed }) => [styles.eyeBtn, pressed && commonStyles.pressed]}
+            >
+              <MaterialCommunityIcons
+                name={isKeyVisible ? 'eye-off-outline' : 'eye-outline'}
+                size={UI_ICON_SIZE_20}
+                color={c.onSurfaceVariant}
+              />
+            </Pressable>
+            <Pressable
+              onPress={handleCopyRecoveryKey}
+              style={({ pressed }) => [styles.copyBtn, pressed && commonStyles.pressed]}
+            >
+              <Text style={styles.copyBtnText}>
+                {copied ? t('backup.copied') : t('backup.copyKey')}
+              </Text>
+            </Pressable>
+          </View>
         </Animated.View>
 
         <AndroidBackupStatsSection
@@ -292,6 +355,12 @@ export default function AndroidBackupScreen() {
           </View>
         </View>
       </Modal>
+
+      <RecoveryKeyModal
+        visible={showRecoveryModal}
+        onClose={handleCancelRecovery}
+        onSubmit={handleConfirmRestore}
+      />
     </View>
   )
 }
@@ -516,6 +585,70 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       color: theme.colors.white,
       textAlign: 'center',
+    },
+    recoveryCard: {
+      padding: UI_SIZE_16,
+      marginTop: UI_SIZE_12,
+      marginBottom: UI_SIZE_12,
+    },
+    recoveryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_8,
+      marginBottom: UI_SIZE_4,
+    },
+    recoveryTitle: {
+      fontSize: UI_FONT_SIZE_16,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.onSurface,
+    },
+    recoveryDesc: {
+      fontSize: UI_FONT_SIZE_14,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+      lineHeight: UI_SIZE_20,
+      marginBottom: UI_SIZE_16,
+    },
+    keyContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: UI_SIZE_12,
+      borderWidth: 1,
+      borderColor: c.outlineVariant ?? theme.colors.borderSecondary,
+      paddingLeft: UI_SIZE_16,
+      paddingRight: UI_SIZE_4,
+      height: UI_SIZE_54,
+    },
+    keyText: {
+      flex: 1,
+      fontSize: UI_FONT_SIZE_14,
+      fontFamily: FontFamily.regular,
+      color: c.onSurface,
+      marginRight: UI_SIZE_8,
+    },
+    copyBtn: {
+      backgroundColor: c.primary,
+      borderRadius: UI_SIZE_9999,
+      paddingHorizontal: UI_SIZE_16,
+      height: UI_SIZE_40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    copyBtnText: {
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: theme.colors.black,
+    },
+    eyeBtn: {
+      width: UI_SIZE_40,
+      height: UI_SIZE_40,
+      borderRadius: UI_SIZE_20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: UI_SIZE_8,
     },
   })
   return styles

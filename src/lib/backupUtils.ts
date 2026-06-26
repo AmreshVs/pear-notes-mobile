@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer'
+
 import * as FileSystem from 'expo-file-system/legacy'
 
 export const LAST_BACKUP_FILE = (FileSystem.documentDirectory ?? '') + 'lastBackup.json'
@@ -17,17 +19,28 @@ export function formatBytes(bytes: number): string {
 }
 
 export function uint8ArrayToBase64(buffer: Uint8Array): string {
-  const CHUNK = 3 * 1024
-  const parts: string[] = []
-  for (let i = 0; i < buffer.length; i += CHUNK) {
-    parts.push(btoa(String.fromCharCode.apply(null, buffer.subarray(i, i + CHUNK) as any)))
-  }
-  return parts.join('')
+  return Buffer.from(buffer).toString('base64')
 }
 
 export function toUint8Array(data: any): Uint8Array {
+  if (!data) return new Uint8Array(0)
   if (data instanceof Uint8Array) return data
-  return new Uint8Array(Object.values(data as Record<string, number>))
+  if (typeof data === 'object') {
+    if (data.type === 'Buffer' && Array.isArray(data.data)) {
+      return new Uint8Array(data.data)
+    }
+    if ('data' in data && Array.isArray(data.data)) {
+      return new Uint8Array(data.data)
+    }
+    if (Array.isArray(data)) {
+      return new Uint8Array(data)
+    }
+    const keys = Object.keys(data)
+    if (keys.length > 0 && keys.every((k) => !isNaN(Number(k)))) {
+      return new Uint8Array(Object.values(data))
+    }
+  }
+  return new Uint8Array(data)
 }
 
 export async function saveLastBackupDate(): Promise<void> {

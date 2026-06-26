@@ -1,7 +1,6 @@
 import { FileText, Film, Image as ImageIcon, Mic } from 'lucide-react-native'
-import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, View as RNView } from 'react-native'
+import { View as RNView, StyleSheet } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -111,7 +110,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     breakdownSection: {
-      marginTop: Space.xl,
+      marginTop: Space.lg,
       marginBottom: Space.sm,
     },
     sectionCapMargin: {
@@ -119,7 +118,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
       marginBottom: Space.md,
-      marginTop: Space.xxxl,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },
