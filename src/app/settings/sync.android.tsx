@@ -1,20 +1,7 @@
-import {
-  deleteSyncedDevice,
-  getLocalPreferences,
-  getSyncedDevices,
-} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
-import {
-  createInvite,
-  getInvite,
-  getInviteExpiresAt,
-  getSyncIsLoading,
-  subscribePairUser,
-} from '@pear-notes/core/store/slices/syncSlice.js'
-import { extractInvite, isValidInvite } from '@pear-notes/core/utils.js'
+import { isValidInvite } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Clipboard from 'expo-clipboard'
 import { router, Stack } from 'expo-router'
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -29,7 +16,8 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch, useSelector } from 'react-redux'
+
+import { useSyncScreen } from './useSyncScreen'
 
 import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
@@ -50,30 +38,33 @@ import {
   UI_FONT_SIZE_18,
   UI_FONT_SIZE_20,
   UI_FONT_SIZE_28,
+  UI_ICON_SIZE_12,
+  UI_ICON_SIZE_14,
   UI_ICON_SIZE_16,
+  UI_ICON_SIZE_18,
   UI_ICON_SIZE_24,
+  UI_ICON_SIZE_30,
+  UI_ICON_SIZE_48,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
-  UI_SIZE_120,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_17,
   UI_SIZE_18,
-  UI_SIZE_180,
-  UI_SIZE_2,
   UI_SIZE_20,
-  UI_SIZE_200,
   UI_SIZE_22,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_30,
   UI_SIZE_32,
   UI_SIZE_36,
-  UI_SIZE_4,
   UI_SIZE_40,
-  UI_SIZE_48,
-  UI_SIZE_6,
-  UI_SIZE_8,
+  UI_SIZE_120,
+  UI_SIZE_180,
+  UI_SIZE_200,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 
@@ -97,7 +88,34 @@ export default function AndroidSyncScreen() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles() as any
-  const dispatch = useDispatch()
+
+  const {
+    tab,
+    setTab,
+    copied,
+    pasteCode,
+    setPasteCode,
+    scannerVisible,
+    hasScanned,
+    deleteSheetVisible,
+    setDeleteSheetVisible,
+    scrollRef,
+    inviteCode,
+    expiresAt,
+    isLoading,
+    syncedDevices,
+    isSynced,
+    handleCopy,
+    handleConnect,
+    handleOpenScanner,
+    handleCloseScanner,
+    handleBarcodeScanned,
+    handleGenerateInvite,
+    handleScrollToEnd,
+    formatExpiry,
+    handleDeleteDevice,
+    handleConfirmDelete,
+  } = useSyncScreen()
 
   const deviceColors = useMemo(
     () => ({
@@ -112,96 +130,17 @@ export default function AndroidSyncScreen() {
     [c],
   )
 
-  const inviteCode = useSelector(getInvite)
-  const expiresAt = useSelector(getInviteExpiresAt)
-  const isLoading = useSelector(getSyncIsLoading)
-  const syncedDevices = useSelector(getSyncedDevices) as any[]
-  const localPreferences = useSelector(getLocalPreferences)
-  const isSynced = localPreferences['isSynced'] === 'true'
-
-  const [tab, setTab] = useState<'link' | 'devices'>('link')
-  const [copied, setCopied] = useState(false)
-  const [pasteCode, setPasteCode] = useState('')
-  const [scannerVisible, setScannerVisible] = useState(false)
-  const [hasScanned, setHasScanned] = useState(false)
-  const [deleteSheetVisible, setDeleteSheetVisible] = useState(false)
-  const [deviceToDeleteKey, setDeviceToDeleteKey] = useState<string | null>(null)
-  const scrollRef = useRef<ScrollView>(null)
-
-  const handleCopy = useCallback(async () => {
-    if (!inviteCode) return
-    await Clipboard.setStringAsync(inviteCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [inviteCode])
-
-  const handleConnect = useCallback(() => {
-    if (isValidInvite(pasteCode)) {
-      const rawInvite = extractInvite(pasteCode)
-      dispatch(subscribePairUser({ invite: rawInvite } as any))
-      setPasteCode('')
-    }
-  }, [dispatch, pasteCode])
-
-  const handleOpenScanner = useCallback(async () => {
-    setHasScanned(false)
-    setScannerVisible(true)
-  }, [])
-
-  const handleCloseScanner = useCallback(() => {
-    setScannerVisible(false)
-    setHasScanned(false)
-  }, [])
-
-  const handleBarcodeScanned = useCallback(
-    ({ data }: { data: string }) => {
-      if (!data || hasScanned) return
-      setHasScanned(true)
-      setPasteCode(data.trim())
-      setScannerVisible(false)
-      setTimeout(() => setHasScanned(false), 500)
-    },
-    [hasScanned],
-  )
-
-  const formatExpiry = useCallback(
-    (ts: number | null) => {
-      if (!ts) return t('sync.invite.permanent')
-      const ms = ts < 10000000000 ? ts * 1000 : ts
-      const d = new Date(ms)
-      if (isNaN(d.getTime())) return t('sync.invite.permanent')
-      return t('sync.invite.expiry', {
-        time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      })
-    },
-    [t],
-  )
-
   const deleteActions = useMemo(
     () => [
       {
         icon: 'trash-can-outline',
         label: t('sync.delete.remove'),
         destructive: true,
-        onPress: () => {
-          setDeleteSheetVisible(false)
-          if (deviceToDeleteKey) {
-            dispatch(deleteSyncedDevice({ key: deviceToDeleteKey } as any))
-          }
-        },
+        onPress: handleConfirmDelete,
       },
     ],
-    [dispatch, deviceToDeleteKey, t],
+    [handleConfirmDelete, t],
   )
-
-  const handleDeleteDevice = useCallback((deviceKey: string) => {
-    setDeviceToDeleteKey(deviceKey)
-    setDeleteSheetVisible(true)
-  }, [])
-
-  const handleInputFocus = useCallback(() => {
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
-  }, [])
 
   const renderLocalDeviceCard = useCallback(
     (device: any, index: number) => (
@@ -289,12 +228,16 @@ export default function AndroidSyncScreen() {
                 >
                   <View style={styles.heroSection}>
                     <View style={styles.heroCircle}>
-                      <MaterialCommunityIcons name="devices" size={UI_SIZE_48} color={c.primary} />
+                      <MaterialCommunityIcons
+                        name="devices"
+                        size={UI_ICON_SIZE_48}
+                        color={c.primary}
+                      />
                     </View>
                     <View style={styles.heroBadge}>
                       <MaterialCommunityIcons
                         name="sync"
-                        size={UI_SIZE_18}
+                        size={UI_ICON_SIZE_18}
                         color={c.onPrimary || theme.colors.text}
                       />
                     </View>
@@ -304,7 +247,7 @@ export default function AndroidSyncScreen() {
                   <Text style={styles.heroDesc}>{t('sync.hero.description')}</Text>
 
                   <Pressable
-                    onPress={() => dispatch(createInvite())}
+                    onPress={handleGenerateInvite}
                     disabled={isLoading}
                     style={({ pressed }) => [
                       styles.generateBtn,
@@ -328,7 +271,7 @@ export default function AndroidSyncScreen() {
                     <View style={styles.heroCircle}>
                       <MaterialCommunityIcons
                         name="shield-check-outline"
-                        size={UI_SIZE_48}
+                        size={UI_ICON_SIZE_48}
                         color={c.primary}
                       />
                     </View>
@@ -369,7 +312,7 @@ export default function AndroidSyncScreen() {
                   >
                     <MaterialCommunityIcons
                       name={copied ? 'check' : 'content-copy'}
-                      size={UI_SIZE_18}
+                      size={UI_ICON_SIZE_18}
                       color={copied ? theme.colors.white : c.onPrimary || theme.colors.text}
                     />
                     <Text
@@ -385,7 +328,7 @@ export default function AndroidSyncScreen() {
                   <View style={styles.warningRow}>
                     <MaterialCommunityIcons
                       name="shield-check"
-                      size={UI_SIZE_14}
+                      size={UI_ICON_SIZE_14}
                       color={c.primary}
                       style={styles.warningIconMargin}
                     />
@@ -407,7 +350,7 @@ export default function AndroidSyncScreen() {
                     <Pressable onPress={handleOpenScanner} style={styles.scanPillSmall}>
                       <MaterialCommunityIcons
                         name="qrcode-scan"
-                        size={UI_SIZE_14}
+                        size={UI_ICON_SIZE_14}
                         color={c.primary}
                       />
                       <Text style={styles.scanPillSmallText}>{t('sync.paste.scanBtn')}</Text>
@@ -419,7 +362,7 @@ export default function AndroidSyncScreen() {
                       value={pasteCode}
                       onChangeText={setPasteCode}
                       onSubmitEditing={handleConnect}
-                      onFocus={handleInputFocus}
+                      onFocus={handleScrollToEnd}
                       placeholder={t('sync.paste.placeholder')}
                       placeholderTextColor={hexWithAlpha(c.onSurfaceVariant, 0.4)}
                       style={styles.pasteInput}
@@ -451,7 +394,7 @@ export default function AndroidSyncScreen() {
               >
                 <MaterialCommunityIcons
                   name="shield-check"
-                  size={UI_SIZE_12}
+                  size={UI_ICON_SIZE_12}
                   color={c.primary}
                   style={styles.warningIconMargin}
                 />
@@ -485,7 +428,7 @@ export default function AndroidSyncScreen() {
                 >
                   <MaterialCommunityIcons
                     name="cellphone-link"
-                    size={UI_SIZE_30}
+                    size={UI_ICON_SIZE_30}
                     color={c.onSurfaceVariant}
                   />
                   <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
