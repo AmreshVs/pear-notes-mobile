@@ -1,30 +1,21 @@
 import Slider from '@react-native-community/slider'
-import {
-  AudioModule,
-  RecordingPresets,
-  setAudioModeAsync,
-  setIsAudioActiveAsync,
-  useAudioPlayer,
-  useAudioPlayerStatus,
-  useAudioRecorder,
-} from 'expo-audio'
-import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Modal, Pressable, StyleSheet, View } from 'react-native'
-import Animated, {
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated'
+import { Modal, Pressable, StyleSheet, View } from 'react-native'
+import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { GlassView } from '@/components/GlassView'
+import { RecordingWaveBar } from '@/components/RecordingWaveBar'
 import { Text, Theme, useTheme, createThemedStylesheet } from '@/components/Themed'
+import {
+  RECORDING_BARS,
+  RECORDING_BAR_GAP,
+  RECORDING_BAR_W,
+  useAudioRecorderModal,
+  fmtTimer,
+  fmtShort,
+} from '@/components/useAudioRecorderModal'
 import {
   FontFamily,
   FontWeight,
@@ -52,69 +43,12 @@ import {
 } from '@/constants/commonStyles'
 
 const TIMELINE_H = 88
-const RECORDING_WINDOW_MS = 30000
-const RECORDING_BARS = 52
-const RECORDING_BAR_W = 3
-const RECORDING_BAR_GAP = 3
 const RECORDING_BAR_STEP = RECORDING_BAR_W + RECORDING_BAR_GAP
-
-let energy = 0.4
-function sampleAmp() {
-  energy = Math.max(0.14, Math.min(0.98, energy + (Math.random() - 0.48) * 0.18))
-  return Math.max(0.12, Math.min(1, energy + (Math.random() - 0.5) * 0.28))
-}
-
-function RecordingWaveBar({
-  index,
-  values,
-  color,
-  active,
-}: {
-  index: number
-  values: SharedValue<number[]>
-  color: string
-  active: boolean
-}) {
-  const animatedStyle = useAnimatedStyle(() => {
-    const amp = values.value[index] ?? 0.16
-    return {
-      height: withTiming(active ? Math.max(16, amp * 84) : 20, {
-        duration: 120,
-        easing: Easing.out(Easing.quad),
-      }),
-      backgroundColor: color,
-      opacity: withTiming(active ? (index === RECORDING_BARS - 1 ? 1 : 0.92) : 0.22, {
-        duration: 160,
-        easing: Easing.out(Easing.quad),
-      }),
-    }
-  }, [active, color, index, values])
-
-  return <Animated.View style={[stylesStatic.recordingBar, animatedStyle]} />
-}
-
-const stylesStatic = StyleSheet.create({
-  recordingBar: {
-    width: RECORDING_BAR_W,
-    borderRadius: 999,
-  },
-})
 
 interface AudioRecorderModalProps {
   visible: boolean
   onDone: (uri: string, durationMs: number) => void
   onCancel: () => void
-}
-
-function fmtTimer(ms: number) {
-  const s = Math.floor(ms / 1000)
-  const cs = Math.floor((ms % 1000) / 10)
-  const m = Math.floor(s / 60)
-  return `${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}.${String(cs).padStart(2, '0')}`
-}
-
-function fmtShort(sec: number) {
-  return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`
 }
 
 interface SheetBodyProps {
@@ -146,7 +80,6 @@ interface SheetBodyProps {
   onSeekStart: () => void
   onSeekChange: (v: number) => void
   onSeekComplete: (v: number) => Promise<void>
-  t: (key: string) => string
 }
 
 function SheetBody({
@@ -178,8 +111,8 @@ function SheetBody({
   onSeekStart,
   onSeekChange,
   onSeekComplete,
-  t,
 }: SheetBodyProps) {
+  const { t } = useTranslation()
   const styles = useStyles()
 
   return (
@@ -325,7 +258,7 @@ function SheetBody({
                 <SymbolView
                   name={isPlaying ? 'pause.fill' : 'play.fill'}
                   size={24}
-                  tintColor={isDark ? '#000000' : '#ffffff'}
+                  tintColor={isDark ? colors.black : colors.white}
                   weight="medium"
                 />
               </Pressable>
@@ -391,56 +324,42 @@ function SheetBody({
 }
 
 export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderModalProps) {
-  const { t } = useTranslation()
   const { colors, isDark } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
 
-  const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
-  const player = useAudioPlayer(null)
-  const playerStatus = useAudioPlayerStatus(player)
+  const {
+    isRecording,
+    isPlaying,
+    hasRecording,
+    showRecordingSurface,
+    currentPlaybackMs,
+    timerMs,
+    totalTimelineMs,
+    recordedDuration,
+    isPresented,
+    liveBars,
+    sheetProgress,
+    recordingWindowStartSec,
+    recordingMidSec,
+    recordingEndSec,
+    status,
+    handleSheetShow,
+    handleRecord,
+    handleStop,
+    handlePlayPause,
+    handleSkip,
+    handleSeekStart,
+    handleSeekChange,
+    handleSeekComplete,
+    handleDoneInner,
+    handleCancelInner,
+  } = useAudioRecorderModal({ visible, onDone, onCancel })
 
-  const [phase, setPhase] = useState<'idle' | 'recording' | 'stopped' | 'playing'>('idle')
-  const [elapsed, setElapsed] = useState(0)
-  const [playMs, setPlayMs] = useState(0)
-  const [hasPermission, setHasPermission] = useState(false)
-  const [isPresented, setIsPresented] = useState(visible)
-  const [recordedUri, setRecordedUri] = useState<string | null>(null)
-  const [recordedDuration, setRecordedDuration] = useState(0)
-  const [isScrubbing, setIsScrubbing] = useState(false)
-  const [scrubMs, setScrubMs] = useState(0)
-
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const sampleRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const startTimeRef = useRef(0)
-  const durationRef = useRef(0)
-  const resumeAfterSeekRef = useRef(false)
-  const isSeekingRef = useRef(false)
-
-  const onCancelRef = useRef(onCancel)
-  useEffect(() => {
-    onCancelRef.current = onCancel
-  }, [onCancel])
-  const liveBars = useSharedValue<number[]>(Array.from({ length: RECORDING_BARS }, () => 0.16))
-  const sheetProgress = useSharedValue(visible ? 1 : 0)
-
-  const isRecording = phase === 'recording'
-  const isPlaying = phase === 'playing'
-  const hasRecording = !!recordedUri
-  const showRecordingSurface = !hasRecording
-  const currentPlaybackMs = isScrubbing ? scrubMs : playMs
-  const timerMs = isRecording ? elapsed : currentPlaybackMs
-  const totalTimelineMs = hasRecording
-    ? Math.max(recordedDuration, 1)
-    : Math.max(elapsed, RECORDING_WINDOW_MS)
   const timerColor = isRecording ? colors.error : colors.text
-  const lineTrack = isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.12)'
+  const lineTrack = colors.timelineTrack
   const lineFill = isRecording ? colors.error : colors.primary
   const bottomInset = Math.max(insets.bottom, 8)
-  const recordingCurrentSec = Math.floor(elapsed / 1000)
-  const recordingWindowStartSec = Math.max(0, recordingCurrentSec - 2)
-  const recordingMidSec = recordingCurrentSec
-  const recordingEndSec = recordingCurrentSec + 2
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({
     opacity: sheetProgress.value * 1,
@@ -453,326 +372,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
       },
     ],
   }))
-
-  useEffect(() => {
-    return () => {
-      sheetProgress.value = 0
-      onCancelRef.current?.()
-    }
-  }, [sheetProgress])
-
-  useEffect(() => {
-    if (!visible) return
-    AudioModule.requestRecordingPermissionsAsync().then(({ granted }) => setHasPermission(granted))
-    return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current)
-        timerRef.current = null
-      }
-    }
-  }, [visible])
-
-  useEffect(() => {
-    if (!visible) return
-    setPhase('idle')
-    setElapsed(0)
-    setPlayMs(0)
-    setRecordedUri(null)
-    setRecordedDuration(0)
-    durationRef.current = 0
-    energy = 0.4
-    liveBars.value = Array.from({ length: RECORDING_BARS }, () => 0.16)
-  }, [visible, liveBars])
-
-  const handleSheetShow = useCallback(() => {
-    sheetProgress.value = withTiming(1, {
-      duration: 340,
-      easing: Easing.out(Easing.cubic),
-    })
-  }, [sheetProgress])
-
-  useEffect(() => {
-    if (visible) {
-      sheetProgress.value = 0
-      setIsPresented(true)
-      return
-    }
-
-    sheetProgress.value = withTiming(
-      0,
-      {
-        duration: 260,
-        easing: Easing.in(Easing.cubic),
-      },
-      (finished) => {
-        if (finished) {
-          runOnJS(setIsPresented)(false)
-        }
-      },
-    )
-  }, [sheetProgress, visible])
-
-  useEffect(() => {
-    if (!hasRecording) return
-    if (isScrubbing || isSeekingRef.current) return
-
-    setPlayMs(playerStatus.currentTime * 1000)
-
-    if (playerStatus.didJustFinish) {
-      setPhase('stopped')
-      setPlayMs(0)
-      setScrubMs(0)
-      player.seekTo(0).catch(() => {})
-      return
-    }
-
-    if (playerStatus.playing && phase !== 'recording') {
-      setPhase('playing')
-      return
-    }
-
-    if (!playerStatus.playing && phase === 'playing' && !resumeAfterSeekRef.current) {
-      setPhase('stopped')
-    }
-  }, [
-    hasRecording,
-    isScrubbing,
-    phase,
-    player,
-    playerStatus.currentTime,
-    playerStatus.didJustFinish,
-    playerStatus.playing,
-  ])
-
-  const clearTimer = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current)
-      timerRef.current = null
-    }
-    if (sampleRef.current) {
-      clearInterval(sampleRef.current)
-      sampleRef.current = null
-    }
-  }, [])
-
-  const stopPlayback = useCallback(() => {
-    try {
-      player.pause()
-    } catch {}
-  }, [player])
-
-  const handleRecord = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-
-    if (!hasPermission) {
-      const { granted } = await AudioModule.requestRecordingPermissionsAsync()
-      setHasPermission(granted)
-      if (!granted) {
-        Alert.alert(t('audioRecorder.errors.micTitle'), t('audioRecorder.errors.micMessage'))
-        return
-      }
-    }
-
-    stopPlayback()
-    clearTimer()
-    setElapsed(0)
-    setPlayMs(0)
-    setScrubMs(0)
-    setIsScrubbing(false)
-    setRecordedUri(null)
-    setRecordedDuration(0)
-    durationRef.current = 0
-    liveBars.value = Array.from({ length: RECORDING_BARS }, () => 0.16)
-
-    try {
-      await setAudioModeAsync({ allowsRecording: true, playsInSilentMode: true })
-      await setIsAudioActiveAsync(true)
-      await recorder.prepareToRecordAsync()
-      recorder.record()
-      setPhase('recording')
-      startTimeRef.current = Date.now()
-      timerRef.current = setInterval(() => {
-        setElapsed(Date.now() - startTimeRef.current)
-      }, 50)
-      sampleRef.current = setInterval(() => {
-        liveBars.value = [...liveBars.value.slice(-(RECORDING_BARS - 1)), sampleAmp()]
-      }, 90)
-    } catch (err: any) {
-      Alert.alert(
-        t('audioRecorder.errors.recordTitle'),
-        err?.message ?? t('audioRecorder.errors.recordDefault'),
-      )
-    }
-  }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback, t])
-
-  const handleStop = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    clearTimer()
-    try {
-      await recorder.stop()
-      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true })
-      const duration = elapsed
-      durationRef.current = duration
-      setRecordedDuration(duration)
-      setPlayMs(0)
-      setScrubMs(0)
-      setPhase('stopped')
-      const uri = recorder.uri
-      setRecordedUri(uri)
-      if (uri) player.replace({ uri })
-    } catch (err: any) {
-      console.error('[AudioRecorderModal][Stop]', err)
-      setPhase('idle')
-    }
-  }, [clearTimer, elapsed, player, recorder])
-
-  const handlePlayPause = useCallback(async () => {
-    if (!recordedUri) return
-
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    try {
-      if (playerStatus.playing) {
-        stopPlayback()
-        setPhase('stopped')
-        return
-      }
-
-      await setAudioModeAsync({ allowsRecording: false, playsInSilentMode: true })
-      await setIsAudioActiveAsync(true)
-      const duration = recordedDuration || 1
-      const startPos = playMs >= duration - 100 ? 0 : playMs
-      await player.seekTo(startPos / 1000)
-      setPlayMs(startPos)
-      setScrubMs(startPos)
-      player.play()
-      setPhase('playing')
-    } catch (err: any) {
-      console.error('[AudioRecorderModal][Play]', err)
-      stopPlayback()
-      setPhase('stopped')
-    }
-  }, [playMs, player, playerStatus.playing, recordedDuration, recordedUri, stopPlayback])
-
-  const handleSkip = useCallback(
-    async (deltaSec: number) => {
-      if (!recordedUri) return
-
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-      const currentMs = player.currentTime * 1000
-      const newMs = Math.max(0, Math.min(recordedDuration || 1, currentMs + deltaSec * 1000))
-
-      try {
-        const wasPlaying = playerStatus.playing
-        resumeAfterSeekRef.current = wasPlaying
-        if (wasPlaying) {
-          player.pause()
-        }
-        await player.seekTo(newMs / 1000)
-        setPlayMs(newMs)
-        setScrubMs(newMs)
-        if (wasPlaying) {
-          player.play()
-          resumeAfterSeekRef.current = false
-          setPhase('playing')
-        } else {
-          resumeAfterSeekRef.current = false
-          setPhase('stopped')
-        }
-      } catch (err) {
-        resumeAfterSeekRef.current = false
-        console.error('[AudioRecorderModal][Skip]', err)
-      }
-    },
-    [player, playerStatus.playing, recordedDuration, recordedUri],
-  )
-
-  const handleSeekStart = useCallback(() => {
-    if (!hasRecording) return
-    setIsScrubbing(true)
-    setScrubMs(playMs)
-  }, [hasRecording, playMs])
-
-  const handleSeekChange = useCallback((value: number) => {
-    setScrubMs(value)
-  }, [])
-
-  const handleSeekComplete = useCallback(
-    async (value: number) => {
-      if (!hasRecording) return
-      const wasPlaying = playerStatus.playing || phase === 'playing'
-      setScrubMs(value)
-      setPlayMs(value)
-      isSeekingRef.current = true
-      try {
-        resumeAfterSeekRef.current = wasPlaying
-        if (wasPlaying) {
-          player.pause()
-        }
-        await player.seekTo(value / 1000)
-        setPlayMs(value)
-        setScrubMs(value)
-        if (wasPlaying) {
-          player.play()
-          setPhase('playing')
-        } else {
-          setPhase('stopped')
-        }
-      } catch (err) {
-        console.error('[AudioRecorderModal][Seek]', err)
-      } finally {
-        isSeekingRef.current = false
-        resumeAfterSeekRef.current = false
-        setIsScrubbing(false)
-      }
-    },
-    [hasRecording, phase, player, playerStatus.playing],
-  )
-
-  const handleDoneInner = useCallback(async () => {
-    stopPlayback()
-    try {
-      if (phase === 'recording') {
-        clearTimer()
-        await recorder.stop()
-        await setAudioModeAsync({ allowsRecording: false })
-        durationRef.current = elapsed
-      }
-    } catch {}
-
-    const uri = recordedUri ?? recorder.uri
-    if (!uri) {
-      onCancel()
-      return
-    }
-
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    onDone(uri, durationRef.current || elapsed)
-  }, [clearTimer, elapsed, onCancel, onDone, phase, recordedUri, recorder, stopPlayback])
-
-  const handleCancelInner = useCallback(async () => {
-    stopPlayback()
-    clearTimer()
-    try {
-      if (phase === 'recording') {
-        await recorder.stop()
-        await setAudioModeAsync({ allowsRecording: false })
-      }
-    } catch {}
-    onCancel()
-  }, [clearTimer, onCancel, phase, recorder, stopPlayback])
-
-  const status = useMemo(() => {
-    if (hasRecording) {
-      return {
-        title: t('audioRecorder.status.capturedTitle'),
-        subtitle: t('audioRecorder.status.capturedSubtitle'),
-      }
-    }
-    return {
-      title: t('audioRecorder.status.idleTitle'),
-      subtitle: t('audioRecorder.status.idleSubtitle'),
-    }
-  }, [hasRecording, t])
 
   if (!isPresented) return null
 
@@ -827,7 +426,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
                 onSeekStart={handleSeekStart}
                 onSeekChange={handleSeekChange}
                 onSeekComplete={handleSeekComplete}
-                t={t}
               />
             </GlassView>
           ) : (
@@ -861,7 +459,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
                 onSeekStart={handleSeekStart}
                 onSeekChange={handleSeekChange}
                 onSeekComplete={handleSeekComplete}
-                t={t}
               />
             </View>
           )}
@@ -879,7 +476,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     backdrop: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: theme.isDark ? 'rgba(0,0,0,0.5)' : 'rgba(0,0,0,0.38)',
+      backgroundColor: theme.colors.backdrop,
     },
     sheetWrap: {
       flex: 1,
@@ -896,7 +493,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderTopRightRadius: Radii.sheet,
       borderBottomLeftRadius: 0,
       borderBottomRightRadius: 0,
-      boxShadow: theme.isDark ? '0 -10px 32px rgba(0,0,0,0.45)' : '0 -12px 40px rgba(0,0,0,0.22)',
+      boxShadow: theme.colors.sheetBoxShadow,
     },
     sheetLight: {
       backgroundColor: theme.colors.background,
@@ -910,7 +507,7 @@ const useStyles = createThemedStylesheet((theme) => {
       width: Layout.grabberWidth,
       height: Layout.grabberHeight,
       borderRadius: 999,
-      backgroundColor: theme.isDark ? theme.colors.border : 'rgba(0,0,0,0.2)',
+      backgroundColor: theme.colors.sheetGrabber,
     },
     headerRow: {
       flexDirection: 'row',
@@ -927,7 +524,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderCurve: 'continuous',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.isDark ? theme.colors.controlBackground : 'rgba(0,0,0,0.08)',
+      backgroundColor: theme.colors.controlBackground,
       borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
     },
@@ -1105,7 +702,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderCurve: 'continuous',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.isDark ? theme.colors.controlBackground : 'rgba(0,0,0,0.07)',
+      backgroundColor: theme.colors.controlBackground,
       borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
     },
@@ -1117,7 +714,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.colors.text,
-      boxShadow: theme.isDark ? '0 10px 24px rgba(0,0,0,0.3)' : '0 10px 24px rgba(15,23,42,0.16)',
+      boxShadow: theme.colors.transportShadow,
     },
     transportPressed: {
       opacity: 0.78,
@@ -1132,8 +729,10 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: 999,
       borderCurve: 'continuous',
       borderWidth: StyleSheet.hairlineWidth,
-      borderColor: theme.isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)',
-      backgroundColor: theme.isDark ? theme.colors.surfaceSecondary : 'rgba(0,0,0,0.05)',
+      borderColor: theme.colors.rerecordBorder,
+      backgroundColor: theme.isDark
+        ? theme.colors.surfaceSecondary
+        : theme.colors.sheetCancelBackground,
     },
     rerecordText: {
       fontSize: UI_FONT_SIZE_15,
@@ -1164,7 +763,7 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'center',
       borderCurve: 'continuous',
       borderColor: theme.colors.error,
-      backgroundColor: theme.isDark ? 'rgba(255,69,58,0.08)' : 'rgba(255,69,58,0.06)',
+      backgroundColor: theme.colors.recordRingBg,
     },
     recordInnerCore: {
       width: UI_SIZE_64,
