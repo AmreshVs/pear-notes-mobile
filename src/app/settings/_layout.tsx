@@ -1,18 +1,22 @@
 import { Stack } from 'expo-router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet } from 'react-native'
 
-import { useTheme } from '@/components/Themed'
+import { createThemedStylesheet, useTheme } from '@/components/Themed'
+import { FontWeight, UI_FONT_SIZE_17 } from '@/constants/commonStyles'
 
 export default function SettingsLayout() {
   const { t } = useTranslation()
   const { colors } = useTheme()
+  const styles = useStyles()
+
   return (
     <Stack
       screenOptions={{
         headerTintColor: colors.primary,
-        headerTitleStyle: { color: colors.text, fontWeight: '600', fontSize: 17 },
-        headerStyle: { backgroundColor: colors.background },
+        headerTitleStyle: styles.headerTitle,
+        headerStyle: styles.header,
         headerShadowVisible: false,
         headerBackTitle: t('layouts.settings'),
       }}
@@ -23,3 +27,17 @@ export default function SettingsLayout() {
     </Stack>
   )
 }
+
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    headerTitle: {
+      color: theme.colors.text,
+      fontWeight: FontWeight.semibold,
+      fontSize: UI_FONT_SIZE_17,
+    },
+    header: {
+      backgroundColor: theme.colors.background,
+    },
+  })
+  return styles
+})

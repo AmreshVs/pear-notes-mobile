@@ -1,10 +1,15 @@
 import { Stack } from 'expo-router'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
+import { StyleSheet } from 'react-native'
 
-import { useTheme } from '@/components/Themed'
+import { createThemedStylesheet, useTheme } from '@/components/Themed'
+import { FontWeight } from '@/constants/commonStyles'
 
 export default function SearchLayout() {
+  const { t } = useTranslation()
   const { colors } = useTheme()
+  const styles = useStyles()
 
   return (
     <Stack
@@ -12,16 +17,33 @@ export default function SearchLayout() {
         headerTransparent: true,
         headerShadowVisible: false,
         headerLargeTitleShadowVisible: false,
-        headerLargeStyle: { backgroundColor: 'transparent' },
-        headerTitleStyle: { color: colors.text, fontWeight: '700' },
-        headerLargeTitleStyle: { color: colors.text, fontWeight: '800' },
+        headerLargeStyle: styles.headerLarge,
+        headerTitleStyle: styles.headerTitle,
+        headerLargeTitleStyle: styles.headerLargeTitle,
         headerTintColor: colors.primary,
         headerLargeTitle: true,
         headerBlurEffect: 'none',
         headerBackButtonDisplayMode: 'minimal',
       }}
     >
-      <Stack.Screen name="index" options={{ title: 'Search' }} />
+      <Stack.Screen name="index" options={{ title: t('search.title') }} />
     </Stack>
   )
 }
+
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    headerLarge: {
+      backgroundColor: theme.colors.transparent,
+    },
+    headerTitle: {
+      color: theme.colors.text,
+      fontWeight: FontWeight.bold,
+    },
+    headerLargeTitle: {
+      color: theme.colors.text,
+      fontWeight: FontWeight.heavy,
+    },
+  })
+  return styles
+})

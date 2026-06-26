@@ -16,31 +16,52 @@ import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import Slider from '@react-native-community/slider'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import {
+  commonStyles,
+  FontFamily,
+  FontWeight,
+  UI_FONT_SIZE_12,
+  UI_FONT_SIZE_14,
+  UI_FONT_SIZE_16,
+  UI_FONT_SIZE_20,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_22,
+  UI_ICON_SIZE_24,
+  UI_SIZE_4,
+  UI_SIZE_8,
+  UI_SIZE_10,
+  UI_SIZE_12,
+  UI_SIZE_16,
+  UI_SIZE_18,
+  UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_40,
+  UI_SIZE_44,
+  UI_SIZE_9999,
+} from '@/constants/commonStyles'
+import { hexWithAlpha } from '@/lib/backupUtils'
+import { deleteDbEncryptionKey } from '@/lib/secureStore'
 import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  if (hex.length === 7) return `${hex}${a}`
-  return hex
-}
 
 export default function AndroidSettingsScreen() {
   const { t } = useTranslation()
-  const insets = useSafeAreaInsets()
-  const theme = useMD3Theme()
-  const c = theme.colors as any
   const dispatch = useDispatch()
+  const styles = useStyles()
+  const theme = useTheme()
+  const md3 = useMD3Theme()
+  const c = md3.colors
 
   const currentTheme = useSelector(getTheme)
   const fontFamily = useSelector(getFontFamily)
@@ -56,9 +77,22 @@ export default function AndroidSettingsScreen() {
   const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
   const [resetSheetVisible, setResetSheetVisible] = React.useState(false)
 
-  const handleResetPress = () => {
+  const sliderMaxTrackColor = useMemo(() => hexWithAlpha(c.primary, 0.2), [c.primary])
+
+  const handleResetPress = useCallback(() => {
     setResetSheetVisible(true)
-  }
+  }, [])
+
+  const handleResetConfirm = useCallback(() => {
+    setResetSheetVisible(false)
+    if (syncedDevices.length > 1 && localDeviceKey) {
+      dispatch(deleteSyncedDevice({ key: localDeviceKey } as any))
+    } else {
+      deleteDbEncryptionKey().catch(console.error)
+      dispatch(clearStorage())
+    }
+    router.back()
+  }, [dispatch, syncedDevices, localDeviceKey])
 
   const resetActions = useMemo(
     () => [
@@ -66,18 +100,10 @@ export default function AndroidSettingsScreen() {
         icon: 'trash-can-outline',
         label: t('settings.danger.resetApp'),
         destructive: true,
-        onPress: () => {
-          setResetSheetVisible(false)
-          if (syncedDevices.length > 1 && localDeviceKey) {
-            dispatch(deleteSyncedDevice({ key: localDeviceKey } as any))
-          } else {
-            dispatch(clearStorage())
-          }
-          router.back()
-        },
+        onPress: handleResetConfirm,
       },
     ],
-    [dispatch, localDeviceKey, t],
+    [handleResetConfirm, t],
   )
 
   const supportsDynamicColor = useMemo(() => {
@@ -107,34 +133,33 @@ export default function AndroidSettingsScreen() {
     [t],
   )
 
+  const handleSortSelect = useCallback(
+    (value: string) => {
+      dispatch(updateSetting({ key: 'sortBy', value }))
+      setSortBySheetVisible(false)
+    },
+    [dispatch],
+  )
+
   const sortByActions = useMemo(
     () => [
       {
         icon: 'clock-outline',
         label: t('settings.general.sortOptions.updatedAt'),
-        onPress: () => {
-          dispatch(updateSetting({ key: 'sortBy', value: 'updatedAt' }))
-          setSortBySheetVisible(false)
-        },
+        onPress: () => handleSortSelect('updatedAt'),
       },
       {
         icon: 'calendar-plus',
         label: t('settings.general.sortOptions.createdAt'),
-        onPress: () => {
-          dispatch(updateSetting({ key: 'sortBy', value: 'createdAt' }))
-          setSortBySheetVisible(false)
-        },
+        onPress: () => handleSortSelect('createdAt'),
       },
       {
         icon: 'sort-alphabetical-variant',
         label: t('settings.general.sortOptions.title'),
-        onPress: () => {
-          dispatch(updateSetting({ key: 'sortBy', value: 'title' }))
-          setSortBySheetVisible(false)
-        },
+        onPress: () => handleSortSelect('title'),
       },
     ],
-    [dispatch, t],
+    [handleSortSelect, t],
   )
 
   const fontActions = useMemo(
@@ -160,142 +185,194 @@ export default function AndroidSettingsScreen() {
     ]
   }, [t])
 
-  const dynStyles = useMemo(() => createDynamicStyles(c, insets), [c, insets])
+  const handleSetTheme = useCallback(
+    (themeValue: 'system' | 'light' | 'dark') => {
+      dispatch(setTheme(themeValue))
+    },
+    [dispatch],
+  )
+
+  const renderThemeOption = useCallback(
+    (tValue: 'system' | 'light' | 'dark') => {
+      const isActive = currentTheme === tValue
+      return (
+        <Pressable
+          key={tValue}
+          onPress={() => handleSetTheme(tValue)}
+          style={[styles.segItem, isActive && styles.segItemActive]}
+        >
+          <Text style={[styles.segText, isActive && styles.segTextActive]}>
+            {t(`settings.general.themes.${tValue}`)}
+          </Text>
+        </Pressable>
+      )
+    },
+    [currentTheme, handleSetTheme, styles, t],
+  )
+
+  const handleSetColorTheme = useCallback(
+    (colorTheme: AndroidColorTheme) => {
+      dispatch(setColorTheme(colorTheme))
+    },
+    [dispatch],
+  )
+
+  const renderColorThemeOption = useCallback(
+    (opt: (typeof colorThemeOptions)[number]) => {
+      const isActive = androidColorTheme === opt.value
+      return (
+        <Pressable
+          key={opt.value}
+          onPress={() => handleSetColorTheme(opt.value)}
+          style={[styles.segItem, isActive && styles.segItemActive]}
+        >
+          <Text style={[styles.segText, isActive && styles.segTextActive]}>{opt.label}</Text>
+        </Pressable>
+      )
+    },
+    [androidColorTheme, handleSetColorTheme, styles],
+  )
+
+  const handleFontSizeChange = useCallback(
+    (val: number) => {
+      dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
+    },
+    [dispatch],
+  )
+
+  const handleSyncPress = useCallback(() => {
+    router.push('/settings/sync')
+  }, [])
+
+  const handleBackupPress = useCallback(() => {
+    router.push('/settings/backup' as any)
+  }, [])
+
+  const handleOpenSortSheet = useCallback(() => {
+    setSortBySheetVisible(true)
+  }, [])
+
+  const handleOpenFontSheet = useCallback(() => {
+    setFontSheetVisible(true)
+  }, [])
 
   return (
-    <View style={dynStyles.root}>
+    <View style={styles.root}>
       <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
-        backgroundColor={c.background}
+        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={styles.root.backgroundColor}
       />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={dynStyles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={dynStyles.iconBtn}>
-          <MaterialCommunityIcons name="arrow-left" size={24} color={c.primary} />
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={UI_SIZE_12} style={styles.iconBtn}>
+          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
         </Pressable>
-        <Text style={dynStyles.headerTitle}>{t('settings.title')}</Text>
+        <Text style={styles.headerTitle}>{t('settings.title')}</Text>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={dynStyles.scrollContent}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeIn.duration(220).delay(20)}>
-          <Text style={dynStyles.sectionCap}>{t('settings.general.header')}</Text>
+          <Text style={styles.sectionCap}>{t('settings.general.header')}</Text>
         </Animated.View>
 
         <Animated.View
           entering={FadeInDown.duration(240).delay(40)}
           layout={LinearTransition.springify().damping(20).stiffness(220)}
-          style={dynStyles.card}
+          style={styles.card}
         >
-          <Text style={dynStyles.cardTitle}>{t('settings.general.appTheme')}</Text>
-          <View style={dynStyles.segContainer}>
-            {(['system', 'light', 'dark'] as const).map((tValue, i) => {
-              const isActive = currentTheme === tValue
-              return (
-                <Pressable
-                  key={tValue}
-                  onPress={() => dispatch(setTheme(tValue))}
-                  style={[dynStyles.segItem, isActive && dynStyles.segItemActive]}
-                >
-                  <Text style={[dynStyles.segText, isActive && dynStyles.segTextActive]}>
-                    {t(`settings.general.themes.${tValue}`)}
-                  </Text>
-                </Pressable>
-              )
-            })}
+          <Text style={styles.cardTitle}>{t('settings.general.appTheme')}</Text>
+          <View style={styles.segContainer}>
+            {(['system', 'light', 'dark'] as const).map(renderThemeOption)}
           </View>
         </Animated.View>
         {supportsDynamicColor && (
           <Animated.View
             entering={FadeInDown.duration(240).delay(60)}
             layout={LinearTransition.springify().damping(20).stiffness(220)}
-            style={dynStyles.card}
+            style={styles.card}
           >
-            <Text style={dynStyles.cardTitle}>{t('settings.general.colorTheme')}</Text>
-            <View style={dynStyles.segContainer}>
-              {colorThemeOptions.map((opt) => {
-                const isActive = androidColorTheme === opt.value
-                return (
-                  <Pressable
-                    key={opt.value}
-                    onPress={() => dispatch(setColorTheme(opt.value))}
-                    style={[dynStyles.segItem, isActive && dynStyles.segItemActive]}
-                  >
-                    <Text style={[dynStyles.segText, isActive && dynStyles.segTextActive]}>
-                      {opt.label}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </View>
+            <Text style={styles.cardTitle}>{t('settings.general.colorTheme')}</Text>
+            <View style={styles.segContainer}>{colorThemeOptions.map(renderColorThemeOption)}</View>
           </Animated.View>
         )}
         <Animated.View
           entering={FadeInDown.duration(240).delay(80)}
           layout={LinearTransition.springify().damping(20).stiffness(220)}
-          style={dynStyles.groupCard}
+          style={styles.groupCard}
         >
           <Pressable
-            onPress={() => setSortBySheetVisible(true)}
-            style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
+            onPress={handleOpenSortSheet}
+            style={({ pressed }) => [styles.groupPressRow, pressed && styles.groupRowPressed]}
           >
-            <View style={{ flex: 1 }}>
-              <Text style={dynStyles.rowTitle}>{t('settings.general.sortNotesBy')}</Text>
-              <Text style={dynStyles.rowSubtitle}>
+            <View style={commonStyles.flex1}>
+              <Text style={styles.rowTitle}>{t('settings.general.sortNotesBy')}</Text>
+              <Text style={styles.rowSubtitle}>
                 {SORT_OPTIONS.find((o) => o.value === sortBy)?.label ??
                   t('settings.general.sortOptions.updatedAt')}
               </Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.onSurfaceVariant} />
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={UI_ICON_SIZE_20}
+              color={c.onSurfaceVariant}
+            />
           </Pressable>
 
-          <View style={dynStyles.groupDivider} />
+          <View style={styles.groupDivider} />
 
           <Pressable
-            onPress={() => setFontSheetVisible(true)}
-            style={({ pressed }) => [dynStyles.groupPressRow, pressed && dynStyles.groupRowPressed]}
+            onPress={handleOpenFontSheet}
+            style={({ pressed }) => [styles.groupPressRow, pressed && styles.groupRowPressed]}
           >
-            <View style={{ flex: 1 }}>
-              <Text style={dynStyles.rowTitle}>{t('settings.general.fontFamily')}</Text>
-              <Text style={dynStyles.rowSubtitle}>
+            <View style={commonStyles.flex1}>
+              <Text style={styles.rowTitle}>{t('settings.general.fontFamily')}</Text>
+              <Text style={styles.rowSubtitle}>
                 {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
               </Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.onSurfaceVariant} />
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={UI_ICON_SIZE_20}
+              color={c.onSurfaceVariant}
+            />
           </Pressable>
 
-          <View style={dynStyles.groupDivider} />
+          <View style={styles.groupDivider} />
 
-          <View style={dynStyles.groupContentRow}>
-            <View style={dynStyles.sliderTitleContainer}>
-              <Text style={dynStyles.rowTitle}>{t('settings.general.textSize')}</Text>
-              <Text style={dynStyles.sliderValueText}>{editorFontSize}</Text>
+          <View style={styles.groupContentRow}>
+            <View style={styles.sliderTitleContainer}>
+              <Text style={styles.rowTitle}>{t('settings.general.textSize')}</Text>
+              <Text style={styles.sliderValueText}>{editorFontSize}</Text>
             </View>
-            <View style={dynStyles.sliderRow}>
-              <MaterialCommunityIcons name="format-size" size={16} color={c.onSurfaceVariant} />
+            <View style={styles.sliderRow}>
+              <MaterialCommunityIcons
+                name="format-size"
+                size={UI_ICON_SIZE_16}
+                color={c.onSurfaceVariant}
+              />
               <Slider
-                style={dynStyles.slider}
+                style={styles.slider}
                 minimumValue={12}
                 maximumValue={24}
                 step={1}
                 value={editorFontSize}
-                onValueChange={(val) =>
-                  dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
-                }
+                onValueChange={handleFontSizeChange}
                 minimumTrackTintColor={c.primary}
-                maximumTrackTintColor={hexWithAlpha(c.primary, 0.2)}
+                maximumTrackTintColor={sliderMaxTrackColor}
                 thumbTintColor={c.primary}
               />
-              <MaterialCommunityIcons name="format-size" size={24} color={c.onSurfaceVariant} />
+              <MaterialCommunityIcons
+                name="format-size"
+                size={UI_ICON_SIZE_24}
+                color={c.onSurfaceVariant}
+              />
             </View>
           </View>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(140)}>
-          <Text style={dynStyles.sectionCapMargin}>{t('settings.sync.header')}</Text>
+          <Text style={styles.sectionCapMargin}>{t('settings.sync.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -303,21 +380,21 @@ export default function AndroidSettingsScreen() {
           layout={LinearTransition.springify().damping(20).stiffness(220)}
         >
           <Pressable
-            onPress={() => router.push('/settings/sync')}
-            style={({ pressed }) => [dynStyles.cardRow, pressed && dynStyles.cardPressed]}
+            onPress={handleSyncPress}
+            style={({ pressed }) => [styles.cardRow, pressed && styles.cardPressed]}
           >
-            <View style={dynStyles.syncIconWrap}>
-              <MaterialCommunityIcons name="sync" size={22} color={c.primary} />
+            <View style={styles.syncIconWrap}>
+              <MaterialCommunityIcons name="sync" size={UI_ICON_SIZE_22} color={c.primary} />
             </View>
-            <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={dynStyles.rowTitle}>{t('settings.sync.linkAndSync')}</Text>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowTitle}>{t('settings.sync.linkAndSync')}</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
+            <MaterialCommunityIcons name="chevron-right" size={UI_ICON_SIZE_20} color={c.primary} />
           </Pressable>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(180)}>
-          <Text style={dynStyles.sectionCapMargin}>{t('settings.backup.header')}</Text>
+          <Text style={styles.sectionCapMargin}>{t('settings.backup.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -325,21 +402,25 @@ export default function AndroidSettingsScreen() {
           layout={LinearTransition.springify().damping(20).stiffness(220)}
         >
           <Pressable
-            onPress={() => router.push('/settings/backup' as any)}
-            style={({ pressed }) => [dynStyles.cardRow, pressed && dynStyles.cardPressed]}
+            onPress={handleBackupPress}
+            style={({ pressed }) => [styles.cardRow, pressed && styles.cardPressed]}
           >
-            <View style={dynStyles.syncIconWrap}>
-              <MaterialCommunityIcons name="cloud-download-outline" size={22} color={c.primary} />
+            <View style={styles.syncIconWrap}>
+              <MaterialCommunityIcons
+                name="cloud-download-outline"
+                size={UI_ICON_SIZE_22}
+                color={c.primary}
+              />
             </View>
-            <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={dynStyles.rowTitle}>{t('settings.backup.backupAndRestore')}</Text>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowTitle}>{t('settings.backup.backupAndRestore')}</Text>
             </View>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={c.primary} />
+            <MaterialCommunityIcons name="chevron-right" size={UI_ICON_SIZE_20} color={c.primary} />
           </Pressable>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(220)}>
-          <Text style={dynStyles.sectionCapMargin}>{t('settings.danger.header')}</Text>
+          <Text style={styles.sectionCapMargin}>{t('settings.danger.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -348,30 +429,23 @@ export default function AndroidSettingsScreen() {
         >
           <Pressable
             onPress={handleResetPress}
-            style={({ pressed }) => [dynStyles.cardRow, pressed && dynStyles.cardPressed]}
+            style={({ pressed }) => [styles.cardRow, pressed && styles.cardPressed]}
           >
-            <View
-              style={[
-                dynStyles.syncIconWrap,
-                { backgroundColor: hexWithAlpha(c.error || '#FF0000', 0.15) },
-              ]}
-            >
+            <View style={styles.dangerIconWrap}>
               <MaterialCommunityIcons
                 name="trash-can-outline"
-                size={22}
-                color={c.error || '#FF0000'}
+                size={UI_ICON_SIZE_22}
+                color={c.error}
               />
             </View>
-            <View style={{ flex: 1, marginLeft: 16 }}>
-              <Text style={[dynStyles.rowTitle, { color: c.error || '#FF0000' }]}>
-                {t('settings.danger.resetApp')}
-              </Text>
+            <View style={styles.rowContent}>
+              <Text style={styles.dangerTitle}>{t('settings.danger.resetApp')}</Text>
             </View>
           </Pressable>
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(260)}>
-          <Text style={dynStyles.footerText}>{t('settings.footer')}</Text>
+          <Text style={styles.footerText}>{t('settings.footer')}</Text>
         </Animated.View>
       </ScrollView>
 
@@ -400,85 +474,88 @@ export default function AndroidSettingsScreen() {
   )
 }
 
-function createDynamicStyles(c: any, insets: any) {
-  return StyleSheet.create({
+const useSettingsHooks = () => {
+  const md3 = useMD3Theme()
+  const insets = useSafeAreaInsets()
+  return { md3, insets }
+}
+
+const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
+  const c = md3.colors as any
+  const styles = StyleSheet.create({
     root: {
-      flex: 1,
+      ...commonStyles.flex1,
       backgroundColor: c.background,
     },
     header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingTop: insets.top + 16,
-      paddingHorizontal: 20,
-      paddingBottom: 16,
+      ...commonStyles.row,
+      paddingTop: insets.top + UI_SIZE_16,
+      paddingHorizontal: UI_SIZE_20,
+      paddingBottom: UI_SIZE_16,
     },
     iconBtn: {
-      width: 40,
-      height: 40,
-      alignItems: 'center',
-      justifyContent: 'center',
+      width: UI_SIZE_40,
+      height: UI_SIZE_40,
+      ...commonStyles.centered,
     },
     headerTitle: {
-      fontSize: 20,
-      fontWeight: '700',
-      fontFamily: 'PlusJakartaSans_700Bold',
+      fontSize: UI_FONT_SIZE_20,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: c.onSurface,
       textAlign: 'left',
     },
     scrollContent: {
-      paddingHorizontal: 20,
-      paddingBottom: insets.bottom + 40,
-      paddingTop: 10,
+      paddingHorizontal: UI_SIZE_20,
+      paddingBottom: insets.bottom + UI_SIZE_40,
+      paddingTop: UI_SIZE_10,
     },
     sectionCap: {
-      fontSize: 12,
-      fontWeight: '800',
+      fontSize: UI_FONT_SIZE_12,
+      fontWeight: FontWeight.heavy,
       letterSpacing: 1.2,
       color: c.primary,
-      marginBottom: 16,
+      marginBottom: UI_SIZE_16,
     },
     sectionCapMargin: {
-      fontSize: 12,
-      fontWeight: '800',
+      fontSize: UI_FONT_SIZE_12,
+      fontWeight: FontWeight.heavy,
       letterSpacing: 1.2,
       color: c.primary,
-      marginTop: 24,
-      marginBottom: 16,
+      marginTop: UI_SIZE_24,
+      marginBottom: UI_SIZE_16,
     },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: 28,
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      marginBottom: 12,
+      borderRadius: UI_SIZE_28,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_16,
+      marginBottom: UI_SIZE_12,
     },
     cardRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      ...commonStyles.row,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: 28,
-      paddingHorizontal: 20,
-      paddingVertical: 18,
+      borderRadius: UI_SIZE_28,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_18,
     },
     cardPressed: {
       backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
     },
     groupCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: 28,
-      marginBottom: 12,
-      overflow: 'hidden' as const,
+      borderRadius: UI_SIZE_28,
+      marginBottom: UI_SIZE_12,
+      overflow: 'hidden',
     },
     groupPressRow: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      paddingHorizontal: 20,
-      paddingVertical: 18,
+      ...commonStyles.row,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_18,
     },
     groupContentRow: {
-      paddingHorizontal: 20,
-      paddingVertical: 18,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_18,
     },
     groupRowPressed: {
       backgroundColor: hexWithAlpha(c.onSurface, 0.08),
@@ -486,91 +563,104 @@ function createDynamicStyles(c: any, insets: any) {
     groupDivider: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: hexWithAlpha(c.outlineVariant, 0.5),
-      marginLeft: 20,
+      marginLeft: UI_SIZE_20,
     },
     cardTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      fontFamily: 'PlusJakartaSans_600SemiBold',
+      fontSize: UI_FONT_SIZE_16,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
       color: c.onSurface,
-      marginBottom: 20,
+      marginBottom: UI_SIZE_20,
     },
     segContainer: {
-      flexDirection: 'row',
+      ...commonStyles.row,
       backgroundColor: hexWithAlpha(c.onSurface, 0.04),
-      borderRadius: 9999,
-      padding: 4,
+      borderRadius: UI_SIZE_9999,
+      padding: UI_SIZE_4,
     },
     segItem: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: 9999,
-      alignItems: 'center',
-      justifyContent: 'center',
+      ...commonStyles.flex1,
+      paddingVertical: UI_SIZE_12,
+      borderRadius: UI_SIZE_9999,
+      ...commonStyles.centered,
     },
     segItemActive: {
       backgroundColor: c.primaryContainer,
     },
     segText: {
-      fontSize: 14,
-      fontWeight: '600',
-      fontFamily: 'PlusJakartaSans_600SemiBold',
+      fontSize: UI_FONT_SIZE_14,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
       color: c.onSurfaceVariant,
     },
     segTextActive: {
       color: c.onPrimaryContainer,
-      fontWeight: '700',
-      fontFamily: 'PlusJakartaSans_700Bold',
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
     },
     rowTitle: {
-      fontSize: 16,
-      fontWeight: '600',
-      fontFamily: 'PlusJakartaSans_600SemiBold',
+      fontSize: UI_FONT_SIZE_16,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
       color: c.onSurface,
-      marginBottom: 4,
+      marginBottom: UI_SIZE_4,
     },
     rowSubtitle: {
-      fontSize: 14,
+      fontSize: UI_FONT_SIZE_14,
       color: c.onSurfaceVariant,
-      fontFamily: 'PlusJakartaSans_500Medium',
-      fontWeight: '500',
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
     },
     sliderTitleContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 16,
+      ...commonStyles.rowBetween,
+      marginBottom: UI_SIZE_16,
     },
     sliderValueText: {
-      fontSize: 16,
-      fontWeight: '800',
-      fontFamily: 'PlusJakartaSans_800ExtraBold',
+      fontSize: UI_FONT_SIZE_16,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
       color: c.primary,
     },
     sliderRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 8,
+      ...commonStyles.row,
+      paddingHorizontal: UI_SIZE_8,
     },
     slider: {
-      flex: 1,
-      marginHorizontal: 12,
-      height: 40,
+      ...commonStyles.flex1,
+      marginHorizontal: UI_SIZE_12,
+      height: UI_SIZE_40,
     },
     syncIconWrap: {
-      width: 44,
-      height: 44,
-      borderRadius: 9999,
+      width: UI_SIZE_44,
+      height: UI_SIZE_44,
+      borderRadius: UI_SIZE_9999,
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
-      justifyContent: 'center',
-      alignItems: 'center',
+      ...commonStyles.centered,
+    },
+    dangerIconWrap: {
+      width: UI_SIZE_44,
+      height: UI_SIZE_44,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(c.error, 0.15),
+      ...commonStyles.centered,
+    },
+    dangerTitle: {
+      fontSize: UI_FONT_SIZE_16,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.error,
+    },
+    rowContent: {
+      ...commonStyles.flex1,
+      marginLeft: UI_SIZE_16,
     },
     footerText: {
       textAlign: 'center',
-      fontSize: 12,
+      fontSize: UI_FONT_SIZE_12,
       fontStyle: 'italic',
       color: c.onSurfaceVariant,
-      marginTop: 20,
+      marginTop: UI_SIZE_20,
     },
   })
-}
+  return styles
+}, useSettingsHooks)

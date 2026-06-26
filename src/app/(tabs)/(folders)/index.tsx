@@ -11,8 +11,8 @@ import {
   getNoteCountsPerFolder,
   getSelectedNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { Image } from 'expo-image'
 import { router, Stack } from 'expo-router'
-import { SymbolView } from 'expo-symbols'
 import { FolderPlus, SquarePen } from 'lucide-react-native'
 import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,16 +21,26 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
-import { Text, Theme, useColors, useThemedStyles, View } from '@/components/Themed'
-import { FontSize, FontWeight, LetterSpacing, Space, commonStyles } from '@/constants/commonStyles'
+import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
+import {
+  commonStyles,
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Space,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_22,
+  UI_SIZE_42,
+} from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function FoldersScreen() {
   const { t } = useTranslation()
-  const styles = useThemedStyles(createStyles)
+  const theme = useTheme()
+  const { colors } = theme
+  const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
-  const colors = useColors()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const folders = useSelector(getFolders)
@@ -125,34 +135,39 @@ export default function FoldersScreen() {
     [styles.iconBtn],
   )
 
+  const handleOpenSettings = useCallback(() => {
+    router.push('/settings')
+  }, [])
+
   const headerLeft = useCallback(
     () => (
-      <Pressable onPress={() => router.push('/settings')} style={iconBtnStyle}>
-        <SymbolView
-          name="gearshape"
-          size={22}
-          tintColor={colors.text}
-          weight="regular"
-          fallback={<View style={styles.fallbackIcon} />}
-        />
+      <Pressable onPress={handleOpenSettings} style={iconBtnStyle}>
+        <Image source="sf:gearshape" style={styles.gearIcon} />
       </Pressable>
     ),
-    [iconBtnStyle, colors.text],
+    [iconBtnStyle, handleOpenSettings, styles.gearIcon],
   )
 
   const headerRight = useCallback(
     () => (
       <GlassView intensity={20} borderRadius={24} style={styles.headerPill}>
         <Pressable onPress={handleCreateFolder} style={iconBtnStyle}>
-          <FolderPlus size={20} color={colors.text} strokeWidth={1.8} />
+          <FolderPlus size={UI_ICON_SIZE_20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
         <View style={commonThemedStyles.pillDivider} />
         <Pressable onPress={handleCreateNote} style={iconBtnStyle}>
-          <SquarePen size={20} color={colors.text} strokeWidth={1.8} />
+          <SquarePen size={UI_ICON_SIZE_20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
       </GlassView>
     ),
-    [handleCreateFolder, handleCreateNote, iconBtnStyle, colors.text, commonThemedStyles],
+    [
+      handleCreateFolder,
+      handleCreateNote,
+      iconBtnStyle,
+      colors.text,
+      commonThemedStyles,
+      styles.headerPill,
+    ],
   )
 
   const renderFolders = useCallback(
@@ -209,10 +224,10 @@ export default function FoldersScreen() {
   )
 }
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     container: {
-      flex: 1,
+      ...commonStyles.flex1,
       backgroundColor: theme.colors.background,
     },
     scrollContent: {
@@ -222,7 +237,7 @@ const createStyles = (theme: Theme) =>
     },
     pageTitle: {
       fontSize: FontSize.hero,
-      lineHeight: 42,
+      lineHeight: UI_SIZE_42,
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,
@@ -235,7 +250,7 @@ const createStyles = (theme: Theme) =>
       paddingHorizontal: Space.sm,
     },
     section: {
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     archiveSection: {
       marginTop: Space.xxl,
@@ -247,8 +262,11 @@ const createStyles = (theme: Theme) =>
     iconBtn: {
       padding: Space.sm,
     },
-    fallbackIcon: {
-      width: 22,
-      height: 22,
+    gearIcon: {
+      width: UI_ICON_SIZE_22,
+      height: UI_ICON_SIZE_22,
+      tintColor: theme.colors.text,
     },
   })
+  return styles
+})
