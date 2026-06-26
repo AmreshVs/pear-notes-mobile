@@ -165,6 +165,7 @@
     "noAdditionalText": "No additional text",
     "actions": {
       "moveTo": "Move to",
+      "moveToFolder": "Move to Folder",
       "copyNote": "Copy Note",
       "delete": "Delete",
       "noFolders": "No folders available",
@@ -278,6 +279,19 @@
     "settings": "Settings",
     "linkAndSync": "Link and Sync",
     "backupRestore": "Backup / Restore"
+  },
+  "tabs": {
+    "home": "Home",
+    "explore": "Explore"
+  },
+  "attachments": {
+    "addAttachment": "Add Attachment",
+    "photoVideo": "Photo & Video",
+    "takePhoto": "Take Photo",
+    "takeVideo": "Take Video",
+    "chooseFile": "Choose File",
+    "scanDocument": "Scan Document",
+    "recordAudio": "Record Audio"
   },
   "common": {
     "cancel": "Cancel",

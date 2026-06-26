@@ -24,7 +24,43 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { Text, Theme, useTheme, useThemedStyles } from '@/components/Themed'
+import { createThemedStylesheetWithHooks, Text, Theme, useTheme } from '@/components/Themed'
+import {
+  FontFamily,
+  FontWeight,
+  UI_FONT_SIZE_10,
+  UI_FONT_SIZE_12,
+  UI_FONT_SIZE_14,
+  UI_FONT_SIZE_15,
+  UI_FONT_SIZE_24,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_24,
+  UI_ICON_SIZE_28,
+  UI_ICON_SIZE_36,
+  UI_SIZE_10,
+  UI_SIZE_12,
+  UI_SIZE_14,
+  UI_SIZE_16,
+  UI_SIZE_18,
+  UI_SIZE_2,
+  UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_32,
+  UI_SIZE_36,
+  UI_SIZE_4,
+  UI_SIZE_40,
+  UI_SIZE_48,
+  UI_SIZE_8,
+} from '@/constants/commonStyles'
+
+type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
+  surfaceContainerLow: string
+  surfaceContainer: string
+  surfaceContainerHigh: string
+  surfaceContainerHighest: string
+  surfaceContainerLowest: string
+}
 
 const TIMELINE_H = 88
 const RECORDING_WINDOW_MS = 30000
@@ -92,10 +128,8 @@ function fmtShort(sec: number) {
 }
 
 interface SheetBodyProps {
-  styles: ReturnType<typeof createStyles>
   colors: Theme['colors']
   md3Theme: ReturnType<typeof useMD3Theme>
-  isDark: boolean
   status: { title: string; subtitle: string }
   hasRecording: boolean
   showRecordingSurface: boolean
@@ -106,8 +140,8 @@ interface SheetBodyProps {
   recordedDuration: number
   lineTrack: string
   lineFill: string
-  timerMs: number
   timerColor: string
+  timerMs: number
   totalTimelineMs: number
   recordingWindowStartSec: number
   recordingMidSec: number
@@ -125,10 +159,8 @@ interface SheetBodyProps {
 }
 
 function SheetBody({
-  styles,
   colors,
   md3Theme,
-  isDark,
   status,
   hasRecording,
   showRecordingSurface,
@@ -139,8 +171,8 @@ function SheetBody({
   recordedDuration,
   lineTrack,
   lineFill,
-  timerMs,
   timerColor,
+  timerMs,
   totalTimelineMs,
   recordingWindowStartSec,
   recordingMidSec,
@@ -157,27 +189,24 @@ function SheetBody({
   onSeekComplete,
 }: SheetBodyProps) {
   const { t } = useTranslation()
+  const styles = useStyles()
+
   return (
     <>
-      <View
-        style={[
-          styles.grabber,
-          {
-            backgroundColor: (md3Theme.colors as any).onSurfaceVariant ?? colors.text,
-            opacity: 0.4,
-          },
-        ]}
-      />
+      <View style={styles.grabber} />
 
       <View style={styles.headerRow}>
         <Pressable
           hitSlop={12}
           onPress={onCancel}
-          style={({ pressed }) => [styles.headerIconButton, pressed && { opacity: 0.6 }]}
+          style={({ pressed }) => [
+            styles.headerIconButton,
+            pressed && styles.headerIconButtonPressed,
+          ]}
         >
           <MaterialCommunityIcons
             name="close"
-            size={24}
+            size={UI_ICON_SIZE_24}
             color={(md3Theme.colors as any).onSurfaceVariant ?? colors.textSecondary}
           />
         </Pressable>
@@ -188,12 +217,12 @@ function SheetBody({
           onPress={onDone}
           style={({ pressed }) => [
             styles.headerIconButton,
-            (!hasRecording && !isRecording) || pressed ? { opacity: 0.5 } : null,
+            (!hasRecording && !isRecording) || pressed ? styles.headerIconButtonDisabled : null,
           ]}
         >
           <MaterialCommunityIcons
             name="check"
-            size={24}
+            size={UI_ICON_SIZE_24}
             color={
               !hasRecording && !isRecording
                 ? ((md3Theme.colors as any).onSurfaceVariant ?? colors.textMuted)
@@ -204,10 +233,8 @@ function SheetBody({
       </View>
 
       <View style={styles.heroBlock}>
-        <Text style={[styles.heroTitle, { color: colors.text }]}>{status.title}</Text>
-        <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-          {status.subtitle}
-        </Text>
+        <Text style={styles.heroTitle}>{status.title}</Text>
+        <Text style={styles.heroSubtitle}>{status.subtitle}</Text>
       </View>
 
       <View style={[styles.timelineWrap, hasRecording && styles.timelineWrapPlayback]}>
@@ -230,13 +257,13 @@ function SheetBody({
               <View
                 style={[
                   styles.recordingNeedleCap,
-                  { backgroundColor: colors.error, opacity: isRecording ? 1 : 0.56 },
+                  !isRecording && styles.recordingNeedleCapInactive,
                 ]}
               />
               <View
                 style={[
                   styles.recordingNeedleStem,
-                  { backgroundColor: colors.error, opacity: isRecording ? 1 : 0.46 },
+                  !isRecording && styles.recordingNeedleStemInactive,
                 ]}
               />
             </View>
@@ -259,38 +286,32 @@ function SheetBody({
               />
             </View>
             <View style={styles.playbackTimeRow}>
-              <Text style={[styles.playbackSideTime, { color: colors.textMuted }]}>
-                {fmtShort(currentPlaybackMs / 1000)}
-              </Text>
-              <Text style={[styles.playbackSideTime, { color: colors.textMuted }]}>
-                {fmtShort(totalTimelineMs / 1000)}
-              </Text>
+              <Text style={styles.playbackSideTime}>{fmtShort(currentPlaybackMs / 1000)}</Text>
+              <Text style={styles.playbackSideTime}>{fmtShort(totalTimelineMs / 1000)}</Text>
             </View>
           </View>
         )}
 
         {showRecordingSurface && (
           <View style={styles.recordingRuler}>
-            <Text style={[styles.recordingTick, { color: colors.textMuted }]}>
+            <Text style={styles.recordingTick}>
               {fmtShort(isRecording ? recordingWindowStartSec : 0)}
             </Text>
-            <Text style={[styles.recordingTick, { color: colors.textMuted }]}>
-              {fmtShort(isRecording ? recordingMidSec : 0)}
-            </Text>
-            <Text style={[styles.recordingTick, { color: colors.textMuted }]}>
-              {fmtShort(isRecording ? recordingEndSec : 2)}
-            </Text>
+            <Text style={styles.recordingTick}>{fmtShort(isRecording ? recordingMidSec : 0)}</Text>
+            <Text style={styles.recordingTick}>{fmtShort(isRecording ? recordingEndSec : 2)}</Text>
           </View>
         )}
       </View>
 
       <View style={styles.timerBlock}>
-        <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>
+        <Text style={styles.timerLabel}>
           {hasRecording
             ? t('audioRecorder.timer.playbackPosition')
             : t('audioRecorder.timer.recordingTime')}
         </Text>
-        <Text style={[styles.timer, { color: timerColor }]}>{fmtTimer(timerMs)}</Text>
+        <Text style={[styles.timer, { color: timerColor }, isRecording && styles.timerRecording]}>
+          {fmtTimer(timerMs)}
+        </Text>
       </View>
 
       <View style={[styles.controlsSection, hasRecording && styles.controlsSectionPlayback]}>
@@ -300,11 +321,14 @@ function SheetBody({
               <Pressable
                 hitSlop={12}
                 onPress={() => onSkip(-15)}
-                style={({ pressed }) => [styles.secondaryTransport, pressed && { opacity: 0.6 }]}
+                style={({ pressed }) => [
+                  styles.secondaryTransport,
+                  pressed && styles.secondaryTransportPressed,
+                ]}
               >
                 <MaterialCommunityIcons
                   name="rewind-15"
-                  size={28}
+                  size={UI_ICON_SIZE_28}
                   color={(md3Theme.colors as any).onSurfaceVariant ?? colors.text}
                 />
               </Pressable>
@@ -313,13 +337,12 @@ function SheetBody({
                 onPress={onPlayPause}
                 style={({ pressed }) => [
                   styles.primaryTransport,
-                  { backgroundColor: md3Theme.colors.primaryContainer },
-                  pressed && { opacity: 0.8 },
+                  pressed && styles.primaryTransportPressed,
                 ]}
               >
                 <MaterialCommunityIcons
                   name={isPlaying ? 'pause' : 'play'}
-                  size={36}
+                  size={UI_ICON_SIZE_36}
                   color={md3Theme.colors.onPrimaryContainer}
                 />
               </Pressable>
@@ -327,11 +350,14 @@ function SheetBody({
               <Pressable
                 hitSlop={12}
                 onPress={() => onSkip(15)}
-                style={({ pressed }) => [styles.secondaryTransport, pressed && { opacity: 0.6 }]}
+                style={({ pressed }) => [
+                  styles.secondaryTransport,
+                  pressed && styles.secondaryTransportPressed,
+                ]}
               >
                 <MaterialCommunityIcons
                   name="fast-forward-15"
-                  size={28}
+                  size={UI_ICON_SIZE_28}
                   color={(md3Theme.colors as any).onSurfaceVariant ?? colors.text}
                 />
               </Pressable>
@@ -341,18 +367,15 @@ function SheetBody({
               onPress={onRecord}
               style={({ pressed }) => [
                 styles.rerecordButton,
-                { backgroundColor: md3Theme.colors.secondaryContainer },
-                pressed && { opacity: 0.7 },
+                pressed && styles.rerecordButtonPressed,
               ]}
             >
               <MaterialCommunityIcons
                 name="refresh"
-                size={20}
+                size={UI_ICON_SIZE_20}
                 color={md3Theme.colors.onSecondaryContainer}
               />
-              <Text style={[styles.rerecordText, { color: md3Theme.colors.onSecondaryContainer }]}>
-                {t('audioRecorder.actions.reRecord')}
-              </Text>
+              <Text style={styles.rerecordText}>{t('audioRecorder.actions.reRecord')}</Text>
             </Pressable>
           </>
         ) : (
@@ -362,27 +385,18 @@ function SheetBody({
                 onPress={isRecording ? onStop : onRecord}
                 style={({ pressed }) => [
                   styles.recordButton,
-                  pressed && { opacity: 0.8, transform: [{ scale: 0.94 }] },
+                  pressed && styles.recordButtonPressed,
                 ]}
               >
-                <View
-                  style={[
-                    styles.recordOuterRing,
-                    { backgroundColor: (md3Theme.colors as any).errorContainer ?? colors.error },
-                  ]}
-                >
+                <View style={styles.recordOuterRing}>
                   <Animated.View
-                    style={[
-                      styles.recordMd3Core,
-                      { backgroundColor: md3Theme.colors.onErrorContainer ?? colors.background },
-                      isRecording && { transform: [{ scale: 0.6 }], borderRadius: 8 },
-                    ]}
+                    style={[styles.recordMd3Core, isRecording && styles.recordMd3CoreRecording]}
                   />
                 </View>
               </Pressable>
             </View>
 
-            <Text style={[styles.recordHint, { color: colors.textSecondary }]}>
+            <Text style={styles.recordHint}>
               {isRecording
                 ? t('audioRecorder.actions.stopHint')
                 : t('audioRecorder.actions.startHint')}
@@ -399,7 +413,7 @@ function SheetBody({
 export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderModalProps) {
   const { t } = useTranslation()
   const { colors, isDark } = useTheme()
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles()
   const insets = useSafeAreaInsets()
   const md3Theme = useMD3Theme()
 
@@ -461,13 +475,12 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     ],
   }))
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     return () => {
       sheetProgress.value = 0
       onCancelRef.current?.()
     }
-  }, [])
+  }, [sheetProgress])
 
   useEffect(() => {
     if (!visible) return
@@ -490,7 +503,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     durationRef.current = 0
     energy = 0.4
     liveBars.value = Array.from({ length: RECORDING_BARS }, () => 0.16)
-  }, [visible])
+  }, [visible, liveBars])
 
   const handleSheetShow = useCallback(() => {
     sheetProgress.value = withTiming(1, {
@@ -736,7 +749,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     [hasRecording, phase, player, playerStatus.playing],
   )
 
-  const handleDone = useCallback(async () => {
+  const handleDoneInner = useCallback(async () => {
     stopPlayback()
     try {
       if (phase === 'recording') {
@@ -757,7 +770,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     onDone(uri, durationRef.current || elapsed)
   }, [clearTimer, elapsed, onCancel, onDone, phase, recordedUri, recorder, stopPlayback])
 
-  const handleCancel = useCallback(async () => {
+  const handleCancelInner = useCallback(async () => {
     stopPlayback()
     clearTimer()
     try {
@@ -794,26 +807,24 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
       transparent
       animationType="none"
       onShow={handleSheetShow}
-      onRequestClose={handleCancel}
+      onRequestClose={handleCancelInner}
     >
       <View style={styles.overlay} pointerEvents={visible ? 'box-none' : 'none'}>
         <Animated.View
           style={[styles.backdrop, backdropAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancelInner} />
         </Animated.View>
 
         <Animated.View
-          style={[styles.sheetWrap, { paddingTop: insets.top + 18 }, sheetAnimatedStyle]}
+          style={[styles.sheetWrap, { paddingTop: insets.top + UI_SIZE_18 }, sheetAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
           <View style={[styles.sheet, { backgroundColor: sheetBg }]}>
             <SheetBody
-              styles={styles}
               colors={colors}
               md3Theme={md3Theme}
-              isDark={isDark}
               status={status}
               hasRecording={hasRecording}
               showRecordingSurface={showRecordingSurface}
@@ -831,8 +842,8 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
               recordingMidSec={recordingMidSec}
               recordingEndSec={recordingEndSec}
               bottomInset={bottomInset}
-              onCancel={handleCancel}
-              onDone={handleDone}
+              onCancel={handleCancelInner}
+              onDone={handleDoneInner}
               onRecord={handleRecord}
               onStop={handleStop}
               onPlayPause={handlePlayPause}
@@ -848,73 +859,89 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
   )
 }
 
-function createStyles(theme: Theme) {
-  return StyleSheet.create({
+const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
+  const c = md3Theme.colors as ExtendedColors
+  const sheetBg = c.surfaceContainerLow ?? c.surface
+
+  const styles = StyleSheet.create({
     overlay: {
       flex: 1,
       justifyContent: 'flex-end',
     },
     backdrop: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: 'rgba(0,0,0,0.45)',
+      backgroundColor: theme.colors.backdrop,
     },
     sheetWrap: {
       flex: 1,
       justifyContent: 'flex-end',
     },
     sheet: {
-      borderTopLeftRadius: 28,
-      borderTopRightRadius: 28,
-      paddingHorizontal: 28,
-      paddingTop: 12,
-      shadowColor: '#000',
+      borderTopLeftRadius: UI_SIZE_28,
+      borderTopRightRadius: UI_SIZE_28,
+      paddingHorizontal: UI_SIZE_28,
+      paddingTop: UI_SIZE_12,
+      shadowColor: theme.colors.black,
       shadowOffset: { width: 0, height: -12 },
       shadowOpacity: 0.15,
-      shadowRadius: 28,
+      shadowRadius: UI_SIZE_28,
       elevation: 24,
+      backgroundColor: sheetBg,
     },
     grabber: {
-      width: 32,
-      height: 4,
+      width: UI_SIZE_32,
+      height: UI_SIZE_4,
       borderRadius: 9999,
       alignSelf: 'center',
-      marginBottom: 20,
-      marginTop: 4,
+      marginBottom: UI_SIZE_20,
+      marginTop: UI_SIZE_4,
+      backgroundColor: (md3Theme.colors as any).onSurfaceVariant ?? theme.colors.text,
+      opacity: 0.4,
     },
     headerRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 20,
+      marginBottom: UI_SIZE_20,
     },
     headerIconButton: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: UI_SIZE_48,
+      height: UI_SIZE_48,
+      borderRadius: UI_SIZE_24,
       alignItems: 'center',
       justifyContent: 'center',
     },
+    headerIconButtonPressed: {
+      opacity: 0.6,
+    },
+    headerIconButtonDisabled: {
+      opacity: 0.5,
+    },
     heroBlock: {
       alignItems: 'center',
-      marginBottom: 24,
+      marginBottom: UI_SIZE_24,
     },
     heroTitle: {
-      fontSize: 24,
-      fontFamily: 'PlusJakartaSans_700Bold',
+      fontSize: UI_FONT_SIZE_24,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
       textAlign: 'center',
-      marginBottom: 8,
+      marginBottom: UI_SIZE_8,
       letterSpacing: -0.3,
+      color: theme.colors.text,
     },
     heroSubtitle: {
-      fontSize: 14,
-      fontFamily: 'PlusJakartaSans_400Regular',
+      fontSize: UI_FONT_SIZE_14,
+      fontFamily: FontFamily.regular,
+      fontWeight: FontWeight.regular,
       textAlign: 'center',
-      lineHeight: 20,
-      paddingHorizontal: 12,
+      lineHeight: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_12,
+      color: theme.colors.textSecondary,
     },
     timelineWrap: {
       height: TIMELINE_H,
-      marginBottom: 32,
+      marginBottom: UI_SIZE_32,
       justifyContent: 'center',
     },
     timelineWrapPlayback: {
@@ -941,48 +968,57 @@ function createStyles(theme: Theme) {
       right: 0,
       top: -4,
       bottom: -4,
-      width: 2,
+      width: UI_SIZE_2,
       alignItems: 'center',
     },
     recordingNeedleCap: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
+      width: UI_SIZE_8,
+      height: UI_SIZE_8,
+      borderRadius: UI_SIZE_4,
       marginBottom: -1,
+      backgroundColor: theme.colors.error,
+    },
+    recordingNeedleCapInactive: {
+      opacity: 0.56,
     },
     recordingNeedleStem: {
       flex: 1,
-      width: 2,
+      width: UI_SIZE_2,
       borderRadius: 1,
+      backgroundColor: theme.colors.error,
+    },
+    recordingNeedleStemInactive: {
+      opacity: 0.46,
     },
     recordingRuler: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: 10,
-      paddingHorizontal: 2,
+      marginTop: UI_SIZE_10,
+      paddingHorizontal: UI_SIZE_2,
     },
     recordingTick: {
-      fontSize: 10,
-      fontFamily: 'monospace',
+      fontSize: UI_FONT_SIZE_10,
+      fontFamily: FontFamily.mono,
+      color: theme.colors.textMuted,
     },
     timelineOuter: {
       width: '100%',
     },
     playbackTrackWrap: {
       width: '100%',
-      height: 32,
+      height: UI_SIZE_32,
       justifyContent: 'center',
     },
     timelineTrack: {
       position: 'absolute',
-      left: 14,
-      right: 14,
-      height: 4,
-      borderRadius: 2,
+      left: UI_SIZE_14,
+      right: UI_SIZE_14,
+      height: UI_SIZE_4,
+      borderRadius: UI_SIZE_2,
     },
     playbackSlider: {
       width: '100%',
-      height: 32,
+      height: UI_SIZE_32,
     },
     playbackTimeRow: {
       flexDirection: 'row',
@@ -990,38 +1026,44 @@ function createStyles(theme: Theme) {
       marginTop: 2,
     },
     playbackSideTime: {
-      fontSize: 12,
-      fontFamily: 'monospace',
+      fontSize: UI_FONT_SIZE_12,
+      fontFamily: FontFamily.mono,
+      color: theme.colors.textMuted,
     },
     timerBlock: {
       alignItems: 'center',
-      marginBottom: 40,
+      marginBottom: UI_SIZE_40,
     },
     timerLabel: {
-      fontSize: 12,
-      fontFamily: 'PlusJakartaSans_700Bold',
+      fontSize: UI_FONT_SIZE_12,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
       textTransform: 'uppercase',
       letterSpacing: 1.2,
-      marginBottom: 8,
+      marginBottom: UI_SIZE_8,
       opacity: 0.7,
+      color: theme.colors.textSecondary,
     },
     timer: {
       fontSize: 54,
       lineHeight: 64,
       fontWeight: '300',
-      fontFamily: 'monospace',
+      fontFamily: FontFamily.mono,
       letterSpacing: -1,
       includeFontPadding: false,
     },
+    timerRecording: {
+      color: theme.colors.error,
+    },
     controlsSection: {
       alignItems: 'center',
-      paddingBottom: 24,
+      paddingBottom: UI_SIZE_24,
     },
     controlsSectionPlayback: {
-      paddingBottom: 20,
+      paddingBottom: UI_SIZE_20,
     },
     recordStage: {
-      marginBottom: 24,
+      marginBottom: UI_SIZE_24,
     },
     recordButton: {
       width: 88,
@@ -1029,28 +1071,40 @@ function createStyles(theme: Theme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    recordButtonPressed: {
+      opacity: 0.8,
+      transform: [{ scale: 0.94 }],
+    },
     recordOuterRing: {
       width: 80,
       height: 80,
       borderRadius: 40,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: (md3Theme.colors as any).errorContainer ?? theme.colors.error,
     },
     recordMd3Core: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
+      borderRadius: UI_SIZE_16,
+      backgroundColor: md3Theme.colors.onErrorContainer ?? theme.colors.background,
+    },
+    recordMd3CoreRecording: {
+      transform: [{ scale: 0.6 }],
+      borderRadius: UI_SIZE_8,
     },
     recordHint: {
-      fontSize: 14,
-      fontFamily: 'PlusJakartaSans_500Medium',
+      fontSize: UI_FONT_SIZE_14,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
       opacity: 0.8,
+      color: theme.colors.textSecondary,
     },
     transportRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 36,
-      marginBottom: 32,
+      gap: UI_SIZE_36,
+      marginBottom: UI_SIZE_32,
     },
     primaryTransport: {
       width: 72,
@@ -1058,6 +1112,10 @@ function createStyles(theme: Theme) {
       borderRadius: 36,
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: md3Theme.colors.primaryContainer,
+    },
+    primaryTransportPressed: {
+      opacity: 0.8,
     },
     secondaryTransport: {
       width: 56,
@@ -1066,17 +1124,27 @@ function createStyles(theme: Theme) {
       alignItems: 'center',
       justifyContent: 'center',
     },
+    secondaryTransportPressed: {
+      opacity: 0.6,
+    },
     rerecordButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 24,
-      paddingVertical: 14,
-      borderRadius: 16,
-      gap: 8,
+      paddingHorizontal: UI_SIZE_24,
+      paddingVertical: UI_SIZE_14,
+      borderRadius: UI_SIZE_16,
+      gap: UI_SIZE_8,
+      backgroundColor: md3Theme.colors.secondaryContainer,
+    },
+    rerecordButtonPressed: {
+      opacity: 0.7,
     },
     rerecordText: {
-      fontSize: 15,
-      fontFamily: 'PlusJakartaSans_600SemiBold',
+      fontSize: UI_FONT_SIZE_15,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: md3Theme.colors.onSecondaryContainer,
     },
   })
-}
+  return styles
+}, useMD3Theme)

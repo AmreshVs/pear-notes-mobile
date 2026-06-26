@@ -1,7 +1,7 @@
 import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { Folder } from 'lucide-react-native'
-import React, { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Image,
@@ -14,9 +14,19 @@ import {
 import Animated, { FadeIn, FadeOutUp, LinearTransition } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 
-import { Text, Theme, useColors, useThemedStyles } from './Themed'
+import { createThemedStylesheet, Text } from './Themed'
 
-import { FontSize, FontWeight, LetterSpacing, Radii, Space } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Radii,
+  Space,
+  UI_ICON_SIZE_12,
+  UI_SIZE_56,
+} from '@/constants/commonStyles'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -58,8 +68,7 @@ export const NoteCard = memo(function NoteCard({
   onMoveTo,
 }: NoteCardProps) {
   const { t } = useTranslation()
-  const styles = useThemedStyles(createStyles)
-  const colors = useColors()
+  const styles = useStyles()
   const [thumbError, setThumbError] = useState(false)
 
   const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
@@ -69,28 +78,27 @@ export const NoteCard = memo(function NoteCard({
   const getPressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }): ViewStyle[] => [
       styles.container,
-      isLast ? {} : styles.borderBottom,
-      {
-        backgroundColor: selected
-          ? colors.cardSelected
-          : pressed
-            ? colors.cardPressed
-            : 'transparent',
-      },
+      !isLast ? styles.borderBottom : {},
+      selected
+        ? styles.containerSelected
+        : pressed
+          ? styles.containerPressed
+          : styles.containerNormal,
     ],
     [
       selected,
-      colors.cardSelected,
-      colors.cardPressed,
       styles.container,
+      styles.containerSelected,
+      styles.containerPressed,
+      styles.containerNormal,
       styles.borderBottom,
       isLast,
     ],
   )
 
   const titleStyle = useMemo(
-    () => [styles.title, { color: selected ? colors.primary : colors.text }],
-    [selected, colors.primary, colors.text, styles.title],
+    () => [styles.title, selected ? styles.titleSelected : styles.titleNormal],
+    [selected, styles.title, styles.titleSelected, styles.titleNormal],
   )
 
   const showThumbnail = !!imageUrl && !thumbError
@@ -116,13 +124,10 @@ export const NoteCard = memo(function NoteCard({
               {folderName && (
                 <>
                   <RNView style={styles.folderTag}>
-                    <Folder size={11} color={colors.textSecondary} style={styles.folderIcon} />
+                    <Folder size={UI_ICON_SIZE_12} style={styles.folderIcon} />
                     <Text
                       variant="caption"
-                      style={[
-                        styles.metadataText,
-                        isPearTheme && { color: colors.primary, opacity: 1 },
-                      ]}
+                      style={[styles.metadataText, isPearTheme && styles.metadataTextPearTheme]}
                     >
                       {folderName}
                     </Text>
@@ -207,12 +212,21 @@ export const NoteCard = memo(function NoteCard({
   )
 })
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     container: {
       paddingHorizontal: Space.base,
       borderRadius: Radii.md,
       marginVertical: 1,
+    },
+    containerNormal: {
+      backgroundColor: theme.colors.transparent,
+    },
+    containerSelected: {
+      backgroundColor: theme.colors.cardSelected,
+    },
+    containerPressed: {
+      backgroundColor: theme.colors.cardPressed,
     },
     borderBottom: {
       borderBottomWidth: StyleSheet.hairlineWidth,
@@ -225,13 +239,20 @@ const createStyles = (theme: Theme) =>
       gap: Space.md,
     },
     content: {
-      flex: 1,
+      ...commonStyles.flex1,
     },
     title: {
       fontSize: FontSize.base,
+      fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       marginBottom: Space.xs,
       letterSpacing: LetterSpacing.tight,
+    },
+    titleNormal: {
+      color: theme.colors.text,
+    },
+    titleSelected: {
+      color: theme.colors.primary,
     },
     summary: {
       fontSize: FontSize.body,
@@ -251,14 +272,20 @@ const createStyles = (theme: Theme) =>
     folderIcon: {
       marginRight: Space.xs,
       opacity: 0.7,
+      color: theme.colors.textSecondary,
     },
     metadataText: {
       fontSize: FontSize.caption,
+      fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
       opacity: 0.6,
       color: theme.colors.textSecondary,
+    },
+    metadataTextPearTheme: {
+      color: theme.colors.primary,
+      opacity: 1,
     },
     separator: {
       opacity: 0.3,
@@ -266,10 +293,13 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.textSecondary,
     },
     thumbnail: {
-      width: 56,
-      height: 56,
+      width: UI_SIZE_56,
+      height: UI_SIZE_56,
       borderRadius: Radii.sm,
       backgroundColor: theme.colors.separator,
       flexShrink: 0,
     },
   })
+  return styles
+})
+

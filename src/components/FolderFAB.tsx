@@ -4,7 +4,14 @@ import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-na
 
 import { GlassView } from '@/components/GlassView'
 import { useColors } from '@/components/Themed'
-import { Space } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  Space,
+  UI_ICON_SIZE_26,
+  UI_SIZE_30,
+  UI_SIZE_36,
+  UI_SIZE_60,
+} from '@/constants/commonStyles'
 
 interface FolderFABProps {
   onPress: () => void
@@ -20,7 +27,7 @@ export function FolderFAB({ onPress = () => {} }: FolderFABProps) {
 
   return (
     <Animated.View style={[styles.fab, animatedStyle]}>
-      <GlassView intensity={20} borderRadius={30} style={styles.glass}>
+      <GlassView intensity={20} borderRadius={UI_SIZE_30} style={styles.glass}>
         <Pressable
           onPress={onPress}
           onPressIn={() => {
@@ -31,7 +38,7 @@ export function FolderFAB({ onPress = () => {} }: FolderFABProps) {
           }}
           style={styles.btn}
         >
-          <FolderPlus size={26} color={colors.text} strokeWidth={1.7} />
+          <FolderPlus size={UI_ICON_SIZE_26} color={colors.text} strokeWidth={1.7} />
         </Pressable>
       </GlassView>
     </Animated.View>
@@ -41,17 +48,16 @@ export function FolderFAB({ onPress = () => {} }: FolderFABProps) {
 const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
-    bottom: 36,
+    bottom: UI_SIZE_36,
     right: Space.base,
   },
   glass: {
-    borderRadius: 30,
+    borderRadius: UI_SIZE_30,
   },
   btn: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    ...commonStyles.centered,
+    width: UI_SIZE_60,
+    height: UI_SIZE_60,
+    borderRadius: UI_SIZE_30,
   },
 })

@@ -13,6 +13,7 @@ import { deleteNote, getNoteData, updateNote } from '@pear-notes/core/store/slic
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Haptics from 'expo-haptics'
+import type { ImagePickerAsset } from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
@@ -530,7 +531,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const processMediaAsset = useCallback(
-    async (asset: ImagePicker.ImagePickerAsset) => {
+    async (asset: ImagePickerAsset) => {
       if (asset.type === 'video') {
         const displayName = asset.fileName || `video-${Date.now()}.mp4`
         setUploadInfo({ fileName: displayName, status: 'Preparing...' })
@@ -777,7 +778,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             height: dimensions.height,
             fileName: name,
             mimeType,
-          } as ImagePicker.ImagePickerAsset)
+          } as ImagePickerAsset)
         }
       } else {
         const { link } = await backendApi.insertFile({

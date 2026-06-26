@@ -1,9 +1,27 @@
 import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
-import MaterialCommunityIcons from "@react-native-vector-icons/material-design-icons/static"
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import React, { useEffect, useMemo, useRef } from 'react'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { createThemedStylesheetWithHooks } from '@/components/Themed'
+import {
+  FontFamily,
+  FontWeight,
+  UI_FONT_SIZE_13,
+  UI_FONT_SIZE_15,
+  UI_FONT_SIZE_20,
+  UI_ICON_SIZE_18,
+  UI_ICON_SIZE_20,
+  UI_SIZE_12,
+  UI_SIZE_14,
+  UI_SIZE_16,
+  UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_36,
+  UI_SIZE_4,
+} from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string
@@ -37,8 +55,8 @@ type Props = {
 
 export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions }: Props) {
   const ref = useRef<BottomSheetModal>(null)
+  const styles = useStyles()
   const { colors } = useMD3Theme()
-  const c = colors as ExtendedColors
 
   useEffect(() => {
     if (visible) {
@@ -48,12 +66,7 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
     }
   }, [visible])
 
-  const sheetBg = c.surfaceContainerLow ?? c.surface
-
-  const backgroundStyle = useMemo(
-    () => ({ backgroundColor: sheetBg, borderTopLeftRadius: 28, borderTopRightRadius: 28 }),
-    [sheetBg],
-  )
+  const backgroundStyle = useMemo(() => styles.sheetBackground, [styles.sheetBackground])
 
   return (
     <BottomSheetModal
@@ -61,85 +74,45 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
       enableDynamicSizing
       enablePanDownToClose
       backgroundStyle={backgroundStyle}
-      handleIndicatorStyle={[
-        styles.handle,
-        { backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.3) },
-      ]}
+      handleIndicatorStyle={styles.handleIndicator}
       onDismiss={onDismiss}
     >
       <BottomSheetView style={styles.container}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: c.onSurface }]}>{title}</Text>
-          {subtitle ? (
-            <Text style={[styles.subtitle, { color: c.onSurfaceVariant }]}>{subtitle}</Text>
-          ) : null}
+          <Text style={styles.title}>{title}</Text>
+          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
 
-        <View
-          style={[
-            styles.actionsCard,
-            {
-              backgroundColor:
-                hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
-            },
-          ]}
-        >
+        <View style={styles.actionsCard}>
           {actions.map((action, index) => (
             <React.Fragment key={action.label}>
               <Pressable
                 onPress={action.onPress}
                 style={({ pressed }) => [
                   styles.actionRow,
-                  pressed && {
-                    backgroundColor: hexWithAlpha(
-                      action.destructive
-                        ? (c as any).errorContainer ?? '#4e0d19'
-                        : c.primaryContainer,
-                      0.18,
-                    ),
-                  },
+                  pressed &&
+                    (action.destructive ? styles.actionRowPressedDestructive : styles.actionRowPressed),
                 ]}
               >
-                <View
-                  style={[
-                    styles.iconCircle,
-                    {
-                      backgroundColor: action.destructive
-                        ? hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.22)
-                        : hexWithAlpha(c.primaryContainer, 0.35),
-                    },
-                  ]}
-                >
+                <View style={action.destructive ? styles.iconCircleDestructive : styles.iconCircle}>
                   <MaterialCommunityIcons
                     name={action.icon as any}
-                    size={21}
-                    color={action.destructive ? c.error : c.primary}
+                    size={UI_ICON_SIZE_20}
+                    color={action.destructive ? colors.error : colors.primary}
                   />
                 </View>
-                <Text
-                  style={[
-                    styles.actionLabel,
-                    { color: action.destructive ? c.error : c.onSurface },
-                  ]}
-                >
+                <Text style={action.destructive ? styles.actionLabelDestructive : styles.actionLabel}>
                   {action.label}
                 </Text>
                 {!action.destructive && (
                   <MaterialCommunityIcons
                     name="chevron-right"
-                    size={18}
-                    color={hexWithAlpha(c.onSurfaceVariant, 0.4)}
+                    size={UI_ICON_SIZE_18}
+                    color={hexWithAlpha(colors.onSurfaceVariant, 0.4)}
                   />
                 )}
               </Pressable>
-              {index < actions.length - 1 && (
-                <View
-                  style={[
-                    styles.separator,
-                    { backgroundColor: hexWithAlpha(c.outlineVariant, 0.14) },
-                  ]}
-                />
-              )}
+              {index < actions.length - 1 && <View style={styles.separator} />}
             </React.Fragment>
           ))}
         </View>
@@ -150,66 +123,108 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
   )
 }
 
-const styles = StyleSheet.create({
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 9999,
-    alignSelf: 'center',
+const useStyles = createThemedStylesheetWithHooks(
+  (theme, md3Theme) => {
+    const c = md3Theme.colors as ExtendedColors
+    const sheetBg = c.surfaceContainerLow ?? c.surface
+
+    const styles = StyleSheet.create({
+      sheetBackground: {
+        backgroundColor: sheetBg,
+        borderTopLeftRadius: UI_SIZE_28,
+        borderTopRightRadius: UI_SIZE_28,
+      },
+      handleIndicator: {
+        width: UI_SIZE_36,
+        height: UI_SIZE_4,
+        borderRadius: 9999,
+        alignSelf: 'center',
+        backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.3),
+      },
+      container: {
+        paddingHorizontal: UI_SIZE_20,
+        paddingTop: UI_SIZE_4,
+      },
+      header: {
+        paddingBottom: UI_SIZE_24,
+        paddingHorizontal: UI_SIZE_4,
+        paddingTop: 0,
+        gap: UI_SIZE_4,
+      },
+      title: {
+        fontSize: UI_FONT_SIZE_20,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        letterSpacing: -0.3,
+        marginBottom: UI_SIZE_12,
+        color: c.onSurface,
+      },
+      subtitle: {
+        fontSize: UI_FONT_SIZE_13,
+        fontFamily: FontFamily.regular,
+        lineHeight: 18,
+        color: c.onSurfaceVariant,
+      },
+      actionsCard: {
+        borderRadius: UI_SIZE_20,
+        overflow: 'hidden',
+        backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
+      },
+      actionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: UI_SIZE_16,
+        paddingVertical: UI_SIZE_14,
+        gap: UI_SIZE_16,
+        minHeight: 62,
+      },
+      actionRowPressed: {
+        backgroundColor: hexWithAlpha(c.primaryContainer, 0.18),
+      },
+      actionRowPressedDestructive: {
+        backgroundColor: hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.18),
+      },
+      iconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 9999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: hexWithAlpha(c.primaryContainer, 0.35),
+      },
+      iconCircleDestructive: {
+        width: 44,
+        height: 44,
+        borderRadius: 9999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.22),
+      },
+      actionLabel: {
+        flex: 1,
+        fontSize: UI_FONT_SIZE_15,
+        fontWeight: FontWeight.semibold,
+        fontFamily: FontFamily.semiBold,
+        color: c.onSurface,
+      },
+      actionLabelDestructive: {
+        flex: 1,
+        fontSize: UI_FONT_SIZE_15,
+        fontWeight: FontWeight.semibold,
+        fontFamily: FontFamily.semiBold,
+        color: c.error,
+      },
+      separator: {
+        height: StyleSheet.hairlineWidth,
+        marginLeft: 76,
+        marginRight: UI_SIZE_16,
+        backgroundColor: hexWithAlpha(c.outlineVariant, 0.14),
+      },
+      bottomPad: {
+        height: UI_SIZE_24,
+      },
+    })
+    return styles
   },
-  container: {
-    paddingHorizontal: 20,
-    paddingTop: 4,
-  },
-  header: {
-    paddingBottom: 24,
-    paddingHorizontal: 4,
-    paddingTop: 0,
-    gap: 4,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: -0.3,
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 13,
-    fontFamily: 'PlusJakartaSans_400Regular',
-    lineHeight: 18,
-  },
-  actionsCard: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 16,
-    minHeight: 62,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionLabel: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 76,
-    marginRight: 16,
-  },
-  bottomPad: {
-    height: 24,
-  },
-})
+  useMD3Theme,
+)

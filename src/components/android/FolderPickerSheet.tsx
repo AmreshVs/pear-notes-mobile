@@ -1,9 +1,30 @@
 import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
-import MaterialCommunityIcons from "@react-native-vector-icons/material-design-icons/static"
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import React, { useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { createThemedStylesheetWithHooks } from '@/components/Themed'
+import {
+  FontFamily,
+  FontWeight,
+  UI_FONT_SIZE_14,
+  UI_FONT_SIZE_15,
+  UI_FONT_SIZE_20,
+  UI_ICON_SIZE_18,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_22,
+  UI_SIZE_4,
+  UI_SIZE_8,
+  UI_SIZE_12,
+  UI_SIZE_14,
+  UI_SIZE_16,
+  UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_32,
+} from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string
@@ -32,10 +53,10 @@ type Props = {
 }
 
 export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Props) {
+  const { t } = useTranslation()
   const ref = useRef<BottomSheetModal>(null)
+  const styles = useStyles()
   const { colors } = useMD3Theme()
-  const c = colors as ExtendedColors
-  const { height: screenHeight } = useWindowDimensions()
 
   useEffect(() => {
     if (visible) {
@@ -45,105 +66,65 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
     }
   }, [visible])
 
-  const sheetBg = c.surfaceContainerLow ?? c.surface
-
-  const backgroundStyle = useMemo(
-    () => ({ backgroundColor: sheetBg, borderTopLeftRadius: 28, borderTopRightRadius: 28 }),
-    [sheetBg],
-  )
-
-  const listCardStyle = useMemo(
-    () => [
-      styles.listCard,
-      {
-        backgroundColor: hexWithAlpha(
-          (c as any).surfaceContainerHighest ?? c.surfaceVariant,
-          0.5,
-        ),
-      },
-    ],
-    [c],
-  )
+  const backgroundStyle = useMemo(() => styles.sheetBackground, [styles.sheetBackground])
 
   return (
     <BottomSheetModal
       ref={ref}
       enableDynamicSizing
       backgroundStyle={backgroundStyle}
-      handleIndicatorStyle={[
-        styles.handle,
-        { backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.3) },
-      ]}
+      handleIndicatorStyle={styles.handleIndicator}
       onDismiss={onDismiss}
     >
       <BottomSheetView>
         <View style={styles.headerRow}>
           <Pressable
             onPress={onDismiss}
-            style={({ pressed }) => [
-              styles.backBtn,
-              pressed && {
-                backgroundColor: hexWithAlpha(
-                  (c as any).surfaceContainerHighest ?? c.surfaceVariant,
-                  0.6,
-                ),
-              },
-            ]}
+            style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
             hitSlop={8}
           >
-            <MaterialCommunityIcons name="arrow-left" size={22} color={c.primary} />
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={UI_ICON_SIZE_22}
+              color={colors.primary}
+            />
           </Pressable>
-          <Text style={[styles.headerTitle, { color: c.onSurface }]}>Move to Folder</Text>
+          <Text style={styles.headerTitle}>{t('noteCard.actions.moveToFolder')}</Text>
         </View>
 
         <ScrollView
-          style={{ maxHeight: screenHeight * 0.55 }}
+          style={styles.scrollView}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={listCardStyle}>
+          <View style={styles.listCard}>
             {folders.map((folder, index) => (
               <React.Fragment key={folder.id}>
                 <Pressable
                   onPress={() => onSelect(folder.id)}
-                  style={({ pressed }) => [
-                    styles.folderRow,
-                    pressed && {
-                      backgroundColor: hexWithAlpha(c.primaryContainer, 0.18),
-                    },
-                  ]}
+                  style={({ pressed }) => [styles.folderRow, pressed && styles.folderRowPressed]}
                 >
-                  <View
-                    style={[
-                      styles.iconCircle,
-                      { backgroundColor: hexWithAlpha(c.primaryContainer, 0.35) },
-                    ]}
-                  >
-                    <MaterialCommunityIcons name="folder-outline" size={20} color={c.primary} />
+                  <View style={styles.iconCircle}>
+                    <MaterialCommunityIcons
+                      name="folder-outline"
+                      size={UI_ICON_SIZE_20}
+                      color={colors.primary}
+                    />
                   </View>
-                  <Text style={[styles.folderName, { color: c.onSurface }]}>{folder.name}</Text>
+                  <Text style={styles.folderName}>{folder.name}</Text>
                   <MaterialCommunityIcons
                     name="chevron-right"
-                    size={18}
-                    color={hexWithAlpha(c.onSurfaceVariant, 0.4)}
+                    size={UI_ICON_SIZE_18}
+                    color={hexWithAlpha(colors.onSurfaceVariant, 0.4)}
                   />
                 </Pressable>
-                {index < folders.length - 1 && (
-                  <View
-                    style={[
-                      styles.separator,
-                      { backgroundColor: hexWithAlpha(c.outlineVariant, 0.14) },
-                    ]}
-                  />
-                )}
+                {index < folders.length - 1 && <View style={styles.separator} />}
               </React.Fragment>
             ))}
             {folders.length === 0 && (
               <View style={styles.emptyRow}>
-                <Text style={[styles.emptyText, { color: c.onSurfaceVariant }]}>
-                  No folders available
-                </Text>
+                <Text style={styles.emptyText}>{t('noteCard.actions.noFolders')}</Text>
               </View>
             )}
           </View>
@@ -154,73 +135,107 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
   )
 }
 
-const styles = StyleSheet.create({
-  handle: {
-    width: 36,
-    height: 4,
-    borderRadius: 9999,
-    alignSelf: 'center',
+const useStyles = createThemedStylesheetWithHooks(
+  (theme, { md3Theme, screenHeight }) => {
+    const c = md3Theme.colors as ExtendedColors
+    const sheetBg = c.surfaceContainerLow ?? c.surface
+
+    const styles = StyleSheet.create({
+      sheetBackground: {
+        backgroundColor: sheetBg,
+        borderTopLeftRadius: UI_SIZE_28,
+        borderTopRightRadius: UI_SIZE_28,
+      },
+      handleIndicator: {
+        width: 36,
+        height: 4,
+        borderRadius: 9999,
+        alignSelf: 'center',
+        backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.3),
+      },
+      headerRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: UI_SIZE_12,
+        paddingTop: UI_SIZE_8,
+        paddingBottom: UI_SIZE_16,
+        gap: UI_SIZE_4,
+      },
+      backBtn: {
+        padding: UI_SIZE_8,
+        borderRadius: 9999,
+      },
+      backBtnPressed: {
+        backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
+      },
+      headerTitle: {
+        fontSize: UI_FONT_SIZE_20,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        letterSpacing: -0.3,
+        color: c.onSurface,
+      },
+      scrollView: {
+        maxHeight: screenHeight * 0.55,
+      },
+      listContent: {
+        paddingHorizontal: UI_SIZE_20,
+      },
+      listCard: {
+        borderRadius: UI_SIZE_20,
+        overflow: 'hidden',
+        backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
+      },
+      folderRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: UI_SIZE_16,
+        paddingVertical: UI_SIZE_14,
+        gap: UI_SIZE_16,
+        minHeight: 62,
+      },
+      folderRowPressed: {
+        backgroundColor: hexWithAlpha(c.primaryContainer, 0.18),
+      },
+      iconCircle: {
+        width: 44,
+        height: 44,
+        borderRadius: 9999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: hexWithAlpha(c.primaryContainer, 0.35),
+      },
+      folderName: {
+        flex: 1,
+        fontSize: UI_FONT_SIZE_15,
+        fontWeight: FontWeight.semibold,
+        fontFamily: FontFamily.semiBold,
+        color: c.onSurface,
+      },
+      separator: {
+        height: StyleSheet.hairlineWidth,
+        marginLeft: 76,
+        marginRight: UI_SIZE_16,
+        backgroundColor: hexWithAlpha(c.outlineVariant, 0.14),
+      },
+      emptyRow: {
+        paddingVertical: UI_SIZE_24,
+        alignItems: 'center',
+      },
+      emptyText: {
+        fontSize: UI_FONT_SIZE_14,
+        fontFamily: FontFamily.regular,
+        color: c.onSurfaceVariant,
+      },
+      bottomPad: {
+        height: UI_SIZE_32,
+      },
+    })
+    return styles
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    paddingBottom: 16,
-    gap: 4,
+  () => {
+    const md3Theme = useMD3Theme()
+    const { height: screenHeight } = useWindowDimensions()
+    return { md3Theme, screenHeight }
   },
-  backBtn: {
-    padding: 8,
-    borderRadius: 9999,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    fontFamily: 'PlusJakartaSans_700Bold',
-    letterSpacing: -0.3,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-  },
-  listCard: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  folderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 16,
-    minHeight: 62,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  folderName: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
-    fontFamily: 'PlusJakartaSans_600SemiBold',
-  },
-  separator: {
-    height: StyleSheet.hairlineWidth,
-    marginLeft: 76,
-    marginRight: 16,
-  },
-  emptyRow: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontSize: 14,
-    fontFamily: 'PlusJakartaSans_400Regular',
-  },
-  bottomPad: {
-    height: 32,
-  },
-})
+)

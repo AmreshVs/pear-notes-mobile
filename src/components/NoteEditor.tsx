@@ -1,5 +1,6 @@
 import React, { forwardRef, memo, useCallback, useImperativeHandle, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { StyleSheet } from 'react-native'
 import {
   EnrichedTextInput,
   type EnrichedTextInputInstance,
@@ -8,7 +9,23 @@ import {
 
 import { sanitizeTipTapHtml } from '../utils/sanitize-html'
 
-import { Theme, useColors, useThemedStyles } from './Themed'
+import { createThemedStylesheet, useColors } from './Themed'
+
+import {
+  commonStyles,
+  FontSize,
+  UI_FONT_SIZE_19,
+  UI_FONT_SIZE_22,
+  UI_FONT_SIZE_26,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_10,
+  UI_SIZE_12,
+  UI_SIZE_18,
+  UI_SIZE_20,
+  UI_SIZE_30,
+  UI_SIZE_150,
+} from '@/constants/commonStyles'
 
 interface NoteEditorProps {
   initialContent: string
@@ -36,7 +53,7 @@ export interface NoteEditorHandle {
 const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
   ({ initialContent, onContentChange, onStyleStateChange }, ref) => {
     const { t } = useTranslation()
-    const styles = useThemedStyles(createStyles)
+    const styles = useStyles()
     const colors = useColors()
     const inputRef = useRef<EnrichedTextInputInstance>(null)
     const onContentChangeRef = useRef(onContentChange)
@@ -99,33 +116,36 @@ const NoteEditorComponent = forwardRef<NoteEditorHandle, NoteEditorProps>(
   },
 )
 
-const createStyles = (theme: Theme) => ({
-  input: {
-    flex: 1,
-    fontSize: 18,
-    lineHeight: 30,
-    paddingHorizontal: 20,
-    paddingBottom: 150,
-    color: theme.colors.text,
-  },
-  htmlStyle: {
-    h1: { fontSize: 26, bold: true },
-    h2: { fontSize: 22, bold: true },
-    h3: { fontSize: 19, bold: true },
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    input: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.title,
+      lineHeight: UI_SIZE_30,
+      paddingHorizontal: UI_SIZE_20,
+      paddingBottom: UI_SIZE_150,
+      color: theme.colors.text,
+    },
+  })
+
+  const htmlStyle = {
+    h1: { fontSize: UI_FONT_SIZE_26, bold: true },
+    h2: { fontSize: UI_FONT_SIZE_22, bold: true },
+    h3: { fontSize: UI_FONT_SIZE_19, bold: true },
     blockquote: {
       borderColor: theme.colors.primary,
       borderWidth: 3,
-      gapWidth: 12,
+      gapWidth: UI_SIZE_12,
       color: theme.colors.textSecondary,
     },
     codeblock: {
-      color: theme.isDark ? '#A8FF78' : '#333',
-      backgroundColor: theme.isDark ? '#1C1C1E' : '#F4F4F5',
-      borderRadius: 10,
+      color: theme.colors.codeText,
+      backgroundColor: theme.colors.codeBlockBg,
+      borderRadius: UI_SIZE_10,
     },
     code: {
-      color: theme.isDark ? '#A8FF78' : '#333',
-      backgroundColor: theme.isDark ? '#2C2C2E' : '#F4F4F5',
+      color: theme.colors.codeText,
+      backgroundColor: theme.colors.codeBg,
     },
     a: {
       color: theme.colors.primary,
@@ -133,22 +153,27 @@ const createStyles = (theme: Theme) => ({
     },
     ul: {
       bulletColor: theme.colors.primary,
-      bulletSize: 6,
-      marginLeft: 20,
-      gapWidth: 6,
+      bulletSize: UI_SIZE_6,
+      marginLeft: UI_SIZE_20,
+      gapWidth: UI_SIZE_6,
     },
     ol: {
       markerColor: theme.colors.primary,
-      marginLeft: 20,
-      gapWidth: 6,
+      marginLeft: UI_SIZE_20,
+      gapWidth: UI_SIZE_6,
     },
     ulCheckbox: {
       boxColor: theme.colors.primary,
-      boxSize: 18,
-      marginLeft: 4,
-      gapWidth: 10,
+      boxSize: UI_SIZE_18,
+      marginLeft: UI_SIZE_4,
+      gapWidth: UI_SIZE_10,
     },
-  },
+  }
+
+  return {
+    ...styles,
+    htmlStyle,
+  }
 })
 
 NoteEditorComponent.displayName = 'NoteEditor'

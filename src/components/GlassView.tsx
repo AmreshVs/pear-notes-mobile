@@ -3,7 +3,7 @@ import { GlassView as ExpoGlassView } from 'expo-glass-effect'
 import React, { memo, useMemo } from 'react'
 import { StyleSheet, ViewProps, ViewStyle } from 'react-native'
 
-import { Theme, useThemedStyles } from './Themed'
+import { createThemedStylesheet, useTheme } from './Themed'
 
 interface GlassViewProps extends ViewProps {
   intensity?: number
@@ -19,7 +19,10 @@ export const GlassView = memo(function GlassView({
   style,
   ...props
 }: GlassViewProps) {
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles()
+  const theme = useTheme()
+
+  const blurTint = theme.isDark ? 'dark' : 'light'
 
   const containerStyle = useMemo(
     () => [styles.container, { borderRadius }, style],
@@ -30,20 +33,20 @@ export const GlassView = memo(function GlassView({
 
   return (
     <ExpoGlassView {...props} style={containerStyle}>
-      <BlurView intensity={intensity} tint={styles.blurTint} style={blurStyle} />
+      <BlurView intensity={intensity} tint={blurTint} style={blurStyle} />
       {children}
     </ExpoGlassView>
   )
 })
 
-const createStyles = (theme: Theme) => ({
-  ...StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     container: {
       overflow: 'hidden',
       backgroundColor: theme.colors.glassBackground,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.glassBorder,
     },
-  }),
-  blurTint: (theme.isDark ? 'dark' : 'light') as 'dark' | 'light',
+  })
+  return styles
 })

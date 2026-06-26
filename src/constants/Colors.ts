@@ -36,6 +36,9 @@ export default {
     transparent: 'transparent',
     scannerOverlay: 'rgba(0,0,0,0.55)',
     overlayText: 'rgba(255,255,255,0.82)',
+    codeText: '#333333',
+    codeBg: '#f4f4f5',
+    codeBlockBg: '#f4f4f5',
   },
   dark: {
     text: '#ffffff',
@@ -72,5 +75,8 @@ export default {
     transparent: 'transparent',
     scannerOverlay: 'rgba(0,0,0,0.55)',
     overlayText: 'rgba(255,255,255,0.82)',
+    codeText: '#a8ff78',
+    codeBg: '#2c2c2e',
+    codeBlockBg: '#1c1c1e',
   },
 }

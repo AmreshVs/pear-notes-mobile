@@ -13,12 +13,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
+  commonStyles,
   Durations,
-  GlassIntensity,
   FontWeight,
-  UI_SIZE_4,
-  UI_SIZE_5,
-  UI_SIZE_8,
+  GlassIntensity,
+  Layout,
+  Radii,
+  UI_FONT_SIZE_14,
+  UI_FONT_SIZE_16,
+  UI_FONT_SIZE_20,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -27,14 +30,10 @@ import {
   UI_SIZE_24,
   UI_SIZE_27,
   UI_SIZE_32,
-  UI_SIZE_34,
-  UI_SIZE_38,
+  UI_SIZE_4,
   UI_SIZE_40,
   UI_SIZE_54,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_16,
-  UI_FONT_SIZE_20,
-  commonStyles,
+  UI_SIZE_8,
 } from '@/constants/commonStyles'
 
 interface ResetAppBottomSheetProps {
@@ -150,11 +149,7 @@ export function ResetAppBottomSheet({ visible, onConfirm, onCancel }: ResetAppBo
           pointerEvents={visible ? 'auto' : 'none'}
         >
           {isDark ? (
-            <GlassView
-              intensity={GlassIntensity.low}
-              borderRadius={UI_SIZE_34}
-              style={styles.sheet}
-            >
+            <GlassView intensity={GlassIntensity.low} borderRadius={34} style={styles.sheet}>
               <RNView style={styles.grabber} />
               <RNView style={styles.content}>
                 <Text style={styles.title}>{t('settings.reset.confirmTitle')}</Text>
@@ -230,8 +225,8 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingBottom: UI_SIZE_4,
       gap: UI_SIZE_18,
       borderCurve: 'continuous',
-      borderTopLeftRadius: UI_SIZE_34,
-      borderTopRightRadius: UI_SIZE_34,
+      borderTopLeftRadius: Radii.sheet,
+      borderTopRightRadius: Radii.sheet,
       borderBottomLeftRadius: 0,
       borderBottomRightRadius: 0,
       boxShadow: theme.isDark
@@ -247,8 +242,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     grabber: {
       alignSelf: 'center',
-      width: UI_SIZE_38,
-      height: UI_SIZE_5,
+      width: Layout.grabberWidth,
+      height: Layout.grabberHeight,
       borderRadius: 9999,
       backgroundColor: theme.colors.sheetGrabber,
       marginBottom: UI_SIZE_8,

@@ -24,7 +24,32 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { GlassView } from '@/components/GlassView'
-import { Text, Theme, useTheme, useThemedStyles } from '@/components/Themed'
+import { Text, Theme, useTheme, createThemedStylesheet } from '@/components/Themed'
+import {
+  FontFamily,
+  FontWeight,
+  Layout,
+  Radii,
+  UI_FONT_SIZE_11,
+  UI_FONT_SIZE_13,
+  UI_FONT_SIZE_15,
+  UI_FONT_SIZE_28,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_8,
+  UI_SIZE_10,
+  UI_SIZE_12,
+  UI_SIZE_14,
+  UI_SIZE_18,
+  UI_SIZE_24,
+  UI_SIZE_28,
+  UI_SIZE_36,
+  UI_SIZE_54,
+  UI_SIZE_64,
+  UI_SIZE_80,
+  UI_SIZE_88,
+} from '@/constants/commonStyles'
 
 const TIMELINE_H = 88
 const RECORDING_WINDOW_MS = 30000
@@ -93,7 +118,6 @@ function fmtShort(sec: number) {
 }
 
 interface SheetBodyProps {
-  styles: ReturnType<typeof createStyles>
   colors: Theme['colors']
   isDark: boolean
   status: { title: string; subtitle: string }
@@ -126,7 +150,6 @@ interface SheetBodyProps {
 }
 
 function SheetBody({
-  styles,
   colors,
   isDark,
   status,
@@ -157,6 +180,8 @@ function SheetBody({
   onSeekComplete,
   t,
 }: SheetBodyProps) {
+  const styles = useStyles()
+
   return (
     <>
       <View style={styles.grabber} />
@@ -189,10 +214,8 @@ function SheetBody({
       </View>
 
       <View style={styles.heroBlock}>
-        <Text style={[styles.heroTitle, { color: colors.text }]}>{status.title}</Text>
-        <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>
-          {status.subtitle}
-        </Text>
+        <Text style={styles.heroTitle}>{status.title}</Text>
+        <Text style={styles.heroSubtitle}>{status.subtitle}</Text>
       </View>
 
       <View style={[styles.timelineWrap, hasRecording && styles.timelineWrapPlayback]}>
@@ -215,13 +238,13 @@ function SheetBody({
               <View
                 style={[
                   styles.recordingNeedleCap,
-                  { backgroundColor: colors.error, opacity: isRecording ? 1 : 0.56 },
+                  !isRecording && styles.recordingNeedleCapInactive,
                 ]}
               />
               <View
                 style={[
                   styles.recordingNeedleStem,
-                  { backgroundColor: colors.error, opacity: isRecording ? 1 : 0.46 },
+                  !isRecording && styles.recordingNeedleStemInactive,
                 ]}
               />
             </View>
@@ -244,38 +267,32 @@ function SheetBody({
               />
             </View>
             <View style={styles.playbackTimeRow}>
-              <Text style={[styles.playbackSideTime, { color: colors.textMuted }]}>
-                {fmtShort(currentPlaybackMs / 1000)}
-              </Text>
-              <Text style={[styles.playbackSideTime, { color: colors.textMuted }]}>
-                {fmtShort(totalTimelineMs / 1000)}
-              </Text>
+              <Text style={styles.playbackSideTime}>{fmtShort(currentPlaybackMs / 1000)}</Text>
+              <Text style={styles.playbackSideTime}>{fmtShort(totalTimelineMs / 1000)}</Text>
             </View>
           </View>
         )}
 
         {showRecordingSurface && (
           <View style={styles.recordingRuler}>
-            <Text style={[styles.recordingTick, { color: colors.textMuted }]}>
+            <Text style={styles.recordingTick}>
               {fmtShort(isRecording ? recordingWindowStartSec : 0)}
             </Text>
-            <Text style={[styles.recordingTick, { color: colors.textMuted }]}>
-              {fmtShort(isRecording ? recordingMidSec : 0)}
-            </Text>
-            <Text style={[styles.recordingTick, { color: colors.textMuted }]}>
-              {fmtShort(isRecording ? recordingEndSec : 2)}
-            </Text>
+            <Text style={styles.recordingTick}>{fmtShort(isRecording ? recordingMidSec : 0)}</Text>
+            <Text style={styles.recordingTick}>{fmtShort(isRecording ? recordingEndSec : 2)}</Text>
           </View>
         )}
       </View>
 
       <View style={styles.timerBlock}>
-        <Text style={[styles.timerLabel, { color: colors.textSecondary }]}>
+        <Text style={styles.timerLabel}>
           {hasRecording
             ? t('audioRecorder.timer.playbackPosition')
             : t('audioRecorder.timer.recordingTime')}
         </Text>
-        <Text style={[styles.timer, { color: timerColor }]}>{fmtTimer(timerMs)}</Text>
+        <Text style={[styles.timer, { color: timerColor }, isRecording && styles.timerRecording]}>
+          {fmtTimer(timerMs)}
+        </Text>
       </View>
 
       <View style={[styles.controlsSection, hasRecording && styles.controlsSectionPlayback]}>
@@ -302,7 +319,6 @@ function SheetBody({
                 onPress={onPlayPause}
                 style={({ pressed }) => [
                   styles.primaryTransport,
-                  { backgroundColor: colors.text },
                   pressed && styles.transportPressed,
                 ]}
               >
@@ -333,11 +349,7 @@ function SheetBody({
 
             <Pressable
               onPress={onRecord}
-              style={({ pressed }) => [
-                styles.rerecordButton,
-                { backgroundColor: isDark ? colors.surfaceSecondary : 'rgba(0,0,0,0.05)' },
-                pressed && styles.transportPressed,
-              ]}
+              style={({ pressed }) => [styles.rerecordButton, pressed && styles.transportPressed]}
             >
               <SymbolView
                 name="arrow.clockwise"
@@ -345,9 +357,7 @@ function SheetBody({
                 tintColor={colors.text}
                 weight="semibold"
               />
-              <Text style={[styles.rerecordText, { color: colors.text }]}>
-                {t('audioRecorder.actions.reRecord')}
-              </Text>
+              <Text style={styles.rerecordText}>{t('audioRecorder.actions.reRecord')}</Text>
             </Pressable>
           </>
         ) : (
@@ -360,19 +370,13 @@ function SheetBody({
                   pressed && styles.recordButtonPressed,
                 ]}
               >
-                <View style={[styles.recordOuterRing, { borderColor: colors.error }]}>
-                  <View
-                    style={[
-                      styles.recordInnerCore,
-                      { backgroundColor: colors.error },
-                      isRecording && styles.recordStopCore,
-                    ]}
-                  />
+                <View style={styles.recordOuterRing}>
+                  <View style={[styles.recordInnerCore, isRecording && styles.recordStopCore]} />
                 </View>
               </Pressable>
             </View>
 
-            <Text style={[styles.recordHint, { color: colors.textSecondary }]}>
+            <Text style={styles.recordHint}>
               {isRecording
                 ? t('audioRecorder.actions.stopHint')
                 : t('audioRecorder.actions.startHint')}
@@ -389,7 +393,7 @@ function SheetBody({
 export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderModalProps) {
   const { t } = useTranslation()
   const { colors, isDark } = useTheme()
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles()
   const insets = useSafeAreaInsets()
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
@@ -450,13 +454,12 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     ],
   }))
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     return () => {
       sheetProgress.value = 0
       onCancelRef.current?.()
     }
-  }, [])
+  }, [sheetProgress])
 
   useEffect(() => {
     if (!visible) return
@@ -479,7 +482,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     durationRef.current = 0
     energy = 0.4
     liveBars.value = Array.from({ length: RECORDING_BARS }, () => 0.16)
-  }, [visible])
+  }, [visible, liveBars])
 
   const handleSheetShow = useCallback(() => {
     sheetProgress.value = withTiming(1, {
@@ -600,7 +603,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
         err?.message ?? t('audioRecorder.errors.recordDefault'),
       )
     }
-  }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback])
+  }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback, t])
 
   const handleStop = useCallback(async () => {
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -725,7 +728,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     [hasRecording, phase, player, playerStatus.playing],
   )
 
-  const handleDone = useCallback(async () => {
+  const handleDoneInner = useCallback(async () => {
     stopPlayback()
     try {
       if (phase === 'recording') {
@@ -746,7 +749,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     onDone(uri, durationRef.current || elapsed)
   }, [clearTimer, elapsed, onCancel, onDone, phase, recordedUri, recorder, stopPlayback])
 
-  const handleCancel = useCallback(async () => {
+  const handleCancelInner = useCallback(async () => {
     stopPlayback()
     clearTimer()
     try {
@@ -769,7 +772,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
       title: t('audioRecorder.status.idleTitle'),
       subtitle: t('audioRecorder.status.idleSubtitle'),
     }
-  }, [hasRecording])
+  }, [hasRecording, t])
 
   if (!isPresented) return null
 
@@ -779,24 +782,23 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
       transparent
       animationType="none"
       onShow={handleSheetShow}
-      onRequestClose={handleCancel}
+      onRequestClose={handleCancelInner}
     >
       <View style={styles.overlay} pointerEvents={visible ? 'box-none' : 'none'}>
         <Animated.View
           style={[styles.backdrop, backdropAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
-          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} />
+          <Pressable style={StyleSheet.absoluteFill} onPress={handleCancelInner} />
         </Animated.View>
 
         <Animated.View
-          style={[styles.sheetWrap, { paddingTop: insets.top + 18 }, sheetAnimatedStyle]}
+          style={[styles.sheetWrap, { paddingTop: insets.top + UI_SIZE_18 }, sheetAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
           {isDark ? (
-            <GlassView intensity={70} borderRadius={34} style={styles.sheet}>
+            <GlassView intensity={70} borderRadius={Radii.sheet} style={styles.sheet}>
               <SheetBody
-                styles={styles}
                 colors={colors}
                 isDark={isDark}
                 status={status}
@@ -816,8 +818,8 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
                 recordingMidSec={recordingMidSec}
                 recordingEndSec={recordingEndSec}
                 bottomInset={bottomInset}
-                onCancel={handleCancel}
-                onDone={handleDone}
+                onCancel={handleCancelInner}
+                onDone={handleDoneInner}
                 onRecord={handleRecord}
                 onStop={handleStop}
                 onPlayPause={handlePlayPause}
@@ -831,7 +833,6 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
           ) : (
             <View style={[styles.sheet, styles.sheetLight]}>
               <SheetBody
-                styles={styles}
                 colors={colors}
                 isDark={isDark}
                 status={status}
@@ -851,8 +852,8 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
                 recordingMidSec={recordingMidSec}
                 recordingEndSec={recordingEndSec}
                 bottomInset={bottomInset}
-                onCancel={handleCancel}
-                onDone={handleDone}
+                onCancel={handleCancelInner}
+                onDone={handleDoneInner}
                 onRecord={handleRecord}
                 onStop={handleStop}
                 onPlayPause={handlePlayPause}
@@ -870,8 +871,8 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
   )
 }
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     overlay: {
       flex: 1,
       justifyContent: 'flex-end',
@@ -886,28 +887,28 @@ const createStyles = (theme: Theme) =>
       paddingHorizontal: 0,
     },
     sheet: {
-      paddingHorizontal: 18,
-      paddingTop: 10,
-      paddingBottom: 4,
-      gap: 14,
+      paddingHorizontal: UI_SIZE_18,
+      paddingTop: UI_SIZE_10,
+      paddingBottom: UI_SIZE_4,
+      gap: UI_SIZE_14,
       borderCurve: 'continuous',
-      borderTopLeftRadius: 34,
-      borderTopRightRadius: 34,
+      borderTopLeftRadius: Radii.sheet,
+      borderTopRightRadius: Radii.sheet,
       borderBottomLeftRadius: 0,
       borderBottomRightRadius: 0,
       boxShadow: theme.isDark ? '0 -10px 32px rgba(0,0,0,0.45)' : '0 -12px 40px rgba(0,0,0,0.22)',
     },
     sheetLight: {
-      backgroundColor: '#f2f2f7',
+      backgroundColor: theme.colors.background,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderLeftWidth: StyleSheet.hairlineWidth,
       borderRightWidth: StyleSheet.hairlineWidth,
-      borderColor: 'rgba(0,0,0,0.14)',
+      borderColor: theme.colors.separator,
     },
     grabber: {
       alignSelf: 'center',
-      width: 38,
-      height: 5,
+      width: Layout.grabberWidth,
+      height: Layout.grabberHeight,
       borderRadius: 999,
       backgroundColor: theme.isDark ? theme.colors.border : 'rgba(0,0,0,0.2)',
     },
@@ -920,44 +921,48 @@ const createStyles = (theme: Theme) =>
       opacity: 0.48,
     },
     headerIconButton: {
-      width: 36,
-      height: 36,
+      width: UI_SIZE_36,
+      height: UI_SIZE_36,
       borderRadius: 999,
       borderCurve: 'continuous',
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.isDark ? theme.colors.controlBackground : 'rgba(0,0,0,0.08)',
       borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
-      borderColor: 'rgba(0,0,0,0.1)',
+      borderColor: theme.colors.borderSecondary,
     },
     heroBlock: {
       alignItems: 'center',
-      gap: 6,
-      paddingHorizontal: 14,
-      minHeight: 80,
+      gap: UI_SIZE_6,
+      paddingHorizontal: UI_SIZE_14,
+      minHeight: UI_SIZE_80,
       justifyContent: 'center',
     },
     heroTitle: {
-      fontSize: 29,
+      fontSize: UI_FONT_SIZE_28,
       lineHeight: 34,
-      fontWeight: '700',
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       textAlign: 'center',
       letterSpacing: -0.7,
+      color: theme.colors.text,
     },
     heroSubtitle: {
-      fontSize: 15,
+      fontSize: UI_FONT_SIZE_15,
       lineHeight: 21,
+      fontFamily: FontFamily.regular,
       textAlign: 'center',
       maxWidth: 290,
+      color: theme.colors.textSecondary,
     },
     timelineWrap: {
-      gap: 6,
-      paddingHorizontal: 6,
+      gap: UI_SIZE_6,
+      paddingHorizontal: UI_SIZE_6,
       minHeight: TIMELINE_H + 48,
     },
     timelineWrapPlayback: {
       minHeight: 84,
-      gap: 8,
+      gap: UI_SIZE_8,
     },
     recordingWave: {
       height: TIMELINE_H + 28,
@@ -992,36 +997,43 @@ const createStyles = (theme: Theme) =>
       marginLeft: -1,
     },
     recordingNeedleCap: {
-      width: 12,
-      height: 12,
+      width: UI_SIZE_12,
+      height: UI_SIZE_12,
       borderRadius: 999,
+      backgroundColor: theme.colors.error,
+    },
+    recordingNeedleCapInactive: {
+      opacity: 0.56,
     },
     recordingNeedleStem: {
       flex: 1,
       width: 2,
       borderRadius: 999,
+      backgroundColor: theme.colors.error,
+    },
+    recordingNeedleStemInactive: {
+      opacity: 0.46,
     },
     recordingRuler: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingTop: 6,
-      paddingHorizontal: 2,
+      paddingTop: UI_SIZE_6,
+      paddingHorizontal: UI_SIZE_2,
       minHeight: 22,
     },
     recordingTick: {
-      fontSize: 11,
-      fontVariant: ['tabular-nums'],
-      minWidth: 36,
-      textAlign: 'center',
+      fontSize: UI_FONT_SIZE_11,
+      fontFamily: FontFamily.mono,
       opacity: 0.78,
+      color: theme.colors.textMuted,
     },
     timelineOuter: {
       height: 54,
-      gap: 8,
+      gap: UI_SIZE_8,
     },
     playbackTrackWrap: {
-      height: 24,
+      height: UI_SIZE_24,
       position: 'relative',
       justifyContent: 'center',
     },
@@ -1029,6 +1041,7 @@ const createStyles = (theme: Theme) =>
       height: 2,
       borderRadius: 999,
       width: '100%',
+      backgroundColor: theme.colors.separator,
     },
     playbackSlider: {
       position: 'absolute',
@@ -1043,30 +1056,36 @@ const createStyles = (theme: Theme) =>
       alignItems: 'center',
     },
     playbackSideTime: {
-      fontSize: 11,
-      fontVariant: ['tabular-nums'],
-      minWidth: 40,
+      fontSize: UI_FONT_SIZE_11,
+      fontFamily: FontFamily.mono,
+      color: theme.colors.textMuted,
     },
     timerBlock: {
       alignItems: 'center',
-      gap: 4,
+      gap: UI_SIZE_4,
       minHeight: 74,
       justifyContent: 'center',
     },
     timerLabel: {
-      fontSize: 13,
-      fontWeight: '600',
+      fontSize: UI_FONT_SIZE_13,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.textSecondary,
     },
     timer: {
       fontSize: 50,
       lineHeight: 56,
       fontWeight: '200',
-      fontVariant: ['tabular-nums'],
+      fontFamily: FontFamily.mono,
       letterSpacing: -1.8,
+      color: theme.colors.text,
+    },
+    timerRecording: {
+      color: theme.colors.error,
     },
     controlsSection: {
       alignItems: 'center',
-      gap: 12,
+      gap: UI_SIZE_12,
       paddingBottom: 0,
       minHeight: 142,
       justifyContent: 'center',
@@ -1077,18 +1096,18 @@ const createStyles = (theme: Theme) =>
     transportRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 18,
+      gap: UI_SIZE_18,
     },
     secondaryTransport: {
-      width: 54,
-      height: 54,
+      width: UI_SIZE_54,
+      height: UI_SIZE_54,
       borderRadius: 999,
       borderCurve: 'continuous',
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.isDark ? theme.colors.controlBackground : 'rgba(0,0,0,0.07)',
       borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
-      borderColor: 'rgba(0,0,0,0.1)',
+      borderColor: theme.colors.borderSecondary,
     },
     primaryTransport: {
       width: 78,
@@ -1097,6 +1116,7 @@ const createStyles = (theme: Theme) =>
       borderCurve: 'continuous',
       alignItems: 'center',
       justifyContent: 'center',
+      backgroundColor: theme.colors.text,
       boxShadow: theme.isDark ? '0 10px 24px rgba(0,0,0,0.3)' : '0 10px 24px rgba(15,23,42,0.16)',
     },
     transportPressed: {
@@ -1106,17 +1126,20 @@ const createStyles = (theme: Theme) =>
     rerecordButton: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 8,
-      paddingHorizontal: 18,
-      paddingVertical: 12,
+      gap: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_18,
+      paddingVertical: UI_SIZE_12,
       borderRadius: 999,
       borderCurve: 'continuous',
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.18)',
+      backgroundColor: theme.isDark ? theme.colors.surfaceSecondary : 'rgba(0,0,0,0.05)',
     },
     rerecordText: {
-      fontSize: 15,
-      fontWeight: '600',
+      fontSize: UI_FONT_SIZE_15,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
     },
     recordStage: {
       alignItems: 'center',
@@ -1124,7 +1147,7 @@ const createStyles = (theme: Theme) =>
       minHeight: 84,
     },
     recordButton: {
-      padding: 10,
+      padding: UI_SIZE_10,
       borderRadius: 999,
       borderCurve: 'continuous',
     },
@@ -1133,29 +1156,35 @@ const createStyles = (theme: Theme) =>
       transform: [{ scale: 0.98 }],
     },
     recordOuterRing: {
-      width: 88,
-      height: 88,
+      width: UI_SIZE_88,
+      height: UI_SIZE_88,
       borderRadius: 999,
       borderWidth: 3,
       alignItems: 'center',
       justifyContent: 'center',
       borderCurve: 'continuous',
+      borderColor: theme.colors.error,
       backgroundColor: theme.isDark ? 'rgba(255,69,58,0.08)' : 'rgba(255,69,58,0.06)',
     },
     recordInnerCore: {
-      width: 64,
-      height: 64,
+      width: UI_SIZE_64,
+      height: UI_SIZE_64,
       borderRadius: 999,
       borderCurve: 'continuous',
+      backgroundColor: theme.colors.error,
     },
     recordStopCore: {
-      width: 28,
-      height: 28,
+      width: UI_SIZE_28,
+      height: UI_SIZE_28,
       borderRadius: 8,
     },
     recordHint: {
-      fontSize: 15,
+      fontSize: UI_FONT_SIZE_15,
       lineHeight: 20,
       textAlign: 'center',
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textSecondary,
     },
   })
+  return styles
+})

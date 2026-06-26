@@ -14,7 +14,16 @@ import { useSelector } from 'react-redux'
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
-import { Theme, useTheme, useThemedStyles } from './Themed'
+import { createThemedStylesheet, useTheme } from './Themed'
+
+import {
+  FontWeight,
+  UI_FONT_SIZE_15,
+  UI_SIZE_12,
+  UI_SIZE_20,
+  UI_SIZE_8,
+  UI_STROKE_WIDTH_1_5,
+} from '@/constants/commonStyles'
 
 export interface TiptapStyleState {
   bold: { isActive: boolean }
@@ -157,7 +166,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     },
     ref,
   ) => {
-    const styles = useThemedStyles(createStyles)
+    const styles = useStyles()
     const theme = useTheme()
     const { colors } = theme
     const fontSize = useSelector(getEditorFontSize)
@@ -364,6 +373,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     }, [backgroundColor, injectBackgroundColor])
 
     const prevIsDarkRef = useRef(theme.isDark)
+
     useEffect(() => {
       if (prevIsDarkRef.current === theme.isDark) return
       prevIsDarkRef.current = theme.isDark
@@ -374,6 +384,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     const prevFontSizeRef = useRef(fontSize)
     const prevFontFamilyRef = useRef(fontFamily)
+
     useEffect(() => {
       if (prevFontSizeRef.current === fontSize && prevFontFamilyRef.current === fontFamily) return
       prevFontSizeRef.current = fontSize
@@ -508,11 +519,19 @@ TiptapEditorComponent.displayName = 'TiptapEditor'
 
 export const TiptapEditor = memo(TiptapEditorComponent)
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
-    container: { flex: 1, backgroundColor: theme.colors.background },
-    flex: { flex: 1 },
-    webView: { flex: 1, backgroundColor: theme.colors.background },
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    flex: {
+      flex: 1,
+    },
+    webView: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
     overlay: {
       ...StyleSheet.absoluteFill,
       justifyContent: 'center',
@@ -520,20 +539,22 @@ const createStyles = (theme: Theme) =>
       zIndex: 10,
     },
     errorText: {
-      fontSize: 15,
-      marginBottom: 12,
+      fontSize: UI_FONT_SIZE_15,
+      marginBottom: UI_SIZE_12,
       color: theme.colors.textSecondary,
     },
     retryBtn: {
-      paddingHorizontal: 20,
-      paddingVertical: 8,
-      borderRadius: 20,
-      borderWidth: 1.5,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_8,
+      borderRadius: UI_SIZE_20,
+      borderWidth: UI_STROKE_WIDTH_1_5,
       borderColor: theme.colors.primary,
     },
     retryText: {
-      fontSize: 15,
-      fontWeight: '600',
+      fontSize: UI_FONT_SIZE_15,
+      fontWeight: FontWeight.semibold,
       color: theme.colors.primary,
     },
   })
+  return styles
+})
