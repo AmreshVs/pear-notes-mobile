@@ -33,6 +33,9 @@ export default {
     white: '#ffffff',
     black: '#000000',
     qrDark: '#111111',
+    transparent: 'transparent',
+    scannerOverlay: 'rgba(0,0,0,0.55)',
+    overlayText: 'rgba(255,255,255,0.82)',
   },
   dark: {
     text: '#ffffff',
@@ -66,5 +69,8 @@ export default {
     white: '#ffffff',
     black: '#000000',
     qrDark: '#111111',
+    transparent: 'transparent',
+    scannerOverlay: 'rgba(0,0,0,0.55)',
+    overlayText: 'rgba(255,255,255,0.82)',
   },
 }

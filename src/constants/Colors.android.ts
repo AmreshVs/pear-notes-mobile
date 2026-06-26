@@ -32,6 +32,9 @@ export default {
     sheetCancelBackground: 'rgba(0, 0, 0, 0.05)',
     white: '#ffffff',
     qrDark: '#111111',
+    transparent: 'transparent',
+    scannerOverlay: 'rgba(0,0,0,0.55)',
+    overlayText: 'rgba(255,255,255,0.82)',
   },
   dark: {
     text: '#FFFFFF',
@@ -64,5 +67,8 @@ export default {
     sheetCancelBackground: 'rgba(255, 255, 255, 0.06)',
     white: '#ffffff',
     qrDark: '#111111',
+    transparent: 'transparent',
+    scannerOverlay: 'rgba(0,0,0,0.55)',
+    overlayText: 'rgba(255,255,255,0.82)',
   },
 }

@@ -1,4 +1,4 @@
-import { ActionSheetIOS } from 'react-native';
+import { ActionSheetIOS } from 'react-native'
 
 export function getSortOptions(t: (key: string) => string) {
   return [
@@ -34,4 +34,14 @@ export function showPicker(
       if (index < options.length) onSelect(options[index].value)
     },
   )
+}
+
+export function getPlatformNames(t: (key: string) => string): Record<string, string> {
+  return {
+    darwin: t('sync.platforms.macOS'),
+    win32: t('sync.platforms.Windows'),
+    linux: t('sync.platforms.Linux'),
+    android: t('sync.platforms.Android'),
+    ios: t('sync.platforms.iOS'),
+  }
 }
