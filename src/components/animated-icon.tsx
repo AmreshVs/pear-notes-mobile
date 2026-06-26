@@ -1,38 +1,45 @@
 import { Image } from 'expo-image'
-import { useState } from 'react'
-import { Dimensions, StyleSheet, View } from 'react-native'
+import { useState, useMemo } from 'react'
+import { useWindowDimensions, StyleSheet, View } from 'react-native'
 import Animated, { Easing, Keyframe } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
 
-import { useColors } from './Themed'
+import { createThemedStylesheet } from './Themed'
 
-const INITIAL_SCALE_FACTOR = Dimensions.get('screen').height / 90
+import { commonStyles } from '@/constants/commonStyles'
+
 const DURATION = 600
 
 export function AnimatedSplashOverlay() {
-  const colors = useColors()
+  const { height } = useWindowDimensions()
+  const initialScaleFactor = height / 90
   const [visible, setVisible] = useState(true)
+  const styles = useStyles()
+
+  const splashKeyframe = useMemo(
+    () =>
+      new Keyframe({
+        0: {
+          transform: [{ scale: initialScaleFactor }],
+          opacity: 1,
+        },
+        20: {
+          opacity: 1,
+        },
+        70: {
+          opacity: 0,
+          easing: Easing.elastic(0.7),
+        },
+        100: {
+          opacity: 0,
+          transform: [{ scale: 1 }],
+          easing: Easing.elastic(0.7),
+        },
+      }),
+    [initialScaleFactor],
+  )
 
   if (!visible) return null
-
-  const splashKeyframe = new Keyframe({
-    0: {
-      transform: [{ scale: INITIAL_SCALE_FACTOR }],
-      opacity: 1,
-    },
-    20: {
-      opacity: 1,
-    },
-    70: {
-      opacity: 0,
-      easing: Easing.elastic(0.7),
-    },
-    100: {
-      opacity: 0,
-      transform: [{ scale: 1 }],
-      easing: Easing.elastic(0.7),
-    },
-  })
 
   return (
     <Animated.View
@@ -42,20 +49,10 @@ export function AnimatedSplashOverlay() {
           scheduleOnRN(setVisible, false)
         }
       })}
-      style={[styles.backgroundSolidColor, { backgroundColor: colors.primary }]}
+      style={styles.backgroundSolidColor}
     />
   )
 }
-
-const keyframe = new Keyframe({
-  0: {
-    transform: [{ scale: INITIAL_SCALE_FACTOR }],
-  },
-  100: {
-    transform: [{ scale: 1 }],
-    easing: Easing.elastic(0.7),
-  },
-})
 
 const logoKeyframe = new Keyframe({
   0: {
@@ -84,17 +81,31 @@ const glowKeyframe = new Keyframe({
 })
 
 export function AnimatedIcon() {
-  const colors = useColors()
+  const { height } = useWindowDimensions()
+  const initialScaleFactor = height / 90
+  const styles = useStyles()
+
+  const keyframe = useMemo(
+    () =>
+      new Keyframe({
+        0: {
+          transform: [{ scale: initialScaleFactor }],
+        },
+        100: {
+          transform: [{ scale: 1 }],
+          easing: Easing.elastic(0.7),
+        },
+      }),
+    [initialScaleFactor],
+  )
+
   return (
     <View style={styles.iconContainer}>
       <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
       </Animated.View>
 
-      <Animated.View
-        entering={keyframe.duration(DURATION)}
-        style={[styles.background, { backgroundColor: colors.primary }]}
-      />
+      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
       <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
         <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
       </Animated.View>
@@ -102,36 +113,39 @@ export function AnimatedIcon() {
   )
 }
 
-const styles = StyleSheet.create({
-  imageContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  glow: {
-    width: 201,
-    height: 201,
-    position: 'absolute',
-  },
-  iconContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 128,
-    height: 128,
-    zIndex: 100,
-  },
-  image: {
-    position: 'absolute',
-    width: 76,
-    height: 71,
-  },
-  background: {
-    borderRadius: 40,
-    width: 128,
-    height: 128,
-    position: 'absolute',
-  },
-  backgroundSolidColor: {
-    ...StyleSheet.absoluteFill,
-    zIndex: 1000,
-  },
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    imageContainer: {
+      ...commonStyles.centered,
+    },
+    glow: {
+      width: 201,
+      height: 201,
+      position: 'absolute',
+    },
+    iconContainer: {
+      ...commonStyles.centered,
+      width: 128,
+      height: 128,
+      zIndex: 100,
+    },
+    image: {
+      position: 'absolute',
+      width: 76,
+      height: 71,
+    },
+    background: {
+      borderRadius: 40,
+      width: 128,
+      height: 128,
+      position: 'absolute',
+      backgroundColor: theme.colors.primary,
+    },
+    backgroundSolidColor: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: theme.colors.primary,
+      zIndex: 1000,
+    },
+  })
+  return styles
 })

@@ -3,9 +3,17 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity } from 'react-native'
 
-import { Text, Theme, View, useThemedStyles } from './Themed'
+import { createThemedStylesheet, Text, View } from './Themed'
 
-import { FontSize, FontWeight, Radii, Space } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  FontSize,
+  FontWeight,
+  Radii,
+  Space,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_64,
+} from '@/constants/commonStyles'
 
 interface ErrorScreenProps {
   message: string
@@ -14,29 +22,37 @@ interface ErrorScreenProps {
 
 export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) => {
   const { t } = useTranslation()
-  const styles = useThemedStyles(createStyles)
+  const styles = useStyles()
 
   return (
     <View style={styles.container}>
-      <AlertCircle size={64} color={styles.icon.color} strokeWidth={1.5} style={styles.icon} />
+      <AlertCircle
+        size={UI_ICON_SIZE_64}
+        color={styles.icon.color}
+        strokeWidth={1.5}
+        style={styles.icon}
+      />
       <Text style={styles.title}>{t('error.initFailed')}</Text>
       <Text style={styles.message}>{message}</Text>
 
       <TouchableOpacity style={styles.button} onPress={onRetry} activeOpacity={0.7}>
-        <RotateCcw size={20} color={styles.buttonText.color} style={styles.buttonIcon} />
+        <RotateCcw
+          size={UI_ICON_SIZE_20}
+          color={styles.buttonText.color}
+          style={styles.buttonIcon}
+        />
         <Text style={styles.buttonText}>{t('error.retry')}</Text>
       </TouchableOpacity>
     </View>
   )
 }
 
-const createStyles = (theme: Theme) =>
-  StyleSheet.create({
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
     container: {
-      flex: 1,
+      ...commonStyles.flex1,
+      ...commonStyles.centered,
       backgroundColor: theme.colors.background,
-      alignItems: 'center',
-      justifyContent: 'center',
       padding: Space.lg,
     },
     icon: {
@@ -57,20 +73,21 @@ const createStyles = (theme: Theme) =>
       lineHeight: 22,
     },
     button: {
+      ...commonStyles.row,
+      ...commonStyles.centered,
       backgroundColor: theme.colors.primary,
       paddingHorizontal: Space.xl,
       paddingVertical: 14,
       borderRadius: Radii.md,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     buttonIcon: {
       marginRight: Space.sm,
     },
     buttonText: {
-      color: theme.isDark ? '#000' : '#fff',
+      color: theme.isDark ? theme.colors.black : theme.colors.white,
       fontSize: FontSize.base,
       fontWeight: FontWeight.semibold,
     },
   })
+  return styles
+})
