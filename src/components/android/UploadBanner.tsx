@@ -5,9 +5,8 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_11,
-  UI_FONT_SIZE_13,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
@@ -68,13 +67,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       flex: 1,
     },
     uploadName: {
-      fontSize: UI_FONT_SIZE_13,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
     uploadStatus: {
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
       marginTop: 1,

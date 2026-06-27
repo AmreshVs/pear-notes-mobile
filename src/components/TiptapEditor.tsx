@@ -17,8 +17,8 @@ import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 import { createThemedStylesheet, useTheme } from './Themed'
 
 import {
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_15,
   UI_SIZE_12,
   UI_SIZE_20,
   UI_SIZE_8,
@@ -539,7 +539,7 @@ const useStyles = createThemedStylesheet((theme) => {
       zIndex: 10,
     },
     errorText: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       marginBottom: UI_SIZE_12,
       color: theme.colors.textSecondary,
     },
@@ -551,7 +551,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderColor: theme.colors.primary,
     },
     retryText: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       color: theme.colors.primary,
     },

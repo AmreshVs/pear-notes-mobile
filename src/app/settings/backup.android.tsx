@@ -28,11 +28,8 @@ import { createThemedStylesheetWithHooks, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_16,
-  UI_FONT_SIZE_20,
-  UI_FONT_SIZE_24,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
@@ -390,7 +387,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.centered,
     },
     headerTitle: {
-      fontSize: UI_FONT_SIZE_20,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,
@@ -415,7 +412,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_24,
     },
     heroTitle: {
-      fontSize: UI_FONT_SIZE_24,
+      fontSize: FontSize.heading,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,
@@ -423,7 +420,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_12,
     },
     heroDesc: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
       textAlign: 'center',
@@ -443,7 +440,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_8,
     },
     primaryBtnText: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.black,
@@ -457,7 +454,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_8,
     },
     secondaryBtnText: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
@@ -506,7 +503,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.centered,
     },
     progressTitle: {
-      fontSize: UI_FONT_SIZE_20,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,
@@ -514,7 +511,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_8,
     },
     progressDesc: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
       textAlign: 'center',
@@ -543,7 +540,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       backgroundColor: hexWithAlpha(c.onSurface, 0.08),
     },
     cancelBtnText: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.primary,
@@ -562,7 +559,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       borderColor: theme.colors.error,
     },
     clearBtnText: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.error,
@@ -580,7 +577,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.centered,
     },
     clearConfirmText: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.white,
@@ -598,13 +595,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_4,
     },
     recoveryTitle: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,
     },
     recoveryDesc: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
       lineHeight: UI_SIZE_20,
@@ -623,7 +620,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     keyText: {
       flex: 1,
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: c.onSurface,
       marginRight: UI_SIZE_8,
@@ -637,7 +634,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       alignItems: 'center',
     },
     copyBtnText: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.black,

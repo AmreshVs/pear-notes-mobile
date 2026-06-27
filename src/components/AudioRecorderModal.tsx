@@ -18,13 +18,10 @@ import {
 } from '@/components/useAudioRecorderModal'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
   Layout,
   Radii,
-  UI_FONT_SIZE_11,
-  UI_FONT_SIZE_13,
-  UI_FONT_SIZE_15,
-  UI_FONT_SIZE_28,
   UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_6,
@@ -536,7 +533,7 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'center',
     },
     heroTitle: {
-      fontSize: UI_FONT_SIZE_28,
+      fontSize: FontSize.heading,
       lineHeight: 34,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
@@ -545,7 +542,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
     },
     heroSubtitle: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       lineHeight: 21,
       fontFamily: FontFamily.regular,
       textAlign: 'center',
@@ -620,7 +617,7 @@ const useStyles = createThemedStylesheet((theme) => {
       minHeight: 22,
     },
     recordingTick: {
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.mono,
       opacity: 0.78,
       color: theme.colors.textMuted,
@@ -653,7 +650,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
     },
     playbackSideTime: {
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.mono,
       color: theme.colors.textMuted,
     },
@@ -664,7 +661,7 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'center',
     },
     timerLabel: {
-      fontSize: UI_FONT_SIZE_13,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       color: theme.colors.textSecondary,
@@ -735,7 +732,7 @@ const useStyles = createThemedStylesheet((theme) => {
         : theme.colors.sheetCancelBackground,
     },
     rerecordText: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
@@ -778,7 +775,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: 8,
     },
     recordHint: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       lineHeight: 20,
       textAlign: 'center',
       fontFamily: FontFamily.regular,

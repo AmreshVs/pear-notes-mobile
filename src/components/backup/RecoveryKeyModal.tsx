@@ -117,7 +117,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.controlBackground,
       color: theme.colors.text,
       fontFamily: FontFamily.regular,
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       paddingHorizontal: Space.md,
       marginBottom: Space.xl,
     },
@@ -134,7 +134,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
     },
     cancelBtnText: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.textMuted,
@@ -148,7 +148,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
     },
     submitBtnText: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.black,

@@ -169,7 +169,7 @@ const createStyles = (theme: Theme) =>
       backgroundColor: theme.colors.transparent,
     },
     count: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       color: theme.colors.textSecondary,
       opacity: 0.6,
     },

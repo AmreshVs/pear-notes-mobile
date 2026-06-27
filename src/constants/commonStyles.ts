@@ -1,28 +1,13 @@
 import { Platform, StyleSheet } from 'react-native'
 
 export const FontSize = {
-  micro: 10,
-  caption: 11,
-  small: 12,
+  caption: 12,
   body: 14,
-  base: 16,
-  subtitle: 17,
-  title: 18,
-  titleLarge: 20,
+  subtitle: 16,
+  title: 20,
   heading: 24,
   hero: 32,
 } as const
-
-export const UI_FONT_SIZE_10 = 10
-export const UI_FONT_SIZE_11 = 11
-export const UI_FONT_SIZE_12 = 12
-export const UI_FONT_SIZE_14 = 14
-export const UI_FONT_SIZE_16 = 16
-export const UI_FONT_SIZE_17 = 17
-export const UI_FONT_SIZE_18 = 18
-export const UI_FONT_SIZE_20 = 20
-export const UI_FONT_SIZE_24 = 24
-export const UI_FONT_SIZE_32 = 32
 
 export const UI_SIZE_2 = 2
 export const UI_SIZE_4 = 4
@@ -62,12 +47,6 @@ export const UI_SIZE_200 = 200
 export const UI_SIZE_280 = 280
 export const UI_SIZE_9999 = 9999
 
-export const UI_FONT_SIZE_13 = 13
-export const UI_FONT_SIZE_15 = 15
-export const UI_FONT_SIZE_28 = 28
-export const UI_FONT_SIZE_26 = 26
-export const UI_FONT_SIZE_22 = 22
-export const UI_FONT_SIZE_19 = 19
 export const UI_ICON_SIZE_18 = 18
 export const UI_ICON_SIZE_20 = 20
 export const UI_ICON_SIZE_22 = 22

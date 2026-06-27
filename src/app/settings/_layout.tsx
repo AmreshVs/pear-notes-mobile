@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
 
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
-import { FontWeight, UI_FONT_SIZE_17 } from '@/constants/commonStyles'
+import { FontSize, FontWeight } from '@/constants/commonStyles'
 
 export default function SettingsLayout() {
   const { t } = useTranslation()
@@ -33,7 +33,7 @@ const useStyles = createThemedStylesheet((theme) => {
     headerTitle: {
       color: theme.colors.text,
       fontWeight: FontWeight.semibold,
-      fontSize: UI_FONT_SIZE_17,
+      fontSize: FontSize.subtitle,
     },
     header: {
       backgroundColor: theme.colors.background,

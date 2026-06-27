@@ -22,9 +22,7 @@ import {
   UI_SIZE_42,
   UI_SIZE_280,
   UI_SIZE_9999,
-  UI_FONT_SIZE_13,
-  UI_FONT_SIZE_15,
-  UI_FONT_SIZE_18,
+  FontSize,
 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -164,17 +162,17 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       bottom: insets.bottom + UI_SIZE_24,
     },
     scannerTitle: {
-      fontSize: UI_FONT_SIZE_18,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       textAlign: 'center',
       color: theme.colors.white,
     },
     scannerDesc: {
-      fontSize: UI_FONT_SIZE_13,
+      fontSize: FontSize.body,
       lineHeight: UI_SIZE_20,
       textAlign: 'center',
-      color: 'rgba(255,255,255,0.8)',
+      color: theme.colors.overlayText,
       fontFamily: FontFamily.regular,
     },
     permissionCard: {
@@ -191,7 +189,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       backgroundColor: c.primary,
     },
     permissionBtnText: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onPrimary || theme.colors.text,
@@ -201,8 +199,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingVertical: UI_SIZE_8,
     },
     permissionCancelText: {
-      fontSize: UI_FONT_SIZE_13,
-      color: 'rgba(255,255,255,0.7)',
+      fontSize: FontSize.body,
+      color: theme.colors.overlayTextMuted,
       fontFamily: FontFamily.regular,
     },
   })

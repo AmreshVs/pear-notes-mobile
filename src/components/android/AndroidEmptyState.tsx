@@ -8,11 +8,8 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_11,
-  UI_FONT_SIZE_13,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_20,
   UI_ICON_SIZE_48,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -117,7 +114,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingHorizontal: UI_SIZE_40,
     },
     title: {
-      fontSize: UI_FONT_SIZE_20,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       marginTop: UI_SIZE_16,
@@ -125,7 +122,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       color: c.onSurface,
     },
     subtitle: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       textAlign: 'center',
       fontFamily: FontFamily.regular,
       lineHeight: UI_SIZE_20,
@@ -144,7 +141,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       backgroundColor: hexWithAlpha(c.outlineVariant, 0.3),
     },
     linkTitle: {
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       letterSpacing: 1.2,
@@ -152,7 +149,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       color: c.onSurface,
     },
     linkSub: {
-      fontSize: UI_FONT_SIZE_13,
+      fontSize: FontSize.body,
       marginBottom: UI_SIZE_18,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
@@ -169,7 +166,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       opacity: 0.8,
     },
     linkBtnText: {
-      fontSize: UI_FONT_SIZE_13,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onPrimaryContainer,

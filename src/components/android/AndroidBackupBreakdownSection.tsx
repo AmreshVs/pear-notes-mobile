@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontWeight, UI_FONT_SIZE_12, UI_FONT_SIZE_14, UI_ICON_SIZE_20, UI_SIZE_12, UI_SIZE_20, UI_SIZE_24, UI_SIZE_28, UI_SIZE_8 } from '@/constants/commonStyles'
+import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_20, UI_SIZE_12, UI_SIZE_20, UI_SIZE_24, UI_SIZE_28, UI_SIZE_8 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -127,7 +127,7 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
       marginBottom: UI_SIZE_8,
     },
     sectionTitle: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurfaceVariant,
@@ -150,18 +150,18 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
       gap: UI_SIZE_12,
     },
     breakdownTitle: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.medium,
       fontFamily: FontFamily.medium,
       color: c.onSurface,
     },
     breakdownCount: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
     },
     breakdownSize: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,

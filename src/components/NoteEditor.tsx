@@ -14,9 +14,6 @@ import { createThemedStylesheet, useColors } from './Themed'
 import {
   commonStyles,
   FontSize,
-  UI_FONT_SIZE_19,
-  UI_FONT_SIZE_22,
-  UI_FONT_SIZE_26,
   UI_SIZE_4,
   UI_SIZE_6,
   UI_SIZE_10,
@@ -129,9 +126,9 @@ const useStyles = createThemedStylesheet((theme) => {
   })
 
   const htmlStyle = {
-    h1: { fontSize: UI_FONT_SIZE_26, bold: true },
-    h2: { fontSize: UI_FONT_SIZE_22, bold: true },
-    h3: { fontSize: UI_FONT_SIZE_19, bold: true },
+    h1: { fontSize: FontSize.heading, bold: true },
+    h2: { fontSize: FontSize.title, bold: true },
+    h3: { fontSize: FontSize.subtitle, bold: true },
     blockquote: {
       borderColor: theme.colors.primary,
       borderWidth: 3,

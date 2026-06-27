@@ -374,7 +374,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xs,
     },
     recoveryTitle: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: theme.colors.text,
@@ -476,7 +476,7 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: Space.sm,
     },
     primaryBtnText: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.black,
@@ -492,7 +492,7 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: Space.sm,
     },
     secondaryBtnText: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.text,
@@ -565,7 +565,7 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.xxl,
     },
     cancelBtnText: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.primary,
@@ -589,7 +589,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderColor: theme.colors.error,
     },
     clearBtnText: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.error,
@@ -602,7 +602,7 @@ const useStyles = createThemedStylesheet((theme) => {
       ...commonStyles.centered,
     },
     clearConfirmText: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.white,

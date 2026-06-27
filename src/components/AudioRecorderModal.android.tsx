@@ -17,12 +17,8 @@ import {
 } from '@/components/useAudioRecorderModal'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_10,
-  UI_FONT_SIZE_12,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_15,
-  UI_FONT_SIZE_24,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_28,
@@ -519,7 +515,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       marginBottom: UI_SIZE_24,
     },
     heroTitle: {
-      fontSize: UI_FONT_SIZE_24,
+      fontSize: FontSize.heading,
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       textAlign: 'center',
@@ -528,7 +524,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       color: theme.colors.text,
     },
     heroSubtitle: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       fontWeight: FontWeight.regular,
       textAlign: 'center',
@@ -594,7 +590,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       paddingHorizontal: UI_SIZE_2,
     },
     recordingTick: {
-      fontSize: UI_FONT_SIZE_10,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.mono,
       color: theme.colors.textMuted,
     },
@@ -623,7 +619,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       marginTop: 2,
     },
     playbackSideTime: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.mono,
       color: theme.colors.textMuted,
     },
@@ -632,7 +628,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       marginBottom: UI_SIZE_40,
     },
     timerLabel: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       textTransform: 'uppercase',
@@ -691,7 +687,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       borderRadius: UI_SIZE_8,
     },
     recordHint: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.medium,
       fontWeight: FontWeight.medium,
       opacity: 0.8,
@@ -737,7 +733,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       opacity: 0.7,
     },
     rerecordText: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
       color: md3Theme.colors.onSecondaryContainer,

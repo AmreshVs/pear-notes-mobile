@@ -7,10 +7,8 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_13,
-  UI_FONT_SIZE_15,
-  UI_FONT_SIZE_20,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_SIZE_12,
@@ -152,7 +150,7 @@ const useStyles = createThemedStylesheetWithHooks(
         gap: UI_SIZE_4,
       },
       title: {
-        fontSize: UI_FONT_SIZE_20,
+        fontSize: FontSize.title,
         fontWeight: FontWeight.bold,
         fontFamily: FontFamily.bold,
         letterSpacing: -0.3,
@@ -160,7 +158,7 @@ const useStyles = createThemedStylesheetWithHooks(
         color: c.onSurface,
       },
       subtitle: {
-        fontSize: UI_FONT_SIZE_13,
+        fontSize: FontSize.body,
         fontFamily: FontFamily.regular,
         lineHeight: 18,
         color: c.onSurfaceVariant,
@@ -202,14 +200,14 @@ const useStyles = createThemedStylesheetWithHooks(
       },
       actionLabel: {
         flex: 1,
-        fontSize: UI_FONT_SIZE_15,
+        fontSize: FontSize.subtitle,
         fontWeight: FontWeight.semibold,
         fontFamily: FontFamily.semiBold,
         color: c.onSurface,
       },
       actionLabelDestructive: {
         flex: 1,
-        fontSize: UI_FONT_SIZE_15,
+        fontSize: FontSize.subtitle,
         fontWeight: FontWeight.semibold,
         fontFamily: FontFamily.semiBold,
         color: c.error,

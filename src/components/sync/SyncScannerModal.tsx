@@ -166,7 +166,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     permissionBtnText: {
       color: theme.colors.black,
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
     },
     permissionCancelBtn: {

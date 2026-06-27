@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontWeight, UI_FONT_SIZE_14, UI_FONT_SIZE_16, UI_ICON_SIZE_22, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_28, UI_SIZE_4, UI_SIZE_8, UI_SIZE_9999 } from '@/constants/commonStyles'
+import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_22, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_28, UI_SIZE_4, UI_SIZE_8, UI_SIZE_9999 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -124,14 +124,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       flex: 1,
     },
     infoLabel: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
       marginBottom: UI_SIZE_4,
     },
     infoValue: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
     },
@@ -155,14 +155,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_8,
     },
     statLabel: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
       marginBottom: UI_SIZE_4,
     },
     statValue: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
     },
@@ -178,18 +178,18 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingVertical: UI_SIZE_10,
     },
     diskLabel: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
     },
     diskValue: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
     diskValuePrimary: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.primary,

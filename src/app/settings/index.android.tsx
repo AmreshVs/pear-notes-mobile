@@ -29,11 +29,8 @@ import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Th
 import {
   commonStyles,
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_12,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_16,
-  UI_FONT_SIZE_20,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
@@ -499,7 +496,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.centered,
     },
     headerTitle: {
-      fontSize: UI_FONT_SIZE_20,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,
@@ -511,14 +508,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingTop: UI_SIZE_10,
     },
     sectionCap: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       letterSpacing: 1.2,
       color: c.primary,
       marginBottom: UI_SIZE_16,
     },
     sectionCapMargin: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       letterSpacing: 1.2,
       color: c.primary,
@@ -566,7 +563,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginLeft: UI_SIZE_20,
     },
     cardTitle: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
@@ -588,7 +585,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       backgroundColor: c.primaryContainer,
     },
     segText: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurfaceVariant,
@@ -599,14 +596,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.bold,
     },
     rowTitle: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
       marginBottom: UI_SIZE_4,
     },
     rowSubtitle: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.medium,
       fontWeight: FontWeight.medium,
@@ -616,7 +613,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_16,
     },
     sliderValueText: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       color: c.primary,
@@ -645,7 +642,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.centered,
     },
     dangerTitle: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.error,
@@ -656,7 +653,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     footerText: {
       textAlign: 'center',
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontStyle: 'italic',
       color: c.onSurfaceVariant,
       marginTop: UI_SIZE_20,

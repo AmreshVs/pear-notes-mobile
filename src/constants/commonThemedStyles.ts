@@ -16,8 +16,7 @@ export const createThemedStyles = (theme: Theme) => {
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.caps,
       textTransform: 'uppercase',
-      opacity: 0.5,
-      color: theme.colors.textSecondary,
+      color: theme.colors.textMuted,
     },
     emptyContainer: {
       flex: 1,
@@ -31,15 +30,13 @@ export const createThemedStyles = (theme: Theme) => {
       letterSpacing: -0.3,
       textAlign: 'center',
       marginBottom: Space.sm,
-      opacity: 0.6,
-      color: theme.colors.textSecondary,
+      color: theme.colors.textMuted,
     },
     emptySubtitle: {
       fontSize: FontSize.body,
       textAlign: 'center',
-      opacity: 0.4,
       lineHeight: Space.lg,
-      color: theme.colors.textSecondary,
+      color: theme.colors.textMuted,
     },
     pillDivider: {
       width: StyleSheet.hairlineWidth,
@@ -80,8 +77,7 @@ export const createThemedStyles = (theme: Theme) => {
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
       textTransform: 'uppercase',
-      opacity: 0.6,
-      color: theme.colors.textSecondary,
+      color: theme.colors.textMuted,
     },
   })
 }

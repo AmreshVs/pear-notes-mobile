@@ -196,7 +196,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderColor: cardBg,
     },
     deviceName: {
-      fontSize: 15,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       letterSpacing: -0.3,
       marginBottom: 3,
@@ -217,7 +217,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: hexWithAlpha(theme.colors.primary, 0.56),
     },
     renameInput: {
-      fontSize: 15,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       borderWidth: 1,
       borderRadius: Radii.sm,

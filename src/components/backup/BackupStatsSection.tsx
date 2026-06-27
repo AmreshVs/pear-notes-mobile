@@ -118,7 +118,7 @@ const useStyles = createThemedStylesheet((theme) => {
       flex: 1,
     },
     infoLabel: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
       marginBottom: UI_SIZE_2,

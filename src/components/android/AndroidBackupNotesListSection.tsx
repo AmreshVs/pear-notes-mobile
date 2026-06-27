@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontWeight, UI_FONT_SIZE_12, UI_FONT_SIZE_13, UI_FONT_SIZE_14, UI_SIZE_8, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_20 } from '@/constants/commonStyles'
+import { commonStyles, FontFamily, FontSize, FontWeight, UI_SIZE_8, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_20 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -141,7 +141,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginTop: UI_SIZE_12,
     },
     sectionTitle: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurfaceVariant,
@@ -161,7 +161,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     noteTitle: {
       flex: 1,
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
@@ -172,7 +172,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_8,
     },
     noteSize: {
-      fontSize: UI_FONT_SIZE_13,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
     },
@@ -190,13 +190,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     mediaName: {
       flex: 1,
-      fontSize: UI_FONT_SIZE_13,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
       marginRight: UI_SIZE_8,
     },
     mediaSize: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
     },

@@ -34,10 +34,9 @@ import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
   Space,
-  UI_FONT_SIZE_12,
-  UI_FONT_SIZE_14,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
@@ -1091,13 +1090,13 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: 2,
     },
     uploadFileName: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.text,
     },
     uploadStatus: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: theme.colors.textSecondary,
     },

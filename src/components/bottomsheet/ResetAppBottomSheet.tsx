@@ -15,13 +15,11 @@ import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   Durations,
+  FontSize,
   FontWeight,
   GlassIntensity,
   Layout,
   Radii,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_16,
-  UI_FONT_SIZE_20,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -253,13 +251,13 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
     },
     title: {
-      fontSize: UI_FONT_SIZE_20,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       color: theme.colors.text,
       textAlign: 'center',
     },
     subtitle: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: theme.colors.textSecondary,
       textAlign: 'center',
       lineHeight: UI_SIZE_20,
@@ -277,7 +275,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.error,
     },
     confirmBtnText: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       color: theme.colors.white,
     },
@@ -290,7 +288,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderColor: theme.colors.borderSecondary,
     },
     cancelBtnText: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },

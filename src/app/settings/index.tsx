@@ -25,13 +25,8 @@ import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   Durations,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_11,
-  UI_FONT_SIZE_12,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_16,
-  UI_FONT_SIZE_17,
-  UI_FONT_SIZE_24,
   UI_ICON_SIZE_15,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_17,
@@ -242,8 +237,8 @@ export default function SettingsScreen() {
                 <Text style={styles.sizeSm}>A</Text>
                 <Slider
                   style={styles.slider}
-                  minimumValue={UI_FONT_SIZE_12}
-                  maximumValue={UI_FONT_SIZE_24}
+                  minimumValue={FontSize.caption}
+                  maximumValue={FontSize.heading}
                   step={1}
                   value={editorFontSize}
                   onValueChange={handleFontSizeChange}
@@ -365,7 +360,7 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingTop: UI_SIZE_12,
     },
     sectionCap: {
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.5,
       marginBottom: UI_SIZE_12,
@@ -373,7 +368,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
     },
     sectionCapMargin: {
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.5,
       marginBottom: UI_SIZE_12,
@@ -387,17 +382,17 @@ const useStyles = createThemedStylesheet((theme) => {
       borderBottomColor: theme.colors.borderSecondary,
     },
     rowLabel: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
     rowLabelSemiBold: {
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
     rowVal: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
     segCtrl: {
@@ -424,7 +419,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderBottomRightRadius: UI_SIZE_12,
     },
     segText: {
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.medium,
       color: theme.colors.textMuted,
     },
@@ -442,12 +437,12 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     badgeText: {
       color: theme.colors.primary,
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
     },
     footer: {
       textAlign: 'center',
-      fontSize: UI_FONT_SIZE_12,
+      fontSize: FontSize.caption,
       marginTop: UI_SIZE_40,
       fontStyle: 'italic',
       color: theme.colors.textMuted,
@@ -477,12 +472,12 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     sizeSm: {
       color: theme.colors.textMuted,
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
     },
     sizeLg: {
       color: theme.colors.textMuted,
-      fontSize: UI_FONT_SIZE_17,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
     },
     dangerIconBox: {

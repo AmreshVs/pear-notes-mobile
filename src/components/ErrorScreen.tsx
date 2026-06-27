@@ -60,13 +60,13 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.lg,
     },
     title: {
-      fontSize: 22,
+      fontSize: FontSize.heading,
       fontWeight: FontWeight.bold,
       color: theme.colors.text,
       marginBottom: Space.md,
     },
     message: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       color: theme.colors.textSecondary,
       textAlign: 'center',
       marginBottom: Space.xxxl,
@@ -85,7 +85,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     buttonText: {
       color: theme.isDark ? theme.colors.black : theme.colors.white,
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
     },
   })

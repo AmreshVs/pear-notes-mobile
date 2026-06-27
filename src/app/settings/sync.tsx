@@ -410,7 +410,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.primary,
     },
     segLabel: {
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.medium,
     },
     segLabelActive: {
@@ -444,7 +444,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.13 : 0.1),
     },
     heroTitle: {
-      fontSize: 21,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.5,
       marginBottom: Space.md,
@@ -472,7 +472,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     btnText: {
       color: theme.colors.white,
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.2,
     },
@@ -495,19 +495,19 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.13 : 0.1),
     },
     inviteTitle: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.3,
       marginBottom: 2,
       color: theme.colors.text,
     },
     inviteSub: {
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.medium,
       color: theme.colors.textMuted,
     },
     codeLabel: {
-      fontSize: FontSize.micro,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.4,
       textTransform: 'uppercase',
@@ -532,7 +532,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     codeText: {
       fontFamily: MonoFontFamily,
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       letterSpacing: 1,
       color: theme.colors.text,
     },
@@ -551,13 +551,13 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.white,
     },
     qrTitle: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       marginBottom: Space.xs,
       color: theme.colors.text,
     },
     qrDescription: {
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       lineHeight: 18,
       textAlign: 'center',
       color: theme.colors.textMuted,
@@ -592,7 +592,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     warningText: {
       flex: 1,
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       lineHeight: 17,
       color: theme.colors.textMuted,
     },
@@ -612,13 +612,13 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: 6,
     },
     plusIcon: {
-      fontSize: 18,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.semibold,
       lineHeight: 20,
       color: theme.colors.primary,
     },
     invitePasteText: {
-      fontSize: 15,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
@@ -650,7 +650,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: hexWithAlpha(theme.colors.primary, 0.1),
     },
     scanPillBtnText: {
-      fontSize: FontSize.micro,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       color: theme.colors.primary,
     },
@@ -683,7 +683,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginTop: Space.xxl,
     },
     footNote: {
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       flex: 1,
       lineHeight: 17,
       color: theme.colors.textMuted,
@@ -723,7 +723,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
     },
     emptyText: {
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       marginTop: Space.md,
       color: theme.colors.textMuted,
     },

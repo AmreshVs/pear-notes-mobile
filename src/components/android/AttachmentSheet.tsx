@@ -8,9 +8,8 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_12,
-  UI_FONT_SIZE_20,
   UI_ICON_SIZE_26,
   UI_SIZE_12,
   UI_SIZE_14,
@@ -178,7 +177,7 @@ const useStyles = createThemedStylesheetWithHooks(
         paddingHorizontal: UI_SIZE_20,
       },
       title: {
-        fontSize: UI_FONT_SIZE_20,
+        fontSize: FontSize.title,
         fontWeight: FontWeight.bold,
         fontFamily: FontFamily.bold,
         letterSpacing: -0.3,
@@ -210,7 +209,7 @@ const useStyles = createThemedStylesheetWithHooks(
         backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.9),
       },
       itemLabel: {
-        fontSize: UI_FONT_SIZE_12,
+        fontSize: FontSize.caption,
         fontFamily: FontFamily.medium,
         fontWeight: FontWeight.medium,
         textAlign: 'center',

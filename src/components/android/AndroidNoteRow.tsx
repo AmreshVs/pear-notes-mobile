@@ -20,10 +20,8 @@ import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_10,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_17,
   UI_ICON_SIZE_13,
   UI_SIZE_10,
   UI_SIZE_12,
@@ -173,7 +171,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       ...commonStyles.flex1,
     },
     title: {
-      fontSize: UI_FONT_SIZE_17,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       marginBottom: UI_SIZE_4,
@@ -181,7 +179,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       color: c.onSurface,
     },
     preview: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       marginBottom: UI_SIZE_10,
       lineHeight: UI_SIZE_20,
@@ -199,18 +197,18 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       ...commonStyles.row,
     },
     metaDate: {
-      fontSize: UI_FONT_SIZE_10,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       letterSpacing: 0.5,
       color: c.onSurfaceVariant,
     },
     metaDot: {
-      fontSize: UI_FONT_SIZE_10,
+      fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
     },
     metaTag: {
-      fontSize: UI_FONT_SIZE_10,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       letterSpacing: 0.5,

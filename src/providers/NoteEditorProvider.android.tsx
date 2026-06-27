@@ -35,9 +35,8 @@ import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_16,
-  UI_FONT_SIZE_20,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_SIZE_10,
@@ -996,7 +995,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       elevation: 6,
     },
     infoDialogTitle: {
-      fontSize: UI_FONT_SIZE_20,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,
@@ -1004,7 +1003,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     infoDialogMessage: {
       color: c.onSurfaceVariant,
-      fontSize: UI_FONT_SIZE_16,
+      fontSize: FontSize.subtitle,
       fontFamily: FontFamily.regular,
     },
     infoDialogCancelText: {

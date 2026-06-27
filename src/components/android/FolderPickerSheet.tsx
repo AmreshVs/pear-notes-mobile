@@ -8,10 +8,8 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   FontFamily,
+  FontSize,
   FontWeight,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_15,
-  UI_FONT_SIZE_20,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
@@ -169,7 +167,7 @@ const useStyles = createThemedStylesheetWithHooks(
         backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
       },
       headerTitle: {
-        fontSize: UI_FONT_SIZE_20,
+        fontSize: FontSize.title,
         fontWeight: FontWeight.bold,
         fontFamily: FontFamily.bold,
         letterSpacing: -0.3,
@@ -207,7 +205,7 @@ const useStyles = createThemedStylesheetWithHooks(
       },
       folderName: {
         flex: 1,
-        fontSize: UI_FONT_SIZE_15,
+        fontSize: FontSize.subtitle,
         fontWeight: FontWeight.semibold,
         fontFamily: FontFamily.semiBold,
         color: c.onSurface,
@@ -223,7 +221,7 @@ const useStyles = createThemedStylesheetWithHooks(
         alignItems: 'center',
       },
       emptyText: {
-        fontSize: UI_FONT_SIZE_14,
+        fontSize: FontSize.body,
         fontFamily: FontFamily.regular,
         color: c.onSurfaceVariant,
       },

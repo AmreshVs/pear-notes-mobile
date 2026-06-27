@@ -581,7 +581,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.transparent,
     },
     title: {
-      fontSize: isAndroid ? 22 : FontSize.heading,
+      fontSize: FontSize.heading,
       fontWeight: isAndroid ? FontWeight.semibold : FontWeight.bold,
       textAlign: 'center',
       letterSpacing: isAndroid ? 0 : LetterSpacing.tight,
@@ -589,7 +589,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
     },
     sub: {
-      fontSize: isAndroid ? 14 : FontSize.body,
+      fontSize: FontSize.body,
       textAlign: 'center',
       lineHeight: isAndroid ? 20 : 22,
       opacity: isAndroid ? 0.64 : 0.7,
@@ -612,7 +612,7 @@ const useStyles = createThemedStylesheet((theme) => {
         : {}),
     },
     idLabel: {
-      fontSize: FontSize.micro,
+      fontSize: FontSize.caption,
       fontWeight: isAndroid ? FontWeight.black : FontWeight.bold,
       letterSpacing: 2,
       marginBottom: Space.xs,
@@ -628,7 +628,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
     },
     idEmojis: {
-      fontSize: 24,
+      fontSize: FontSize.heading,
       textAlign: 'center',
     },
     idHex: {
@@ -682,7 +682,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     scannerDescription: {
       fontSize: FontSize.body,
-      color: 'rgba(255,255,255,0.8)',
+      color: theme.colors.overlayText,
       textAlign: 'center',
       lineHeight: 20,
     },
@@ -707,7 +707,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginTop: 16,
     },
     permissionCancelText: {
-      color: 'rgba(255,255,255,0.5)',
+      color: theme.colors.overlayTextMuted,
     },
     scannerOverlay: {
       ...StyleSheet.absoluteFill,
@@ -749,7 +749,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: 'rgba(0,0,0,0.35)',
     },
     globeIcon: { opacity: 0.2 },
-    greenBtnText: { color: theme.colors.success, fontWeight: FontWeight.bold, fontSize: 15 },
+    greenBtnText: { color: theme.colors.success, fontWeight: FontWeight.bold, fontSize: FontSize.subtitle },
     cancelPressable: {
       ...commonStyles.centered,
       flex: 1,
@@ -766,13 +766,13 @@ const useStyles = createThemedStylesheet((theme) => {
     cancelBtnText: {
       color: theme.colors.textSecondary,
       fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
-      fontSize: isAndroid ? 14 : FontSize.body,
+      fontSize: FontSize.body,
       letterSpacing: isAndroid ? 0.1 : 0,
     },
     confirmBtnText: {
       color: theme.isDark ? theme.colors.black : theme.colors.white,
       fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
-      fontSize: isAndroid ? 14 : 15,
+      fontSize: isAndroid ? FontSize.body : FontSize.subtitle,
       letterSpacing: isAndroid ? 0.1 : 0,
     },
     inputLabelText: {
@@ -803,7 +803,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: `${theme.colors.primary}1A`,
     },
     scanBtnText: {
-      fontSize: FontSize.micro,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       color: theme.colors.primary,
     },
@@ -813,7 +813,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: isAndroid ? 12 : Radii.md,
       borderWidth: isAndroid ? StyleSheet.hairlineWidth : 1,
       paddingHorizontal: Space.base,
-      fontSize: FontSize.small,
+      fontSize: FontSize.caption,
       textAlign: 'center',
       fontFamily: MonoFontFamily,
       letterSpacing: 1,
@@ -880,7 +880,7 @@ const useStyles = createThemedStylesheet((theme) => {
     errorBtnText: {
       color: theme.colors.white,
       fontWeight: FontWeight.bold,
-      fontSize: 15,
+      fontSize: FontSize.subtitle,
     },
     progressLabel: {
       marginTop: Space.md,

@@ -21,7 +21,7 @@ import { ErrorScreen } from '@/components/ErrorScreen'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import { createThemedStylesheet, useResolvedColorScheme, useTheme } from '@/components/Themed'
 import Colors from '@/constants/Colors'
-import { commonStyles, FontWeight } from '@/constants/commonStyles'
+import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
@@ -177,13 +177,13 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.background,
     },
     resetTitle: {
-      fontSize: 18,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.semibold,
       marginTop: 4,
       color: theme.colors.text,
     },
     resetDesc: {
-      fontSize: 14,
+      fontSize: FontSize.body,
       opacity: 0.7,
       textAlign: 'center',
       paddingHorizontal: 40,

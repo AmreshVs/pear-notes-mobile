@@ -242,7 +242,7 @@ const useStyles = createThemedStylesheet((theme) => {
       ...commonStyles.flex1,
     },
     title: {
-      fontSize: FontSize.base,
+      fontSize: FontSize.subtitle,
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       marginBottom: Space.xs,

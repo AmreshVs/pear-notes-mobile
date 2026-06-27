@@ -43,13 +43,9 @@ import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Th
 import {
   commonStyles,
   FontFamily,
+  FontSize,
   FontWeight,
   Radii,
-  UI_FONT_SIZE_11,
-  UI_FONT_SIZE_14,
-  UI_FONT_SIZE_15,
-  UI_FONT_SIZE_18,
-  UI_FONT_SIZE_20,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
@@ -512,7 +508,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       marginBottom: UI_SIZE_28,
     },
     pageTitle: {
-      fontSize: 36,
+      fontSize: FontSize.hero,
       fontWeight: FontWeight.black,
       fontFamily: FontFamily.extraBold,
       letterSpacing: -0.5,
@@ -520,7 +516,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       marginBottom: UI_SIZE_4,
     },
     pageSubtitle: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontWeight: FontWeight.regular,
       fontFamily: FontFamily.regular,
@@ -550,7 +546,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     },
     searchInput: {
       flex: 1,
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       color: c.onSurface,
       fontFamily: FontFamily.medium,
       padding: 0,
@@ -566,7 +562,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     },
     emptyText: {
       color: c.onSurfaceVariant,
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
     },
     archiveSection: {
@@ -579,7 +575,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       paddingHorizontal: UI_SIZE_6,
     },
     sectionTitle: {
-      fontSize: UI_FONT_SIZE_18,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,
@@ -608,7 +604,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       shadowRadius: 8,
     },
     dialogTitle: {
-      fontSize: UI_FONT_SIZE_20,
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       marginBottom: UI_SIZE_16,
@@ -625,13 +621,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       paddingVertical: UI_SIZE_10,
     },
     dialogBtnTextCancel: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurfaceVariant,
     },
     dialogBtnTextRename: {
-      fontSize: UI_FONT_SIZE_14,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.primary,
@@ -666,7 +662,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       backgroundColor: hexWithAlpha(c.errorContainer ?? '#871c34', isDark ? 0.18 : 0.22),
     },
     rowNameText: {
-      fontSize: UI_FONT_SIZE_15,
+      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
@@ -683,7 +679,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.8),
     },
     countText: {
-      fontSize: UI_FONT_SIZE_11,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurfaceVariant,

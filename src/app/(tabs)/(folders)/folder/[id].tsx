@@ -31,7 +31,6 @@ import {
   FontWeight,
   LetterSpacing,
   Space,
-  UI_SIZE_15,
   UI_SIZE_2,
   UI_SIZE_32,
   UI_SIZE_4,
@@ -426,17 +425,16 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xs,
     },
     linkSub: {
-      fontSize: FontSize.micro,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.wide,
       textTransform: 'uppercase',
-      opacity: 0.4,
-      color: theme.colors.textSecondary,
+      color: theme.colors.textMuted,
     },
     linkBtnText: {
       color: theme.colors.white,
       fontWeight: FontWeight.bold,
-      fontSize: UI_SIZE_15,
+      fontSize: FontSize.subtitle,
     },
     connectBtn: {
       ...commonStyles.primaryBtn,
