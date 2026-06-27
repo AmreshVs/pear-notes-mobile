@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_22, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_28, UI_SIZE_4, UI_SIZE_8, UI_SIZE_9999 } from '@/constants/commonStyles'
+import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_22, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_28, UI_SIZE_4, UI_SIZE_8, UI_SIZE_9999 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -19,8 +19,6 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 type AndroidBackupStatsSectionProps = {
   lastBackupDate: string | null
   totalBlobBytes: number
-  totalOnDiskBytes: number
-  reclaimableBytes: number
   formatBackupDate: (iso: string) => string
   formatBytes: (bytes: number) => string
 }
@@ -30,8 +28,6 @@ const ICON_WRAP_SIZE = 44
 export function AndroidBackupStatsSection({
   lastBackupDate,
   totalBlobBytes,
-  totalOnDiskBytes,
-  reclaimableBytes,
   formatBackupDate,
   formatBytes,
 }: AndroidBackupStatsSectionProps) {
@@ -70,21 +66,6 @@ export function AndroidBackupStatsSection({
           <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>
         </View>
       </Animated.View>
-
-      {totalOnDiskBytes > 0 && (
-        <Animated.View entering={FadeInDown.duration(240).delay(150)} style={styles.diskCard}>
-          <View style={styles.diskRow}>
-            <Text style={styles.diskLabel}>{t('backup.diskFootprint')}</Text>
-            <Text style={styles.diskValue}>{formatBytes(totalOnDiskBytes)}</Text>
-          </View>
-          {reclaimableBytes > 0 && (
-            <View style={styles.diskRow}>
-              <Text style={styles.diskLabel}>{t('backup.reclaimable')}</Text>
-              <Text style={styles.diskValuePrimary}>{formatBytes(reclaimableBytes)}</Text>
-            </View>
-          )}
-        </Animated.View>
-      )}
     </>
   )
 }
@@ -165,34 +146,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.regular,
-    },
-    diskCard: {
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: UI_SIZE_28,
-      padding: UI_SIZE_8,
-      marginTop: UI_SIZE_12,
-    },
-    diskRow: {
-      ...commonStyles.rowBetween,
-      paddingHorizontal: UI_SIZE_12,
-      paddingVertical: UI_SIZE_10,
-    },
-    diskLabel: {
-      fontSize: FontSize.body,
-      color: c.onSurfaceVariant,
-      fontFamily: FontFamily.regular,
-    },
-    diskValue: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: c.onSurface,
-    },
-    diskValuePrimary: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: c.primary,
     },
   })
   return styles

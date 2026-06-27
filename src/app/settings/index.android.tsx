@@ -8,11 +8,6 @@ import {
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
-import {
-  deleteSyncedDevice,
-  getSyncedDevices,
-} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
-import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import Slider from '@react-native-community/slider'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -49,7 +44,6 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { deleteDbEncryptionKey } from '@/lib/secureStore'
 import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
 
 export default function AndroidSettingsScreen() {
@@ -65,43 +59,11 @@ export default function AndroidSettingsScreen() {
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
   const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
-  const syncedDevices = useSelector(getSyncedDevices)
-
-  const localDevice = syncedDevices.find((d: any) => d.isLocal)
-  const localDeviceKey = localDevice?.key
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
   const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
-  const [resetSheetVisible, setResetSheetVisible] = React.useState(false)
 
   const sliderMaxTrackColor = useMemo(() => hexWithAlpha(c.primary, 0.2), [c.primary])
-
-  const handleResetPress = useCallback(() => {
-    setResetSheetVisible(true)
-  }, [])
-
-  const handleResetConfirm = useCallback(() => {
-    setResetSheetVisible(false)
-    if (syncedDevices.length > 1 && localDeviceKey) {
-      dispatch(deleteSyncedDevice({ key: localDeviceKey } as any))
-    } else {
-      deleteDbEncryptionKey().catch(console.error)
-      dispatch(clearStorage())
-    }
-    router.back()
-  }, [dispatch, syncedDevices, localDeviceKey])
-
-  const resetActions = useMemo(
-    () => [
-      {
-        icon: 'trash-can-outline',
-        label: t('settings.danger.resetApp'),
-        destructive: true,
-        onPress: handleResetConfirm,
-      },
-    ],
-    [handleResetConfirm, t],
-  )
 
   const supportsDynamicColor = useMemo(() => {
     return Platform.OS === 'android' && Number(Platform.Version) >= 31
@@ -243,6 +205,10 @@ export default function AndroidSettingsScreen() {
 
   const handleBackupPress = useCallback(() => {
     router.push('/settings/backup' as any)
+  }, [])
+
+  const handleStoragePress = useCallback(() => {
+    router.push('/settings/storage' as any)
   }, [])
 
   const handleOpenSortSheet = useCallback(() => {
@@ -417,7 +383,7 @@ export default function AndroidSettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(220)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.danger.header')}</Text>
+          <Text style={styles.sectionCapMargin}>{t('settings.storage.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -425,19 +391,20 @@ export default function AndroidSettingsScreen() {
           layout={LinearTransition.springify().damping(20).stiffness(220)}
         >
           <Pressable
-            onPress={handleResetPress}
+            onPress={handleStoragePress}
             style={({ pressed }) => [styles.cardRow, pressed && styles.cardPressed]}
           >
-            <View style={styles.dangerIconWrap}>
+            <View style={styles.syncIconWrap}>
               <MaterialCommunityIcons
-                name="trash-can-outline"
+                name="database-outline"
                 size={UI_ICON_SIZE_22}
-                color={c.error}
+                color={c.primary}
               />
             </View>
             <View style={styles.rowContent}>
-              <Text style={styles.dangerTitle}>{t('settings.danger.resetApp')}</Text>
+              <Text style={styles.rowTitle}>{t('settings.storage.storageTitle')}</Text>
             </View>
+            <MaterialCommunityIcons name="chevron-right" size={UI_ICON_SIZE_20} color={c.primary} />
           </Pressable>
         </Animated.View>
 
@@ -460,13 +427,6 @@ export default function AndroidSettingsScreen() {
         actions={fontActions}
       />
 
-      <BottomActionSheet
-        visible={resetSheetVisible}
-        onDismiss={() => setResetSheetVisible(false)}
-        title={t('settings.reset.confirmTitle')}
-        subtitle={t('settings.reset.confirmMessage')}
-        actions={resetActions}
-      />
     </View>
   )
 }
@@ -633,19 +593,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       borderRadius: UI_SIZE_9999,
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
       ...commonStyles.centered,
-    },
-    dangerIconWrap: {
-      width: UI_SIZE_44,
-      height: UI_SIZE_44,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: hexWithAlpha(c.error, 0.15),
-      ...commonStyles.centered,
-    },
-    dangerTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: c.error,
     },
     rowContent: {
       ...commonStyles.flex1,

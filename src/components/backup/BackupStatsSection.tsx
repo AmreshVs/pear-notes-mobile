@@ -12,7 +12,6 @@ import {
   FontWeight,
   Space,
   UI_SIZE_2,
-  UI_SIZE_12,
   UI_SIZE_16,
   UI_STROKE_WIDTH_1_8,
 } from '@/constants/commonStyles'
@@ -21,8 +20,6 @@ import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 type BackupStatsSectionProps = {
   lastBackupDate: string | null
   totalBlobBytes: number
-  totalOnDiskBytes: number
-  reclaimableBytes: number
   formatBackupDate: (iso: string) => string
   formatBytes: (bytes: number) => string
 }
@@ -30,8 +27,6 @@ type BackupStatsSectionProps = {
 export function BackupStatsSection({
   lastBackupDate,
   totalBlobBytes,
-  totalOnDiskBytes,
-  reclaimableBytes,
   formatBackupDate,
   formatBytes,
 }: BackupStatsSectionProps) {
@@ -82,24 +77,6 @@ export function BackupStatsSection({
           <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>
         </RNView>
       </Animated.View>
-
-      {totalOnDiskBytes > 0 && (
-        <Animated.View
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayExtraLong)}
-          style={[commonThemedStyles.card, styles.perNoteSection]}
-        >
-          <RNView style={styles.diskRow}>
-            <Text style={styles.diskLabel}>{t('backup.diskFootprint')}</Text>
-            <Text style={styles.diskValue}>{formatBytes(totalOnDiskBytes)}</Text>
-          </RNView>
-          {reclaimableBytes > 0 && (
-            <RNView style={styles.diskRow}>
-              <Text style={styles.diskLabel}>{t('backup.reclaimable')}</Text>
-              <Text style={styles.diskValuePrimary}>{formatBytes(reclaimableBytes)}</Text>
-            </RNView>
-          )}
-        </Animated.View>
-      )}
     </>
   )
 }
@@ -147,28 +124,6 @@ const useStyles = createThemedStylesheet((theme) => {
     statValue: {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
-    },
-    perNoteSection: {
-      marginTop: UI_SIZE_12,
-    },
-    diskRow: {
-      ...commonStyles.rowBetween,
-      paddingHorizontal: Space.base,
-      paddingVertical: Space.sm,
-    },
-    diskLabel: {
-      fontSize: FontSize.body,
-      color: theme.colors.textMuted,
-    },
-    diskValue: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      color: theme.colors.text,
-    },
-    diskValuePrimary: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      color: theme.colors.primary,
     },
   })
   return styles

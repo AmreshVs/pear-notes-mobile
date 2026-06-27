@@ -9,15 +9,10 @@ import {
   startImportBackup,
 } from '@pear-notes/core/store/slices/backupSlice.js'
 import {
-  deleteNoteMedia,
-  getNotesStorageInfo,
-  getReclaimableBytes,
   getTotalBlobBytes,
-  getTotalOnDiskBytes,
-  selectStorageByKind,
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
-import { clearStorage, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform } from 'react-native'
@@ -48,13 +43,8 @@ function useBackupScreen() {
   const importStatus = useSelector(getImportStatus) as BackupStatus
   const exportBuffer = useSelector(getExportBuffer) as any
   const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
-  const totalOnDiskBytes = (useSelector(getTotalOnDiskBytes) as number) ?? 0
-  const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
-  const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
-  const buckets = useSelector(selectStorageByKind) as any
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
-  const [confirmClear, setConfirmClear] = useState(false)
   const [deviceRecoveryKey, setDeviceRecoveryKey] = useState<string | null>(null)
   const [showRecoveryModal, setShowRecoveryModal] = useState(false)
   const [selectedBackupBuffer, setSelectedBackupBuffer] = useState<Uint8Array | null>(null)
@@ -113,26 +103,6 @@ function useBackupScreen() {
     dispatch(resetImport())
     dispatch(setNeedsReload(true))
   }, [dispatch])
-
-  const handleClearStorage = useCallback(() => {
-    setConfirmClear(false)
-    dispatch(clearStorage())
-  }, [dispatch])
-
-  const handleShowConfirmClear = useCallback(() => {
-    setConfirmClear(true)
-  }, [])
-
-  const handleHideConfirmClear = useCallback(() => {
-    setConfirmClear(false)
-  }, [])
-
-  const handleDeleteMedia = useCallback(
-    (noteKey: string, mediaPath: string) => {
-      dispatch(deleteNoteMedia({ noteKey, mediaPath } as any))
-    },
-    [dispatch],
-  )
 
   const handleSaveBackup = useCallback(async () => {
     if (Platform.OS === 'ios') {
@@ -210,19 +180,10 @@ function useBackupScreen() {
   }, [exportStatus.step, importStatus.step, dispatch])
 
   return {
-    exportStatus,
     importStatus,
-    exportBuffer,
     totalBlobBytes,
-    totalOnDiskBytes,
-    reclaimableBytes,
-    notesStorageInfo,
-    buckets,
     lastBackupDate,
-    setLastBackupDate,
-    confirmClear,
     isExporting,
-    isImporting,
     showProgressModal,
     isError,
     errorMessage,
@@ -232,13 +193,7 @@ function useBackupScreen() {
     handleCancelExport,
     handleCancelImport,
     handleRestoreComplete,
-    handleClearStorage,
-    handleShowConfirmClear,
-    handleHideConfirmClear,
-    handleDeleteMedia,
-    handleSaveBackup,
     handleRestoreData,
-    handleCancelOrDismiss,
     deviceRecoveryKey,
     showRecoveryModal,
     handleConfirmRestore,

@@ -1,4 +1,3 @@
-import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
@@ -19,8 +18,6 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import useBackupScreen from '@/app/settings/useBackupScreen'
-import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBackupBreakdownSection'
-import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { RecoveryKeyModal } from '@/components/backup/RecoveryKeyModal'
@@ -30,12 +27,10 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_SIZE_10,
   UI_SIZE_12,
-  UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_2,
   UI_SIZE_20,
@@ -71,28 +66,20 @@ export default function AndroidBackupScreen() {
   const c = theme.colors as ExtendedColors
   const styles = useStyles()
   const {
-    exportStatus,
     importStatus,
     totalBlobBytes,
-    totalOnDiskBytes,
-    reclaimableBytes,
-    notesStorageInfo,
-    buckets,
     lastBackupDate,
-    confirmClear,
+    isExporting,
     showProgressModal,
     isError,
     errorMessage,
     progressStatus,
     isActive,
     handleCreateBackup,
+    handleCancelExport,
+    handleCancelImport,
     handleRestoreComplete,
-    handleClearStorage,
-    handleShowConfirmClear,
-    handleHideConfirmClear,
-    handleDeleteMedia,
     handleRestoreData,
-    handleCancelOrDismiss,
     deviceRecoveryKey,
     showRecoveryModal,
     handleConfirmRestore,
@@ -117,10 +104,9 @@ export default function AndroidBackupScreen() {
     }
   }, [deviceRecoveryKey])
 
-  const progressTitle =
-    exportStatus.step !== 'idle' && exportStatus.step !== 'done' && exportStatus.step !== 'error'
-      ? t('backup.progress.creatingTitle')
-      : t('backup.progress.restoringTitle')
+  const progressTitle = isExporting
+    ? t('backup.progress.creatingTitle')
+    : t('backup.progress.restoringTitle')
 
   return (
     <View style={styles.root}>
@@ -195,7 +181,11 @@ export default function AndroidBackupScreen() {
           </View>
           <Text style={styles.recoveryDesc}>{t('backup.recoveryKeyDesc')}</Text>
           <View style={styles.keyContainer}>
-            <Text numberOfLines={1} ellipsizeMode="middle" style={styles.keyText}>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode={isKeyVisible ? 'middle' : 'clip'}
+              style={styles.keyText}
+            >
               {isKeyVisible
                 ? deviceRecoveryKey
                 : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
@@ -224,36 +214,9 @@ export default function AndroidBackupScreen() {
         <AndroidBackupStatsSection
           lastBackupDate={lastBackupDate}
           totalBlobBytes={totalBlobBytes}
-          totalOnDiskBytes={totalOnDiskBytes}
-          reclaimableBytes={reclaimableBytes}
           formatBackupDate={formatBackupDate}
           formatBytes={formatBytes}
         />
-
-        <AndroidBackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
-
-        <AndroidBackupNotesListSection
-          notesStorageInfo={notesStorageInfo}
-          formatBytes={formatBytes}
-          handleDeleteMedia={handleDeleteMedia}
-          mediaKind={mediaKind}
-        />
-
-        {reclaimableBytes > 0 && (
-          <Animated.View entering={FadeInDown.duration(240).delay(190)} style={styles.clearSection}>
-            <Pressable
-              onPress={handleShowConfirmClear}
-              style={({ pressed }) => [styles.clearBtn, pressed && styles.btnPressed]}
-            >
-              <MaterialCommunityIcons
-                name="trash-can-outline"
-                size={UI_ICON_SIZE_18}
-                color={c.error}
-              />
-              <Text style={styles.clearBtnText}>{t('backup.clearStorage')}</Text>
-            </Pressable>
-          </Animated.View>
-        )}
       </ScrollView>
 
       <Modal visible={showProgressModal} transparent animationType="fade" statusBarTranslucent>
@@ -313,7 +276,7 @@ export default function AndroidBackupScreen() {
                 </Pressable>
               ) : (
                 <Pressable
-                  onPress={handleCancelOrDismiss}
+                  onPress={isExporting ? handleCancelExport : handleCancelImport}
                   style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
                 >
                   <Text style={styles.cancelBtnText}>
@@ -321,33 +284,6 @@ export default function AndroidBackupScreen() {
                   </Text>
                 </Pressable>
               )}
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      <Modal visible={confirmClear} transparent animationType="fade" statusBarTranslucent>
-        <View style={styles.overlayCenter}>
-          <View style={styles.confirmCard}>
-            <Text style={styles.progressTitle}>{t('backup.clearAllDataTitle')}</Text>
-            <Text style={styles.progressDesc}>{t('backup.clearAllDataDesc')}</Text>
-            <View style={styles.clearActionRow}>
-              <Pressable
-                onPress={handleHideConfirmClear}
-                style={({ pressed }) => [
-                  styles.secondaryBtn,
-                  commonStyles.flex1,
-                  pressed && styles.btnPressed,
-                ]}
-              >
-                <Text style={styles.secondaryBtnText}>{t('common.cancel')}</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleClearStorage}
-                style={({ pressed }) => [styles.clearConfirmBtn, pressed && styles.btnPressed]}
-              >
-                <Text style={styles.clearConfirmText}>{t('common.clear')}</Text>
-              </Pressable>
             </View>
           </View>
         </View>
@@ -473,13 +409,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       borderRadius: UI_SIZE_28,
       overflow: 'hidden',
     },
-    confirmCard: {
-      width: '100%',
-      backgroundColor: c.surfaceContainerHigh ?? c.surface,
-      borderRadius: UI_SIZE_28,
-      overflow: 'hidden',
-      padding: UI_SIZE_24,
-    },
     progressModalInner: {
       padding: UI_SIZE_24,
       alignItems: 'center',
@@ -544,44 +473,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.primary,
-    },
-    clearSection: {
-      marginTop: UI_SIZE_8,
-      marginBottom: UI_SIZE_8,
-    },
-    clearBtn: {
-      ...commonStyles.row,
-      justifyContent: 'center',
-      gap: UI_SIZE_8,
-      paddingVertical: UI_SIZE_14,
-      borderRadius: UI_SIZE_9999,
-      borderWidth: 1,
-      borderColor: theme.colors.error,
-    },
-    clearBtnText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.error,
-    },
-    clearActionRow: {
-      flexDirection: 'row',
-      gap: UI_SIZE_12,
-      marginTop: UI_SIZE_8,
-    },
-    clearConfirmBtn: {
-      flex: 1,
-      height: UI_SIZE_54,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: theme.colors.error,
-      ...commonStyles.centered,
-    },
-    clearConfirmText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.white,
-      textAlign: 'center',
     },
     recoveryCard: {
       padding: UI_SIZE_16,

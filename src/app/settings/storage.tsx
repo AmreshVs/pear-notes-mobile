@@ -1,0 +1,276 @@
+import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
+import { router, Stack } from 'expo-router'
+import { Database, Trash2, X } from 'lucide-react-native'
+import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+
+import useStorageScreen from '@/app/settings/useStorageScreen'
+import { BackupBreakdownSection } from '@/components/backup/BackupBreakdownSection'
+import { BackupNotesListSection } from '@/components/backup/BackupNotesListSection'
+import { ClearStorageBottomSheet } from '@/components/bottomsheet/ClearStorageAppBottomSheet'
+import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
+import {
+  commonStyles,
+  Durations,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Radii,
+  Space,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_48,
+  UI_SIZE_15,
+  UI_SIZE_22,
+  UI_SIZE_30,
+  UI_SIZE_48,
+  UI_SIZE_60,
+  UI_SIZE_96,
+  UI_STROKE_WIDTH_2_5,
+} from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { formatBytes } from '@/lib/backupUtils'
+
+export default function StorageScreen() {
+  const { t } = useTranslation()
+  const theme = useTheme()
+  const { colors } = theme
+  const styles = useStyles()
+  const commonThemedStyles = useCommonThemedStyles()
+
+  const handleBack = useCallback(() => router.back(), [])
+  const {
+    totalBlobBytes,
+    totalOnDiskBytes,
+    reclaimableBytes,
+    notesStorageInfo,
+    buckets,
+    resetSheetVisible,
+    handleDeleteMedia,
+    handleResetPress,
+    handleResetConfirm,
+    handleResetCancel,
+  } = useStorageScreen()
+
+  const renderHeaderRight = useCallback(
+    () => (
+      <Pressable
+        onPress={handleBack}
+        hitSlop={8}
+        style={({ pressed }) => [styles.closeBtn, pressed && commonStyles.pressed]}
+      >
+        <X size={UI_ICON_SIZE_16} color={colors.text} strokeWidth={UI_STROKE_WIDTH_2_5} />
+      </Pressable>
+    ),
+    [handleBack, styles, colors.text],
+  )
+
+  return (
+    <RNView style={styles.container}>
+      <Stack.Screen options={{ headerRight: renderHeaderRight }} />
+
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <Animated.View entering={FadeIn.duration(Durations.fade)} style={styles.heroContainer}>
+          <RNView style={styles.heroIcon}>
+            <Database size={UI_ICON_SIZE_48} color={colors.primary} strokeWidth={1.5} />
+          </RNView>
+          <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
+          <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}>
+          <Text style={styles.sectionCap}>{t('storage.usage')}</Text>
+          <RNView style={commonThemedStyles.card}>
+            <RNView style={styles.usageRow}>
+              <Text style={styles.usageLabel}>{t('storage.notesData')}</Text>
+              <Text style={styles.usageValue}>{formatBytes(totalBlobBytes)}</Text>
+            </RNView>
+            <RNView style={[styles.usageRow, styles.usageRowBorder]}>
+              <Text style={styles.usageLabel}>{t('storage.diskFootprint')}</Text>
+              <Text style={styles.usageValue}>{formatBytes(totalOnDiskBytes)}</Text>
+            </RNView>
+            {reclaimableBytes > 0 && (
+              <RNView style={[styles.usageRow, styles.usageRowBorder]}>
+                <Text style={styles.usageLabel}>{t('storage.reclaimable')}</Text>
+                <Text style={styles.usageValuePrimary}>{formatBytes(reclaimableBytes)}</Text>
+              </RNView>
+            )}
+          </RNView>
+        </Animated.View>
+
+        <BackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
+
+        <BackupNotesListSection
+          notesStorageInfo={notesStorageInfo}
+          formatBytes={formatBytes}
+          handleDeleteMedia={handleDeleteMedia}
+          mediaKind={mediaKind}
+        />
+
+        <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}>
+          <Text style={styles.sectionCapDanger}>{t('storage.dangerZone')}</Text>
+          <RNView style={[commonThemedStyles.card, styles.dangerCard]}>
+            <RNView style={styles.dangerContent}>
+              <RNView style={styles.dangerTextContent}>
+                <Text style={styles.dangerTitle}>{t('storage.clearAllData')}</Text>
+                <Text style={styles.dangerDesc}>{t('storage.clearAllDataDesc')}</Text>
+              </RNView>
+              <Pressable
+                onPress={handleResetPress}
+                style={({ pressed }) => [styles.dangerBtn, pressed && commonStyles.pressed]}
+              >
+                <Trash2 size={UI_ICON_SIZE_16} color={colors.error} strokeWidth={2} />
+                <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
+              </Pressable>
+            </RNView>
+          </RNView>
+        </Animated.View>
+      </ScrollView>
+
+      <ClearStorageBottomSheet
+        visible={resetSheetVisible}
+        onConfirm={handleResetConfirm}
+        onCancel={handleResetCancel}
+      />
+    </RNView>
+  )
+}
+
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    scroll: {
+      paddingHorizontal: Space.lg,
+      paddingBottom: UI_SIZE_60,
+      paddingTop: Space.xl,
+    },
+    heroContainer: {
+      alignItems: 'center',
+      paddingVertical: Space.xl,
+      marginBottom: Space.xl,
+    },
+    heroIcon: {
+      width: UI_SIZE_96,
+      height: UI_SIZE_96,
+      borderRadius: UI_SIZE_48,
+      backgroundColor: theme.colors.cardSelected,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: Space.xl,
+      borderWidth: 1,
+      borderColor: theme.colors.borderSecondary,
+    },
+    heroTitle: {
+      fontSize: FontSize.heading,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: theme.colors.text,
+      textAlign: 'center',
+      marginBottom: Space.md,
+    },
+    heroDesc: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textMuted,
+      textAlign: 'center',
+      lineHeight: UI_SIZE_22,
+    },
+    closeBtn: {
+      width: UI_SIZE_30,
+      height: UI_SIZE_30,
+      borderRadius: UI_SIZE_15,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    sectionCap: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: LetterSpacing.caps,
+      marginBottom: Space.md,
+      textTransform: 'uppercase',
+      color: theme.colors.textMuted,
+    },
+    sectionCapDanger: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: LetterSpacing.caps,
+      marginBottom: Space.md,
+      marginTop: Space.xl,
+      textTransform: 'uppercase',
+      color: theme.colors.textMuted,
+    },
+    usageRow: {
+      ...commonStyles.rowBetween,
+      paddingHorizontal: Space.base,
+      paddingVertical: Space.md,
+    },
+    usageRowBorder: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.colors.borderSecondary,
+    },
+    usageLabel: {
+      fontSize: FontSize.body,
+      color: theme.colors.textMuted,
+    },
+    usageValue: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
+    },
+    usageValuePrimary: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.primary,
+    },
+    dangerCard: {
+      padding: Space.lg,
+    },
+    dangerContent: {
+      ...commonStyles.rowBetween,
+      alignItems: 'center',
+      gap: Space.base,
+    },
+    dangerTextContent: {
+      flex: 1,
+    },
+    dangerTitle: {
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: theme.colors.text,
+      marginBottom: Space.xs,
+    },
+    dangerDesc: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textMuted,
+      lineHeight: FontSize.caption * 1.4,
+    },
+    dangerBtn: {
+      ...commonStyles.row,
+      gap: Space.sm,
+      paddingHorizontal: Space.base,
+      paddingVertical: Space.sm,
+      borderRadius: Radii.md,
+      borderWidth: 1,
+      borderColor: theme.colors.error,
+      backgroundColor: `${theme.colors.error}10`,
+    },
+    dangerBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: theme.colors.error,
+    },
+  })
+  return styles
+})

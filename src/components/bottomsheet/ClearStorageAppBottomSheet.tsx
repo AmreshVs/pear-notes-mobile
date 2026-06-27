@@ -34,13 +34,17 @@ import {
   UI_SIZE_8,
 } from '@/constants/commonStyles'
 
-interface ResetAppBottomSheetProps {
+interface ClearStorageBottomSheetProps {
   visible: boolean
   onConfirm: () => void
   onCancel: () => void
 }
 
-export function ResetAppBottomSheet({ visible, onConfirm, onCancel }: ResetAppBottomSheetProps) {
+export function ClearStorageBottomSheet({
+  visible,
+  onConfirm,
+  onCancel,
+}: ClearStorageBottomSheetProps) {
   const { t } = useTranslation()
   const { isDark } = useTheme()
   const insets = useSafeAreaInsets()
@@ -158,7 +162,7 @@ export function ResetAppBottomSheet({ visible, onConfirm, onCancel }: ResetAppBo
                     onPress={handleConfirm}
                     style={({ pressed }) => [styles.confirmBtn, pressed && commonStyles.pressed]}
                   >
-                    <Text style={styles.confirmBtnText}>{t('settings.danger.resetApp')}</Text>
+                    <Text style={styles.confirmBtnText}>{t('settings.danger.clearStorage')}</Text>
                   </Pressable>
 
                   <Pressable
@@ -183,7 +187,7 @@ export function ResetAppBottomSheet({ visible, onConfirm, onCancel }: ResetAppBo
                     onPress={handleConfirm}
                     style={({ pressed }) => [styles.confirmBtn, pressed && commonStyles.pressed]}
                   >
-                    <Text style={styles.confirmBtnText}>{t('settings.danger.resetApp')}</Text>
+                    <Text style={styles.confirmBtnText}>{t('settings.danger.clearStorage')}</Text>
                   </Pressable>
 
                   <Pressable

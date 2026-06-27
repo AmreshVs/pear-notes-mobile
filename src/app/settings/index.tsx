@@ -6,21 +6,15 @@ import {
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
-import {
-  deleteSyncedDevice,
-  getSyncedDevices,
-} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
-import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
-import { ChevronRight, Download, RefreshCw, Trash2, X } from 'lucide-react-native'
-import { useCallback, useState } from 'react'
+import { ChevronRight, Database, Download, RefreshCw, X } from 'lucide-react-native'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { ResetAppBottomSheet } from '@/components/bottomsheet/ResetAppBottomSheet'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -45,7 +39,6 @@ import {
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { deleteDbEncryptionKey } from '@/lib/secureStore'
 import { getFontOptions, getSortOptions, showPicker } from '@/utils/settingsUtils'
 
 export default function SettingsScreen() {
@@ -60,11 +53,6 @@ export default function SettingsScreen() {
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
-  const syncedDevices = useSelector(getSyncedDevices)
-  const localDevice = syncedDevices.find((d: any) => d.isLocal)
-  const localDeviceKey = localDevice?.key
-
-  const [resetSheetVisible, setResetSheetVisible] = useState(false)
 
   const handleClose = useCallback(() => {
     router.back()
@@ -124,23 +112,8 @@ export default function SettingsScreen() {
     router.push('/settings/backup' as any)
   }, [])
 
-  const handleResetPress = useCallback(() => {
-    setResetSheetVisible(true)
-  }, [])
-
-  const handleResetConfirm = useCallback(() => {
-    setResetSheetVisible(false)
-    if (syncedDevices.length > 1 && localDeviceKey) {
-      dispatch(deleteSyncedDevice({ key: localDeviceKey } as any))
-    } else {
-      deleteDbEncryptionKey().catch(console.error)
-      dispatch(clearStorage())
-    }
-    router.back()
-  }, [dispatch, syncedDevices, localDeviceKey])
-
-  const handleResetCancel = useCallback(() => {
-    setResetSheetVisible(false)
+  const handleStoragePress = useCallback(() => {
+    router.push('/settings/storage' as any)
   }, [])
 
   return (
@@ -309,7 +282,7 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayReset)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.danger.header')}</Text>
+          <Text style={styles.sectionCapMargin}>{t('settings.storage.header')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -318,19 +291,19 @@ export default function SettingsScreen() {
         >
           <RNView style={commonThemedStyles.card}>
             <Pressable
-              onPress={handleResetPress}
+              onPress={handleStoragePress}
               style={({ pressed }) => [commonStyles.settingsRow, pressed && commonStyles.pressed]}
             >
               <RNView style={commonStyles.settingsRowLeft}>
-                <RNView style={[commonThemedStyles.iconBox34, styles.dangerIconBox]}>
-                  <Trash2
+                <RNView style={commonThemedStyles.iconBox34}>
+                  <Database
                     size={UI_ICON_SIZE_17}
-                    color={colors.error}
+                    color={colors.primary}
                     strokeWidth={UI_STROKE_WIDTH_1_8}
                   />
                 </RNView>
-                <Text style={[styles.rowLabelSemiBold, styles.dangerLabel]}>
-                  {t('settings.danger.resetApp')}
+                <Text style={styles.rowLabelSemiBold}>
+                  {t('settings.storage.storageTitle')}
                 </Text>
               </RNView>
               <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
@@ -343,11 +316,6 @@ export default function SettingsScreen() {
         </Animated.View>
       </ScrollView>
 
-      <ResetAppBottomSheet
-        visible={resetSheetVisible}
-        onConfirm={handleResetConfirm}
-        onCancel={handleResetCancel}
-      />
     </RNView>
   )
 }
@@ -479,12 +447,6 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
-    },
-    dangerIconBox: {
-      backgroundColor: `${theme.colors.error}1A`,
-    },
-    dangerLabel: {
-      color: theme.colors.error,
     },
   })
 

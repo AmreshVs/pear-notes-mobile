@@ -41,12 +41,16 @@
       "header": "BACKUP",
       "backupAndRestore": "Backup / Restore"
     },
+    "storage": {
+      "header": "STORAGE",
+      "storageTitle": "Storage"
+    },
     "danger": {
       "header": "DANGER ZONE",
-      "resetApp": "Reset App"
+      "clearStorage": "Clear Storage"
     },
     "reset": {
-      "confirmTitle": "Reset App?",
+      "confirmTitle": "Clear Storage?",
       "confirmMessage": "This will permanently delete all your notes, media, and files on this device. This action cannot be undone and your data cannot be recovered if you haven't backed it up or synced with another device."
     },
     "e2eEncrypted": "End-to-end encrypted",
@@ -281,7 +285,8 @@
   "layouts": {
     "settings": "Settings",
     "linkAndSync": "Link and Sync",
-    "backupRestore": "Backup / Restore"
+    "backupRestore": "Backup / Restore",
+    "storage": "Storage"
   },
   "tabs": {
     "home": "Home",
@@ -358,5 +363,19 @@
     "enterRecoveryKeyDesc": "Please enter the Recovery Key of the device that created this backup.",
     "invalidKey": "Invalid Key",
     "invalidKeyDesc": "The recovery key must be a 64-character hex string."
+  },
+  "storage": {
+    "hero": {
+      "title": "Storage",
+      "description": "View and manage the space used by your notes, media, and files on this device."
+    },
+    "usage": "USAGE",
+    "notesData": "Notes Data",
+    "diskFootprint": "On-disk Footprint",
+    "reclaimable": "Reclaimable",
+    "dangerZone": "DANGER ZONE",
+    "clearAllData": "Clear All Data",
+    "clearAllDataDesc": "Permanently deletes all notes, folders, settings, and media.",
+    "clearStorage": "Clear Storage"
   }
 }

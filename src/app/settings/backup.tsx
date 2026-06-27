@@ -1,4 +1,3 @@
-import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
 import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
 import { router, Stack } from 'expo-router'
@@ -17,8 +16,6 @@ import {
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 
 import useBackupScreen from '@/app/settings/useBackupScreen'
-import { BackupBreakdownSection } from '@/components/backup/BackupBreakdownSection'
-import { BackupNotesListSection } from '@/components/backup/BackupNotesListSection'
 import { BackupStatsSection } from '@/components/backup/BackupStatsSection'
 import { RecoveryKeyModal } from '@/components/backup/RecoveryKeyModal'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -33,7 +30,6 @@ import {
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_28,
   UI_ICON_SIZE_48,
-  UI_SIZE_14,
   UI_SIZE_15,
   UI_SIZE_2,
   UI_SIZE_20,
@@ -60,12 +56,7 @@ export default function BackupScreen() {
   const {
     importStatus,
     totalBlobBytes,
-    totalOnDiskBytes,
-    reclaimableBytes,
-    notesStorageInfo,
-    buckets,
     lastBackupDate,
-    confirmClear,
     showProgressModal,
     isError,
     errorMessage,
@@ -75,10 +66,6 @@ export default function BackupScreen() {
     handleCancelExport,
     handleCancelImport,
     handleRestoreComplete,
-    handleClearStorage,
-    handleShowConfirmClear,
-    handleHideConfirmClear,
-    handleDeleteMedia,
     handleRestoreData,
     isExporting,
     deviceRecoveryKey,
@@ -213,31 +200,9 @@ export default function BackupScreen() {
         <BackupStatsSection
           lastBackupDate={lastBackupDate}
           totalBlobBytes={totalBlobBytes}
-          totalOnDiskBytes={totalOnDiskBytes}
-          reclaimableBytes={reclaimableBytes}
           formatBackupDate={formatBackupDate}
           formatBytes={formatBytes}
         />
-
-        <BackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
-
-        <BackupNotesListSection
-          notesStorageInfo={notesStorageInfo}
-          formatBytes={formatBytes}
-          handleDeleteMedia={handleDeleteMedia}
-          mediaKind={mediaKind}
-        />
-
-        {reclaimableBytes > 0 && (
-          <Animated.View entering={FadeInDown.duration(240).delay(190)} style={styles.clearSection}>
-            <Pressable
-              onPress={handleShowConfirmClear}
-              style={({ pressed }) => [styles.clearBtn, pressed && styles.btnPressed]}
-            >
-              <Text style={styles.clearBtnText}>{t('backup.clearReclaimable')}</Text>
-            </Pressable>
-          </Animated.View>
-        )}
       </ScrollView>
 
       <Modal visible={showProgressModal} transparent animationType="fade" statusBarTranslucent>
@@ -310,34 +275,6 @@ export default function BackupScreen() {
                   <RNText style={styles.cancelBtnText}>{t('common.cancel')}</RNText>
                 </Pressable>
               )}
-            </RNView>
-          </RNView>
-        </RNView>
-      </Modal>
-
-      <Modal visible={confirmClear} transparent animationType="fade" statusBarTranslucent>
-        <RNView style={[commonStyles.modalOverlay, styles.overlayCenter]}>
-          <RNView style={styles.confirmCard}>
-            <RNText style={styles.progressTitle}>{t('backup.clearAllDataTitle')}</RNText>
-            <RNText style={styles.progressDesc}>{t('backup.clearAllDataDesc')}</RNText>
-
-            <RNView style={styles.clearActionRow}>
-              <Pressable
-                onPress={handleHideConfirmClear}
-                style={({ pressed }) => [
-                  styles.secondaryBtn,
-                  commonStyles.flex1,
-                  pressed && styles.btnPressed,
-                ]}
-              >
-                <RNText style={styles.secondaryBtnText}>{t('common.cancel')}</RNText>
-              </Pressable>
-              <Pressable
-                onPress={handleClearStorage}
-                style={({ pressed }) => [styles.clearConfirmBtn, pressed && styles.btnPressed]}
-              >
-                <RNText style={styles.clearConfirmText}>{t('common.clear')}</RNText>
-              </Pressable>
             </RNView>
           </RNView>
         </RNView>
@@ -507,12 +444,6 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.surface,
       marginHorizontal: Space.xl,
     },
-    confirmCard: {
-      borderRadius: Radii.xl,
-      backgroundColor: theme.colors.surface,
-      marginHorizontal: Space.xl,
-      padding: Space.xl,
-    },
     progressIconWrap: {
       width: UI_SIZE_72,
       height: UI_SIZE_72,
@@ -569,43 +500,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.primary,
-    },
-    clearSection: {
-      marginTop: UI_SIZE_4,
-      marginBottom: Space.sm,
-    },
-    clearActionRow: {
-      flexDirection: 'row',
-      gap: Space.md,
-      marginTop: Space.md,
-    },
-    clearBtn: {
-      ...commonStyles.row,
-      justifyContent: 'center',
-      gap: Space.sm,
-      paddingVertical: UI_SIZE_14,
-      borderRadius: Radii.pill,
-      borderWidth: 1,
-      borderColor: theme.colors.error,
-    },
-    clearBtnText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.error,
-    },
-    clearConfirmBtn: {
-      flex: 1,
-      height: UI_SIZE_54,
-      borderRadius: Radii.pill,
-      backgroundColor: theme.colors.error,
-      ...commonStyles.centered,
-    },
-    clearConfirmText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.white,
     },
   })
   return styles
