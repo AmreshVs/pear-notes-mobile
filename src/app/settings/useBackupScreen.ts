@@ -18,8 +18,6 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Platform } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { useToast } from '@/providers/ToastProvider'
-
 import {
   InvalidBackupFileError,
   pickAndReadBackupFile,
@@ -28,6 +26,7 @@ import {
 } from '@/lib/backupFileManager'
 import { loadLastBackupDate, saveLastBackupDate } from '@/lib/backupUtils'
 import { getDbEncryptionKey } from '@/lib/secureStore'
+import { useToast } from '@/providers/ToastProvider'
 
 type BackupStatus = {
   step: string
@@ -129,12 +128,13 @@ function useBackupScreen() {
         await saveBackupToDevice(exportBuffer)
         await saveLastBackupDate()
         setLastBackupDate(new Date().toISOString())
-      } catch {
+      } catch (e) {
+        showToast(String(e))
       } finally {
         dispatch(resetExport())
       }
     }
-  }, [exportBuffer, dispatch, t])
+  }, [exportBuffer, dispatch, showToast, t])
 
   useEffect(() => {
     if (exportStatus.step === 'done' && exportBuffer) {
@@ -150,18 +150,14 @@ function useBackupScreen() {
       setShowRecoveryModal(true)
     } catch (e) {
       if (Platform.OS === 'android') {
-        showToast(
-          e instanceof InvalidBackupFileError
-            ? t('backup.invalidFileDesc')
-            : String(e),
-        )
+        showToast(e instanceof InvalidBackupFileError ? t('backup.invalidFileDesc') : String(e))
       } else if (e instanceof InvalidBackupFileError) {
         Alert.alert(t('backup.invalidFile'), t('backup.invalidFileDesc'))
       } else {
         Alert.alert(t('backup.restoreError'), String(e))
       }
     }
-  }, [t])
+  }, [showToast, t])
 
   const handleConfirmRestore = useCallback(
     async (enteredKey: string) => {
