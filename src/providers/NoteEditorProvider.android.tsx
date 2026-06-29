@@ -981,7 +981,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       alignItems: 'center',
     },
     infoDialog: {
-      backgroundColor: c.surfaceContainerHigh,
+      backgroundColor: c.surfaceContainerHighest,
       borderRadius: UI_SIZE_28,
       padding: UI_SIZE_24,
       width: Math.min(width - 48, 400),
