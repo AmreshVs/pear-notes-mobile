@@ -57,6 +57,7 @@ export default function FolderNotesScreen() {
   const selectedNote = useSelector(getSelectedNote)
   const localPreferences = useSelector(getLocalPreferences)
   const allNotes = useSelector(getNotes) as any[]
+  const isTrashFolder = id === RECENTLY_DELETED_KEY
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote || null)
 
@@ -299,7 +300,9 @@ export default function FolderNotesScreen() {
         }}
       />
       <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="square.and.pencil" onPress={handleCreateNote} />
+        {!isTrashFolder && (
+          <Stack.Toolbar.Button icon="square.and.pencil" onPress={handleCreateNote} />
+        )}
         {!folder?.isSystem && (
           <Stack.Toolbar.Menu icon="ellipsis">
             <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
@@ -332,6 +335,16 @@ export default function FolderNotesScreen() {
                 </Text>
                 <Text style={commonThemedStyles.emptySubtitle}>
                   {t('folderView.empty.noMatchesSubtitle')}
+                </Text>
+              </>
+            ) : isTrashFolder ? (
+              <>
+                <SymbolView name="trash" size={44} tintColor={colors.textMuted} />
+                <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
+                  {t('folderView.empty.trashEmptyTitle')}
+                </Text>
+                <Text style={commonThemedStyles.emptySubtitle}>
+                  {t('folderView.empty.trashEmptySubtitle')}
                 </Text>
               </>
             ) : localPreferences['isSynced'] !== true && allNotes.length === 0 ? (
@@ -462,6 +475,9 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.primary,
       fontWeight: FontWeight.bold,
       fontSize: FontSize.body,
+    },
+    emptyTitle: {
+      marginTop: Space.md,
     },
   })
   return styles

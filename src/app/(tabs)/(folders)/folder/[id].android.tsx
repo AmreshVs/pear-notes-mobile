@@ -461,7 +461,8 @@ export default function AndroidFolderNotesScreen() {
         ListEmptyComponent={
           <AndroidEmptyState
             hasSearch={searchQuery.trim().length > 0}
-            isOnboarding={localPreferences['isSynced'] !== true && allNotes.length === 0}
+            isOnboarding={!isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0}
+            isTrash={isTrashFolder}
             onLinkDevice={handleLinkDevice}
             onCreateNote={handleCreateNote}
             height={height}
@@ -469,13 +470,15 @@ export default function AndroidFolderNotesScreen() {
         }
       />
 
-      <FAB
-        icon="plus"
-        onPress={handleCreateNote}
-        style={styles.fab}
-        color={c.onPrimaryContainer}
-        customSize={64}
-      />
+      {!isTrashFolder && (
+        <FAB
+          icon="plus"
+          onPress={handleCreateNote}
+          style={styles.fab}
+          color={c.onPrimaryContainer}
+          customSize={64}
+        />
+      )}
 
       <Modal
         visible={!!renameDialog}

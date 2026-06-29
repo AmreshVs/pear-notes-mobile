@@ -23,6 +23,7 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 type EmptyStateProps = {
   hasSearch: boolean
   isOnboarding: boolean
+  isTrash?: boolean
   onLinkDevice: () => void
   onCreateNote: () => void
   height: number
@@ -31,6 +32,7 @@ type EmptyStateProps = {
 export const AndroidEmptyState = memo(function AndroidEmptyState({
   hasSearch,
   isOnboarding,
+  isTrash,
   onLinkDevice,
   onCreateNote,
   height,
@@ -106,6 +108,20 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
               </Text>
             </Pressable>
           </View>
+        </>
+      ) : isTrash ? (
+        <>
+          <MaterialCommunityIcons
+            name="delete-empty-outline"
+            size={UI_ICON_SIZE_48}
+            color={hexWithAlpha(c.onSurfaceVariant, 0.3)}
+          />
+          <Text style={styles.title}>
+            {t('folderView.empty.trashEmptyTitle')}
+          </Text>
+          <Text style={styles.subtitle}>
+            {t('folderView.empty.trashEmptySubtitle')}
+          </Text>
         </>
       ) : (
         <>
