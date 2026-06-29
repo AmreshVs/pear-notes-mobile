@@ -2,7 +2,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import * as Clipboard from 'expo-clipboard'
 import * as Haptics from 'expo-haptics'
 import { router, Stack } from 'expo-router'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import useBackupScreen from '@/app/settings/useBackupScreen'
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
+import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { RecoveryKeyModal } from '@/components/backup/RecoveryKeyModal'
 import { createThemedStylesheetWithHooks, useTheme } from '@/components/Themed'
@@ -84,6 +85,9 @@ export default function AndroidBackupScreen() {
     showRecoveryModal,
     handleConfirmRestore,
     handleCancelRecovery,
+    showExportConfirm,
+    handleConfirmExport,
+    handleDismissExportConfirm,
   } = useBackupScreen()
 
   const commonThemedStyles = useCommonThemedStyles()
@@ -103,6 +107,17 @@ export default function AndroidBackupScreen() {
       setTimeout(() => setCopied(false), 2000)
     }
   }, [deviceRecoveryKey])
+
+  const exportConfirmActions = useMemo(
+    () => [
+      {
+        icon: 'database-export-outline',
+        label: t('backup.confirmExportYes'),
+        onPress: handleConfirmExport,
+      },
+    ],
+    [handleConfirmExport, t],
+  )
 
   const progressTitle = isExporting
     ? t('backup.progress.creatingTitle')
@@ -293,6 +308,14 @@ export default function AndroidBackupScreen() {
         visible={showRecoveryModal}
         onClose={handleCancelRecovery}
         onSubmit={handleConfirmRestore}
+      />
+
+      <BottomActionSheet
+        visible={showExportConfirm}
+        onDismiss={handleDismissExportConfirm}
+        title={t('backup.confirmExportTitle')}
+        subtitle={t('backup.confirmExportDesc')}
+        actions={exportConfirmActions}
       />
     </View>
   )

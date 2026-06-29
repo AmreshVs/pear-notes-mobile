@@ -23,6 +23,7 @@ import { useDispatch } from 'react-redux'
 import { AudioRecorderModal } from '../components/AudioRecorderModal'
 import { isImageFile } from '../utils/media'
 
+import { useToast } from './ToastProvider'
 import { useNoteEditor } from './useNoteEditor'
 
 import { AttachmentSheet } from '@/components/android/AttachmentSheet'
@@ -88,6 +89,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const dispatch = useDispatch()
   const styles = useStyles()
   const { width } = Dimensions.get('window')
+  const { showToast } = useToast()
 
   const {
     editorRef,
@@ -195,10 +197,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             setTimeout(() => editorRef.current?.scrollToEnd(), 300)
           }
         } catch {
-          setDialogInfo({
-            title: t('noteEditor.upload.failedTitle'),
-            message: t('noteEditor.upload.failedVideo'),
-          })
+          showToast(t('noteEditor.upload.failedVideo'))
         } finally {
           setUploadInfo(null)
         }
@@ -235,7 +234,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         setUploadInfo(null)
       }
     },
-    [noteId, resolveHyperdriveUrl, setUploadInfo, setDialogInfo, t, width],
+    [noteId, resolveHyperdriveUrl, setUploadInfo, showToast, t, width],
   )
 
   const handlePickImage = useCallback(async () => {
@@ -415,24 +414,18 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             )
             await copyFileToSAF(localPath, uri)
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-            setDialogInfo({
-              title: t('common.success', 'Success'),
-              message: t('noteCard.downloadComplete', 'File downloaded successfully.'),
-            })
+            showToast(t('noteCard.downloadComplete', 'File downloaded successfully.'))
           } else {
-            setDialogInfo({
-              title: t('common.error', 'Error'),
-              message: t('noteEditor.upload.failedDownload', 'Could not download the file.'),
-            })
+            showToast(t('noteEditor.upload.failedDownload', 'Could not download the file.'))
           }
         }
       } catch (e) {
-        setDialogInfo({ title: t('common.error', 'Error'), message: String(e) })
+        showToast(String(e))
       } finally {
         setUploadInfo(null)
       }
     },
-    [resolveHyperdriveUrl, setUploadInfo, setDialogInfo, t],
+    [resolveHyperdriveUrl, setUploadInfo, showToast, t],
   )
 
   const handleImageLongPress = useCallback(

@@ -15,7 +15,6 @@ import { Href, router, Stack } from 'expo-router'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Alert,
   Modal,
   Pressable,
   ScrollView,
@@ -98,6 +97,7 @@ export default function AndroidFoldersScreen() {
   const selectedNote = useSelector(getSelectedNote) as string | null
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
   const [renameDialog, setRenameDialog] = useState<{ id: string; name: string } | null>(null)
   const [renameText, setRenameText] = useState('')
@@ -188,15 +188,18 @@ export default function AndroidFoldersScreen() {
     if (!folderSheet) return
     const folderId = folderSheet
     setFolderSheet(null)
-    Alert.alert(t('folders.deleteTitle'), t('folders.deleteDescription'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('folders.buttons.delete'),
-        style: 'destructive',
-        onPress: () => dispatch(deleteFolder(folderId)),
-      },
-    ])
-  }, [folderSheet, dispatch, t])
+    setDeleteConfirmFolder(folderId)
+  }, [folderSheet])
+
+  const handleConfirmDelete = useCallback(() => {
+    if (!deleteConfirmFolder) return
+    dispatch(deleteFolder(deleteConfirmFolder))
+    setDeleteConfirmFolder(null)
+  }, [deleteConfirmFolder, dispatch])
+
+  const handleCloseDeleteConfirm = useCallback(() => {
+    setDeleteConfirmFolder(null)
+  }, [])
 
   const handleOpenSettings = useCallback(() => {
     router.push('/settings')
@@ -235,6 +238,18 @@ export default function AndroidFoldersScreen() {
     [handleSheetRename, handleSheetDelete, t],
   )
 
+  const deleteConfirmActions = useMemo(
+    () => [
+      {
+        icon: 'delete-outline',
+        label: t('folders.buttons.delete'),
+        onPress: handleConfirmDelete,
+        destructive: true,
+      },
+    ],
+    [handleConfirmDelete, t],
+  )
+
   return (
     <View style={styles.root}>
       <StatusBar
@@ -263,7 +278,10 @@ export default function AndroidFoldersScreen() {
           </Pressable>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(220).delay(40).easing(Easing.out(Easing.cubic))} style={styles.searchWrap}>
+        <Animated.View
+          entering={FadeInDown.duration(220).delay(40).easing(Easing.out(Easing.cubic))}
+          style={styles.searchWrap}
+        >
           <View style={styles.searchBar}>
             <MaterialCommunityIcons
               name="magnify"
@@ -386,6 +404,14 @@ export default function AndroidFoldersScreen() {
         title={sheetTitle}
         subtitle={t('folders.options')}
         actions={sheetActions}
+      />
+
+      <BottomActionSheet
+        visible={!!deleteConfirmFolder}
+        onDismiss={handleCloseDeleteConfirm}
+        title={t('folders.deleteTitle')}
+        subtitle={t('folders.deleteDescription')}
+        actions={deleteConfirmActions}
       />
     </View>
   )

@@ -18,6 +18,8 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Platform } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { useToast } from '@/providers/ToastProvider'
+
 import {
   InvalidBackupFileError,
   pickAndReadBackupFile,
@@ -38,6 +40,8 @@ type BackupStatus = {
 function useBackupScreen() {
   const dispatch = useDispatch()
   const { t } = useTranslation()
+  const { showToast } = useToast()
+  const [showExportConfirm, setShowExportConfirm] = useState(false)
 
   const exportStatus = useSelector(getExportStatus) as BackupStatus
   const importStatus = useSelector(getImportStatus) as BackupStatus
@@ -72,24 +76,29 @@ function useBackupScreen() {
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
   const handleCreateBackup = useCallback(() => {
-    Alert.alert(
-      t('backup.confirmExportTitle'),
-      t('backup.confirmExportDesc'),
-      [
-        {
-          text: t('backup.confirmExportNo'),
-          style: 'cancel',
-        },
-        {
-          text: t('backup.confirmExportYes'),
-          onPress: () => {
-            dispatch(startExportBackup())
-          },
-        },
-      ],
-      { cancelable: true },
-    )
+    if (Platform.OS === 'android') {
+      setShowExportConfirm(true)
+    } else {
+      Alert.alert(
+        t('backup.confirmExportTitle'),
+        t('backup.confirmExportDesc'),
+        [
+          { text: t('backup.confirmExportNo'), style: 'cancel' },
+          { text: t('backup.confirmExportYes'), onPress: () => dispatch(startExportBackup()) },
+        ],
+        { cancelable: true },
+      )
+    }
   }, [dispatch, t])
+
+  const handleConfirmExport = useCallback(() => {
+    setShowExportConfirm(false)
+    dispatch(startExportBackup())
+  }, [dispatch])
+
+  const handleDismissExportConfirm = useCallback(() => {
+    setShowExportConfirm(false)
+  }, [])
 
   const handleCancelExport = useCallback(() => {
     dispatch(resetExport())
@@ -140,7 +149,13 @@ function useBackupScreen() {
       setSelectedBackupBuffer(buffer)
       setShowRecoveryModal(true)
     } catch (e) {
-      if (e instanceof InvalidBackupFileError) {
+      if (Platform.OS === 'android') {
+        showToast(
+          e instanceof InvalidBackupFileError
+            ? t('backup.invalidFileDesc')
+            : String(e),
+        )
+      } else if (e instanceof InvalidBackupFileError) {
         Alert.alert(t('backup.invalidFile'), t('backup.invalidFileDesc'))
       } else {
         Alert.alert(t('backup.restoreError'), String(e))
@@ -198,6 +213,9 @@ function useBackupScreen() {
     showRecoveryModal,
     handleConfirmRestore,
     handleCancelRecovery,
+    showExportConfirm,
+    handleConfirmExport,
+    handleDismissExportConfirm,
   }
 }
 

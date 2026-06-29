@@ -23,7 +23,6 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Alert,
   FlatList,
   ListRenderItemInfo,
   Modal,
@@ -93,6 +92,8 @@ export default function AndroidFolderNotesScreen() {
   const [folderOptionsSheet, setFolderOptionsSheet] = useState(false)
   const [renameDialog, setRenameDialog] = useState<{ id: string; name: string } | null>(null)
   const [renameText, setRenameText] = useState('')
+  const [deleteConfirmNote, setDeleteConfirmNote] = useState<string | null>(null)
+  const [showFolderDeleteConfirm, setShowFolderDeleteConfirm] = useState(false)
 
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote)
@@ -172,23 +173,12 @@ export default function AndroidFolderNotesScreen() {
   const handleDeleteNote = useCallback(
     (noteId: string) => {
       if (isTrashFolder) {
-        Alert.alert(
-          t('folderView.permanentlyDeleteTitle'),
-          t('folderView.permanentlyDeleteSubtitle'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('folders.buttons.delete'),
-              style: 'destructive',
-              onPress: () => dispatch(deleteNote(noteId as any)),
-            },
-          ],
-        )
+        setDeleteConfirmNote(noteId)
       } else {
         dispatch(deleteNote(noteId as any))
       }
     },
-    [dispatch, isTrashFolder, t],
+    [dispatch, isTrashFolder],
   )
 
   const handleMoveNote = useCallback(
@@ -260,18 +250,20 @@ export default function AndroidFolderNotesScreen() {
 
   const handleFolderSheetDelete = useCallback(() => {
     setFolderOptionsSheet(false)
-    Alert.alert(t('folders.deleteTitle'), t('folders.deleteDescription'), [
-      { text: t('common.cancel'), style: 'cancel' },
-      {
-        text: t('folders.buttons.delete'),
-        style: 'destructive',
-        onPress: () => {
-          dispatch(deleteFolder(id as any))
-          router.back()
-        },
-      },
-    ])
-  }, [dispatch, id, t])
+    setShowFolderDeleteConfirm(true)
+  }, [])
+
+  const handleConfirmDeleteNote = useCallback(() => {
+    if (!deleteConfirmNote) return
+    dispatch(deleteNote(deleteConfirmNote as any))
+    setDeleteConfirmNote(null)
+  }, [deleteConfirmNote, dispatch])
+
+  const handleConfirmDeleteFolder = useCallback(() => {
+    dispatch(deleteFolder(id as any))
+    setShowFolderDeleteConfirm(false)
+    router.back()
+  }, [dispatch, id])
 
   const confirmRename = useCallback(() => {
     if (!renameDialog) return
@@ -354,6 +346,30 @@ export default function AndroidFolderNotesScreen() {
   const handleCloseFolderOptions = useCallback(() => {
     setFolderOptionsSheet(false)
   }, [])
+
+  const deleteNoteConfirmActions = useMemo(
+    () => [
+      {
+        icon: 'delete-outline',
+        label: t('folders.buttons.delete'),
+        onPress: handleConfirmDeleteNote,
+        destructive: true,
+      },
+    ],
+    [handleConfirmDeleteNote, t],
+  )
+
+  const deleteFolderConfirmActions = useMemo(
+    () => [
+      {
+        icon: 'delete-outline',
+        label: t('folders.buttons.delete'),
+        onPress: handleConfirmDeleteFolder,
+        destructive: true,
+      },
+    ],
+    [handleConfirmDeleteFolder, t],
+  )
 
   return (
     <View style={styles.root}>
@@ -525,6 +541,22 @@ export default function AndroidFolderNotesScreen() {
         onDismiss={handleCloseFolderPicker}
         folders={moveFolders.map((f: any) => ({ id: f.id, name: f.name }))}
         onSelect={handleConfirmMove}
+      />
+
+      <BottomActionSheet
+        visible={!!deleteConfirmNote}
+        onDismiss={() => setDeleteConfirmNote(null)}
+        title={t('folderView.permanentlyDeleteTitle')}
+        subtitle={t('folderView.permanentlyDeleteSubtitle')}
+        actions={deleteNoteConfirmActions}
+      />
+
+      <BottomActionSheet
+        visible={showFolderDeleteConfirm}
+        onDismiss={() => setShowFolderDeleteConfirm(false)}
+        title={t('folders.deleteTitle')}
+        subtitle={t('folders.deleteDescription')}
+        actions={deleteFolderConfirmActions}
       />
     </View>
   )

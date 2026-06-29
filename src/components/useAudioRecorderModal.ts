@@ -10,7 +10,9 @@ import {
 import * as Haptics from 'expo-haptics'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert } from 'react-native'
+import { Alert, Platform } from 'react-native'
+
+import { useToast } from '@/providers/ToastProvider'
 import {
   Easing,
   runOnJS,
@@ -84,6 +86,7 @@ export function useAudioRecorderModal({
   onCancel,
 }: AudioRecorderModalProps): AudioRecorderModalState {
   const { t } = useTranslation()
+  const { showToast } = useToast()
 
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY)
   const player = useAudioPlayer(null)
@@ -242,7 +245,11 @@ export function useAudioRecorderModal({
       const { granted } = await AudioModule.requestRecordingPermissionsAsync()
       setHasPermission(granted)
       if (!granted) {
-        Alert.alert(t('audioRecorder.errors.micTitle'), t('audioRecorder.errors.micMessage'))
+        if (Platform.OS === 'android') {
+          showToast(t('audioRecorder.errors.micMessage'))
+        } else {
+          Alert.alert(t('audioRecorder.errors.micTitle'), t('audioRecorder.errors.micMessage'))
+        }
         return
       }
     }
@@ -273,10 +280,14 @@ export function useAudioRecorderModal({
       }, 90)
     } catch (err: any) {
       console.error('[AudioRecorderModal][handleRecord] failed:', err)
-      Alert.alert(
-        t('audioRecorder.errors.recordTitle'),
-        err?.message ?? t('audioRecorder.errors.recordDefault'),
-      )
+      if (Platform.OS === 'android') {
+        showToast(err?.message ?? t('audioRecorder.errors.recordDefault'))
+      } else {
+        Alert.alert(
+          t('audioRecorder.errors.recordTitle'),
+          err?.message ?? t('audioRecorder.errors.recordDefault'),
+        )
+      }
     }
   }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback, t])
 

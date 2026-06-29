@@ -26,6 +26,7 @@ import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { SheetProvider } from '@/providers/SheetProvider'
+import { ToastProvider } from '@/providers/ToastProvider'
 import { startWorklet } from '@/utils/worklet'
 
 export { ErrorBoundary } from 'expo-router'
@@ -249,6 +250,7 @@ function RootLayoutNav() {
     <ThemeProvider value={isDark ? CustomDarkTheme : CustomLightTheme}>
       <AndroidPaperProvider>
         <SheetProvider>
+          <ToastProvider>
           <SplashGate />
           <NoteEditorProvider>
             <Stack
@@ -269,6 +271,7 @@ function RootLayoutNav() {
 
             <PairingOverlay />
           </NoteEditorProvider>
+          </ToastProvider>
         </SheetProvider>
       </AndroidPaperProvider>
     </ThemeProvider>

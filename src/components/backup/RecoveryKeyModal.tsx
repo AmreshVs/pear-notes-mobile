@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Modal, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
+import { Alert, Modal, Platform, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
+import { useToast } from '@/providers/ToastProvider'
 import {
   commonStyles,
   FontFamily,
@@ -25,11 +26,16 @@ export function RecoveryKeyModal({ visible, onClose, onSubmit }: RecoveryKeyModa
   const { colors } = theme
   const styles = useStyles()
   const [inputValue, setInputValue] = useState('')
+  const { showToast } = useToast()
 
   const handleSubmit = () => {
     const trimmed = inputValue.trim()
     if (trimmed.length !== 64 || !/^[0-9a-fA-F]+$/.test(trimmed)) {
-      Alert.alert(t('backup.invalidKey'), t('backup.invalidKeyDesc'))
+      if (Platform.OS === 'android') {
+        showToast(t('backup.invalidKeyDesc'))
+      } else {
+        Alert.alert(t('backup.invalidKey'), t('backup.invalidKeyDesc'))
+      }
       return
     }
     onSubmit(trimmed)
