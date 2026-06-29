@@ -158,7 +158,7 @@ export function AttachmentSheet({
 const useStyles = createThemedStylesheetWithHooks(
   (theme, md3Theme) => {
     const c = md3Theme.colors as ExtendedColors
-    const sheetBg = c.surfaceContainerLow ?? c.surface
+    const sheetBg = c.background
 
     const styles = StyleSheet.create({
       sheetBackground: {
@@ -171,7 +171,7 @@ const useStyles = createThemedStylesheetWithHooks(
         height: UI_SIZE_4,
         borderRadius: 9999,
         alignSelf: 'center',
-        backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.3),
+        backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
       },
       container: {
         paddingHorizontal: UI_SIZE_20,
@@ -206,7 +206,7 @@ const useStyles = createThemedStylesheetWithHooks(
         borderRadius: 9999,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.9),
+        backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
       },
       itemLabel: {
         fontSize: FontSize.caption,

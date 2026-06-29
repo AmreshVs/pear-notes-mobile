@@ -27,12 +27,13 @@ import {
 } from 'react-native'
 import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
 import Animated, {
+  Easing,
   FadeIn,
   FadeInDown,
   LinearTransition,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
@@ -262,7 +263,7 @@ export default function AndroidFoldersScreen() {
           </Pressable>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(220).delay(40)} style={styles.searchWrap}>
+        <Animated.View entering={FadeInDown.duration(220).delay(40).easing(Easing.out(Easing.cubic))} style={styles.searchWrap}>
           <View style={styles.searchBar}>
             <MaterialCommunityIcons
               name="magnify"
@@ -282,8 +283,8 @@ export default function AndroidFoldersScreen() {
         </Animated.View>
 
         <Animated.View
-          entering={FadeInDown.duration(240).delay(80)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          entering={FadeInDown.duration(240).delay(80).easing(Easing.out(Easing.cubic))}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.listCard}
         >
           {topFolders.map((folder, index) => (
@@ -310,7 +311,7 @@ export default function AndroidFoldersScreen() {
 
         {archiveFolders.length > 0 && (
           <Animated.View
-            entering={FadeInDown.duration(240).delay(120)}
+            entering={FadeInDown.duration(240).delay(120).easing(Easing.out(Easing.cubic))}
             style={styles.archiveSection}
           >
             <View style={styles.sectionHeader}>
@@ -424,10 +425,10 @@ const VaultFolderRow = memo(function VaultFolderRow({
   const handlePress = useCallback(() => onPress(id), [id, onPress])
   const handleLongPress = useCallback(() => onLongPress(id), [id, onLongPress])
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.97, { damping: 18, stiffness: 350 })
+    scale.value = withTiming(0.97, { duration: 120, easing: Easing.out(Easing.cubic) })
   }, [scale])
   const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 })
+    scale.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) })
   }, [scale])
 
   const iconName = isAll ? 'folder-account' : isTrash ? 'delete-outline' : 'folder-outline'
@@ -449,7 +450,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
   return (
     <Animated.View
       style={animatedStyle}
-      layout={LinearTransition.springify().damping(20).stiffness(220)}
+      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable
         onPress={handlePress}

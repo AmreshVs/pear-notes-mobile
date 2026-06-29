@@ -6,12 +6,13 @@ import { memo, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Image, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
+  Easing,
   FadeInDown,
   FadeOutUp,
   LinearTransition,
   useAnimatedStyle,
   useSharedValue,
-  withSpring,
+  withTiming,
 } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 
@@ -76,17 +77,17 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const handlePress = useCallback(() => onPress(note.key), [onPress, note.key])
   const handleLongPress = useCallback(() => onLongPress(note.key), [onLongPress, note.key])
   const handlePressIn = useCallback(() => {
-    scale.value = withSpring(0.985, { damping: 20, stiffness: 400 })
+    scale.value = withTiming(0.985, { duration: 120, easing: Easing.out(Easing.cubic) })
   }, [scale])
   const handlePressOut = useCallback(() => {
-    scale.value = withSpring(1, { damping: 16, stiffness: 300 })
+    scale.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) })
   }, [scale])
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(200).delay(Math.min(index, 10) * 30)}
+      entering={FadeInDown.duration(200).delay(Math.min(index, 10) * 30).easing(Easing.out(Easing.cubic))}
       exiting={FadeOutUp.duration(160)}
-      layout={LinearTransition.springify().damping(20).stiffness(220)}
+      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
       style={animStyle}
     >
       <Pressable
