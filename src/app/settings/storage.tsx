@@ -121,14 +121,14 @@ export default function StorageScreen() {
                 <Text style={styles.dangerTitle}>{t('storage.clearAllData')}</Text>
                 <Text style={styles.dangerDesc}>{t('storage.clearAllDataDesc')}</Text>
               </RNView>
-              <Pressable
-                onPress={handleResetPress}
-                style={({ pressed }) => [styles.dangerBtn, pressed && commonStyles.pressed]}
-              >
-                <Trash2 size={UI_ICON_SIZE_16} color={colors.error} strokeWidth={2} />
-                <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
-              </Pressable>
             </RNView>
+            <Pressable
+              onPress={handleResetPress}
+              style={({ pressed }) => [styles.dangerBtn, pressed && commonStyles.pressed]}
+            >
+              <Trash2 size={UI_ICON_SIZE_16} color={colors.error} strokeWidth={2} />
+              <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
+            </Pressable>
           </RNView>
         </Animated.View>
       </ScrollView>
@@ -257,6 +257,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     dangerBtn: {
       ...commonStyles.row,
+      ...commonStyles.centered,
       gap: Space.sm,
       paddingHorizontal: Space.base,
       paddingVertical: Space.sm,
@@ -264,6 +265,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderWidth: 1,
       borderColor: theme.colors.error,
       backgroundColor: `${theme.colors.error}10`,
+      marginTop: Space.md,
     },
     dangerBtnText: {
       fontSize: FontSize.body,

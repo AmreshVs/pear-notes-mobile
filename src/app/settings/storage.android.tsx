@@ -280,8 +280,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       opacity: 0.7,
     },
     dangerCard: {
-      ...commonStyles.rowBetween,
-      alignItems: 'center',
+      ...commonStyles.centered,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
       padding: UI_SIZE_20,
@@ -305,6 +304,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     dangerBtn: {
       ...commonStyles.row,
+      ...commonStyles.centered,
       gap: UI_SIZE_8,
       paddingHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_10,
@@ -312,6 +312,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       borderWidth: 1,
       borderColor: c.error,
       backgroundColor: hexWithAlpha(c.error, 0.08),
+      width: '100%',
     },
     dangerBtnText: {
       fontSize: FontSize.body,
