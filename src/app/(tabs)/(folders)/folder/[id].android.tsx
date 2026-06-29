@@ -217,8 +217,12 @@ export default function AndroidFolderNotesScreen() {
     if (!activeNoteId) return
     const targetId = activeNoteId
     setNoteSheetVisible(false)
-    handleDeleteNote(targetId)
-  }, [activeNoteId, handleDeleteNote])
+    if (isTrashFolder) {
+      setTimeout(() => setDeleteConfirmNote(targetId), 300)
+    } else {
+      dispatch(deleteNote(targetId as any))
+    }
+  }, [activeNoteId, isTrashFolder, dispatch])
 
   const handleNoteSheetCopy = useCallback(async () => {
     if (!activeNoteId) return
