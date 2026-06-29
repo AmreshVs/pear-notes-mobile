@@ -150,9 +150,11 @@
       "noMatchesSubtitle": "Try a different search term",
       "noNotesTitle": "No Notes",
       "noNotesSubtitle": "Tap the compose button to create one",
-      "linkTitle": "Link Existing Device",
-      "linkSub": "Already have notes elsewhere?",
-      "connectBtn": "Connect Device"
+      "onboardingTitle": "Start your first note",
+      "onboardingSubtitle": "Write something new or connect another device to sync your existing notes.",
+      "newNoteBtn": "New note",
+      "connectBtn": "Connect device",
+      "noNotesHint": "Tap + to create a note in this folder"
     },
     "sections": {
       "today": "Today",

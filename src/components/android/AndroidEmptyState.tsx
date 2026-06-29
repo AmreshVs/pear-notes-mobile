@@ -13,11 +13,8 @@ import {
   UI_ICON_SIZE_48,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_18,
-  UI_SIZE_2,
   UI_SIZE_20,
   UI_SIZE_24,
-  UI_SIZE_32,
   UI_SIZE_40,
   UI_SIZE_8,
 } from '@/constants/commonStyles'
@@ -25,15 +22,17 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 
 type EmptyStateProps = {
   hasSearch: boolean
-  isSynced: boolean
+  isOnboarding: boolean
   onLinkDevice: () => void
+  onCreateNote: () => void
   height: number
 }
 
 export const AndroidEmptyState = memo(function AndroidEmptyState({
   hasSearch,
-  isSynced,
+  isOnboarding,
   onLinkDevice,
+  onCreateNote,
   height,
 }: EmptyStateProps) {
   const { t } = useTranslation()
@@ -60,6 +59,54 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
             {t('folderView.empty.noMatchesSubtitle')}
           </Text>
         </>
+      ) : isOnboarding ? (
+        <>
+          <MaterialCommunityIcons
+            name="notebook-outline"
+            size={UI_ICON_SIZE_48}
+            color={c.primary}
+          />
+          <Text style={styles.title}>
+            {t('folderView.empty.onboardingTitle')}
+          </Text>
+          <Text style={styles.subtitle}>
+            {t('folderView.empty.onboardingSubtitle')}
+          </Text>
+          <View style={styles.ctaRow}>
+            <Pressable
+              onPress={onCreateNote}
+              style={({ pressed }) => [
+                styles.primaryBtn,
+                pressed && styles.btnPressed,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="plus"
+                size={UI_SIZE_20}
+                color={c.onPrimary}
+              />
+              <Text style={styles.primaryBtnText}>
+                {t('folderView.empty.newNoteBtn')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onLinkDevice}
+              style={({ pressed }) => [
+                styles.secondaryBtn,
+                pressed && styles.btnPressed,
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="devices"
+                size={UI_SIZE_20}
+                color={c.primary}
+              />
+              <Text style={styles.secondaryBtnText}>
+                {t('folderView.empty.connectBtn')}
+              </Text>
+            </Pressable>
+          </View>
+        </>
       ) : (
         <>
           <MaterialCommunityIcons
@@ -73,28 +120,6 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
           <Text style={styles.subtitle}>
             {t('folderView.empty.noNotesSubtitle')}
           </Text>
-          {!isSynced && (
-            <View style={styles.linkBox}>
-              <View style={styles.divider} />
-              <Text style={styles.linkTitle}>
-                {t('folderView.empty.linkTitle')}
-              </Text>
-              <Text style={styles.linkSub}>
-                {t('folderView.empty.linkSub')}
-              </Text>
-              <Pressable
-                onPress={onLinkDevice}
-                style={({ pressed }) => [
-                  styles.linkBtn,
-                  pressed && styles.linkBtnPressed,
-                ]}
-              >
-                <Text style={styles.linkBtnText}>
-                  {t('folderView.empty.connectBtn')}
-                </Text>
-              </Pressable>
-            </View>
-          )}
         </>
       )}
     </Animated.View>
@@ -128,48 +153,44 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       lineHeight: UI_SIZE_20,
       color: c.onSurfaceVariant,
     },
-    linkBox: {
+    ctaRow: {
+      flexDirection: 'row',
+      gap: UI_SIZE_12,
+      marginTop: UI_SIZE_24,
+    },
+    primaryBtn: {
+      flexDirection: 'row',
       alignItems: 'center',
-      marginTop: UI_SIZE_32,
-      width: '100%',
-    },
-    divider: {
-      width: UI_SIZE_40,
-      height: 3,
-      borderRadius: UI_SIZE_2,
-      marginBottom: UI_SIZE_24,
-      backgroundColor: hexWithAlpha(c.outlineVariant, 0.3),
-    },
-    linkTitle: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.extraBold,
-      letterSpacing: 1.2,
-      marginBottom: UI_SIZE_8,
-      color: c.onSurface,
-    },
-    linkSub: {
-      fontSize: FontSize.body,
-      marginBottom: UI_SIZE_18,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
-      width: '100%',
-      textAlign: 'center'
-    },
-    linkBtn: {
+      gap: UI_SIZE_8,
       paddingHorizontal: UI_SIZE_24,
       paddingVertical: UI_SIZE_12,
       borderRadius: UI_SIZE_12,
-      backgroundColor: c.primaryContainer,
+      backgroundColor: c.primary,
     },
-    linkBtnPressed: {
+    secondaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_24,
+      paddingVertical: UI_SIZE_12,
+      borderRadius: UI_SIZE_12,
+      borderWidth: 1,
+      borderColor: c.outline,
+    },
+    btnPressed: {
       opacity: 0.8,
     },
-    linkBtnText: {
+    primaryBtnText: {
       fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      color: c.onPrimaryContainer,
+      color: c.onPrimary,
+    },
+    secondaryBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.primary,
     },
   })
   return styles

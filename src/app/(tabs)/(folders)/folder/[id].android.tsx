@@ -9,6 +9,7 @@ import {
   createNote,
   deleteNote,
   getFilteredNotes,
+  getNotes,
   getSelectedNote,
   setSelectedNote,
   updateNote,
@@ -83,6 +84,7 @@ export default function AndroidFolderNotesScreen() {
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote) as string | null
   const localPreferences = useSelector(getLocalPreferences) as any
+  const allNotes = useSelector(getNotes) as any[]
 
   const [searchVisible, setSearchVisible] = useState(false)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
@@ -443,8 +445,9 @@ export default function AndroidFolderNotesScreen() {
         ListEmptyComponent={
           <AndroidEmptyState
             hasSearch={searchQuery.trim().length > 0}
-            isSynced={localPreferences['isSynced'] === true}
+            isOnboarding={localPreferences['isSynced'] !== true && allNotes.length === 0}
             onLinkDevice={handleLinkDevice}
+            onCreateNote={handleCreateNote}
             height={height}
           />
         }

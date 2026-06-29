@@ -9,6 +9,7 @@ import {
   createNote,
   deleteNote,
   getFilteredNotes,
+  getNotes,
   getSelectedNote,
   setSelectedNote,
   updateNote,
@@ -19,6 +20,7 @@ import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/ui
 import { formatDate } from '@pear-notes/core/utils.js'
 import * as Clipboard from 'expo-clipboard'
 import { Stack, router, useLocalSearchParams } from 'expo-router'
+import { SymbolView } from 'expo-symbols'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
@@ -32,8 +34,6 @@ import {
   LetterSpacing,
   Space,
   UI_SIZE_2,
-  UI_SIZE_32,
-  UI_SIZE_4,
   UI_SIZE_42,
   commonStyles,
 } from '@/constants/commonStyles'
@@ -56,6 +56,7 @@ export default function FolderNotesScreen() {
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote)
   const localPreferences = useSelector(getLocalPreferences)
+  const allNotes = useSelector(getNotes) as any[]
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote || null)
 
@@ -333,6 +334,34 @@ export default function FolderNotesScreen() {
                   {t('folderView.empty.noMatchesSubtitle')}
                 </Text>
               </>
+            ) : localPreferences['isSynced'] !== true && allNotes.length === 0 ? (
+              <>
+                <SymbolView name="book.closed" size={44} tintColor={colors.primary} />
+                <Text style={styles.onboardingTitle}>{t('folderView.empty.onboardingTitle')}</Text>
+                <Text style={commonThemedStyles.emptySubtitle}>
+                  {t('folderView.empty.onboardingSubtitle')}
+                </Text>
+                <View style={styles.ctaRow}>
+                  <Pressable
+                    onPress={handleCreateNote}
+                    style={({ pressed }) => [styles.primaryBtn, pressed && commonStyles.pressed]}
+                  >
+                    <SymbolView name="plus" size={16} tintColor={colors.white} />
+                    <Text style={styles.primaryBtnText}>{t('folderView.empty.newNoteBtn')}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={handleLinkDevice}
+                    style={({ pressed }) => [styles.secondaryBtn, pressed && commonStyles.pressed]}
+                  >
+                    <SymbolView
+                      name="laptopcomputer.and.iphone"
+                      size={16}
+                      tintColor={colors.primary}
+                    />
+                    <Text style={styles.secondaryBtnText}>{t('folderView.empty.connectBtn')}</Text>
+                  </Pressable>
+                </View>
+              </>
             ) : (
               <>
                 <Text style={commonThemedStyles.emptyTitle}>
@@ -341,19 +370,6 @@ export default function FolderNotesScreen() {
                 <Text style={commonThemedStyles.emptySubtitle}>
                   {t('folderView.empty.noNotesSubtitle')}
                 </Text>
-                {localPreferences['isSynced'] !== true && (
-                  <View style={styles.linkContainer}>
-                    <View style={styles.linkDivider} />
-                    <Text style={styles.linkTitle}>{t('folderView.empty.linkTitle')}</Text>
-                    <Text style={styles.linkSub}>{t('folderView.empty.linkSub')}</Text>
-                    <Pressable
-                      onPress={handleLinkDevice}
-                      style={({ pressed }) => [styles.connectBtn, pressed && commonStyles.pressed]}
-                    >
-                      <Text style={styles.linkBtnText}>{t('folderView.empty.connectBtn')}</Text>
-                    </Pressable>
-                  </View>
-                )}
               </>
             )}
           </View>
@@ -404,43 +420,48 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       paddingHorizontal: Space.xxxl,
     },
-    linkContainer: {
-      width: '100%',
-      marginTop: Space.xxxl,
-      alignItems: 'center',
-    },
-    linkDivider: {
-      width: UI_SIZE_32,
-      height: UI_SIZE_4,
-      borderRadius: UI_SIZE_2,
-      backgroundColor: theme.colors.borderSecondary,
-      marginBottom: Space.xl,
-    },
-    linkTitle: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      letterSpacing: LetterSpacing.caps,
-      textTransform: 'uppercase',
-      color: theme.colors.text,
-      marginBottom: Space.xs,
-    },
-    linkSub: {
-      fontSize: FontSize.caption,
+    onboardingTitle: {
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.wide,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
+      letterSpacing: -0.3,
+      textAlign: 'center',
+      marginTop: Space.md,
+      marginBottom: Space.sm,
+      color: theme.colors.text,
     },
-    linkBtnText: {
+    ctaRow: {
+      flexDirection: 'row',
+      gap: Space.sm,
+      marginTop: Space.lg,
+    },
+    primaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.md,
+      borderRadius: Space.sm,
+      backgroundColor: theme.colors.primary,
+    },
+    secondaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.md,
+      borderRadius: Space.sm,
+      borderWidth: 1,
+      borderColor: theme.colors.separator,
+    },
+    primaryBtnText: {
       color: theme.colors.white,
       fontWeight: FontWeight.bold,
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
     },
-    connectBtn: {
-      ...commonStyles.primaryBtn,
-      backgroundColor: theme.colors.primary,
-      width: '100%',
-      marginTop: Space.xl,
+    secondaryBtnText: {
+      color: theme.colors.primary,
+      fontWeight: FontWeight.bold,
+      fontSize: FontSize.body,
     },
   })
   return styles
