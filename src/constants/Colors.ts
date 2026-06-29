@@ -50,8 +50,8 @@ export default {
   dark: {
     text: '#ffffff',
     textSecondary: '#b0b0b5',
-    background: '#202020',
-    surface: '#1c1c1e',
+    background: '#1a1a1a',
+    surface: '#252527',
     surfaceSecondary: '#2c2c2e',
     primary: pearGold,
     border: '#38383a',
