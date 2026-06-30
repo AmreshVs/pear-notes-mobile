@@ -10,6 +10,7 @@ import {
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 import Slider from '@react-native-community/slider'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import Constants from 'expo-constants'
 import { router, Stack } from 'expo-router'
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -410,6 +411,7 @@ export default function AndroidSettingsScreen() {
 
         <Animated.View entering={FadeIn.duration(220).delay(260)}>
           <Text style={styles.footerText}>{t('settings.footer')}</Text>
+          <Text style={styles.versionText}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
         </Animated.View>
       </ScrollView>
 
@@ -604,6 +606,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontStyle: 'italic',
       color: c.onSurfaceVariant,
       marginTop: UI_SIZE_20,
+    },
+    versionText: {
+      textAlign: 'center',
+      fontSize: FontSize.caption,
+      color: c.onSurfaceVariant,
+      marginTop: UI_SIZE_8,
     },
   })
   return styles

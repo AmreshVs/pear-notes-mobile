@@ -7,6 +7,7 @@ import {
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 import Slider from '@react-native-community/slider'
+import Constants from 'expo-constants'
 import { router, Stack } from 'expo-router'
 import { ChevronRight, Database, Download, RefreshCw, X } from 'lucide-react-native'
 import { useCallback } from 'react'
@@ -313,6 +314,7 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
           <Text style={styles.footer}>{t('settings.footer')}</Text>
+          <Text style={styles.version}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
         </Animated.View>
       </ScrollView>
 
@@ -413,6 +415,12 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       marginTop: UI_SIZE_40,
       fontStyle: 'italic',
+      color: theme.colors.textMuted,
+    },
+    version: {
+      textAlign: 'center',
+      fontSize: FontSize.caption,
+      marginTop: UI_SIZE_8,
       color: theme.colors.textMuted,
     },
     closeBtn: {
