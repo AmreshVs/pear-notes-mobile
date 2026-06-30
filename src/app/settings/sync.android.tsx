@@ -32,7 +32,6 @@ import {
   FontWeight,
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_14,
-  UI_ICON_SIZE_16,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_30,
@@ -403,7 +402,7 @@ export default function AndroidSyncScreen() {
               {localDevices.length > 0 && (
                 <>
                   <Text style={styles.sectionCapLocal}>{t('sync.devices.thisDevice')}</Text>
-                  {localDevices.map(renderLocalDeviceCard)}
+                  <View style={styles.deviceList}>{localDevices.map(renderLocalDeviceCard)}</View>
                 </>
               )}
 
@@ -412,7 +411,7 @@ export default function AndroidSyncScreen() {
               </Text>
 
               {otherDevices.length > 0 ? (
-                otherDevices.map(renderOtherDeviceCard)
+                <View style={styles.deviceList}>{otherDevices.map(renderOtherDeviceCard)}</View>
               ) : (
                 <Animated.View
                   entering={FadeInDown.duration(Durations.fade)}
@@ -427,20 +426,18 @@ export default function AndroidSyncScreen() {
                 </Animated.View>
               )}
 
-              <View style={styles.encryptedBadgeRow}>
-                <View style={styles.encryptedBadge}>
-                  <MaterialCommunityIcons
-                    name="shield-lock"
-                    size={UI_ICON_SIZE_16}
-                    color={c.primary}
-                  />
-                  <Text style={styles.encryptedText}>
-                    {t('settings.e2eEncrypted').toUpperCase()}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.footerText}>{t('sync.invite.warning')}</Text>
+              <Animated.View
+                entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
+                style={styles.footNoteRow}
+              >
+                <MaterialCommunityIcons
+                  name="shield-check"
+                  size={UI_ICON_SIZE_12}
+                  color={c.primary}
+                  style={styles.warningIconMargin}
+                />
+                <Text style={styles.footNoteText}>{t('sync.footer')}</Text>
+              </Animated.View>
             </Animated.View>
           )}
         </ScrollView>
@@ -780,7 +777,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: hexWithAlpha(c.onSurfaceVariant, 0.6),
     },
     sectionCapMargin: {
-      marginTop: UI_SIZE_28,
+      marginTop: UI_SIZE_28 + UI_SIZE_10,
+    },
+    deviceList: {
+      gap: UI_SIZE_10,
     },
     emptyCard: {
       borderWidth: 1,
@@ -793,34 +793,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     emptyText: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
-    },
-    encryptedBadgeRow: {
-      alignItems: 'center',
-      marginTop: UI_SIZE_32,
-      marginBottom: UI_SIZE_12,
-    },
-    encryptedBadge: {
-      ...commonStyles.row,
-      gap: UI_SIZE_8,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_10,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: c.surfaceContainer,
-    },
-    encryptedText: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.extraBold,
-      letterSpacing: 1.5,
-      color: c.onSurfaceVariant,
-    },
-    footerText: {
-      fontSize: FontSize.caption,
-      lineHeight: UI_SIZE_18,
-      textAlign: 'center',
-      paddingHorizontal: UI_SIZE_20,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
     },

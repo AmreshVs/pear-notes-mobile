@@ -106,20 +106,23 @@ export default function AndroidSettingsScreen() {
       {
         icon: 'clock-outline',
         label: t('settings.general.sortOptions.updatedAt'),
+        selected: sortBy === 'updatedAt',
         onPress: () => handleSortSelect('updatedAt'),
       },
       {
         icon: 'calendar-plus',
         label: t('settings.general.sortOptions.createdAt'),
+        selected: sortBy === 'createdAt',
         onPress: () => handleSortSelect('createdAt'),
       },
       {
         icon: 'sort-alphabetical-variant',
         label: t('settings.general.sortOptions.title'),
+        selected: sortBy === 'title',
         onPress: () => handleSortSelect('title'),
       },
     ],
-    [handleSortSelect, t],
+    [handleSortSelect, t, sortBy],
   )
 
   const fontActions = useMemo(
@@ -127,12 +130,13 @@ export default function AndroidSettingsScreen() {
       FONT_OPTIONS.map((f) => ({
         icon: 'format-font',
         label: f.label,
+        selected: f.value === fontFamily,
         onPress: () => {
           dispatch(updateSetting({ key: 'fontFamily', value: f.value }))
           setFontSheetVisible(false)
         },
       })),
-    [dispatch, FONT_OPTIONS],
+    [dispatch, FONT_OPTIONS, fontFamily],
   )
 
   const colorThemeOptions = useMemo(() => {

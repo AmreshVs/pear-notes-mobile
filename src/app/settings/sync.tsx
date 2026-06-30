@@ -253,10 +253,7 @@ export default function SyncScreen() {
               </Reanimated.View>
             )}
 
-            <Reanimated.View
-              entering={FadeInDown.duration(220).delay(110)}
-              style={styles.invitePasteSection}
-            >
+            <Reanimated.View entering={FadeInDown.duration(220).delay(110)}>
               <RNView style={styles.invitePasteHeader}>
                 <RNView style={styles.invitePasteLeft}>
                   <Text style={styles.plusIcon}>+</Text>
@@ -348,10 +345,7 @@ export default function SyncScreen() {
               </Reanimated.View>
             )}
 
-            <Reanimated.View
-              entering={FadeIn.duration(220).delay(140)}
-              style={styles.footNoteRowDevice}
-            >
+            <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
               <ShieldCheck
                 size={UI_ICON_SIZE_13}
                 color={colors.primary}
@@ -497,8 +491,6 @@ const useStyles = createThemedStylesheet((theme) => {
     inviteTitle: {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
-      letterSpacing: -0.3,
-      marginBottom: 2,
       color: theme.colors.text,
     },
     inviteSub: {
@@ -596,9 +588,6 @@ const useStyles = createThemedStylesheet((theme) => {
       lineHeight: 17,
       color: theme.colors.textMuted,
     },
-    invitePasteSection: {
-      marginBottom: Space.xl,
-    },
     invitePasteHeader: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -676,12 +665,6 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: Space.sm,
       marginTop: Space.xl,
     },
-    footNoteRowDevice: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: Space.sm,
-      marginTop: Space.xxl,
-    },
     footNote: {
       fontSize: FontSize.caption,
       flex: 1,
@@ -701,7 +684,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
       marginBottom: Space.md,
-      marginTop: Space.lg,
+      marginTop: Space.lg + Space.sm,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },
@@ -709,7 +692,6 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Radii.card,
       borderWidth: 1,
       overflow: 'hidden',
-      marginBottom: Space.sm,
       backgroundColor: cardBg,
       borderColor: cardBorder,
     },

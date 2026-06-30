@@ -24,10 +24,14 @@ export function getFontOptions(t: (key: string) => string) {
 export function showPicker(
   title: string,
   options: { label: string; value: string }[],
+  selectedValue: string,
   onSelect: (value: string) => void,
   cancelLabel: string,
 ) {
-  const labels = [...options.map((o) => o.label), cancelLabel]
+  const labels = [
+    ...options.map((o) => (o.value === selectedValue ? `✓  ${o.label}` : o.label)),
+    cancelLabel,
+  ]
   ActionSheetIOS.showActionSheetWithOptions(
     { options: labels, cancelButtonIndex: labels.length - 1, title },
     (index) => {

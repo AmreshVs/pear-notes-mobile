@@ -41,6 +41,7 @@ export type SheetAction = {
   label: string
   onPress: () => void
   destructive?: boolean
+  selected?: boolean
 }
 
 type Props = {
@@ -92,22 +93,42 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
                     (action.destructive ? styles.actionRowPressedDestructive : styles.actionRowPressed),
                 ]}
               >
-                <View style={action.destructive ? styles.iconCircleDestructive : styles.iconCircle}>
+                <View
+                  style={
+                    action.destructive
+                      ? styles.iconCircleDestructive
+                      : action.selected
+                        ? styles.iconCircleSelected
+                        : styles.iconCircle
+                  }
+                >
                   <MaterialCommunityIcons
                     name={action.icon as any}
                     size={UI_ICON_SIZE_20}
                     color={action.destructive ? colors.error : colors.primary}
                   />
                 </View>
-                <Text style={action.destructive ? styles.actionLabelDestructive : styles.actionLabel}>
+                <Text
+                  style={
+                    action.destructive
+                      ? styles.actionLabelDestructive
+                      : action.selected
+                        ? styles.actionLabelSelected
+                        : styles.actionLabel
+                  }
+                >
                   {action.label}
                 </Text>
-                {!action.destructive && (
-                  <MaterialCommunityIcons
-                    name="chevron-right"
-                    size={UI_ICON_SIZE_18}
-                    color={hexWithAlpha(colors.onSurfaceVariant, 0.4)}
-                  />
+                {action.selected ? (
+                  <MaterialCommunityIcons name="check" size={UI_ICON_SIZE_20} color={colors.primary} />
+                ) : (
+                  !action.destructive && (
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={UI_ICON_SIZE_18}
+                      color={hexWithAlpha(colors.onSurfaceVariant, 0.4)}
+                    />
+                  )
                 )}
               </Pressable>
               {index < actions.length - 1 && <View style={styles.separator} />}
@@ -198,12 +219,27 @@ const useStyles = createThemedStylesheetWithHooks(
         justifyContent: 'center',
         backgroundColor: hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.22),
       },
+      iconCircleSelected: {
+        width: 44,
+        height: 44,
+        borderRadius: 9999,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: hexWithAlpha(c.primary, 0.18),
+      },
       actionLabel: {
         flex: 1,
         fontSize: FontSize.subtitle,
         fontWeight: FontWeight.semibold,
         fontFamily: FontFamily.semiBold,
         color: c.onSurface,
+      },
+      actionLabelSelected: {
+        flex: 1,
+        fontSize: FontSize.subtitle,
+        fontWeight: FontWeight.bold,
+        fontFamily: FontFamily.bold,
+        color: c.primary,
       },
       actionLabelDestructive: {
         flex: 1,

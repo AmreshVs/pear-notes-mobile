@@ -191,7 +191,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       borderRadius: UI_SIZE_24,
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_18,
-      marginBottom: UI_SIZE_10,
       gap: UI_SIZE_16,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
     },

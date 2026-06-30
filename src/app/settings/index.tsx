@@ -77,10 +77,11 @@ export default function SettingsScreen() {
     showPicker(
       t('settings.general.sortNotesBy'),
       getSortOptions(t),
+      sortBy,
       handleSortSelect,
       t('common.cancel'),
     )
-  }, [t, handleSortSelect])
+  }, [t, handleSortSelect, sortBy])
 
   const handleFontSelect = useCallback(
     (val: string) => {
@@ -93,10 +94,11 @@ export default function SettingsScreen() {
     showPicker(
       t('settings.general.fontFamily'),
       getFontOptions(t),
+      fontFamily,
       handleFontSelect,
       t('common.cancel'),
     )
-  }, [t, handleFontSelect])
+  }, [t, handleFontSelect, fontFamily])
 
   const handleFontSizeChange = useCallback(
     (val: number) => {

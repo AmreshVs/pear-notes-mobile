@@ -342,7 +342,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     copyBtn: {
       backgroundColor: theme.colors.primary,
-      borderRadius: Radii.pill,
+      borderRadius: Radii.md,
       paddingHorizontal: Space.md,
       height: 38,
       justifyContent: 'center',
@@ -406,7 +406,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     primaryBtn: {
       height: UI_SIZE_54,
-      borderRadius: Radii.pill,
+      borderRadius: Radii.lg,
       backgroundColor: theme.colors.primary,
       ...commonStyles.row,
       justifyContent: 'center',
@@ -420,7 +420,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     secondaryBtn: {
       height: UI_SIZE_54,
-      borderRadius: Radii.pill,
+      borderRadius: Radii.lg,
       backgroundColor: theme.colors.controlBackground,
       borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
