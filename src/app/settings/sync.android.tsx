@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import useSyncScreen from './useSyncScreen'
@@ -210,7 +210,7 @@ export default function AndroidSyncScreen() {
             <Animated.View
               key="link-tab"
               entering={FadeIn.duration(Durations.fade)}
-              layout={LinearTransition.springify().damping(20).stiffness(220)}
+              layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.tabContent}
             >
               {!inviteCode ? (
@@ -396,7 +396,7 @@ export default function AndroidSyncScreen() {
             <Animated.View
               key="devices-tab"
               entering={FadeIn.duration(Durations.fade)}
-              layout={LinearTransition.springify().damping(20).stiffness(220)}
+              layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.tabContent}
             >
               {localDevices.length > 0 && (

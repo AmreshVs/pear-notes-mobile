@@ -6,7 +6,7 @@ import { Monitor, Smartphone, Trash2 } from 'lucide-react-native'
 import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Animated, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
-import Reanimated, { FadeIn, LinearTransition } from 'react-native-reanimated'
+import Reanimated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 
 import { SyncDeleteModal } from '@/components/sync/SyncDeleteModal'
@@ -99,7 +99,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
     <>
       <Reanimated.View
         entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
-        layout={LinearTransition.springify().damping(20).stiffness(220)}
+        layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
       >
         <RNView style={styles.deviceRow}>
           <RNView style={styles.deviceIcon}>

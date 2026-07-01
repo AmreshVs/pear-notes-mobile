@@ -13,7 +13,7 @@ import { ChevronRight, Database, Download, RefreshCw, X } from 'lucide-react-nat
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
-import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -147,7 +147,7 @@ export default function SettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.rowUnderline}>
@@ -234,7 +234,7 @@ export default function SettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
             <Pressable
@@ -262,7 +262,7 @@ export default function SettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayExtraLong)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
             <Pressable
@@ -290,7 +290,7 @@ export default function SettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
             <Pressable

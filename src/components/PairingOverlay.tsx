@@ -5,6 +5,7 @@ import {
   getInviterStatus,
   getReceiverStatus,
   getShowPairingInput,
+  rejectPairing,
   resetInvite,
   resetReceiverStatus,
   setDeviceRemoved,
@@ -41,6 +42,7 @@ import {
   MonoFontFamily,
   Radii,
   Space,
+  UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
 
@@ -89,6 +91,20 @@ export const PairingOverlay = memo(function PairingOverlay() {
     else dispatch(setShowPairingInput(false))
     setIsScanning(false)
   }, [dispatch, isInviter, isReceiverActive, deviceRemoved])
+
+  const handleReject = useCallback(() => {
+    dispatch(rejectPairing())
+  }, [dispatch])
+
+  const handleConfirm = useCallback(() => {
+    dispatch(confirmPairing())
+  }, [dispatch])
+
+  const handleResetAfterFailedPairing = useCallback(() => {
+    deleteDbEncryptionKey().catch(console.error)
+    dispatch(clearStorage())
+    dispatch(resetReceiverStatus())
+  }, [dispatch])
 
   const handleConnect = useCallback(() => {
     if (isValidInvite(pasteCode)) {
@@ -220,6 +236,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   const renderContent = useCallback(() => {
     const isDone = step === 'done'
+    const isError = step === 'error'
+    const isRejected = step === 'rejected'
 
     if (deviceRemoved) {
       return (
@@ -255,6 +273,29 @@ export const PairingOverlay = memo(function PairingOverlay() {
             <Text style={styles.greenBtnText}>
               {isInviter ? t('pairing.overlay.returnToNotes') : t('pairing.overlay.openWorkspace')}
             </Text>
+          </Pressable>
+        </View>
+      )
+    }
+
+    if (isError || isRejected) {
+      return (
+        <View style={styles.cardInner}>
+          <View style={[styles.icon, styles.errorIcon]}>
+            <ShieldAlert size={UI_ICON_SIZE_40} color={colors.error} strokeWidth={2.5} />
+          </View>
+          <Text style={styles.title}>
+            {isRejected
+              ? t('pairing.overlay.pairingRejectedTitle')
+              : t('pairing.overlay.pairingFailedTitle')}
+          </Text>
+          <Text style={styles.sub}>
+            {isRejected
+              ? t('pairing.overlay.pairingRejectedDesc')
+              : t('pairing.overlay.pairingFailedDesc')}
+          </Text>
+          <Pressable onPress={handleResetAfterFailedPairing} style={[styles.btn, styles.errorBtn]}>
+            <Text style={styles.errorBtnText}>{t('pairing.overlay.okay')}</Text>
           </Pressable>
         </View>
       )
@@ -358,13 +399,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
         {isConfirm ? (
           <View style={styles.row}>
-            <Pressable onPress={handleClose} style={styles.cancelPressable}>
-              <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
+            <Pressable onPress={handleReject} style={styles.rejectPressable}>
+              <Text style={styles.rejectBtnText}>{t('pairing.overlay.rejectBtn')}</Text>
             </Pressable>
-            <Pressable
-              onPress={() => dispatch(confirmPairing())}
-              style={[styles.btn, styles.confirmBtn]}
-            >
+            <Pressable onPress={handleConfirm} style={[styles.btn, styles.confirmBtn]}>
               <Text style={styles.confirmBtnText}>{t('pairing.overlay.verifyBtn')}</Text>
             </Pressable>
           </View>
@@ -392,6 +430,9 @@ export const PairingOverlay = memo(function PairingOverlay() {
     progress,
     renderIcon,
     handleClose,
+    handleReject,
+    handleConfirm,
+    handleResetAfterFailedPairing,
     colors,
     pasteCode,
     handleConnect,
@@ -749,7 +790,11 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: 'rgba(0,0,0,0.35)',
     },
     globeIcon: { opacity: 0.2 },
-    greenBtnText: { color: theme.colors.success, fontWeight: FontWeight.bold, fontSize: FontSize.subtitle },
+    greenBtnText: {
+      color: theme.colors.success,
+      fontWeight: FontWeight.bold,
+      fontSize: FontSize.subtitle,
+    },
     cancelPressable: {
       ...commonStyles.centered,
       flex: 1,
@@ -765,6 +810,21 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     cancelBtnText: {
       color: theme.colors.textSecondary,
+      fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
+      fontSize: FontSize.body,
+      letterSpacing: isAndroid ? 0.1 : 0,
+    },
+    rejectPressable: {
+      ...commonStyles.centered,
+      flex: 1,
+      height: isAndroid ? 48 : 50,
+      borderRadius: isAndroid ? 9999 : Radii.md,
+      backgroundColor: `${theme.colors.error}1A`,
+      borderWidth: isAndroid ? 0 : 1,
+      borderColor: `${theme.colors.error}4D`,
+    },
+    rejectBtnText: {
+      color: theme.colors.error,
       fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
       fontSize: FontSize.body,
       letterSpacing: isAndroid ? 0.1 : 0,

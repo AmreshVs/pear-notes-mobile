@@ -15,7 +15,7 @@ import { router, Stack } from 'expo-router'
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
-import Animated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
@@ -246,7 +246,7 @@ export default function AndroidSettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(240).delay(40)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.card}
         >
           <Text style={styles.cardTitle}>{t('settings.general.appTheme')}</Text>
@@ -257,7 +257,7 @@ export default function AndroidSettingsScreen() {
         {supportsDynamicColor && (
           <Animated.View
             entering={FadeInDown.duration(240).delay(60)}
-            layout={LinearTransition.springify().damping(20).stiffness(220)}
+            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             style={styles.card}
           >
             <Text style={styles.cardTitle}>{t('settings.general.colorTheme')}</Text>
@@ -266,7 +266,7 @@ export default function AndroidSettingsScreen() {
         )}
         <Animated.View
           entering={FadeInDown.duration(240).delay(80)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.groupCard}
         >
           <Pressable
@@ -345,7 +345,7 @@ export default function AndroidSettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(240).delay(160)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <Pressable
             onPress={handleSyncPress}
@@ -367,7 +367,7 @@ export default function AndroidSettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(240).delay(200)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <Pressable
             onPress={handleBackupPress}
@@ -393,7 +393,7 @@ export default function AndroidSettingsScreen() {
 
         <Animated.View
           entering={FadeInDown.duration(240).delay(240)}
-          layout={LinearTransition.springify().damping(20).stiffness(220)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <Pressable
             onPress={handleStoragePress}

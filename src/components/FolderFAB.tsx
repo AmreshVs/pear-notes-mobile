@@ -1,6 +1,11 @@
 import { FolderPlus } from 'lucide-react-native'
 import { Pressable, StyleSheet } from 'react-native'
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated'
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
 
 import { GlassView } from '@/components/GlassView'
 import { useColors } from '@/components/Themed'
@@ -31,10 +36,10 @@ export function FolderFAB({ onPress = () => {} }: FolderFABProps) {
         <Pressable
           onPress={onPress}
           onPressIn={() => {
-            scale.value = withSpring(0.88, { damping: 15, stiffness: 300 })
+            scale.value = withTiming(0.88, { duration: 120, easing: Easing.out(Easing.cubic) })
           }}
           onPressOut={() => {
-            scale.value = withSpring(1, { damping: 12, stiffness: 250 })
+            scale.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) })
           }}
           style={styles.btn}
         >

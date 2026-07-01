@@ -12,7 +12,7 @@ import {
   TextInput,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import Reanimated, { FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import Reanimated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
 import useSyncScreen from './useSyncScreen'
 
@@ -138,7 +138,7 @@ export default function SyncScreen() {
           <Reanimated.View
             key="link-tab"
             entering={FadeIn.duration(220)}
-            layout={LinearTransition.springify().damping(20).stiffness(220)}
+            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             style={styles.pad}
           >
             <Reanimated.View entering={FadeInDown.duration(240).delay(40)} style={styles.heroCard}>
@@ -310,7 +310,7 @@ export default function SyncScreen() {
           <Reanimated.View
             key="devices-tab"
             entering={FadeIn.duration(220)}
-            layout={LinearTransition.springify().damping(20).stiffness(220)}
+            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             style={styles.pad}
           >
             <Reanimated.View entering={FadeIn.duration(200)}>

@@ -273,7 +273,12 @@
       "identityDesc": "Verifying connection. Please authorize on your other device.",
       "remoteId": "REMOTE ID",
       "myId": "MY ID",
-      "verifyBtn": "Verify Code"
+      "verifyBtn": "Verify Code",
+      "rejectBtn": "Reject",
+      "pairingFailedTitle": "Pairing Failed",
+      "pairingFailedDesc": "Sync timed out. This device will reset and restart.",
+      "pairingRejectedTitle": "Pairing Declined",
+      "pairingRejectedDesc": "The other device declined this pairing request. This device will reset and restart."
     }
   },
   "search": {
