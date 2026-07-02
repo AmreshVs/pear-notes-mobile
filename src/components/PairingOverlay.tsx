@@ -28,7 +28,7 @@ import {
   StyleSheet,
   TextInput,
 } from 'react-native'
-import Reanimated, { FadeInDown } from 'react-native-reanimated'
+import Reanimated, { Easing, FadeInDown } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from './GlassView'
@@ -68,7 +68,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   const isInviterActive = inviterStatus.step !== 'idle'
   const isReceiverActive = receiverStatus.step !== 'idle'
-  const isVisible = isInviterActive || isReceiverActive || showPairingInput || deviceRemoved
+  const isVisible =
+    isInviterActive || isReceiverActive || showPairingInput || deviceRemoved || !!pendingInvite
 
   const activeStatus = isInviterActive ? inviterStatus : receiverStatus
   const isInviter = isInviterActive
@@ -507,7 +508,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
           key={`${step}-${pendingInvite ? 'merge' : showPairingInput ? 'input' : 'flow'}`}
           entering={FadeInDown.duration(240)}
         >
-          <Reanimated.View entering={FadeInDown.springify()} style={styles.card}>
+          <Reanimated.View
+            entering={FadeInDown.duration(240).easing(Easing.out(Easing.cubic))}
+            style={styles.card}
+          >
             {isAndroid ? (
               <RNView style={styles.androidCard}>{renderContent()}</RNView>
             ) : (

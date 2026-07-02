@@ -171,6 +171,7 @@
   "noteCard": {
     "untitled": "Untitled",
     "noAdditionalText": "No additional text",
+    "lockedSummary": "Authenticate to view this note",
     "actions": {
       "moveTo": "Move to",
       "moveToFolder": "Move to Folder",
@@ -178,9 +179,23 @@
       "delete": "Delete",
       "noFolders": "No folders available",
       "options": "Note options",
-      "share": "Share"
+      "share": "Share",
+      "lock": "Lock Note",
+      "unlock": "Remove Lock"
     },
-    "deleteConfirmation": "Are you sure you want to delete this note?"
+    "deleteConfirmation": "Are you sure you want to delete this note?",
+    "unlockReason": "Unlock this note",
+    "authUnavailableTitle": "Device Lock Unavailable",
+    "authUnavailableDesc": "Set up Face ID, Touch ID, or a device passcode to lock notes.",
+    "lockedTitle": "Locked Note",
+    "lockedNoAuthTitle": "Can't Open Locked Note",
+    "lockedNoAuthDesc": "This note is locked and can't be opened on this device. Set up Face ID, Touch ID, or a device passcode in Settings to view it.",
+    "lockedUnlockDesc": "This note is protected. Use biometric to authenticate and view it.",
+    "lockedUnlockFaceDesc": "This note is protected. Use Face ID to view it.",
+    "lockedUnlockFingerprintDesc": "This note is protected. Use your fingerprint to view it.",
+    "unlock": "Unlock",
+    "unlockWithFace": "Unlock with Face ID",
+    "unlockWithFingerprint": "Unlock with Fingerprint"
   },
   "audioRecorder": {
     "status": {

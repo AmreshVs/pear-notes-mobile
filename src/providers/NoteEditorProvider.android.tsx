@@ -6,6 +6,7 @@ import type { ImagePickerAsset } from 'expo-image-picker'
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  Alert,
   Animated,
   Dimensions,
   Image,
@@ -32,6 +33,7 @@ import { EditorToolbar } from '@/components/android/EditorToolbar'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { LockedNoteView } from '@/components/LockedNoteView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import {
@@ -69,6 +71,8 @@ import {
   uploadRecording,
   uploadVideo,
 } from '@/lib/noteAttachmentManager'
+import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
+import { toggleNoteLock } from '@/lib/noteLockActions'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { parseNoteAttachmentsAndText } from '@/utils/noteParser'
 
@@ -137,7 +141,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleEditorFocus,
     handleEditorBlur,
     resolveHyperdriveUrl,
+    noteData,
   } = useNoteEditor()
+
+  useNoteLockVersion()
+  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
+  const lockOverlayStyle = useMemo(
+    () => [styles.lockOverlay, { top: insets.top + 52 }],
+    [styles.lockOverlay, insets.top],
+  )
 
   const handleUpdate = useCallback(
     (html: string) => {
@@ -626,6 +638,19 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     })
   }, [noteId, dispatch, slideAnim, resetEditorState, setDialogInfo, t])
 
+  const handleToggleLock = useCallback(() => {
+    if (!noteId) return
+    setMoreSheetVisible(false)
+    toggleNoteLock({
+      key: noteId,
+      currentlyLocked: !!noteData?.locked,
+      reason: t('noteCard.unlockReason'),
+      dispatch,
+      onUnavailable: () =>
+        Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+    })
+  }, [noteId, noteData?.locked, dispatch, setMoreSheetVisible, t])
+
   const moreSheetActions = useMemo(() => {
     const list = []
     if (moveFolders.length > 0) {
@@ -639,6 +664,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       })
     }
     list.push({
+      icon: noteData?.locked ? 'lock-off-outline' : 'lock-outline',
+      label: noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
+      onPress: handleToggleLock,
+    })
+    list.push({
       icon: 'delete-outline',
       label: t('noteCard.actions.delete'),
       onPress: () => {
@@ -648,7 +678,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       destructive: true,
     })
     return list
-  }, [moveFolders, t, handleDeleteNote, setMoreSheetVisible, setMoveDialogVisible])
+  }, [
+    moveFolders,
+    noteData?.locked,
+    t,
+    handleDeleteNote,
+    handleToggleLock,
+    setMoreSheetVisible,
+    setMoveDialogVisible,
+  ])
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
@@ -713,65 +751,79 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           </Pressable>
         </View>
 
-        <View style={styles.floatingRight} pointerEvents="box-none">
-          <Pressable
-            onPress={handleShare}
-            style={({ pressed }) => [styles.floatingIconBtn, pressed && styles.pressed]}
-            hitSlop={8}
-          >
-            <MaterialCommunityIcons
-              name="export-variant"
-              size={UI_ICON_SIZE_20}
-              color={c.primary}
+        {!isNoteLocked && (
+          <View style={styles.floatingRight} pointerEvents="box-none">
+            <Pressable
+              onPress={handleShare}
+              style={({ pressed }) => [styles.floatingIconBtn, pressed && styles.pressed]}
+              hitSlop={8}
+            >
+              <MaterialCommunityIcons
+                name="export-variant"
+                size={UI_ICON_SIZE_20}
+                color={c.primary}
+              />
+            </Pressable>
+
+            <Pressable
+              onPress={() => setMoreSheetVisible(true)}
+              style={({ pressed }) => [styles.floatingIconBtn, pressed && styles.pressed]}
+              hitSlop={8}
+            >
+              <MaterialCommunityIcons
+                name="dots-vertical"
+                size={UI_ICON_SIZE_22}
+                color={c.primary}
+              />
+            </Pressable>
+
+            <BottomActionSheet
+              visible={moreSheetVisible}
+              onDismiss={() => setMoreSheetVisible(false)}
+              title={titleRef.current || t('noteCard.untitled')}
+              subtitle={t('noteCard.actions.options')}
+              actions={moreSheetActions}
             />
-          </Pressable>
 
-          <Pressable
-            onPress={() => setMoreSheetVisible(true)}
-            style={({ pressed }) => [styles.floatingIconBtn, pressed && styles.pressed]}
-            hitSlop={8}
-          >
-            <MaterialCommunityIcons name="dots-vertical" size={UI_ICON_SIZE_22} color={c.primary} />
-          </Pressable>
+            <Pressable
+              onPress={() => {
+                if (isEditing) {
+                  handleDone()
+                } else {
+                  setTimeout(() => editorRef.current?.focus(), 100)
+                }
+              }}
+              style={({ pressed }) => [styles.saveBtn, pressed && styles.savePressed]}
+            >
+              <MaterialCommunityIcons
+                name={isEditing ? 'check' : 'pencil-outline'}
+                size={UI_ICON_SIZE_20}
+                color={c.onPrimaryContainer}
+              />
+            </Pressable>
+          </View>
+        )}
 
-          <BottomActionSheet
-            visible={moreSheetVisible}
-            onDismiss={() => setMoreSheetVisible(false)}
-            title={titleRef.current || t('noteCard.untitled')}
-            subtitle={t('noteCard.actions.options')}
-            actions={moreSheetActions}
-          />
+        {isNoteLocked && (
+          <View style={lockOverlayStyle}>
+            <LockedNoteView noteId={noteId ?? ''} />
+          </View>
+        )}
 
-          <Pressable
-            onPress={() => {
-              if (isEditing) {
-                handleDone()
-              } else {
-                setTimeout(() => editorRef.current?.focus(), 100)
-              }
+        {!isNoteLocked && (
+          <EditorToolbar
+            isActive={isActive}
+            editorRef={editorRef}
+            toolbarBottom={
+              keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12
+            }
+            onAttachPress={() => {
+              Keyboard.dismiss()
+              editorRef.current?.blur()
+              setAttachSheetVisible(true)
             }}
-            style={({ pressed }) => [styles.saveBtn, pressed && styles.savePressed]}
-          >
-            <MaterialCommunityIcons
-              name={isEditing ? 'check' : 'pencil-outline'}
-              size={UI_ICON_SIZE_20}
-              color={c.onPrimaryContainer}
-            />
-          </Pressable>
-        </View>
-
-        <EditorToolbar
-          isActive={isActive}
-          editorRef={editorRef}
-          toolbarBottom={
-            keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12
-          }
-          onAttachPress={() => {
-            Keyboard.dismiss()
-            editorRef.current?.blur()
-            setAttachSheetVisible(true)
-          }}
-        />
+          />
+        )}
 
         <AttachmentSheet
           visible={attachSheetVisible}
@@ -930,6 +982,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
   const styles = StyleSheet.create({
     animatedView: {
       ...StyleSheet.absoluteFill,
+      backgroundColor: c.background,
+    },
+    lockOverlay: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 15,
       backgroundColor: c.background,
     },
     floatingLeft: {

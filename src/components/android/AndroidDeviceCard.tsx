@@ -3,7 +3,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, TextInput, View } from 'react-native'
-import Animated, { FadeInDown, LinearTransition } from 'react-native-reanimated'
+import Animated, { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -124,7 +124,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
       entering={FadeInDown.duration(Durations.fade).delay(
         Math.min(index, 6) * Durations.delayShort,
       )}
-      layout={LinearTransition.springify().damping(20).stiffness(220)}
+      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable
         onPress={!isLocal ? undefined : startEditing}

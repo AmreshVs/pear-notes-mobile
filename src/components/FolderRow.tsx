@@ -8,7 +8,7 @@ import {
 import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
-import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
+import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
 
 import { Text, Theme, useThemedStyles } from './Themed'
 
@@ -74,7 +74,7 @@ export const FolderRow = memo(function FolderRow({
     <Animated.View
       entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
       exiting={FadeOut.duration(160)}
-      layout={LinearTransition.springify().damping(20).stiffness(220)}
+      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable onPress={() => onPress(id)} style={containerStyle}>
         <RNView style={styles.leftContent}>

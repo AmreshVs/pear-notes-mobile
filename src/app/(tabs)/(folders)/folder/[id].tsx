@@ -38,6 +38,7 @@ import {
   commonStyles,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { getFirstImageUrl, getPreview } from '@/utils/noteUtils'
 
@@ -214,10 +215,20 @@ export default function FolderNotesScreen() {
       const isLast = index === sectionDataLength - 1
       const animationIndex = sectionIndex * 3 + index
 
+      const isLocked = note.value?.locked === true
       const handlePress = () => handleSelectNote(note.key)
       const handleDelete = () => handleDeleteNote(note.key)
       const handleCopy = () => handleCopyNote(note.value?.title, note.value?.note)
       const handleMoveTo = (folderId: string) => handleMoveNote(note.key, folderId)
+      const handleToggleLock = () =>
+        toggleNoteLock({
+          key: note.key,
+          currentlyLocked: isLocked,
+          reason: t('noteCard.unlockReason'),
+          dispatch,
+          onUnavailable: () =>
+            Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+        })
 
       const folderName =
         folder?.id === ALL_NOTES_KEY
@@ -236,9 +247,11 @@ export default function FolderNotesScreen() {
           selected={false}
           isLast={isLast}
           animationIndex={animationIndex}
+          locked={isLocked}
           onPress={handlePress}
           onDelete={handleDelete}
           onCopy={handleCopy}
+          onToggleLock={handleToggleLock}
           moveFolders={moveFolders}
           onMoveTo={handleMoveTo}
         />
@@ -252,6 +265,7 @@ export default function FolderNotesScreen() {
       handleCopyNote,
       moveFolders,
       handleMoveNote,
+      dispatch,
       t,
     ],
   )

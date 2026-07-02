@@ -47,6 +47,8 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>Allow Pear Notes to use the camera to scan QR codes and documents.</string>
+    <key>NSFaceIDUsageDescription</key>
+    <string>Allow Pear Notes to use Face ID to unlock locked notes.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Allow Pear Notes to access your microphone to record voice notes.</string>
     <key>NSPhotoLibraryAddUsageDescription</key>

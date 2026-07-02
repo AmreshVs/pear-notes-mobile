@@ -1,6 +1,6 @@
 import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { Folder } from 'lucide-react-native'
+import { Folder, Lock, LockOpen } from 'lucide-react-native'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -11,10 +11,10 @@ import {
   StyleSheet,
   type ViewStyle,
 } from 'react-native'
-import Animated, { FadeIn, FadeOutUp, LinearTransition } from 'react-native-reanimated'
+import Animated, { Easing, FadeIn, FadeOutUp, LinearTransition } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 
-import { createThemedStylesheet, Text } from './Themed'
+import { createThemedStylesheet, Text, useTheme } from './Themed'
 
 import {
   commonStyles,
@@ -27,6 +27,7 @@ import {
   UI_ICON_SIZE_12,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
+import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -45,14 +46,17 @@ interface NoteCardProps {
   selected?: boolean
   isLast?: boolean
   animationIndex?: number
+  locked?: boolean
   onPress: () => void
   onDelete?: () => void
   onCopy?: () => void
+  onToggleLock?: () => void
   moveFolders?: MoveFolder[]
   onMoveTo?: (folderId: string) => void
 }
 
 export const NoteCard = memo(function NoteCard({
+  id,
   title,
   date,
   summary,
@@ -61,15 +65,21 @@ export const NoteCard = memo(function NoteCard({
   selected,
   isLast,
   animationIndex = 0,
+  locked,
   onPress,
   onDelete,
   onCopy,
+  onToggleLock,
   moveFolders,
   onMoveTo,
 }: NoteCardProps) {
   const { t } = useTranslation()
   const styles = useStyles()
+  const { colors } = useTheme()
+  const lockIconColor = colors.primary
   const [thumbError, setThumbError] = useState(false)
+  useNoteLockVersion()
+  const masked = locked === true && !isNoteUnlocked(id)
 
   const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
   const colorTheme = useSelector(getColorTheme)
@@ -101,23 +111,35 @@ export const NoteCard = memo(function NoteCard({
     [selected, styles.title, styles.titleSelected, styles.titleNormal],
   )
 
-  const showThumbnail = !!imageUrl && !thumbError
+  const showThumbnail = !!imageUrl && !thumbError && !masked
+  const displayTitle = title || t('noteCard.untitled')
+  const displaySummary = masked
+    ? t('noteCard.lockedSummary')
+    : summary || t('noteCard.noAdditionalText')
 
   const card = (
     <Animated.View
       entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
       exiting={FadeOutUp.duration(180)}
-      layout={LinearTransition.springify().damping(20).stiffness(220)}
+      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable onPress={onPress} style={getPressableStyle}>
         <RNView style={styles.row}>
           <RNView style={styles.content}>
-            <Text variant="bodyBold" numberOfLines={1} style={titleStyle}>
-              {title || t('noteCard.untitled')}
-            </Text>
+            <RNView style={styles.titleRow}>
+              {locked &&
+                (masked ? (
+                  <Lock size={UI_ICON_SIZE_12} color={lockIconColor} />
+                ) : (
+                  <LockOpen size={UI_ICON_SIZE_12} color={lockIconColor} />
+                ))}
+              <Text variant="bodyBold" numberOfLines={1} style={titleStyle}>
+                {displayTitle}
+              </Text>
+            </RNView>
 
             <Text variant="caption" numberOfLines={2} style={styles.summary}>
-              {summary || t('noteCard.noAdditionalText')}
+              {displaySummary}
             </Text>
 
             <RNView style={styles.metadata}>
@@ -156,7 +178,7 @@ export const NoteCard = memo(function NoteCard({
     </Animated.View>
   )
 
-  const hasActions = onDelete || onCopy || onMoveTo
+  const hasActions = onDelete || onCopy || onMoveTo || onToggleLock
 
   if (!ExpoUI || !hasActions) {
     return card
@@ -194,6 +216,14 @@ export const NoteCard = memo(function NoteCard({
               label={t('noteCard.actions.copyNote')}
               systemImage="doc.on.doc"
               onPress={onCopy}
+            />
+          )}
+
+          {onToggleLock && (
+            <Button
+              label={locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')}
+              systemImage={locked ? 'lock.slash' : 'lock'}
+              onPress={onToggleLock}
             />
           )}
 
@@ -241,7 +271,13 @@ const useStyles = createThemedStylesheet((theme) => {
     content: {
       ...commonStyles.flex1,
     },
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+    },
     title: {
+      ...commonStyles.flex1,
       fontSize: FontSize.subtitle,
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,

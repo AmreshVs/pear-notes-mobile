@@ -414,7 +414,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.amreshvs.pearnotes;
-				PRODUCT_NAME = Pearnotes;
+				PRODUCT_NAME = "Pearnotes";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "pearnotes/pearnotes-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -449,7 +449,7 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.amreshvs.pearnotes;
-				PRODUCT_NAME = Pearnotes;
+				PRODUCT_NAME = "Pearnotes";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "pearnotes/pearnotes-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;

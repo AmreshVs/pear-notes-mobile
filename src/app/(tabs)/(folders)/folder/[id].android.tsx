@@ -20,9 +20,10 @@ import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/ui
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  Alert,
   FlatList,
   ListRenderItemInfo,
   Modal,
@@ -50,18 +51,19 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
-  UI_SIZE_4,
-  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
+  UI_SIZE_4,
   UI_SIZE_48,
+  UI_SIZE_8,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { toggleNoteLock } from '@/lib/noteLockActions'
 import { getPreview } from '@/utils/noteUtils'
 
 function noteKey(note: any): string {
@@ -170,17 +172,6 @@ export default function AndroidFolderNotesScreen() {
     dispatch(createNote({ title: '', note: '' } as any))
   }, [dispatch, id])
 
-  const handleDeleteNote = useCallback(
-    (noteId: string) => {
-      if (isTrashFolder) {
-        setDeleteConfirmNote(noteId)
-      } else {
-        dispatch(deleteNote(noteId as any))
-      }
-    },
-    [dispatch, isTrashFolder],
-  )
-
   const handleMoveNote = useCallback(
     (noteId: string, folderId: string) => {
       dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
@@ -234,6 +225,25 @@ export default function AndroidFolderNotesScreen() {
     setNoteSheetVisible(false)
     setFolderPickerVisible(true)
   }, [])
+
+  const activeNoteLocked = useMemo(
+    () => notes.find((n: any) => n.key === activeNoteId)?.value?.locked === true,
+    [notes, activeNoteId],
+  )
+
+  const handleNoteSheetToggleLock = useCallback(() => {
+    if (!activeNoteId) return
+    const targetId = activeNoteId
+    setNoteSheetVisible(false)
+    toggleNoteLock({
+      key: targetId,
+      currentlyLocked: activeNoteLocked,
+      reason: t('noteCard.unlockReason'),
+      dispatch,
+      onUnavailable: () =>
+        Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+    })
+  }, [activeNoteId, activeNoteLocked, dispatch, t])
 
   const handleConfirmMove = useCallback(
     (folderId: string) => {
@@ -308,6 +318,15 @@ export default function AndroidFolderNotesScreen() {
             },
           ]
         : []),
+      ...(!isTrashFolder
+        ? [
+            {
+              icon: activeNoteLocked ? 'lock-off-outline' : 'lock-outline',
+              label: activeNoteLocked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
+              onPress: handleNoteSheetToggleLock,
+            },
+          ]
+        : []),
       {
         icon: 'delete-outline',
         label: isTrashFolder
@@ -321,6 +340,8 @@ export default function AndroidFolderNotesScreen() {
       handleNoteSheetCopy,
       handleNoteSheetMove,
       handleNoteSheetDelete,
+      handleNoteSheetToggleLock,
+      activeNoteLocked,
       moveFolders.length,
       isTrashFolder,
       t,
@@ -465,7 +486,9 @@ export default function AndroidFolderNotesScreen() {
         ListEmptyComponent={
           <AndroidEmptyState
             hasSearch={searchQuery.trim().length > 0}
-            isOnboarding={!isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0}
+            isOnboarding={
+              !isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0
+            }
             isTrash={isTrashFolder}
             onLinkDevice={handleLinkDevice}
             onCreateNote={handleCreateNote}

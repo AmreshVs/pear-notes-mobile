@@ -65,6 +65,7 @@ export default function SearchScreen() {
           selected={false}
           isLast={index === notes.length - 1}
           animationIndex={index}
+          locked={note.value?.locked === true}
           onPress={handlePress}
         />
       )

@@ -319,18 +319,23 @@ export default function SyncScreen() {
 
             <Reanimated.View
               entering={FadeInDown.duration(220).delay(30)}
+              layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.deviceGroup}
             >
               {renderLocalDevices()}
             </Reanimated.View>
 
-            <Reanimated.View entering={FadeIn.duration(200).delay(70)}>
+            <Reanimated.View
+              entering={FadeIn.duration(200).delay(70)}
+              layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+            >
               <Text style={styles.sectionCapDevice}>{t('sync.devices.otherDevices')}</Text>
             </Reanimated.View>
 
             {otherDevices.length > 0 ? (
               <Reanimated.View
                 entering={FadeInDown.duration(220).delay(100)}
+                layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
                 style={styles.deviceGroup}
               >
                 {renderOtherDevices()}

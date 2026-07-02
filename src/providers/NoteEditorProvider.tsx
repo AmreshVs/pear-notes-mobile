@@ -30,6 +30,7 @@ import { useNoteEditor } from './useNoteEditor'
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
+import { LockedNoteView } from '@/components/LockedNoteView'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import {
@@ -60,6 +61,8 @@ import {
   uploadRecording,
   uploadVideo,
 } from '@/lib/noteAttachmentManager'
+import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
+import { toggleNoteLock } from '@/lib/noteLockActions'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import {
   formatAttachmentSize,
@@ -118,7 +121,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     resolveHyperdriveUrl,
     isEdgeSwipeActive,
     setIsEdgeSwipeActive,
+    noteData,
   } = useNoteEditor()
+
+  useNoteLockVersion()
+  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
 
   const handleUpdate = useCallback(
     (html: string) => {
@@ -477,25 +484,45 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     )
   }, [moveFolders, handleMoveNote, t])
 
+  const handleToggleLock = useCallback(() => {
+    if (!noteId) return
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    toggleNoteLock({
+      key: noteId,
+      currentlyLocked: !!noteData?.locked,
+      reason: t('noteCard.unlockReason'),
+      dispatch,
+      onUnavailable: () =>
+        Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+    })
+  }, [noteId, noteData?.locked, dispatch, t])
+
   const handleMoreOptions = useCallback(() => {
     if (!noteId) return
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     if (Platform.OS === 'ios') {
+      const lockLabel = noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: [t('common.cancel'), t('noteCard.actions.moveTo'), t('noteCard.actions.delete')],
+          options: [
+            t('common.cancel'),
+            t('noteCard.actions.moveTo'),
+            lockLabel,
+            t('noteCard.actions.delete'),
+          ],
           cancelButtonIndex: 0,
-          destructiveButtonIndex: 2,
+          destructiveButtonIndex: 3,
         },
         (index: number) => {
           if (index === 1) showMoveToSheet()
-          else if (index === 2) handleDeleteNote()
+          else if (index === 2) handleToggleLock()
+          else if (index === 3) handleDeleteNote()
         },
       )
     } else {
       handleDeleteNote()
     }
-  }, [noteId, showMoveToSheet, handleDeleteNote, t])
+  }, [noteId, noteData?.locked, showMoveToSheet, handleToggleLock, handleDeleteNote, t])
 
   const handleOpenAttachment = useCallback(
     async (url: string, fileName: string, attachmentId?: string) => {
@@ -712,6 +739,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [keyboardHeight],
   )
 
+  const lockOverlayStyle = useMemo(
+    () => [styles.lockOverlay, { top: insets.top + 52 }],
+    [styles.lockOverlay, insets.top],
+  )
+
   return (
     <NoteEditorContext.Provider value={contextValue}>
       {children}
@@ -747,7 +779,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
               <View style={styles.flex1} />
 
-              {isEditing ? (
+              {isNoteLocked ? null : isEditing ? (
                 <GlassView intensity={40} borderRadius={22} style={styles.headerBtn}>
                   <Pressable
                     onPress={handleDone}
@@ -824,6 +856,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                           )}
                         </ExpoUI.Menu>
                         <ExpoUI.Button
+                          label={
+                            noteData?.locked
+                              ? t('noteCard.actions.unlock')
+                              : t('noteCard.actions.lock')
+                          }
+                          systemImage={noteData?.locked ? 'lock.slash' : 'lock'}
+                          onPress={handleToggleLock}
+                        />
+                        <ExpoUI.Button
                           label={t('noteCard.actions.delete')}
                           systemImage="trash"
                           role="destructive"
@@ -869,7 +910,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onAttachmentLongPress={handleAttachmentLongPress}
           />
 
-          {isOpen && (
+          {isOpen && !isNoteLocked && (
             <EditorToolbar
               isEditing={isEditing}
               isActive={isActive}
@@ -883,6 +924,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onTakePhoto={handleTakePhoto}
               onTakeVideo={handleTakeVideo}
             />
+          )}
+
+          {isNoteLocked && (
+            <View style={lockOverlayStyle}>
+              <LockedNoteView noteId={noteId ?? ''} />
+            </View>
           )}
 
           <AudioRecorderModal
@@ -1030,6 +1077,14 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     animatedView: {
       ...StyleSheet.absoluteFill,
+      backgroundColor: theme.colors.background,
+    },
+    lockOverlay: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 9,
       backgroundColor: theme.colors.background,
     },
     header: {

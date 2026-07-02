@@ -35,6 +35,7 @@ import {
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { getFirstImageUrl, getPreview, isChecklistNote } from '@/utils/noteUtils'
 
 type NoteRowProps = {
@@ -58,18 +59,24 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const md3 = useMD3Theme()
   const c = md3.colors
 
+  useNoteLockVersion()
+  const locked = note.value?.locked === true
+  const masked = locked && !isNoteUnlocked(note.key)
+
   const title = note.value?.title || t('noteCard.untitled')
   const html = note.value?.note || ''
-  const preview = getPreview(html, t('noteCard.noAdditionalText'))
+  const preview = masked
+    ? t('noteCard.lockedSummary')
+    : getPreview(html, t('noteCard.noAdditionalText'))
   const rawImageUrl = getFirstImageUrl(html)
-  const hasChecklist = isChecklistNote(html)
+  const hasChecklist = !masked && isChecklistNote(html)
   const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
 
   const resolvedImageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
   const colorTheme = useSelector(getColorTheme)
   const isPearTheme = colorTheme === 'pear'
   const [thumbError, setThumbError] = useState(false)
-  const showThumb = !!resolvedImageUrl && !thumbError
+  const showThumb = !!resolvedImageUrl && !thumbError && !masked
 
   const scale = useSharedValue(1)
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
@@ -101,9 +108,19 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
         ]}
       >
         <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
+          <View style={styles.titleRow}>
+            {locked && (
+              <MaterialCommunityIcons
+                name={masked ? 'lock-outline' : 'lock-open-variant-outline'}
+                size={UI_ICON_SIZE_13}
+                color={c.primary}
+                style={styles.lockIcon}
+              />
+            )}
+            <Text style={styles.title} numberOfLines={1}>
+              {title}
+            </Text>
+          </View>
 
           {hasChecklist && preview ? (
             <View style={styles.checklistRow}>
@@ -171,11 +188,19 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     content: {
       ...commonStyles.flex1,
     },
+    titleRow: {
+      ...commonStyles.row,
+      gap: UI_SIZE_6,
+      marginBottom: UI_SIZE_4,
+    },
+    lockIcon: {
+      marginTop: 1,
+    },
     title: {
+      ...commonStyles.flex1,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      marginBottom: UI_SIZE_4,
       letterSpacing: -0.2,
       color: c.onSurface,
     },
