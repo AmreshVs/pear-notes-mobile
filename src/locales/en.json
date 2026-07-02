@@ -267,6 +267,9 @@
       "scanBtn": "Scan QR",
       "placeholder": "Paste your code here...",
       "connectBtn": "Connect",
+      "mergeTitle": "Combine This Device?",
+      "mergeDesc": "Notes, folders, and media on this device will be merged into the linked vault. Nothing on this device will be deleted.",
+      "mergeConfirm": "Combine & Link",
       "verifyTitle": "Verify Secure Code",
       "identityTitle": "Identity Verification",
       "verifyDesc": "Ensure both devices display the same identification code.",
@@ -346,6 +349,8 @@
     "progress": {
       "creatingTitle": "Creating Backup...",
       "restoringTitle": "Restoring Data...",
+      "readingTitle": "Reading Backup...",
+      "readingDesc": "Loading and preparing your backup file...",
       "creatingDesc": "Encrypting and uploading your vault data...",
       "restoringDesc": "Decrypting and restoring your vault data...",
       "errorTitle": "Something went wrong",
@@ -371,7 +376,11 @@
     "enterRecoveryKeyTitle": "Enter Recovery Key",
     "enterRecoveryKeyDesc": "Please enter the Recovery Key of the device that created this backup.",
     "invalidKey": "Invalid Key",
-    "invalidKeyDesc": "The recovery key must be a 64-character hex string."
+    "invalidKeyDesc": "The recovery key must be a 64-character hex string.",
+    "errors": {
+      "invalidFile": "This file isn't a valid Pear Notes backup.",
+      "incorrectKey": "Incorrect recovery key. Please check the key and try again."
+    }
   },
   "storage": {
     "hero": {

@@ -153,7 +153,7 @@ export async function previewAttachment(url: string, fileName: string) {
 export async function shareAttachment(url: string, fileName: string) {
   const localUri = await downloadToCache(url, fileName)
   try {
-    await ExpoNativeShareModule.share({ message: '', urls: [localUri] })
+    await ExpoNativeShareModule.share({ message: '', urls: [localUri], resolveOnDismiss: true })
   } finally {
     await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
   }

@@ -6,7 +6,7 @@ import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 import * as Crypto from 'expo-crypto'
 import { Directory, Paths } from 'expo-file-system'
-import { router, Stack } from 'expo-router'
+import { router, Stack, usePathname } from 'expo-router'
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation'
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
@@ -73,7 +73,12 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const deviceRemoved = useSelector(getDeviceRemoved)
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
+  const inviterStatus = useSelector((state: any) => state.sync.inviterStatus)
   const notesLoading = useSelector(getNotesLoading)
+  const pathname = usePathname()
+  const pathnameRef = useRef(pathname)
+  pathnameRef.current = pathname
+  const prevNeedsConfirmRef = useRef(false)
 
   const initWorklet = useCallback(async () => {
     try {
@@ -124,6 +129,19 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       triggerReload()
     }
   }, [needsReload, dispatch, triggerReload])
+
+  useEffect(() => {
+    const needsConfirm =
+      inviterStatus?.step === 'confirmation' || receiverStatus?.step === 'confirmation'
+    if (
+      needsConfirm &&
+      !prevNeedsConfirmRef.current &&
+      pathnameRef.current.startsWith('/settings')
+    ) {
+      router.dismissAll()
+    }
+    prevNeedsConfirmRef.current = needsConfirm
+  }, [inviterStatus?.step, receiverStatus?.step])
 
   useEffect(() => {
     if (!isResetting) {
@@ -251,26 +269,26 @@ function RootLayoutNav() {
       <AndroidPaperProvider>
         <SheetProvider>
           <ToastProvider>
-          <SplashGate />
-          <NoteEditorProvider>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            >
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="note" options={{ headerShown: false }} />
-              <Stack.Screen
-                name="settings"
-                options={{
-                  presentation: 'modal',
+            <SplashGate />
+            <NoteEditorProvider>
+              <Stack
+                screenOptions={{
                   headerShown: false,
                 }}
-              />
-            </Stack>
+              >
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="note" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="settings"
+                  options={{
+                    presentation: 'modal',
+                    headerShown: false,
+                  }}
+                />
+              </Stack>
 
-            <PairingOverlay />
-          </NoteEditorProvider>
+              <PairingOverlay />
+            </NoteEditorProvider>
           </ToastProvider>
         </SheetProvider>
       </AndroidPaperProvider>

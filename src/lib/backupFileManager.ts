@@ -54,7 +54,12 @@ export async function saveBackupWithShare(exportBuffer: any, shareMessage?: stri
   }
 }
 
-export async function pickAndReadBackupFile(): Promise<Uint8Array | null> {
+export type PickedBackupFile = {
+  uri: string
+  name: string
+}
+
+export async function pickBackupFile(): Promise<PickedBackupFile | null> {
   const result = await DocumentPicker.getDocumentAsync({
     type: '*/*',
     copyToCacheDirectory: true,
@@ -65,7 +70,11 @@ export async function pickAndReadBackupFile(): Promise<Uint8Array | null> {
   if (!name.endsWith('.pnbk') && !name.endsWith('.pearnotes')) {
     throw new InvalidBackupFileError()
   }
-  const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+  return { uri: asset.uri, name }
+}
+
+export async function readBackupFile(uri: string): Promise<Uint8Array> {
+  const base64 = await FileSystem.readAsStringAsync(uri, {
     encoding: FileSystem.EncodingType.Base64,
   })
   return Buffer.from(base64, 'base64')

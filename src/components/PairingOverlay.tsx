@@ -55,6 +55,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const colors = useColors()
   const theme = useTheme()
   const [pasteCode, setPasteCode] = useState('')
+  const [pendingInvite, setPendingInvite] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
@@ -89,6 +90,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     if (isInviter) dispatch(resetInvite())
     else if (isReceiverActive) dispatch(resetReceiverStatus())
     else dispatch(setShowPairingInput(false))
+    setPendingInvite(null)
     setIsScanning(false)
   }, [dispatch, isInviter, isReceiverActive, deviceRemoved])
 
@@ -108,13 +110,22 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   const handleConnect = useCallback(() => {
     if (isValidInvite(pasteCode)) {
-      const rawInvite = extractInvite(pasteCode)
-      dispatch(subscribePairUser({ invite: rawInvite }))
-      dispatch(setShowPairingInput(false))
-      setPasteCode('')
+      setPendingInvite(extractInvite(pasteCode))
       setIsScanning(false)
     }
-  }, [dispatch, pasteCode])
+  }, [pasteCode])
+
+  const handleConfirmMerge = useCallback(() => {
+    if (!pendingInvite) return
+    dispatch(subscribePairUser({ invite: pendingInvite }))
+    dispatch(setShowPairingInput(false))
+    setPendingInvite(null)
+    setPasteCode('')
+  }, [dispatch, pendingInvite])
+
+  const handleCancelMerge = useCallback(() => {
+    setPendingInvite(null)
+  }, [])
 
   const handleOpenScanner = useCallback(async () => {
     if (!cameraPermission?.granted) {
@@ -130,9 +141,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       if (!data || hasScanned) return
       setHasScanned(true)
       if (isValidInvite(data)) {
-        const rawInvite = extractInvite(data)
-        dispatch(subscribePairUser({ invite: rawInvite }))
-        dispatch(setShowPairingInput(false))
+        setPendingInvite(extractInvite(data))
         setIsScanning(false)
       } else {
         setPasteCode(data.trim())
@@ -140,7 +149,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       }
       setTimeout(() => setHasScanned(false), 1000)
     },
-    [dispatch, hasScanned],
+    [hasScanned],
   )
 
   const renderIcon = useCallback(() => {
@@ -327,6 +336,26 @@ export const PairingOverlay = memo(function PairingOverlay() {
       )
     }
 
+    if (pendingInvite) {
+      return (
+        <View style={styles.cardInner}>
+          <View style={styles.iconGold}>
+            <Link2 size={UI_ICON_SIZE_40} color={colors.primary} />
+          </View>
+          <Text style={styles.title}>{t('pairing.overlay.mergeTitle')}</Text>
+          <Text style={styles.sub}>{t('pairing.overlay.mergeDesc')}</Text>
+          <View style={styles.row}>
+            <Pressable onPress={handleCancelMerge} style={styles.cancelPressable}>
+              <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
+            </Pressable>
+            <Pressable onPress={handleConfirmMerge} style={[styles.btn, styles.confirmBtn]}>
+              <Text style={styles.confirmBtnText}>{t('pairing.overlay.mergeConfirm')}</Text>
+            </Pressable>
+          </View>
+        </View>
+      )
+    }
+
     if (showPairingInput) {
       return (
         <View style={styles.cardInner}>
@@ -449,6 +478,9 @@ export const PairingOverlay = memo(function PairingOverlay() {
     styles,
     deviceRemoved,
     handleOpenScanner,
+    pendingInvite,
+    handleConfirmMerge,
+    handleCancelMerge,
   ])
 
   const fadeStyle = useMemo(
@@ -472,7 +504,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
       <View style={styles.center} pointerEvents="box-none">
         <Reanimated.View
-          key={`${step}-${showPairingInput ? 'input' : 'flow'}`}
+          key={`${step}-${pendingInvite ? 'merge' : showPairingInput ? 'input' : 'flow'}`}
           entering={FadeInDown.duration(240)}
         >
           <Reanimated.View entering={FadeInDown.springify()} style={styles.card}>

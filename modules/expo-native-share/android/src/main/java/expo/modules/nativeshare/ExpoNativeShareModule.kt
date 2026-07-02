@@ -76,7 +76,11 @@ class ExpoNativeShareModule : Module() {
         setDataAndType(uri, mimeType)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
       }
-      currentActivity.startActivity(Intent.createChooser(intent, null))
+      try {
+        currentActivity.startActivity(intent)
+      } catch (_: android.content.ActivityNotFoundException) {
+        currentActivity.startActivity(Intent.createChooser(intent, null))
+      }
     }
 
     AsyncFunction("copyFile") { options: Map<String, Any?> ->

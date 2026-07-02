@@ -20,7 +20,8 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import {
   InvalidBackupFileError,
-  pickAndReadBackupFile,
+  pickBackupFile,
+  readBackupFile,
   saveBackupToDevice,
   saveBackupWithShare,
 } from '@/lib/backupFileManager'
@@ -144,11 +145,23 @@ function useBackupScreen() {
 
   const handleRestoreData = useCallback(async () => {
     try {
-      const buffer = await pickAndReadBackupFile()
-      if (!buffer) return
+      const picked = await pickBackupFile()
+      if (!picked) return
+      dispatch(
+        setImportStatus({
+          step: 'reading',
+          progress: 5,
+          message: t('backup.progress.readingDesc'),
+          current: 0,
+          total: 0,
+        }),
+      )
+      const buffer = await readBackupFile(picked.uri)
+      dispatch(resetImport())
       setSelectedBackupBuffer(buffer)
       setShowRecoveryModal(true)
     } catch (e) {
+      dispatch(resetImport())
       if (Platform.OS === 'android') {
         showToast(e instanceof InvalidBackupFileError ? t('backup.invalidFileDesc') : String(e))
       } else if (e instanceof InvalidBackupFileError) {
@@ -157,7 +170,7 @@ function useBackupScreen() {
         Alert.alert(t('backup.restoreError'), String(e))
       }
     }
-  }, [showToast, t])
+  }, [dispatch, showToast, t])
 
   const handleConfirmRestore = useCallback(
     async (enteredKey: string) => {
@@ -184,11 +197,6 @@ function useBackupScreen() {
     setShowRecoveryModal(false)
     setSelectedBackupBuffer(null)
   }, [])
-
-  const handleCancelOrDismiss = useCallback(() => {
-    if (exportStatus.step !== 'idle') dispatch(resetExport())
-    if (importStatus.step !== 'idle') dispatch(resetImport())
-  }, [exportStatus.step, importStatus.step, dispatch])
 
   return {
     importStatus,

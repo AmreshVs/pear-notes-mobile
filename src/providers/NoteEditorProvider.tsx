@@ -498,13 +498,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [noteId, showMoveToSheet, handleDeleteNote, t])
 
   const handleOpenAttachment = useCallback(
-    async (url: string, fileName: string) => {
+    async (url: string, fileName: string, attachmentId?: string) => {
       if (!url) return
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      editorRef.current?.setAttachmentLoading(url, true, attachmentId)
       try {
         await shareAttachment(url, fileName)
       } catch {
         Alert.alert(t('common.error'), t('noteEditor.upload.failedVideo'))
+      } finally {
+        editorRef.current?.setAttachmentLoading(url, false, attachmentId)
       }
     },
     [t],

@@ -50,6 +50,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { formatBackupDate, formatBytes, hexWithAlpha } from '@/lib/backupUtils'
+import { getBackupErrorMessage } from '@/utils/backupErrors'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -119,9 +120,12 @@ export default function AndroidBackupScreen() {
     [handleConfirmExport, t],
   )
 
-  const progressTitle = isExporting
-    ? t('backup.progress.creatingTitle')
-    : t('backup.progress.restoringTitle')
+  const progressTitle =
+    importStatus.step === 'reading'
+      ? t('backup.progress.readingTitle')
+      : isExporting
+        ? t('backup.progress.creatingTitle')
+        : t('backup.progress.restoringTitle')
 
   return (
     <View style={styles.root}>
@@ -268,7 +272,7 @@ export default function AndroidBackupScreen() {
               </Text>
               <Text style={styles.progressDesc}>
                 {isError
-                  ? errorMessage
+                  ? getBackupErrorMessage(errorMessage, t)
                   : importStatus.step === 'done'
                     ? t('backup.restoreCompleteDesc')
                     : `${progressStatus.message}${progressStatus.progress > 0 ? `  ${progressStatus.progress}%` : ''}`}

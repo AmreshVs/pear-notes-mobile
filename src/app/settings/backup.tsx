@@ -45,6 +45,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { formatBackupDate, formatBytes } from '@/lib/backupUtils'
+import { getBackupErrorMessage } from '@/utils/backupErrors'
 
 export default function BackupScreen() {
   const { t } = useTranslation()
@@ -92,9 +93,12 @@ export default function BackupScreen() {
     }
   }, [deviceRecoveryKey])
 
-  const progressTitle = isExporting
-    ? t('backup.progress.creatingTitle')
-    : t('backup.progress.restoringTitle')
+  const progressTitle =
+    importStatus.step === 'reading'
+      ? t('backup.progress.readingTitle')
+      : isExporting
+        ? t('backup.progress.creatingTitle')
+        : t('backup.progress.restoringTitle')
 
   const renderHeaderRight = useCallback(
     () => (
@@ -236,7 +240,7 @@ export default function BackupScreen() {
 
               <RNText style={styles.progressDesc}>
                 {isError
-                  ? errorMessage
+                  ? getBackupErrorMessage(errorMessage, t)
                   : importStatus.step === 'done'
                     ? t('backup.progress.restoredDesc')
                     : progressStatus.message}

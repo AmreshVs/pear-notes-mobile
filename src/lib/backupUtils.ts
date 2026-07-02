@@ -4,6 +4,19 @@ import * as FileSystem from 'expo-file-system/legacy'
 
 export const LAST_BACKUP_FILE = (FileSystem.documentDirectory ?? '') + 'lastBackup.json'
 
+export const RECOVERY_KEY_LENGTH = 64
+
+const RECOVERY_KEY_PATTERN = /^[0-9a-fA-F]+$/
+
+export function normalizeRecoveryKey(key: string): string {
+  return key.replace(/\s+/g, '').toLowerCase()
+}
+
+export function isValidRecoveryKey(key: string): boolean {
+  const normalized = normalizeRecoveryKey(key)
+  return normalized.length === RECOVERY_KEY_LENGTH && RECOVERY_KEY_PATTERN.test(normalized)
+}
+
 export function hexWithAlpha(hex: string, alpha: number): string {
   const a = Math.round(alpha * 255)
     .toString(16)

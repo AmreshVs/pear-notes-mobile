@@ -1,18 +1,22 @@
-import React, { useState } from 'react'
+import { Key } from 'lucide-react-native'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Modal, Platform, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
+import { Modal, Pressable, View as RNView, StyleSheet, TextInput } from 'react-native'
 
+import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
-import { useToast } from '@/providers/ToastProvider'
 import {
   commonStyles,
   FontFamily,
   FontSize,
   FontWeight,
+  MonoFontFamily,
   Radii,
   Space,
+  UI_ICON_SIZE_28,
   UI_SIZE_54,
 } from '@/constants/commonStyles'
+import { isValidRecoveryKey } from '@/lib/backupUtils'
 
 type RecoveryKeyModalProps = {
   visible: boolean
@@ -26,59 +30,78 @@ export function RecoveryKeyModal({ visible, onClose, onSubmit }: RecoveryKeyModa
   const { colors } = theme
   const styles = useStyles()
   const [inputValue, setInputValue] = useState('')
-  const { showToast } = useToast()
+  const [error, setError] = useState(false)
 
-  const handleSubmit = () => {
+  const handleChange = useCallback((value: string) => {
+    setInputValue(value)
+    setError(false)
+  }, [])
+
+  const handleClose = useCallback(() => {
+    setInputValue('')
+    setError(false)
+    onClose()
+  }, [onClose])
+
+  const handleSubmit = useCallback(() => {
     const trimmed = inputValue.trim()
-    if (trimmed.length !== 64 || !/^[0-9a-fA-F]+$/.test(trimmed)) {
-      if (Platform.OS === 'android') {
-        showToast(t('backup.invalidKeyDesc'))
-      } else {
-        Alert.alert(t('backup.invalidKey'), t('backup.invalidKeyDesc'))
-      }
+    if (!isValidRecoveryKey(trimmed)) {
+      setError(true)
       return
     }
     onSubmit(trimmed)
     setInputValue('')
-  }
+    setError(false)
+  }, [inputValue, onSubmit])
 
   return (
     <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
       <RNView style={styles.overlay}>
         <RNView style={styles.card}>
-          <Text style={styles.title}>{t('backup.enterRecoveryKeyTitle')}</Text>
-          <Text style={styles.desc}>{t('backup.enterRecoveryKeyDesc')}</Text>
+          <GlassView intensity={50} style={styles.glass}>
+            <RNView style={styles.inner}>
+              <RNView style={styles.iconRing}>
+                <Key size={UI_ICON_SIZE_28} color={colors.primary} strokeWidth={2} />
+              </RNView>
 
-          <TextInput
-            style={styles.input}
-            value={inputValue}
-            onChangeText={setInputValue}
-            placeholder="0123456789abcdef..."
-            placeholderTextColor={colors.textMuted}
-            autoCapitalize="none"
-            autoCorrect={false}
-            maxLength={64}
-          />
+              <Text style={styles.title}>{t('backup.enterRecoveryKeyTitle')}</Text>
+              <Text style={styles.desc}>{t('backup.enterRecoveryKeyDesc')}</Text>
 
-          <RNView style={styles.actionRow}>
-            <Pressable
-              onPress={onClose}
-              style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
-            >
-              <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={handleSubmit}
-              disabled={!inputValue.trim()}
-              style={({ pressed }) => [
-                styles.submitBtn,
-                pressed && commonStyles.pressed,
-                !inputValue.trim() && styles.disabledBtn,
-              ]}
-            >
-              <Text style={styles.submitBtnText}>{t('common.ok') || 'OK'}</Text>
-            </Pressable>
-          </RNView>
+              <TextInput
+                style={[styles.input, error && styles.inputError]}
+                value={inputValue}
+                onChangeText={handleChange}
+                onSubmitEditing={handleSubmit}
+                placeholder="0123456789abcdef..."
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={64}
+              />
+
+              {error ? <Text style={styles.errorText}>{t('backup.invalidKeyDesc')}</Text> : null}
+
+              <RNView style={styles.actionRow}>
+                <Pressable
+                  onPress={handleClose}
+                  style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
+                >
+                  <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={handleSubmit}
+                  disabled={!inputValue.trim()}
+                  style={({ pressed }) => [
+                    styles.submitBtn,
+                    pressed && commonStyles.pressed,
+                    !inputValue.trim() && styles.disabledBtn,
+                  ]}
+                >
+                  <Text style={styles.submitBtnText}>{t('common.ok') || 'OK'}</Text>
+                </Pressable>
+              </RNView>
+            </RNView>
+          </GlassView>
         </RNView>
       </RNView>
     </Modal>
@@ -91,13 +114,24 @@ const useStyles = createThemedStylesheet((theme) => {
       flex: 1,
       backgroundColor: theme.colors.backdrop,
       ...commonStyles.centered,
+      paddingHorizontal: Space.xl,
     },
     card: {
-      width: '85%',
-      borderRadius: Radii.xl,
-      backgroundColor: theme.colors.surface,
-      padding: Space.xl,
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+      ...commonStyles.modalCard,
+    },
+    glass: {
+      borderRadius: Radii.card,
+    },
+    inner: {
+      padding: Space.xxxl,
+      alignItems: 'center',
+      width: '100%',
+      backgroundColor: theme.colors.transparent,
+    },
+    iconRing: {
+      ...commonStyles.iconRing80,
+      backgroundColor: `${theme.colors.primary}26`,
+      borderColor: `${theme.colors.primary}4D`,
     },
     title: {
       fontSize: FontSize.title,
@@ -116,51 +150,65 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xl,
     },
     input: {
+      width: '100%',
       height: UI_SIZE_54,
       borderRadius: Radii.md,
       borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
-      backgroundColor: theme.colors.controlBackground,
+      backgroundColor: theme.colors.cardPressed,
       color: theme.colors.text,
-      fontFamily: FontFamily.regular,
-      fontSize: FontSize.subtitle,
+      fontFamily: MonoFontFamily,
+      fontSize: FontSize.caption,
+      textAlign: 'center',
+      letterSpacing: 1,
       paddingHorizontal: Space.md,
-      marginBottom: Space.xl,
+    },
+    inputError: {
+      borderColor: theme.colors.error,
+    },
+    errorText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.error,
+      textAlign: 'center',
+      marginTop: Space.sm,
     },
     actionRow: {
       flexDirection: 'row',
-      justifyContent: 'flex-end',
       gap: Space.md,
+      width: '100%',
+      marginTop: Space.xl,
     },
     cancelBtn: {
-      height: UI_SIZE_54,
-      borderRadius: Radii.pill,
-      paddingHorizontal: Space.xl,
-      justifyContent: 'center',
-      alignItems: 'center',
+      flex: 1,
+      height: 50,
+      borderRadius: Radii.md,
+      ...commonStyles.centered,
+      backgroundColor: theme.colors.cardPressed,
+      borderWidth: 1,
+      borderColor: theme.colors.borderSecondary,
     },
     cancelBtnText: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.bold,
       fontFamily: FontFamily.semiBold,
-      color: theme.colors.textMuted,
+      color: theme.colors.textSecondary,
     },
     submitBtn: {
-      height: UI_SIZE_54,
-      borderRadius: Radii.pill,
+      flex: 1,
+      height: 50,
+      borderRadius: Radii.md,
+      ...commonStyles.centered,
       backgroundColor: theme.colors.primary,
-      paddingHorizontal: Space.xl,
-      justifyContent: 'center',
-      alignItems: 'center',
     },
     submitBtnText: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.bold,
       fontFamily: FontFamily.semiBold,
-      color: theme.colors.black,
+      color: theme.isDark ? theme.colors.black : theme.colors.white,
     },
     disabledBtn: {
-      opacity: 0.5,
+      opacity: 0.3,
     },
   })
   return styles
