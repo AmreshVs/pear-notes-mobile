@@ -78,6 +78,7 @@ export default function FolderNotesScreen() {
 
   const groupedNotes = useMemo(() => {
     const sections: Record<string, any[]> = {
+      [t('folderView.sections.pinned')]: [],
       [t('folderView.sections.today')]: [],
       [t('folderView.sections.yesterday')]: [],
       [t('folderView.sections.last7Days')]: [],
@@ -87,6 +88,10 @@ export default function FolderNotesScreen() {
     const DAY = 86_400_000
 
     notes.forEach((note: any) => {
+      if (!isTrashFolder && note.value?.pinned === true) {
+        sections[t('folderView.sections.pinned')].push(note)
+        return
+      }
       const diff = now - (note.value?.updatedAt || note.value?.createdAt || 0)
       if (diff < DAY) sections[t('folderView.sections.today')].push(note)
       else if (diff < 2 * DAY) sections[t('folderView.sections.yesterday')].push(note)
@@ -97,7 +102,7 @@ export default function FolderNotesScreen() {
     return Object.entries(sections)
       .filter(([_, data]) => data.length > 0)
       .map(([title, data]) => ({ title, data }))
-  }, [notes, t])
+  }, [notes, t, isTrashFolder])
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -139,6 +144,13 @@ export default function FolderNotesScreen() {
   const handleMoveNote = useCallback(
     (noteId: string, folderId: string) => {
       dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
+    },
+    [dispatch],
+  )
+
+  const handleTogglePinNote = useCallback(
+    (noteId: string, currentlyPinned: boolean) => {
+      dispatch(updateNote({ key: noteId, pinned: !currentlyPinned } as any))
     },
     [dispatch],
   )
@@ -216,10 +228,12 @@ export default function FolderNotesScreen() {
       const animationIndex = sectionIndex * 3 + index
 
       const isLocked = note.value?.locked === true
+      const isPinned = note.value?.pinned === true
       const handlePress = () => handleSelectNote(note.key)
       const handleDelete = () => handleDeleteNote(note.key)
       const handleCopy = () => handleCopyNote(note.value?.title, note.value?.note)
       const handleMoveTo = (folderId: string) => handleMoveNote(note.key, folderId)
+      const handleTogglePin = () => handleTogglePinNote(note.key, isPinned)
       const handleToggleLock = () =>
         toggleNoteLock({
           key: note.key,
@@ -248,10 +262,12 @@ export default function FolderNotesScreen() {
           isLast={isLast}
           animationIndex={animationIndex}
           locked={isLocked}
+          pinned={isPinned}
           onPress={handlePress}
           onDelete={handleDelete}
           onCopy={handleCopy}
           onToggleLock={handleToggleLock}
+          onTogglePin={isTrashFolder ? undefined : handleTogglePin}
           moveFolders={moveFolders}
           onMoveTo={handleMoveTo}
         />
@@ -263,6 +279,8 @@ export default function FolderNotesScreen() {
       handleSelectNote,
       handleDeleteNote,
       handleCopyNote,
+      handleTogglePinNote,
+      isTrashFolder,
       moveFolders,
       handleMoveNote,
       dispatch,

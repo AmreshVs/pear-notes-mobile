@@ -1,6 +1,6 @@
 import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { Folder, Lock, LockOpen } from 'lucide-react-native'
+import { Folder, Lock, LockOpen, Pin } from 'lucide-react-native'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -47,10 +47,12 @@ interface NoteCardProps {
   isLast?: boolean
   animationIndex?: number
   locked?: boolean
+  pinned?: boolean
   onPress: () => void
   onDelete?: () => void
   onCopy?: () => void
   onToggleLock?: () => void
+  onTogglePin?: () => void
   moveFolders?: MoveFolder[]
   onMoveTo?: (folderId: string) => void
 }
@@ -66,10 +68,12 @@ export const NoteCard = memo(function NoteCard({
   isLast,
   animationIndex = 0,
   locked,
+  pinned,
   onPress,
   onDelete,
   onCopy,
   onToggleLock,
+  onTogglePin,
   moveFolders,
   onMoveTo,
 }: NoteCardProps) {
@@ -127,6 +131,7 @@ export const NoteCard = memo(function NoteCard({
         <RNView style={styles.row}>
           <RNView style={styles.content}>
             <RNView style={styles.titleRow}>
+              {pinned && <Pin size={UI_ICON_SIZE_12} color={lockIconColor} fill={lockIconColor} />}
               {locked &&
                 (masked ? (
                   <Lock size={UI_ICON_SIZE_12} color={lockIconColor} />
@@ -178,7 +183,7 @@ export const NoteCard = memo(function NoteCard({
     </Animated.View>
   )
 
-  const hasActions = onDelete || onCopy || onMoveTo || onToggleLock
+  const hasActions = onDelete || onCopy || onMoveTo || onToggleLock || onTogglePin
 
   if (!ExpoUI || !hasActions) {
     return card
@@ -216,6 +221,14 @@ export const NoteCard = memo(function NoteCard({
               label={t('noteCard.actions.copyNote')}
               systemImage="doc.on.doc"
               onPress={onCopy}
+            />
+          )}
+
+          {onTogglePin && (
+            <Button
+              label={pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin')}
+              systemImage={pinned ? 'pin.slash' : 'pin'}
+              onPress={onTogglePin}
             />
           )}
 

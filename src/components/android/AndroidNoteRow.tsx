@@ -61,6 +61,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
 
   useNoteLockVersion()
   const locked = note.value?.locked === true
+  const pinned = note.value?.pinned === true
   const masked = locked && !isNoteUnlocked(note.key)
 
   const title = note.value?.title || t('noteCard.untitled')
@@ -109,6 +110,14 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
       >
         <View style={styles.content}>
           <View style={styles.titleRow}>
+            {pinned && (
+              <MaterialCommunityIcons
+                name="pin"
+                size={UI_ICON_SIZE_13}
+                color={c.primary}
+                style={styles.lockIcon}
+              />
+            )}
             {locked && (
               <MaterialCommunityIcons
                 name={masked ? 'lock-outline' : 'lock-open-variant-outline'}

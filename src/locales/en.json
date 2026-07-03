@@ -45,6 +45,21 @@
       "header": "STORAGE",
       "storageTitle": "Storage"
     },
+    "privacy": {
+      "header": "PRIVACY",
+      "noteLock": "Note Lock",
+      "available": "Available",
+      "noteLockDesc": "Lock individual notes from the note menu. Unlocks with {{method}}.",
+      "methods": {
+        "faceIos": "Face ID",
+        "touchId": "Touch ID",
+        "passcodeIos": "Passcode",
+        "faceAndroid": "Face unlock",
+        "fingerprintAndroid": "Fingerprint",
+        "iris": "Iris unlock",
+        "screenLock": "Screen lock"
+      }
+    },
     "danger": {
       "header": "DANGER ZONE",
       "clearStorage": "Clear Storage"
@@ -159,6 +174,7 @@
       "noNotesHint": "Tap + to create a note in this folder"
     },
     "sections": {
+      "pinned": "Pinned",
       "today": "Today",
       "yesterday": "Yesterday",
       "last7Days": "Last 7 Days",
@@ -176,6 +192,8 @@
       "moveTo": "Move to",
       "moveToFolder": "Move to Folder",
       "copyNote": "Copy Note",
+      "pin": "Pin Note",
+      "unpin": "Unpin Note",
       "delete": "Delete",
       "noFolders": "No folders available",
       "options": "Note options",
@@ -294,9 +312,9 @@
       "verifyBtn": "Verify Code",
       "rejectBtn": "Reject",
       "pairingFailedTitle": "Pairing Failed",
-      "pairingFailedDesc": "Sync timed out. This device will reset and restart.",
+      "pairingFailedDesc": "Pairing timed out or failed. Your notes on this device have been kept. You can try pairing again.",
       "pairingRejectedTitle": "Pairing Declined",
-      "pairingRejectedDesc": "The other device declined this pairing request. This device will reset and restart."
+      "pairingRejectedDesc": "The other device declined this pairing request. Your notes on this device have been kept."
     }
   },
   "search": {

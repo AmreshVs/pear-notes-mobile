@@ -19,6 +19,8 @@ import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
+import useLockStatus from './useLockStatus'
+
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -46,6 +48,7 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
+import { getLockMethodLabelKey } from '@/utils/settingsUtils'
 
 export default function AndroidSettingsScreen() {
   const { t } = useTranslation()
@@ -60,6 +63,8 @@ export default function AndroidSettingsScreen() {
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
   const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
+  const { lockAvailable, lockMethod } = useLockStatus()
+  const lockMethodLabel = lockAvailable ? t(getLockMethodLabelKey(lockMethod)) : ''
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
   const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
@@ -413,7 +418,36 @@ export default function AndroidSettingsScreen() {
           </Pressable>
         </Animated.View>
 
-        <Animated.View entering={FadeIn.duration(220).delay(260)}>
+        {lockAvailable && (
+          <Animated.View entering={FadeIn.duration(220).delay(260)}>
+            <Text style={styles.sectionCapMargin}>{t('settings.privacy.header')}</Text>
+          </Animated.View>
+        )}
+
+        {lockAvailable && (
+          <Animated.View
+            entering={FadeInDown.duration(240).delay(280)}
+            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+          >
+            <View style={styles.cardRow}>
+              <View style={styles.syncIconWrap}>
+                <MaterialCommunityIcons
+                  name="lock-outline"
+                  size={UI_ICON_SIZE_22}
+                  color={c.primary}
+                />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.rowTitle}>{t('settings.privacy.noteLock')}</Text>
+                <Text style={styles.rowSubtitle}>
+                  {t('settings.privacy.noteLockDesc', { method: lockMethodLabel })}
+                </Text>
+              </View>
+            </View>
+          </Animated.View>
+        )}
+
+        <Animated.View entering={FadeIn.duration(220).delay(300)}>
           <Text style={styles.footerText}>{t('settings.footer')}</Text>
           <Text style={styles.versionText}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
         </Animated.View>
@@ -432,7 +466,6 @@ export default function AndroidSettingsScreen() {
         title={t('settings.general.fontFamily')}
         actions={fontActions}
       />
-
     </View>
   )
 }

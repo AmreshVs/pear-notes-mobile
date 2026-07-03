@@ -1,13 +1,24 @@
 import * as LocalAuthentication from 'expo-local-authentication'
 
-export async function isDeviceAuthSupported(): Promise<boolean> {
+export type DeviceAuthMethod = 'face' | 'fingerprint' | 'iris' | 'passcode' | 'none'
+
+export async function getDeviceAuthMethod(): Promise<DeviceAuthMethod> {
   try {
-    const hasHardware = await LocalAuthentication.hasHardwareAsync()
-    const isEnrolled = await LocalAuthentication.isEnrolledAsync()
-    return hasHardware && isEnrolled
+    const level = await LocalAuthentication.getEnrolledLevelAsync()
+    if (level === LocalAuthentication.SecurityLevel.NONE) return 'none'
+    if (level === LocalAuthentication.SecurityLevel.SECRET) return 'passcode'
+    const types = await LocalAuthentication.supportedAuthenticationTypesAsync()
+    if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) return 'face'
+    if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) return 'fingerprint'
+    if (types.includes(LocalAuthentication.AuthenticationType.IRIS)) return 'iris'
+    return 'passcode'
   } catch {
-    return false
+    return 'none'
   }
+}
+
+export async function isDeviceAuthSupported(): Promise<boolean> {
+  return (await getDeviceAuthMethod()) !== 'none'
 }
 
 export async function authenticate(reason: string): Promise<boolean> {

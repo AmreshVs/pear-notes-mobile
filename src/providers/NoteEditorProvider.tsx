@@ -1,5 +1,6 @@
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { deleteNote, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import type { DocumentPickerAsset } from 'expo-document-picker'
 import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
@@ -47,8 +48,8 @@ import {
 import {
   deleteAttachment,
   downloadToCache,
-  pickDocument,
-  pickImageFromLibrary,
+  pickDocuments,
+  pickImagesFromLibrary,
   previewAttachment,
   saveImageToPhotos,
   scanDocument,
@@ -228,8 +229,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handlePickImage = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    const asset = await pickImageFromLibrary()
-    if (asset) {
+    const assets = await pickImagesFromLibrary()
+    if (!assets) return
+    for (const asset of assets) {
       await processMediaAsset(asset)
     }
   }, [processMediaAsset])
@@ -301,65 +303,74 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [noteId, resolveHyperdriveUrl, setUploadInfo, t])
 
+  const processDocumentAsset = useCallback(
+    async (asset: DocumentPickerAsset) => {
+      const { uri, name, size, mimeType } = asset
+      const displayName = name || t('noteEditor.upload.file')
+      const sizeStr = formatAttachmentSize(size)
+      setUploadInfo({
+        fileName: displayName,
+        status: sizeStr
+          ? t('noteEditor.upload.readingWithSize', { size: sizeStr })
+          : t('noteEditor.upload.reading'),
+      })
+      try {
+        setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.uploading') })
+        if (isImageFile(name, mimeType)) {
+          const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+            Image.getSize(
+              uri,
+              (w, h) => resolve({ width: w, height: h }),
+              () => resolve({ width: 0, height: 0 }),
+            )
+          })
+          if (dimensions.width > 0) {
+            await processMediaAsset({
+              type: 'image',
+              uri,
+              width: dimensions.width,
+              height: dimensions.height,
+              fileName: name,
+              mimeType,
+            } as ImagePickerAsset)
+          }
+        } else {
+          const { link } = await uploadDocumentFile(noteId!, uri, name || `file-${Date.now()}`)
+          if (link) {
+            const resolvedLink = resolveHyperdriveUrl(link)
+            const isAudio = mimeType?.startsWith('audio/')
+            if (isAudio) {
+              editorRef.current?.insertAudioAttachment(
+                resolvedLink,
+                name || t('noteEditor.upload.audio'),
+              )
+            } else {
+              editorRef.current?.insertFileAttachment(
+                resolvedLink,
+                name || t('noteEditor.upload.file'),
+                size || 0,
+                mimeType || '',
+              )
+            }
+            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+          }
+        }
+      } catch {
+      } finally {
+        setUploadInfo(null)
+      }
+    },
+    [noteId, resolveHyperdriveUrl, processMediaAsset, setUploadInfo, t],
+  )
+
   const handlePickFile = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    const asset = await pickDocument()
-    if (!asset) return
-    const { uri, name, size, mimeType } = asset
-    const displayName = name || t('noteEditor.upload.file')
-    const sizeStr = formatAttachmentSize(size)
-    setUploadInfo({
-      fileName: displayName,
-      status: sizeStr
-        ? t('noteEditor.upload.readingWithSize', { size: sizeStr })
-        : t('noteEditor.upload.reading'),
-    })
-    try {
-      setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.uploading') })
-      if (isImageFile(name, mimeType)) {
-        const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
-          Image.getSize(
-            uri,
-            (w, h) => resolve({ width: w, height: h }),
-            () => resolve({ width: 0, height: 0 }),
-          )
-        })
-        if (dimensions.width > 0) {
-          await processMediaAsset({
-            type: 'image',
-            uri,
-            width: dimensions.width,
-            height: dimensions.height,
-            fileName: name,
-            mimeType,
-          } as ImagePickerAsset)
-        }
-      } else {
-        const { link } = await uploadDocumentFile(noteId!, uri, name || `file-${Date.now()}`)
-        if (link) {
-          const resolvedLink = resolveHyperdriveUrl(link)
-          const isAudio = mimeType?.startsWith('audio/')
-          if (isAudio) {
-            editorRef.current?.insertAudioAttachment(
-              resolvedLink,
-              name || t('noteEditor.upload.audio'),
-            )
-          } else {
-            editorRef.current?.insertFileAttachment(
-              resolvedLink,
-              name || t('noteEditor.upload.file'),
-              size || 0,
-              mimeType || '',
-            )
-          }
-          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-        }
-      }
-    } catch {
-    } finally {
-      setUploadInfo(null)
+    const assets = await pickDocuments()
+    if (!assets) return
+    for (const asset of assets) {
+      await processDocumentAsset(asset)
     }
-  }, [noteId, resolveHyperdriveUrl, processMediaAsset, setUploadInfo, t])
+  }, [processDocumentAsset])
 
   const handleRecordAudio = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)

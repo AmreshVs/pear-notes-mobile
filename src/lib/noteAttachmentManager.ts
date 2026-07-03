@@ -6,17 +6,20 @@ import * as FileSystem from 'expo-file-system/legacy'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
-export async function pickImageFromLibrary() {
+export async function pickImagesFromLibrary() {
   const ImagePicker = await import('expo-image-picker')
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.All,
     allowsEditing: false,
+    allowsMultipleSelection: true,
+    selectionLimit: 0,
+    orderedSelection: true,
     quality: 0.8,
   })
-  if (result.canceled || !result.assets?.[0]) {
+  if (result.canceled || !result.assets?.length) {
     return null
   }
-  return result.assets[0]
+  return result.assets
 }
 
 export async function takePhotoFromCamera() {
@@ -55,16 +58,16 @@ export async function scanDocument() {
   return scannedImages
 }
 
-export async function pickDocument() {
+export async function pickDocuments() {
   const DocumentPicker = await import('expo-document-picker')
   const result = await DocumentPicker.getDocumentAsync({
     copyToCacheDirectory: true,
-    multiple: false,
+    multiple: true,
   })
-  if (result.canceled || !result.assets?.[0]) {
+  if (result.canceled || !result.assets?.length) {
     return null
   }
-  return result.assets[0]
+  return result.assets
 }
 
 export async function uploadVideo(noteId: string, uri: string, fileName: string) {

@@ -1,4 +1,28 @@
-import { ActionSheetIOS } from 'react-native'
+import { ActionSheetIOS, Platform } from 'react-native'
+
+import type { DeviceAuthMethod } from '@/lib/deviceAuth'
+
+const LOCK_METHOD_LABEL_KEYS_IOS: Record<DeviceAuthMethod, string> = {
+  face: 'settings.privacy.methods.faceIos',
+  fingerprint: 'settings.privacy.methods.touchId',
+  iris: 'settings.privacy.methods.iris',
+  passcode: 'settings.privacy.methods.passcodeIos',
+  none: '',
+}
+
+const LOCK_METHOD_LABEL_KEYS_ANDROID: Record<DeviceAuthMethod, string> = {
+  face: 'settings.privacy.methods.faceAndroid',
+  fingerprint: 'settings.privacy.methods.fingerprintAndroid',
+  iris: 'settings.privacy.methods.iris',
+  passcode: 'settings.privacy.methods.screenLock',
+  none: '',
+}
+
+export function getLockMethodLabelKey(method: DeviceAuthMethod): string {
+  const keys =
+    Platform.OS === 'android' ? LOCK_METHOD_LABEL_KEYS_ANDROID : LOCK_METHOD_LABEL_KEYS_IOS
+  return keys[method]
+}
 
 export function getSortOptions(t: (key: string) => string) {
   return [

@@ -9,12 +9,14 @@ import {
 import Slider from '@react-native-community/slider'
 import Constants from 'expo-constants'
 import { router, Stack } from 'expo-router'
-import { ChevronRight, Database, Download, RefreshCw, X } from 'lucide-react-native'
+import { ChevronRight, Database, Download, LockKeyhole, RefreshCw, X } from 'lucide-react-native'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
+
+import useLockStatus from './useLockStatus'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -40,7 +42,12 @@ import {
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { getFontOptions, getSortOptions, showPicker } from '@/utils/settingsUtils'
+import {
+  getFontOptions,
+  getLockMethodLabelKey,
+  getSortOptions,
+  showPicker,
+} from '@/utils/settingsUtils'
 
 export default function SettingsScreen() {
   const { t } = useTranslation()
@@ -54,6 +61,8 @@ export default function SettingsScreen() {
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
+  const { lockAvailable, lockMethod } = useLockStatus()
+  const lockMethodLabel = lockAvailable ? t(getLockMethodLabelKey(lockMethod)) : ''
 
   const handleClose = useCallback(() => {
     router.back()
@@ -305,21 +314,54 @@ export default function SettingsScreen() {
                     strokeWidth={UI_STROKE_WIDTH_1_8}
                   />
                 </RNView>
-                <Text style={styles.rowLabelSemiBold}>
-                  {t('settings.storage.storageTitle')}
-                </Text>
+                <Text style={styles.rowLabelSemiBold}>{t('settings.storage.storageTitle')}</Text>
               </RNView>
               <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
             </Pressable>
           </RNView>
         </Animated.View>
 
+        {lockAvailable && (
+          <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
+            <Text style={styles.sectionCapMargin}>{t('settings.privacy.header')}</Text>
+          </Animated.View>
+        )}
+
+        {lockAvailable && (
+          <Animated.View
+            entering={FadeInDown.duration(Durations.slide).delay(Durations.delayFooter)}
+            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+          >
+            <RNView style={commonThemedStyles.card}>
+              <RNView style={commonStyles.settingsRow}>
+                <RNView style={styles.lockRowLeft}>
+                  <RNView style={commonThemedStyles.iconBox34}>
+                    <LockKeyhole
+                      size={UI_ICON_SIZE_17}
+                      color={colors.primary}
+                      strokeWidth={UI_STROKE_WIDTH_1_8}
+                    />
+                  </RNView>
+                  <RNView style={styles.lockInfo}>
+                    <Text style={styles.rowLabelSemiBold}>{t('settings.privacy.noteLock')}</Text>
+                    <Text style={styles.lockDesc}>
+                      {t('settings.privacy.noteLockDesc', { method: lockMethodLabel })}
+                    </Text>
+                  </RNView>
+                </RNView>
+                <RNView style={styles.badge}>
+                  <Text style={styles.badgeText}>{t('settings.privacy.available')}</Text>
+                </RNView>
+              </RNView>
+            </RNView>
+          </Animated.View>
+        )}
+
         <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
           <Text style={styles.footer}>{t('settings.footer')}</Text>
           <Text style={styles.version}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
         </Animated.View>
       </ScrollView>
-
     </RNView>
   )
 }
@@ -366,6 +408,19 @@ const useStyles = createThemedStylesheet((theme) => {
     rowVal: {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
+    },
+    lockRowLeft: {
+      ...commonStyles.settingsRowLeft,
+      flex: 1,
+      paddingRight: UI_SIZE_12,
+    },
+    lockInfo: {
+      flex: 1,
+    },
+    lockDesc: {
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+      marginTop: UI_SIZE_4,
     },
     segCtrl: {
       ...commonStyles.row,

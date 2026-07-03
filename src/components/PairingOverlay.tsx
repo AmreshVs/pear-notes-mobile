@@ -104,8 +104,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
   }, [dispatch])
 
   const handleResetAfterFailedPairing = useCallback(() => {
-    deleteDbEncryptionKey().catch(console.error)
-    dispatch(clearStorage())
     dispatch(resetReceiverStatus())
   }, [dispatch])
 

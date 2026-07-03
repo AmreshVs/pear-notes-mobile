@@ -10,7 +10,9 @@ import {
   deleteNote,
   getFilteredNotes,
   getNotes,
+  getPinnedNotes,
   getSelectedNote,
+  getUnpinnedNotes,
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -24,10 +26,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Alert,
-  FlatList,
-  ListRenderItemInfo,
   Modal,
   Pressable,
+  SectionList,
+  SectionListData,
+  SectionListRenderItemInfo,
   StatusBar,
   StyleSheet,
   TextInput,
@@ -52,6 +55,7 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_SIZE_10,
+  UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
@@ -82,6 +86,8 @@ export default function AndroidFolderNotesScreen() {
 
   const allFolders = useSelector(getFolders) as any[]
   const notes = useSelector(getFilteredNotes) as any[]
+  const pinnedNotes = useSelector(getPinnedNotes) as any[]
+  const unpinnedNotes = useSelector(getUnpinnedNotes) as any[]
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote) as string | null
   const localPreferences = useSelector(getLocalPreferences) as any
@@ -231,6 +237,11 @@ export default function AndroidFolderNotesScreen() {
     [notes, activeNoteId],
   )
 
+  const activeNotePinned = useMemo(
+    () => notes.find((n: any) => n.key === activeNoteId)?.value?.pinned === true,
+    [notes, activeNoteId],
+  )
+
   const handleNoteSheetToggleLock = useCallback(() => {
     if (!activeNoteId) return
     const targetId = activeNoteId
@@ -244,6 +255,13 @@ export default function AndroidFolderNotesScreen() {
         Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
     })
   }, [activeNoteId, activeNoteLocked, dispatch, t])
+
+  const handleNoteSheetTogglePin = useCallback(() => {
+    if (!activeNoteId) return
+    const targetId = activeNoteId
+    setNoteSheetVisible(false)
+    dispatch(updateNote({ key: targetId, pinned: !activeNotePinned } as any))
+  }, [activeNoteId, activeNotePinned, dispatch])
 
   const handleConfirmMove = useCallback(
     (folderId: string) => {
@@ -292,22 +310,48 @@ export default function AndroidFolderNotesScreen() {
     dispatch(setShowPairingInput(true))
   }, [dispatch])
 
+  const sections = useMemo(() => {
+    const result: { title: string; data: any[] }[] = []
+    if (pinnedNotes.length > 0) {
+      result.push({ title: t('folderView.sections.pinned'), data: pinnedNotes })
+    }
+    if (unpinnedNotes.length > 0) {
+      result.push({ title: '', data: unpinnedNotes })
+    }
+    return result
+  }, [pinnedNotes, unpinnedNotes, t])
+
   const renderNote = useCallback(
-    ({ item: note, index }: ListRenderItemInfo<any>) => (
+    ({ item: note, index, section }: SectionListRenderItemInfo<any>) => (
       <AndroidNoteRow
         note={note}
         index={index}
-        isLast={index === notes.length - 1}
+        isLast={index === section.data.length - 1}
         folderName={isAllNotes ? folderNameMap[note.value?.folderKey] : undefined}
         onPress={handleSelectNote}
         onLongPress={handleNoteLongPress}
       />
     ),
-    [notes.length, isAllNotes, folderNameMap, handleSelectNote, handleNoteLongPress],
+    [isAllNotes, folderNameMap, handleSelectNote, handleNoteLongPress],
+  )
+
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: SectionListData<any> }) =>
+      section.title ? <Text style={styles.sectionCap}>{section.title}</Text> : null,
+    [styles.sectionCap],
   )
 
   const noteSheetActions = useMemo(
     () => [
+      ...(!isTrashFolder
+        ? [
+            {
+              icon: activeNotePinned ? 'pin-off-outline' : 'pin-outline',
+              label: activeNotePinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin'),
+              onPress: handleNoteSheetTogglePin,
+            },
+          ]
+        : []),
       { icon: 'content-copy', label: t('noteCard.actions.copyNote'), onPress: handleNoteSheetCopy },
       ...(moveFolders.length > 0
         ? [
@@ -341,7 +385,9 @@ export default function AndroidFolderNotesScreen() {
       handleNoteSheetMove,
       handleNoteSheetDelete,
       handleNoteSheetToggleLock,
+      handleNoteSheetTogglePin,
       activeNoteLocked,
+      activeNotePinned,
       moveFolders.length,
       isTrashFolder,
       t,
@@ -472,10 +518,12 @@ export default function AndroidFolderNotesScreen() {
         </View>
       </Animated.View>
 
-      <FlatList
-        data={notes}
+      <SectionList
+        sections={sections}
         keyExtractor={noteKey}
         renderItem={renderNote}
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled={false}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -663,6 +711,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       marginTop: UI_SIZE_10,
       letterSpacing: -0.5,
       color: c.onSurface,
+    },
+    sectionCap: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
+      letterSpacing: 1.2,
+      color: c.primary,
+      marginBottom: UI_SIZE_12,
+      marginTop: UI_SIZE_4,
     },
     fab: {
       position: 'absolute',
