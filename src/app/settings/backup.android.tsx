@@ -1,8 +1,5 @@
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Clipboard from 'expo-clipboard'
-import * as Haptics from 'expo-haptics'
 import { router, Stack } from 'expo-router'
-import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -19,9 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import useBackupScreen from '@/app/settings/useBackupScreen'
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
-import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { RecoveryKeyModal } from '@/components/backup/RecoveryKeyModal'
 import { createThemedStylesheetWithHooks, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -82,43 +77,9 @@ export default function AndroidBackupScreen() {
     handleCancelImport,
     handleRestoreComplete,
     handleRestoreData,
-    deviceRecoveryKey,
-    showRecoveryModal,
-    handleConfirmRestore,
-    handleCancelRecovery,
-    showExportConfirm,
-    handleConfirmExport,
-    handleDismissExportConfirm,
   } = useBackupScreen()
 
   const commonThemedStyles = useCommonThemedStyles()
-
-  const [copied, setCopied] = useState(false)
-  const [isKeyVisible, setIsKeyVisible] = useState(false)
-
-  const toggleKeyVisibility = useCallback(() => {
-    setIsKeyVisible((prev) => !prev)
-  }, [])
-
-  const handleCopyRecoveryKey = useCallback(async () => {
-    if (deviceRecoveryKey) {
-      await Clipboard.setStringAsync(deviceRecoveryKey)
-      setCopied(true)
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-      setTimeout(() => setCopied(false), 2000)
-    }
-  }, [deviceRecoveryKey])
-
-  const exportConfirmActions = useMemo(
-    () => [
-      {
-        icon: 'database-export-outline',
-        label: t('backup.confirmExportYes'),
-        onPress: handleConfirmExport,
-      },
-    ],
-    [handleConfirmExport, t],
-  )
 
   const progressTitle =
     importStatus.step === 'reading'
@@ -195,39 +156,10 @@ export default function AndroidBackupScreen() {
           style={[commonThemedStyles.card, styles.recoveryCard]}
         >
           <View style={styles.recoveryHeader}>
-            <MaterialCommunityIcons name="key-outline" size={UI_ICON_SIZE_20} color={c.primary} />
-            <Text style={styles.recoveryTitle}>{t('backup.recoveryKey')}</Text>
+            <MaterialCommunityIcons name="lock-outline" size={UI_ICON_SIZE_20} color={c.primary} />
+            <Text style={styles.recoveryTitle}>{t('backup.protectedTitle')}</Text>
           </View>
-          <Text style={styles.recoveryDesc}>{t('backup.recoveryKeyDesc')}</Text>
-          <View style={styles.keyContainer}>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode={isKeyVisible ? 'middle' : 'clip'}
-              style={styles.keyText}
-            >
-              {isKeyVisible
-                ? deviceRecoveryKey
-                : '••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••'}
-            </Text>
-            <Pressable
-              onPress={toggleKeyVisibility}
-              style={({ pressed }) => [styles.eyeBtn, pressed && commonStyles.pressed]}
-            >
-              <MaterialCommunityIcons
-                name={isKeyVisible ? 'eye-off-outline' : 'eye-outline'}
-                size={UI_ICON_SIZE_20}
-                color={c.onSurfaceVariant}
-              />
-            </Pressable>
-            <Pressable
-              onPress={handleCopyRecoveryKey}
-              style={({ pressed }) => [styles.copyBtn, pressed && commonStyles.pressed]}
-            >
-              <Text style={styles.copyBtnText}>
-                {copied ? t('backup.copied') : t('backup.copyKey')}
-              </Text>
-            </Pressable>
-          </View>
+          <Text style={styles.recoveryDesc}>{t('backup.protectedDesc')}</Text>
         </Animated.View>
 
         <AndroidBackupStatsSection
@@ -307,20 +239,6 @@ export default function AndroidBackupScreen() {
           </View>
         </View>
       </Modal>
-
-      <RecoveryKeyModal
-        visible={showRecoveryModal}
-        onClose={handleCancelRecovery}
-        onSubmit={handleConfirmRestore}
-      />
-
-      <BottomActionSheet
-        visible={showExportConfirm}
-        onDismiss={handleDismissExportConfirm}
-        title={t('backup.confirmExportTitle')}
-        subtitle={t('backup.confirmExportDesc')}
-        actions={exportConfirmActions}
-      />
     </View>
   )
 }
@@ -524,46 +442,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurfaceVariant,
       lineHeight: UI_SIZE_20,
       marginBottom: UI_SIZE_16,
-    },
-    keyContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: UI_SIZE_12,
-      borderWidth: 1,
-      borderColor: c.outlineVariant ?? theme.colors.borderSecondary,
-      paddingLeft: UI_SIZE_16,
-      paddingRight: UI_SIZE_4,
-      height: UI_SIZE_54,
-    },
-    keyText: {
-      flex: 1,
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
-      color: c.onSurface,
-      marginRight: UI_SIZE_8,
-    },
-    copyBtn: {
-      backgroundColor: c.primary,
-      borderRadius: UI_SIZE_9999,
-      paddingHorizontal: UI_SIZE_16,
-      height: UI_SIZE_40,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    copyBtnText: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.black,
-    },
-    eyeBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      borderRadius: UI_SIZE_20,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: UI_SIZE_8,
     },
   })
   return styles

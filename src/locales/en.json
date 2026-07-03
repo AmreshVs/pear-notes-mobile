@@ -331,6 +331,7 @@
     "settings": "Settings",
     "linkAndSync": "Link and Sync",
     "backupRestore": "Backup / Restore",
+    "backupPassword": "Backup Password",
     "storage": "Storage"
   },
   "tabs": {
@@ -412,7 +413,38 @@
     "invalidKeyDesc": "The recovery key must be a 64-character hex string.",
     "errors": {
       "invalidFile": "This file isn't a valid Pear Notes backup.",
-      "incorrectKey": "Incorrect recovery key. Please check the key and try again."
+      "incorrectKey": "Incorrect recovery key. Please check the key and try again.",
+      "incorrectPassword": "Incorrect password. Please check your backup password and try again.",
+      "passwordRequired": "This backup is password-protected. Please enter its password.",
+      "unsupportedVersion": "This backup was made with an incompatible version and cannot be restored."
+    },
+    "protectedTitle": "Password Protected",
+    "protectedDesc": "You choose a password when creating a backup, and it encrypts the file. You'll need that same password to restore — it is never stored, so keep it somewhere safe.",
+    "password": {
+      "createTitle": "Set a Backup Password",
+      "createDesc": "This password encrypts your backup. You'll need it to restore — it can't be recovered if lost.",
+      "enterTitle": "Enter Backup Password",
+      "enterDesc": "Enter the password used to create this backup to decrypt your data.",
+      "placeholder": "Password",
+      "confirmPlaceholder": "Confirm password",
+      "mismatch": "Passwords do not match",
+      "createButton": "Create Backup",
+      "restoreButton": "Restore",
+      "strength": {
+        "label": "Strength",
+        "veryWeak": "Very weak",
+        "weak": "Weak",
+        "fair": "Fair",
+        "good": "Good",
+        "strong": "Strong"
+      },
+      "rules": {
+        "length": "At least 10 characters",
+        "uppercase": "An uppercase letter",
+        "lowercase": "A lowercase letter",
+        "number": "A number",
+        "symbol": "A symbol"
+      }
     }
   },
   "storage": {

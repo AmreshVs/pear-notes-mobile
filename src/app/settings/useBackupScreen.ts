@@ -5,14 +5,13 @@ import {
   resetExport,
   resetImport,
   setImportStatus,
-  startExportBackup,
-  startImportBackup,
 } from '@pear-notes/core/store/slices/backupSlice.js'
 import {
   getTotalBlobBytes,
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform } from 'react-native'
@@ -25,8 +24,8 @@ import {
   saveBackupToDevice,
   saveBackupWithShare,
 } from '@/lib/backupFileManager'
+import { setPendingImportBuffer } from '@/lib/backupPasswordFlow'
 import { loadLastBackupDate, saveLastBackupDate } from '@/lib/backupUtils'
-import { getDbEncryptionKey } from '@/lib/secureStore'
 import { useToast } from '@/providers/ToastProvider'
 
 type BackupStatus = {
@@ -37,11 +36,17 @@ type BackupStatus = {
   total: number
 }
 
+const MODAL_DISMISS_DELAY_MS = 450
+const BACKUP_PASSWORD_ROUTE = '/settings/backup-password'
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 function useBackupScreen() {
   const dispatch = useDispatch()
   const { t } = useTranslation()
   const { showToast } = useToast()
-  const [showExportConfirm, setShowExportConfirm] = useState(false)
 
   const exportStatus = useSelector(getExportStatus) as BackupStatus
   const importStatus = useSelector(getImportStatus) as BackupStatus
@@ -49,9 +54,6 @@ function useBackupScreen() {
   const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
-  const [deviceRecoveryKey, setDeviceRecoveryKey] = useState<string | null>(null)
-  const [showRecoveryModal, setShowRecoveryModal] = useState(false)
-  const [selectedBackupBuffer, setSelectedBackupBuffer] = useState<Uint8Array | null>(null)
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
@@ -59,10 +61,6 @@ function useBackupScreen() {
 
   useEffect(() => {
     loadLastBackupDate().then(setLastBackupDate)
-  }, [])
-
-  useEffect(() => {
-    getDbEncryptionKey().then(setDeviceRecoveryKey)
   }, [])
 
   const isExporting =
@@ -76,28 +74,7 @@ function useBackupScreen() {
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
   const handleCreateBackup = useCallback(() => {
-    if (Platform.OS === 'android') {
-      setShowExportConfirm(true)
-    } else {
-      Alert.alert(
-        t('backup.confirmExportTitle'),
-        t('backup.confirmExportDesc'),
-        [
-          { text: t('backup.confirmExportNo'), style: 'cancel' },
-          { text: t('backup.confirmExportYes'), onPress: () => dispatch(startExportBackup()) },
-        ],
-        { cancelable: true },
-      )
-    }
-  }, [dispatch, t])
-
-  const handleConfirmExport = useCallback(() => {
-    setShowExportConfirm(false)
-    dispatch(startExportBackup())
-  }, [dispatch])
-
-  const handleDismissExportConfirm = useCallback(() => {
-    setShowExportConfirm(false)
+    router.push(`${BACKUP_PASSWORD_ROUTE}?mode=create`)
   }, [])
 
   const handleCancelExport = useCallback(() => {
@@ -116,6 +93,7 @@ function useBackupScreen() {
   const handleSaveBackup = useCallback(async () => {
     if (Platform.OS === 'ios') {
       try {
+        await wait(MODAL_DISMISS_DELAY_MS)
         await saveBackupWithShare(exportBuffer, t('backup.shareBackup'))
         await saveLastBackupDate()
         setLastBackupDate(new Date().toISOString())
@@ -158,8 +136,8 @@ function useBackupScreen() {
       )
       const buffer = await readBackupFile(picked.uri)
       dispatch(resetImport())
-      setSelectedBackupBuffer(buffer)
-      setShowRecoveryModal(true)
+      setPendingImportBuffer(buffer)
+      router.push(`${BACKUP_PASSWORD_ROUTE}?mode=enter`)
     } catch (e) {
       dispatch(resetImport())
       if (Platform.OS === 'android') {
@@ -171,32 +149,6 @@ function useBackupScreen() {
       }
     }
   }, [dispatch, showToast, t])
-
-  const handleConfirmRestore = useCallback(
-    async (enteredKey: string) => {
-      setShowRecoveryModal(false)
-      if (!selectedBackupBuffer) return
-      setTimeout(() => {
-        dispatch(
-          setImportStatus({
-            step: 'decrypting',
-            progress: 15,
-            message: t('backup.progress.restoringDesc'),
-          }),
-        )
-        dispatch(
-          startImportBackup({ buffer: selectedBackupBuffer, recoveryKey: enteredKey } as any),
-        )
-        setSelectedBackupBuffer(null)
-      }, 350)
-    },
-    [dispatch, selectedBackupBuffer, t],
-  )
-
-  const handleCancelRecovery = useCallback(() => {
-    setShowRecoveryModal(false)
-    setSelectedBackupBuffer(null)
-  }, [])
 
   return {
     importStatus,
@@ -213,13 +165,6 @@ function useBackupScreen() {
     handleCancelImport,
     handleRestoreComplete,
     handleRestoreData,
-    deviceRecoveryKey,
-    showRecoveryModal,
-    handleConfirmRestore,
-    handleCancelRecovery,
-    showExportConfirm,
-    handleConfirmExport,
-    handleDismissExportConfirm,
   }
 }
 
