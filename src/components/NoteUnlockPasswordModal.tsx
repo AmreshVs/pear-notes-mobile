@@ -1,7 +1,7 @@
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { BlurView } from 'expo-blur'
 import { Eye, EyeOff, Lock } from 'lucide-react-native'
-import { memo, useCallback, useEffect, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   KeyboardAvoidingView,
@@ -55,14 +55,27 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
   const toggleSecure = useCallback(() => setSecure((s) => !s), [])
   const handleCancel = useCallback(() => resolveNoteLockPassword(false), [])
 
+  const modalCardStyle = useMemo(
+    () =>
+      StyleSheet.flatten([
+        commonStyles.modalCard,
+        Platform.OS === 'android' && styles.androidModal,
+      ]),
+    [styles.androidModal],
+  )
+
   const handleSubmit = useCallback(async () => {
     if (!password.trim() || submitting) return
     setSubmitting(true)
-    const valid = await backendApi.verifyNoteLockPassword({ password })
+    const { valid, retryAfter } = await backendApi.verifyNoteLockPassword({ password })
     if (valid) {
       resolveNoteLockPassword(true)
     } else {
-      setError(t('noteLockPassword.incorrect'))
+      setError(
+        retryAfter > 0
+          ? t('noteLockPassword.tooManyAttempts', { seconds: retryAfter })
+          : t('noteLockPassword.incorrect'),
+      )
       setSubmitting(false)
     }
   }, [password, submitting, t])
@@ -81,11 +94,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
         <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} />
 
         <KeyboardAvoidingView style={styles.center} behavior="padding" pointerEvents="box-none">
-          <GlassView
-            intensity={40}
-            borderRadius={32}
-            style={[commonStyles.modalCard, Platform.OS === 'android' && styles.androidModal]}
-          >
+          <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.icon}>
                 <Lock size={UI_ICON_SIZE_40} color={colors.primary} />

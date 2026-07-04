@@ -365,6 +365,7 @@
     "confirmPlaceholder": "Confirm password",
     "mismatch": "Passwords do not match",
     "incorrect": "Incorrect password",
+    "tooManyAttempts": "Too many attempts. Try again in {{seconds}}s.",
     "createButton": "Set Password",
     "unlockButton": "Unlock"
   },

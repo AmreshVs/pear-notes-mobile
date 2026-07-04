@@ -88,12 +88,16 @@ export default function NoteLockPasswordScreen() {
       router.back()
       return
     }
-    const valid = await backendApi.verifyNoteLockPassword({ password })
+    const { valid, retryAfter } = await backendApi.verifyNoteLockPassword({ password })
     if (valid) {
       resolveNoteLockPassword(true)
       router.back()
     } else {
-      setError(t('noteLockPassword.incorrect'))
+      setError(
+        retryAfter > 0
+          ? t('noteLockPassword.tooManyAttempts', { seconds: retryAfter })
+          : t('noteLockPassword.incorrect'),
+      )
     }
   }, [canSubmit, isCreate, password, dispatch, t])
 
