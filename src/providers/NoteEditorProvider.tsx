@@ -1,5 +1,6 @@
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { deleteNote, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import type { DocumentPickerAsset } from 'expo-document-picker'
 import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'
@@ -22,7 +23,7 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 import { isImageFile } from '../utils/media'
 
@@ -31,6 +32,7 @@ import { useNoteEditor } from './useNoteEditor'
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
+import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
@@ -45,6 +47,7 @@ import {
   UI_SIZE_32,
   UI_SIZE_48,
 } from '@/constants/commonStyles'
+import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import {
   deleteAttachment,
   downloadToCache,
@@ -126,7 +129,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   } = useNoteEditor()
 
   useNoteLockVersion()
+  const lockMethod = useSelector(getLockMethod)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
+  const protectLockedNote = isOpen && !!noteData?.locked
+  useLockedNoteScreenProtection(protectLockedNote)
 
   const handleUpdate = useCallback(
     (html: string) => {
@@ -503,10 +509,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       currentlyLocked: !!noteData?.locked,
       reason: t('noteCard.unlockReason'),
       dispatch,
-      onUnavailable: () =>
-        Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+      lockMethod,
     })
-  }, [noteId, noteData?.locked, dispatch, t])
+  }, [noteId, noteData?.locked, dispatch, lockMethod, t])
 
   const handleMoreOptions = useCallback(() => {
     if (!noteId) return
@@ -942,6 +947,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               <LockedNoteView noteId={noteId ?? ''} />
             </View>
           )}
+
+          <LockedContentShield active={protectLockedNote} />
 
           <AudioRecorderModal
             visible={isRecorderVisible}

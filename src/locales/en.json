@@ -3,6 +3,9 @@
     "title": "Settings",
     "general": {
       "header": "GENERAL",
+      "interface": "Interface",
+      "notesList": "Notes List",
+      "editor": "Editor",
       "appTheme": "App Theme",
       "sortNotesBy": "Sort Notes By",
       "fontFamily": "Font Family",
@@ -46,10 +49,23 @@
       "storageTitle": "Storage"
     },
     "privacy": {
-      "header": "PRIVACY",
+      "header": "NOTE LOCK",
+      "sectionHeader": "PRIVACY & SECURITY",
+      "rowTitle": "Privacy & Security",
+      "screenTitle": "Privacy & Security",
+      "screenDesc": "Protect your locked notes with biometrics or a custom password, and guard against screenshots and app-switcher previews.",
       "noteLock": "Note Lock",
       "available": "Available",
       "noteLockDesc": "Lock individual notes from the note menu. Unlocks with {{method}}.",
+      "noteLockPasswordDesc": "Locked notes unlock with your custom password on all synced devices.",
+      "changeMethodReason": "Authenticate to change the note lock method",
+      "unlockMethod": "Unlock Method",
+      "biometric": "Biometric",
+      "password": "Password",
+      "blockScreenshots": "Block Screenshots",
+      "blockScreenshotsDesc": "Prevent screenshots while viewing a locked note.",
+      "hideInSwitcher": "Hide in App Switcher",
+      "hideInSwitcherDesc": "Cover note content in the app switcher while viewing a locked note.",
       "methods": {
         "faceIos": "Face ID",
         "touchId": "Touch ID",
@@ -203,17 +219,20 @@
     },
     "deleteConfirmation": "Are you sure you want to delete this note?",
     "unlockReason": "Unlock this note",
-    "authUnavailableTitle": "Device Lock Unavailable",
-    "authUnavailableDesc": "Set up Face ID, Touch ID, or a device passcode to lock notes.",
+    "authUnavailableTitle": "Set a Note Lock Password",
+    "authUnavailableDesc": "This device has no biometrics or passcode set up. Set a custom password to lock your notes.",
+    "authUnavailableAction": "Set Password",
     "lockedTitle": "Locked Note",
     "lockedNoAuthTitle": "Can't Open Locked Note",
     "lockedNoAuthDesc": "This note is locked and can't be opened on this device. Set up Face ID, Touch ID, or a device passcode in Settings to view it.",
     "lockedUnlockDesc": "This note is protected. Use biometric to authenticate and view it.",
     "lockedUnlockFaceDesc": "This note is protected. Use Face ID to view it.",
     "lockedUnlockFingerprintDesc": "This note is protected. Use your fingerprint to view it.",
+    "lockedUnlockPasswordDesc": "This note is protected. Enter your note lock password to view it.",
     "unlock": "Unlock",
     "unlockWithFace": "Unlock with Face ID",
-    "unlockWithFingerprint": "Unlock with Fingerprint"
+    "unlockWithFingerprint": "Unlock with Fingerprint",
+    "unlockWithPassword": "Enter Password"
   },
   "audioRecorder": {
     "status": {
@@ -329,10 +348,26 @@
   },
   "layouts": {
     "settings": "Settings",
+    "general": "General",
     "linkAndSync": "Link and Sync",
     "backupRestore": "Backup / Restore",
     "backupPassword": "Backup Password",
+    "noteLockPassword": "Note Lock Password",
+    "privacyAndSecurity": "Privacy & Security",
     "storage": "Storage"
+  },
+  "noteLockPassword": {
+    "createTitle": "Set Note Lock Password",
+    "enterTitle": "Enter Note Lock Password",
+    "createDesc": "This password will be required to open locked notes on all your synced devices.",
+    "enterDesc": "Enter your note lock password to unlock this note.",
+    "warning": "The app does not store this password. If you forget it, locked notes cannot be opened. Please write it down and keep it safe.",
+    "placeholder": "Note lock password",
+    "confirmPlaceholder": "Confirm password",
+    "mismatch": "Passwords do not match",
+    "incorrect": "Incorrect password",
+    "createButton": "Set Password",
+    "unlockButton": "Unlock"
   },
   "tabs": {
     "home": "Home",

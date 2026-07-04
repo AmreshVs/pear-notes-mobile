@@ -14,6 +14,7 @@ import {
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -54,6 +55,7 @@ export default function FolderNotesScreen() {
   const { openNote } = useNoteEditor()
   const allFolders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
+  const lockMethod = useSelector(getLockMethod)
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote)
   const localPreferences = useSelector(getLocalPreferences)
@@ -240,8 +242,7 @@ export default function FolderNotesScreen() {
           currentlyLocked: isLocked,
           reason: t('noteCard.unlockReason'),
           dispatch,
-          onUnavailable: () =>
-            Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+          lockMethod,
         })
 
       const folderName =
@@ -284,6 +285,7 @@ export default function FolderNotesScreen() {
       moveFolders,
       handleMoveNote,
       dispatch,
+      lockMethod,
       t,
     ],
   )

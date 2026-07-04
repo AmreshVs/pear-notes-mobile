@@ -1,22 +1,18 @@
-import {
-  getEditorFontSize,
-  getFontFamily,
-  getSortBy,
-  getTheme,
-  setTheme,
-  updateSetting,
-} from '@pear-notes/core/store/slices/settingsSlice.js'
-import Slider from '@react-native-community/slider'
 import Constants from 'expo-constants'
 import { router, Stack } from 'expo-router'
-import { ChevronRight, Database, Download, LockKeyhole, RefreshCw, X } from 'lucide-react-native'
-import { useCallback } from 'react'
+import {
+  ChevronRight,
+  Database,
+  Download,
+  RefreshCw,
+  ShieldCheck,
+  SlidersHorizontal,
+  X,
+} from 'lucide-react-native'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { useDispatch, useSelector } from 'react-redux'
-
-import useLockStatus from './useLockStatus'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -24,17 +20,12 @@ import {
   Durations,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_15,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_17,
   UI_SIZE_12,
   UI_SIZE_15,
-  UI_SIZE_16,
-  UI_SIZE_18,
   UI_SIZE_20,
-  UI_SIZE_24,
   UI_SIZE_30,
-  UI_SIZE_4,
   UI_SIZE_40,
   UI_SIZE_60,
   UI_SIZE_8,
@@ -42,12 +33,6 @@ import {
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import {
-  getFontOptions,
-  getLockMethodLabelKey,
-  getSortOptions,
-  showPicker,
-} from '@/utils/settingsUtils'
 
 export default function SettingsScreen() {
   const { t } = useTranslation()
@@ -55,78 +40,46 @@ export default function SettingsScreen() {
   const { colors } = theme
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
-  const dispatch = useDispatch()
-
-  const currentTheme = useSelector(getTheme)
-  const fontFamily = useSelector(getFontFamily)
-  const editorFontSize = useSelector(getEditorFontSize)
-  const sortBy = useSelector(getSortBy)
-  const { lockAvailable, lockMethod } = useLockStatus()
-  const lockMethodLabel = lockAvailable ? t(getLockMethodLabelKey(lockMethod)) : ''
 
   const handleClose = useCallback(() => {
     router.back()
   }, [])
 
-  const handleThemeSelect = useCallback(
-    (themeKey: 'system' | 'light' | 'dark') => {
-      dispatch(setTheme(themeKey))
-    },
-    [dispatch],
+  const sections = useMemo(
+    () => [
+      {
+        key: 'general',
+        Icon: SlidersHorizontal,
+        label: t('layouts.general'),
+        onPress: () => router.push('/settings/general' as any),
+      },
+      {
+        key: 'privacy',
+        Icon: ShieldCheck,
+        label: t('settings.privacy.rowTitle'),
+        onPress: () => router.push('/settings/privacy' as any),
+      },
+      {
+        key: 'sync',
+        Icon: RefreshCw,
+        label: t('settings.sync.linkAndSync'),
+        onPress: () => router.push('/settings/sync'),
+      },
+      {
+        key: 'backup',
+        Icon: Download,
+        label: t('settings.backup.backupAndRestore'),
+        onPress: () => router.push('/settings/backup' as any),
+      },
+      {
+        key: 'storage',
+        Icon: Database,
+        label: t('settings.storage.storageTitle'),
+        onPress: () => router.push('/settings/storage' as any),
+      },
+    ],
+    [t],
   )
-
-  const handleSortSelect = useCallback(
-    (val: string) => {
-      dispatch(updateSetting({ key: 'sortBy', value: val }))
-    },
-    [dispatch],
-  )
-
-  const handleSortNotesPress = useCallback(() => {
-    showPicker(
-      t('settings.general.sortNotesBy'),
-      getSortOptions(t),
-      sortBy,
-      handleSortSelect,
-      t('common.cancel'),
-    )
-  }, [t, handleSortSelect, sortBy])
-
-  const handleFontSelect = useCallback(
-    (val: string) => {
-      dispatch(updateSetting({ key: 'fontFamily', value: val }))
-    },
-    [dispatch],
-  )
-
-  const handleFontFamilyPress = useCallback(() => {
-    showPicker(
-      t('settings.general.fontFamily'),
-      getFontOptions(t),
-      fontFamily,
-      handleFontSelect,
-      t('common.cancel'),
-    )
-  }, [t, handleFontSelect, fontFamily])
-
-  const handleFontSizeChange = useCallback(
-    (val: number) => {
-      dispatch(updateSetting({ key: 'editorFontSize', value: Math.round(val) }))
-    },
-    [dispatch],
-  )
-
-  const handleSyncPress = useCallback(() => {
-    router.push('/settings/sync')
-  }, [])
-
-  const handleBackupPress = useCallback(() => {
-    router.push('/settings/backup' as any)
-  }, [])
-
-  const handleStoragePress = useCallback(() => {
-    router.push('/settings/storage' as any)
-  }, [])
 
   return (
     <RNView style={commonThemedStyles.screenContainer}>
@@ -150,214 +103,37 @@ export default function SettingsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(Durations.fade)}>
-          <Text style={styles.sectionCap}>{t('settings.general.header')}</Text>
-        </Animated.View>
-
         <Animated.View
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
-            <RNView style={styles.rowUnderline}>
-              <Text style={styles.rowLabel}>{t('settings.general.appTheme')}</Text>
-              <RNView style={styles.segCtrl}>
-                {(['system', 'light', 'dark'] as const).map((themeKey, i) => {
-                  const isActive = currentTheme === themeKey
-                  return (
-                    <Pressable
-                      key={themeKey}
-                      onPress={() => handleThemeSelect(themeKey)}
-                      style={[
-                        styles.segPill,
-                        isActive && styles.segPillActive,
-                        i === 0 && styles.radiusLeft,
-                        i === 2 && styles.radiusRight,
-                      ]}
-                    >
-                      <Text style={[styles.segText, isActive && styles.segTextActive]}>
-                        {t(`settings.general.themes.${themeKey}`)}
-                      </Text>
-                    </Pressable>
-                  )
-                })}
-              </RNView>
-            </RNView>
-
-            <Pressable
-              onPress={handleSortNotesPress}
-              style={({ pressed }) => [styles.rowUnderline, pressed && commonStyles.pressed]}
-            >
-              <Text style={styles.rowLabel}>{t('settings.general.sortNotesBy')}</Text>
-              <RNView style={commonStyles.settingsRowRight}>
-                <Text style={styles.rowVal}>
-                  {getSortOptions(t).find((o) => o.value === sortBy)?.label ??
-                    t('settings.general.sortOptions.updatedAt')}
-                </Text>
-                <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
-              </RNView>
-            </Pressable>
-
-            <Pressable
-              onPress={handleFontFamilyPress}
-              style={({ pressed }) => [styles.rowUnderline, pressed && commonStyles.pressed]}
-            >
-              <Text style={styles.rowLabel}>{t('settings.general.fontFamily')}</Text>
-              <RNView style={commonStyles.settingsRowRight}>
-                <Text style={styles.rowVal}>
-                  {getFontOptions(t).find((o) => o.value === fontFamily)?.label ?? fontFamily}
-                </Text>
-                <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
-              </RNView>
-            </Pressable>
-
-            <RNView style={styles.sliderRow}>
-              <RNView style={styles.sliderHeader}>
-                <Text style={styles.rowLabel}>{t('settings.general.textSize')}</Text>
-                <RNView style={styles.badge}>
-                  <Text style={styles.badgeText}>{editorFontSize}</Text>
-                </RNView>
-              </RNView>
-              <RNView style={styles.sliderContainer}>
-                <Text style={styles.sizeSm}>A</Text>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={FontSize.caption}
-                  maximumValue={FontSize.heading}
-                  step={1}
-                  value={editorFontSize}
-                  onValueChange={handleFontSizeChange}
-                  minimumTrackTintColor={colors.primary}
-                  maximumTrackTintColor={colors.borderSecondary}
-                  thumbTintColor={colors.white}
-                />
-                <Text style={styles.sizeLg}>A</Text>
-              </RNView>
-            </RNView>
-          </RNView>
-        </Animated.View>
-
-        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayMedium)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.sync.header')}</Text>
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
-          <RNView style={commonThemedStyles.card}>
-            <Pressable
-              onPress={handleSyncPress}
-              style={({ pressed }) => [commonStyles.settingsRow, pressed && commonStyles.pressed]}
-            >
-              <RNView style={commonStyles.settingsRowLeft}>
-                <RNView style={commonThemedStyles.iconBox34}>
-                  <RefreshCw
-                    size={UI_ICON_SIZE_17}
-                    color={colors.primary}
-                    strokeWidth={UI_STROKE_WIDTH_1_8}
-                  />
-                </RNView>
-                <Text style={styles.rowLabelSemiBold}>{t('settings.sync.linkAndSync')}</Text>
-              </RNView>
-              <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
-            </Pressable>
-          </RNView>
-        </Animated.View>
-
-        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayExtraLong)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.backup.header')}</Text>
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayExtraLong)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
-          <RNView style={commonThemedStyles.card}>
-            <Pressable
-              onPress={handleBackupPress}
-              style={({ pressed }) => [commonStyles.settingsRow, pressed && commonStyles.pressed]}
-            >
-              <RNView style={commonStyles.settingsRowLeft}>
-                <RNView style={commonThemedStyles.iconBox34}>
-                  <Download
-                    size={UI_ICON_SIZE_17}
-                    color={colors.primary}
-                    strokeWidth={UI_STROKE_WIDTH_1_8}
-                  />
-                </RNView>
-                <Text style={styles.rowLabelSemiBold}>{t('settings.backup.backupAndRestore')}</Text>
-              </RNView>
-              <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
-            </Pressable>
-          </RNView>
-        </Animated.View>
-
-        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayReset)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.storage.header')}</Text>
-        </Animated.View>
-
-        <Animated.View
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
-          <RNView style={commonThemedStyles.card}>
-            <Pressable
-              onPress={handleStoragePress}
-              style={({ pressed }) => [commonStyles.settingsRow, pressed && commonStyles.pressed]}
-            >
-              <RNView style={commonStyles.settingsRowLeft}>
-                <RNView style={commonThemedStyles.iconBox34}>
-                  <Database
-                    size={UI_ICON_SIZE_17}
-                    color={colors.primary}
-                    strokeWidth={UI_STROKE_WIDTH_1_8}
-                  />
-                </RNView>
-                <Text style={styles.rowLabelSemiBold}>{t('settings.storage.storageTitle')}</Text>
-              </RNView>
-              <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
-            </Pressable>
-          </RNView>
-        </Animated.View>
-
-        {lockAvailable && (
-          <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
-            <Text style={styles.sectionCapMargin}>{t('settings.privacy.header')}</Text>
-          </Animated.View>
-        )}
-
-        {lockAvailable && (
-          <Animated.View
-            entering={FadeInDown.duration(Durations.slide).delay(Durations.delayFooter)}
-            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-          >
-            <RNView style={commonThemedStyles.card}>
-              <RNView style={commonStyles.settingsRow}>
-                <RNView style={styles.lockRowLeft}>
+            {sections.map(({ key, Icon, label, onPress }, i) => (
+              <Pressable
+                key={key}
+                onPress={onPress}
+                style={({ pressed }) => [
+                  i < sections.length - 1 ? styles.rowUnderline : commonStyles.settingsRow,
+                  pressed && commonStyles.pressed,
+                ]}
+              >
+                <RNView style={commonStyles.settingsRowLeft}>
                   <RNView style={commonThemedStyles.iconBox34}>
-                    <LockKeyhole
+                    <Icon
                       size={UI_ICON_SIZE_17}
                       color={colors.primary}
                       strokeWidth={UI_STROKE_WIDTH_1_8}
                     />
                   </RNView>
-                  <RNView style={styles.lockInfo}>
-                    <Text style={styles.rowLabelSemiBold}>{t('settings.privacy.noteLock')}</Text>
-                    <Text style={styles.lockDesc}>
-                      {t('settings.privacy.noteLockDesc', { method: lockMethodLabel })}
-                    </Text>
-                  </RNView>
+                  <Text style={styles.rowLabel}>{label}</Text>
                 </RNView>
-                <RNView style={styles.badge}>
-                  <Text style={styles.badgeText}>{t('settings.privacy.available')}</Text>
-                </RNView>
-              </RNView>
-            </RNView>
-          </Animated.View>
-        )}
+                <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
+              </Pressable>
+            ))}
+          </RNView>
+        </Animated.View>
 
-        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
+        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
           <Text style={styles.footer}>{t('settings.footer')}</Text>
           <Text style={styles.version}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
         </Animated.View>
@@ -373,23 +149,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingBottom: UI_SIZE_60,
       paddingTop: UI_SIZE_12,
     },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: 1.5,
-      marginBottom: UI_SIZE_12,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
-    },
-    sectionCapMargin: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: 1.5,
-      marginBottom: UI_SIZE_12,
-      marginTop: UI_SIZE_24,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
-    },
     rowUnderline: {
       ...commonStyles.settingsRow,
       borderBottomWidth: 1,
@@ -397,75 +156,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowLabel: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.medium,
-      color: theme.colors.text,
-    },
-    rowLabelSemiBold: {
-      fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
-    },
-    rowVal: {
-      fontSize: FontSize.body,
-      color: theme.colors.textMuted,
-    },
-    lockRowLeft: {
-      ...commonStyles.settingsRowLeft,
-      flex: 1,
-      paddingRight: UI_SIZE_12,
-    },
-    lockInfo: {
-      flex: 1,
-    },
-    lockDesc: {
-      fontSize: FontSize.caption,
-      color: theme.colors.textMuted,
-      marginTop: UI_SIZE_4,
-    },
-    segCtrl: {
-      ...commonStyles.row,
-      borderRadius: UI_SIZE_16,
-      padding: 3,
-      backgroundColor: theme.colors.controlBackground,
-    },
-    segPill: {
-      ...commonStyles.centered,
-      paddingHorizontal: UI_SIZE_12,
-      paddingVertical: 7,
-      borderRadius: UI_SIZE_12,
-    },
-    segPillActive: {
-      backgroundColor: theme.colors.primary,
-    },
-    radiusLeft: {
-      borderTopLeftRadius: UI_SIZE_12,
-      borderBottomLeftRadius: UI_SIZE_12,
-    },
-    radiusRight: {
-      borderTopRightRadius: UI_SIZE_12,
-      borderBottomRightRadius: UI_SIZE_12,
-    },
-    segText: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.medium,
-      color: theme.colors.textMuted,
-    },
-    segTextActive: {
-      color: theme.colors.text,
-      fontWeight: FontWeight.bold,
-    },
-    badge: {
-      paddingHorizontal: UI_SIZE_12,
-      paddingVertical: UI_SIZE_4,
-      borderRadius: UI_SIZE_8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.cardSelected,
-    },
-    badgeText: {
-      color: theme.colors.primary,
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
     },
     footer: {
       textAlign: 'center',
@@ -485,33 +177,6 @@ const useStyles = createThemedStylesheet((theme) => {
       width: UI_SIZE_30,
       height: UI_SIZE_30,
       borderRadius: UI_SIZE_15,
-    },
-    sliderRow: {
-      flexDirection: 'column',
-      alignItems: 'stretch',
-      paddingVertical: UI_SIZE_20,
-      paddingHorizontal: UI_SIZE_18,
-    },
-    sliderHeader: {
-      ...commonStyles.rowBetween,
-      marginBottom: UI_SIZE_16,
-    },
-    sliderContainer: {
-      ...commonStyles.row,
-      gap: UI_SIZE_12,
-    },
-    slider: {
-      flex: 1,
-    },
-    sizeSm: {
-      color: theme.colors.textMuted,
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.semibold,
-    },
-    sizeLg: {
-      color: theme.colors.textMuted,
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
     },
   })
 

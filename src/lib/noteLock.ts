@@ -30,6 +30,14 @@ export function relockNote(key: string) {
   if (unlockedKeys.delete(key)) emit()
 }
 
+export function markNoteUnlocked(key: string) {
+  if (!key) return
+  if (!unlockedKeys.has(key)) {
+    unlockedKeys.add(key)
+    emit()
+  }
+}
+
 export async function unlockNote(key: string, reason: string): Promise<boolean> {
   if (!key) return false
   if (unlockedKeys.has(key)) return true

@@ -1,9 +1,11 @@
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import * as LocalAuthentication from 'expo-local-authentication'
 import { Fingerprint, Lock, ScanFace, ShieldAlert } from 'lucide-react-native'
 import { memo, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -19,7 +21,8 @@ import {
   UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
 import { isDeviceAuthSupported } from '@/lib/deviceAuth'
-import { unlockNote } from '@/lib/noteLock'
+import { markNoteUnlocked, unlockNote } from '@/lib/noteLock'
+import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 
 const isAndroid = Platform.OS === 'android'
 
@@ -33,10 +36,16 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   const [authState, setAuthState] = useState<AuthState>('checking')
   const [biometric, setBiometric] = useState<BiometricKind>('generic')
   const [unlocking, setUnlocking] = useState(false)
+  const lockMethod = useSelector(getLockMethod)
+  const isPassword = lockMethod === 'password'
 
   useEffect(() => {
     let active = true
     ;(async () => {
+      if (isPassword) {
+        if (active) setAuthState('supported')
+        return
+      }
       const supported = await isDeviceAuthSupported()
       if (!active) return
       if (!supported) {
@@ -59,17 +68,22 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
     return () => {
       active = false
     }
-  }, [])
+  }, [isPassword])
 
   const handleUnlock = useCallback(async () => {
     if (unlocking) return
     setUnlocking(true)
     try {
-      await unlockNote(noteId, t('noteCard.unlockReason'))
+      if (isPassword) {
+        const ok = await requestNoteLockPassword()
+        if (ok) markNoteUnlocked(noteId)
+      } else {
+        await unlockNote(noteId, t('noteCard.unlockReason'))
+      }
     } finally {
       setUnlocking(false)
     }
-  }, [noteId, unlocking, t])
+  }, [noteId, unlocking, isPassword, t])
 
   const unavailable = authState === 'unavailable'
   const iconColor = unavailable ? colors.error : colors.primary
@@ -84,16 +98,19 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
     return <Lock size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
   }
 
-  const description = unavailable
-    ? t('noteCard.lockedNoAuthDesc')
-    : biometric === 'face'
-      ? t('noteCard.lockedUnlockFaceDesc')
-      : biometric === 'fingerprint'
-        ? t('noteCard.lockedUnlockFingerprintDesc')
-        : t('noteCard.lockedUnlockDesc')
+  const description = isPassword
+    ? t('noteCard.lockedUnlockPasswordDesc')
+    : unavailable
+      ? t('noteCard.lockedNoAuthDesc')
+      : biometric === 'face'
+        ? t('noteCard.lockedUnlockFaceDesc')
+        : biometric === 'fingerprint'
+          ? t('noteCard.lockedUnlockFingerprintDesc')
+          : t('noteCard.lockedUnlockDesc')
 
-  const unlockLabel =
-    biometric === 'face'
+  const unlockLabel = isPassword
+    ? t('noteCard.unlockWithPassword')
+    : biometric === 'face'
       ? t('noteCard.unlockWithFace')
       : biometric === 'fingerprint'
         ? t('noteCard.unlockWithFingerprint')

@@ -16,6 +16,7 @@ import {
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -25,7 +26,6 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Alert,
   Modal,
   Pressable,
   SectionList,
@@ -86,6 +86,7 @@ export default function AndroidFolderNotesScreen() {
 
   const allFolders = useSelector(getFolders) as any[]
   const notes = useSelector(getFilteredNotes) as any[]
+  const lockMethod = useSelector(getLockMethod) as string
   const pinnedNotes = useSelector(getPinnedNotes) as any[]
   const unpinnedNotes = useSelector(getUnpinnedNotes) as any[]
   const searchQuery = useSelector(getSearchQuery) as string
@@ -251,10 +252,9 @@ export default function AndroidFolderNotesScreen() {
       currentlyLocked: activeNoteLocked,
       reason: t('noteCard.unlockReason'),
       dispatch,
-      onUnavailable: () =>
-        Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+      lockMethod,
     })
-  }, [activeNoteId, activeNoteLocked, dispatch, t])
+  }, [activeNoteId, activeNoteLocked, dispatch, lockMethod, t])
 
   const handleNoteSheetTogglePin = useCallback(() => {
     if (!activeNoteId) return

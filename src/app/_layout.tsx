@@ -18,6 +18,8 @@ import 'react-native-reanimated'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 
 import { ErrorScreen } from '@/components/ErrorScreen'
+import { LockUnavailableModal } from '@/components/LockUnavailableModal'
+import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import { createThemedStylesheet, useResolvedColorScheme, useTheme } from '@/components/Themed'
 import Colors from '@/constants/Colors'
@@ -288,6 +290,8 @@ function RootLayoutNav() {
               </Stack>
 
               <PairingOverlay />
+              <LockUnavailableModal />
+              <NoteUnlockPasswordModal />
             </NoteEditorProvider>
           </ToastProvider>
         </SheetProvider>

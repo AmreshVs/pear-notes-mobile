@@ -1,5 +1,6 @@
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { deleteNote, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import type { DocumentPickerAsset } from 'expo-document-picker'
 import * as Haptics from 'expo-haptics'
@@ -7,7 +8,6 @@ import type { ImagePickerAsset } from 'expo-image-picker'
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Alert,
   Animated,
   Dimensions,
   Image,
@@ -20,7 +20,7 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 import { AudioRecorderModal } from '../components/AudioRecorderModal'
 import { isImageFile } from '../utils/media'
@@ -34,6 +34,7 @@ import { EditorToolbar } from '@/components/android/EditorToolbar'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
@@ -56,6 +57,7 @@ import {
   UI_SIZE_8,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import {
   copyFileToSAF,
@@ -146,7 +148,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   } = useNoteEditor()
 
   useNoteLockVersion()
+  const lockMethod = useSelector(getLockMethod)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
+  const protectLockedNote = isOpen && !!noteData?.locked
+  useLockedNoteScreenProtection(protectLockedNote)
   const lockOverlayStyle = useMemo(
     () => [styles.lockOverlay, { top: insets.top + 52 }],
     [styles.lockOverlay, insets.top],
@@ -657,10 +662,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       currentlyLocked: !!noteData?.locked,
       reason: t('noteCard.unlockReason'),
       dispatch,
-      onUnavailable: () =>
-        Alert.alert(t('noteCard.authUnavailableTitle'), t('noteCard.authUnavailableDesc')),
+      lockMethod,
     })
-  }, [noteId, noteData?.locked, dispatch, setMoreSheetVisible, t])
+  }, [noteId, noteData?.locked, dispatch, lockMethod, setMoreSheetVisible, t])
 
   const moreSheetActions = useMemo(() => {
     const list = []
@@ -820,6 +824,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             <LockedNoteView noteId={noteId ?? ''} />
           </View>
         )}
+
+        <LockedContentShield active={protectLockedNote} />
 
         {!isNoteLocked && (
           <EditorToolbar

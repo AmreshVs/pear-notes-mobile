@@ -1,0 +1,260 @@
+import { clearLockPassword } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { router } from 'expo-router'
+import { Fingerprint, KeyRound, LockKeyhole } from 'lucide-react-native'
+import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, View as RNView, StyleSheet, Switch } from 'react-native'
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { useDispatch } from 'react-redux'
+
+import { usePrivacyLock } from './usePrivacyLock'
+
+import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
+import {
+  commonStyles,
+  Durations,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  Radii,
+  Space,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_20,
+} from '@/constants/commonStyles'
+import { authenticate } from '@/lib/deviceAuth'
+import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
+import { getLockMethodLabelKey } from '@/utils/settingsUtils'
+
+export function PrivacyLockSection() {
+  const { t } = useTranslation()
+  const dispatch = useDispatch()
+  const styles = useStyles()
+  const { colors } = useTheme()
+  const {
+    lockAvailable,
+    deviceMethod,
+    isPassword,
+    screenshotProtection,
+    switcherHide,
+    toggleScreenshotProtection,
+    toggleSwitcherHide,
+  } = usePrivacyLock()
+
+  const selectBiometric = useCallback(async () => {
+    if (!isPassword) return
+    const ok = await requestNoteLockPassword()
+    if (ok) dispatch(clearLockPassword())
+  }, [isPassword, dispatch])
+
+  const selectPassword = useCallback(async () => {
+    if (isPassword) {
+      const ok = await requestNoteLockPassword()
+      if (!ok) return
+    } else if (lockAvailable) {
+      const ok = await authenticate(t('settings.privacy.changeMethodReason'))
+      if (!ok) return
+    }
+    router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
+  }, [isPassword, lockAvailable, t])
+
+  const methodDesc = isPassword
+    ? t('settings.privacy.noteLockPasswordDesc')
+    : t('settings.privacy.noteLockDesc', { method: t(getLockMethodLabelKey(deviceMethod)) })
+
+  const trackColor = { false: colors.borderSecondary, true: colors.primary }
+
+  return (
+    <>
+      <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
+        <Text style={styles.sectionCap}>{t('settings.privacy.header')}</Text>
+      </Animated.View>
+
+      <Animated.View
+        entering={FadeInDown.duration(Durations.slide).delay(Durations.delayFooter)}
+        layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+      >
+        <RNView style={styles.card}>
+          <RNView style={styles.infoRow}>
+            <RNView style={styles.iconBox}>
+              <LockKeyhole size={UI_ICON_SIZE_20} color={colors.primary} strokeWidth={1.8} />
+            </RNView>
+            <RNView style={commonStyles.flex1}>
+              <Text style={styles.rowTitle}>{t('settings.privacy.noteLock')}</Text>
+              <Text style={styles.rowDesc}>{methodDesc}</Text>
+            </RNView>
+          </RNView>
+
+          <RNView style={styles.divider} />
+
+          <RNView style={styles.methodRow}>
+            <Text style={styles.rowTitle}>{t('settings.privacy.unlockMethod')}</Text>
+            <RNView style={styles.segment}>
+              <Pressable
+                onPress={selectBiometric}
+                disabled={!lockAvailable}
+                style={[
+                  styles.segmentBtn,
+                  !isPassword && styles.segmentBtnActive,
+                  !lockAvailable && styles.segmentBtnDisabled,
+                ]}
+              >
+                <Fingerprint
+                  size={UI_ICON_SIZE_16}
+                  color={!isPassword ? colors.black : colors.textMuted}
+                  strokeWidth={2}
+                />
+                <Text style={!isPassword ? styles.segmentTextActive : styles.segmentText}>
+                  {t('settings.privacy.biometric')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={selectPassword}
+                style={[styles.segmentBtn, isPassword && styles.segmentBtnActive]}
+              >
+                <KeyRound
+                  size={UI_ICON_SIZE_16}
+                  color={isPassword ? colors.black : colors.textMuted}
+                  strokeWidth={2}
+                />
+                <Text style={isPassword ? styles.segmentTextActive : styles.segmentText}>
+                  {t('settings.privacy.password')}
+                </Text>
+              </Pressable>
+            </RNView>
+          </RNView>
+
+          <RNView style={styles.divider} />
+
+          <RNView style={styles.toggleRow}>
+            <RNView style={styles.toggleInfo}>
+              <Text style={styles.rowTitle}>{t('settings.privacy.blockScreenshots')}</Text>
+              <Text style={styles.rowDesc}>{t('settings.privacy.blockScreenshotsDesc')}</Text>
+            </RNView>
+            <Switch
+              value={screenshotProtection}
+              onValueChange={toggleScreenshotProtection}
+              trackColor={trackColor}
+              thumbColor={colors.white}
+            />
+          </RNView>
+
+          <RNView style={styles.divider} />
+
+          <RNView style={styles.toggleRow}>
+            <RNView style={styles.toggleInfo}>
+              <Text style={styles.rowTitle}>{t('settings.privacy.hideInSwitcher')}</Text>
+              <Text style={styles.rowDesc}>{t('settings.privacy.hideInSwitcherDesc')}</Text>
+            </RNView>
+            <Switch
+              value={switcherHide}
+              onValueChange={toggleSwitcherHide}
+              trackColor={trackColor}
+              thumbColor={colors.white}
+            />
+          </RNView>
+        </RNView>
+      </Animated.View>
+    </>
+  )
+}
+
+const useStyles = createThemedStylesheet((theme) => {
+  const styles = StyleSheet.create({
+    sectionCap: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      letterSpacing: 1.5,
+      marginBottom: Space.md,
+      textTransform: 'uppercase',
+      color: theme.colors.textMuted,
+    },
+    card: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: Radii.card,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.borderSecondary,
+      overflow: 'hidden',
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.md,
+      padding: Space.lg,
+    },
+    iconBox: {
+      width: 40,
+      height: 40,
+      borderRadius: Radii.md,
+      backgroundColor: theme.colors.cardSelected,
+      ...commonStyles.centered,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: theme.colors.borderSecondary,
+      marginLeft: Space.lg,
+    },
+    methodRow: {
+      padding: Space.lg,
+      gap: Space.md,
+    },
+    segment: {
+      flexDirection: 'row',
+      backgroundColor: theme.colors.controlBackground,
+      borderRadius: Radii.md,
+      padding: 4,
+      gap: 4,
+    },
+    segmentBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: Space.sm,
+      height: 40,
+      borderRadius: Radii.sm,
+    },
+    segmentBtnActive: {
+      backgroundColor: theme.colors.primary,
+    },
+    segmentBtnDisabled: {
+      opacity: 0.4,
+    },
+    segmentText: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.textMuted,
+    },
+    segmentTextActive: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.black,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: Space.md,
+      padding: Space.lg,
+    },
+    toggleInfo: {
+      flex: 1,
+    },
+    rowTitle: {
+      fontSize: FontSize.subtitle,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
+    },
+    rowDesc: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textMuted,
+      marginTop: 2,
+      lineHeight: FontSize.caption * 1.4,
+    },
+  })
+  return styles
+})
