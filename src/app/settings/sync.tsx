@@ -671,7 +671,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginTop: Space.xl,
     },
     footNote: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       flex: 1,
       lineHeight: 17,
       color: theme.colors.textMuted,

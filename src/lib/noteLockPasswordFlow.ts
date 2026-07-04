@@ -1,3 +1,4 @@
+import { router } from 'expo-router'
 import { useSyncExternalStore } from 'react'
 
 let visible = false
@@ -28,11 +29,21 @@ export function requestNoteLockPassword(): Promise<boolean> {
   })
 }
 
+export function requestNoteLockPasswordScreen(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (resolver) resolver(false)
+    resolver = resolve
+    router.push('/settings/note-lock-password?mode=enter&purpose=verify' as any)
+  })
+}
+
 export function resolveNoteLockPassword(ok: boolean): void {
-  visible = false
+  if (visible) {
+    visible = false
+    emit()
+  }
   const current = resolver
   resolver = null
-  emit()
   if (current) current(ok)
 }
 

@@ -263,7 +263,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
     },
     recoveryDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: theme.colors.textMuted,
       lineHeight: FontSize.caption * 1.4,

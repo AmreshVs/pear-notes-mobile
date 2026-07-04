@@ -43,7 +43,6 @@ import {
   UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { formatBackupDate, formatBytes, hexWithAlpha } from '@/lib/backupUtils'
 import { getBackupErrorMessage } from '@/utils/backupErrors'
 
@@ -78,8 +77,6 @@ export default function AndroidBackupScreen() {
     handleRestoreComplete,
     handleRestoreData,
   } = useBackupScreen()
-
-  const commonThemedStyles = useCommonThemedStyles()
 
   const progressTitle =
     importStatus.step === 'reading'
@@ -151,10 +148,7 @@ export default function AndroidBackupScreen() {
           </Pressable>
         </Animated.View>
 
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(120)}
-          style={[commonThemedStyles.card, styles.recoveryCard]}
-        >
+        <Animated.View entering={FadeInDown.duration(240).delay(120)} style={styles.recoveryCard}>
           <View style={styles.recoveryHeader}>
             <MaterialCommunityIcons name="lock-outline" size={UI_ICON_SIZE_20} color={c.primary} />
             <Text style={styles.recoveryTitle}>{t('backup.protectedTitle')}</Text>
@@ -420,7 +414,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.primary,
     },
     recoveryCard: {
-      padding: UI_SIZE_16,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: UI_SIZE_28,
+      padding: UI_SIZE_20,
       marginTop: UI_SIZE_12,
       marginBottom: UI_SIZE_12,
     },

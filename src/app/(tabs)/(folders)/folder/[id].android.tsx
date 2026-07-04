@@ -10,9 +10,7 @@ import {
   deleteNote,
   getFilteredNotes,
   getNotes,
-  getPinnedNotes,
   getSelectedNote,
-  getUnpinnedNotes,
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -68,6 +66,7 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { toggleNoteLock } from '@/lib/noteLockActions'
+import { buildNoteSections } from '@/utils/noteSections'
 import { getPreview } from '@/utils/noteUtils'
 
 function noteKey(note: any): string {
@@ -87,8 +86,6 @@ export default function AndroidFolderNotesScreen() {
   const allFolders = useSelector(getFolders) as any[]
   const notes = useSelector(getFilteredNotes) as any[]
   const lockMethod = useSelector(getLockMethod) as string
-  const pinnedNotes = useSelector(getPinnedNotes) as any[]
-  const unpinnedNotes = useSelector(getUnpinnedNotes) as any[]
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote) as string | null
   const localPreferences = useSelector(getLocalPreferences) as any
@@ -310,16 +307,10 @@ export default function AndroidFolderNotesScreen() {
     dispatch(setShowPairingInput(true))
   }, [dispatch])
 
-  const sections = useMemo(() => {
-    const result: { title: string; data: any[] }[] = []
-    if (pinnedNotes.length > 0) {
-      result.push({ title: t('folderView.sections.pinned'), data: pinnedNotes })
-    }
-    if (unpinnedNotes.length > 0) {
-      result.push({ title: '', data: unpinnedNotes })
-    }
-    return result
-  }, [pinnedNotes, unpinnedNotes, t])
+  const sections = useMemo(
+    () => buildNoteSections(notes, t, isTrashFolder),
+    [notes, t, isTrashFolder],
+  )
 
   const renderNote = useCallback(
     ({ item: note, index, section }: SectionListRenderItemInfo<any>) => (
@@ -529,7 +520,12 @@ export default function AndroidFolderNotesScreen() {
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews
         ListHeaderComponent={
-          <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
+          <View>
+            <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
+            <Text style={styles.pageCount}>
+              {t('folderView.noteCount', { count: notes.length })}
+            </Text>
+          </View>
         }
         ListEmptyComponent={
           <AndroidEmptyState
@@ -707,15 +703,24 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       fontSize: FontSize.heading,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
-      marginBottom: UI_SIZE_20,
+      marginBottom: UI_SIZE_4,
       marginTop: UI_SIZE_10,
       letterSpacing: -0.5,
       color: c.onSurface,
+    },
+    pageCount: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
+      letterSpacing: 1.2,
+      color: c.onSurfaceVariant,
+      marginBottom: UI_SIZE_4,
     },
     sectionCap: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
+      textTransform: 'uppercase',
       letterSpacing: 1.2,
       color: c.primary,
       marginBottom: UI_SIZE_12,
@@ -724,7 +729,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
     fab: {
       position: 'absolute',
       right: UI_SIZE_24,
-      borderRadius: UI_SIZE_20,
+      borderRadius: UI_SIZE_9999,
       elevation: 4,
       boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
       backgroundColor: c.primaryContainer,

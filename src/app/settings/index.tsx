@@ -11,10 +11,11 @@ import {
 } from 'lucide-react-native'
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
+import { Pressable, View as RNView, StyleSheet, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
+import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   Durations,
@@ -98,11 +99,7 @@ export default function SettingsScreen() {
         }}
       />
 
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        contentContainerStyle={styles.scroll}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.scroll}>
         <Animated.View
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
@@ -132,18 +129,24 @@ export default function SettingsScreen() {
             ))}
           </RNView>
         </Animated.View>
-
-        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
-          <Text style={styles.footer}>{t('settings.footer')}</Text>
-          <Text style={styles.version}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
-        </Animated.View>
-      </ScrollView>
+      </View>
+      <View style={commonStyles.flex1} />
+      <Animated.View
+        style={styles.footerContainer}
+        entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
+      >
+        <Text style={styles.footer}>{t('settings.footer')}</Text>
+        <Text style={styles.version}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
+      </Animated.View>
     </RNView>
   )
 }
 
-const useStyles = createThemedStylesheet((theme) => {
+const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
   const styles = StyleSheet.create({
+    footerContainer: {
+      marginBottom: insets.bottom + UI_SIZE_12,
+    },
     scroll: {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: UI_SIZE_60,
@@ -181,4 +184,4 @@ const useStyles = createThemedStylesheet((theme) => {
   })
 
   return styles
-})
+}, useSafeAreaInsets)

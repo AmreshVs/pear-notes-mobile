@@ -1,19 +1,26 @@
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { clearLockPassword, getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 import useLockStatus from '@/app/settings/useLockStatus'
+import { authenticate } from '@/lib/deviceAuth'
 import {
   getLockPrivacyPreference,
   LOCK_SCREENSHOT_PROTECTION_KEY,
   LOCK_SWITCHER_HIDE_KEY,
   setLockPrivacyPreference,
 } from '@/lib/lockPrivacy'
+import { requestNoteLockPasswordScreen } from '@/lib/noteLockPasswordFlow'
+
+const SCREEN_POP_DELAY_MS = 400
 
 export function usePrivacyLock() {
+  const dispatch = useDispatch()
   const { lockAvailable, lockMethod: deviceMethod } = useLockStatus()
   const lockMethod = useSelector(getLockMethod) as string
   const isPassword = lockMethod === 'password'
+  const passwordDisabled = !isPassword && !lockAvailable
 
   const [screenshotProtection, setScreenshotProtection] = useState(true)
   const [switcherHide, setSwitcherHide] = useState(true)
@@ -30,6 +37,28 @@ export function usePrivacyLock() {
       active = false
     }
   }, [])
+
+  const selectBiometric = useCallback(async () => {
+    if (!isPassword) return
+    const ok = await requestNoteLockPasswordScreen()
+    if (ok) dispatch(clearLockPassword())
+  }, [isPassword, dispatch])
+
+  const selectPassword = useCallback(
+    async (reason: string) => {
+      if (isPassword) {
+        const ok = await requestNoteLockPasswordScreen()
+        if (!ok) return
+        await new Promise((resolve) => setTimeout(resolve, SCREEN_POP_DELAY_MS))
+      } else {
+        if (!lockAvailable) return
+        const ok = await authenticate(reason)
+        if (!ok) return
+      }
+      router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
+    },
+    [isPassword, lockAvailable],
+  )
 
   const toggleScreenshotProtection = useCallback(() => {
     setScreenshotProtection((prev) => {
@@ -51,8 +80,11 @@ export function usePrivacyLock() {
     lockAvailable,
     deviceMethod,
     isPassword,
+    passwordDisabled,
     screenshotProtection,
     switcherHide,
+    selectBiometric,
+    selectPassword,
     toggleScreenshotProtection,
     toggleSwitcherHide,
   }

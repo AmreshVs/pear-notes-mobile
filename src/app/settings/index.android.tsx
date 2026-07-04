@@ -3,7 +3,7 @@ import Constants from 'expo-constants'
 import { router, Stack } from 'expo-router'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import { Pressable, StatusBar, StyleSheet, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -17,7 +17,6 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
-  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -26,6 +25,7 @@ import {
   UI_SIZE_28,
   UI_SIZE_40,
   UI_SIZE_44,
+  UI_SIZE_8,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -90,7 +90,7 @@ export default function AndroidSettingsScreen() {
         <Text style={styles.headerTitle}>{t('settings.title')}</Text>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <View style={styles.scrollContent}>
         {sections.map(({ key, icon, label, onPress }, i) => (
           <Animated.View
             key={key}
@@ -115,12 +115,12 @@ export default function AndroidSettingsScreen() {
             </Pressable>
           </Animated.View>
         ))}
-
-        <Animated.View entering={FadeIn.duration(220).delay(280)}>
-          <Text style={styles.footerText}>{t('settings.footer')}</Text>
-          <Text style={styles.versionText}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
-        </Animated.View>
-      </ScrollView>
+      </View>
+      <View style={commonStyles.flex1} />
+      <Animated.View style={styles.footerContainer} entering={FadeIn.duration(220).delay(280)}>
+        <Text style={styles.footerText}>{t('settings.footer')}</Text>
+        <Text style={styles.versionText}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
+      </Animated.View>
     </View>
   )
 }
@@ -137,6 +137,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
+    },
+    footerContainer: {
+      marginBottom: insets.bottom + UI_SIZE_12,
     },
     header: {
       ...commonStyles.row,

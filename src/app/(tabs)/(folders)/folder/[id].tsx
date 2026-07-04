@@ -41,6 +41,7 @@ import {
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+import { buildNoteSections } from '@/utils/noteSections'
 import { getFirstImageUrl, getPreview } from '@/utils/noteUtils'
 
 export default function FolderNotesScreen() {
@@ -78,33 +79,10 @@ export default function FolderNotesScreen() {
     [allFolders, id],
   )
 
-  const groupedNotes = useMemo(() => {
-    const sections: Record<string, any[]> = {
-      [t('folderView.sections.pinned')]: [],
-      [t('folderView.sections.today')]: [],
-      [t('folderView.sections.yesterday')]: [],
-      [t('folderView.sections.last7Days')]: [],
-      [t('folderView.sections.older')]: [],
-    }
-    const now = Date.now()
-    const DAY = 86_400_000
-
-    notes.forEach((note: any) => {
-      if (!isTrashFolder && note.value?.pinned === true) {
-        sections[t('folderView.sections.pinned')].push(note)
-        return
-      }
-      const diff = now - (note.value?.updatedAt || note.value?.createdAt || 0)
-      if (diff < DAY) sections[t('folderView.sections.today')].push(note)
-      else if (diff < 2 * DAY) sections[t('folderView.sections.yesterday')].push(note)
-      else if (diff < 7 * DAY) sections[t('folderView.sections.last7Days')].push(note)
-      else sections[t('folderView.sections.older')].push(note)
-    })
-
-    return Object.entries(sections)
-      .filter(([_, data]) => data.length > 0)
-      .map(([title, data]) => ({ title, data }))
-  }, [notes, t, isTrashFolder])
+  const groupedNotes = useMemo(
+    () => buildNoteSections(notes, t, isTrashFolder),
+    [notes, t, isTrashFolder],
+  )
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -298,7 +276,9 @@ export default function FolderNotesScreen() {
       return (
         <View key={section.title} style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
+            <Text style={[commonThemedStyles.sectionCap, styles.sectionTitle]}>
+              {section.title}
+            </Text>
           </View>
           <View style={styles.listContainer}>{section.data.map(renderItem)}</View>
         </View>
@@ -438,6 +418,9 @@ const useStyles = createThemedStylesheet((theme) => {
       flexGrow: 1,
       paddingHorizontal: 0,
       paddingTop: Space.lg,
+    },
+    sectionTitle: {
+      color: theme.colors.primary,
     },
     pageTitle: {
       fontSize: FontSize.hero,

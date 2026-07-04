@@ -194,14 +194,6 @@ export const EditorToolbar = memo(function EditorToolbar({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.toolbarRow}
           >
-            <ToolbarBtn
-              sf="checkmark.square"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              active={isActive('checkboxList')}
-              onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
-              styles={styles}
-            />
             <AttachMenu
               colors={colors}
               onPickImage={handlePickImageEdit}
@@ -212,14 +204,15 @@ export const EditorToolbar = memo(function EditorToolbar({
               onTakeVideo={handleTakeVideoEdit}
               styles={styles}
             />
+            <View style={styles.divider} />
             <ToolbarBtn
-              sf="square.and.pencil"
+              sf="checkmark.square"
               tintActive={colors.primary}
               tintDefault={colors.text}
-              onPress={() => {}}
+              active={isActive('checkboxList')}
+              onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
               styles={styles}
             />
-            <View style={styles.divider} />
             <ToolbarBtn
               sf="textformat.size.larger"
               tintActive={colors.primary}

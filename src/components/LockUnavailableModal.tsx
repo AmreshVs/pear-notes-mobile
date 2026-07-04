@@ -1,7 +1,6 @@
 import { BlurView } from 'expo-blur'
-import { router } from 'expo-router'
-import { KeyRound } from 'lucide-react-native'
-import { memo, useCallback } from 'react'
+import { Fingerprint } from 'lucide-react-native'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
 
@@ -16,7 +15,6 @@ import {
   Space,
   UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
-import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hideLockInfo, useLockInfoVisible } from '@/lib/lockInfoModal'
 
@@ -24,13 +22,7 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const styles = useStyles()
-  const commonThemedStyles = useCommonThemedStyles()
   const visible = useLockInfoVisible()
-
-  const handleSetPassword = useCallback(() => {
-    hideLockInfo()
-    router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
-  }, [])
 
   return (
     <Modal
@@ -50,7 +42,7 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
           <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.icon}>
-                <KeyRound size={UI_ICON_SIZE_40} color={colors.primary} />
+                <Fingerprint size={UI_ICON_SIZE_40} color={colors.primary} />
               </RNView>
 
               <Text style={styles.title}>{t('noteCard.authUnavailableTitle')}</Text>
@@ -61,21 +53,11 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
                   onPress={hideLockInfo}
                   style={({ pressed }) => [
                     styles.btn,
-                    commonThemedStyles.cancelBtn,
-                    pressed && commonStyles.pressed,
-                  ]}
-                >
-                  <Text style={styles.cancelText}>{t('common.cancel')}</Text>
-                </Pressable>
-                <Pressable
-                  onPress={handleSetPassword}
-                  style={({ pressed }) => [
-                    styles.btn,
                     styles.confirmBtn,
                     pressed && commonStyles.pressed,
                   ]}
                 >
-                  <Text style={styles.confirmText}>{t('noteCard.authUnavailableAction')}</Text>
+                  <Text style={styles.confirmText}>{t('common.ok')}</Text>
                 </Pressable>
               </RNView>
             </RNView>
@@ -137,11 +119,6 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    cancelText: {
-      color: theme.colors.textMuted,
-      fontWeight: FontWeight.bold,
-      fontSize: FontSize.body,
     },
     confirmBtn: {
       backgroundColor: theme.colors.primary,

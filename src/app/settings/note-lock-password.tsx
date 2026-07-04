@@ -3,7 +3,7 @@ import { loadSettings } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { isValidBackupPassword } from '@pear-notes/core/utils.js'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { Check, Eye, EyeOff, Lock, TriangleAlert, X } from 'lucide-react-native'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
@@ -74,6 +74,11 @@ export default function NoteLockPasswordScreen() {
   )
 
   const toggleSecure = useCallback(() => setSecure((s) => !s), [])
+
+  useEffect(() => {
+    if (isCreate) return
+    return () => resolveNoteLockPassword(false)
+  }, [isCreate])
 
   const handleSubmit = useCallback(async () => {
     if (!canSubmit) return

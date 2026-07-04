@@ -1,11 +1,8 @@
-import { clearLockPassword } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { router } from 'expo-router'
 import { Fingerprint, KeyRound, LockKeyhole } from 'lucide-react-native'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View as RNView, StyleSheet, Switch } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { useDispatch } from 'react-redux'
 
 import { usePrivacyLock } from './usePrivacyLock'
 
@@ -21,45 +18,34 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
-import { authenticate } from '@/lib/deviceAuth'
-import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
 
 export function PrivacyLockSection() {
   const { t } = useTranslation()
-  const dispatch = useDispatch()
   const styles = useStyles()
   const { colors } = useTheme()
   const {
     lockAvailable,
     deviceMethod,
     isPassword,
+    passwordDisabled,
     screenshotProtection,
     switcherHide,
+    selectBiometric,
+    selectPassword,
     toggleScreenshotProtection,
     toggleSwitcherHide,
   } = usePrivacyLock()
 
-  const selectBiometric = useCallback(async () => {
-    if (!isPassword) return
-    const ok = await requestNoteLockPassword()
-    if (ok) dispatch(clearLockPassword())
-  }, [isPassword, dispatch])
-
-  const selectPassword = useCallback(async () => {
-    if (isPassword) {
-      const ok = await requestNoteLockPassword()
-      if (!ok) return
-    } else if (lockAvailable) {
-      const ok = await authenticate(t('settings.privacy.changeMethodReason'))
-      if (!ok) return
-    }
-    router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
-  }, [isPassword, lockAvailable, t])
+  const handleSelectPassword = useCallback(() => {
+    selectPassword(t('settings.privacy.changeMethodReason'))
+  }, [selectPassword, t])
 
   const methodDesc = isPassword
     ? t('settings.privacy.noteLockPasswordDesc')
-    : t('settings.privacy.noteLockDesc', { method: t(getLockMethodLabelKey(deviceMethod)) })
+    : lockAvailable
+      ? t('settings.privacy.noteLockDesc', { method: t(getLockMethodLabelKey(deviceMethod)) })
+      : t('settings.privacy.noteLockUnavailableDesc')
 
   const trackColor = { false: colors.borderSecondary, true: colors.primary }
 
@@ -108,8 +94,13 @@ export function PrivacyLockSection() {
                 </Text>
               </Pressable>
               <Pressable
-                onPress={selectPassword}
-                style={[styles.segmentBtn, isPassword && styles.segmentBtnActive]}
+                onPress={handleSelectPassword}
+                disabled={passwordDisabled}
+                style={[
+                  styles.segmentBtn,
+                  isPassword && styles.segmentBtnActive,
+                  passwordDisabled && styles.segmentBtnDisabled,
+                ]}
               >
                 <KeyRound
                   size={UI_ICON_SIZE_16}
@@ -249,11 +240,11 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
     },
     rowDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: theme.colors.textMuted,
       marginTop: 2,
-      lineHeight: FontSize.caption * 1.4,
+      lineHeight: FontSize.body * 1.4,
     },
   })
   return styles

@@ -23,6 +23,13 @@ export async function toggleNoteLock({
   if (!key) return
   const usePassword = lockMethod === 'password'
   if (currentlyLocked) {
+    if (!usePassword) {
+      const supported = await isDeviceAuthSupported()
+      if (!supported) {
+        showLockUnavailable()
+        return
+      }
+    }
     const ok = usePassword ? await requestNoteLockPassword() : await authenticate(reason)
     if (!ok) return
     dispatch(updateNote({ key, locked: false } as any))

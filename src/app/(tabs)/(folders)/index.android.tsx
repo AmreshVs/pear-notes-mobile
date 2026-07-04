@@ -267,7 +267,6 @@ export default function AndroidFoldersScreen() {
         <Animated.View entering={FadeIn.duration(200)} style={styles.header}>
           <View>
             <Text style={styles.pageTitle}>{t('folders.title')}</Text>
-            <Text style={styles.pageSubtitle}>{t('folders.subtitle')}</Text>
           </View>
           <Pressable
             onPress={handleOpenSettings}
@@ -333,11 +332,6 @@ export default function AndroidFoldersScreen() {
             style={styles.archiveSection}
           >
             <View style={styles.sectionHeader}>
-              <MaterialCommunityIcons
-                name="archive-outline"
-                size={UI_ICON_SIZE_20}
-                color={c.onSurfaceVariant}
-              />
               <Text style={styles.sectionTitle}>{t('folders.archiveHeader')}</Text>
             </View>
             <View style={styles.listCard}>
@@ -602,10 +596,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       paddingHorizontal: UI_SIZE_6,
     },
     sectionTitle: {
-      fontSize: FontSize.title,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      color: c.onSurface,
+      color: c.secondary,
     },
     fab: {
       position: 'absolute',
