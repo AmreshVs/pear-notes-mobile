@@ -276,9 +276,7 @@ export default function FolderNotesScreen() {
       return (
         <View key={section.title} style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={[commonThemedStyles.sectionCap, styles.sectionTitle]}>
-              {section.title}
-            </Text>
+            <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
           </View>
           <View style={styles.listContainer}>{section.data.map(renderItem)}</View>
         </View>
@@ -419,9 +417,7 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: 0,
       paddingTop: Space.lg,
     },
-    sectionTitle: {
-      color: theme.colors.primary,
-    },
+
     pageTitle: {
       fontSize: FontSize.hero,
       lineHeight: UI_SIZE_42,

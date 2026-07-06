@@ -250,7 +250,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xs,
     },
     dangerDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: theme.colors.textMuted,
       lineHeight: FontSize.caption * 1.4,

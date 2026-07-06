@@ -1,3 +1,4 @@
+import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteSyncedDevice,
   getLocalPreferences,
@@ -7,16 +8,22 @@ import {
   createInvite,
   getInvite,
   getInviteExpiresAt,
+  getInviterStatus,
+  getReceiverStatus,
   getSyncIsLoading,
+  resetInvite,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, isValidInvite } from '@pear-notes/core/utils.js'
 import { useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
-import { useCallback, useRef, useState } from 'react'
+import { router } from 'expo-router'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, ScrollView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
+
+import { pendingInviteState } from '@/lib/pendingInviteState'
 
 function useSyncScreen() {
   const { t } = useTranslation()
@@ -28,6 +35,7 @@ function useSyncScreen() {
   const syncedDevices = useSelector(getSyncedDevices) as any[]
   const localPreferences = useSelector(getLocalPreferences) as any
   const isSynced = localPreferences?.isSynced === 'true'
+  const notes = useSelector(getNotes) as any[]
 
   const [tab, setTab] = useState<'link' | 'devices'>('link')
   const [copied, setCopied] = useState(false)
@@ -40,6 +48,31 @@ function useSyncScreen() {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const scrollRef = useRef<ScrollView>(null)
 
+  const inviterStatus = useSelector(getInviterStatus)
+  const receiverStatus = useSelector(getReceiverStatus)
+  const inviterStatusRef = useRef(inviterStatus)
+  const receiverStatusRef = useRef(receiverStatus)
+
+  useEffect(() => {
+    inviterStatusRef.current = inviterStatus
+    receiverStatusRef.current = receiverStatus
+  }, [inviterStatus, receiverStatus])
+
+  useEffect(() => {
+    return () => {
+      const inviterStep = inviterStatusRef.current?.step
+      const receiverStep = receiverStatusRef.current?.step
+
+      const isInviterActive =
+        inviterStep && !['idle', 'generating', 'ready', 'searching'].includes(inviterStep)
+      const isReceiverActive = receiverStep && !['idle', 'connecting'].includes(receiverStep)
+
+      if (!isInviterActive && !isReceiverActive) {
+        dispatch(resetInvite())
+      }
+    }
+  }, [dispatch])
+
   const handleCopy = useCallback(async () => {
     if (!inviteCode) return
     await Clipboard.setStringAsync(inviteCode)
@@ -50,10 +83,27 @@ function useSyncScreen() {
   const handleConnect = useCallback(() => {
     if (isValidInvite(pasteCode)) {
       const rawInvite = extractInvite(pasteCode)
-      dispatch(subscribePairUser({ invite: rawInvite }))
-      setPasteCode('')
+      if (notes.length > 0) {
+        pendingInviteState.setPendingInvite(rawInvite)
+        setPasteCode('')
+        if (Platform.OS === 'ios') {
+          router.dismissAll()
+          router.back()
+        } else {
+          router.back()
+        }
+      } else {
+        dispatch(subscribePairUser({ invite: rawInvite }))
+        setPasteCode('')
+        if (Platform.OS === 'ios') {
+          router.dismissAll()
+          router.back()
+        } else {
+          router.back()
+        }
+      }
     }
-  }, [dispatch, pasteCode])
+  }, [dispatch, pasteCode, notes.length])
 
   const handleOpenScanner = useCallback(async () => {
     if (Platform.OS === 'ios') {

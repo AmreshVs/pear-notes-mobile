@@ -38,6 +38,13 @@ export function markNoteUnlocked(key: string) {
   }
 }
 
+export function clearUnlockedNotes() {
+  if (unlockedKeys.size > 0) {
+    unlockedKeys.clear()
+    emit()
+  }
+}
+
 export async function unlockNote(key: string, reason: string): Promise<boolean> {
   if (!key) return false
   if (unlockedKeys.has(key)) return true

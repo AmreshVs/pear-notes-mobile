@@ -29,10 +29,11 @@ import {
   TextInput,
 } from 'react-native'
 import Reanimated, { Easing, FadeInDown } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { GlassView } from './GlassView'
-import { createThemedStylesheet, Text, useColors, useTheme, View } from './Themed'
+import { createThemedStylesheetWithHooks, Text, useColors, useTheme, View } from './Themed'
 
 import {
   commonStyles,
@@ -42,8 +43,11 @@ import {
   MonoFontFamily,
   Radii,
   Space,
+  UI_ICON_SIZE_12,
   UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
+import { clearStorageState } from '@/lib/clearStorageState'
+import { pendingInviteState } from '@/lib/pendingInviteState'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
 
 const isAndroid = process.env.EXPO_OS === 'android'
@@ -60,6 +64,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const [hasScanned, setHasScanned] = useState(false)
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const fadeAnim = useMemo(() => new Animated.Value(0), [])
+
+  useEffect(() => {
+    return pendingInviteState.subscribe((invite) => {
+      setPendingInvite(invite)
+    })
+  }, [])
 
   const inviterStatus = useSelector(getInviterStatus)
   const receiverStatus = useSelector(getReceiverStatus)
@@ -119,11 +129,13 @@ export const PairingOverlay = memo(function PairingOverlay() {
     dispatch(subscribePairUser({ invite: pendingInvite }))
     dispatch(setShowPairingInput(false))
     setPendingInvite(null)
+    pendingInviteState.setPendingInvite(null)
     setPasteCode('')
   }, [dispatch, pendingInvite])
 
   const handleCancelMerge = useCallback(() => {
     setPendingInvite(null)
+    pendingInviteState.setPendingInvite(null)
   }, [])
 
   const handleOpenScanner = useCallback(async () => {
@@ -257,6 +269,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
           <Pressable
             onPress={() => {
+              clearStorageState.setClearing(true)
               deleteDbEncryptionKey().catch(console.error)
               dispatch(clearStorage())
               dispatch(setDeviceRemoved(false))
@@ -571,7 +584,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
   )
 })
 
-const useStyles = createThemedStylesheet((theme) => {
+const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
   const styles = StyleSheet.create({
     center: {
       ...commonStyles.centered,
@@ -720,13 +733,14 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     scannerHeader: {
       position: 'absolute',
-      top: 0,
+      top: insets.top + UI_ICON_SIZE_12,
       left: 0,
       right: 0,
-      paddingTop: 56,
       paddingHorizontal: Space.lg,
       flexDirection: 'row',
       justifyContent: 'flex-end',
+      zIndex: 2,
+      backgroundColor: 'transparent',
     },
     scannerCloseBtn: {
       width: 42,
@@ -1007,4 +1021,4 @@ const useStyles = createThemedStylesheet((theme) => {
     },
   })
   return styles
-})
+}, useSafeAreaInsets)

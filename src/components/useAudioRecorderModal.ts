@@ -11,8 +11,6 @@ import * as Haptics from 'expo-haptics'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform } from 'react-native'
-
-import { useToast } from '@/providers/ToastProvider'
 import {
   Easing,
   runOnJS,
@@ -20,6 +18,8 @@ import {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated'
+
+import { useToast } from '@/providers/ToastProvider'
 
 const RECORDING_WINDOW_MS = 30000
 const RECORDING_BARS = 52

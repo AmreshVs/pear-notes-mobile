@@ -7,15 +7,11 @@ import {
   selectStorageByKind,
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
-import {
-  deleteSyncedDevice,
-  getSyncedDevices,
-} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
-import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { clearStorageState } from '@/lib/clearStorageState'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
 
 function useStorageScreen() {
@@ -26,9 +22,6 @@ function useStorageScreen() {
   const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
-  const syncedDevices = useSelector(getSyncedDevices)
-  const localDevice = syncedDevices.find((d: any) => d.isLocal)
-  const localDeviceKey = localDevice?.key
 
   const [resetSheetVisible, setResetSheetVisible] = useState(false)
 
@@ -49,14 +42,10 @@ function useStorageScreen() {
 
   const handleResetConfirm = useCallback(() => {
     setResetSheetVisible(false)
-    if (syncedDevices.length > 1 && localDeviceKey) {
-      dispatch(deleteSyncedDevice({ key: localDeviceKey } as any))
-    } else {
-      deleteDbEncryptionKey().catch(console.error)
-      dispatch(clearStorage())
-    }
-    router.back()
-  }, [dispatch, syncedDevices, localDeviceKey])
+    clearStorageState.setClearing(true)
+    deleteDbEncryptionKey().catch(console.error)
+    dispatch(clearStorage())
+  }, [dispatch])
 
   const handleResetCancel = useCallback(() => {
     setResetSheetVisible(false)

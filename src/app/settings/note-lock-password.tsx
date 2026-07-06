@@ -160,6 +160,7 @@ export default function NoteLockPasswordScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               style={styles.input}
+              autoFocus={!isCreate}
             />
             <Pressable onPress={toggleSecure} hitSlop={UI_SIZE_8} style={styles.eyeBtn}>
               {secure ? (

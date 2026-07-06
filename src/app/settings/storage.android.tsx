@@ -297,7 +297,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_4,
     },
     dangerDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
       lineHeight: FontSize.caption * 1.4,

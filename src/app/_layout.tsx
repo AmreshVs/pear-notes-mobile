@@ -1,7 +1,7 @@
 import '@/locales/i18n'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getDeviceRemoved, setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 import * as Crypto from 'expo-crypto'
@@ -12,7 +12,15 @@ import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Appearance, LogBox, StyleSheet, Text, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Appearance,
+  LogBox,
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import { Provider, useDispatch, useSelector } from 'react-redux'
@@ -21,9 +29,10 @@ import { ErrorScreen } from '@/components/ErrorScreen'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
-import { createThemedStylesheet, useResolvedColorScheme, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, useResolvedColorScheme } from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
+import { clearStorageState } from '@/lib/clearStorageState'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
@@ -47,32 +56,49 @@ const documentDir = new Directory(Paths.document)
 const storage = documentDir.uri.replace(/^file:\/+/, '/')
 
 export default function RootLayout() {
+  const { t } = useTranslation()
   const [remountKey, setRemountKey] = useState(0)
+  const [isClearing, setIsClearing] = useState(false)
 
   const triggerReload = useCallback(() => {
     setRemountKey((k) => k + 1)
   }, [])
 
+  useEffect(() => {
+    return clearStorageState.subscribe((val) => {
+      setIsClearing(val)
+    })
+  }, [])
+
+  const colorScheme = Appearance.getColorScheme()
+  const isDark = colorScheme === 'dark'
+  const currentTheme = isDark ? Colors.dark : Colors.light
+  const styles = getStyles(isDark)
+
   return (
-    <Provider key={remountKey} store={store}>
-      <RootLayoutInner triggerReload={triggerReload} />
-    </Provider>
+    <View style={commonStyles.flex1}>
+      <Provider key={remountKey} store={store}>
+        <RootLayoutInner triggerReload={triggerReload} />
+      </Provider>
+      {isClearing && (
+        <View style={styles.overlay}>
+          <ActivityIndicator size="large" color={currentTheme.primary} />
+          <Text style={styles.title}>{t('pairing.overlay.resettingTitle')}</Text>
+          <Text style={styles.desc}>{t('pairing.overlay.resettingDesc')}</Text>
+        </View>
+      )}
+    </View>
   )
 }
 
 function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const theme = useTheme()
   const styles = useStyles()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
-  const [isResetting, setIsResetting] = useState(false)
-  const prevDeviceRemovedRef = useRef(false)
   const savedEncryptionKeyRef = useRef<string | null>(null)
-  const wasLoadingRef = useRef(false)
 
-  const deviceRemoved = useSelector(getDeviceRemoved)
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
   const inviterStatus = useSelector((state: any) => state.sync.inviterStatus)
@@ -108,13 +134,6 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     initWorklet()
   }, [initWorklet])
 
-  useEffect(() => {
-    if (prevDeviceRemovedRef.current && !deviceRemoved) {
-      setIsResetting(true)
-    }
-    prevDeviceRemovedRef.current = deviceRemoved
-  }, [deviceRemoved])
-
   const encryptionKey = receiverStatus?.encryptionKey
   useEffect(() => {
     if (encryptionKey && encryptionKey !== savedEncryptionKeyRef.current) {
@@ -138,48 +157,32 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     if (
       needsConfirm &&
       !prevNeedsConfirmRef.current &&
-      pathnameRef.current.startsWith('/settings')
+      pathnameRef.current.startsWith('/settings') &&
+      Platform.OS === 'ios'
     ) {
       router.dismissAll()
+      router.back()
     }
     prevNeedsConfirmRef.current = needsConfirm
   }, [inviterStatus?.step, receiverStatus?.step])
 
   useEffect(() => {
-    if (!isResetting) {
-      wasLoadingRef.current = false
-      return
+    if (!notesLoading && clearStorageState.getClearing()) {
+      const timer = setTimeout(() => {
+        clearStorageState.setClearing(false)
+      }, 800)
+      return () => clearTimeout(timer)
     }
-    if (notesLoading) {
-      wasLoadingRef.current = true
-    } else if (wasLoadingRef.current) {
-      setIsResetting(false)
-    }
-  }, [isResetting, notesLoading])
-
-  useEffect(() => {
-    if (!isResetting) return
-    const fallback = setTimeout(() => setIsResetting(false), 15000)
-    return () => clearTimeout(fallback)
-  }, [isResetting])
+  }, [notesLoading])
 
   if (fatalError) {
     return <ErrorScreen message={fatalError} onRetry={initWorklet} />
   }
 
   return (
-    <>
-      <GestureHandlerRootView style={styles.gestureView}>
-        <RootLayoutNav />
-      </GestureHandlerRootView>
-      {isResetting && (
-        <View style={styles.resetOverlay}>
-          <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.resetTitle}>{t('pairing.overlay.resettingTitle')}</Text>
-          <Text style={styles.resetDesc}>{t('pairing.overlay.resettingDesc')}</Text>
-        </View>
-      )}
-    </>
+    <GestureHandlerRootView style={styles.gestureView}>
+      <RootLayoutNav />
+    </GestureHandlerRootView>
   )
 }
 
@@ -188,27 +191,6 @@ const useStyles = createThemedStylesheet((theme) => {
     gestureView: {
       ...commonStyles.flex1,
       backgroundColor: theme.colors.background,
-    },
-    resetOverlay: {
-      ...StyleSheet.absoluteFill,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 9999,
-      gap: 12,
-      backgroundColor: theme.colors.background,
-    },
-    resetTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.semibold,
-      marginTop: 4,
-      color: theme.colors.text,
-    },
-    resetDesc: {
-      fontSize: FontSize.body,
-      opacity: 0.7,
-      textAlign: 'center',
-      paddingHorizontal: 40,
-      color: theme.colors.textSecondary,
     },
   })
   return styles
@@ -298,4 +280,31 @@ function RootLayoutNav() {
       </AndroidPaperProvider>
     </ThemeProvider>
   )
+}
+
+const getStyles = (isDark: boolean) => {
+  const currentTheme = isDark ? Colors.dark : Colors.light
+  const styles = StyleSheet.create({
+    overlay: {
+      ...StyleSheet.absoluteFill,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: currentTheme.background,
+      zIndex: 99999,
+      gap: 12,
+    },
+    title: {
+      fontSize: FontSize.title,
+      fontWeight: FontWeight.semibold,
+      color: currentTheme.text,
+    },
+    desc: {
+      fontSize: FontSize.body,
+      opacity: 0.7,
+      textAlign: 'center',
+      paddingHorizontal: 40,
+      color: currentTheme.textSecondary,
+    },
+  })
+  return styles
 }

@@ -1,4 +1,5 @@
 import { TextStyle } from 'react-native'
+
 import { FontSize } from './commonStyles'
 
 export const Typography = {

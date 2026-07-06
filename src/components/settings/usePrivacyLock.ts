@@ -11,6 +11,7 @@ import {
   LOCK_SWITCHER_HIDE_KEY,
   setLockPrivacyPreference,
 } from '@/lib/lockPrivacy'
+import { clearUnlockedNotes } from '@/lib/noteLock'
 import { requestNoteLockPasswordScreen } from '@/lib/noteLockPasswordFlow'
 
 const SCREEN_POP_DELAY_MS = 400
@@ -64,6 +65,7 @@ export function usePrivacyLock() {
     setScreenshotProtection((prev) => {
       const next = !prev
       setLockPrivacyPreference(LOCK_SCREENSHOT_PROTECTION_KEY, next)
+      clearUnlockedNotes()
       return next
     })
   }, [])
