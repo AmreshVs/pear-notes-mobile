@@ -5,7 +5,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import type { DocumentPickerAsset } from 'expo-document-picker'
 import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Animated,
@@ -146,6 +146,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     resolveHyperdriveUrl,
     noteData,
   } = useNoteEditor()
+
+  const isPreviewingRef = useRef(false)
 
   useNoteLockVersion()
   const lockMethod = useSelector(getLockMethod)
@@ -554,7 +556,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleOpenAttachment = useCallback(
     async (url: string, fileName: string) => {
-      if (!url) return
+      if (!url || isPreviewingRef.current) return
+      isPreviewingRef.current = true
       try {
         const cleanUrl = resolveHyperdriveUrl(url)
         const name = fileName || cleanUrl.split('/').pop() || 'file'
@@ -565,7 +568,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         } else {
           await ExpoNativeShareModule.default.preview({ url: cleanUrl })
         }
-      } catch {}
+      } catch {
+      } finally {
+        isPreviewingRef.current = false
+      }
     },
     [resolveHyperdriveUrl],
   )
@@ -576,6 +582,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         handleOpenAttachment(url, fileName)
         return
       }
+      if (!url || isPreviewingRef.current) return
+      isPreviewingRef.current = true
       try {
         const cleanUrl = resolveHyperdriveUrl(url)
         const name = fileName || cleanUrl.split('/').pop() || 'image.jpg'
@@ -584,7 +592,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           const ExpoNativeShareModule = await import('../../modules/expo-native-share')
           await ExpoNativeShareModule.default.preview({ url: localPath })
         }
-      } catch {}
+      } catch {
+      } finally {
+        isPreviewingRef.current = false
+      }
     },
     [handleOpenAttachment, resolveHyperdriveUrl],
   )

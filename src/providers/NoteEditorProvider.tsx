@@ -2,10 +2,11 @@ import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { deleteNote, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import type { DocumentPickerAsset } from 'expo-document-picker'
+import * as FileSystem from 'expo-file-system'
 import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -25,6 +26,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
+import ExpoNativeShareModule from '../../modules/expo-native-share'
 import { isImageFile } from '../utils/media'
 
 import { useNoteEditor } from './useNoteEditor'
@@ -53,10 +55,8 @@ import {
   downloadToCache,
   pickDocuments,
   pickImagesFromLibrary,
-  previewAttachment,
   saveImageToPhotos,
   scanDocument,
-  shareAttachment,
   shareMessage,
   takePhotoFromCamera,
   takeVideoFromCamera,
@@ -127,6 +127,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setIsEdgeSwipeActive,
     noteData,
   } = useNoteEditor()
+
+  const isPreviewingRef = useRef(false)
 
   useNoteLockVersion()
   const lockMethod = useSelector(getLockMethod)
@@ -542,15 +544,23 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleOpenAttachment = useCallback(
     async (url: string, fileName: string, attachmentId?: string) => {
-      if (!url) return
+      if (!url || isPreviewingRef.current) return
+      isPreviewingRef.current = true
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
       editorRef.current?.setAttachmentLoading(url, true, attachmentId)
+      let localUri: string | null = null
       try {
-        await shareAttachment(url, fileName)
+        localUri = await downloadToCache(url, fileName)
+        editorRef.current?.setAttachmentLoading(url, false, attachmentId)
+        await ExpoNativeShareModule.share({ message: '', urls: [localUri], resolveOnDismiss: true })
       } catch {
         Alert.alert(t('common.error'), t('noteEditor.upload.failedVideo'))
       } finally {
         editorRef.current?.setAttachmentLoading(url, false, attachmentId)
+        isPreviewingRef.current = false
+        if (localUri) {
+          await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+        }
       }
     },
     [t],
@@ -558,15 +568,23 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handlePreviewAttachment = useCallback(
     async (url: string, fileName: string, attachmentId?: string) => {
-      if (!url) return
+      if (!url || isPreviewingRef.current) return
+      isPreviewingRef.current = true
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
       editorRef.current?.setAttachmentLoading(url, true, attachmentId)
+      let localUri: string | null = null
       try {
-        await previewAttachment(url, fileName)
+        localUri = await downloadToCache(url, fileName)
+        editorRef.current?.setAttachmentLoading(url, false, attachmentId)
+        await ExpoNativeShareModule.preview({ url: localUri })
       } catch {
         Alert.alert(t('common.error'), t('noteEditor.upload.failedVideo'))
       } finally {
         editorRef.current?.setAttachmentLoading(url, false, attachmentId)
+        isPreviewingRef.current = false
+        if (localUri) {
+          await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+        }
       }
     },
     [t],
