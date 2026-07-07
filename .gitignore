@@ -54,5 +54,5 @@ ios/Pods/
 .agent/
 editor-bundle/node_modules/
 package-lock.json
-modules/expo-native-share/android/build/
-modules/expo-native-share/android/.gradle
+modules/*/android/build/
+modules/*/android/.gradle

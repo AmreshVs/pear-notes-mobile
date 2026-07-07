@@ -11,10 +11,11 @@ import {
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import * as ExpoBackgroundService from 'expo-background-service'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Platform } from 'react-native'
+import { Alert, PermissionsAndroid, Platform } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
 import {
@@ -56,6 +57,7 @@ function useBackupScreen() {
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
   const [hideModal, setHideModal] = useState(false)
+  const [isForegroundServiceActive, setIsForegroundServiceActive] = useState(false)
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
@@ -76,14 +78,52 @@ function useBackupScreen() {
   const progressStatus = isExporting ? exportStatus : importStatus
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
+  useEffect(() => {
+    if (isForegroundServiceActive) {
+      if (isActive) {
+        ExpoBackgroundService.updateService(progressStatus.progress, progressStatus.message, 100)
+      } else {
+        ExpoBackgroundService.stopService()
+        setIsForegroundServiceActive(false)
+      }
+    }
+  }, [isForegroundServiceActive, isActive, progressStatus.progress, progressStatus.message])
+
   const handleCreateBackup = useCallback(() => {
     setHideModal(false)
     router.push(`${BACKUP_PASSWORD_ROUTE}?mode=create`)
   }, [])
 
-  const handleRunInBackground = useCallback(() => {
+  const handleRunInBackground = useCallback(async () => {
     setHideModal(true)
-  }, [])
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+          {
+            title: t('backup.notificationPermissionTitle', 'Notification Permission'),
+            message: t(
+              'backup.notificationPermissionDesc',
+              'Pear Notes needs notification permissions to show the backup progress while running in the background.',
+            ),
+            buttonNeutral: t('backup.notificationPermissionAskMeLater', 'Ask Me Later'),
+            buttonNegative: t('backup.notificationPermissionCancel', 'Cancel'),
+            buttonPositive: t('backup.notificationPermissionOK', 'OK'),
+          },
+        )
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          ExpoBackgroundService.startService(
+            isExporting ? t('backup.title') : t('backup.restoreTitle'),
+            progressStatus.message,
+            100,
+          )
+          setIsForegroundServiceActive(true)
+        }
+      } catch (err) {
+        console.warn(err)
+      }
+    }
+  }, [t, isExporting, progressStatus.message])
 
   const handleCancelExport = useCallback(() => {
     dispatch(resetExport())

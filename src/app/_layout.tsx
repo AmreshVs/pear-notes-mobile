@@ -25,6 +25,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import 'react-native-reanimated'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 
+import { BackupProgressBanner } from '@/components/backup/BackupProgressBanner'
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
@@ -274,6 +275,7 @@ function RootLayoutNav() {
               <PairingOverlay />
               <LockUnavailableModal />
               <NoteUnlockPasswordModal />
+              <BackupProgressBanner />
             </NoteEditorProvider>
           </ToastProvider>
         </SheetProvider>

@@ -6,7 +6,8 @@
     "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": ["./src/*"],
-      "@/assets/*": ["./assets/*"]
+      "@/assets/*": ["./assets/*"],
+      "expo-background-service": ["./modules/expo-background-service/src/index.ts"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
