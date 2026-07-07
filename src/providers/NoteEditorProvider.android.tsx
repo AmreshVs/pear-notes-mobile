@@ -145,6 +145,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleEditorBlur,
     resolveHyperdriveUrl,
     noteData,
+    handleYjsMessage,
   } = useNoteEditor()
 
   const isPreviewingRef = useRef(false)
@@ -748,6 +749,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
         <TiptapEditor
           ref={editorRef}
+          noteId={noteId ?? 'new'}
           initialContent=""
           initialTitle=""
           safeAreaTop={insets.top + 52}
@@ -756,6 +758,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           }
           backgroundColor={c.background}
           onContentChange={handleUpdate}
+          onYjsMessage={handleYjsMessage}
           onTitleChange={handleTitleChange}
           onStyleStateChange={handleStyleStateChange}
           onEditorFocus={handleEditorFocus}

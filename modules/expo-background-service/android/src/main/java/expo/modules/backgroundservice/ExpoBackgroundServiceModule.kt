@@ -12,43 +12,43 @@ class ExpoBackgroundServiceModule : Module() {
     Name("ExpoBackgroundService")
 
     Function("start") { title: String, message: String, maxProgress: Int ->
-      val context: Context = appContext.reactContext ?: return@Function
-      
-      val intent = Intent(context, BackupForegroundService::class.java).apply {
-        action = BackupForegroundService.ACTION_START
-        putExtra(BackupForegroundService.EXTRA_TITLE, title)
-        putExtra(BackupForegroundService.EXTRA_MESSAGE, message)
-        putExtra(BackupForegroundService.EXTRA_MAX_PROGRESS, maxProgress)
-      }
-      
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        ContextCompat.startForegroundService(context, intent)
-      } else {
-        context.startService(intent)
+      appContext.reactContext?.let { context ->
+        val intent = Intent(context, BackupForegroundService::class.java).apply {
+          action = BackupForegroundService.ACTION_START
+          putExtra(BackupForegroundService.EXTRA_TITLE, title)
+          putExtra(BackupForegroundService.EXTRA_MESSAGE, message)
+          putExtra(BackupForegroundService.EXTRA_MAX_PROGRESS, maxProgress)
+        }
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          ContextCompat.startForegroundService(context, intent)
+        } else {
+          context.startService(intent)
+        }
       }
     }
 
     Function("update") { progress: Int, message: String, maxProgress: Int ->
-      val context: Context = appContext.reactContext ?: return@Function
-      
-      val intent = Intent(context, BackupForegroundService::class.java).apply {
-        action = BackupForegroundService.ACTION_UPDATE
-        putExtra(BackupForegroundService.EXTRA_MESSAGE, message)
-        putExtra(BackupForegroundService.EXTRA_PROGRESS, progress)
-        putExtra(BackupForegroundService.EXTRA_MAX_PROGRESS, maxProgress)
+      appContext.reactContext?.let { context ->
+        val intent = Intent(context, BackupForegroundService::class.java).apply {
+          action = BackupForegroundService.ACTION_UPDATE
+          putExtra(BackupForegroundService.EXTRA_MESSAGE, message)
+          putExtra(BackupForegroundService.EXTRA_PROGRESS, progress)
+          putExtra(BackupForegroundService.EXTRA_MAX_PROGRESS, maxProgress)
+        }
+        
+        context.startService(intent)
       }
-      
-      context.startService(intent)
     }
 
     Function("stop") {
-      val context: Context = appContext.reactContext ?: return@Function
-      
-      val intent = Intent(context, BackupForegroundService::class.java).apply {
-        action = BackupForegroundService.ACTION_STOP
+      appContext.reactContext?.let { context ->
+        val intent = Intent(context, BackupForegroundService::class.java).apply {
+          action = BackupForegroundService.ACTION_STOP
+        }
+        
+        context.startService(intent)
       }
-      
-      context.startService(intent)
     }
   }
 }

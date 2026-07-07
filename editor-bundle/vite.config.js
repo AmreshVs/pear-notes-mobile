@@ -15,4 +15,9 @@ export default defineConfig({
     },
   },
   publicDir: false,
+  resolve: {
+    alias: {
+      'y-prosemirror': '@tiptap/y-tiptap',
+    },
+  },
 })

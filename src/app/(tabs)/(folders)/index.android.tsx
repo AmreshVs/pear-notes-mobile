@@ -536,12 +536,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       color: c.onSurface,
       marginBottom: UI_SIZE_4,
     },
-    pageSubtitle: {
-      fontSize: FontSize.body,
-      color: c.onSurfaceVariant,
-      fontWeight: FontWeight.regular,
-      fontFamily: FontFamily.regular,
-    },
     gearBtn: {
       ...commonStyles.headerBtn,
       borderRadius: UI_SIZE_9999,

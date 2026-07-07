@@ -1,6 +1,8 @@
 import { requireNativeModule } from 'expo-modules-core'
+import { Platform } from 'react-native'
 
-const ExpoBackgroundService = requireNativeModule('ExpoBackgroundService')
+const ExpoBackgroundService =
+  Platform.OS === 'android' ? requireNativeModule('ExpoBackgroundService') : {}
 
 export function startService(title: string, message: string, maxProgress: number): void {
   ExpoBackgroundService.start(title, message, maxProgress)

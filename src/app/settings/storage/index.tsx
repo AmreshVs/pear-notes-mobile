@@ -7,6 +7,7 @@ import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 
 import useStorageScreen from './useStorageScreen'
+
 import { BackupBreakdownSection } from '@/components/backup/BackupBreakdownSection'
 import { BackupNotesListSection } from '@/components/backup/BackupNotesListSection'
 import { ClearStorageBottomSheet } from '@/components/bottomsheet/ClearStorageAppBottomSheet'

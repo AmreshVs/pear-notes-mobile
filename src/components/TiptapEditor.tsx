@@ -1,10 +1,15 @@
+import { COLLABORATION_ENABLED } from '@pear-notes/core/constant.js'
 import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getCollaboratorIdentity } from '@pear-notes/core/utils.js'
 import {
   forwardRef,
   memo,
   useCallback,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -66,6 +71,7 @@ export interface TiptapEditorHandle {
   save: () => Promise<void>
   getHTML: () => Promise<string | undefined>
   setHTML: (html: string) => void
+  loadNote: (noteId: string, html: string) => void
   setTitle: (title: string) => void
   scrollToTop: () => void
   scrollToEnd: () => void
@@ -73,9 +79,11 @@ export interface TiptapEditorHandle {
   setAttachmentLoading: (url: string, loading: boolean, attachmentId?: string) => void
   deleteImage: (src: string) => void
   deleteAttachment: (url: string) => void
+  applyYjsMessage: (dataBase64: string) => void
 }
 
 export interface TiptapEditorProps {
+  noteId: string
   initialContent: string
   initialTitle?: string
   safeAreaTop?: number
@@ -100,6 +108,7 @@ export interface TiptapEditorProps {
     rect?: { x: number; y: number; width: number; height: number },
     attachmentId?: string,
   ) => void
+  onYjsMessage?: (dataBase64: string) => void
 }
 
 type WebViewMsg =
@@ -126,6 +135,7 @@ type WebViewMsg =
       rect?: { x: number; y: number; width: number; height: number }
       attachmentId?: string
     }
+  | { type: 'yjsMessage'; data: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
 
@@ -147,6 +157,7 @@ const iosWebViewProps =
 const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   (
     {
+      noteId,
       initialContent,
       initialTitle,
       safeAreaTop,
@@ -163,6 +174,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onDeleteAttachment,
       onImageLongPress,
       onAttachmentLongPress,
+      onYjsMessage,
     },
     ref,
   ) => {
@@ -171,7 +183,15 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const { colors } = theme
     const fontSize = useSelector(getEditorFontSize)
     const fontFamily = useSelector(getFontFamily)
+    const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
     const webViewRef = useRef<WebView>(null)
+
+    const syncedDevices = useSelector(getSyncedDevices)
+    const localDevice = useMemo(() => syncedDevices.find((d: any) => d.isLocal), [syncedDevices])
+    const collaborator = useMemo(
+      () => getCollaboratorIdentity(localDevice, 'Mobile'),
+      [localDevice],
+    )
 
     const onContentChangeRef = useRef(onContentChange)
     const onTitleChangeRef = useRef(onTitleChange)
@@ -183,6 +203,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onDeleteAttachmentRef = useRef(onDeleteAttachment)
     const onImageLongPressRef = useRef(onImageLongPress)
     const onAttachmentLongPressRef = useRef(onAttachmentLongPress)
+    const onYjsMessageRef = useRef(onYjsMessage)
 
     onContentChangeRef.current = onContentChange
     onTitleChangeRef.current = onTitleChange
@@ -194,23 +215,27 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onDeleteAttachmentRef.current = onDeleteAttachment
     onImageLongPressRef.current = onImageLongPress
     onAttachmentLongPressRef.current = onAttachmentLongPress
+    onYjsMessageRef.current = onYjsMessage
 
     const colorsRef = useRef(colors)
     const isDarkRef = useRef(theme.isDark)
     const fontSizeRef = useRef(fontSize)
     const fontFamilyRef = useRef(fontFamily)
+    const hyperdriveServerAddressRef = useRef(hyperdriveServerAddress)
     const safeAreaTopRef = useRef(safeAreaTop ?? 100)
     const backgroundColorRef = useRef(backgroundColor)
     colorsRef.current = colors
     isDarkRef.current = theme.isDark
     fontSizeRef.current = fontSize
     fontFamilyRef.current = fontFamily
+    hyperdriveServerAddressRef.current = hyperdriveServerAddress
     safeAreaTopRef.current = safeAreaTop ?? 100
     backgroundColorRef.current = backgroundColor
 
     const editorReadyRef = useRef(false)
     const editorInitializedRef = useRef(false)
     const pendingContentRef = useRef<string | null>(null)
+    const pendingLoadNoteRef = useRef<{ noteId: string; html: string } | null>(null)
     const pendingTitleRef = useRef<string | null>(null)
 
     const initialTitleRef = useRef(initialTitle ?? '')
@@ -285,6 +310,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             editorReadyRef.current = true
             sendCommand({
               type: 'init',
+              noteId,
               colors: backgroundColorRef.current
                 ? { ...colorsRef.current, background: backgroundColorRef.current }
                 : colorsRef.current,
@@ -294,6 +320,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               title: initialTitleRef.current,
               html: initialContentRef.current,
               safeAreaTop: safeAreaTopRef.current,
+              collaborator,
+              collaborationEnabled: COLLABORATION_ENABLED,
+              hyperdriveAddress: hyperdriveServerAddressRef.current,
             })
             break
 
@@ -310,6 +339,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             if (pendingContentRef.current !== null) {
               sendCommand({ type: 'setContent', html: pendingContentRef.current })
               pendingContentRef.current = null
+            }
+            if (pendingLoadNoteRef.current !== null) {
+              sendCommand({ type: 'loadNote', ...pendingLoadNoteRef.current })
+              pendingLoadNoteRef.current = null
             }
             break
 
@@ -361,9 +394,13 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           case 'attachmentLongPress':
             onAttachmentLongPressRef.current?.(msg.url, msg.fileName, msg.rect, msg.attachmentId)
             break
+
+          case 'yjsMessage':
+            onYjsMessageRef.current?.(msg.data)
+            break
         }
       },
-      [revealEditor, sendCommand, injectBackgroundColor],
+      [revealEditor, sendCommand, injectBackgroundColor, noteId],
     )
 
     useEffect(() => {
@@ -393,6 +430,31 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         sendCommand({ type: 'setFontSettings', fontSize, fontFamily })
       }
     }, [fontSize, fontFamily, sendCommand])
+
+    const prevHyperdriveAddressRef = useRef(hyperdriveServerAddress)
+
+    useEffect(() => {
+      if (prevHyperdriveAddressRef.current === hyperdriveServerAddress) return
+      prevHyperdriveAddressRef.current = hyperdriveServerAddress
+      if (editorReadyRef.current) {
+        sendCommand({ type: 'setHyperdriveAddress', address: hyperdriveServerAddress })
+      }
+    }, [hyperdriveServerAddress, sendCommand])
+
+    const prevCollaboratorRef = useRef(collaborator)
+
+    useEffect(() => {
+      if (
+        prevCollaboratorRef.current.name === collaborator.name &&
+        prevCollaboratorRef.current.color === collaborator.color
+      ) {
+        return
+      }
+      prevCollaboratorRef.current = collaborator
+      if (editorReadyRef.current) {
+        sendCommand({ type: 'setCollaborator', collaborator })
+      }
+    }, [collaborator, sendCommand])
 
     const handleError = useCallback((_e: any) => {
       setEditorState('error')
@@ -450,6 +512,13 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             sendCommand({ type: 'setContent', html })
           }
         },
+        loadNote: (noteId, html) => {
+          if (!editorInitializedRef.current) {
+            pendingLoadNoteRef.current = { noteId, html }
+          } else {
+            sendCommand({ type: 'loadNote', noteId, html })
+          }
+        },
         setTitle: (title) => {
           if (!editorInitializedRef.current) {
             pendingTitleRef.current = title
@@ -462,6 +531,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId }),
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),
         deleteAttachment: (url) => sendCommand({ type: 'deleteAttachment', url }),
+        applyYjsMessage: (data) => sendCommand({ type: 'yjsMessage', data }),
         scrollToEnd: () =>
           webViewRef.current?.injectJavaScript(
             `(function(){var pm=document.querySelector('.ProseMirror');if(pm&&pm.lastElementChild){pm.lastElementChild.scrollIntoView({block:'end',behavior:'smooth'})}else{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}})();true;`,
