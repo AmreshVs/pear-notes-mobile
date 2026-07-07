@@ -13,7 +13,7 @@ import {
 } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 
-import useBackupScreen from '@/app/settings/useBackupScreen'
+import useBackupScreen from './useBackupScreen'
 import { BackupStatsSection } from '@/components/backup/BackupStatsSection'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {

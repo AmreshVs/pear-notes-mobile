@@ -3,7 +3,7 @@ import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
-import useLockStatus from '@/app/settings/useLockStatus'
+import useLockStatus from '@/app/settings/privacy/useLockStatus'
 import { authenticate } from '@/lib/deviceAuth'
 import {
   getLockPrivacyPreference,

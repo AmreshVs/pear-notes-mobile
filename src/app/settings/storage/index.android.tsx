@@ -7,7 +7,7 @@ import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import useStorageScreen from '@/app/settings/useStorageScreen'
+import useStorageScreen from './useStorageScreen'
 import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBackupBreakdownSection'
 import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
