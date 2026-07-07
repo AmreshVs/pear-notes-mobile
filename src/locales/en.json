@@ -411,6 +411,7 @@
     "files": "Files",
     "text": "Text",
     "textAllNotesDesc": "(all notes)",
+    "syncedMedia": "Synced Media",
     "items": "{{count}} items",
     "clearStorage": "Clear Storage",
     "clearAllDataTitle": "Clear All Data?",

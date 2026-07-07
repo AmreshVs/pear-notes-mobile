@@ -19,6 +19,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import {
   InvalidBackupFileError,
+  getTempBackupFilePath,
   pickBackupFile,
   readBackupFile,
   saveBackupToDevice,
@@ -54,6 +55,7 @@ function useBackupScreen() {
   const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
+  const [hideModal, setHideModal] = useState(false)
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
@@ -67,14 +69,20 @@ function useBackupScreen() {
     exportStatus.step !== 'idle' && exportStatus.step !== 'done' && exportStatus.step !== 'error'
   const isImporting = importStatus.step !== 'idle' && importStatus.step !== 'error'
   const showProgressModal =
-    isExporting || isImporting || exportStatus.step === 'error' || importStatus.step === 'error'
+    !hideModal &&
+    (isExporting || isImporting || exportStatus.step === 'error' || importStatus.step === 'error')
   const isError = exportStatus.step === 'error' || importStatus.step === 'error'
   const errorMessage = exportStatus.step === 'error' ? exportStatus.message : importStatus.message
   const progressStatus = isExporting ? exportStatus : importStatus
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
   const handleCreateBackup = useCallback(() => {
+    setHideModal(false)
     router.push(`${BACKUP_PASSWORD_ROUTE}?mode=create`)
+  }, [])
+
+  const handleRunInBackground = useCallback(() => {
+    setHideModal(true)
   }, [])
 
   const handleCancelExport = useCallback(() => {
@@ -94,7 +102,8 @@ function useBackupScreen() {
     if (Platform.OS === 'ios') {
       try {
         await wait(MODAL_DISMISS_DELAY_MS)
-        await saveBackupWithShare(exportBuffer, t('backup.shareBackup'))
+        const filePath = getTempBackupFilePath()
+        await saveBackupWithShare(filePath, t('backup.shareBackup'))
         await saveLastBackupDate()
         setLastBackupDate(new Date().toISOString())
         dispatch(resetExport())
@@ -102,9 +111,9 @@ function useBackupScreen() {
         Alert.alert(t('backup.shareError'), String(e))
       }
     } else {
-      if (!exportBuffer) return
       try {
-        await saveBackupToDevice(exportBuffer)
+        const filePath = getTempBackupFilePath()
+        await saveBackupToDevice(filePath)
         await saveLastBackupDate()
         setLastBackupDate(new Date().toISOString())
       } catch (e) {
@@ -116,15 +125,17 @@ function useBackupScreen() {
   }, [exportBuffer, dispatch, showToast, t])
 
   useEffect(() => {
-    if (exportStatus.step === 'done' && exportBuffer) {
+    if (exportStatus.step === 'done') {
+      setHideModal(false)
       handleSaveBackup()
     }
-  }, [exportStatus.step, exportBuffer, handleSaveBackup])
+  }, [exportStatus.step, handleSaveBackup])
 
   const handleRestoreData = useCallback(async () => {
     try {
       const picked = await pickBackupFile()
       if (!picked) return
+      setHideModal(false)
       dispatch(
         setImportStatus({
           step: 'reading',
@@ -163,6 +174,7 @@ function useBackupScreen() {
     handleCreateBackup,
     handleCancelExport,
     handleCancelImport,
+    handleRunInBackground,
     handleRestoreComplete,
     handleRestoreData,
   }

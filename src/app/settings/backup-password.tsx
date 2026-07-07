@@ -37,6 +37,7 @@ import {
   UI_SIZE_54,
   UI_SIZE_8,
 } from '@/constants/commonStyles'
+import { getTempBackupFilePath } from '@/lib/backupFileManager'
 import { takePendingImportBuffer } from '@/lib/backupPasswordFlow'
 import { getPasswordStrength, PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
@@ -80,7 +81,8 @@ export default function BackupPasswordScreen() {
   const handleSubmit = useCallback(() => {
     if (!canSubmit) return
     if (isCreate) {
-      dispatch(startExportBackup({ password } as any))
+      const filePath = getTempBackupFilePath()
+      dispatch(startExportBackup({ password, filePath } as any))
       router.back()
       return
     }

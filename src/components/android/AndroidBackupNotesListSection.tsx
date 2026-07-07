@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { commonStyles, FontFamily, FontSize, FontWeight, UI_SIZE_8, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_20 } from '@/constants/commonStyles'
+import { getMediaDisplayName } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -49,7 +50,7 @@ export function AndroidBackupNotesListSection({
         <View style={styles.mediaHeaderActions}>
           <MaterialCommunityIcons name={iconName as any} size={UI_SIZE_14} color={c.onSurfaceVariant} />
           <Text style={styles.mediaName} numberOfLines={1}>
-            {m.name}
+            {getMediaDisplayName(m.name, t('backup.syncedMedia'))}
           </Text>
         </View>
         <View style={styles.noteHeaderActions}>

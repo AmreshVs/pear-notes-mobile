@@ -63,6 +63,7 @@ export default function BackupScreen() {
     handleCreateBackup,
     handleCancelExport,
     handleCancelImport,
+    handleRunInBackground,
     handleRestoreComplete,
     handleRestoreData,
     isExporting,
@@ -220,12 +221,20 @@ export default function BackupScreen() {
                   <RNText style={styles.cancelBtnText}>{t('common.close')}</RNText>
                 </Pressable>
               ) : (
-                <Pressable
-                  onPress={isExporting ? handleCancelExport : handleCancelImport}
-                  style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
-                >
-                  <RNText style={styles.cancelBtnText}>{t('common.cancel')}</RNText>
-                </Pressable>
+                <RNView style={styles.modalActions}>
+                  <Pressable
+                    onPress={handleRunInBackground}
+                    style={({ pressed }) => [styles.bgBtn, pressed && commonStyles.pressed]}
+                  >
+                    <RNText style={styles.bgBtnText}>{t('backup.runInBackground')}</RNText>
+                  </Pressable>
+                  <Pressable
+                    onPress={isExporting ? handleCancelExport : handleCancelImport}
+                    style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
+                  >
+                    <RNText style={styles.cancelBtnText}>{t('common.cancel')}</RNText>
+                  </Pressable>
+                </RNView>
               )}
             </RNView>
           </RNView>
@@ -405,7 +414,27 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
-      color: theme.colors.primary,
+      color: theme.colors.error,
+    },
+    modalActions: {
+      flexDirection: 'column',
+      gap: Space.md,
+      width: '100%',
+    },
+    bgBtn: {
+      paddingVertical: Space.md,
+      paddingHorizontal: Space.xxl,
+      backgroundColor: theme.colors.controlBackground,
+      borderRadius: Radii.md,
+      borderWidth: 1,
+      borderColor: theme.colors.borderSecondary,
+      alignItems: 'center',
+    },
+    bgBtnText: {
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: theme.colors.text,
     },
   })
   return styles

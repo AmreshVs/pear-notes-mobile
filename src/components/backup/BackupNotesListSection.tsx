@@ -26,6 +26,7 @@ import {
   UI_SIZE_16,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { getMediaDisplayName } from '@/lib/backupUtils'
 
 type BackupNotesListSectionProps = {
   notesStorageInfo: any[]
@@ -60,7 +61,7 @@ export function BackupNotesListSection({
         <RNView style={styles.mediaHeaderActions}>
           <Icon size={UI_SIZE_14} color={colors.textMuted} strokeWidth={2} />
           <RNText style={styles.mediaName} numberOfLines={1}>
-            {m.name}
+            {getMediaDisplayName(m.name, t('backup.syncedMedia'))}
           </RNText>
         </RNView>
         <RNView style={styles.noteHeaderActions}>

@@ -11,6 +11,13 @@ export function hexWithAlpha(hex: string, alpha: number): string {
   return hex.length === 7 ? `${hex}${a}` : hex
 }
 
+const HYPERDRIVE_URL_PREFIX = 'http://hyperdrive'
+
+export function getMediaDisplayName(name: string, fallback: string): string {
+  if (!name || name.startsWith(HYPERDRIVE_URL_PREFIX)) return fallback
+  return name
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B'
   const units = ['B', 'KB', 'MB', 'GB']

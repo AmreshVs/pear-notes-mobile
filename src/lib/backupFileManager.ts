@@ -1,10 +1,7 @@
-import { Buffer } from 'buffer'
-
 import * as DocumentPicker from 'expo-document-picker'
-import * as FileSystem from 'expo-file-system/legacy'
+import { File } from 'expo-file-system'
+import * as FileSystemLegacy from 'expo-file-system/legacy'
 import { Platform, Share } from 'react-native'
-
-import { toUint8Array, uint8ArrayToBase64 } from '@/lib/backupUtils'
 
 export class InvalidBackupFileError extends Error {
   constructor() {
@@ -12,45 +9,45 @@ export class InvalidBackupFileError extends Error {
   }
 }
 
-export async function saveBackupToDevice(exportBuffer: any): Promise<void> {
-  const uint8 = toUint8Array(exportBuffer)
-  const base64 = uint8ArrayToBase64(uint8)
+export function getTempBackupFilePath(): string {
+  const cacheDir = FileSystemLegacy.cacheDirectory ?? ''
+  return cacheDir.replace('file://', '') + 'temp_export.pnbk'
+}
+
+export async function saveBackupToDevice(exportFilePath: string): Promise<void> {
   const date = new Date().toISOString().split('T')[0]
   const filename = `pear-notes-${date}.pnbk`
 
   if (Platform.OS === 'ios') {
-    const fileUri = (FileSystem.cacheDirectory ?? '') + filename
-    await FileSystem.writeAsStringAsync(fileUri, base64, {
-      encoding: FileSystem.EncodingType.Base64,
-    })
+    const fileUri = (FileSystemLegacy.cacheDirectory ?? '') + filename
+    const srcFile = new File(exportFilePath)
+    const destFile = new File(fileUri)
+    srcFile.copy(destFile)
     await Share.share({ url: fileUri })
   } else {
-    const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync()
+    const permissions =
+      await FileSystemLegacy.StorageAccessFramework.requestDirectoryPermissionsAsync()
     if (permissions.granted) {
-      const uri = await FileSystem.StorageAccessFramework.createFileAsync(
+      const uri = await FileSystemLegacy.StorageAccessFramework.createFileAsync(
         permissions.directoryUri,
         filename,
         'application/octet-stream',
       )
-      await FileSystem.writeAsStringAsync(uri, base64, {
-        encoding: FileSystem.EncodingType.Base64,
-      })
+      const srcFile = new File(exportFilePath)
+      const destFile = new File(uri)
+      srcFile.copy(destFile)
     }
   }
 }
 
-export async function saveBackupWithShare(exportBuffer: any, shareMessage?: string): Promise<void> {
-  const uint8 = toUint8Array(exportBuffer)
-  const base64 = uint8ArrayToBase64(uint8)
-  const date = new Date().toISOString().split('T')[0]
-  const tempFile = (FileSystem.cacheDirectory ?? '') + `pear-notes-${date}.pnbk`
-  await FileSystem.writeAsStringAsync(tempFile, base64, {
-    encoding: FileSystem.EncodingType.Base64,
-  })
+export async function saveBackupWithShare(
+  exportFilePath: string,
+  shareMessage?: string,
+): Promise<void> {
   if (Platform.OS === 'ios') {
-    await Share.share({ url: tempFile })
+    await Share.share({ url: exportFilePath })
   } else {
-    await Share.share({ message: shareMessage, url: tempFile })
+    await Share.share({ message: shareMessage, url: exportFilePath })
   }
 }
 
@@ -74,8 +71,6 @@ export async function pickBackupFile(): Promise<PickedBackupFile | null> {
 }
 
 export async function readBackupFile(uri: string): Promise<Uint8Array> {
-  const base64 = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.Base64,
-  })
-  return Buffer.from(base64, 'base64')
+  const file = new File(uri)
+  return await file.bytes()
 }
