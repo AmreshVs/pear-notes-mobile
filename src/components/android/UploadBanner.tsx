@@ -1,5 +1,14 @@
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { memo } from 'react'
-import { ActivityIndicator, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native'
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleProp,
+  StyleSheet,
+  Text,
+  View,
+  ViewStyle,
+} from 'react-native'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
@@ -7,6 +16,10 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  UI_ICON_SIZE_20,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_6,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
@@ -14,28 +27,53 @@ import {
 
 type UploadBannerProps = {
   fileName: string
-  status: string
+  status?: string
+  progress?: number
+  onCancel?: () => void
   style?: StyleProp<ViewStyle>
 }
 
 export const UploadBanner = memo(function UploadBanner({
   fileName,
   status,
+  progress,
+  onCancel,
   style,
 }: UploadBannerProps) {
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors
+  const showProgress = typeof progress === 'number'
 
   return (
     <View style={[styles.uploadBanner, style]}>
-      <ActivityIndicator size="small" color={c.primary} style={styles.uploadSpinner} />
+      {showProgress ? null : (
+        <ActivityIndicator size="small" color={c.primary} style={styles.uploadSpinner} />
+      )}
       <View style={styles.uploadText}>
-        <Text style={styles.uploadName} numberOfLines={1}>
-          {fileName}
-        </Text>
-        <Text style={styles.uploadStatus}>{status}</Text>
+        <View style={styles.uploadHeaderRow}>
+          <Text style={styles.uploadName} numberOfLines={1}>
+            {fileName}
+          </Text>
+          {showProgress ? <Text style={styles.uploadPercent}>{`${progress}%`}</Text> : null}
+        </View>
+        {showProgress ? (
+          <View style={styles.uploadTrack}>
+            <View style={[styles.uploadFill, { width: `${progress}%` }]} />
+          </View>
+        ) : (
+          <Text style={styles.uploadStatus}>{status}</Text>
+        )}
       </View>
+      {showProgress && onCancel ? (
+        <Pressable
+          onPress={onCancel}
+          hitSlop={UI_SIZE_12}
+          style={({ pressed }) => [styles.uploadCancel, pressed && styles.uploadCancelPressed]}
+        >
+          <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_20} color={c.onSurface} />
+        </Pressable>
+      ) : null}
     </View>
   )
 })
@@ -65,18 +103,52 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     },
     uploadText: {
       flex: 1,
+      gap: UI_SIZE_6,
+    },
+    uploadHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: UI_SIZE_12,
     },
     uploadName: {
+      flex: 1,
       fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
+    uploadPercent: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurfaceVariant,
+    },
     uploadStatus: {
       fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
-      marginTop: 1,
+    },
+    uploadTrack: {
+      height: UI_SIZE_4,
+      borderRadius: UI_SIZE_2,
+      backgroundColor: c.surfaceVariant ?? c.surface,
+      overflow: 'hidden',
+    },
+    uploadFill: {
+      height: '100%',
+      borderRadius: UI_SIZE_2,
+      backgroundColor: c.primary,
+    },
+    uploadCancel: {
+      width: UI_SIZE_20 + UI_SIZE_12,
+      height: UI_SIZE_20 + UI_SIZE_12,
+      marginLeft: UI_SIZE_6,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: UI_SIZE_20,
+    },
+    uploadCancelPressed: {
+      opacity: 0.6,
     },
   })
   return styles

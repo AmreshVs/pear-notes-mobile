@@ -43,6 +43,9 @@ import {
   FontSize,
   FontWeight,
   Space,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_6,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
@@ -51,6 +54,8 @@ import {
 } from '@/constants/commonStyles'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import {
+  CameraPermissionDeniedError,
+  copyVideoToUploadCache,
   deleteAttachment,
   downloadToCache,
   pickDocuments,
@@ -60,19 +65,15 @@ import {
   shareMessage,
   takePhotoFromCamera,
   takeVideoFromCamera,
-  uploadDocumentFile,
-  uploadImage,
-  uploadRecording,
-  uploadVideo,
+  toBackendPath,
 } from '@/lib/noteAttachmentManager'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { toggleNoteLock } from '@/lib/noteLockActions'
+import { runNoteUpload } from '@/lib/noteUploadManager'
+import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
+import { useNoteUpload } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
-import {
-  formatAttachmentSize,
-  parseNoteAttachmentsAndText,
-  resolveAttachmentFilename,
-} from '@/utils/noteParser'
+import { parseNoteAttachmentsAndText, resolveAttachmentFilename } from '@/utils/noteParser'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -92,8 +93,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     keyboardHeight,
     isSharing,
     setIsSharing,
-    uploadInfo,
-    setUploadInfo,
+    loadedNoteRef,
     selectedImageSrc,
     setSelectedImageSrc,
     selectedAttachmentSrc,
@@ -113,7 +113,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     slideAnim,
     titleRef,
     noteContentRef,
-    isLoadingNoteRef,
     moveFolders,
     resetEditorState,
     closeNote,
@@ -130,6 +129,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   } = useNoteEditor()
 
   const isPreviewingRef = useRef(false)
+  const currentUpload = useNoteUpload(noteId)
 
   useNoteLockVersion()
   const lockMethod = useSelector(getLockMethod)
@@ -146,11 +146,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           resolveHyperdriveUrl(HYPERDRIVE_URL_PREFIX),
           HYPERDRIVE_URL_PREFIX,
         )
-      }
-      if (isLoadingNoteRef.current) {
-        isLoadingNoteRef.current = false
-        noteContentRef.current = finalHtml
-        return
       }
       if (finalHtml === noteContentRef.current) return
       noteContentRef.current = finalHtml
@@ -179,32 +174,43 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const processMediaAsset = useCallback(
     async (asset: ImagePickerAsset) => {
+      if (!noteId) return
+      const targetNoteId = noteId
+
       if (asset.type === 'video') {
         const displayName = asset.fileName || `video-${Date.now()}.mp4`
-        setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.preparing') })
+        const mimeType = asset.mimeType || 'video/mp4'
+        let prepared
         try {
-          const { link, size } = await uploadVideo(noteId!, asset.uri, displayName)
-          if (link) {
-            const resolvedLink = resolveHyperdriveUrl(link)
-            editorRef.current?.insertFileAttachment(
-              resolvedLink,
-              displayName,
-              size,
-              asset.mimeType || 'video/mp4',
-            )
-            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-          }
+          prepared = await copyVideoToUploadCache(asset.uri, displayName)
         } catch {
           Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedVideo'))
+          return
+        }
+        try {
+          await runNoteUpload({
+            noteId: targetNoteId,
+            path: prepared.path,
+            fileName: displayName,
+            displayName,
+            attachment: { type: 'file', fileSize: prepared.size, fileType: mimeType },
+            insertLive: (link) => {
+              editorRef.current?.insertFileAttachment(link, displayName, prepared.size, mimeType)
+              setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+            },
+            resolveLink: resolveHyperdriveUrl,
+            isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+            onError: () =>
+              Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedVideo')),
+          })
         } finally {
-          setUploadInfo(null)
+          await FileSystem.deleteAsync(prepared.cacheUri, { idempotent: true }).catch(() => {})
         }
         return
       }
 
       const { uri, width: assetWidth, height: assetHeight, fileName } = asset
       const displayName = fileName || t('noteEditor.upload.photo')
-      setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.processing') })
       const maxWidth = Dimensions.get('window').width - 40
       const maxHeight = 400
       let finalWidth = assetWidth
@@ -220,20 +226,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         finalWidth = finalWidth * ratio
       }
 
-      try {
-        setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.uploading') })
-        const { link } = await uploadImage(noteId!, uri, fileName || `image-${Date.now()}.jpg`)
-        if (link) {
-          const resolvedLink = resolveHyperdriveUrl(link)
-          editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
+      await runNoteUpload({
+        noteId: targetNoteId,
+        path: toBackendPath(uri),
+        fileName: fileName || `image-${Date.now()}.jpg`,
+        displayName,
+        attachment: { type: 'image', width: finalWidth, height: finalHeight },
+        insertLive: (link) => {
+          editorRef.current?.insertImage(link, finalWidth, finalHeight)
           setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-        }
-      } catch {
-      } finally {
-        setUploadInfo(null)
-      }
+        },
+        resolveLink: resolveHyperdriveUrl,
+        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+      })
     },
-    [noteId, resolveHyperdriveUrl, setUploadInfo, t],
+    [noteId, resolveHyperdriveUrl, t],
   )
 
   const handlePickImage = useCallback(async () => {
@@ -247,22 +254,32 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleTakePhoto = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    const asset = await takePhotoFromCamera()
-    if (asset) {
-      await processMediaAsset(asset)
+    try {
+      const asset = await takePhotoFromCamera()
+      if (asset) {
+        await processMediaAsset(asset)
+      }
+    } catch (e) {
+      if (e instanceof CameraPermissionDeniedError) showCameraPermissionAlert(t)
     }
-  }, [processMediaAsset])
+  }, [processMediaAsset, t])
 
   const handleTakeVideo = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    const asset = await takeVideoFromCamera()
-    if (asset) {
-      await processMediaAsset(asset)
+    try {
+      const asset = await takeVideoFromCamera()
+      if (asset) {
+        await processMediaAsset(asset)
+      }
+    } catch (e) {
+      if (e instanceof CameraPermissionDeniedError) showCameraPermissionAlert(t)
     }
-  }, [processMediaAsset])
+  }, [processMediaAsset, t])
 
   const handleScanDocument = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    if (!noteId) return
+    const targetNoteId = noteId
     try {
       const scannedImages = await scanDocument()
       if (!scannedImages) return
@@ -271,21 +288,23 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
       for (let i = 0; i < scannedImages.length; i++) {
         const uri = scannedImages[i]
-        const pageLabel =
+        const displayName =
           scannedImages.length > 1
             ? t('noteEditor.upload.pageCount', { count: i + 1, total: scannedImages.length })
             : t('noteEditor.upload.scannedDoc')
-        const displayName = `scan-${Date.now()}-page${i + 1}.jpg`
-        setUploadInfo({ fileName: pageLabel, status: t('noteEditor.upload.processing') })
+        const fileName = `scan-${Date.now()}-page${i + 1}.jpg`
 
+        let finalWidth = maxWidth
+        let finalHeight = maxHeight
         try {
-          const sizePromise = new Promise<{ width: number; height: number }>((resolve, reject) => {
+          const { width: imgW, height: imgH } = await new Promise<{
+            width: number
+            height: number
+          }>((resolve, reject) => {
             Image.getSize(uri, (w, h) => resolve({ width: w, height: h }), reject)
           })
-          const { width: imgW, height: imgH } = await sizePromise
-
-          let finalWidth = imgW
-          let finalHeight = imgH
+          finalWidth = imgW
+          finalHeight = imgH
           if (imgW > maxWidth) {
             const ratio = maxWidth / imgW
             finalWidth = maxWidth
@@ -296,80 +315,80 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             finalHeight = maxHeight
             finalWidth = finalWidth * ratio
           }
-
-          setUploadInfo({ fileName: pageLabel, status: t('noteEditor.upload.uploading') })
-          const { link } = await uploadDocumentFile(noteId!, uri, displayName)
-          if (link) {
-            const resolvedLink = resolveHyperdriveUrl(link)
-            editorRef.current?.insertImage(resolvedLink, finalWidth, finalHeight)
-            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-          }
         } catch {}
+
+        await runNoteUpload({
+          noteId: targetNoteId,
+          path: toBackendPath(uri),
+          fileName,
+          displayName,
+          attachment: { type: 'image', width: finalWidth, height: finalHeight },
+          insertLive: (link) => {
+            editorRef.current?.insertImage(link, finalWidth, finalHeight)
+            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+          },
+          resolveLink: resolveHyperdriveUrl,
+          isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+        })
       }
-    } catch {
-    } finally {
-      setUploadInfo(null)
-    }
-  }, [noteId, resolveHyperdriveUrl, setUploadInfo, t])
+    } catch {}
+  }, [noteId, resolveHyperdriveUrl, t])
 
   const processDocumentAsset = useCallback(
     async (asset: DocumentPickerAsset) => {
+      if (!noteId) return
+      const targetNoteId = noteId
       const { uri, name, size, mimeType } = asset
-      const displayName = name || t('noteEditor.upload.file')
-      const sizeStr = formatAttachmentSize(size)
-      setUploadInfo({
-        fileName: displayName,
-        status: sizeStr
-          ? t('noteEditor.upload.readingWithSize', { size: sizeStr })
-          : t('noteEditor.upload.reading'),
-      })
-      try {
-        setUploadInfo({ fileName: displayName, status: t('noteEditor.upload.uploading') })
-        if (isImageFile(name, mimeType)) {
-          const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
-            Image.getSize(
-              uri,
-              (w, h) => resolve({ width: w, height: h }),
-              () => resolve({ width: 0, height: 0 }),
-            )
-          })
-          if (dimensions.width > 0) {
-            await processMediaAsset({
-              type: 'image',
-              uri,
-              width: dimensions.width,
-              height: dimensions.height,
-              fileName: name,
-              mimeType,
-            } as ImagePickerAsset)
-          }
-        } else {
-          const { link } = await uploadDocumentFile(noteId!, uri, name || `file-${Date.now()}`)
-          if (link) {
-            const resolvedLink = resolveHyperdriveUrl(link)
-            const isAudio = mimeType?.startsWith('audio/')
-            if (isAudio) {
-              editorRef.current?.insertAudioAttachment(
-                resolvedLink,
-                name || t('noteEditor.upload.audio'),
-              )
-            } else {
-              editorRef.current?.insertFileAttachment(
-                resolvedLink,
-                name || t('noteEditor.upload.file'),
-                size || 0,
-                mimeType || '',
-              )
-            }
-            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-          }
+
+      if (isImageFile(name, mimeType)) {
+        const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
+          Image.getSize(
+            uri,
+            (w, h) => resolve({ width: w, height: h }),
+            () => resolve({ width: 0, height: 0 }),
+          )
+        })
+        if (dimensions.width > 0) {
+          await processMediaAsset({
+            type: 'image',
+            uri,
+            width: dimensions.width,
+            height: dimensions.height,
+            fileName: name,
+            mimeType,
+          } as ImagePickerAsset)
         }
-      } catch {
-      } finally {
-        setUploadInfo(null)
+        return
       }
+
+      const isAudio = mimeType?.startsWith('audio/')
+      const displayName = name || t('noteEditor.upload.file')
+      await runNoteUpload({
+        noteId: targetNoteId,
+        path: toBackendPath(uri),
+        fileName: name || `file-${Date.now()}`,
+        displayName,
+        attachment: isAudio
+          ? { type: 'audio' }
+          : { type: 'file', fileSize: size || 0, fileType: mimeType || '' },
+        insertLive: (link) => {
+          if (isAudio) {
+            editorRef.current?.insertAudioAttachment(link, name || t('noteEditor.upload.audio'))
+          } else {
+            editorRef.current?.insertFileAttachment(
+              link,
+              name || t('noteEditor.upload.file'),
+              size || 0,
+              mimeType || '',
+            )
+          }
+          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
+        },
+        resolveLink: resolveHyperdriveUrl,
+        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+      })
     },
-    [noteId, resolveHyperdriveUrl, processMediaAsset, setUploadInfo, t],
+    [noteId, resolveHyperdriveUrl, processMediaAsset, t],
   )
 
   const handlePickFile = useCallback(async () => {
@@ -391,21 +410,24 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleRecordingDone = useCallback(
     async (uri: string, _durationMs: number) => {
       setIsRecorderVisible(false)
+      if (!noteId) return
+      const targetNoteId = noteId
       const fileName = `recording-${Date.now()}.m4a`
-      setUploadInfo({ fileName, status: t('noteEditor.upload.uploading') })
-      try {
-        const { link } = await uploadRecording(noteId!, uri, fileName)
-        if (link) {
-          const resolvedLink = resolveHyperdriveUrl(link)
-          editorRef.current?.insertAudioAttachment(resolvedLink, fileName)
+      await runNoteUpload({
+        noteId: targetNoteId,
+        path: toBackendPath(uri),
+        fileName,
+        displayName: fileName,
+        attachment: { type: 'audio' },
+        insertLive: (link) => {
+          editorRef.current?.insertAudioAttachment(link, fileName)
           setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-        }
-      } catch {
-      } finally {
-        setUploadInfo(null)
-      }
+        },
+        resolveLink: resolveHyperdriveUrl,
+        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+      })
     },
-    [noteId, resolveHyperdriveUrl, setUploadInfo, setIsRecorderVisible, t],
+    [noteId, resolveHyperdriveUrl, setIsRecorderVisible, t],
   )
 
   const handleDeleteNote = useCallback(() => {
@@ -977,16 +999,33 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onCancel={() => setIsRecorderVisible(false)}
           />
 
-          {uploadInfo && (
+          {currentUpload && (
             <View style={[styles.uploadContainer, { bottom: toolbarBottom + 64 }]}>
               <GlassView intensity={12} borderRadius={16} style={styles.uploadToast} isInteractive>
-                <ActivityIndicator size="small" color={colors.primary} />
                 <View style={styles.uploadTextWrap}>
-                  <Text style={styles.uploadFileName} numberOfLines={1}>
-                    {uploadInfo.fileName}
-                  </Text>
-                  <Text style={styles.uploadStatus}>{uploadInfo.status}</Text>
+                  <View style={styles.uploadHeaderRow}>
+                    <Text style={styles.uploadFileName} numberOfLines={1}>
+                      {currentUpload.fileName}
+                    </Text>
+                    <Text style={styles.uploadPercent}>{`${currentUpload.progress}%`}</Text>
+                  </View>
+                  <View style={styles.uploadTrack}>
+                    <View style={[styles.uploadFill, { width: `${currentUpload.progress}%` }]} />
+                  </View>
                 </View>
+                <Pressable
+                  onPress={currentUpload.cancel}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.uploadCancel, pressed && styles.pressed]}
+                >
+                  <SymbolView
+                    name="xmark"
+                    size={16}
+                    tintColor={colors.text}
+                    weight="semibold"
+                    fallback={<View />}
+                  />
+                </Pressable>
               </GlassView>
             </View>
           )}
@@ -1184,18 +1223,42 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     uploadTextWrap: {
       flex: 1,
-      gap: 2,
+      gap: UI_SIZE_6,
+    },
+    uploadHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: UI_SIZE_12,
     },
     uploadFileName: {
+      flex: 1,
       fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.text,
     },
-    uploadStatus: {
+    uploadPercent: {
       fontSize: FontSize.caption,
-      fontFamily: FontFamily.regular,
+      fontFamily: FontFamily.semiBold,
       color: theme.colors.textSecondary,
+    },
+    uploadTrack: {
+      height: UI_SIZE_4,
+      borderRadius: UI_SIZE_2,
+      backgroundColor: theme.colors.borderSecondary,
+      overflow: 'hidden',
+    },
+    uploadFill: {
+      height: '100%',
+      borderRadius: UI_SIZE_2,
+      backgroundColor: theme.colors.primary,
+    },
+    uploadCancel: {
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     flex1: {
       flex: 1,

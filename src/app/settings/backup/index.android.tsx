@@ -69,12 +69,15 @@ export default function AndroidBackupScreen() {
     isExporting,
     showProgressModal,
     isError,
+    isExportDone,
+    isImportDone,
     errorMessage,
     progressStatus,
     isActive,
     handleCreateBackup,
     handleCancelExport,
     handleCancelImport,
+    handleDismissProgress,
     handleRestoreComplete,
     handleRestoreData,
   } = useBackupScreen()
@@ -170,7 +173,7 @@ export default function AndroidBackupScreen() {
           <View style={styles.progressCard}>
             <View style={styles.progressModalInner}>
               <View style={styles.progressIconWrap}>
-                {!isError && importStatus.step !== 'done' && (
+                {!isError && !isImportDone && !isExportDone && (
                   <ActivityIndicator
                     size="large"
                     color={c.primary}
@@ -178,7 +181,7 @@ export default function AndroidBackupScreen() {
                   />
                 )}
                 <View style={styles.progressIconInner}>
-                  {importStatus.step === 'done' ? (
+                  {isImportDone || isExportDone ? (
                     <MaterialCommunityIcons name="check" size={UI_ICON_SIZE_24} color={c.primary} />
                   ) : (
                     <MaterialCommunityIcons
@@ -192,20 +195,24 @@ export default function AndroidBackupScreen() {
 
               <Text style={styles.progressTitle}>
                 {isError
-                  ? t('backup.progress.creatingTitle')
-                  : importStatus.step === 'done'
+                  ? t('backup.progress.errorTitle')
+                  : isImportDone
                     ? t('backup.restoreComplete')
-                    : progressTitle}
+                    : isExportDone
+                      ? t('backup.progress.completeTitle')
+                      : progressTitle}
               </Text>
               <Text style={styles.progressDesc}>
                 {isError
                   ? getBackupErrorMessage(errorMessage, t)
-                  : importStatus.step === 'done'
+                  : isImportDone
                     ? t('backup.restoreCompleteDesc')
-                    : `${progressStatus.message}${progressStatus.progress > 0 ? `  ${progressStatus.progress}%` : ''}`}
+                    : isExportDone
+                      ? t('backup.progress.completeDesc')
+                      : `${progressStatus.message}${progressStatus.progress > 0 ? `  ${progressStatus.progress}%` : ''}`}
               </Text>
 
-              {!isError && importStatus.step !== 'done' && (
+              {!isError && !isImportDone && !isExportDone && (
                 <View style={styles.progressBarTrack}>
                   <View
                     style={[styles.progressBarFill, { width: `${progressStatus.progress}%` }]}
@@ -213,21 +220,26 @@ export default function AndroidBackupScreen() {
                 </View>
               )}
 
-              {importStatus.step === 'done' ? (
+              {isError ? (
+                <Pressable
+                  onPress={handleDismissProgress}
+                  style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+                >
+                  <Text style={styles.cancelBtnText}>{t('backup.progress.dismiss')}</Text>
+                </Pressable>
+              ) : isImportDone ? (
                 <Pressable
                   onPress={handleRestoreComplete}
                   style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
                 >
                   <Text style={styles.cancelBtnText}>{t('pairing.overlay.okay')}</Text>
                 </Pressable>
-              ) : (
+              ) : isExportDone ? null : (
                 <Pressable
                   onPress={isExporting ? handleCancelExport : handleCancelImport}
                   style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
                 >
-                  <Text style={styles.cancelBtnText}>
-                    {isError ? t('backup.progress.dismiss') : t('backup.progress.cancel')}
-                  </Text>
+                  <Text style={styles.cancelBtnText}>{t('backup.progress.cancel')}</Text>
                 </Pressable>
               )}
             </View>

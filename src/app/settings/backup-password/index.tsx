@@ -38,7 +38,7 @@ import {
   UI_SIZE_8,
 } from '@/constants/commonStyles'
 import { getTempBackupFilePath } from '@/lib/backupFileManager'
-import { takePendingImportBuffer } from '@/lib/backupPasswordFlow'
+import { takePendingImportPath } from '@/lib/backupPasswordFlow'
 import { getPasswordStrength, PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
 export default function BackupPasswordScreen() {
@@ -86,8 +86,8 @@ export default function BackupPasswordScreen() {
       router.back()
       return
     }
-    const buffer = takePendingImportBuffer()
-    if (buffer) {
+    const filePath = takePendingImportPath()
+    if (filePath) {
       dispatch(
         setImportStatus({
           step: 'decrypting',
@@ -95,7 +95,7 @@ export default function BackupPasswordScreen() {
           message: t('backup.progress.restoringDesc'),
         }),
       )
-      dispatch(startImportBackup({ buffer, password } as any))
+      dispatch(startImportBackup({ filePath, password } as any))
     }
     router.back()
   }, [canSubmit, isCreate, password, dispatch, t])

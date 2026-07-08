@@ -58,12 +58,15 @@ export default function BackupScreen() {
     lastBackupDate,
     showProgressModal,
     isError,
+    isExportDone,
+    isImportDone,
     errorMessage,
     progressStatus,
     isActive,
     handleCreateBackup,
     handleCancelExport,
     handleCancelImport,
+    handleDismissProgress,
     handleRunInBackground,
     handleRestoreComplete,
     handleRestoreData,
@@ -164,7 +167,7 @@ export default function BackupScreen() {
           <RNView style={[commonStyles.modalCard, styles.progressCard]}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.progressIconWrap}>
-                {!isError && importStatus.step !== 'done' && (
+                {!isError && !isImportDone && !isExportDone && (
                   <ActivityIndicator
                     style={styles.progressSpinner}
                     size={UI_SIZE_72}
@@ -172,7 +175,7 @@ export default function BackupScreen() {
                   />
                 )}
                 <RNView style={styles.progressIconInner}>
-                  {importStatus.step === 'done' ? (
+                  {isImportDone || isExportDone ? (
                     <Check size={UI_ICON_SIZE_28} color={colors.primary} strokeWidth={2} />
                   ) : (
                     <CloudUpload size={UI_ICON_SIZE_28} color={colors.primary} strokeWidth={1.5} />
@@ -183,45 +186,46 @@ export default function BackupScreen() {
               <RNText style={styles.progressTitle}>
                 {isError
                   ? t('backup.progress.errorTitle')
-                  : importStatus.step === 'done'
+                  : isImportDone
                     ? t('backup.progress.restoredTitle')
-                    : progressTitle}
+                    : isExportDone
+                      ? t('backup.progress.completeTitle')
+                      : progressTitle}
               </RNText>
 
               <RNText style={styles.progressDesc}>
                 {isError
                   ? getBackupErrorMessage(errorMessage, t)
-                  : importStatus.step === 'done'
+                  : isImportDone
                     ? t('backup.progress.restoredDesc')
-                    : progressStatus.message}
+                    : isExportDone
+                      ? t('backup.progress.completeDesc')
+                      : `${progressStatus.message}${progressStatus.progress > 0 ? `  ${progressStatus.progress}%` : ''}`}
               </RNText>
 
-              {!isError && progressStatus.total > 0 && importStatus.step !== 'done' && (
+              {!isError && !isImportDone && !isExportDone && (
                 <RNView style={styles.progressBarTrack}>
                   <RNView
-                    style={[
-                      styles.progressBarFill,
-                      { width: `${(progressStatus.current / progressStatus.total) * 100}%` },
-                    ]}
+                    style={[styles.progressBarFill, { width: `${progressStatus.progress}%` }]}
                   />
                 </RNView>
               )}
 
               {isError ? (
                 <Pressable
-                  onPress={isExporting ? handleCancelExport : handleCancelImport}
+                  onPress={handleDismissProgress}
                   style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
                 >
                   <RNText style={styles.cancelBtnText}>{t('common.close')}</RNText>
                 </Pressable>
-              ) : importStatus.step === 'done' ? (
+              ) : isImportDone ? (
                 <Pressable
                   onPress={handleRestoreComplete}
                   style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
                 >
                   <RNText style={styles.cancelBtnText}>{t('common.close')}</RNText>
                 </Pressable>
-              ) : (
+              ) : isExportDone ? null : (
                 <RNView style={styles.modalActions}>
                   <Pressable
                     onPress={handleRunInBackground}

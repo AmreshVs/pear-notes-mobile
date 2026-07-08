@@ -1,6 +1,7 @@
 module.exports = {
   extends: 'universe/native',
   plugins: ['import', 'react-native'],
+  ignorePatterns: ['editor-bundle/**', 'src/utils/tiptap-editor-bundle.ts'],
   rules: {
     'import/order': [
       'error',

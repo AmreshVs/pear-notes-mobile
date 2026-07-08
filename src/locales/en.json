@@ -204,6 +204,18 @@
     "untitled": "Untitled",
     "noAdditionalText": "No additional text",
     "lockedSummary": "Authenticate to view this note",
+    "uploading": "Uploading… {{progress}}%",
+    "attachment": {
+      "image_one": "Photo",
+      "image_other": "{{count}} Photos",
+      "video_one": "Video",
+      "video_other": "{{count}} Videos",
+      "audio_one": "Voice recording",
+      "audio_other": "{{count}} Voice recordings",
+      "file_one": "Attachment",
+      "file_other": "{{count}} Attachments",
+      "mixed": "{{count}} Attachments"
+    },
     "actions": {
       "moveTo": "Move to",
       "moveToFolder": "Move to Folder",
@@ -388,6 +400,13 @@
     "close": "Close",
     "ok": "OK"
   },
+  "permissions": {
+    "openSettings": "Open Settings",
+    "camera": {
+      "title": "Camera Access Needed",
+      "message": "Pear Notes needs camera access to take photos and videos. Enable it in Settings."
+    }
+  },
   "backup": {
     "title": "Backup / Restore",
     "subtitle": "Export or import your data",
@@ -396,7 +415,17 @@
       "description": "Backing up your data ensures you never lose your notes and files. All backups are encrypted with your private key and can be safely restored to any of your devices."
     },
     "createBackup": "Create Backup",
+    "lockedAuthReason": "Authenticate to back up your locked notes",
     "restoreData": "Restore Data",
+    "restoreTitle": "Restoring Data",
+    "runInBackground": "Run in Background",
+    "bannerReadyTitle": "Backup Ready",
+    "bannerReadyAction": "Press here to save",
+    "notificationPermissionTitle": "Notification Permission",
+    "notificationPermissionDesc": "Pear Notes needs notification permission to show backup progress while it runs in the background.",
+    "notificationPermissionAskMeLater": "Ask Me Later",
+    "notificationPermissionCancel": "Cancel",
+    "notificationPermissionOK": "OK",
     "lastBackup": "Last Backup",
     "noBackup": "Never",
     "notesSize": "Notes Size",
@@ -426,6 +455,8 @@
       "errorTitle": "Something went wrong",
       "restoredTitle": "Restore Complete",
       "restoredDesc": "Your notes and data have been restored successfully.",
+      "completeTitle": "Backup Ready",
+      "completeDesc": "Opening the share sheet to save your backup...",
       "cancel": "Cancel",
       "dismiss": "Dismiss"
     },
@@ -492,6 +523,13 @@
     "notesData": "Notes Data",
     "diskFootprint": "On-disk Footprint",
     "reclaimable": "Reclaimable",
+    "reclaimableDesc": "Deleted attachments still on disk",
+    "reclaimNow": "Reclaim now",
+    "reclaiming": "Reclaiming…",
+    "compact": "Compact Storage",
+    "compactDesc": "Free disk space held by deleted attachments",
+    "compactNow": "Compact",
+    "compacting": "Compacting…",
     "dangerZone": "DANGER ZONE",
     "clearAllData": "Clear All Data",
     "clearAllDataDesc": "Permanently deletes all notes, folders, settings, and media.",

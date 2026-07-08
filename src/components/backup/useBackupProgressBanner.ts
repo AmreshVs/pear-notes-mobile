@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import { useSelector } from 'react-redux'
 
+import { clearImportCacheFile } from '@/lib/backupFileManager'
+
 const isIOS = Platform.OS === 'ios'
 
 export function useBackupProgressBanner() {
@@ -18,10 +20,11 @@ export function useBackupProgressBanner() {
   const isExporting =
     exportStatus.step !== 'idle' && exportStatus.step !== 'done' && exportStatus.step !== 'error'
   const isImporting = importStatus.step !== 'idle' && importStatus.step !== 'error'
+  const isExportComplete = exportStatus.step === 'done'
 
   const isActive = isExporting || isImporting
   const isBackupScreen = pathname === '/settings/backup'
-  const isVisible = isActive && !isBackupScreen
+  const isVisible = (isActive || isExportComplete) && !isBackupScreen
 
   const progressStatus = isExporting ? exportStatus : importStatus
   const message =
@@ -30,6 +33,17 @@ export function useBackupProgressBanner() {
 
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isKeepAwake, setIsKeepAwake] = useState(isIOS)
+
+  useEffect(() => {
+    if (!isActive) setIsCollapsed(false)
+  }, [isActive])
+
+  useEffect(() => {
+    if (importStatus.step === 'done' || importStatus.step === 'error') {
+      clearImportCacheFile()
+    }
+  }, [importStatus.step])
+
   useEffect(() => {
     if (isKeepAwake && isActive) {
       activateKeepAwakeAsync('backup-keep-awake')
@@ -60,6 +74,7 @@ export function useBackupProgressBanner() {
   return {
     t,
     isExporting,
+    isExportComplete,
     progressStatus,
     message,
     isCollapsed,

@@ -1,9 +1,11 @@
 import {
   deleteNoteMedia,
+  getIsReclaiming,
   getNotesStorageInfo,
   getReclaimableBytes,
   getTotalBlobBytes,
   getTotalOnDiskBytes,
+  reclaimStorage,
   selectStorageByKind,
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
@@ -20,6 +22,7 @@ function useStorageScreen() {
   const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
   const totalOnDiskBytes = (useSelector(getTotalOnDiskBytes) as number) ?? 0
   const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
+  const isReclaiming = (useSelector(getIsReclaiming) as boolean) ?? false
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
 
@@ -35,6 +38,10 @@ function useStorageScreen() {
     },
     [dispatch],
   )
+
+  const handleReclaim = useCallback(() => {
+    dispatch(reclaimStorage())
+  }, [dispatch])
 
   const handleResetPress = useCallback(() => {
     setResetSheetVisible(true)
@@ -55,10 +62,12 @@ function useStorageScreen() {
     totalBlobBytes,
     totalOnDiskBytes,
     reclaimableBytes,
+    isReclaiming,
     notesStorageInfo,
     buckets,
     resetSheetVisible,
     handleDeleteMedia,
+    handleReclaim,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,

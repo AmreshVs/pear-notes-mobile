@@ -1177,17 +1177,21 @@ window.editorBridge = {
 
       case 'deleteImage': {
         const { src: srcToDelete } = msg
+        let deleted = false
         editor.state.doc.descendants((node, pos) => {
           if (node.type.name === 'image' && node.attrs.src === srcToDelete) {
             editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize))
+            deleted = true
             return false
           }
         })
+        if (deleted) flushContentChange(editor.getHTML(), editor.getText())
         break
       }
 
       case 'deleteAttachment': {
         const { url: urlToDelete } = msg
+        let deleted = false
         editor.state.doc.descendants((node, pos) => {
           if (
             (node.type.name === 'fileAttachment' || node.type.name === 'audioAttachment') &&
@@ -1196,9 +1200,11 @@ window.editorBridge = {
               node.attrs.audioData === urlToDelete)
           ) {
             editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize))
+            deleted = true
             return false
           }
         })
+        if (deleted) flushContentChange(editor.getHTML(), editor.getText())
         break
       }
 

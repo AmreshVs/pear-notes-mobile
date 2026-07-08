@@ -2,9 +2,9 @@ import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { memo, useCallback, useState } from 'react'
+import { type ComponentProps, memo, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Image, Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
   FadeInDown,
@@ -36,7 +36,24 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
-import { getFirstImageUrl, getPreview, isChecklistNote } from '@/utils/noteUtils'
+import { useNoteUpload } from '@/lib/uploadRegistry'
+import {
+  type AttachmentKind,
+  getAttachmentInfo,
+  getFirstImageUrl,
+  getPreview,
+  isChecklistNote,
+} from '@/utils/noteUtils'
+
+type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name']
+
+const ATTACHMENT_ICONS: Record<AttachmentKind, MaterialIconName> = {
+  image: 'image-outline',
+  video: 'video-outline',
+  audio: 'microphone-outline',
+  file: 'paperclip',
+  mixed: 'paperclip',
+}
 
 type NoteRowProps = {
   note: any
@@ -60,15 +77,17 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const c = md3.colors
 
   useNoteLockVersion()
+  const upload = useNoteUpload(note.key)
   const locked = note.value?.locked === true
   const pinned = note.value?.pinned === true
   const masked = locked && !isNoteUnlocked(note.key)
 
   const title = note.value?.title || t('noteCard.untitled')
   const html = note.value?.note || ''
-  const preview = masked
-    ? t('noteCard.lockedSummary')
-    : getPreview(html, t('noteCard.noAdditionalText'))
+  const previewText = masked ? t('noteCard.lockedSummary') : getPreview(html)
+  const attachment = masked ? null : getAttachmentInfo(html)
+  const showAttachment = !previewText && !!attachment
+  const displayPreview = previewText || t('noteCard.noAdditionalText')
   const rawImageUrl = getFirstImageUrl(html)
   const hasChecklist = !masked && isChecklistNote(html)
   const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
@@ -131,7 +150,19 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
             </Text>
           </View>
 
-          {hasChecklist && preview ? (
+          {showAttachment && attachment ? (
+            <View style={styles.checklistRow}>
+              <MaterialCommunityIcons
+                name={ATTACHMENT_ICONS[attachment.kind]}
+                size={UI_ICON_SIZE_13}
+                color={c.onSurfaceVariant}
+                style={styles.checkboxIcon}
+              />
+              <Text style={styles.preview} numberOfLines={1}>
+                {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
+              </Text>
+            </View>
+          ) : hasChecklist && displayPreview ? (
             <View style={styles.checklistRow}>
               <MaterialCommunityIcons
                 name="checkbox-blank-outline"
@@ -140,13 +171,22 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                 style={styles.checkboxIcon}
               />
               <Text style={styles.preview} numberOfLines={1}>
-                {preview}
+                {displayPreview}
               </Text>
             </View>
           ) : (
             <Text style={styles.preview} numberOfLines={1}>
-              {preview}
+              {displayPreview}
             </Text>
+          )}
+
+          {upload && (
+            <View style={styles.uploadRow}>
+              <ActivityIndicator size="small" color={c.primary} />
+              <Text style={styles.uploadLabel} numberOfLines={1}>
+                {t('noteCard.uploading', { progress: upload.progress })}
+              </Text>
+            </View>
           )}
 
           <View style={styles.meta}>
@@ -227,6 +267,18 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     checkboxIcon: {
       marginRight: UI_SIZE_6,
       marginTop: 1,
+    },
+    uploadRow: {
+      ...commonStyles.row,
+      gap: UI_SIZE_6,
+      marginBottom: UI_SIZE_10,
+    },
+    uploadLabel: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.primary,
     },
     meta: {
       ...commonStyles.row,

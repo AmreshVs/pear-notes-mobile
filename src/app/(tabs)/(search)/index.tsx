@@ -12,8 +12,7 @@ import { Text, View, createThemedStylesheet, useTheme } from '@/components/Theme
 import { Space, commonStyles } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
-
-const PREVIEW_LIMIT = 100
+import { getAttachmentInfo, getFirstImageUrl, getPreview } from '@/utils/noteUtils'
 
 export default function SearchScreen() {
   const { t } = useTranslation()
@@ -34,17 +33,6 @@ export default function SearchScreen() {
     [dispatch, openNote],
   )
 
-  const getPreviewText = useCallback(
-    (html: string) => {
-      if (!html) return t('folderView.noAdditionalText')
-      return html
-        .replace(/<[^>]*>?/gm, '')
-        .substring(0, PREVIEW_LIMIT)
-        .trim()
-    },
-    [t],
-  )
-
   const renderNoteItem = useCallback(
     (note: any, index: number) => {
       const handlePress = () => handleSelectNote(note.key)
@@ -52,7 +40,7 @@ export default function SearchScreen() {
         new Date(note.value?.updatedAt || note.value?.createdAt || 0),
         'MMM d',
       )
-      const summary = getPreviewText(note.value?.note)
+      const html = note.value?.note
 
       return (
         <NoteCard
@@ -60,7 +48,9 @@ export default function SearchScreen() {
           id={note.key}
           title={note.value?.title}
           date={formattedDate}
-          summary={summary}
+          summary={getPreview(html)}
+          attachment={getAttachmentInfo(html)}
+          rawImageUrl={getFirstImageUrl(html)}
           folderName={note.value?.folderName}
           selected={false}
           isLast={index === notes.length - 1}
@@ -71,7 +61,7 @@ export default function SearchScreen() {
         />
       )
     },
-    [notes.length, getPreviewText, handleSelectNote],
+    [notes.length, handleSelectNote],
   )
 
   return (

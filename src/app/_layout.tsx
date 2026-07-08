@@ -33,6 +33,7 @@ import { PairingOverlay } from '@/components/PairingOverlay'
 import { createThemedStylesheet, useResolvedColorScheme } from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
+import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
@@ -134,6 +135,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useEffect(() => {
     initWorklet()
   }, [initWorklet])
+
+  useEffect(() => {
+    sweepBackupCache()
+  }, [])
 
   const encryptionKey = receiverStatus?.encryptionKey
   useEffect(() => {

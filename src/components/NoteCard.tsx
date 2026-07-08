@@ -1,9 +1,19 @@
 import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { Folder, Lock, LockOpen, Pin } from 'lucide-react-native'
+import {
+  Film,
+  Folder,
+  Image as ImageIcon,
+  Lock,
+  LockOpen,
+  Mic,
+  Paperclip,
+  Pin,
+} from 'lucide-react-native'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  ActivityIndicator,
   Image,
   Platform,
   Pressable,
@@ -28,8 +38,18 @@ import {
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
+import { useNoteUpload } from '@/lib/uploadRegistry'
+import type { AttachmentInfo } from '@/utils/noteUtils'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
+
+const ATTACHMENT_ICONS = {
+  image: ImageIcon,
+  video: Film,
+  audio: Mic,
+  file: Paperclip,
+  mixed: Paperclip,
+} as const
 
 interface MoveFolder {
   id: string
@@ -41,6 +61,7 @@ interface NoteCardProps {
   title: string
   date: string
   summary: string
+  attachment?: AttachmentInfo | null
   rawImageUrl?: string | null
   folderName?: string
   selected?: boolean
@@ -62,6 +83,7 @@ export const NoteCard = memo(function NoteCard({
   title,
   date,
   summary,
+  attachment,
   rawImageUrl,
   folderName,
   selected,
@@ -83,6 +105,7 @@ export const NoteCard = memo(function NoteCard({
   const lockIconColor = colors.primary
   const [thumbError, setThumbError] = useState(false)
   useNoteLockVersion()
+  const upload = useNoteUpload(id)
   const masked = locked === true && !isNoteUnlocked(id)
 
   const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
@@ -117,6 +140,8 @@ export const NoteCard = memo(function NoteCard({
 
   const showThumbnail = !!imageUrl && !thumbError && !masked
   const displayTitle = title || t('noteCard.untitled')
+  const showAttachment = !masked && !summary && !!attachment
+  const AttachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
   const displaySummary = masked
     ? t('noteCard.lockedSummary')
     : summary || t('noteCard.noAdditionalText')
@@ -143,9 +168,27 @@ export const NoteCard = memo(function NoteCard({
               </Text>
             </RNView>
 
-            <Text variant="caption" numberOfLines={2} style={styles.summary}>
-              {displaySummary}
-            </Text>
+            {showAttachment && AttachmentIcon ? (
+              <RNView style={styles.attachmentRow}>
+                <AttachmentIcon size={UI_ICON_SIZE_12} color={colors.textSecondary} />
+                <Text variant="caption" numberOfLines={1} style={styles.attachmentLabel}>
+                  {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
+                </Text>
+              </RNView>
+            ) : (
+              <Text variant="caption" numberOfLines={2} style={styles.summary}>
+                {displaySummary}
+              </Text>
+            )}
+
+            {upload && (
+              <RNView style={styles.uploadRow}>
+                <ActivityIndicator size="small" color={colors.primary} />
+                <Text variant="caption" numberOfLines={1} style={styles.uploadLabel}>
+                  {t('noteCard.uploading', { progress: upload.progress })}
+                </Text>
+              </RNView>
+            )}
 
             <RNView style={styles.metadata}>
               {folderName && (
@@ -310,9 +353,33 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xs,
       color: theme.colors.textSecondary,
     },
+    attachmentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+      marginBottom: Space.xs,
+    },
+    attachmentLabel: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.body,
+      opacity: 0.8,
+      color: theme.colors.textSecondary,
+    },
     metadata: {
       flexDirection: 'row',
       alignItems: 'center',
+    },
+    uploadRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+      marginBottom: Space.xs,
+    },
+    uploadLabel: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      color: theme.colors.primary,
     },
     folderTag: {
       flexDirection: 'row',

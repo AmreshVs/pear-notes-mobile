@@ -1,5 +1,5 @@
 import { usePathname } from 'expo-router'
-import { ChevronDown, Moon, Sun } from 'lucide-react-native'
+import { Check, ChevronDown, Coffee } from 'lucide-react-native'
 import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native'
 import Animated, {
   interpolate,
@@ -31,11 +31,11 @@ export function BackupProgressBanner() {
   const {
     t,
     isExporting,
+    isExportComplete,
     progressStatus,
     message,
     isCollapsed,
     isKeepAwake,
-    isActive,
     isVisible,
     isIOS,
     handlePress,
@@ -78,48 +78,66 @@ export function BackupProgressBanner() {
   return (
     <Animated.View
       style={[styles.container, containerStyle]}
-      pointerEvents={isActive ? 'box-none' : 'none'}
+      pointerEvents={isVisible ? 'box-none' : 'none'}
     >
       <Pressable
         onPress={handlePress}
         style={({ pressed }) => [
           styles.banner,
-          isCollapsed && styles.bannerCollapsed,
+          isCollapsed && !isExportComplete && styles.bannerCollapsed,
           pressed && commonStyles.pressed,
         ]}
       >
-        <ActivityIndicator size="small" color={theme.colors.primary} />
+        {isExportComplete ? (
+          <Check size={UI_ICON_SIZE_20} color={theme.colors.primary} />
+        ) : isCollapsed && progressStatus.progress > 0 ? (
+          <Text style={styles.collapsedPct}>{progressStatus.progress}%</Text>
+        ) : (
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        )}
 
-        <Animated.View style={[styles.textContainer, textContainerStyle]}>
-          <Text style={styles.title} numberOfLines={1}>
-            {isExporting ? t('backup.title') : t('backup.restoreTitle')}
-          </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
-            {message} {progressStatus.progress > 0 ? `(${progressStatus.progress}%)` : ''}
-          </Text>
-        </Animated.View>
+        {isExportComplete ? (
+          <Animated.View style={styles.textContainer}>
+            <Text style={styles.title} numberOfLines={1}>
+              {t('backup.bannerReadyTitle')}
+            </Text>
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {t('backup.bannerReadyAction')}
+            </Text>
+          </Animated.View>
+        ) : (
+          <>
+            <Animated.View style={[styles.textContainer, textContainerStyle]}>
+              <Text style={styles.title} numberOfLines={1}>
+                {isExporting ? t('backup.title') : t('backup.restoreTitle')}
+              </Text>
+              <Text style={styles.subtitle} numberOfLines={1}>
+                {message} {progressStatus.progress > 0 ? `(${progressStatus.progress}%)` : ''}
+              </Text>
+            </Animated.View>
 
-        <Animated.View style={[actionsContainerStyle, styles.actionsContainer]}>
-          {isIOS && (
-            <Pressable
-              onPress={toggleKeepAwake}
-              style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
-            >
-              {isKeepAwake ? (
-                <Sun size={UI_ICON_SIZE_20} color={theme.colors.primary} />
-              ) : (
-                <Moon size={UI_ICON_SIZE_20} color={theme.colors.textSecondary} />
+            <Animated.View style={[actionsContainerStyle, styles.actionsContainer]}>
+              {isIOS && (
+                <Pressable
+                  onPress={toggleKeepAwake}
+                  style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
+                >
+                  <Coffee
+                    size={UI_ICON_SIZE_20}
+                    color={isKeepAwake ? theme.colors.primary : theme.colors.textSecondary}
+                  />
+                </Pressable>
               )}
-            </Pressable>
-          )}
 
-          <Pressable
-            onPress={toggleCollapse}
-            style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
-          >
-            <ChevronDown size={UI_ICON_SIZE_20} color={theme.colors.textSecondary} />
-          </Pressable>
-        </Animated.View>
+              <Pressable
+                onPress={toggleCollapse}
+                style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
+              >
+                <ChevronDown size={UI_ICON_SIZE_20} color={theme.colors.textSecondary} />
+              </Pressable>
+            </Animated.View>
+          </>
+        )}
       </Pressable>
     </Animated.View>
   )
@@ -155,6 +173,11 @@ const useStyles = createThemedStylesheetWithHooks(
         width: 50,
         height: 50,
         borderRadius: 25,
+      },
+      collapsedPct: {
+        fontSize: FontSize.caption,
+        fontWeight: FontWeight.bold,
+        color: theme.colors.primary,
       },
       textContainer: {
         marginLeft: Space.md,

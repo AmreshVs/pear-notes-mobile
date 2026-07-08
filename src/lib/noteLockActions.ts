@@ -13,6 +13,22 @@ type ToggleArgs = {
   lockMethod?: string
 }
 
+export async function authenticateWithLockMethod(
+  reason: string,
+  lockMethod: string = 'biometric',
+): Promise<boolean> {
+  const usePassword = lockMethod === 'password'
+  if (!usePassword) {
+    const supported = await isDeviceAuthSupported()
+    if (!supported) {
+      showLockUnavailable()
+      return false
+    }
+    return authenticate(reason)
+  }
+  return requestNoteLockPassword()
+}
+
 export async function toggleNoteLock({
   key,
   currentlyLocked,
@@ -23,14 +39,7 @@ export async function toggleNoteLock({
   if (!key) return
   const usePassword = lockMethod === 'password'
   if (currentlyLocked) {
-    if (!usePassword) {
-      const supported = await isDeviceAuthSupported()
-      if (!supported) {
-        showLockUnavailable()
-        return
-      }
-    }
-    const ok = usePassword ? await requestNoteLockPassword() : await authenticate(reason)
+    const ok = await authenticateWithLockMethod(reason, lockMethod)
     if (!ok) return
     dispatch(updateNote({ key, locked: false } as any))
     relockNote(key)

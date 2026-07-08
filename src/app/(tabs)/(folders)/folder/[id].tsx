@@ -42,7 +42,7 @@ import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { buildNoteSections } from '@/utils/noteSections'
-import { getFirstImageUrl, getPreview } from '@/utils/noteUtils'
+import { getAttachmentInfo, getFirstImageUrl, getPreview } from '@/utils/noteUtils'
 
 export default function FolderNotesScreen() {
   const { height } = useWindowDimensions()
@@ -234,7 +234,8 @@ export default function FolderNotesScreen() {
           id={note.key}
           title={note.value?.title}
           date={formatDate(note.value?.updatedAt || note.value?.createdAt)}
-          summary={getPreview(note.value?.note, t('folderView.noAdditionalText'))}
+          summary={getPreview(note.value?.note)}
+          attachment={getAttachmentInfo(note.value?.note)}
           rawImageUrl={getFirstImageUrl(note.value?.note)}
           folderName={folderName}
           selected={false}

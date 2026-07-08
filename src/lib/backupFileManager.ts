@@ -14,29 +14,83 @@ export function getTempBackupFilePath(): string {
   return cacheDir.replace('file://', '') + 'temp_export.pnbk'
 }
 
-export async function saveBackupToDevice(exportFilePath: string): Promise<void> {
+export function getBackupFileName(): string {
   const date = new Date().toISOString().split('T')[0]
-  const filename = `pear-notes-${date}.pnbk`
+  return `pear-notes-${date}.pnbk`
+}
 
-  if (Platform.OS === 'ios') {
-    const fileUri = (FileSystemLegacy.cacheDirectory ?? '') + filename
-    const srcFile = new File(exportFilePath)
-    const destFile = new File(fileUri)
-    srcFile.copy(destFile)
-    await Share.share({ url: fileUri })
-  } else {
-    const permissions =
-      await FileSystemLegacy.StorageAccessFramework.requestDirectoryPermissionsAsync()
-    if (permissions.granted) {
-      const uri = await FileSystemLegacy.StorageAccessFramework.createFileAsync(
-        permissions.directoryUri,
-        filename,
-        'application/octet-stream',
-      )
-      const srcFile = new File(exportFilePath)
-      const destFile = new File(uri)
-      srcFile.copy(destFile)
+function renameBackupInCache(exportFilePath: string): string {
+  const fileUri = (FileSystemLegacy.cacheDirectory ?? '') + getBackupFileName()
+  const destFile = new File(fileUri)
+  if (destFile.exists) destFile.delete()
+  new File(exportFilePath).copy(destFile)
+  return fileUri
+}
+
+function deleteFileIfExists(path: string): void {
+  try {
+    const file = new File(path)
+    if (file.exists) file.delete()
+  } catch {}
+}
+
+export function clearBackupExportCache(exportFilePath: string): void {
+  deleteFileIfExists(exportFilePath)
+  deleteFileIfExists((FileSystemLegacy.cacheDirectory ?? '') + getBackupFileName())
+}
+
+export async function sweepBackupCache(): Promise<void> {
+  const cacheDir = FileSystemLegacy.cacheDirectory ?? ''
+  if (!cacheDir) return
+  try {
+    const entries = await FileSystemLegacy.readDirectoryAsync(cacheDir)
+    await Promise.all(
+      entries
+        .filter(
+          (name) =>
+            name === 'temp_export.pnbk' ||
+            (name.startsWith('pear-notes-') && name.endsWith('.pnbk')),
+        )
+        .map((name) => FileSystemLegacy.deleteAsync(cacheDir + name, { idempotent: true })),
+    )
+    const pickerDir = cacheDir + 'DocumentPicker'
+    const info = await FileSystemLegacy.getInfoAsync(pickerDir)
+    if (info.exists) await FileSystemLegacy.deleteAsync(pickerDir, { idempotent: true })
+  } catch {}
+}
+
+let lastImportCachePath: string | null = null
+
+export function rememberImportCacheFile(path: string): void {
+  lastImportCachePath = path
+}
+
+export function clearImportCacheFile(): void {
+  if (!lastImportCachePath) return
+  deleteFileIfExists(lastImportCachePath)
+  lastImportCachePath = null
+}
+
+export async function saveBackupToDevice(exportFilePath: string): Promise<void> {
+  try {
+    if (Platform.OS === 'ios') {
+      await Share.share({ url: renameBackupInCache(exportFilePath) })
+    } else {
+      const permissions =
+        await FileSystemLegacy.StorageAccessFramework.requestDirectoryPermissionsAsync()
+      if (permissions.granted) {
+        const uri = await FileSystemLegacy.StorageAccessFramework.createFileAsync(
+          permissions.directoryUri,
+          getBackupFileName(),
+          'application/octet-stream',
+        )
+        const srcFile = new File(exportFilePath)
+        const destFile = new File(uri)
+        srcFile.copy(destFile)
+      }
     }
+  } finally {
+    clearBackupExportCache(exportFilePath)
   }
 }
 
@@ -44,10 +98,14 @@ export async function saveBackupWithShare(
   exportFilePath: string,
   shareMessage?: string,
 ): Promise<void> {
-  if (Platform.OS === 'ios') {
-    await Share.share({ url: exportFilePath })
-  } else {
-    await Share.share({ message: shareMessage, url: exportFilePath })
+  try {
+    if (Platform.OS === 'ios') {
+      await Share.share({ url: renameBackupInCache(exportFilePath) })
+    } else {
+      await Share.share({ message: shareMessage, url: exportFilePath })
+    }
+  } finally {
+    clearBackupExportCache(exportFilePath)
   }
 }
 
@@ -70,7 +128,6 @@ export async function pickBackupFile(): Promise<PickedBackupFile | null> {
   return { uri: asset.uri, name }
 }
 
-export async function readBackupFile(uri: string): Promise<Uint8Array> {
-  const file = new File(uri)
-  return await file.bytes()
+export function backupUriToPath(uri: string): string {
+  return decodeURIComponent(uri.replace('file://', ''))
 }

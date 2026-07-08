@@ -1,11 +1,11 @@
-let pendingImportBuffer: Uint8Array | null = null
+let pendingImportPath: string | null = null
 
-export function setPendingImportBuffer(buffer: Uint8Array): void {
-  pendingImportBuffer = buffer
+export function setPendingImportPath(path: string): void {
+  pendingImportPath = path
 }
 
-export function takePendingImportBuffer(): Uint8Array | null {
-  const buffer = pendingImportBuffer
-  pendingImportBuffer = null
-  return buffer
+export function takePendingImportPath(): string | null {
+  const path = pendingImportPath
+  pendingImportPath = null
+  return path
 }

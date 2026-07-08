@@ -45,11 +45,12 @@ export default function StorageScreen() {
   const {
     totalBlobBytes,
     totalOnDiskBytes,
-    reclaimableBytes,
+    isReclaiming,
     notesStorageInfo,
     buckets,
     resetSheetVisible,
     handleDeleteMedia,
+    handleReclaim,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,
@@ -96,12 +97,25 @@ export default function StorageScreen() {
               <Text style={styles.usageLabel}>{t('storage.diskFootprint')}</Text>
               <Text style={styles.usageValue}>{formatBytes(totalOnDiskBytes)}</Text>
             </RNView>
-            {reclaimableBytes > 0 && (
-              <RNView style={[styles.usageRow, styles.usageRowBorder]}>
-                <Text style={styles.usageLabel}>{t('storage.reclaimable')}</Text>
-                <Text style={styles.usageValuePrimary}>{formatBytes(reclaimableBytes)}</Text>
+            <RNView style={[styles.usageRow, styles.usageRowBorder]}>
+              <RNView style={styles.reclaimLabelWrap}>
+                <Text style={styles.usageLabel}>{t('storage.compact')}</Text>
+                <Text style={styles.reclaimDesc}>{t('storage.compactDesc')}</Text>
               </RNView>
-            )}
+              <Pressable
+                onPress={handleReclaim}
+                disabled={isReclaiming}
+                style={({ pressed }) => [
+                  styles.reclaimBtn,
+                  isReclaiming && styles.reclaimBtnDisabled,
+                  pressed && commonStyles.pressed,
+                ]}
+              >
+                <Text style={styles.reclaimBtnText}>
+                  {isReclaiming ? t('storage.compacting') : t('storage.compactNow')}
+                </Text>
+              </Pressable>
+            </RNView>
           </RNView>
         </Animated.View>
 
@@ -227,9 +241,27 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
-    usageValuePrimary: {
-      fontSize: FontSize.body,
+    reclaimLabelWrap: {
+      flex: 1,
+      gap: Space.xs,
+    },
+    reclaimDesc: {
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+    },
+    reclaimBtn: {
+      paddingHorizontal: Space.base,
+      paddingVertical: Space.sm,
+      borderRadius: Radii.md,
+      backgroundColor: `${theme.colors.primary}1A`,
+    },
+    reclaimBtnDisabled: {
+      opacity: 0.5,
+    },
+    reclaimBtnText: {
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
       color: theme.colors.primary,
     },
     dangerCard: {

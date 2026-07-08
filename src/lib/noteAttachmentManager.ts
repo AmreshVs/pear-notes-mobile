@@ -1,5 +1,3 @@
-import { Buffer } from 'buffer'
-
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -22,8 +20,24 @@ export async function pickImagesFromLibrary() {
   return result.assets
 }
 
+export class CameraPermissionDeniedError extends Error {
+  constructor() {
+    super('CAMERA_PERMISSION_DENIED')
+    this.name = 'CameraPermissionDeniedError'
+  }
+}
+
+async function ensureCameraPermission(ImagePicker: typeof import('expo-image-picker')) {
+  const current = await ImagePicker.getCameraPermissionsAsync()
+  if (current.granted) return
+  if (!current.canAskAgain) throw new CameraPermissionDeniedError()
+  const requested = await ImagePicker.requestCameraPermissionsAsync()
+  if (!requested.granted) throw new CameraPermissionDeniedError()
+}
+
 export async function takePhotoFromCamera() {
   const ImagePicker = await import('expo-image-picker')
+  await ensureCameraPermission(ImagePicker)
   const result = await ImagePicker.launchCameraAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
     allowsEditing: false,
@@ -37,6 +51,7 @@ export async function takePhotoFromCamera() {
 
 export async function takeVideoFromCamera() {
   const ImagePicker = await import('expo-image-picker')
+  await ensureCameraPermission(ImagePicker)
   const result = await ImagePicker.launchCameraAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Videos,
     allowsEditing: false,
@@ -70,55 +85,29 @@ export async function pickDocuments() {
   return result.assets
 }
 
-export async function uploadVideo(noteId: string, uri: string, fileName: string) {
+export function toBackendPath(uri: string): string {
+  return decodeURIComponent(uri.replace('file://', ''))
+}
+
+export async function copyVideoToUploadCache(uri: string, fileName: string) {
   const ext = fileName.split('.').pop() || 'mp4'
-  const cachePath = `${FileSystem.cacheDirectory}upload-${Date.now()}.${ext}`
-  await FileSystem.copyAsync({ from: uri, to: cachePath })
-  const info = await FileSystem.getInfoAsync(cachePath)
-  const fileSize = (info as any).size || 0
-  const { link } = await backendApi.insertFile({
-    key: noteId,
-    fileName,
-    path: decodeURIComponent(cachePath.replace('file://', '')),
-  } as any)
-  await FileSystem.deleteAsync(cachePath, { idempotent: true })
-  return { link, size: fileSize }
-}
-
-export async function uploadImage(noteId: string, uri: string, fileName: string) {
-  const base64Data = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' })
-  const buffer = Buffer.from(base64Data, 'base64')
-  const { link } = await backendApi.insertFile({
-    key: noteId,
-    fileName,
-    buffer,
-  } as any)
-  return { link }
-}
-
-export async function uploadDocumentFile(noteId: string, uri: string, fileName: string) {
-  const { link } = await backendApi.insertFile({
-    key: noteId,
-    fileName,
-    path: decodeURIComponent(uri.replace('file://', '')),
-  } as any)
-  return { link }
-}
-
-export async function uploadRecording(noteId: string, uri: string, fileName: string) {
-  const { link } = await backendApi.insertFile({
-    key: noteId,
-    fileName,
-    path: decodeURIComponent(uri.replace('file://', '')),
-  } as any)
-  return { link }
+  const cacheUri = `${FileSystem.cacheDirectory}upload-${Date.now()}.${ext}`
+  await FileSystem.copyAsync({ from: uri, to: cacheUri })
+  const info = await FileSystem.getInfoAsync(cacheUri)
+  return { path: toBackendPath(cacheUri), cacheUri, size: (info as any).size || 0 }
 }
 
 export async function deleteAttachment(url: string) {
-  if (url.startsWith(HYPERDRIVE_URL_PREFIX)) {
-    const key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
-    await backendApi.deleteFile(key)
+  if (!url) return
+  const queryIdx = url.indexOf('?')
+  let key: string | null = null
+  if (queryIdx !== -1 && url.slice(queryIdx).includes('blob=')) {
+    key = url.slice(queryIdx)
+  } else if (url.startsWith(HYPERDRIVE_URL_PREFIX)) {
+    key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
   }
+  if (!key) return
+  await backendApi.deleteFile(key)
 }
 
 export async function downloadToCache(url: string, fileName: string): Promise<string> {

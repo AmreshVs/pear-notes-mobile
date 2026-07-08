@@ -54,11 +54,12 @@ export default function AndroidStorageScreen() {
   const {
     totalBlobBytes,
     totalOnDiskBytes,
-    reclaimableBytes,
+    isReclaiming,
     notesStorageInfo,
     buckets,
     resetSheetVisible,
     handleDeleteMedia,
+    handleReclaim,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,
@@ -111,12 +112,25 @@ export default function AndroidStorageScreen() {
               <Text style={styles.usageLabel}>{t('storage.diskFootprint')}</Text>
               <Text style={styles.usageValue}>{formatBytes(totalOnDiskBytes)}</Text>
             </View>
-            {reclaimableBytes > 0 && (
-              <View style={[styles.usageRow, styles.usageRowBorder]}>
-                <Text style={styles.usageLabel}>{t('storage.reclaimable')}</Text>
-                <Text style={styles.usageValuePrimary}>{formatBytes(reclaimableBytes)}</Text>
+            <View style={[styles.usageRow, styles.usageRowBorder]}>
+              <View style={styles.reclaimLabelWrap}>
+                <Text style={styles.usageLabel}>{t('storage.compact')}</Text>
+                <Text style={styles.reclaimDesc}>{t('storage.compactDesc')}</Text>
               </View>
-            )}
+              <Pressable
+                onPress={handleReclaim}
+                disabled={isReclaiming}
+                style={({ pressed }) => [
+                  styles.reclaimBtn,
+                  isReclaiming && styles.reclaimBtnDisabled,
+                  pressed && styles.cardPressed,
+                ]}
+              >
+                <Text style={styles.reclaimBtnText}>
+                  {isReclaiming ? t('storage.compacting') : t('storage.compactNow')}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
 
@@ -271,8 +285,26 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
-    usageValuePrimary: {
-      fontSize: FontSize.body,
+    reclaimLabelWrap: {
+      flex: 1,
+      gap: UI_SIZE_4,
+    },
+    reclaimDesc: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+    },
+    reclaimBtn: {
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_8,
+      borderRadius: UI_SIZE_20,
+      backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
+    },
+    reclaimBtnDisabled: {
+      opacity: 0.5,
+    },
+    reclaimBtnText: {
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.primary,
