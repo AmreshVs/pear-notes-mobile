@@ -1,4 +1,5 @@
 const path = require('path')
+
 const { getDefaultConfig } = require('expo/metro-config')
 
 const projectRoot = __dirname
@@ -14,8 +15,8 @@ const singletonPackages = ['react', 'react-redux', '@reduxjs/toolkit', 'redux-sa
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
   ...Object.fromEntries(
-    singletonPackages.map((pkg) => [pkg, path.resolve(projectRoot, 'node_modules', pkg)])
-  )
+    singletonPackages.map((pkg) => [pkg, path.resolve(projectRoot, 'node_modules', pkg)]),
+  ),
 }
 config.resolver.unstable_enableSymlinks = true
 

@@ -8,8 +8,13 @@ export function startService(title: string, message: string, maxProgress: number
   ExpoBackgroundService.start(title, message, maxProgress)
 }
 
-export function updateService(progress: number, message: string, maxProgress: number): void {
-  ExpoBackgroundService.update(progress, message, maxProgress)
+export function updateService(
+  title: string,
+  progress: number,
+  message: string,
+  maxProgress: number,
+): void {
+  ExpoBackgroundService.update(title, progress, message, maxProgress)
 }
 
 export function stopService(): void {

@@ -28,15 +28,16 @@ class ExpoBackgroundServiceModule : Module() {
       }
     }
 
-    Function("update") { progress: Int, message: String, maxProgress: Int ->
+    Function("update") { title: String, progress: Int, message: String, maxProgress: Int ->
       appContext.reactContext?.let { context ->
         val intent = Intent(context, BackupForegroundService::class.java).apply {
           action = BackupForegroundService.ACTION_UPDATE
+          putExtra(BackupForegroundService.EXTRA_TITLE, title)
           putExtra(BackupForegroundService.EXTRA_MESSAGE, message)
           putExtra(BackupForegroundService.EXTRA_PROGRESS, progress)
           putExtra(BackupForegroundService.EXTRA_MAX_PROGRESS, maxProgress)
         }
-        
+
         context.startService(intent)
       }
     }

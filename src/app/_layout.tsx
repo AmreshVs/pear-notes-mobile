@@ -113,7 +113,11 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const initWorklet = useCallback(async () => {
     try {
       setFatalError(null)
-      await startWorklet(storage)
+      await startWorklet(storage, {
+        onWorkletDied: () => initWorklet(),
+        notificationTitle: t('sync.backgroundSync.notificationTitle'),
+        notificationMessage: t('sync.backgroundSync.notificationMessage'),
+      })
       let key = await getDbEncryptionKey()
       if (!key) {
         const bytes = new Uint8Array(32)

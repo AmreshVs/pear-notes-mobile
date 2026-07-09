@@ -98,13 +98,25 @@ function useBackupScreen() {
   useEffect(() => {
     if (isForegroundServiceActive) {
       if (isActive) {
-        ExpoBackgroundService.updateService(progressStatus.progress, progressStatus.message, 100)
+        ExpoBackgroundService.updateService(
+          isExporting ? t('backup.title') : t('backup.restoreTitle'),
+          progressStatus.progress,
+          progressStatus.message,
+          100,
+        )
       } else {
         ExpoBackgroundService.stopService()
         setIsForegroundServiceActive(false)
       }
     }
-  }, [isForegroundServiceActive, isActive, progressStatus.progress, progressStatus.message])
+  }, [
+    isForegroundServiceActive,
+    isActive,
+    isExporting,
+    t,
+    progressStatus.progress,
+    progressStatus.message,
+  ])
 
   const handleCreateBackup = useCallback(async () => {
     if (hasLockedNotes) {

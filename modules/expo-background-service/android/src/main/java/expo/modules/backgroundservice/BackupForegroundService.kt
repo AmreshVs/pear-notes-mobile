@@ -27,21 +27,26 @@ class BackupForegroundService : Service() {
         const val EXTRA_MAX_PROGRESS = "EXTRA_MAX_PROGRESS"
     }
 
+    private var currentTitle: String = "Backup in progress"
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action ?: return START_NOT_STICKY
-        
+
         when (action) {
             ACTION_START -> {
                 val title = intent.getStringExtra(EXTRA_TITLE) ?: "Backup in progress"
+                currentTitle = title
                 val message = intent.getStringExtra(EXTRA_MESSAGE) ?: ""
                 val maxProgress = intent.getIntExtra(EXTRA_MAX_PROGRESS, 100)
                 startForegroundService(title, message, maxProgress)
             }
             ACTION_UPDATE -> {
+                val title = intent.getStringExtra(EXTRA_TITLE) ?: currentTitle
+                currentTitle = title
                 val message = intent.getStringExtra(EXTRA_MESSAGE) ?: ""
                 val progress = intent.getIntExtra(EXTRA_PROGRESS, 0)
                 val maxProgress = intent.getIntExtra(EXTRA_MAX_PROGRESS, 100)
-                updateNotification(message, progress, maxProgress)
+                updateNotification(title, message, progress, maxProgress)
             }
             ACTION_STOP -> {
                 stopForeground(true)
@@ -52,6 +57,11 @@ class BackupForegroundService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onTimeout(startId: Int, fgsType: Int) {
+        stopForeground(true)
+        stopSelf()
+    }
 
     private fun startForegroundService(title: String, message: String, maxProgress: Int) {
         createNotificationChannel()
@@ -67,19 +77,19 @@ class BackupForegroundService : Service() {
         // Try to find default app icon, or use a fallback
         val iconRes = applicationInfo.icon
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(iconRes)
-            .setProgress(maxProgress, 0, false)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
-            .build()
 
-        startForeground(NOTIFICATION_ID, notification)
+        if (maxProgress > 0) builder.setProgress(maxProgress, 0, false)
+
+        startForeground(NOTIFICATION_ID, builder.build())
     }
 
-    private fun updateNotification(message: String, progress: Int, maxProgress: Int) {
+    private fun updateNotification(title: String, message: String, progress: Int, maxProgress: Int) {
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
         val pendingIntent = PendingIntent.getActivity(
             this,
@@ -91,17 +101,17 @@ class BackupForegroundService : Service() {
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val iconRes = applicationInfo.icon
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Backup in progress")
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(title)
             .setContentText(message)
             .setSmallIcon(iconRes)
-            .setProgress(maxProgress, progress, false)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
-            .build()
 
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        if (maxProgress > 0) builder.setProgress(maxProgress, progress, false)
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
     private fun createNotificationChannel() {
