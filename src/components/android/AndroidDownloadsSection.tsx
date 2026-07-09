@@ -1,6 +1,6 @@
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, Text, View } from 'react-native'
+import { Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -20,6 +20,7 @@ import {
   UI_SIZE_24,
   UI_SIZE_28,
 } from '@/constants/commonStyles'
+import { groupTransfersByNote } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -28,22 +29,29 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 type AndroidDownloadsSectionProps = {
   downloads: DownloadItem[]
+  noteTitles: Record<string, string>
   formatBytes: (bytes: number) => string
+  onRetry: (url: string) => void
 }
 
-export function AndroidDownloadsSection({ downloads, formatBytes }: AndroidDownloadsSectionProps) {
+export function AndroidDownloadsSection({
+  downloads,
+  noteTitles,
+  formatBytes,
+  onRetry,
+}: AndroidDownloadsSectionProps) {
   const { t } = useTranslation()
   const styles = useStyles() as any
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
 
-  const renderDownloadItem = (download: DownloadItem) => {
+  const renderDownloadItem = (download: DownloadItem, index: number) => {
     const pct =
       download.totalBytes > 0
         ? Math.min(100, Math.round((download.downloadedBytes / download.totalBytes) * 100))
         : 0
     return (
-      <View key={download.url} style={styles.row}>
+      <View key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <View style={styles.rowHeader}>
           <View style={styles.rowMeta}>
             <MaterialCommunityIcons
@@ -62,9 +70,20 @@ export function AndroidDownloadsSection({ downloads, formatBytes }: AndroidDownl
               />
             )}
           </View>
-          <Text style={styles.sizeLabel}>
-            {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
-          </Text>
+          <View style={styles.rowActions}>
+            <Text style={styles.sizeLabel}>
+              {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
+            </Text>
+            {download.status === 'error' && (
+              <Pressable
+                onPress={() => onRetry(download.url)}
+                hitSlop={8}
+                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+              >
+                <MaterialCommunityIcons name="restore" size={UI_ICON_SIZE_18} color={c.primary} />
+              </Pressable>
+            )}
+          </View>
         </View>
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${pct}%` }]} />
@@ -73,14 +92,25 @@ export function AndroidDownloadsSection({ downloads, formatBytes }: AndroidDownl
     )
   }
 
+  const renderGroup = (group: { noteKey: string; title: string; items: DownloadItem[] }) => (
+    <View key={group.noteKey} style={styles.card}>
+      <Text style={styles.groupTitle} numberOfLines={1}>
+        {group.title || t('noteCard.untitled')}
+      </Text>
+      {group.items.map(renderDownloadItem)}
+    </View>
+  )
+
   if (!downloads.length) return null
+
+  const groups = groupTransfersByNote(downloads, noteTitles, t('noteCard.untitled'))
 
   return (
     <Animated.View entering={FadeInDown.duration(240)} style={styles.section}>
       <Text style={styles.sectionTitle}>
         {t('storage.syncingFromDevices')} ({downloads.length})
       </Text>
-      <View style={styles.card}>{downloads.map(renderDownloadItem)}</View>
+      <View style={styles.groupList}>{groups.map(renderGroup)}</View>
     </Animated.View>
   )
 }
@@ -105,6 +135,17 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
       marginLeft: UI_SIZE_8,
       letterSpacing: 0.5,
     },
+    groupList: {
+      gap: UI_SIZE_12,
+    },
+    groupTitle: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurfaceVariant,
+      paddingHorizontal: UI_SIZE_20,
+      paddingTop: UI_SIZE_12,
+    },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
@@ -113,9 +154,11 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
     row: {
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_12,
+      gap: UI_SIZE_8,
+    },
+    rowBorder: {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: c.outlineVariant ?? c.onSurface,
-      gap: UI_SIZE_8,
     },
     rowHeader: {
       ...commonStyles.rowBetween,
@@ -127,6 +170,11 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
       gap: UI_SIZE_8,
       flex: 1,
       marginRight: UI_SIZE_8,
+    },
+    rowActions: {
+      ...commonStyles.row,
+      alignItems: 'center',
+      gap: UI_SIZE_8,
     },
     fileName: {
       fontSize: FontSize.body,
@@ -140,6 +188,9 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurfaceVariant,
+    },
+    retryBtn: {
+      padding: UI_SIZE_4,
     },
     progressTrack: {
       height: UI_SIZE_4,

@@ -12,6 +12,7 @@ import useStorageScreen from './useStorageScreen'
 import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBackupBreakdownSection'
 import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
 import { AndroidDownloadsSection } from '@/components/android/AndroidDownloadsSection'
+import { AndroidUploadsSection } from '@/components/android/AndroidUploadsSection'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
@@ -57,11 +58,14 @@ export default function AndroidStorageScreen() {
     totalOnDiskBytes,
     isReclaiming,
     activeDownloads,
+    activeUploads,
+    noteTitleByKey,
     notesStorageInfo,
     buckets,
     resetSheetVisible,
     handleDeleteMedia,
     handleReclaim,
+    handleRetryDownload,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,
@@ -103,7 +107,18 @@ export default function AndroidStorageScreen() {
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
         </Animated.View>
 
-        <AndroidDownloadsSection downloads={activeDownloads} formatBytes={formatBytes} />
+        <AndroidDownloadsSection
+          downloads={activeDownloads}
+          noteTitles={noteTitleByKey}
+          formatBytes={formatBytes}
+          onRetry={handleRetryDownload}
+        />
+
+        <AndroidUploadsSection
+          uploads={activeUploads}
+          noteTitles={noteTitleByKey}
+          formatBytes={formatBytes}
+        />
 
         <Animated.View entering={FadeInDown.duration(240).delay(60)}>
           <Text style={styles.sectionTitle}>{t('storage.usage')}</Text>

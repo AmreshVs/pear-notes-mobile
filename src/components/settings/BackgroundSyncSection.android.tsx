@@ -121,7 +121,7 @@ export function BackgroundSyncSection() {
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.card}
       >
-        <Text style={styles.cardTitle}>{t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}`)}</Text>
+        <Text style={styles.cardTitle}>{t('sync.backgroundSync.modeLabel')}</Text>
         <View style={styles.segContainer}>{MODES.map(renderSegment)}</View>
         <Text style={styles.cardDesc}>{t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}Desc`)}</Text>
       </Animated.View>

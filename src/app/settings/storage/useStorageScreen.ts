@@ -1,17 +1,19 @@
 import {
   deleteNoteMedia,
   getActiveDownloads,
+  getActiveUploads,
   getIsReclaiming,
   getNotesStorageInfo,
   getReclaimableBytes,
   getTotalBlobBytes,
   getTotalOnDiskBytes,
   reclaimStorage,
+  retryDownload,
   selectStorageByKind,
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { clearStorageState } from '@/lib/clearStorageState'
@@ -25,8 +27,15 @@ function useStorageScreen() {
   const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
   const isReclaiming = (useSelector(getIsReclaiming) as boolean) ?? false
   const activeDownloads = useSelector(getActiveDownloads) as any[]
+  const activeUploads = useSelector(getActiveUploads) as any[]
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
+
+  const noteTitleByKey = useMemo(() => {
+    const map: Record<string, string> = {}
+    for (const note of notesStorageInfo) map[note.key] = note.title
+    return map
+  }, [notesStorageInfo])
 
   const [resetSheetVisible, setResetSheetVisible] = useState(false)
 
@@ -44,6 +53,13 @@ function useStorageScreen() {
   const handleReclaim = useCallback(() => {
     dispatch(reclaimStorage())
   }, [dispatch])
+
+  const handleRetryDownload = useCallback(
+    (url: string) => {
+      dispatch(retryDownload({ url } as any))
+    },
+    [dispatch],
+  )
 
   const handleResetPress = useCallback(() => {
     setResetSheetVisible(true)
@@ -66,11 +82,14 @@ function useStorageScreen() {
     reclaimableBytes,
     isReclaiming,
     activeDownloads,
+    activeUploads,
+    noteTitleByKey,
     notesStorageInfo,
     buckets,
     resetSheetVisible,
     handleDeleteMedia,
     handleReclaim,
+    handleRetryDownload,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,

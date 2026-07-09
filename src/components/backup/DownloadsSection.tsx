@@ -1,6 +1,6 @@
-import { CloudDownload, WifiOff } from 'lucide-react-native'
+import { CloudDownload, RotateCw, WifiOff } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
-import { View as RNView, StyleSheet } from 'react-native'
+import { Pressable, View as RNView, StyleSheet } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -16,6 +16,7 @@ import {
   UI_SIZE_4,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { groupTransfersByNote } from '@/lib/backupUtils'
 
 export type DownloadItem = {
   noteKey: string
@@ -29,23 +30,30 @@ export type DownloadItem = {
 
 type DownloadsSectionProps = {
   downloads: DownloadItem[]
+  noteTitles: Record<string, string>
   formatBytes: (bytes: number) => string
+  onRetry: (url: string) => void
 }
 
-export function DownloadsSection({ downloads, formatBytes }: DownloadsSectionProps) {
+export function DownloadsSection({
+  downloads,
+  noteTitles,
+  formatBytes,
+  onRetry,
+}: DownloadsSectionProps) {
   const { t } = useTranslation()
   const theme = useTheme()
   const { colors } = theme
   const styles = useStyles() as any
   const commonThemedStyles = useCommonThemedStyles()
 
-  const renderDownloadItem = (download: DownloadItem) => {
+  const renderDownloadItem = (download: DownloadItem, index: number) => {
     const pct =
       download.totalBytes > 0
         ? Math.min(100, Math.round((download.downloadedBytes / download.totalBytes) * 100))
         : 0
     return (
-      <RNView key={download.url} style={styles.row}>
+      <RNView key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <RNView style={styles.rowHeader}>
           <RNView style={styles.rowMeta}>
             <CloudDownload size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
@@ -56,9 +64,20 @@ export function DownloadsSection({ downloads, formatBytes }: DownloadsSectionPro
               <WifiOff size={UI_ICON_SIZE_16} color={colors.textMuted} strokeWidth={2} />
             )}
           </RNView>
-          <Text style={styles.sizeLabel}>
-            {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
-          </Text>
+          <RNView style={styles.rowActions}>
+            <Text style={styles.sizeLabel}>
+              {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
+            </Text>
+            {download.status === 'error' && (
+              <Pressable
+                onPress={() => onRetry(download.url)}
+                hitSlop={8}
+                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+              >
+                <RotateCw size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+              </Pressable>
+            )}
+          </RNView>
         </RNView>
         <RNView style={styles.progressTrack}>
           <RNView style={[styles.progressFill, { width: `${pct}%` }]} />
@@ -67,14 +86,25 @@ export function DownloadsSection({ downloads, formatBytes }: DownloadsSectionPro
     )
   }
 
+  const renderGroup = (group: { noteKey: string; title: string; items: DownloadItem[] }) => (
+    <RNView key={group.noteKey} style={commonThemedStyles.card}>
+      <Text style={styles.groupTitle} numberOfLines={1}>
+        {group.title || t('noteCard.untitled')}
+      </Text>
+      {group.items.map(renderDownloadItem)}
+    </RNView>
+  )
+
   if (!downloads.length) return null
+
+  const groups = groupTransfersByNote(downloads, noteTitles, t('noteCard.untitled'))
 
   return (
     <Animated.View entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
       <Text style={styles.sectionCap}>
         {t('storage.syncingFromDevices')} ({downloads.length})
       </Text>
-      <RNView style={commonThemedStyles.card}>{downloads.map(renderDownloadItem)}</RNView>
+      <RNView style={styles.groupList}>{groups.map(renderGroup)}</RNView>
     </Animated.View>
   )
 }
@@ -92,12 +122,24 @@ const useStyles = createThemedStylesheet((theme) => {
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },
+    groupList: {
+      gap: Space.md,
+    },
+    groupTitle: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.textMuted,
+      paddingHorizontal: Space.lg,
+      paddingTop: Space.md,
+    },
     row: {
       paddingHorizontal: Space.lg,
       paddingVertical: Space.md,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.borderSecondary,
       gap: Space.sm,
+    },
+    rowBorder: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.colors.borderSecondary,
     },
     rowHeader: {
       ...commonStyles.rowBetween,
@@ -110,6 +152,11 @@ const useStyles = createThemedStylesheet((theme) => {
       flex: 1,
       marginRight: Space.sm,
     },
+    rowActions: {
+      ...commonStyles.row,
+      alignItems: 'center',
+      gap: Space.sm,
+    },
     fileName: {
       fontSize: FontSize.body,
       fontWeight: FontWeight.medium,
@@ -120,6 +167,9 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
       color: theme.colors.textMuted,
+    },
+    retryBtn: {
+      padding: Space.xs,
     },
     progressTrack: {
       height: UI_SIZE_4,

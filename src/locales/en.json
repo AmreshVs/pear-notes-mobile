@@ -151,6 +151,7 @@
     },
     "backgroundSync": {
       "header": "BACKGROUND SYNC",
+      "modeLabel": "Sync Mode",
       "off": "Off",
       "periodic": "Periodic",
       "alwaysOn": "Always On",
@@ -544,6 +545,7 @@
     "compactNow": "Compact",
     "compacting": "Compacting…",
     "syncingFromDevices": "SYNCING FROM OTHER DEVICES",
+    "syncingToDevices": "SYNCING TO OTHER DEVICES",
     "attachment": "Attachment",
     "waitingForDevice": "Waiting for the other device to come online",
     "dangerZone": "DANGER ZONE",

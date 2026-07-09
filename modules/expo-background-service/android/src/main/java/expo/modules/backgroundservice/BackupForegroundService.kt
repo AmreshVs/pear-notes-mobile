@@ -58,7 +58,7 @@ class BackupForegroundService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    override fun onTimeout(startId: Int, fgsType: Int) {
+    override fun onTimeout(startId: Int) {
         stopForeground(true)
         stopSelf()
     }

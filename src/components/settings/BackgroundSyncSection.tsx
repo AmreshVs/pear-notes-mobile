@@ -9,9 +9,10 @@ import {
   Durations,
   FontSize,
   FontWeight,
-  UI_SIZE_8,
+  Space,
   UI_SIZE_12,
   UI_SIZE_16,
+  UI_SIZE_18,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import {
@@ -86,12 +87,14 @@ export function BackgroundSyncSection() {
       >
         <RNView style={commonThemedStyles.card}>
           <RNView style={commonStyles.settingsRow}>
-            <Text style={styles.rowLabel}>{t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}`)}</Text>
+            <Text style={styles.rowLabel}>{t('sync.backgroundSync.modeLabel')}</Text>
             <RNView style={styles.segCtrl}>{MODES.map(renderSegment)}</RNView>
           </RNView>
-          <Text style={styles.rowDesc}>
-            {t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}Desc`)}
-          </Text>
+          <RNView style={styles.descRow}>
+            <Text style={styles.rowDesc}>
+              {t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}Desc`)}
+            </Text>
+          </RNView>
         </RNView>
       </Animated.View>
     </>
@@ -114,10 +117,13 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
+    descRow: {
+      paddingHorizontal: UI_SIZE_18,
+      paddingBottom: Space.base,
+    },
     rowDesc: {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
-      marginTop: UI_SIZE_8,
       lineHeight: FontSize.body * 1.4,
     },
     segCtrl: {
