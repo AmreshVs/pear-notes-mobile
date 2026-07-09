@@ -10,6 +10,7 @@ import useStorageScreen from './useStorageScreen'
 
 import { BackupBreakdownSection } from '@/components/backup/BackupBreakdownSection'
 import { BackupNotesListSection } from '@/components/backup/BackupNotesListSection'
+import { DownloadsSection } from '@/components/backup/DownloadsSection'
 import { ClearStorageBottomSheet } from '@/components/bottomsheet/ClearStorageAppBottomSheet'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -46,6 +47,7 @@ export default function StorageScreen() {
     totalBlobBytes,
     totalOnDiskBytes,
     isReclaiming,
+    activeDownloads,
     notesStorageInfo,
     buckets,
     resetSheetVisible,
@@ -85,6 +87,8 @@ export default function StorageScreen() {
           <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
         </Animated.View>
+
+        <DownloadsSection downloads={activeDownloads} formatBytes={formatBytes} />
 
         <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}>
           <Text style={styles.sectionCap}>{t('storage.usage')}</Text>

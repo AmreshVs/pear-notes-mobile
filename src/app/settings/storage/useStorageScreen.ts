@@ -1,5 +1,6 @@
 import {
   deleteNoteMedia,
+  getActiveDownloads,
   getIsReclaiming,
   getNotesStorageInfo,
   getReclaimableBytes,
@@ -23,6 +24,7 @@ function useStorageScreen() {
   const totalOnDiskBytes = (useSelector(getTotalOnDiskBytes) as number) ?? 0
   const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
   const isReclaiming = (useSelector(getIsReclaiming) as boolean) ?? false
+  const activeDownloads = useSelector(getActiveDownloads) as any[]
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
 
@@ -63,6 +65,7 @@ function useStorageScreen() {
     totalOnDiskBytes,
     reclaimableBytes,
     isReclaiming,
+    activeDownloads,
     notesStorageInfo,
     buckets,
     resetSheetVisible,
