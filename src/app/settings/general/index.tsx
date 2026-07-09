@@ -15,6 +15,7 @@ import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -210,6 +211,8 @@ export default function GeneralSettingsScreen() {
             </RNView>
           </RNView>
         </Animated.View>
+
+        <BackgroundSyncSection />
       </ScrollView>
     </RNView>
   )

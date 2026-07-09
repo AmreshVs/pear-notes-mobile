@@ -33,6 +33,8 @@
       "expo-font",
       "expo-system-ui",
       "expo-image",
+      "expo-task-manager",
+      "expo-background-task",
       [
         "expo-camera",
         {

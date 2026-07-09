@@ -23,7 +23,6 @@ import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection.android'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -426,8 +425,6 @@ export default function AndroidSyncScreen() {
                   <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
                 </Animated.View>
               )}
-
-              <BackgroundSyncSection />
 
               <Animated.View
                 entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}

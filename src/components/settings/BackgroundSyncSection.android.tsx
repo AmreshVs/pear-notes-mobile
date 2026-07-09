@@ -1,7 +1,6 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PermissionsAndroid, StyleSheet, Switch, View } from 'react-native'
+import { PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -11,104 +10,120 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_22,
   UI_SIZE_4,
   UI_SIZE_9999,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_18,
   UI_SIZE_20,
+  UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_44,
 } from '@/constants/commonStyles'
 import {
-  BACKGROUND_SYNC_ENABLED_KEY,
-  getBackgroundSyncPreference,
-  setBackgroundSyncPreference,
+  BackgroundSyncMode,
+  getBackgroundSyncMode,
+  setBackgroundSyncMode,
 } from '@/lib/backgroundSync'
+import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
   primaryContainer?: string
-  onPrimary?: string
+  onPrimaryContainer?: string
+  onSurfaceVariant?: string
+}
+
+const MODES: BackgroundSyncMode[] = ['off', 'periodic', 'always-on']
+
+const MODE_LOCALE_KEY: Record<BackgroundSyncMode, string> = {
+  off: 'off',
+  periodic: 'periodic',
+  'always-on': 'alwaysOn',
 }
 
 export function BackgroundSyncSection() {
   const { t } = useTranslation()
-  const md3 = useMD3Theme()
-  const c = md3.colors as ExtendedColors
   const styles = useStyles()
-  const [enabled, setEnabled] = useState(false)
+  const [mode, setMode] = useState<BackgroundSyncMode>('off')
 
   useEffect(() => {
     let active = true
-    getBackgroundSyncPreference(BACKGROUND_SYNC_ENABLED_KEY).then((value) => {
-      if (active) setEnabled(value)
+    getBackgroundSyncMode().then((value) => {
+      if (active) setMode(value)
     })
     return () => {
       active = false
     }
   }, [])
 
-  const trackColor = useMemo(
-    () => ({ false: hexWithAlpha(c.onSurface, 0.15), true: c.primary }),
-    [c.onSurface, c.primary],
+  const commitMode = useCallback((next: BackgroundSyncMode) => {
+    setMode(next)
+    setBackgroundSyncMode(next)
+    applyBackgroundSyncMode(next)
+  }, [])
+
+  const handleSelect = useCallback(
+    async (next: BackgroundSyncMode) => {
+      if (next === mode) return
+
+      if (next === 'always-on') {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+            {
+              title: t('sync.backgroundSync.permissionTitle'),
+              message: t('sync.backgroundSync.permissionDescription'),
+              buttonNeutral: t('backup.notificationPermissionAskMeLater'),
+              buttonNegative: t('backup.notificationPermissionCancel'),
+              buttonPositive: t('backup.notificationPermissionOK'),
+            },
+          )
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            commitMode(next)
+          }
+        } catch (err) {
+          console.warn(err)
+        }
+        return
+      }
+
+      commitMode(next)
+    },
+    [mode, t, commitMode],
   )
 
-  const handleToggle = useCallback(async () => {
-    if (enabled) {
-      setEnabled(false)
-      setBackgroundSyncPreference(BACKGROUND_SYNC_ENABLED_KEY, false)
-      return
-    }
-
-    try {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-        {
-          title: t('sync.backgroundSync.permissionTitle'),
-          message: t('sync.backgroundSync.permissionDescription'),
-          buttonNeutral: t('backup.notificationPermissionAskMeLater'),
-          buttonNegative: t('backup.notificationPermissionCancel'),
-          buttonPositive: t('backup.notificationPermissionOK'),
-        },
+  const renderSegment = useCallback(
+    (item: BackgroundSyncMode) => {
+      const active = item === mode
+      return (
+        <Pressable
+          key={item}
+          onPress={() => handleSelect(item)}
+          style={[styles.segItem, active && styles.segItemActive]}
+        >
+          <Text style={[styles.segText, active && styles.segTextActive]}>
+            {t(`sync.backgroundSync.${MODE_LOCALE_KEY[item]}`)}
+          </Text>
+        </Pressable>
       )
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-        setEnabled(true)
-        setBackgroundSyncPreference(BACKGROUND_SYNC_ENABLED_KEY, true)
-      }
-    } catch (err) {
-      console.warn(err)
-    }
-  }, [enabled, t])
+    },
+    [mode, handleSelect, styles, t],
+  )
 
   return (
     <>
-      <Animated.View entering={FadeIn.duration(220).delay(20)}>
-        <Text style={styles.sectionCap}>{t('sync.backgroundSync.header')}</Text>
+      <Animated.View entering={FadeIn.duration(220).delay(120)}>
+        <Text style={styles.sectionCapMargin}>{t('sync.backgroundSync.header')}</Text>
       </Animated.View>
 
       <Animated.View
-        entering={FadeInDown.duration(240).delay(40)}
+        entering={FadeInDown.duration(240).delay(140)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        style={styles.groupCard}
+        style={styles.card}
       >
-        <View style={styles.toggleRow}>
-          <View style={styles.iconWrap}>
-            <MaterialCommunityIcons name="sync" size={UI_ICON_SIZE_22} color={c.primary} />
-          </View>
-          <View style={commonStyles.flex1}>
-            <Text style={styles.rowTitle}>{t('sync.backgroundSync.title')}</Text>
-            <Text style={styles.rowSubtitle}>{t('sync.backgroundSync.description')}</Text>
-          </View>
-          <Switch
-            value={enabled}
-            onValueChange={handleToggle}
-            trackColor={trackColor}
-            thumbColor={c.onPrimary}
-          />
-        </View>
+        <Text style={styles.cardTitle}>{t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}`)}</Text>
+        <View style={styles.segContainer}>{MODES.map(renderSegment)}</View>
+        <Text style={styles.cardDesc}>{t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}Desc`)}</Text>
       </Animated.View>
     </>
   )
@@ -122,46 +137,60 @@ const useBackgroundSyncHooks = () => {
 const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
-    sectionCap: {
+    sectionCapMargin: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.bold,
       letterSpacing: 1.2,
       color: c.primary,
+      marginTop: UI_SIZE_24,
       marginBottom: UI_SIZE_16,
     },
-    groupCard: {
+    card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      marginBottom: UI_SIZE_12,
-      overflow: 'hidden',
-    },
-    toggleRow: {
-      ...commonStyles.row,
       paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_18,
-      gap: UI_SIZE_16,
+      paddingVertical: UI_SIZE_16,
+      marginBottom: UI_SIZE_12,
     },
-    iconWrap: {
-      width: UI_SIZE_44,
-      height: UI_SIZE_44,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
-      ...commonStyles.centered,
-    },
-    rowTitle: {
+    cardTitle: {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
-      marginBottom: UI_SIZE_4,
+      marginBottom: UI_SIZE_20,
     },
-    rowSubtitle: {
+    cardDesc: {
       fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       fontFamily: FontFamily.medium,
       fontWeight: FontWeight.medium,
-      lineHeight: UI_SIZE_20,
+      marginTop: UI_SIZE_16,
+    },
+    segContainer: {
+      ...commonStyles.row,
+      backgroundColor: hexWithAlpha(c.onSurface, 0.04),
+      borderRadius: UI_SIZE_9999,
+      padding: UI_SIZE_4,
+    },
+    segItem: {
+      ...commonStyles.flex1,
+      paddingVertical: UI_SIZE_12,
+      borderRadius: UI_SIZE_9999,
+      ...commonStyles.centered,
+    },
+    segItemActive: {
+      backgroundColor: c.primaryContainer,
+    },
+    segText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurfaceVariant,
+    },
+    segTextActive: {
+      color: c.onPrimaryContainer,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
     },
   })
   return styles

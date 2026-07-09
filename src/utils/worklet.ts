@@ -2,14 +2,14 @@ import HRPC from '@pear-notes/core/spec/hrpc/index.js'
 import * as ExpoBackgroundService from 'expo-background-service'
 import { AppState, AppStateStatus, Platform } from 'react-native'
 
-import { getBackgroundSyncPreference, BACKGROUND_SYNC_ENABLED_KEY } from '@/lib/backgroundSync'
+import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 
 const { setRPC } = require('@pear-notes/core/rpc.js')
 const FramedStream = require('framed-stream')
 const { Worklet } = require('react-native-bare-kit')
 
 const BACKGROUND_WAKEUP_DEADLINE_MS = 25_000
-const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
+export const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
 
 interface StartWorkletOptions {
   onWorkletDied?: () => void
@@ -25,8 +25,8 @@ let _notificationStrings = { title: '', message: '' }
 async function handleBackground(worklet: any) {
   if (Platform.OS === 'android') {
     try {
-      const enabled = await getBackgroundSyncPreference(BACKGROUND_SYNC_ENABLED_KEY)
-      if (enabled) {
+      const mode = await getBackgroundSyncMode()
+      if (mode === 'always-on') {
         ExpoBackgroundService.startService(
           _notificationStrings.title,
           _notificationStrings.message,
@@ -43,6 +43,16 @@ async function handleBackground(worklet: any) {
     worklet.wakeup(BACKGROUND_WAKEUP_DEADLINE_MS)
   } catch {
     console.error('Failed to wake up the worklet')
+  }
+}
+
+export function wakeActiveWorklet(deadlineMs: number): boolean {
+  if (!_activeWorklet || _activeWorklet.terminated) return false
+  try {
+    _activeWorklet.wakeup(deadlineMs)
+    return true
+  } catch {
+    return false
   }
 }
 

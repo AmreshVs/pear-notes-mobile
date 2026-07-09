@@ -1,18 +1,22 @@
 import { backendApi } from '@pear-notes/core/backend/api.js'
 
-export const BACKGROUND_SYNC_ENABLED_KEY = 'backgroundSyncEnabled'
+export type BackgroundSyncMode = 'off' | 'periodic' | 'always-on'
 
-export async function getBackgroundSyncPreference(key: string): Promise<boolean> {
+export const BACKGROUND_SYNC_MODE_KEY = 'backgroundSyncMode'
+const DEFAULT_MODE: BackgroundSyncMode = 'off'
+
+export async function getBackgroundSyncMode(): Promise<BackgroundSyncMode> {
   try {
-    const value = await backendApi.getPreference({ key })
-    return value === 'true'
+    const value = await backendApi.getPreference({ key: BACKGROUND_SYNC_MODE_KEY })
+    if (value === 'off' || value === 'periodic' || value === 'always-on') return value
+    return DEFAULT_MODE
   } catch {
-    return false
+    return DEFAULT_MODE
   }
 }
 
-export async function setBackgroundSyncPreference(key: string, enabled: boolean): Promise<void> {
+export async function setBackgroundSyncMode(mode: BackgroundSyncMode): Promise<void> {
   try {
-    await backendApi.updatePreference({ key, value: enabled ? 'true' : 'false' })
+    await backendApi.updatePreference({ key: BACKGROUND_SYNC_MODE_KEY, value: mode })
   } catch {}
 }

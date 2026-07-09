@@ -33,6 +33,8 @@ import { PairingOverlay } from '@/components/PairingOverlay'
 import { createThemedStylesheet, useResolvedColorScheme } from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
+import { getBackgroundSyncMode } from '@/lib/backgroundSync'
+import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
@@ -142,6 +144,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
 
   useEffect(() => {
     sweepBackupCache()
+  }, [])
+
+  useEffect(() => {
+    getBackgroundSyncMode().then(applyBackgroundSyncMode)
   }, [])
 
   const encryptionKey = receiverStatus?.encryptionKey
