@@ -573,7 +573,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       editorRef.current?.setAttachmentLoading(url, true, attachmentId)
       let localUri: string | null = null
       try {
-        localUri = await downloadToCache(url, fileName)
+        localUri = await downloadToCache(url, fileName, (progress) =>
+          editorRef.current?.setAttachmentLoading(url, true, attachmentId, progress),
+        )
         editorRef.current?.setAttachmentLoading(url, false, attachmentId)
         await ExpoNativeShareModule.share({ message: '', urls: [localUri], resolveOnDismiss: true })
       } catch {
@@ -597,7 +599,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       editorRef.current?.setAttachmentLoading(url, true, attachmentId)
       let localUri: string | null = null
       try {
-        localUri = await downloadToCache(url, fileName)
+        localUri = await downloadToCache(url, fileName, (progress) =>
+          editorRef.current?.setAttachmentLoading(url, true, attachmentId, progress),
+        )
         editorRef.current?.setAttachmentLoading(url, false, attachmentId)
         await ExpoNativeShareModule.preview({ url: localUri })
       } catch {
@@ -1004,11 +1008,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               <GlassView intensity={12} borderRadius={16} style={styles.uploadToast} isInteractive>
                 <View style={styles.uploadTextWrap}>
                   <View style={styles.uploadHeaderRow}>
-                    <Text style={styles.uploadFileName} numberOfLines={1}>
-                      {currentUpload.fileName}
-                    </Text>
+                    <Text style={styles.uploadTitle}>{t('noteEditor.upload.uploading')}</Text>
                     <Text style={styles.uploadPercent}>{`${currentUpload.progress}%`}</Text>
                   </View>
+                  <Text style={styles.uploadFileName} numberOfLines={1}>
+                    {currentUpload.fileName}
+                  </Text>
                   <View style={styles.uploadTrack}>
                     <View style={[styles.uploadFill, { width: `${currentUpload.progress}%` }]} />
                   </View>
@@ -1231,12 +1236,17 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'space-between',
       gap: UI_SIZE_12,
     },
-    uploadFileName: {
+    uploadTitle: {
       flex: 1,
       fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.text,
+    },
+    uploadFileName: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textSecondary,
     },
     uploadPercent: {
       fontSize: FontSize.caption,

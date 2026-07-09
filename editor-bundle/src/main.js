@@ -541,11 +541,16 @@ const FileAttachment = Node.create({
       const loadingOverlay = document.createElement('div')
       loadingOverlay.className = 'attachment-loading-overlay'
       loadingOverlay.style.cssText =
-        'display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.35); border-radius: 12px; align-items: center; justify-content: center; z-index: 10;'
+        'display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.35); border-radius: 12px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; z-index: 10;'
       const spinner = document.createElement('div')
       spinner.style.cssText =
         'width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: attachment-spin 0.6s linear infinite;'
       loadingOverlay.appendChild(spinner)
+      const loadingPercent = document.createElement('div')
+      loadingPercent.className = 'attachment-loading-percent'
+      loadingPercent.style.cssText =
+        'display: none; color: #fff; font-size: 12px; font-weight: 600; font-family: sans-serif;'
+      loadingOverlay.appendChild(loadingPercent)
       dom.addEventListener('mousedown', (e) => {
         e.preventDefault()
       })
@@ -1238,7 +1243,15 @@ window.editorBridge = {
             : el.dataset.url === msg.url
           if (matches) {
             const overlay = el.querySelector('.attachment-loading-overlay')
-            if (overlay) overlay.style.display = msg.loading ? 'flex' : 'none'
+            if (overlay) {
+              overlay.style.display = msg.loading ? 'flex' : 'none'
+              const percentEl = overlay.querySelector('.attachment-loading-percent')
+              if (percentEl) {
+                const showPercent = msg.loading && typeof msg.progress === 'number'
+                percentEl.textContent = showPercent ? `${msg.progress}%` : ''
+                percentEl.style.display = showPercent ? 'block' : 'none'
+              }
+            }
           }
         })
         break

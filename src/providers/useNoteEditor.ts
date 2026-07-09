@@ -22,7 +22,11 @@ export function useNoteEditor() {
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
   const [isSharing, setIsSharing] = useState(false)
-  const [uploadInfo, setUploadInfo] = useState<{ fileName: string; status: string } | null>(null)
+  const [uploadInfo, setUploadInfo] = useState<{
+    fileName: string
+    status: string
+    progress?: number
+  } | null>(null)
   const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null)
   const [selectedAttachmentSrc, setSelectedAttachmentSrc] = useState<string | null>(null)
   const [selectedAttachmentFileName, setSelectedAttachmentFileName] = useState<string | null>(null)

@@ -51,18 +51,26 @@ export const UploadBanner = memo(function UploadBanner({
         <ActivityIndicator size="small" color={c.primary} style={styles.uploadSpinner} />
       )}
       <View style={styles.uploadText}>
-        <View style={styles.uploadHeaderRow}>
-          <Text style={styles.uploadName} numberOfLines={1}>
-            {fileName}
-          </Text>
-          {showProgress ? <Text style={styles.uploadPercent}>{`${progress}%`}</Text> : null}
-        </View>
         {showProgress ? (
-          <View style={styles.uploadTrack}>
-            <View style={[styles.uploadFill, { width: `${progress}%` }]} />
-          </View>
+          <>
+            <View style={styles.uploadHeaderRow}>
+              <Text style={styles.uploadName}>{status}</Text>
+              <Text style={styles.uploadPercent}>{`${progress}%`}</Text>
+            </View>
+            <Text style={styles.uploadFileName} numberOfLines={1}>
+              {fileName}
+            </Text>
+            <View style={styles.uploadTrack}>
+              <View style={[styles.uploadFill, { width: `${progress}%` }]} />
+            </View>
+          </>
         ) : (
-          <Text style={styles.uploadStatus}>{status}</Text>
+          <>
+            <Text style={styles.uploadName} numberOfLines={1}>
+              {fileName}
+            </Text>
+            <Text style={styles.uploadStatus}>{status}</Text>
+          </>
         )}
       </View>
       {showProgress && onCancel ? (
@@ -121,6 +129,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     uploadPercent: {
       fontSize: FontSize.caption,
       fontFamily: FontFamily.semiBold,
+      color: c.onSurfaceVariant,
+    },
+    uploadFileName: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
     },
     uploadStatus: {

@@ -454,8 +454,18 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         const permissions =
           await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync()
         if (permissions.granted) {
-          setUploadInfo({ fileName, status: t('noteCard.actions.downloading', 'Downloading...') })
-          const localPath = await downloadToCache(cleanUrl, fileName)
+          setUploadInfo({
+            fileName,
+            status: t('noteCard.actions.downloading', 'Downloading...'),
+            progress: 0,
+          })
+          const localPath = await downloadToCache(cleanUrl, fileName, (progress) =>
+            setUploadInfo({
+              fileName,
+              status: t('noteCard.actions.downloading', 'Downloading...'),
+              progress,
+            }),
+          )
           if (localPath) {
             const ext = fileName.split('.').pop()?.toLowerCase() || ''
             const mimeType = MIME_TYPES[ext] || 'application/octet-stream'
@@ -583,7 +593,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       try {
         const cleanUrl = resolveHyperdriveUrl(url)
         const name = fileName || cleanUrl.split('/').pop() || 'file'
-        const localPath = await downloadToCache(cleanUrl, name)
+        const status = t('noteCard.actions.downloading', 'Downloading...')
+        setUploadInfo({ fileName: name, status, progress: 0 })
+        const localPath = await downloadToCache(cleanUrl, name, (progress) =>
+          setUploadInfo({ fileName: name, status, progress }),
+        )
         const ExpoNativeShareModule = await import('../../modules/expo-native-share')
         if (localPath) {
           await ExpoNativeShareModule.default.preview({ url: localPath })
@@ -592,10 +606,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         }
       } catch {
       } finally {
+        setUploadInfo(null)
         isPreviewingRef.current = false
       }
     },
-    [resolveHyperdriveUrl],
+    [resolveHyperdriveUrl, setUploadInfo, t],
   )
 
   const handlePreviewAttachment = useCallback(
@@ -894,6 +909,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         {currentUpload ? (
           <UploadBanner
             fileName={currentUpload.fileName}
+            status={t('noteEditor.upload.uploading')}
             progress={currentUpload.progress}
             onCancel={currentUpload.cancel}
             style={[
@@ -909,6 +925,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <UploadBanner
             fileName={uploadInfo.fileName}
             status={uploadInfo.status}
+            progress={uploadInfo.progress}
             style={[
               styles.uploadBanner,
               {

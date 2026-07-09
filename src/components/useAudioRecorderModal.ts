@@ -438,12 +438,12 @@ export function useAudioRecorderModal({
   const handleCancelInner = useCallback(async () => {
     stopPlayback()
     clearTimer()
-    try {
-      if (phase === 'recording') {
-        await recorder.stop()
-        await setAudioModeAsync({ allowsRecording: false })
-      }
-    } catch {}
+    if (phase === 'recording') {
+      recorder
+        .stop()
+        .then(() => setAudioModeAsync({ allowsRecording: false }))
+        .catch(() => {})
+    }
     onCancel()
   }, [clearTimer, onCancel, phase, recorder, stopPlayback])
 

@@ -110,7 +110,11 @@ export async function deleteAttachment(url: string) {
   await backendApi.deleteFile(key)
 }
 
-export async function downloadToCache(url: string, fileName: string): Promise<string> {
+export async function downloadToCache(
+  url: string,
+  fileName: string,
+  onProgress?: (progress: number) => void,
+): Promise<string> {
   if (url.startsWith('data:')) {
     const safeFileName = fileName || `file_${Date.now()}`
     const localUri = `${FileSystem.cacheDirectory}${safeFileName}`
@@ -120,8 +124,23 @@ export async function downloadToCache(url: string, fileName: string): Promise<st
   }
   const ext = fileName.split('.').pop() || 'bin'
   const dest = `${FileSystem.cacheDirectory}share-${Date.now()}.${ext}`
-  const { uri } = await FileSystem.downloadAsync(url, dest)
-  return uri
+  if (!onProgress) {
+    const { uri } = await FileSystem.downloadAsync(url, dest)
+    return uri
+  }
+  const resumable = FileSystem.createDownloadResumable(
+    url,
+    dest,
+    {},
+    ({ totalBytesWritten, totalBytesExpectedToWrite }) => {
+      if (totalBytesExpectedToWrite > 0) {
+        onProgress(Math.min(100, Math.round((totalBytesWritten / totalBytesExpectedToWrite) * 100)))
+      }
+    },
+  )
+  const result = await resumable.downloadAsync()
+  if (!result) throw new Error('Download failed')
+  return result.uri
 }
 
 export async function saveImageToPhotos(url: string, fileName: string) {

@@ -76,7 +76,12 @@ export interface TiptapEditorHandle {
   scrollToTop: () => void
   scrollToEnd: () => void
   setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
-  setAttachmentLoading: (url: string, loading: boolean, attachmentId?: string) => void
+  setAttachmentLoading: (
+    url: string,
+    loading: boolean,
+    attachmentId?: string,
+    progress?: number,
+  ) => void
   deleteImage: (src: string) => void
   deleteAttachment: (url: string) => void
   applyYjsMessage: (dataBase64: string) => void
@@ -527,8 +532,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }
         },
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
-        setAttachmentLoading: (url, loading, attachmentId) =>
-          sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId }),
+        setAttachmentLoading: (url, loading, attachmentId, progress) =>
+          sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId, progress }),
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),
         deleteAttachment: (url) => sendCommand({ type: 'deleteAttachment', url }),
         applyYjsMessage: (data) => sendCommand({ type: 'yjsMessage', data }),
