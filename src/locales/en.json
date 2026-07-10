@@ -552,5 +552,18 @@
     "clearAllData": "Clear All Data",
     "clearAllDataDesc": "Permanently deletes all notes, folders, settings, and media.",
     "clearStorage": "Clear Storage"
+  },
+  "update": {
+    "overlay": {
+      "title": "Update Required",
+      "description": "A required update is available (v{{version}}). Please update PearNotes to continue.",
+      "updateButton": "Update Now"
+    },
+    "banner": {
+      "title": "Update available",
+      "description": "Version {{version}} is ready to install",
+      "updateButton": "Update Now",
+      "dismiss": "Dismiss"
+    }
   }
 }
