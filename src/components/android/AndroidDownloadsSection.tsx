@@ -32,6 +32,7 @@ type AndroidDownloadsSectionProps = {
   noteTitles: Record<string, string>
   formatBytes: (bytes: number) => string
   onRetry: (url: string) => void
+  onPause: (url: string) => void
 }
 
 export function AndroidDownloadsSection({
@@ -39,6 +40,7 @@ export function AndroidDownloadsSection({
   noteTitles,
   formatBytes,
   onRetry,
+  onPause,
 }: AndroidDownloadsSectionProps) {
   const { t } = useTranslation()
   const styles = useStyles() as any
@@ -50,6 +52,7 @@ export function AndroidDownloadsSection({
       download.totalBytes > 0
         ? Math.min(100, Math.round((download.downloadedBytes / download.totalBytes) * 100))
         : 0
+    const isStuck = download.status === 'error' || (download.status === 'downloading' && download.stalled)
     return (
       <View key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <View style={styles.rowHeader}>
@@ -74,7 +77,33 @@ export function AndroidDownloadsSection({
             <Text style={styles.sizeLabel}>
               {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
             </Text>
-            {download.status === 'error' && (
+            {download.status === 'downloading' && !download.stalled && (
+              <Pressable
+                onPress={() => onPause(download.url)}
+                hitSlop={8}
+                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+              >
+                <MaterialCommunityIcons
+                  name="pause-circle-outline"
+                  size={UI_ICON_SIZE_18}
+                  color={c.primary}
+                />
+              </Pressable>
+            )}
+            {download.status === 'paused' && (
+              <Pressable
+                onPress={() => onRetry(download.url)}
+                hitSlop={8}
+                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+              >
+                <MaterialCommunityIcons
+                  name="play-circle-outline"
+                  size={UI_ICON_SIZE_18}
+                  color={c.primary}
+                />
+              </Pressable>
+            )}
+            {isStuck && (
               <Pressable
                 onPress={() => onRetry(download.url)}
                 hitSlop={8}

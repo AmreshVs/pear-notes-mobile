@@ -1,4 +1,4 @@
-import { CloudDownload, RotateCw, WifiOff } from 'lucide-react-native'
+import { CloudDownload, Pause, Play, RotateCw, WifiOff } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { Pressable, View as RNView, StyleSheet } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
@@ -26,6 +26,7 @@ export type DownloadItem = {
   downloadedBytes: number
   status: string
   sourceOnline: boolean
+  stalled: boolean
 }
 
 type DownloadsSectionProps = {
@@ -33,6 +34,7 @@ type DownloadsSectionProps = {
   noteTitles: Record<string, string>
   formatBytes: (bytes: number) => string
   onRetry: (url: string) => void
+  onPause: (url: string) => void
 }
 
 export function DownloadsSection({
@@ -40,6 +42,7 @@ export function DownloadsSection({
   noteTitles,
   formatBytes,
   onRetry,
+  onPause,
 }: DownloadsSectionProps) {
   const { t } = useTranslation()
   const theme = useTheme()
@@ -52,6 +55,8 @@ export function DownloadsSection({
       download.totalBytes > 0
         ? Math.min(100, Math.round((download.downloadedBytes / download.totalBytes) * 100))
         : 0
+    const isStuck =
+      download.status === 'error' || (download.status === 'downloading' && download.stalled)
     return (
       <RNView key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <RNView style={styles.rowHeader}>
@@ -68,7 +73,25 @@ export function DownloadsSection({
             <Text style={styles.sizeLabel}>
               {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
             </Text>
-            {download.status === 'error' && (
+            {download.status === 'downloading' && !download.stalled && (
+              <Pressable
+                onPress={() => onPause(download.url)}
+                hitSlop={8}
+                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+              >
+                <Pause size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+              </Pressable>
+            )}
+            {download.status === 'paused' && (
+              <Pressable
+                onPress={() => onRetry(download.url)}
+                hitSlop={8}
+                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+              >
+                <Play size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+              </Pressable>
+            )}
+            {isStuck && (
               <Pressable
                 onPress={() => onRetry(download.url)}
                 hitSlop={8}

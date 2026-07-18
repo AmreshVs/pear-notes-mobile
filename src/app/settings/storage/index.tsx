@@ -57,6 +57,7 @@ export default function StorageScreen() {
     handleDeleteMedia,
     handleReclaim,
     handleRetryDownload,
+    handlePauseDownload,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,
@@ -97,6 +98,7 @@ export default function StorageScreen() {
           noteTitles={noteTitleByKey}
           formatBytes={formatBytes}
           onRetry={handleRetryDownload}
+          onPause={handlePauseDownload}
         />
 
         <UploadsSection

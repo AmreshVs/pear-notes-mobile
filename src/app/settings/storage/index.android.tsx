@@ -66,6 +66,7 @@ export default function AndroidStorageScreen() {
     handleDeleteMedia,
     handleReclaim,
     handleRetryDownload,
+    handlePauseDownload,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,
@@ -112,6 +113,7 @@ export default function AndroidStorageScreen() {
           noteTitles={noteTitleByKey}
           formatBytes={formatBytes}
           onRetry={handleRetryDownload}
+          onPause={handlePauseDownload}
         />
 
         <AndroidUploadsSection

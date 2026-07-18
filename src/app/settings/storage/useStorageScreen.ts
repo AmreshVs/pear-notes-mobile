@@ -7,6 +7,7 @@ import {
   getReclaimableBytes,
   getTotalBlobBytes,
   getTotalOnDiskBytes,
+  pauseDownload,
   reclaimStorage,
   retryDownload,
   selectStorageByKind,
@@ -61,6 +62,13 @@ function useStorageScreen() {
     [dispatch],
   )
 
+  const handlePauseDownload = useCallback(
+    (url: string) => {
+      dispatch(pauseDownload({ url }))
+    },
+    [dispatch],
+  )
+
   const handleResetPress = useCallback(() => {
     setResetSheetVisible(true)
   }, [])
@@ -90,6 +98,7 @@ function useStorageScreen() {
     handleDeleteMedia,
     handleReclaim,
     handleRetryDownload,
+    handlePauseDownload,
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,
