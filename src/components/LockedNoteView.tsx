@@ -1,14 +1,12 @@
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
-import * as LocalAuthentication from 'expo-local-authentication'
 import { Fingerprint, Lock, ScanFace, ShieldAlert } from 'lucide-react-native'
-import { memo, useCallback, useEffect, useState } from 'react'
+import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
-import { useSelector } from 'react-redux'
 
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
+import { useLockedNoteView } from '@/components/useLockedNoteView'
 import {
   commonStyles,
   FontFamily,
@@ -20,72 +18,18 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
-import { isDeviceAuthSupported } from '@/lib/deviceAuth'
-import { markNoteUnlocked, unlockNote } from '@/lib/noteLock'
-import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
-
-const isAndroid = Platform.OS === 'android'
-
-type AuthState = 'checking' | 'supported' | 'unavailable'
-type BiometricKind = 'face' | 'fingerprint' | 'generic'
 
 export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId: string }) {
   const { t } = useTranslation()
   const styles = useStyles()
   const { colors, isDark } = useTheme()
-  const [authState, setAuthState] = useState<AuthState>('checking')
-  const [biometric, setBiometric] = useState<BiometricKind>('generic')
-  const [unlocking, setUnlocking] = useState(false)
-  const lockMethod = useSelector(getLockMethod)
-  const isPassword = lockMethod === 'password'
+  const { authState, biometric, unlocking, isPassword, unavailable, handleUnlock } =
+    useLockedNoteView(noteId)
 
-  useEffect(() => {
-    let active = true
-    ;(async () => {
-      if (isPassword) {
-        if (active) setAuthState('supported')
-        return
-      }
-      const supported = await isDeviceAuthSupported()
-      if (!active) return
-      if (!supported) {
-        setAuthState('unavailable')
-        return
-      }
-      setAuthState('supported')
-      if (isAndroid) return
-      try {
-        const types = await LocalAuthentication.supportedAuthenticationTypesAsync()
-        if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-          setBiometric('face')
-        } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-          setBiometric('fingerprint')
-        }
-      } catch {
-        setBiometric('generic')
-      }
-    })()
-    return () => {
-      active = false
-    }
-  }, [isPassword])
+  const onUnlock = useCallback(() => {
+    handleUnlock(t('noteCard.unlockReason'))
+  }, [handleUnlock, t])
 
-  const handleUnlock = useCallback(async () => {
-    if (unlocking) return
-    setUnlocking(true)
-    try {
-      if (isPassword) {
-        const ok = await requestNoteLockPassword()
-        if (ok) markNoteUnlocked(noteId)
-      } else {
-        await unlockNote(noteId, t('noteCard.unlockReason'))
-      }
-    } finally {
-      setUnlocking(false)
-    }
-  }, [noteId, unlocking, isPassword, t])
-
-  const unavailable = authState === 'unavailable'
   const iconColor = unavailable ? colors.error : colors.primary
   const btnTextColor = isDark ? colors.black : colors.white
 
@@ -123,7 +67,7 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
       <Text style={styles.desc}>{description}</Text>
       {authState === 'supported' ? (
         <Pressable
-          onPress={handleUnlock}
+          onPress={onUnlock}
           disabled={unlocking}
           style={({ pressed }) => [
             styles.unlockBtn,
@@ -146,13 +90,9 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   return (
     <Animated.View entering={FadeIn.duration(220)} style={styles.container}>
       <Animated.View entering={FadeInDown.duration(260)} style={styles.card}>
-        {isAndroid ? (
-          <RNView style={styles.androidCard}>{content}</RNView>
-        ) : (
-          <GlassView intensity={50} style={styles.glass}>
-            <RNView style={styles.inner}>{content}</RNView>
-          </GlassView>
-        )}
+        <GlassView intensity={50} style={styles.glass}>
+          <RNView style={styles.inner}>{content}</RNView>
+        </GlassView>
       </Animated.View>
     </Animated.View>
   )
@@ -177,15 +117,6 @@ const useStyles = createThemedStylesheet((theme) => {
     glass: {
       borderRadius: Radii.card,
     },
-    androidCard: {
-      borderRadius: 28,
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
-      padding: 32,
-      alignItems: 'center',
-      elevation: 2,
-    },
     inner: {
       padding: Space.xxxl,
       alignItems: 'center',
@@ -204,12 +135,12 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     title: {
       fontSize: FontSize.title,
-      fontWeight: isAndroid ? FontWeight.semibold : FontWeight.bold,
-      fontFamily: isAndroid ? FontFamily.semiBold : FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: theme.colors.text,
       textAlign: 'center',
       marginBottom: Space.sm,
-      letterSpacing: isAndroid ? 0 : LetterSpacing.tight,
+      letterSpacing: LetterSpacing.tight,
     },
     desc: {
       fontSize: FontSize.body,
@@ -227,7 +158,7 @@ const useStyles = createThemedStylesheet((theme) => {
       height: 52,
       minWidth: 200,
       paddingHorizontal: Space.xl,
-      borderRadius: isAndroid ? 9999 : Radii.md,
+      borderRadius: Radii.md,
       backgroundColor: theme.colors.primary,
       marginTop: Space.xl,
     },
@@ -236,7 +167,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     unlockBtnText: {
       fontSize: FontSize.subtitle,
-      fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
+      fontWeight: FontWeight.bold,
       fontFamily: FontFamily.semiBold,
       color: theme.isDark ? theme.colors.black : theme.colors.white,
     },

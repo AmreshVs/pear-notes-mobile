@@ -1,28 +1,21 @@
 import { usePathname } from 'expo-router'
 import { Check, ChevronDown, Coffee } from 'lucide-react-native'
-import { ActivityIndicator, Platform, Pressable, StyleSheet } from 'react-native'
-import Animated, {
-  interpolate,
-  useAnimatedStyle,
-  useDerivedValue,
-  withTiming,
-} from 'react-native-reanimated'
+import { ActivityIndicator, Pressable, StyleSheet } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useBackupProgressBanner } from './useBackupProgressBanner'
+import { useBackupProgressBannerAnimation } from './useBackupProgressBannerAnimation'
 
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontSize,
   FontWeight,
   Radii,
   Space,
   UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
-
-const isAndroid = Platform.OS === 'android'
 
 export function BackupProgressBanner() {
   const theme = useTheme()
@@ -43,37 +36,8 @@ export function BackupProgressBanner() {
     toggleKeepAwake,
   } = useBackupProgressBanner()
 
-  const fadeAnim = useDerivedValue(() => {
-    return withTiming(isVisible ? 1 : 0, { duration: Durations.fade })
-  }, [isVisible])
-
-  const collapseAnim = useDerivedValue(() => {
-    return withTiming(isCollapsed ? 0 : 1, { duration: Durations.fade })
-  }, [isCollapsed])
-
-  const containerStyle = useAnimatedStyle(() => {
-    return {
-      opacity: fadeAnim.value,
-      transform: [
-        {
-          translateY: interpolate(fadeAnim.value, [0, 1], [20, 0]),
-        },
-      ],
-    }
-  })
-
-  const textContainerStyle = useAnimatedStyle(() => {
-    return {
-      opacity: collapseAnim.value,
-      width: interpolate(collapseAnim.value, [0, 1], [0, 200]),
-    }
-  })
-
-  const actionsContainerStyle = useAnimatedStyle(() => {
-    return {
-      opacity: collapseAnim.value,
-    }
-  })
+  const { containerStyle, textContainerStyle, actionsContainerStyle } =
+    useBackupProgressBannerAnimation(isVisible, isCollapsed)
 
   return (
     <Animated.View
@@ -146,7 +110,7 @@ export function BackupProgressBanner() {
 const useStyles = createThemedStylesheetWithHooks(
   (theme, { insets, pathname }) => {
     const isMainTab = pathname.startsWith('/(tabs)') || pathname === '/'
-    const bottomOffset = isMainTab ? insets.bottom + (isAndroid ? 65 : 85) : insets.bottom + 16
+    const bottomOffset = isMainTab ? insets.bottom + 85 : insets.bottom + 16
 
     const styles = StyleSheet.create({
       container: {

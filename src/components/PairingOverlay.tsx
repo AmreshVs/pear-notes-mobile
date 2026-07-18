@@ -508,7 +508,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
         <RNView style={styles.androidScrim} />
       ) : (
         <>
-          <BlurView intensity={100} tint="dark" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={100} tint={theme.colorScheme} style={StyleSheet.absoluteFill} />
           <View style={styles.overlay} />
         </>
       )}

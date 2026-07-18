@@ -1,17 +1,10 @@
 import { Lock } from 'lucide-react-native'
-import { memo, useEffect, useState } from 'react'
-import { AppState, type AppStateStatus, View as RNView, StyleSheet } from 'react-native'
+import { memo } from 'react'
+import { View as RNView, StyleSheet } from 'react-native'
 
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
-import {
-  commonStyles,
-  FontFamily,
-  FontSize,
-  Radii,
-  Space,
-  UI_ICON_SIZE_40,
-} from '@/constants/commonStyles'
-import { getLockPrivacyPreference, LOCK_SWITCHER_HIDE_KEY } from '@/lib/lockPrivacy'
+import { useLockedContentShield } from '@/components/useLockedContentShield'
+import { commonStyles, Radii, Space, UI_ICON_SIZE_40 } from '@/constants/commonStyles'
 
 export const LockedContentShield = memo(function LockedContentShield({
   active,
@@ -20,25 +13,9 @@ export const LockedContentShield = memo(function LockedContentShield({
 }) {
   const styles = useStyles()
   const { colors } = useTheme()
-  const [enabled, setEnabled] = useState(true)
-  const [appState, setAppState] = useState<AppStateStatus>(AppState.currentState)
+  const { visible } = useLockedContentShield(active)
 
-  useEffect(() => {
-    let cancelled = false
-    getLockPrivacyPreference(LOCK_SWITCHER_HIDE_KEY).then((value) => {
-      if (!cancelled) setEnabled(value)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [active])
-
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', setAppState)
-    return () => subscription.remove()
-  }, [])
-
-  if (!active || !enabled || appState === 'active') return null
+  if (!visible) return null
 
   return (
     <RNView style={styles.overlay}>
@@ -67,11 +44,6 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: `${theme.colors.primary}26`,
       borderColor: `${theme.colors.primary}4D`,
       borderRadius: Radii.card,
-    },
-    title: {
-      fontSize: FontSize.title,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.text,
     },
   })
   return styles

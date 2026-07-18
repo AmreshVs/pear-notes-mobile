@@ -1,12 +1,6 @@
-import {
-  setImportStatus,
-  startExportBackup,
-  startImportBackup,
-} from '@pear-notes/core/store/slices/backupSlice.js'
-import { isValidBackupPassword } from '@pear-notes/core/utils.js'
-import { router, Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 import { Check, Eye, EyeOff, Lock, X } from 'lucide-react-native'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
@@ -19,7 +13,8 @@ import {
   TextInput,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch } from 'react-redux'
+
+import { useBackupPasswordScreen } from './useBackupPasswordScreen'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -37,28 +32,28 @@ import {
   UI_SIZE_54,
   UI_SIZE_8,
 } from '@/constants/commonStyles'
-import { getTempBackupFilePath } from '@/lib/backupFileManager'
-import { takePendingImportPath } from '@/lib/backupPasswordFlow'
-import { getPasswordStrength, PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
+import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
 export default function BackupPasswordScreen() {
   const { t } = useTranslation()
   const { mode } = useLocalSearchParams<{ mode: string }>()
-  const dispatch = useDispatch()
   const { colors } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
 
-  const isCreate = mode !== 'enter'
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [secure, setSecure] = useState(true)
-
-  const strength = useMemo(() => getPasswordStrength(password), [password])
-  const passwordsMatch = password === confirm
-  const canSubmit = isCreate
-    ? isValidBackupPassword(password) && passwordsMatch
-    : password.trim().length > 0
+  const {
+    isCreate,
+    password,
+    setPassword,
+    confirm,
+    setConfirm,
+    secure,
+    toggleSecure,
+    strength,
+    passwordsMatch,
+    canSubmit,
+    submit,
+  } = useBackupPasswordScreen(mode)
 
   const barFillStyle = useMemo(() => {
     const colorStyle =
@@ -76,29 +71,9 @@ export default function BackupPasswordScreen() {
     [styles.footer, insets.bottom],
   )
 
-  const toggleSecure = useCallback(() => setSecure((s) => !s), [])
-
   const handleSubmit = useCallback(() => {
-    if (!canSubmit) return
-    if (isCreate) {
-      const filePath = getTempBackupFilePath()
-      dispatch(startExportBackup({ password, filePath } as any))
-      router.back()
-      return
-    }
-    const filePath = takePendingImportPath()
-    if (filePath) {
-      dispatch(
-        setImportStatus({
-          step: 'decrypting',
-          progress: 15,
-          message: t('backup.progress.restoringDesc'),
-        }),
-      )
-      dispatch(startImportBackup({ filePath, password } as any))
-    }
-    router.back()
-  }, [canSubmit, isCreate, password, dispatch, t])
+    submit(t('backup.progress.restoringDesc'))
+  }, [submit, t])
 
   const renderRule = useCallback(
     (rule: (typeof PASSWORD_RULE_KEYS)[number]) => {

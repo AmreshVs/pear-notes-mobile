@@ -20,7 +20,7 @@ import { hideLockInfo, useLockInfoVisible } from '@/lib/lockInfoModal'
 
 export const LockUnavailableModal = memo(function LockUnavailableModal() {
   const { t } = useTranslation()
-  const { colors } = useTheme()
+  const { colors, colorScheme } = useTheme()
   const styles = useStyles()
   const visible = useLockInfoVisible()
 
@@ -33,7 +33,7 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
       onRequestClose={hideLockInfo}
     >
       <RNView style={styles.modalFill}>
-        <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={95} tint={colorScheme} style={StyleSheet.absoluteFill} />
         <RNView style={commonStyles.modalOverlay} />
 
         <Pressable style={StyleSheet.absoluteFill} onPress={hideLockInfo} />

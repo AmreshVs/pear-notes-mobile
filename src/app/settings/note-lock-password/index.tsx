@@ -1,9 +1,6 @@
-import { backendApi } from '@pear-notes/core/backend/api.js'
-import { loadSettings } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { isValidBackupPassword } from '@pear-notes/core/utils.js'
-import { router, Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 import { Check, Eye, EyeOff, Lock, TriangleAlert, X } from 'lucide-react-native'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
@@ -16,7 +13,8 @@ import {
   TextInput,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch } from 'react-redux'
+
+import { useNoteLockPasswordScreen } from './useNoteLockPasswordScreen'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -34,28 +32,30 @@ import {
   UI_SIZE_54,
   UI_SIZE_8,
 } from '@/constants/commonStyles'
-import { resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
-import { getPasswordStrength, PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
+import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
 export default function NoteLockPasswordScreen() {
   const { t } = useTranslation()
   const { mode } = useLocalSearchParams<{ mode: string; purpose: string }>()
-  const dispatch = useDispatch()
   const { colors } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
 
-  const isCreate = mode !== 'enter'
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm] = useState('')
-  const [secure, setSecure] = useState(true)
-  const [error, setError] = useState('')
-
-  const strength = useMemo(() => getPasswordStrength(password), [password])
-  const passwordsMatch = password === confirm
-  const canSubmit = isCreate
-    ? isValidBackupPassword(password) && passwordsMatch
-    : password.trim().length > 0
+  const {
+    isCreate,
+    password,
+    setPassword,
+    confirm,
+    setConfirm,
+    secure,
+    toggleSecure,
+    strength,
+    passwordsMatch,
+    canSubmit,
+    error,
+    setError,
+    submit,
+  } = useNoteLockPasswordScreen(mode)
 
   const barFillStyle = useMemo(() => {
     const colorStyle =
@@ -73,33 +73,16 @@ export default function NoteLockPasswordScreen() {
     [styles.footer, insets.bottom],
   )
 
-  const toggleSecure = useCallback(() => setSecure((s) => !s), [])
-
-  useEffect(() => {
-    if (isCreate) return
-    return () => resolveNoteLockPassword(false)
-  }, [isCreate])
-
   const handleSubmit = useCallback(async () => {
-    if (!canSubmit) return
-    if (isCreate) {
-      const done = await backendApi.setNoteLockPassword({ password })
-      if (done) dispatch(loadSettings())
-      router.back()
-      return
-    }
-    const { valid, retryAfter } = await backendApi.verifyNoteLockPassword({ password })
-    if (valid) {
-      resolveNoteLockPassword(true)
-      router.back()
-    } else {
+    const failure = await submit()
+    if (failure) {
       setError(
-        retryAfter > 0
-          ? t('noteLockPassword.tooManyAttempts', { seconds: retryAfter })
+        failure.retryAfter > 0
+          ? t('noteLockPassword.tooManyAttempts', { seconds: failure.retryAfter })
           : t('noteLockPassword.incorrect'),
       )
     }
-  }, [canSubmit, isCreate, password, dispatch, t])
+  }, [submit, setError, t])
 
   const renderRule = useCallback(
     (rule: (typeof PASSWORD_RULE_KEYS)[number]) => {

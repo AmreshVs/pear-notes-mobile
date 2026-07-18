@@ -33,7 +33,7 @@ import { resolveNoteLockPassword, useNoteUnlockVisible } from '@/lib/noteLockPas
 
 export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
   const { t } = useTranslation()
-  const { colors } = useTheme()
+  const { colors, colorScheme } = useTheme()
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const visible = useNoteUnlockVisible()
@@ -89,7 +89,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
       onRequestClose={handleCancel}
     >
       <RNView style={styles.fill}>
-        <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
+        <BlurView intensity={95} tint={colorScheme} style={StyleSheet.absoluteFill} />
         <RNView style={commonStyles.modalOverlay} />
         <Pressable style={StyleSheet.absoluteFill} onPress={handleCancel} />
 
