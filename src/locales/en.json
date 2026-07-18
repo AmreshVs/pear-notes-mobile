@@ -287,6 +287,11 @@
     "retry": "Retry",
     "backendFailed": "Failed to initialize backend runtime."
   },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "message": "The app hit an unexpected error. Reloading will recover your notes without data loss.",
+    "reload": "Reload"
+  },
   "noteEditor": {
     "placeholder": "Start writing...",
     "upload": {

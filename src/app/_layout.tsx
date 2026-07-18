@@ -46,7 +46,7 @@ import { SheetProvider } from '@/providers/SheetProvider'
 import { ToastProvider } from '@/providers/ToastProvider'
 import { startWorklet } from '@/utils/worklet'
 
-export { ErrorBoundary } from 'expo-router'
+export { AppErrorBoundary as ErrorBoundary } from '@/components/AppErrorBoundary'
 
 LogBox.ignoreAllLogs()
 
