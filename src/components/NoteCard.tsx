@@ -21,7 +21,7 @@ import {
   StyleSheet,
   type ViewStyle,
 } from 'react-native'
-import Animated, { Easing, FadeIn, FadeOutUp, LinearTransition } from 'react-native-reanimated'
+import Animated, { FadeIn, FadeOutUp } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 
 import { createThemedStylesheet, Text, useTheme } from './Themed'
@@ -150,7 +150,6 @@ export const NoteCard = memo(function NoteCard({
     <Animated.View
       entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
       exiting={FadeOutUp.duration(180)}
-      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable onPress={onPress} style={getPressableStyle}>
         <RNView style={styles.row}>
