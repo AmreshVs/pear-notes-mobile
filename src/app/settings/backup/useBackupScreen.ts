@@ -174,9 +174,11 @@ function useBackupScreen() {
     if (Platform.OS === 'ios') {
       try {
         await wait(MODAL_DISMISS_DELAY_MS)
-        await saveBackupWithShare(getTempBackupFilePath(), t('backup.shareBackup'))
-        await saveLastBackupDate()
-        setLastBackupDate(new Date().toISOString())
+        const saved = await saveBackupWithShare(getTempBackupFilePath(), t('backup.shareBackup'))
+        if (saved) {
+          await saveLastBackupDate()
+          setLastBackupDate(new Date().toISOString())
+        }
         dispatch(resetExport())
       } catch (e) {
         dispatch(resetExport())
@@ -184,9 +186,11 @@ function useBackupScreen() {
       }
     } else {
       try {
-        await saveBackupToDevice(getTempBackupFilePath())
-        await saveLastBackupDate()
-        setLastBackupDate(new Date().toISOString())
+        const saved = await saveBackupToDevice(getTempBackupFilePath())
+        if (saved) {
+          await saveLastBackupDate()
+          setLastBackupDate(new Date().toISOString())
+        }
       } catch (e) {
         showToast(String(e))
       } finally {

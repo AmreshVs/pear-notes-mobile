@@ -71,24 +71,29 @@ export function clearImportCacheFile(): void {
   lastImportCachePath = null
 }
 
-export async function saveBackupToDevice(exportFilePath: string): Promise<void> {
+const SAF_DOCUMENTS_INITIAL_URI =
+  'content://com.android.externalstorage.documents/document/primary%3ADocuments'
+
+export async function saveBackupToDevice(exportFilePath: string): Promise<boolean> {
   try {
     if (Platform.OS === 'ios') {
-      await Share.share({ url: renameBackupInCache(exportFilePath) })
-    } else {
-      const permissions =
-        await FileSystemLegacy.StorageAccessFramework.requestDirectoryPermissionsAsync()
-      if (permissions.granted) {
-        const uri = await FileSystemLegacy.StorageAccessFramework.createFileAsync(
-          permissions.directoryUri,
-          getBackupFileName(),
-          'application/octet-stream',
-        )
-        const srcFile = new File(exportFilePath)
-        const destFile = new File(uri)
-        srcFile.copy(destFile)
-      }
+      const result = await Share.share({ url: renameBackupInCache(exportFilePath) })
+      return result.action !== Share.dismissedAction
     }
+    const permissions =
+      await FileSystemLegacy.StorageAccessFramework.requestDirectoryPermissionsAsync(
+        SAF_DOCUMENTS_INITIAL_URI,
+      )
+    if (!permissions.granted) return false
+    const uri = await FileSystemLegacy.StorageAccessFramework.createFileAsync(
+      permissions.directoryUri,
+      getBackupFileName(),
+      'application/octet-stream',
+    )
+    const srcFile = new File(exportFilePath)
+    const destFile = new File(uri)
+    srcFile.copy(destFile)
+    return true
   } finally {
     clearBackupExportCache(exportFilePath)
   }
@@ -97,13 +102,14 @@ export async function saveBackupToDevice(exportFilePath: string): Promise<void> 
 export async function saveBackupWithShare(
   exportFilePath: string,
   shareMessage?: string,
-): Promise<void> {
+): Promise<boolean> {
   try {
     if (Platform.OS === 'ios') {
-      await Share.share({ url: renameBackupInCache(exportFilePath) })
-    } else {
-      await Share.share({ message: shareMessage, url: exportFilePath })
+      const result = await Share.share({ url: renameBackupInCache(exportFilePath) })
+      return result.action !== Share.dismissedAction
     }
+    const result = await Share.share({ message: shareMessage, url: exportFilePath })
+    return result.action !== Share.dismissedAction
   } finally {
     clearBackupExportCache(exportFilePath)
   }
