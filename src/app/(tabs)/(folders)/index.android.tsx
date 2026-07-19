@@ -468,36 +468,37 @@ const VaultFolderRow = memo(function VaultFolderRow({
   )
 
   return (
-    <Animated.View
-      style={animatedStyle}
-      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-    >
-      <Pressable
-        onPress={handlePress}
-        onLongPress={handleLongPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={getPressableStyle}
-      >
-        <View style={styles.rowLeft}>
-          <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
-            <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_22} color={iconColor} />
-          </View>
-          <Text style={styles.rowNameText}>{name}</Text>
-        </View>
-        <View style={styles.rowRight}>
-          {countLabel && (
-            <View style={styles.countBadge}>
-              <Text style={styles.countText}>{countLabel}</Text>
+    <Animated.View layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
+      <Animated.View style={animatedStyle}>
+        <Pressable
+          onPress={handlePress}
+          onLongPress={handleLongPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          style={getPressableStyle}
+        >
+          <View style={styles.rowLeft}>
+            <View
+              style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}
+            >
+              <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_22} color={iconColor} />
             </View>
-          )}
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={UI_ICON_SIZE_18}
-            color={hexWithAlpha(c.onSurfaceVariant, 0.5)}
-          />
-        </View>
-      </Pressable>
+            <Text style={styles.rowNameText}>{name}</Text>
+          </View>
+          <View style={styles.rowRight}>
+            {countLabel && (
+              <View style={styles.countBadge}>
+                <Text style={styles.countText}>{countLabel}</Text>
+              </View>
+            )}
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={UI_ICON_SIZE_18}
+              color={hexWithAlpha(c.onSurfaceVariant, 0.5)}
+            />
+          </View>
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   )
 })

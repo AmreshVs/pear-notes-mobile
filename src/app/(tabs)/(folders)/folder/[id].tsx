@@ -147,6 +147,36 @@ export default function FolderNotesScreen() {
     [t],
   )
 
+  const notesRef = useRef(notes)
+  notesRef.current = notes
+
+  const handleCopyNoteById = useCallback(
+    (noteId: string) => {
+      const target = (notesRef.current as any[]).find((n) => n.key === noteId)
+      if (target) handleCopyNote(target.value?.title, target.value?.note)
+    },
+    [handleCopyNote],
+  )
+
+  const handleToggleLockNote = useCallback(
+    (noteId: string, currentlyLocked: boolean) => {
+      toggleNoteLock({
+        key: noteId,
+        currentlyLocked,
+        reason: t('noteCard.unlockReason'),
+        dispatch,
+        lockMethod,
+      })
+    },
+    [dispatch, lockMethod, t],
+  )
+
+  const attachmentByKey = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof getAttachmentInfo>>()
+    for (const n of notes as any[]) map.set(n.key, getAttachmentInfo(n.value?.note))
+    return map
+  }, [notes])
+
   const handleRenameFolder = useCallback(() => {
     if (!folder) return
     Alert.prompt(
@@ -211,19 +241,6 @@ export default function FolderNotesScreen() {
 
       const isLocked = note.value?.locked === true
       const isPinned = note.value?.pinned === true
-      const handlePress = () => handleSelectNote(note.key)
-      const handleDelete = () => handleDeleteNote(note.key)
-      const handleCopy = () => handleCopyNote(note.value?.title, note.value?.note)
-      const handleMoveTo = (folderId: string) => handleMoveNote(note.key, folderId)
-      const handleTogglePin = () => handleTogglePinNote(note.key, isPinned)
-      const handleToggleLock = () =>
-        toggleNoteLock({
-          key: note.key,
-          currentlyLocked: isLocked,
-          reason: t('noteCard.unlockReason'),
-          dispatch,
-          lockMethod,
-        })
 
       const folderName =
         folder?.id === ALL_NOTES_KEY
@@ -237,7 +254,7 @@ export default function FolderNotesScreen() {
           title={note.value?.title}
           date={formatDate(note.value?.updatedAt || note.value?.createdAt)}
           summary={getPreview(note.value?.note)}
-          attachment={getAttachmentInfo(note.value?.note)}
+          attachment={attachmentByKey.get(note.key) ?? null}
           rawImageUrl={getFirstImageUrl(note.value?.note)}
           folderName={folderName}
           selected={false}
@@ -245,29 +262,28 @@ export default function FolderNotesScreen() {
           animationIndex={animationIndex}
           locked={isLocked}
           pinned={isPinned}
-          onPress={handlePress}
-          onDelete={handleDelete}
-          onCopy={handleCopy}
-          onToggleLock={handleToggleLock}
-          onTogglePin={isTrashFolder ? undefined : handleTogglePin}
+          onPress={handleSelectNote}
+          onDelete={handleDeleteNote}
+          onCopy={handleCopyNoteById}
+          onToggleLock={handleToggleLockNote}
+          onTogglePin={isTrashFolder ? undefined : handleTogglePinNote}
           moveFolders={moveFolders}
-          onMoveTo={handleMoveTo}
+          onMoveTo={handleMoveNote}
         />
       )
     },
     [
       allFolders,
       folder?.id,
+      attachmentByKey,
       handleSelectNote,
       handleDeleteNote,
-      handleCopyNote,
+      handleCopyNoteById,
       handleTogglePinNote,
+      handleToggleLockNote,
       isTrashFolder,
       moveFolders,
       handleMoveNote,
-      dispatch,
-      lockMethod,
-      t,
     ],
   )
 
@@ -397,11 +413,7 @@ export default function FolderNotesScreen() {
               </>
             ) : (
               <>
-                <SymbolView
-                  name="note.text"
-                  size={UI_ICON_SIZE_44}
-                  tintColor={colors.textMuted}
-                />
+                <SymbolView name="note.text" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
                 <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
                   {t('folderView.empty.noNotesTitle')}
                 </Text>

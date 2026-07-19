@@ -69,13 +69,36 @@ interface NoteCardProps {
   animationIndex?: number
   locked?: boolean
   pinned?: boolean
-  onPress: () => void
-  onDelete?: () => void
-  onCopy?: () => void
-  onToggleLock?: () => void
-  onTogglePin?: () => void
+  onPress: (id: string) => void
+  onDelete?: (id: string) => void
+  onCopy?: (id: string) => void
+  onToggleLock?: (id: string, currentlyLocked: boolean) => void
+  onTogglePin?: (id: string, currentlyPinned: boolean) => void
   moveFolders?: MoveFolder[]
-  onMoveTo?: (folderId: string) => void
+  onMoveTo?: (id: string, folderId: string) => void
+}
+
+function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
+  return (
+    prev.id === next.id &&
+    prev.title === next.title &&
+    prev.date === next.date &&
+    prev.summary === next.summary &&
+    prev.attachment === next.attachment &&
+    prev.rawImageUrl === next.rawImageUrl &&
+    prev.folderName === next.folderName &&
+    prev.selected === next.selected &&
+    prev.isLast === next.isLast &&
+    prev.locked === next.locked &&
+    prev.pinned === next.pinned &&
+    prev.moveFolders === next.moveFolders &&
+    prev.onPress === next.onPress &&
+    prev.onDelete === next.onDelete &&
+    prev.onCopy === next.onCopy &&
+    prev.onToggleLock === next.onToggleLock &&
+    prev.onTogglePin === next.onTogglePin &&
+    prev.onMoveTo === next.onMoveTo
+  )
 }
 
 export const NoteCard = memo(function NoteCard({
@@ -111,6 +134,18 @@ export const NoteCard = memo(function NoteCard({
   const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
   const colorTheme = useSelector(getColorTheme)
   const isPearTheme = colorTheme === 'pear'
+
+  const handlePress = useCallback(() => onPress(id), [onPress, id])
+  const handleDelete = useCallback(() => onDelete?.(id), [onDelete, id])
+  const handleCopy = useCallback(() => onCopy?.(id), [onCopy, id])
+  const handleToggleLock = useCallback(
+    () => onToggleLock?.(id, locked === true),
+    [onToggleLock, id, locked],
+  )
+  const handleTogglePin = useCallback(
+    () => onTogglePin?.(id, pinned === true),
+    [onTogglePin, id, pinned],
+  )
 
   const getPressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }): ViewStyle[] => [
@@ -151,7 +186,7 @@ export const NoteCard = memo(function NoteCard({
       entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
       exiting={FadeOutUp.duration(180)}
     >
-      <Pressable onPress={onPress} style={getPressableStyle}>
+      <Pressable onPress={handlePress} style={getPressableStyle}>
         <RNView style={styles.row}>
           <RNView style={styles.content}>
             <RNView style={styles.titleRow}>
@@ -245,7 +280,7 @@ export const NoteCard = memo(function NoteCard({
                     key={folder.id}
                     label={folder.name}
                     systemImage="folder"
-                    onPress={() => onMoveTo(folder.id)}
+                    onPress={() => onMoveTo(id, folder.id)}
                   />
                 ))
               ) : (
@@ -262,7 +297,7 @@ export const NoteCard = memo(function NoteCard({
             <Button
               label={t('noteCard.actions.copyNote')}
               systemImage="doc.on.doc"
-              onPress={onCopy}
+              onPress={handleCopy}
             />
           )}
 
@@ -270,7 +305,7 @@ export const NoteCard = memo(function NoteCard({
             <Button
               label={pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin')}
               systemImage={pinned ? 'pin.slash' : 'pin'}
-              onPress={onTogglePin}
+              onPress={handleTogglePin}
             />
           )}
 
@@ -278,7 +313,7 @@ export const NoteCard = memo(function NoteCard({
             <Button
               label={locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')}
               systemImage={locked ? 'lock.slash' : 'lock'}
-              onPress={onToggleLock}
+              onPress={handleToggleLock}
             />
           )}
 
@@ -287,7 +322,7 @@ export const NoteCard = memo(function NoteCard({
               label={t('noteCard.actions.delete')}
               systemImage="trash"
               role="destructive"
-              onPress={onDelete}
+              onPress={handleDelete}
             />
           )}
         </ContextMenu.Items>
@@ -295,7 +330,7 @@ export const NoteCard = memo(function NoteCard({
       </ContextMenu>
     </Host>
   )
-})
+}, areNoteCardPropsEqual)
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({

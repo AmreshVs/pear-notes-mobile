@@ -28,7 +28,6 @@ export default function FoldersLayout() {
     >
       <Stack.Screen name="index" options={{ title: t('folders.title') }} />
       <Stack.Screen name="folder/[id]" options={{ headerLargeTitle: true }} />
-      <Stack.Screen name="note/[id]" options={{ headerLargeTitle: false, title: '' }} />
     </Stack>
   )
 }
