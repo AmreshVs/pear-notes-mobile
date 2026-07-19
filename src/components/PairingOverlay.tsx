@@ -47,6 +47,7 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_40,
+  UI_SIZE_32,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
@@ -677,10 +678,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     },
     title: {
       fontSize: FontSize.heading,
+      lineHeight: UI_SIZE_32,
       fontWeight: isAndroid ? FontWeight.semibold : FontWeight.bold,
       textAlign: 'center',
       letterSpacing: isAndroid ? 0 : LetterSpacing.tight,
-      marginBottom: isAndroid ? 4 : Space.sm,
+      marginBottom: Space.md,
+      width: '100%',
       color: theme.colors.text,
     },
     sub: {
@@ -867,7 +870,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     },
     cancelBtnText: {
       color: theme.colors.textSecondary,
-      fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
+      fontWeight: FontWeight.bold,
       fontSize: FontSize.body,
       letterSpacing: isAndroid ? 0.1 : 0,
     },
@@ -882,13 +885,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     },
     rejectBtnText: {
       color: theme.colors.error,
-      fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
+      fontWeight: FontWeight.bold,
       fontSize: FontSize.body,
       letterSpacing: isAndroid ? 0.1 : 0,
     },
     confirmBtnText: {
       color: theme.isDark ? theme.colors.black : theme.colors.white,
-      fontWeight: isAndroid ? FontWeight.medium : FontWeight.bold,
+      fontWeight: FontWeight.bold,
       fontSize: isAndroid ? FontSize.body : FontSize.subtitle,
       letterSpacing: isAndroid ? 0.1 : 0,
     },
