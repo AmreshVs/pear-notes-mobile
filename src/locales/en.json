@@ -314,7 +314,14 @@
       "scannedDoc": "Scanned document",
       "pageCount": "Page {{count}} of {{total}}",
       "file": "File",
-      "audio": "Audio"
+      "audio": "Audio",
+      "uploadingCount": "Uploading {{current}} of {{total}}",
+      "queued": "Queued",
+      "done": "Done",
+      "cancelAll": "Cancel all uploads",
+      "cancelItem": "Cancel upload",
+      "expandQueue": "Show upload queue",
+      "collapseQueue": "Hide upload queue"
     },
     "menu": {
       "image": "Image",

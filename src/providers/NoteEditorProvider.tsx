@@ -17,7 +17,6 @@ import {
   Pressable,
   Share,
   StyleSheet,
-  Text,
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -35,20 +34,12 @@ import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
+import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import {
-  FontFamily,
-  FontSize,
-  FontWeight,
   Space,
-  UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
-  UI_SIZE_2,
-  UI_SIZE_4,
-  UI_SIZE_6,
-  UI_SIZE_12,
-  UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_32,
   UI_SIZE_48,
@@ -57,7 +48,6 @@ import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtec
 import { downloadToCache, saveImageToPhotos, shareMessage } from '@/lib/noteAttachmentManager'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
-import { useNoteUpload } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { parseNoteAttachmentsAndText, resolveAttachmentFilename } from '@/utils/noteParser'
 
@@ -114,7 +104,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   } = editor
 
   const isPreviewingRef = useRef(false)
-  const currentUpload = useNoteUpload(noteId)
 
   useNoteLockVersion()
   const lockMethod = useSelector(getLockMethod)
@@ -729,37 +718,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onCancel={() => setIsRecorderVisible(false)}
           />
 
-          {currentUpload && (
-            <View style={[styles.uploadContainer, { bottom: toolbarBottom + 64 }]}>
-              <GlassView intensity={12} borderRadius={16} style={styles.uploadToast} isInteractive>
-                <View style={styles.uploadTextWrap}>
-                  <View style={styles.uploadHeaderRow}>
-                    <Text style={styles.uploadTitle}>{t('noteEditor.upload.uploading')}</Text>
-                    <Text style={styles.uploadPercent}>{`${currentUpload.progress}%`}</Text>
-                  </View>
-                  <Text style={styles.uploadFileName} numberOfLines={1}>
-                    {currentUpload.fileName}
-                  </Text>
-                  <View style={styles.uploadTrack}>
-                    <View style={[styles.uploadFill, { width: `${currentUpload.progress}%` }]} />
-                  </View>
-                </View>
-                <Pressable
-                  onPress={currentUpload.cancel}
-                  hitSlop={8}
-                  style={({ pressed }) => [styles.uploadCancel, pressed && styles.pressed]}
-                >
-                  <SymbolView
-                    name="xmark"
-                    size={UI_ICON_SIZE_16}
-                    tintColor={colors.text}
-                    weight="semibold"
-                    fallback={<View />}
-                  />
-                </Pressable>
-              </GlassView>
-            </View>
-          )}
+          <UploadQueueBanner noteId={noteId} bottom={toolbarBottom + 64} />
 
           {ExpoUI && (
             <View
@@ -936,65 +895,6 @@ const useStyles = createThemedStylesheet((theme) => {
       width: StyleSheet.hairlineWidth,
       height: UI_SIZE_20,
       backgroundColor: theme.colors.separator,
-    },
-    uploadContainer: {
-      position: 'absolute',
-      left: Space.base,
-      right: Space.base,
-      alignItems: 'center',
-      zIndex: 20,
-    },
-    uploadToast: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: UI_SIZE_12,
-      paddingHorizontal: UI_SIZE_16,
-      paddingVertical: UI_SIZE_12,
-      overflow: 'hidden',
-    },
-    uploadTextWrap: {
-      flex: 1,
-      gap: UI_SIZE_6,
-    },
-    uploadHeaderRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: UI_SIZE_12,
-    },
-    uploadTitle: {
-      flex: 1,
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.text,
-    },
-    uploadFileName: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.regular,
-      color: theme.colors.textSecondary,
-    },
-    uploadPercent: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.textSecondary,
-    },
-    uploadTrack: {
-      height: UI_SIZE_4,
-      borderRadius: UI_SIZE_2,
-      backgroundColor: theme.colors.borderSecondary,
-      overflow: 'hidden',
-    },
-    uploadFill: {
-      height: '100%',
-      borderRadius: UI_SIZE_2,
-      backgroundColor: theme.colors.primary,
-    },
-    uploadCancel: {
-      width: UI_SIZE_32,
-      height: UI_SIZE_32,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     flex1: {
       flex: 1,

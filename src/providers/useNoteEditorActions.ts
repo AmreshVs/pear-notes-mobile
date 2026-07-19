@@ -22,11 +22,24 @@ import {
 } from '@/lib/noteAttachmentManager'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { runNoteUpload } from '@/lib/noteUploadManager'
+import {
+  clearNoteUploadQueue,
+  enqueueNoteUploads,
+  isNoteUploadItemCancelled,
+} from '@/lib/uploadRegistry'
 import { isImageFile } from '@/utils/media'
 
 const IMAGE_MAX_HEIGHT = 400
 const IMAGE_WIDTH_INSET = 40
 const SCROLL_TO_END_DELAY = 300
+
+let uploadItemSequence = 0
+const nextUploadItemId = () => `upload-${Date.now()}-${(uploadItemSequence += 1)}`
+
+const getAssetDisplayName = (
+  asset: { fileName?: string | null; name?: string },
+  fallback: string,
+) => asset.fileName || (asset as { name?: string }).name || fallback
 
 export type NoteEditorActionLabels = {
   photo: string
@@ -122,8 +135,8 @@ export function useNoteEditorActions({
   )
 
   const processMediaAsset = useCallback(
-    async (asset: ImagePickerAsset) => {
-      if (!noteId) return
+    async (asset: ImagePickerAsset, itemId: string) => {
+      if (!noteId || isNoteUploadItemCancelled(itemId)) return
       const targetNoteId = noteId
 
       if (asset.type === 'video') {
@@ -139,6 +152,7 @@ export function useNoteEditorActions({
         try {
           await runNoteUpload({
             noteId: targetNoteId,
+            itemId,
             path: prepared.path,
             fileName: displayName,
             displayName,
@@ -163,6 +177,7 @@ export function useNoteEditorActions({
 
       await runNoteUpload({
         noteId: targetNoteId,
+        itemId,
         path: toBackendPath(uri),
         fileName: fileName || `image-${Date.now()}.jpg`,
         displayName,
@@ -188,8 +203,8 @@ export function useNoteEditorActions({
   )
 
   const processDocumentAsset = useCallback(
-    async (asset: DocumentPickerAsset) => {
-      if (!noteId) return
+    async (asset: DocumentPickerAsset, itemId: string) => {
+      if (!noteId || isNoteUploadItemCancelled(itemId)) return
       const targetNoteId = noteId
       const { uri, name, size, mimeType } = asset
 
@@ -202,14 +217,17 @@ export function useNoteEditorActions({
           )
         })
         if (dimensions.width > 0) {
-          await processMediaAsset({
-            type: 'image',
-            uri,
-            width: dimensions.width,
-            height: dimensions.height,
-            fileName: name,
-            mimeType,
-          } as ImagePickerAsset)
+          await processMediaAsset(
+            {
+              type: 'image',
+              uri,
+              width: dimensions.width,
+              height: dimensions.height,
+              fileName: name,
+              mimeType,
+            } as ImagePickerAsset,
+            itemId,
+          )
         }
         return
       }
@@ -218,6 +236,7 @@ export function useNoteEditorActions({
       const displayName = name || labels.file
       await runNoteUpload({
         noteId: targetNoteId,
+        itemId,
         path: toBackendPath(uri),
         fileName: name || `file-${Date.now()}`,
         displayName,
@@ -247,44 +266,68 @@ export function useNoteEditorActions({
   const handlePickImage = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     const assets = await pickImagesFromLibrary()
-    if (!assets) return
-    for (const asset of assets) {
-      await processMediaAsset(asset)
+    if (!assets || !noteId) return
+    const queued = assets.map((asset) => ({
+      id: nextUploadItemId(),
+      fileName: getAssetDisplayName(asset, labels.photo),
+      asset,
+    }))
+    enqueueNoteUploads(noteId, queued)
+    for (const entry of queued) {
+      await processMediaAsset(entry.asset, entry.id)
     }
-  }, [processMediaAsset])
+    clearNoteUploadQueue(noteId)
+  }, [processMediaAsset, noteId, labels])
 
   const handleTakePhoto = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     try {
       const asset = await takePhotoFromCamera()
-      if (asset) {
-        await processMediaAsset(asset)
+      if (asset && noteId) {
+        const itemId = nextUploadItemId()
+        enqueueNoteUploads(noteId, [
+          { id: itemId, fileName: getAssetDisplayName(asset, labels.photo) },
+        ])
+        await processMediaAsset(asset, itemId)
+        clearNoteUploadQueue(noteId)
       }
     } catch (e) {
       if (e instanceof CameraPermissionDeniedError) onCameraPermissionDenied()
     }
-  }, [processMediaAsset, onCameraPermissionDenied])
+  }, [processMediaAsset, onCameraPermissionDenied, noteId, labels])
 
   const handleTakeVideo = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     try {
       const asset = await takeVideoFromCamera()
-      if (asset) {
-        await processMediaAsset(asset)
+      if (asset && noteId) {
+        const itemId = nextUploadItemId()
+        enqueueNoteUploads(noteId, [
+          { id: itemId, fileName: getAssetDisplayName(asset, labels.photo) },
+        ])
+        await processMediaAsset(asset, itemId)
+        clearNoteUploadQueue(noteId)
       }
     } catch (e) {
       if (e instanceof CameraPermissionDeniedError) onCameraPermissionDenied()
     }
-  }, [processMediaAsset, onCameraPermissionDenied])
+  }, [processMediaAsset, onCameraPermissionDenied, noteId, labels])
 
   const handlePickFile = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     const assets = await pickDocuments()
-    if (!assets) return
-    for (const asset of assets) {
-      await processDocumentAsset(asset)
+    if (!assets || !noteId) return
+    const queued = assets.map((asset) => ({
+      id: nextUploadItemId(),
+      fileName: getAssetDisplayName(asset, labels.file),
+      asset,
+    }))
+    enqueueNoteUploads(noteId, queued)
+    for (const entry of queued) {
+      await processDocumentAsset(entry.asset, entry.id)
     }
-  }, [processDocumentAsset])
+    clearNoteUploadQueue(noteId)
+  }, [processDocumentAsset, noteId, labels])
 
   const handleScanDocument = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -294,7 +337,21 @@ export function useNoteEditorActions({
       const scannedImages = await scanDocument()
       if (!scannedImages) return
 
+      const scanIds = scannedImages.map(() => nextUploadItemId())
+      enqueueNoteUploads(
+        targetNoteId,
+        scannedImages.map((_, i) => ({
+          id: scanIds[i],
+          fileName:
+            scannedImages.length > 1
+              ? labels.pageLabel(i + 1, scannedImages.length)
+              : labels.scannedDoc,
+        })),
+      )
+
       for (let i = 0; i < scannedImages.length; i++) {
+        const itemId = scanIds[i]
+        if (isNoteUploadItemCancelled(itemId)) continue
         const uri = scannedImages[i]
         const displayName =
           scannedImages.length > 1
@@ -318,6 +375,7 @@ export function useNoteEditorActions({
 
         await runNoteUpload({
           noteId: targetNoteId,
+          itemId,
           path: toBackendPath(uri),
           fileName,
           displayName,
@@ -330,6 +388,7 @@ export function useNoteEditorActions({
           isNoteOpen: () => loadedNoteRef.current === targetNoteId,
         })
       }
+      clearNoteUploadQueue(targetNoteId)
     } catch {}
   }, [noteId, resolveHyperdriveUrl, editorRef, loadedNoteRef, labels, screenWidth, fitImage])
 
@@ -339,8 +398,11 @@ export function useNoteEditorActions({
       if (!noteId) return
       const targetNoteId = noteId
       const fileName = `${recordingFileNamePrefix}-${Date.now()}.m4a`
+      const itemId = nextUploadItemId()
+      enqueueNoteUploads(targetNoteId, [{ id: itemId, fileName }])
       await runNoteUpload({
         noteId: targetNoteId,
+        itemId,
         path: toBackendPath(uri),
         fileName,
         displayName: fileName,
@@ -352,6 +414,7 @@ export function useNoteEditorActions({
         resolveLink: resolveHyperdriveUrl,
         isNoteOpen: () => loadedNoteRef.current === targetNoteId,
       })
+      clearNoteUploadQueue(targetNoteId)
     },
     [
       noteId,

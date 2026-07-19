@@ -38,7 +38,7 @@ import {
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
-import { useNoteUpload } from '@/lib/uploadRegistry'
+import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import type { AttachmentInfo } from '@/utils/noteUtils'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
@@ -128,7 +128,8 @@ export const NoteCard = memo(function NoteCard({
   const lockIconColor = colors.primary
   const [thumbError, setThumbError] = useState(false)
   useNoteLockVersion()
-  const upload = useNoteUpload(id)
+  const uploadQueue = useNoteUploadQueue(id)
+  const upload = uploadQueue.activeItem
   const masked = locked === true && !isNoteUnlocked(id)
 
   const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))

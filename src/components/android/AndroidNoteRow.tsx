@@ -36,7 +36,7 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
-import { useNoteUpload } from '@/lib/uploadRegistry'
+import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import {
   type AttachmentKind,
   getAttachmentInfo,
@@ -77,7 +77,8 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const c = md3.colors
 
   useNoteLockVersion()
-  const upload = useNoteUpload(note.key)
+  const uploadQueue = useNoteUploadQueue(note.key)
+  const upload = uploadQueue.activeItem
   const locked = note.value?.locked === true
   const pinned = note.value?.pinned === true
   const masked = locked && !isNoteUnlocked(note.key)

@@ -2,7 +2,12 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
-import { endNoteUpload, startNoteUpload, updateNoteUploadProgress } from '@/lib/uploadRegistry'
+import {
+  beginNoteUploadItem,
+  completeNoteUploadItem,
+  isNoteUploadItemCancelled,
+  updateNoteUploadItemProgress,
+} from '@/lib/uploadRegistry'
 
 export class UploadCancelledError extends Error {
   constructor() {
@@ -93,6 +98,7 @@ function appendAttachmentToStoredNote(
 
 type RunNoteUploadOptions = {
   noteId: string
+  itemId: string
   path: string
   fileName: string
   displayName: string
@@ -106,6 +112,7 @@ type RunNoteUploadOptions = {
 export async function runNoteUpload(options: RunNoteUploadOptions): Promise<void> {
   const {
     noteId,
+    itemId,
     path,
     fileName,
     displayName,
@@ -116,10 +123,12 @@ export async function runNoteUpload(options: RunNoteUploadOptions): Promise<void
     onError,
   } = options
 
+  if (isNoteUploadItemCancelled(itemId)) return
+
   const { promise, cancel } = createProgressUpload(noteId, path, fileName, (progress) =>
-    updateNoteUploadProgress(noteId, progress),
+    updateNoteUploadItemProgress(noteId, itemId, progress),
   )
-  startNoteUpload(noteId, { id: `${Date.now()}`, fileName: displayName, progress: 0, cancel })
+  beginNoteUploadItem(noteId, itemId, cancel)
 
   try {
     const { link } = await promise
@@ -132,6 +141,6 @@ export async function runNoteUpload(options: RunNoteUploadOptions): Promise<void
   } catch (e) {
     if (!(e instanceof UploadCancelledError)) onError?.()
   } finally {
-    endNoteUpload(noteId)
+    if (!isNoteUploadItemCancelled(itemId)) completeNoteUploadItem(noteId, itemId)
   }
 }

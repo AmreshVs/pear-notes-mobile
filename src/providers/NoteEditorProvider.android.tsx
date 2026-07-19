@@ -35,6 +35,7 @@ import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
+import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import {
   FontFamily,
   FontSize,
@@ -58,7 +59,7 @@ import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtec
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { copyFileToSAF, downloadToCache, shareMessage } from '@/lib/noteAttachmentManager'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
-import { useNoteUpload } from '@/lib/uploadRegistry'
+import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { parseNoteAttachmentsAndText } from '@/utils/noteParser'
 
@@ -133,7 +134,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const isPreviewingRef = useRef(false)
 
   useNoteLockVersion()
-  const currentUpload = useNoteUpload(noteId)
+  const uploadQueue = useNoteUploadQueue(noteId)
+  const hasUploadQueue = uploadQueue.items.length > 0
+  const uploadBannerBottom = useMemo(
+    () =>
+      (keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12) + UI_SIZE_72,
+    [keyboardHeight, insets.bottom],
+  )
   const lockMethod = useSelector(getLockMethod)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
   const protectLockedNote = isOpen && !!noteData?.locked
@@ -630,22 +637,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           onRecordAudio={handleRecordAudio}
         />
 
-        {currentUpload ? (
-          <UploadBanner
-            fileName={currentUpload.fileName}
-            status={t('noteEditor.upload.uploading')}
-            progress={currentUpload.progress}
-            onCancel={currentUpload.cancel}
-            style={[
-              styles.uploadBanner,
-              {
-                bottom:
-                  (keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12) +
-                  UI_SIZE_72,
-              },
-            ]}
-          />
-        ) : uploadInfo ? (
+        <UploadQueueBanner noteId={noteId} bottom={uploadBannerBottom} />
+
+        {!hasUploadQueue && uploadInfo ? (
           <UploadBanner
             fileName={uploadInfo.fileName}
             status={uploadInfo.status}
