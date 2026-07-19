@@ -216,6 +216,7 @@
   },
   "noteCard": {
     "untitled": "Untitled",
+    "downloadComplete": "File downloaded successfully.",
     "noAdditionalText": "No additional text",
     "lockedSummary": "Authenticate to view this note",
     "uploading": "Uploading… {{progress}}%",
@@ -233,6 +234,7 @@
     "actions": {
       "moveTo": "Move to",
       "moveToFolder": "Move to Folder",
+      "downloading": "Downloading...",
       "copyNote": "Copy Note",
       "pin": "Pin Note",
       "unpin": "Unpin Note",
@@ -302,6 +304,7 @@
       "uploading": "Uploading...",
       "failedTitle": "Upload Failed",
       "failedVideo": "Could not upload the video.",
+      "failedDownload": "Could not download the file.",
       "photo": "Photo",
       "scannedDoc": "Scanned document",
       "pageCount": "Page {{count}} of {{total}}",
@@ -313,7 +316,8 @@
       "attachment": "Attachment",
       "imageOptions": "Image Options",
       "attachmentOptions": "Attachment Options",
-      "saveToPhotos": "Save to Photos"
+      "saveToPhotos": "Save to Photos",
+      "download": "Download"
     }
   },
   "pairing": {
@@ -417,6 +421,8 @@
     "cancel": "Cancel",
     "clear": "Clear",
     "close": "Close",
+    "confirm": "Confirm",
+    "error": "Error",
     "ok": "OK"
   },
   "permissions": {
@@ -456,15 +462,20 @@
     "images": "Images",
     "videos": "Videos",
     "voiceNotes": "Voice notes",
+    "audio": "Audio",
     "files": "Files",
     "text": "Text",
     "textAllNotesDesc": "(all notes)",
     "syncedMedia": "Synced Media",
     "items": "{{count}} items",
+    "shareBackup": "Pear Notes backup",
+    "shareError": "Share Failed",
     "clearStorage": "Clear Storage",
     "clearAllDataTitle": "Clear All Data?",
     "clearAllDataDesc": "This will permanently delete ALL notes, folders, settings, and media. This cannot be undone.",
     "progress": {
+      "backingUp": "Backing up your data...",
+      "restoring": "Restoring your data...",
       "creatingTitle": "Creating Backup...",
       "restoringTitle": "Restoring Data...",
       "readingTitle": "Reading Backup...",
