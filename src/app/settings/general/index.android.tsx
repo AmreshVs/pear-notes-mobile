@@ -21,6 +21,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection.android'
+import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -339,6 +340,8 @@ export default function AndroidGeneralSettingsScreen() {
         </Animated.View>
 
         <BackgroundSyncSection />
+
+        <MediaSyncSection />
       </ScrollView>
 
       <BottomActionSheet

@@ -86,7 +86,20 @@
       "confirmMessage": "This will permanently delete all your notes, media, and files on this device. This action cannot be undone and your data cannot be recovered if you haven't backed it up or synced with another device."
     },
     "e2eEncrypted": "End-to-end encrypted",
-    "footer": "End-to-end encrypted • Fully private"
+    "footer": "End-to-end encrypted • Fully private",
+    "mediaSync": {
+      "title": "Media sync",
+      "pauseMedia": "Pause media transfers",
+      "pauseMediaDesc": "Hold photos, video, and file transfers. Notes, folders, and settings keep syncing.",
+      "heldNotice": "Media transfers are held. Queued items resume automatically once media is allowed again.",
+      "holdOnCellular": "Hold media on cellular",
+      "holdOnCellularDesc": "Automatically hold photos, video, and files while on a mobile connection.",
+      "onWifi": "Currently on Wi-Fi",
+      "onCellular": "Currently on cellular — media held",
+      "onCellularAllowed": "Currently on cellular",
+      "offline": "No connection",
+      "connectionUnknown": "Connection type unavailable"
+    }
   },
   "sync": {
     "title": "Link and Sync",

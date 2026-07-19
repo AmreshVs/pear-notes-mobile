@@ -40,6 +40,7 @@ import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
+import { useMediaSyncAutoDetect } from '@/lib/useMediaSyncAutoDetect'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { SheetProvider } from '@/providers/SheetProvider'
@@ -101,6 +102,8 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const styles = useStyles()
+
+  useMediaSyncAutoDetect()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
   const savedEncryptionKeyRef = useRef<string | null>(null)

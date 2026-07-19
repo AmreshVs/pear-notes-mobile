@@ -16,6 +16,7 @@ import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-na
 import { useDispatch, useSelector } from 'react-redux'
 
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
+import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -213,6 +214,8 @@ export default function GeneralSettingsScreen() {
         </Animated.View>
 
         <BackgroundSyncSection />
+
+        <MediaSyncSection />
       </ScrollView>
     </RNView>
   )
