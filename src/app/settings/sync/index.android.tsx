@@ -482,7 +482,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       justifyContent: 'space-between',
       paddingHorizontal: UI_SIZE_8,
       paddingBottom: UI_SIZE_8,
-      paddingTop: insets.top + UI_SIZE_4,
+      paddingTop: insets.top + UI_SIZE_16,
     },
     iconBtn: {
       padding: UI_SIZE_8,
