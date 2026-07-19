@@ -18,7 +18,7 @@ import useBackupScreen from './useBackupScreen'
 
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { createThemedStylesheetWithHooks, useTheme } from '@/components/Themed'
+import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
   FontFamily,
@@ -60,7 +60,6 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 export default function AndroidBackupScreen() {
   const { t } = useTranslation()
   const theme = useMD3Theme()
-  const appTheme = useTheme()
   const c = theme.colors as ExtendedColors
   const styles = useStyles()
   const {
@@ -134,7 +133,7 @@ export default function AndroidBackupScreen() {
             <MaterialCommunityIcons
               name="cloud-upload"
               size={UI_ICON_SIZE_20}
-              color={appTheme.colors.black}
+              color={c.onPrimary}
             />
             <Text style={styles.primaryBtnText}>{t('backup.createBackup')}</Text>
           </Pressable>
@@ -332,7 +331,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
-      color: theme.colors.black,
+      color: c.onPrimary,
     },
     secondaryBtn: {
       height: UI_SIZE_54,

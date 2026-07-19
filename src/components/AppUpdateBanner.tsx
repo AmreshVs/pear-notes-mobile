@@ -124,7 +124,7 @@ const useStyles = createThemedStylesheetWithHooks(
       updateBtnText: {
         fontSize: FontSize.body,
         fontWeight: FontWeight.bold,
-        color: theme.colors.black,
+        color: theme.colors.onPrimary,
       },
     })
     return styles

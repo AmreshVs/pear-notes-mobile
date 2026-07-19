@@ -125,7 +125,7 @@ export default function BackupScreen() {
               isActive && styles.btnDisabled,
             ]}
           >
-            <CloudUpload size={UI_ICON_SIZE_18} color={colors.black} strokeWidth={2} />
+            <CloudUpload size={UI_ICON_SIZE_18} color={colors.onPrimary} strokeWidth={2} />
             <Text style={styles.primaryBtnText}>{t('backup.createBackup')}</Text>
           </Pressable>
 
@@ -336,7 +336,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
-      color: theme.colors.black,
+      color: theme.colors.onPrimary,
     },
     secondaryBtn: {
       height: UI_SIZE_54,

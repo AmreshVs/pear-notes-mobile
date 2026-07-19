@@ -163,7 +163,7 @@ export default function SyncScreen() {
                     {isLoading && (
                       <ActivityIndicator
                         size="small"
-                        color={colors.black}
+                        color={colors.onPrimary}
                         style={styles.indicatorMargin}
                       />
                     )}
@@ -231,7 +231,7 @@ export default function SyncScreen() {
                     {copied ? (
                       <Check size={UI_ICON_SIZE_14} color={colors.white} strokeWidth={2.5} />
                     ) : (
-                      <Link2 size={UI_ICON_SIZE_14} color={colors.black} strokeWidth={2.2} />
+                      <Link2 size={UI_ICON_SIZE_14} color={colors.onPrimary} strokeWidth={2.2} />
                     )}
                     <Text style={[styles.btnText, copied && styles.btnTextCopied]}>
                       {copied ? t('sync.invite.copied') : t('sync.invite.copyBtn')}
@@ -289,7 +289,7 @@ export default function SyncScreen() {
                   ]}
                 >
                   {isLoading ? (
-                    <ActivityIndicator size="small" color={colors.black} />
+                    <ActivityIndicator size="small" color={colors.onPrimary} />
                   ) : (
                     <Text style={styles.linkBtnText}>{t('sync.paste.linkBtn')}</Text>
                   )}
@@ -415,7 +415,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.medium,
     },
     segLabelActive: {
-      color: theme.colors.white,
+      color: theme.colors.onPrimary,
       fontWeight: FontWeight.bold,
     },
     segLabelInactive: {
@@ -472,7 +472,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.primary,
     },
     btnText: {
-      color: theme.colors.white,
+      color: theme.colors.onPrimary,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.2,
@@ -664,7 +664,7 @@ const useStyles = createThemedStylesheet((theme) => {
       opacity: 0.4,
     },
     linkBtnText: {
-      color: theme.colors.black,
+      color: theme.colors.onPrimary,
       fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
     },

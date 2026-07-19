@@ -3,6 +3,7 @@ import type { MD3Theme } from 'react-native-paper'
 import { MD3DarkTheme, MD3LightTheme } from 'react-native-paper'
 
 export const pearGold = '#DCA323'
+export const pearGoldForeground = '#1a1300'
 
 export const pearM3Theme = createMaterial3Theme(pearGold)
 
@@ -23,9 +24,9 @@ const obsidianOverrides = {
     level5: '#303032',
   },
   primary: pearGold,
-  onPrimary: '#000000',
+  onPrimary: pearGoldForeground,
   primaryContainer: pearGold,
-  onPrimaryContainer: '#000000',
+  onPrimaryContainer: pearGoldForeground,
   secondaryContainer: '#222224',
   onSecondaryContainer: '#ffffff',
   outline: '#38383a',
@@ -50,9 +51,9 @@ const lightOverrides = {
     level5: '#E0E0E0',
   },
   primary: pearGold,
-  onPrimary: '#000000',
+  onPrimary: pearGoldForeground,
   primaryContainer: pearGold,
-  onPrimaryContainer: '#000000',
+  onPrimaryContainer: pearGoldForeground,
   secondary: '#5C5C5C',
   onSecondary: '#FFFFFF',
   secondaryContainer: '#E8E8E8',

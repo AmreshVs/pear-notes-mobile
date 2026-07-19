@@ -124,7 +124,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.primary,
     },
     confirmText: {
-      color: theme.colors.black,
+      color: theme.colors.onPrimary,
       fontWeight: FontWeight.bold,
       fontSize: FontSize.body,
     },

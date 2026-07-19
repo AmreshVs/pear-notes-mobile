@@ -84,7 +84,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginRight: Space.sm,
     },
     buttonText: {
-      color: theme.isDark ? theme.colors.black : theme.colors.white,
+      color: theme.colors.onPrimary,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
     },

@@ -805,7 +805,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       backgroundColor: theme.colors.primary,
     },
     permissionBtnText: {
-      color: theme.colors.white,
+      color: theme.colors.onPrimary,
       fontWeight: FontWeight.bold,
     },
     permissionCancelBtn: {
@@ -894,7 +894,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       letterSpacing: isAndroid ? 0.1 : 0,
     },
     confirmBtnText: {
-      color: theme.isDark ? theme.colors.black : theme.colors.white,
+      color: theme.colors.onPrimary,
       fontWeight: FontWeight.bold,
       fontSize: isAndroid ? FontSize.body : FontSize.subtitle,
       letterSpacing: isAndroid ? 0.1 : 0,

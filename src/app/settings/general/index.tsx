@@ -285,7 +285,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
     },
     segTextActive: {
-      color: theme.colors.text,
+      color: theme.colors.onPrimary,
       fontWeight: FontWeight.bold,
     },
     badge: {

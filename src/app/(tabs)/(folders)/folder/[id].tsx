@@ -395,7 +395,7 @@ export default function FolderNotesScreen() {
                     onPress={handleCreateNote}
                     style={({ pressed }) => [styles.primaryBtn, pressed && commonStyles.pressed]}
                   >
-                    <SymbolView name="plus" size={UI_ICON_SIZE_16} tintColor={colors.white} />
+                    <SymbolView name="plus" size={UI_ICON_SIZE_16} tintColor={colors.onPrimary} />
                     <Text style={styles.primaryBtnText}>{t('folderView.empty.newNoteBtn')}</Text>
                   </Pressable>
                   <Pressable
@@ -505,7 +505,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderColor: theme.colors.separator,
     },
     primaryBtnText: {
-      color: theme.colors.white,
+      color: theme.colors.onPrimary,
       fontWeight: FontWeight.bold,
       fontSize: FontSize.body,
     },

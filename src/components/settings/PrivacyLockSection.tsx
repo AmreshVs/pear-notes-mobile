@@ -86,7 +86,7 @@ export function PrivacyLockSection() {
               >
                 <Fingerprint
                   size={UI_ICON_SIZE_16}
-                  color={!isPassword ? colors.black : colors.textMuted}
+                  color={!isPassword ? colors.onPrimary : colors.textMuted}
                   strokeWidth={2}
                 />
                 <Text style={!isPassword ? styles.segmentTextActive : styles.segmentText}>
@@ -104,7 +104,7 @@ export function PrivacyLockSection() {
               >
                 <KeyRound
                   size={UI_ICON_SIZE_16}
-                  color={isPassword ? colors.black : colors.textMuted}
+                  color={isPassword ? colors.onPrimary : colors.textMuted}
                   strokeWidth={2}
                 />
                 <Text style={isPassword ? styles.segmentTextActive : styles.segmentText}>
@@ -221,7 +221,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
-      color: theme.colors.black,
+      color: theme.colors.onPrimary,
     },
     toggleRow: {
       flexDirection: 'row',

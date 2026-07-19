@@ -165,7 +165,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.primary,
     },
     permissionBtnText: {
-      color: theme.colors.black,
+      color: theme.colors.onPrimary,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
     },

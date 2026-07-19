@@ -1,4 +1,5 @@
 const pearGold = '#DCA323'
+const pearGoldForeground = '#1a1300'
 
 export default {
   light: {
@@ -8,6 +9,7 @@ export default {
     surface: '#ffffff',
     surfaceSecondary: '#e5e5ea',
     primary: pearGold,
+    onPrimary: pearGoldForeground,
     border: '#c6c6c8',
     tint: pearGold,
     tabIconDefault: '#8e8e93',
@@ -55,6 +57,7 @@ export default {
     surface: '#222224',
     surfaceSecondary: '#2a2a2c',
     primary: pearGold,
+    onPrimary: pearGoldForeground,
     border: '#38383a',
     tint: pearGold,
     tabIconDefault: '#606065',

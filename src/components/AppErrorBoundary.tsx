@@ -106,7 +106,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.subtitle,
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
-      color: theme.colors.black,
+      color: theme.colors.onPrimary,
     },
   })
   return styles

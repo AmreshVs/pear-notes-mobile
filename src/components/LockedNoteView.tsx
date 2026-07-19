@@ -22,7 +22,7 @@ import {
 export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId: string }) {
   const { t } = useTranslation()
   const styles = useStyles()
-  const { colors, isDark } = useTheme()
+  const { colors } = useTheme()
   const { authState, biometric, unlocking, isPassword, unavailable, handleUnlock } =
     useLockedNoteView(noteId)
 
@@ -31,7 +31,7 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   }, [handleUnlock, t])
 
   const iconColor = unavailable ? colors.error : colors.primary
-  const btnTextColor = isDark ? colors.black : colors.white
+  const btnTextColor = colors.onPrimary
 
   const renderIcon = () => {
     if (unavailable) return <ShieldAlert size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
@@ -169,7 +169,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.semiBold,
-      color: theme.isDark ? theme.colors.black : theme.colors.white,
+      color: theme.colors.onPrimary,
     },
   })
   return styles
