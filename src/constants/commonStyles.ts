@@ -158,6 +158,8 @@ export const LetterSpacing = {
   tight: -0.4,
   caps: 1.5,
   wide: 1.2,
+  loose: 3,
+  code: 6,
 } as const
 export const MonoFontFamily = Platform.OS === 'ios' ? 'Menlo-Regular' : 'monospace'
 

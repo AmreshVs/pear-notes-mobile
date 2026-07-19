@@ -48,6 +48,8 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_40,
   UI_SIZE_32,
+  UI_SIZE_40,
+  UI_SIZE_48,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
@@ -253,7 +255,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     return (
       <View style={styles.fingerprintContainer}>
         <Text style={styles.idEmojis}>{emojis}</Text>
-        <Text style={styles.idHex}>({hex.split('').join(' ').toUpperCase()})</Text>
+        <Text style={styles.idHex}>{hex.toUpperCase()}</Text>
       </View>
     )
   }
@@ -692,13 +694,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       lineHeight: isAndroid ? 20 : 22,
       opacity: isAndroid ? 0.64 : 0.7,
       marginBottom: Space.xl,
-      maxWidth: 280,
+      width: '100%',
       color: theme.colors.textSecondary,
     },
     idCard: {
       width: '100%',
-      paddingHorizontal: Space.xl,
-      paddingVertical: isAndroid ? Space.md : Space.base,
+      paddingHorizontal: Space.md,
+      paddingVertical: isAndroid ? Space.base : Space.lg,
       borderRadius: isAndroid ? 16 : Space.base,
       borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
@@ -728,15 +730,17 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       color: theme.colors.text,
     },
     idEmojis: {
-      fontSize: FontSize.heading,
+      fontSize: UI_SIZE_40,
+      lineHeight: UI_SIZE_48,
+      letterSpacing: LetterSpacing.loose,
       textAlign: 'center',
     },
     idHex: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.title,
       color: theme.colors.text,
-      fontWeight: 'bold',
+      fontWeight: FontWeight.bold,
       fontFamily: MonoFontFamily,
-      letterSpacing: 2,
+      letterSpacing: LetterSpacing.code,
       textAlign: 'center',
     },
     scannerScreen: {
