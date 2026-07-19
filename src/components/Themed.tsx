@@ -3,15 +3,25 @@ import React, { memo, useMemo } from 'react'
 import {
   StyleSheet,
   Text as DefaultText,
+  type TextStyle,
   View as DefaultView,
   useColorScheme as useDeviceColorScheme,
 } from 'react-native'
 import { useSelector } from 'react-redux'
 
 import Colors from '@/constants/Colors'
-import { commonStyles } from '@/constants/commonStyles'
+import { commonStyles, FontFamily } from '@/constants/commonStyles'
 import { Layout, Spacing } from '@/constants/Spacing'
 import { Typography } from '@/constants/Typography'
+
+const WEIGHT_TO_FONT_FAMILY: Record<string, string> = {
+  '400': FontFamily.regular,
+  '500': FontFamily.medium,
+  '600': FontFamily.semiBold,
+  '700': FontFamily.bold,
+  '800': FontFamily.extraBold,
+  '900': FontFamily.extraBold,
+}
 
 export function useResolvedColorScheme(): 'light' | 'dark' {
   const deviceColorScheme = useDeviceColorScheme()
@@ -90,10 +100,14 @@ export const Text = memo(function Text(props: TextProps) {
     theme.colorScheme === 'light' ? lightColor || theme.colors.text : darkColor || theme.colors.text
   const typographyStyle = Typography[variant]
 
-  const combinedStyle = useMemo(
-    () => [{ color }, typographyStyle, style],
-    [color, typographyStyle, style],
-  )
+  const combinedStyle = useMemo(() => {
+    const flat = StyleSheet.flatten([{ color }, typographyStyle, style]) as TextStyle
+    if (!flat.fontFamily) {
+      flat.fontFamily =
+        WEIGHT_TO_FONT_FAMILY[String(flat.fontWeight ?? '400')] ?? FontFamily.regular
+    }
+    return flat
+  }, [color, typographyStyle, style])
 
   return <DefaultText style={combinedStyle} {...otherProps} />
 })
