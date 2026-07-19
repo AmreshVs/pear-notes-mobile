@@ -51,6 +51,7 @@ export const UI_ICON_SIZE_18 = 18
 export const UI_ICON_SIZE_20 = 20
 export const UI_ICON_SIZE_22 = 22
 export const UI_ICON_SIZE_28 = 28
+export const UI_ICON_SIZE_44 = 44
 export const UI_ICON_SIZE_48 = 48
 
 export const UI_ICON_SIZE_13 = 13

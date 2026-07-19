@@ -43,6 +43,10 @@ import {
   FontSize,
   FontWeight,
   Space,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_22,
+  UI_ICON_SIZE_24,
   UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_6,
@@ -830,7 +834,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                 >
                   <SymbolView
                     name="chevron.left"
-                    size={20}
+                    size={UI_ICON_SIZE_20}
                     tintColor={colors.text}
                     weight="semibold"
                     fallback={<View />}
@@ -848,7 +852,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   >
                     <SymbolView
                       name="checkmark"
-                      size={22}
+                      size={UI_ICON_SIZE_22}
                       tintColor={colors.text}
                       weight="semibold"
                       fallback={<View />}
@@ -870,7 +874,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                     ) : (
                       <SymbolView
                         name="square.and.arrow.up"
-                        size={24}
+                        size={UI_ICON_SIZE_24}
                         tintColor={colors.text}
                         weight="medium"
                         fallback={<View />}
@@ -886,7 +890,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                             <View style={styles.headerBtnInner}>
                               <SymbolView
                                 name="ellipsis"
-                                size={24}
+                                size={UI_ICON_SIZE_24}
                                 tintColor={colors.text}
                                 weight="medium"
                                 fallback={<View />}
@@ -940,7 +944,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                     >
                       <SymbolView
                         name="ellipsis"
-                        size={24}
+                        size={UI_ICON_SIZE_24}
                         tintColor={colors.text}
                         weight="medium"
                         fallback={<View />}
@@ -1025,7 +1029,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                 >
                   <SymbolView
                     name="xmark"
-                    size={16}
+                    size={UI_ICON_SIZE_16}
                     tintColor={colors.text}
                     weight="semibold"
                     fallback={<View />}

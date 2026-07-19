@@ -14,6 +14,8 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  UI_ICON_SIZE_18,
+  UI_ICON_SIZE_20,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -134,7 +136,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
         ]}
       >
         <View style={styles.deviceIconCircle}>
-          <MaterialCommunityIcons name={iconName} size={UI_SIZE_20} color={c.primary} />
+          <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_20} color={c.primary} />
           {device.isLocal && <View style={styles.deviceOnlineDot} />}
         </View>
 
@@ -170,7 +172,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
             hitSlop={UI_SIZE_12}
             style={styles.deviceDeleteBtn}
           >
-            <MaterialCommunityIcons name="delete-outline" size={UI_SIZE_18} color={c.error} />
+            <MaterialCommunityIcons name="delete-outline" size={UI_ICON_SIZE_18} color={c.error} />
           </Pressable>
         )}
       </Pressable>

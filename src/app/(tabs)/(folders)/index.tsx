@@ -30,6 +30,7 @@ import {
   Space,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
+  UI_SIZE_8,
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -141,21 +142,39 @@ export default function FoldersScreen() {
 
   const headerLeft = useCallback(
     () => (
-      <Pressable onPress={handleOpenSettings} style={iconBtnStyle}>
+      <Pressable
+        onPress={handleOpenSettings}
+        style={iconBtnStyle}
+        hitSlop={UI_SIZE_8}
+        accessibilityRole="button"
+        accessibilityLabel={t('folders.a11y.openSettings')}
+      >
         <Image source="sf:gearshape" style={styles.gearIcon} />
       </Pressable>
     ),
-    [iconBtnStyle, handleOpenSettings, styles.gearIcon],
+    [iconBtnStyle, handleOpenSettings, styles.gearIcon, t],
   )
 
   const headerRight = useCallback(
     () => (
       <GlassView intensity={20} borderRadius={24} style={styles.headerPill}>
-        <Pressable onPress={handleCreateFolder} style={iconBtnStyle}>
+        <Pressable
+          onPress={handleCreateFolder}
+          style={iconBtnStyle}
+          hitSlop={UI_SIZE_8}
+          accessibilityRole="button"
+          accessibilityLabel={t('folders.a11y.newFolder')}
+        >
           <FolderPlus size={UI_ICON_SIZE_20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
         <View style={commonThemedStyles.pillDivider} />
-        <Pressable onPress={handleCreateNote} style={iconBtnStyle}>
+        <Pressable
+          onPress={handleCreateNote}
+          style={iconBtnStyle}
+          hitSlop={UI_SIZE_8}
+          accessibilityRole="button"
+          accessibilityLabel={t('folders.a11y.newNote')}
+        >
           <SquarePen size={UI_ICON_SIZE_20} color={colors.text} strokeWidth={1.8} />
         </Pressable>
       </GlassView>
@@ -167,6 +186,7 @@ export default function FoldersScreen() {
       colors.text,
       commonThemedStyles,
       styles.headerPill,
+      t,
     ],
   )
 

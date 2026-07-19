@@ -23,6 +23,7 @@ import {
   UI_SIZE_280,
   UI_SIZE_9999,
   FontSize,
+  UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -81,7 +82,7 @@ export function AndroidScannerModal({
               <Pressable onPress={onClose} style={styles.scannerCloseBtn}>
                 <MaterialCommunityIcons
                   name="close"
-                  size={UI_SIZE_20}
+                  size={UI_ICON_SIZE_20}
                   color={theme.colors.white}
                 />
               </Pressable>

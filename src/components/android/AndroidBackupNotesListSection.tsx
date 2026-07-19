@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontSize, FontWeight, UI_SIZE_8, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_20 } from '@/constants/commonStyles'
+import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_14, UI_ICON_SIZE_20, UI_SIZE_8, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_20 } from '@/constants/commonStyles'
 import { getMediaDisplayName } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -48,7 +48,7 @@ export function AndroidBackupNotesListSection({
     return (
       <View key={m.path} style={styles.mediaRow}>
         <View style={styles.mediaHeaderActions}>
-          <MaterialCommunityIcons name={iconName as any} size={UI_SIZE_14} color={c.onSurfaceVariant} />
+          <MaterialCommunityIcons name={iconName as any} size={UI_ICON_SIZE_14} color={c.onSurfaceVariant} />
           <Text style={styles.mediaName} numberOfLines={1}>
             {getMediaDisplayName(m.name, t('backup.syncedMedia'))}
           </Text>
@@ -60,7 +60,7 @@ export function AndroidBackupNotesListSection({
             hitSlop={8}
             style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
           >
-            <MaterialCommunityIcons name="close" size={UI_SIZE_14} color={c.onSurfaceVariant} />
+            <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_14} color={c.onSurfaceVariant} />
           </Pressable>
         </View>
       </View>
@@ -82,7 +82,7 @@ export function AndroidBackupNotesListSection({
             <Text style={styles.noteSize}>{formatBytes(note.totalSize)}</Text>
             <MaterialCommunityIcons
               name={isExpanded ? 'chevron-down' : 'chevron-right'}
-              size={UI_SIZE_20}
+              size={UI_ICON_SIZE_20}
               color={c.onSurfaceVariant}
             />
           </View>
@@ -93,7 +93,7 @@ export function AndroidBackupNotesListSection({
               <View style={styles.mediaHeaderActions}>
                 <MaterialCommunityIcons
                   name="pencil-outline"
-                  size={UI_SIZE_14}
+                  size={UI_ICON_SIZE_14}
                   color={c.onSurfaceVariant}
                 />
                 <Text style={styles.mediaName} numberOfLines={1}>

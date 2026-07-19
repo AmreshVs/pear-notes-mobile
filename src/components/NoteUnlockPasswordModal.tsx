@@ -60,6 +60,10 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
 
   const toggleSecure = useCallback(() => setSecure((s) => !s), [])
   const handleCancel = useCallback(() => resolveNoteLockPassword(false), [])
+  const handleChangePassword = useCallback((value: string) => {
+    setPassword(value)
+    setError('')
+  }, [])
 
   const modalCardStyle = useMemo(
     () =>
@@ -112,7 +116,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
               <RNView style={styles.inputRow}>
                 <TextInput
                   value={password}
-                  onChangeText={setPassword}
+                  onChangeText={handleChangePassword}
                   placeholder={t('noteLockPassword.placeholder')}
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry={secure}

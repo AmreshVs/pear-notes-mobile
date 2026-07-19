@@ -35,6 +35,7 @@ import {
   UI_SIZE_48,
   UI_SIZE_8,
   UI_SIZE_96,
+  UI_ICON_SIZE_48,
 } from '@/constants/commonStyles'
 import { formatBytes, hexWithAlpha } from '@/lib/backupUtils'
 
@@ -102,7 +103,11 @@ export default function AndroidStorageScreen() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeIn.duration(220)} style={styles.heroContainer}>
           <View style={styles.heroIcon}>
-            <MaterialCommunityIcons name="database-outline" size={UI_SIZE_48} color={c.primary} />
+            <MaterialCommunityIcons
+              name="database-outline"
+              size={UI_ICON_SIZE_48}
+              color={c.primary}
+            />
           </View>
           <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>

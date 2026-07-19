@@ -22,6 +22,8 @@ import {
   FontWeight,
   Layout,
   Radii,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_24,
   UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_6,
@@ -122,7 +124,12 @@ function SheetBody({
           onPress={onCancel}
           style={({ pressed }) => [styles.headerIconButton, pressed && styles.headerActionPressed]}
         >
-          <SymbolView name="xmark" size={16} tintColor={colors.textSecondary} weight="semibold" />
+          <SymbolView
+            name="xmark"
+            size={UI_ICON_SIZE_16}
+            tintColor={colors.textSecondary}
+            weight="semibold"
+          />
         </Pressable>
 
         <Pressable
@@ -136,7 +143,7 @@ function SheetBody({
         >
           <SymbolView
             name="checkmark"
-            size={16}
+            size={UI_ICON_SIZE_16}
             tintColor={!hasRecording && !isRecording ? colors.textMuted : colors.primary}
             weight="bold"
           />
@@ -239,7 +246,7 @@ function SheetBody({
               >
                 <SymbolView
                   name="gobackward.15"
-                  size={24}
+                  size={UI_ICON_SIZE_24}
                   tintColor={colors.text}
                   weight="regular"
                 />
@@ -254,7 +261,7 @@ function SheetBody({
               >
                 <SymbolView
                   name={isPlaying ? 'pause.fill' : 'play.fill'}
-                  size={24}
+                  size={UI_ICON_SIZE_24}
                   tintColor={isDark ? colors.black : colors.white}
                   weight="medium"
                 />
@@ -270,7 +277,7 @@ function SheetBody({
               >
                 <SymbolView
                   name="goforward.15"
-                  size={24}
+                  size={UI_ICON_SIZE_24}
                   tintColor={colors.text}
                   weight="regular"
                 />
@@ -283,7 +290,7 @@ function SheetBody({
             >
               <SymbolView
                 name="arrow.clockwise"
-                size={16}
+                size={UI_ICON_SIZE_16}
                 tintColor={colors.text}
                 weight="semibold"
               />

@@ -23,7 +23,8 @@ import {
   Space,
   UI_SIZE_12,
   UI_SIZE_14,
-  UI_SIZE_16,
+  UI_ICON_SIZE_14,
+  UI_ICON_SIZE_16,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getMediaDisplayName } from '@/lib/backupUtils'
@@ -59,7 +60,7 @@ export function BackupNotesListSection({
     return (
       <RNView key={m.path} style={styles.mediaRow}>
         <RNView style={styles.mediaHeaderActions}>
-          <Icon size={UI_SIZE_14} color={colors.textMuted} strokeWidth={2} />
+          <Icon size={UI_ICON_SIZE_14} color={colors.textMuted} strokeWidth={2} />
           <RNText style={styles.mediaName} numberOfLines={1}>
             {getMediaDisplayName(m.name, t('backup.syncedMedia'))}
           </RNText>
@@ -71,7 +72,7 @@ export function BackupNotesListSection({
             hitSlop={8}
             style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
           >
-            <X size={UI_SIZE_14} color={colors.textMuted} strokeWidth={2} />
+            <X size={UI_ICON_SIZE_14} color={colors.textMuted} strokeWidth={2} />
           </Pressable>
         </RNView>
       </RNView>
@@ -92,9 +93,9 @@ export function BackupNotesListSection({
           <RNView style={styles.noteHeaderActions}>
             <RNText style={styles.noteSize}>{formatBytes(note.totalSize)}</RNText>
             {isExpanded ? (
-              <ChevronDown size={UI_SIZE_16} color={colors.textMuted} strokeWidth={2} />
+              <ChevronDown size={UI_ICON_SIZE_16} color={colors.textMuted} strokeWidth={2} />
             ) : (
-              <ChevronRight size={UI_SIZE_16} color={colors.textMuted} strokeWidth={2} />
+              <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} strokeWidth={2} />
             )}
           </RNView>
         </Pressable>
@@ -102,7 +103,7 @@ export function BackupNotesListSection({
           <RNView>
             <RNView style={styles.mediaRow}>
               <RNView style={styles.mediaHeaderActions}>
-                <PenLine size={UI_SIZE_14} color={colors.textMuted} strokeWidth={2} />
+                <PenLine size={UI_ICON_SIZE_14} color={colors.textMuted} strokeWidth={2} />
                 <RNText style={styles.mediaName} numberOfLines={1}>
                   {t('backup.text')}
                 </RNText>

@@ -184,7 +184,12 @@
     },
     "untitled": "Untitled",
     "searchPlaceholder": "Search folders…",
-    "noFoldersFound": "No folders found"
+    "noFoldersFound": "No folders found",
+    "a11y": {
+      "openSettings": "Open settings",
+      "newFolder": "New folder",
+      "newNote": "New note"
+    }
   },
   "folderView": {
     "searchPlaceholder": "Search notes...",

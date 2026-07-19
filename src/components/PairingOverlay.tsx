@@ -44,8 +44,11 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_12,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_20,
   UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
+import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
@@ -167,7 +170,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     if (step === 'done') {
       return (
         <View style={styles.iconDone}>
-          <Check size={40} color={colors.success} strokeWidth={3} />
+          <Check size={UI_ICON_SIZE_40} color={colors.success} strokeWidth={3} />
         </View>
       )
     }
@@ -175,14 +178,14 @@ export const PairingOverlay = memo(function PairingOverlay() {
     if (showPairingInput) {
       return (
         <View style={styles.iconGold}>
-          <Link2 size={40} color={colors.primary} />
+          <Link2 size={UI_ICON_SIZE_40} color={colors.primary} />
         </View>
       )
     }
 
     return (
       <View style={styles.iconGold}>
-        <ShieldCheck size={40} color={colors.primary} />
+        <ShieldCheck size={UI_ICON_SIZE_40} color={colors.primary} />
       </View>
     )
   }, [step, showPairingInput, styles.iconDone, styles.iconGold, colors, styles.icon])
@@ -191,7 +194,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     () => (
       <View style={styles.loaderWrap}>
         <View style={styles.syncIconWrapper}>
-          <Globe size={40} color={colors.primary} style={styles.globeIcon} />
+          <Globe size={UI_ICON_SIZE_40} color={colors.primary} style={styles.globeIcon} />
         </View>
         <ActivityIndicator size="large" color={colors.primary} style={StyleSheet.absoluteFill} />
       </View>
@@ -263,7 +266,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       return (
         <View style={styles.cardInner}>
           <View style={[styles.icon, styles.errorIcon]}>
-            <ShieldAlert size={40} color={colors.error} strokeWidth={2.5} />
+            <ShieldAlert size={UI_ICON_SIZE_40} color={colors.error} strokeWidth={2.5} />
           </View>
           <Text style={styles.title}>{t('pairing.overlay.deviceRemovedTitle')}</Text>
           <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
@@ -378,7 +381,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
             <View style={styles.inputHeader}>
               <Text style={styles.inputLabelText}>{t('pairing.overlay.inviteCode')}</Text>
               <Pressable onPress={handleOpenScanner} style={styles.scanBtn}>
-                <ScanLine size={16} color={colors.primary} />
+                <ScanLine size={UI_ICON_SIZE_16} color={colors.primary} />
                 <Text style={styles.scanBtnText}>{t('pairing.overlay.scanBtn')}</Text>
               </Pressable>
             </View>
@@ -553,7 +556,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
               </View>
               <View style={styles.scannerHeader}>
                 <Pressable onPress={() => setIsScanning(false)} style={styles.scannerCloseBtn}>
-                  <X size={20} color={theme.colors.white} strokeWidth={2.2} />
+                  <X size={UI_ICON_SIZE_20} color={theme.colors.white} strokeWidth={2.2} />
                 </Pressable>
               </View>
               <View style={styles.scannerFooter}>
@@ -605,13 +608,17 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       position: 'absolute',
       width: '100%',
       height: '100%',
-      backgroundColor: theme.isDark ? 'rgba(0, 0, 0, 0.8)' : 'rgba(0,0,0,0.4)',
+      backgroundColor: theme.isDark
+        ? hexWithAlpha(theme.colors.black, 0.8)
+        : hexWithAlpha(theme.colors.black, 0.4),
     },
     androidCard: {
       borderRadius: 28,
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
-      borderColor: theme.isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+      borderColor: theme.isDark
+        ? hexWithAlpha(theme.colors.white, 0.08)
+        : hexWithAlpha(theme.colors.black, 0.05),
       overflow: 'hidden',
       elevation: 6,
     },
@@ -695,7 +702,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       marginBottom: Space.lg,
       ...(isAndroid
         ? {
-            backgroundColor: theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+            backgroundColor: theme.isDark
+              ? hexWithAlpha(theme.colors.white, 0.06)
+              : hexWithAlpha(theme.colors.black, 0.04),
           }
         : {}),
     },
@@ -740,7 +749,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       zIndex: 2,
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     scannerCloseBtn: {
       width: 42,
@@ -748,7 +757,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       borderRadius: 21,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'rgba(0,0,0,0.45)',
+      backgroundColor: hexWithAlpha(theme.colors.black, 0.45),
     },
     scannerFooter: {
       position: 'absolute',
@@ -758,7 +767,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       paddingHorizontal: Space.lg,
       paddingVertical: Space.lg,
       borderRadius: Radii.card,
-      backgroundColor: 'rgba(0,0,0,0.55)',
+      backgroundColor: hexWithAlpha(theme.colors.black, 0.55),
       gap: Space.sm,
       zIndex: 1,
     },
@@ -812,7 +821,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       aspectRatio: 1,
       borderRadius: Radii.card,
       borderWidth: 2,
-      borderColor: 'rgba(255,255,255,0.92)',
+      borderColor: hexWithAlpha(theme.colors.white, 0.92),
       backgroundColor: theme.colors.transparent,
     },
     fingerprintContainer: {
@@ -835,7 +844,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     },
     overlay: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: 'rgba(0,0,0,0.35)',
+      backgroundColor: hexWithAlpha(theme.colors.black, 0.35),
     },
     globeIcon: { opacity: 0.2 },
     greenBtnText: {
@@ -850,8 +859,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       borderRadius: isAndroid ? 9999 : Radii.md,
       backgroundColor: isAndroid
         ? theme.isDark
-          ? 'rgba(255,255,255,0.08)'
-          : 'rgba(0,0,0,0.05)'
+          ? hexWithAlpha(theme.colors.white, 0.08)
+          : hexWithAlpha(theme.colors.black, 0.05)
         : theme.colors.cardPressed,
       borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
@@ -928,13 +937,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       color: theme.colors.text,
       borderColor: isAndroid
         ? theme.isDark
-          ? 'rgba(255,255,255,0.12)'
-          : 'rgba(0,0,0,0.12)'
+          ? hexWithAlpha(theme.colors.white, 0.12)
+          : hexWithAlpha(theme.colors.black, 0.12)
         : theme.colors.borderSecondary,
       backgroundColor: isAndroid
         ? theme.isDark
-          ? 'rgba(255,255,255,0.04)'
-          : 'rgba(0,0,0,0.03)'
+          ? hexWithAlpha(theme.colors.white, 0.04)
+          : hexWithAlpha(theme.colors.black, 0.03)
         : theme.colors.cardPressed,
     },
     subFpWrapper: {
@@ -970,8 +979,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       borderWidth: isAndroid ? 0 : 1,
       backgroundColor: isAndroid
         ? theme.isDark
-          ? 'rgba(255,255,255,0.08)'
-          : 'rgba(0,0,0,0.06)'
+          ? hexWithAlpha(theme.colors.white, 0.08)
+          : hexWithAlpha(theme.colors.black, 0.06)
         : theme.colors.cardPressed,
       borderColor: theme.colors.borderSecondary,
     },

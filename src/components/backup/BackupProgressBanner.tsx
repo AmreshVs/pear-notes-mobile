@@ -127,7 +127,7 @@ const useStyles = createThemedStylesheetWithHooks(
         backgroundColor: theme.colors.surface,
         padding: Space.md,
         borderRadius: Radii.lg,
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+        boxShadow: theme.colors.cardShadow,
         borderWidth: 1,
         borderColor: theme.colors.borderSecondary,
       },

@@ -12,8 +12,8 @@ import {
   FontWeight,
   Space,
   UI_SIZE_2,
-  UI_SIZE_16,
   UI_STROKE_WIDTH_1_8,
+  UI_ICON_SIZE_16,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
@@ -43,7 +43,7 @@ export function BackupStatsSection({
           <RNView style={styles.infoRow}>
             <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
               <RotateCcw
-                size={UI_SIZE_16}
+                size={UI_ICON_SIZE_16}
                 color={colors.primary}
                 strokeWidth={UI_STROKE_WIDTH_1_8}
               />
@@ -64,14 +64,18 @@ export function BackupStatsSection({
       >
         <RNView style={[commonThemedStyles.card, styles.statCard]}>
           <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-            <HardDrive size={UI_SIZE_16} color={colors.primary} strokeWidth={UI_STROKE_WIDTH_1_8} />
+            <HardDrive
+              size={UI_ICON_SIZE_16}
+              color={colors.primary}
+              strokeWidth={UI_STROKE_WIDTH_1_8}
+            />
           </RNView>
           <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
           <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
         </RNView>
         <RNView style={[commonThemedStyles.card, styles.statCard]}>
           <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-            <Lock size={UI_SIZE_16} color={colors.primary} strokeWidth={UI_STROKE_WIDTH_1_8} />
+            <Lock size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={UI_STROKE_WIDTH_1_8} />
           </RNView>
           <Text style={styles.statLabel}>{t('backup.encryption')}</Text>
           <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>

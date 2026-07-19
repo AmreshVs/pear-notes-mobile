@@ -376,7 +376,9 @@ export default function SyncScreen() {
 
 const useStyles = createThemedStylesheet((theme) => {
   const isDark = theme.isDark
-  const cardBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)'
+  const cardBg = isDark
+    ? hexWithAlpha(theme.colors.white, 0.05)
+    : hexWithAlpha(theme.colors.white, 0.9)
   const cardBorder = theme.colors.borderSecondary
 
   const styles = StyleSheet.create({
@@ -522,7 +524,9 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingVertical: 15,
       paddingHorizontal: Space.md,
       width: '100%',
-      borderColor: isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)',
+      borderColor: isDark
+        ? hexWithAlpha(theme.colors.white, 0.18)
+        : hexWithAlpha(theme.colors.black, 0.12),
     },
     codeScrollContent: {
       paddingHorizontal: 2,
@@ -707,7 +711,9 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingVertical: 36,
       alignItems: 'center',
       justifyContent: 'center',
-      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+      borderColor: isDark
+        ? hexWithAlpha(theme.colors.white, 0.08)
+        : hexWithAlpha(theme.colors.black, 0.08),
     },
     emptyText: {
       fontSize: FontSize.caption,

@@ -34,6 +34,8 @@ import {
   FontWeight,
   LetterSpacing,
   Space,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_44,
   UI_SIZE_2,
   UI_SIZE_42,
   commonStyles,
@@ -352,7 +354,7 @@ export default function FolderNotesScreen() {
               </>
             ) : isTrashFolder ? (
               <>
-                <SymbolView name="trash" size={44} tintColor={colors.textMuted} />
+                <SymbolView name="trash" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
                 <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
                   {t('folderView.empty.trashEmptyTitle')}
                 </Text>
@@ -362,7 +364,7 @@ export default function FolderNotesScreen() {
               </>
             ) : localPreferences['isSynced'] !== true && allNotes.length === 0 ? (
               <>
-                <SymbolView name="book.closed" size={44} tintColor={colors.primary} />
+                <SymbolView name="book.closed" size={UI_ICON_SIZE_44} tintColor={colors.primary} />
                 <Text style={styles.onboardingTitle}>{t('folderView.empty.onboardingTitle')}</Text>
                 <Text style={commonThemedStyles.emptySubtitle}>
                   {t('folderView.empty.onboardingSubtitle')}
@@ -372,7 +374,7 @@ export default function FolderNotesScreen() {
                     onPress={handleCreateNote}
                     style={({ pressed }) => [styles.primaryBtn, pressed && commonStyles.pressed]}
                   >
-                    <SymbolView name="plus" size={16} tintColor={colors.white} />
+                    <SymbolView name="plus" size={UI_ICON_SIZE_16} tintColor={colors.white} />
                     <Text style={styles.primaryBtnText}>{t('folderView.empty.newNoteBtn')}</Text>
                   </Pressable>
                   <Pressable
@@ -381,7 +383,7 @@ export default function FolderNotesScreen() {
                   >
                     <SymbolView
                       name="laptopcomputer.and.iphone"
-                      size={16}
+                      size={UI_ICON_SIZE_16}
                       tintColor={colors.primary}
                     />
                     <Text style={styles.secondaryBtnText}>{t('folderView.empty.connectBtn')}</Text>
@@ -441,7 +443,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: UI_SIZE_2,
     },
     listContainer: {
-      backgroundColor: 'transparent',
+      backgroundColor: theme.colors.transparent,
     },
     emptyStateWrapper: {
       alignItems: 'center',

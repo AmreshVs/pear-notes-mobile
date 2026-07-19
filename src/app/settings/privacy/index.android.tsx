@@ -25,6 +25,7 @@ import {
   UI_SIZE_40,
   UI_SIZE_48,
   UI_SIZE_96,
+  UI_ICON_SIZE_48,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
@@ -60,7 +61,7 @@ export default function AndroidPrivacyScreen() {
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
               name="shield-check-outline"
-              size={UI_SIZE_48}
+              size={UI_ICON_SIZE_48}
               color={c.primary}
             />
           </View>

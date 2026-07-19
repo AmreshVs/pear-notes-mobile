@@ -17,6 +17,7 @@ import {
   UI_SIZE_24,
   UI_SIZE_40,
   UI_SIZE_8,
+  UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
@@ -84,7 +85,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
             >
               <MaterialCommunityIcons
                 name="plus"
-                size={UI_SIZE_20}
+                size={UI_ICON_SIZE_20}
                 color={c.onPrimary}
               />
               <Text style={styles.primaryBtnText}>
@@ -100,7 +101,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
             >
               <MaterialCommunityIcons
                 name="devices"
-                size={UI_SIZE_20}
+                size={UI_ICON_SIZE_20}
                 color={c.primary}
               />
               <Text style={styles.secondaryBtnText}>

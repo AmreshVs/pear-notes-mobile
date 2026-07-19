@@ -162,7 +162,9 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
 
 const useStyles = createThemedStylesheet((theme) => {
   const isDark = theme.isDark
-  const cardBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)'
+  const cardBg = isDark
+    ? hexWithAlpha(theme.colors.white, 0.05)
+    : hexWithAlpha(theme.colors.white, 0.9)
   const cardBorder = theme.colors.borderSecondary
 
   const styles = StyleSheet.create({

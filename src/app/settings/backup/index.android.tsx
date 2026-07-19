@@ -43,6 +43,7 @@ import {
   UI_SIZE_8,
   UI_SIZE_96,
   UI_SIZE_9999,
+  UI_ICON_SIZE_48,
 } from '@/constants/commonStyles'
 import { formatBackupDate, formatBytes, hexWithAlpha } from '@/lib/backupUtils'
 import { getBackupErrorMessage } from '@/utils/backupErrors'
@@ -109,7 +110,7 @@ export default function AndroidBackupScreen() {
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
               name="cloud-upload-outline"
-              size={UI_SIZE_48}
+              size={UI_ICON_SIZE_48}
               color={c.primary}
             />
           </View>
