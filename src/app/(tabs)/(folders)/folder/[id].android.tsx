@@ -154,7 +154,7 @@ export default function AndroidFolderNotesScreen() {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
       lastSelectedNoteRef.current = selectedNote
-      router.push(`/note/${selectedNote}`)
+      router.push(`/note/${selectedNote}?isNew=1`)
     }
   }, [selectedNote])
 

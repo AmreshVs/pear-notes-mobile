@@ -211,7 +211,7 @@ export default function FolderNotesScreen() {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
       creatingNoteRef.current = false
       lastSelectedNoteRef.current = selectedNote
-      openNote(selectedNote)
+      openNote(selectedNote, { focusTitle: true })
     }
   }, [selectedNote, openNote])
 

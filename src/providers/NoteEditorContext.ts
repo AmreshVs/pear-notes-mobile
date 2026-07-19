@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react'
 
 export interface NoteEditorContextType {
-  openNote: (id: string) => void
+  openNote: (id: string, options?: { focusTitle?: boolean }) => void
   closeNote: () => void
   isOpen: boolean
 }

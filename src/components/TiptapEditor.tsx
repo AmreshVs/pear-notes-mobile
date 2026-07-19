@@ -67,6 +67,7 @@ export interface TiptapEditorHandle {
   insertAudioAttachment: (url: string, fileName: string, duration?: number) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
+  focusTitle: () => void
   blur: () => void
   save: () => Promise<void>
   getHTML: () => Promise<string | undefined>
@@ -124,6 +125,7 @@ type WebViewMsg =
   | { type: 'styleState'; state: TiptapStyleState }
   | { type: 'htmlResponse'; requestId: string; html: string }
   | { type: 'focus' }
+  | { type: 'focusTitle' }
   | { type: 'blur' }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
@@ -499,6 +501,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'insertAudioAttachment', url, fileName, duration }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => sendCommand({ type: 'focus' }),
+        focusTitle: () => sendCommand({ type: 'focusTitle' }),
         blur: () => {
           sendCommand({ type: 'blur' })
           webViewRef.current?.injectJavaScript(

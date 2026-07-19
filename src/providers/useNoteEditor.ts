@@ -15,6 +15,8 @@ import { useSelector } from 'react-redux'
 
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 
+const FOCUS_TITLE_DELAY = 250
+
 export function useNoteEditor() {
   const editorRef = useRef<TiptapEditorHandle>(null)
   const [noteId, setNoteId] = useState<string | null>(null)
@@ -71,6 +73,7 @@ export function useNoteEditor() {
   const loadedNoteRef = useRef<string | null>(null)
   const isLoadingNoteRef = useRef(false)
   const isEditorFocusedRef = useRef(false)
+  const shouldFocusTitleRef = useRef(false)
 
   const noteSelector = useMemo(() => getNoteData(noteId ?? ''), [noteId])
   const rawNoteData = useSelector(noteSelector)
@@ -145,6 +148,10 @@ export function useNoteEditor() {
     isLoadingNoteRef.current = true
     InteractionManager.runAfterInteractions(() => {
       editorRef.current?.loadNote(noteId, content)
+      if (shouldFocusTitleRef.current) {
+        shouldFocusTitleRef.current = false
+        setTimeout(() => editorRef.current?.focusTitle(), FOCUS_TITLE_DELAY)
+      }
     })
   }, [noteId, noteData, hyperdriveServerAddress, slideAnim])
 
@@ -208,11 +215,12 @@ export function useNoteEditor() {
     return () => subscription.remove()
   }, [isOpen, closeNote])
 
-  const openNote = useCallback((id: string) => {
+  const openNote = useCallback((id: string, options?: { focusTitle?: boolean }) => {
     Keyboard.dismiss()
     setIsEditing(false)
     editorRef.current?.blur()
     loadedNoteRef.current = null
+    shouldFocusTitleRef.current = options?.focusTitle === true
     setNoteId(id)
     setIsOpen(true)
   }, [])

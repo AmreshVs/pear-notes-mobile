@@ -6,13 +6,13 @@ import { createThemedStylesheet, View } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function NoteScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const { id, isNew } = useLocalSearchParams<{ id: string; isNew?: string }>()
   const styles = useStyles()
   const { openNote } = useNoteEditor()
 
   useEffect(() => {
-    if (id) openNote(id)
-  }, [id, openNote])
+    if (id) openNote(id, { focusTitle: isNew === '1' })
+  }, [id, isNew, openNote])
 
   return <View style={styles.container} />
 }

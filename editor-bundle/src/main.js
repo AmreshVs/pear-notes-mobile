@@ -1262,6 +1262,16 @@ window.editorBridge = {
         editor.commands.focus()
         break
 
+      case 'focusTitle': {
+        const titleEl = document.getElementById('note-title')
+        if (titleEl) {
+          titleEl.focus()
+          const end = titleEl.value.length
+          titleEl.setSelectionRange(end, end)
+        }
+        break
+      }
+
       case 'blur':
         editor.commands.blur()
         break
