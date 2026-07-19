@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useNoteLockPasswordScreen } from './useNoteLockPasswordScreen'
+import useNoteLockPasswordScreen from './useNoteLockPasswordScreen'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'

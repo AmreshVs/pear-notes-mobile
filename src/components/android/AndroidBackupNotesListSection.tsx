@@ -32,7 +32,7 @@ export function AndroidBackupNotesListSection({
   mediaKind,
 }: AndroidBackupNotesListSectionProps) {
   const { t } = useTranslation()
-  const styles = useStyles() as any
+  const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
 

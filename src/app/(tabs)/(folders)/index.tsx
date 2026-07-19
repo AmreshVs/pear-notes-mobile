@@ -146,6 +146,7 @@ export default function FoldersScreen() {
         onPress={handleOpenSettings}
         style={iconBtnStyle}
         hitSlop={UI_SIZE_8}
+        accessible
         accessibilityRole="button"
         accessibilityLabel={t('folders.a11y.openSettings')}
       >
@@ -162,6 +163,7 @@ export default function FoldersScreen() {
           onPress={handleCreateFolder}
           style={iconBtnStyle}
           hitSlop={UI_SIZE_8}
+          accessible
           accessibilityRole="button"
           accessibilityLabel={t('folders.a11y.newFolder')}
         >
@@ -172,6 +174,7 @@ export default function FoldersScreen() {
           onPress={handleCreateNote}
           style={iconBtnStyle}
           hitSlop={UI_SIZE_8}
+          accessible
           accessibilityRole="button"
           accessibilityLabel={t('folders.a11y.newNote')}
         >

@@ -18,7 +18,7 @@ export default function SettingsLayout() {
         headerTitleStyle: styles.headerTitle,
         headerStyle: styles.header,
         headerShadowVisible: false,
-        headerBackTitle: t('layouts.settings'),
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen name="index" options={{ title: t('layouts.settings') }} />

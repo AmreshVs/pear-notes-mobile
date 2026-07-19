@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams } from 'expo-router'
 import { Check, Eye, EyeOff, Lock, X } from 'lucide-react-native'
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
@@ -14,7 +14,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
-import { useBackupPasswordScreen } from './useBackupPasswordScreen'
+import useBackupPasswordScreen from './useBackupPasswordScreen'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -40,6 +40,11 @@ export default function BackupPasswordScreen() {
   const { colors } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
+  const scrollRef = useRef<ScrollView>(null)
+
+  const handleRevealRequirements = useCallback(() => {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250)
+  }, [])
 
   const {
     isCreate,
@@ -105,6 +110,7 @@ export default function BackupPasswordScreen() {
         keyboardVerticalOffset={insets.top + UI_SIZE_54}
       >
         <ScrollView
+          ref={scrollRef}
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -126,6 +132,7 @@ export default function BackupPasswordScreen() {
               secureTextEntry={secure}
               autoCapitalize="none"
               autoCorrect={false}
+              onFocus={handleRevealRequirements}
               style={styles.input}
             />
             <Pressable onPress={toggleSecure} hitSlop={UI_SIZE_8} style={styles.eyeBtn}>

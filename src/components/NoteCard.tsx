@@ -411,7 +411,6 @@ const useStyles = createThemedStylesheet((theme) => {
       width: UI_SIZE_56,
       height: UI_SIZE_56,
       borderRadius: Radii.sm,
-      backgroundColor: theme.colors.separator,
       flexShrink: 0,
     },
   })

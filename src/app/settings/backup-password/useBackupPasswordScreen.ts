@@ -12,7 +12,7 @@ import { getTempBackupFilePath } from '@/lib/backupFileManager'
 import { takePendingImportPath } from '@/lib/backupPasswordFlow'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
-export function useBackupPasswordScreen(mode?: string) {
+export default function useBackupPasswordScreen(mode?: string) {
   const dispatch = useDispatch()
   const isCreate = mode !== 'enter'
 

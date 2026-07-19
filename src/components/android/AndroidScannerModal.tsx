@@ -49,7 +49,7 @@ export function AndroidScannerModal({
   const { t } = useTranslation()
   const theme = useTheme()
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
-  const styles = useStyles() as any
+  const styles = useStyles()
 
   const handleBarcodeScanned = useCallback(
     ({ data }: { data: string }) => {

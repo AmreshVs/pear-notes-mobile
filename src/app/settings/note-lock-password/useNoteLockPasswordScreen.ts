@@ -8,7 +8,7 @@ import { useDispatch } from 'react-redux'
 import { resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
-export function useNoteLockPasswordScreen(mode?: string) {
+export default function useNoteLockPasswordScreen(mode?: string) {
   const dispatch = useDispatch()
   const isCreate = mode !== 'enter'
 

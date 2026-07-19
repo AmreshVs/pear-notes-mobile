@@ -78,7 +78,7 @@ export default function AndroidSyncScreen() {
   const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
-  const styles = useStyles() as any
+  const styles = useStyles()
 
   const {
     tab,

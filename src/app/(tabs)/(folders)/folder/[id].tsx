@@ -52,7 +52,7 @@ export default function FolderNotesScreen() {
   const { t } = useTranslation()
   const theme = useTheme()
   const { colors, isDark } = theme
-  const styles = useStyles() as any
+  const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -120,7 +120,7 @@ export default function FolderNotesScreen() {
         dispatch(deleteNote(noteId as any))
       }
     },
-    [dispatch, id],
+    [dispatch, id, t],
   )
 
   const handleMoveNote = useCallback(
@@ -345,7 +345,12 @@ export default function FolderNotesScreen() {
           <View style={emptyStateStyle}>
             {searchQuery.trim().length > 0 ? (
               <>
-                <Text style={commonThemedStyles.emptyTitle}>
+                <SymbolView
+                  name="magnifyingglass"
+                  size={UI_ICON_SIZE_44}
+                  tintColor={colors.textMuted}
+                />
+                <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
                   {t('folderView.empty.noMatchesTitle')}
                 </Text>
                 <Text style={commonThemedStyles.emptySubtitle}>
@@ -392,7 +397,12 @@ export default function FolderNotesScreen() {
               </>
             ) : (
               <>
-                <Text style={commonThemedStyles.emptyTitle}>
+                <SymbolView
+                  name="note.text"
+                  size={UI_ICON_SIZE_44}
+                  tintColor={colors.textMuted}
+                />
+                <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
                   {t('folderView.empty.noNotesTitle')}
                 </Text>
                 <Text style={commonThemedStyles.emptySubtitle}>

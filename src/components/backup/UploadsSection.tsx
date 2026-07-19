@@ -37,7 +37,7 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
   const { t } = useTranslation()
   const theme = useTheme()
   const { colors } = theme
-  const styles = useStyles() as any
+  const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
 
   const renderUploadItem = (upload: UploadItem, index: number) => {

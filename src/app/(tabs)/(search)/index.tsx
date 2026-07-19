@@ -18,7 +18,7 @@ export default function SearchScreen() {
   const { t } = useTranslation()
   const theme = useTheme()
   const { colors, isDark } = theme
-  const styles = useStyles() as any
+  const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()

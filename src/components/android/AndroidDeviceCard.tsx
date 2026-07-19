@@ -68,7 +68,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
 }: DeviceCardProps) {
   const { t } = useTranslation()
   const dispatch = useDispatch()
-  const styles = useStyles() as any
+  const styles = useStyles()
 
   const platformKey =
     device.platform === 'darwin'

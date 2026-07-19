@@ -308,9 +308,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       width: UI_SIZE_60,
       height: UI_SIZE_60,
       borderRadius: UI_SIZE_14,
-      borderWidth: 1,
-      borderColor: hexWithAlpha(c.outlineVariant, 0.2),
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
     },
   })
   return styles

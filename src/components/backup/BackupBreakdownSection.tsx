@@ -34,7 +34,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
   const { t } = useTranslation()
   const theme = useTheme()
   const { colors } = theme
-  const styles = useStyles() as any
+  const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
 
   if (!buckets) return null
