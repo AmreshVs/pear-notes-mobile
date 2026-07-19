@@ -3,6 +3,7 @@ import { useSyncExternalStore } from 'react'
 
 let visible = false
 let resolver: ((ok: boolean) => void) | null = null
+let currentReason: string | undefined
 const listeners = new Set<() => void>()
 
 function emit() {
@@ -20,13 +21,18 @@ function getSnapshot() {
   return visible
 }
 
-export function requestNoteLockPassword(): Promise<boolean> {
+export function requestNoteLockPassword(reason?: string): Promise<boolean> {
   return new Promise((resolve) => {
     if (resolver) resolver(false)
     resolver = resolve
+    currentReason = reason
     visible = true
     emit()
   })
+}
+
+export function getNoteUnlockReason(): string | undefined {
+  return currentReason
 }
 
 export function requestNoteLockPasswordScreen(): Promise<boolean> {
@@ -42,6 +48,7 @@ export function resolveNoteLockPassword(ok: boolean): void {
     visible = false
     emit()
   }
+  currentReason = undefined
   const current = resolver
   resolver = null
   if (current) current(ok)

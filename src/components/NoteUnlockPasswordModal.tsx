@@ -29,7 +29,11 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { resolveNoteLockPassword, useNoteUnlockVisible } from '@/lib/noteLockPasswordFlow'
+import {
+  getNoteUnlockReason,
+  resolveNoteLockPassword,
+  useNoteUnlockVisible,
+} from '@/lib/noteLockPasswordFlow'
 
 export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
   const { t } = useTranslation()
@@ -42,6 +46,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
   const [secure, setSecure] = useState(true)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [reason, setReason] = useState<string | undefined>()
 
   useEffect(() => {
     if (visible) {
@@ -49,6 +54,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
       setSecure(true)
       setError('')
       setSubmitting(false)
+      setReason(getNoteUnlockReason())
     }
   }, [visible])
 
@@ -101,7 +107,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
               </RNView>
 
               <Text style={styles.title}>{t('noteLockPassword.enterTitle')}</Text>
-              <Text style={styles.sub}>{t('noteLockPassword.enterDesc')}</Text>
+              <Text style={styles.sub}>{reason || t('noteLockPassword.enterDesc')}</Text>
 
               <RNView style={styles.inputRow}>
                 <TextInput

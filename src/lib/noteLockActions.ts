@@ -26,7 +26,7 @@ export async function authenticateWithLockMethod(
     }
     return authenticate(reason)
   }
-  return requestNoteLockPassword()
+  return requestNoteLockPassword(reason)
 }
 
 export async function toggleNoteLock({
