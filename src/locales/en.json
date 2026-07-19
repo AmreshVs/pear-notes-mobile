@@ -510,7 +510,6 @@
     "invalidKeyDesc": "The recovery key must be a 64-character hex string.",
     "errors": {
       "invalidFile": "This file isn't a valid Pear Notes backup.",
-      "incorrectKey": "Incorrect recovery key. Please check the key and try again.",
       "incorrectPassword": "Incorrect password. Please check your backup password and try again.",
       "passwordRequired": "This backup is password-protected. Please enter its password.",
       "unsupportedVersion": "This backup was made with an incompatible version and cannot be restored."
