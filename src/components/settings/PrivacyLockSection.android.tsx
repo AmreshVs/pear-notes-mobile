@@ -55,6 +55,8 @@ export function PrivacyLockSection() {
     toggleSwitcherHide,
   } = usePrivacyLock()
 
+  const disabledContentColor = hexWithAlpha(c.onSurface, 0.38)
+
   const handleSelectPassword = useCallback(() => {
     selectPassword(t('settings.privacy.changeMethodReason'))
   }, [selectPassword, t])
@@ -109,9 +111,21 @@ export function PrivacyLockSection() {
             <MaterialCommunityIcons
               name="fingerprint"
               size={UI_ICON_SIZE_20}
-              color={!isPassword ? c.onPrimaryContainer : c.onSurfaceVariant}
+              color={
+                !lockAvailable
+                  ? disabledContentColor
+                  : !isPassword
+                    ? c.onPrimaryContainer
+                    : c.onSurfaceVariant
+              }
             />
-            <Text style={[styles.segText, !isPassword && styles.segTextActive]}>
+            <Text
+              style={[
+                styles.segText,
+                !isPassword && styles.segTextActive,
+                !lockAvailable && styles.segTextDisabled,
+              ]}
+            >
               {t('settings.privacy.biometric')}
             </Text>
           </Pressable>
@@ -127,9 +141,21 @@ export function PrivacyLockSection() {
             <MaterialCommunityIcons
               name="key-outline"
               size={UI_ICON_SIZE_20}
-              color={isPassword ? c.onPrimaryContainer : c.onSurfaceVariant}
+              color={
+                passwordDisabled
+                  ? disabledContentColor
+                  : isPassword
+                    ? c.onPrimaryContainer
+                    : c.onSurfaceVariant
+              }
             />
-            <Text style={[styles.segText, isPassword && styles.segTextActive]}>
+            <Text
+              style={[
+                styles.segText,
+                isPassword && styles.segTextActive,
+                passwordDisabled && styles.segTextDisabled,
+              ]}
+            >
               {t('settings.privacy.password')}
             </Text>
           </Pressable>
@@ -237,7 +263,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       backgroundColor: c.primaryContainer,
     },
     segItemDisabled: {
-      opacity: 0.4,
+      backgroundColor: hexWithAlpha(c.onSurface, 0.12),
     },
     segText: {
       fontSize: FontSize.body,
@@ -249,6 +275,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       color: c.onPrimaryContainer,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
+    },
+    segTextDisabled: {
+      color: hexWithAlpha(c.onSurface, 0.38),
     },
     groupCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
