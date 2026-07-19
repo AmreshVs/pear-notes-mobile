@@ -437,7 +437,7 @@
     "subtitle": "Export or import your data",
     "hero": {
       "title": "Secure Your Vault",
-      "description": "Backing up your data ensures you never lose your notes and files. All backups are encrypted with your private key and can be safely restored to any of your devices."
+      "description": "Backing up your data ensures you never lose your notes and files. All backups are encrypted with a password you choose and can be safely restored to any of your devices."
     },
     "createBackup": "Create Backup",
     "lockedAuthReason": "Authenticate to back up your locked notes",

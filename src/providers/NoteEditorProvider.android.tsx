@@ -827,7 +827,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               hitSlop={8}
             >
               <MaterialCommunityIcons
-                name="export-variant"
+                name="share-variant-outline"
                 size={UI_ICON_SIZE_20}
                 color={c.primary}
               />
