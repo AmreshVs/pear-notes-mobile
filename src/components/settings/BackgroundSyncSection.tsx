@@ -86,7 +86,7 @@ export function BackgroundSyncSection() {
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
       >
         <RNView style={commonThemedStyles.card}>
-          <RNView style={commonStyles.settingsRow}>
+          <RNView style={styles.stackedRow}>
             <Text style={styles.rowLabel}>{t('sync.backgroundSync.modeLabel')}</Text>
             <RNView style={styles.segCtrl}>{MODES.map(renderSegment)}</RNView>
           </RNView>
@@ -126,6 +126,11 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
       lineHeight: FontSize.body * 1.4,
     },
+    stackedRow: {
+      paddingHorizontal: UI_SIZE_18,
+      paddingVertical: Space.base,
+      gap: Space.md,
+    },
     segCtrl: {
       ...commonStyles.row,
       borderRadius: UI_SIZE_16,
@@ -133,6 +138,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.controlBackground,
     },
     segPill: {
+      ...commonStyles.flex1,
       ...commonStyles.centered,
       paddingHorizontal: UI_SIZE_12,
       paddingVertical: 7,

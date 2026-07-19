@@ -23,6 +23,7 @@ import {
   Durations,
   FontSize,
   FontWeight,
+  Space,
   UI_ICON_SIZE_15,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -113,7 +114,7 @@ export default function GeneralSettingsScreen() {
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
-            <RNView style={commonStyles.settingsRow}>
+            <RNView style={styles.stackedRow}>
               <Text style={styles.rowLabel}>{t('settings.general.appTheme')}</Text>
               <RNView style={styles.segCtrl}>
                 {(['system', 'light', 'dark'] as const).map((themeKey, i) => {
@@ -259,6 +260,11 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
+    stackedRow: {
+      paddingHorizontal: UI_SIZE_18,
+      paddingVertical: Space.base,
+      gap: Space.md,
+    },
     segCtrl: {
       ...commonStyles.row,
       borderRadius: UI_SIZE_16,
@@ -266,6 +272,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.controlBackground,
     },
     segPill: {
+      ...commonStyles.flex1,
       ...commonStyles.centered,
       paddingHorizontal: UI_SIZE_12,
       paddingVertical: 7,
