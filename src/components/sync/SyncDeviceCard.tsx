@@ -21,6 +21,7 @@ import {
   commonStyles,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getDeviceDisplayName } from '@/utils/deviceDisplay'
 import { getPlatformNames } from '@/utils/settingsUtils'
 
 type Props = {
@@ -123,7 +124,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
             ) : (
               <Pressable onPress={!isOther ? startEditing : undefined}>
                 <Text numberOfLines={1} style={styles.deviceName}>
-                  {device.title || device.key || t('sync.platforms.unknown')}
+                  {getDeviceDisplayName(device) || t('sync.platforms.unknown')}
                 </Text>
               </Pressable>
             )}

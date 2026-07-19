@@ -25,6 +25,7 @@ import {
   UI_SIZE_6,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { getDeviceDisplayName } from '@/utils/deviceDisplay'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string
@@ -86,8 +87,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
     device.deviceType === 'mobile' || device.platform === 'android' || device.platform === 'ios'
       ? 'cellphone'
       : 'monitor'
-  const displayName =
-    device.title || (device.key ? `${device.key.slice(0, 6)}…${device.key.slice(-5)}` : 'Unknown')
+  const displayName = getDeviceDisplayName(device)
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(device.title || '')
   const inputRef = useRef<TextInput>(null)
