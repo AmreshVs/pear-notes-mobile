@@ -154,6 +154,8 @@ export const StrokeWidth = {
   bold: 2.5,
 } as const
 
+export const TRANSFER_LIST_MAX_HEIGHT = 340
+
 export const LetterSpacing = {
   tight: -0.4,
   caps: 1.5,

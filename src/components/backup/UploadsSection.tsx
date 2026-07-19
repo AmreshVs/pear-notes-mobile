@@ -1,6 +1,6 @@
 import { CloudUpload } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
-import { View as RNView, StyleSheet } from 'react-native'
+import { View as RNView, ScrollView, StyleSheet } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -11,6 +11,7 @@ import {
   FontWeight,
   LetterSpacing,
   Space,
+  TRANSFER_LIST_MAX_HEIGHT,
   UI_ICON_SIZE_16,
   UI_SIZE_2,
   UI_SIZE_4,
@@ -83,7 +84,14 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
       <Text style={styles.sectionCap}>
         {t('storage.syncingToDevices')} ({uploads.length})
       </Text>
-      <RNView style={styles.groupList}>{groups.map(renderGroup)}</RNView>
+      <ScrollView
+        style={styles.groupScroll}
+        contentContainerStyle={styles.groupList}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator
+      >
+        {groups.map(renderGroup)}
+      </ScrollView>
     </Animated.View>
   )
 }
@@ -100,6 +108,9 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.md,
       textTransform: 'uppercase',
       color: theme.colors.textMuted,
+    },
+    groupScroll: {
+      maxHeight: TRANSFER_LIST_MAX_HEIGHT,
     },
     groupList: {
       gap: Space.md,
