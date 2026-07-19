@@ -9,7 +9,6 @@ import {
   Durations,
   FontSize,
   FontWeight,
-  LetterSpacing,
   Space,
   TRANSFER_LIST_MAX_HEIGHT,
   UI_ICON_SIZE_16,
@@ -125,7 +124,7 @@ export function DownloadsSection({
 
   return (
     <Animated.View entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
-      <Text style={styles.sectionCap}>
+      <Text style={commonThemedStyles.settingsSectionCap}>
         {t('storage.syncingFromDevices')} ({downloads.length})
       </Text>
       <ScrollView
@@ -144,14 +143,6 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     section: {
       marginBottom: Space.lg,
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
     },
     groupScroll: {
       maxHeight: TRANSFER_LIST_MAX_HEIGHT,

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
+import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
@@ -15,7 +16,6 @@ import {
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
-  UI_SIZE_24,
   UI_SIZE_28,
 } from '@/constants/commonStyles'
 import {
@@ -44,6 +44,7 @@ const MODE_LOCALE_KEY: Record<BackgroundSyncMode, string> = {
 export function BackgroundSyncSection() {
   const { t } = useTranslation()
   const styles = useStyles()
+  const md3Styles = useMD3CommonStyles()
   const [mode, setMode] = useState<BackgroundSyncMode>('off')
 
   useEffect(() => {
@@ -113,7 +114,7 @@ export function BackgroundSyncSection() {
   return (
     <>
       <Animated.View entering={FadeIn.duration(220).delay(120)}>
-        <Text style={styles.sectionCapMargin}>{t('sync.backgroundSync.header')}</Text>
+        <Text style={md3Styles.settingsSectionCapSpaced}>{t('sync.backgroundSync.header')}</Text>
       </Animated.View>
 
       <Animated.View
@@ -137,14 +138,6 @@ const useBackgroundSyncHooks = () => {
 const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
-    sectionCapMargin: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      letterSpacing: 1.2,
-      color: c.primary,
-      marginTop: UI_SIZE_24,
-      marginBottom: UI_SIZE_16,
-    },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,

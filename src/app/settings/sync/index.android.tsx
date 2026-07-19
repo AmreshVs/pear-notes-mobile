@@ -22,6 +22,7 @@ import useSyncScreen from './useSyncScreen'
 import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
+import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -79,6 +80,7 @@ export default function AndroidSyncScreen() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
+  const md3Styles = useMD3CommonStyles()
 
   const {
     tab,
@@ -401,12 +403,17 @@ export default function AndroidSyncScreen() {
             >
               {localDevices.length > 0 && (
                 <>
-                  <Text style={styles.sectionCapLocal}>{t('sync.devices.thisDevice')}</Text>
+                  <Text style={md3Styles.settingsSectionCap}>{t('sync.devices.thisDevice')}</Text>
                   <View style={styles.deviceList}>{localDevices.map(renderLocalDeviceCard)}</View>
                 </>
               )}
 
-              <Text style={[styles.sectionCap, localDevices.length > 0 && styles.sectionCapMargin]}>
+              <Text
+                style={[
+                  md3Styles.settingsSectionCap,
+                  localDevices.length > 0 && md3Styles.settingsSectionCapSpaced,
+                ]}
+              >
                 {t('sync.devices.otherDevices')}
               </Text>
 
@@ -759,25 +766,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       lineHeight: UI_SIZE_17,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.extraBold,
-      letterSpacing: 1.5,
-      marginBottom: UI_SIZE_12,
-      color: c.onSurfaceVariant,
-    },
-    sectionCapLocal: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.extraBold,
-      letterSpacing: 1.5,
-      marginBottom: UI_SIZE_12,
-      color: hexWithAlpha(c.onSurfaceVariant, 0.6),
-    },
-    sectionCapMargin: {
-      marginTop: UI_SIZE_28 + UI_SIZE_10,
     },
     deviceList: {
       gap: UI_SIZE_10,

@@ -18,11 +18,13 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
 
 export function PrivacyLockSection() {
   const { t } = useTranslation()
   const styles = useStyles()
+  const commonThemedStyles = useCommonThemedStyles()
   const { colors } = useTheme()
   const {
     lockAvailable,
@@ -52,7 +54,7 @@ export function PrivacyLockSection() {
   return (
     <>
       <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
-        <Text style={styles.sectionCap}>{t('settings.privacy.header')}</Text>
+        <Text style={commonThemedStyles.settingsSectionCap}>{t('settings.privacy.header')}</Text>
       </Animated.View>
 
       <Animated.View
@@ -151,15 +153,6 @@ export function PrivacyLockSection() {
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      letterSpacing: 1.5,
-      marginBottom: Space.md,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
-    },
     card: {
       backgroundColor: theme.colors.surface,
       borderRadius: Radii.card,

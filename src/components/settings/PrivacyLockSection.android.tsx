@@ -6,6 +6,7 @@ import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-na
 
 import { usePrivacyLock } from './usePrivacyLock'
 
+import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
@@ -42,6 +43,7 @@ export function PrivacyLockSection() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
+  const md3Styles = useMD3CommonStyles()
   const {
     lockAvailable,
     deviceMethod,
@@ -75,7 +77,7 @@ export function PrivacyLockSection() {
   return (
     <>
       <Animated.View entering={FadeIn.duration(220).delay(20)}>
-        <Text style={styles.sectionCap}>{t('settings.privacy.header')}</Text>
+        <Text style={md3Styles.settingsSectionCap}>{t('settings.privacy.header')}</Text>
       </Animated.View>
 
       <Animated.View
@@ -207,14 +209,6 @@ const usePrivacyLockHooks = () => {
 const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.bold,
-      letterSpacing: 1.2,
-      color: c.primary,
-      marginBottom: UI_SIZE_16,
-    },
     infoCard: {
       ...commonStyles.row,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,

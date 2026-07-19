@@ -22,7 +22,6 @@ import { Text, createThemedStylesheet, useTheme } from '@/components/Themed'
 import {
   FontSize,
   FontWeight,
-  LetterSpacing,
   MonoFontFamily,
   Radii,
   Space,
@@ -35,6 +34,7 @@ import {
   UI_SIZE_200,
   commonStyles,
 } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 export default function SyncScreen() {
@@ -42,6 +42,7 @@ export default function SyncScreen() {
   const theme = useTheme()
   const { colors } = theme
   const styles = useStyles()
+  const commonThemedStyles = useCommonThemedStyles()
 
   const {
     tab,
@@ -314,7 +315,9 @@ export default function SyncScreen() {
             style={styles.pad}
           >
             <Reanimated.View entering={FadeIn.duration(200)}>
-              <Text style={styles.sectionCap}>{t('sync.devices.thisDevice')}</Text>
+              <Text style={commonThemedStyles.settingsSectionCap}>
+                {t('sync.devices.thisDevice')}
+              </Text>
             </Reanimated.View>
 
             <Reanimated.View
@@ -329,7 +332,9 @@ export default function SyncScreen() {
               entering={FadeIn.duration(200).delay(70)}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             >
-              <Text style={styles.sectionCapDevice}>{t('sync.devices.otherDevices')}</Text>
+              <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+                {t('sync.devices.otherDevices')}
+              </Text>
             </Reanimated.View>
 
             {otherDevices.length > 0 ? (
@@ -678,23 +683,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       flex: 1,
       lineHeight: 17,
-      color: theme.colors.textMuted,
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
-    },
-    sectionCapDevice: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      marginTop: Space.lg + Space.sm,
-      textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },
     deviceGroup: {

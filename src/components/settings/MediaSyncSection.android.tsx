@@ -2,10 +2,11 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Switch, Text, View } from 'react-native'
 
+import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { useMediaSyncPolicy } from '@/components/settings/useMediaSyncPolicy'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { FontFamily, FontSize, FontWeight, Space, UI_SIZE_28 } from '@/constants/commonStyles'
+import { FontFamily, FontSize, Space, UI_SIZE_28 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -15,6 +16,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 export function MediaSyncSection() {
   const { t } = useTranslation()
   const styles = useStyles()
+  const md3Styles = useMD3CommonStyles()
   const c = useMD3Theme().colors
   const {
     mediaPaused,
@@ -44,7 +46,7 @@ export function MediaSyncSection() {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionCap}>{t('settings.mediaSync.title')}</Text>
+      <Text style={md3Styles.settingsSectionCap}>{t('settings.mediaSync.title')}</Text>
       <View style={styles.card}>
         <View style={styles.toggleRow}>
           <View style={styles.toggleInfo}>
@@ -78,15 +80,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
   const styles = StyleSheet.create({
     section: {
       marginTop: Space.lg,
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.semiBold,
-      marginBottom: Space.md,
-      marginLeft: Space.sm,
-      textTransform: 'uppercase',
-      color: c.onSurfaceVariant,
     },
     card: {
       borderRadius: UI_SIZE_28,

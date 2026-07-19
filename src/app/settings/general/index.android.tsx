@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
+import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection.android'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
@@ -38,7 +39,6 @@ import {
   UI_SIZE_16,
   UI_SIZE_18,
   UI_SIZE_20,
-  UI_SIZE_24,
   UI_SIZE_28,
   UI_SIZE_40,
   UI_SIZE_9999,
@@ -50,6 +50,7 @@ export default function AndroidGeneralSettingsScreen() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const styles = useStyles()
+  const md3Styles = useMD3CommonStyles()
   const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors
@@ -228,7 +229,7 @@ export default function AndroidGeneralSettingsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Animated.View entering={FadeIn.duration(220).delay(20)}>
-          <Text style={styles.sectionCap}>{t('settings.general.interface')}</Text>
+          <Text style={md3Styles.settingsSectionCap}>{t('settings.general.interface')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -253,7 +254,7 @@ export default function AndroidGeneralSettingsScreen() {
         )}
 
         <Animated.View entering={FadeIn.duration(220).delay(80)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.general.notesList')}</Text>
+          <Text style={md3Styles.settingsSectionCapSpaced}>{t('settings.general.notesList')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -281,7 +282,7 @@ export default function AndroidGeneralSettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(120)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.general.editor')}</Text>
+          <Text style={md3Styles.settingsSectionCapSpaced}>{t('settings.general.editor')}</Text>
         </Animated.View>
 
         <Animated.View
@@ -396,21 +397,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: insets.bottom + UI_SIZE_40,
       paddingTop: UI_SIZE_10,
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      letterSpacing: 1.2,
-      color: c.primary,
-      marginBottom: UI_SIZE_16,
-    },
-    sectionCapMargin: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      letterSpacing: 1.2,
-      color: c.primary,
-      marginTop: UI_SIZE_24,
-      marginBottom: UI_SIZE_16,
     },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,

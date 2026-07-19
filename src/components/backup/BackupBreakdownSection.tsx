@@ -9,7 +9,6 @@ import {
   Durations,
   FontSize,
   FontWeight,
-  LetterSpacing,
   Space,
   UI_ICON_SIZE_18,
 } from '@/constants/commonStyles'
@@ -52,7 +51,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
       entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}
       style={styles.breakdownSection}
     >
-      <Text style={styles.sectionCapMargin}>{t('backup.breakdownByType')}</Text>
+      <Text style={commonThemedStyles.settingsSectionCapSpaced}>{t('backup.breakdownByType')}</Text>
       <RNView style={commonThemedStyles.card}>
         {buckets.image.count > 0 && (
           <RNView style={styles.breakdownRow}>
@@ -112,14 +111,6 @@ const useStyles = createThemedStylesheet((theme) => {
     breakdownSection: {
       marginTop: Space.lg,
       marginBottom: Space.sm,
-    },
-    sectionCapMargin: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
     },
     breakdownRow: {
       ...commonStyles.rowBetween,

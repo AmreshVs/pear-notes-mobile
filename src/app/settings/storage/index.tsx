@@ -20,7 +20,6 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
-  LetterSpacing,
   Radii,
   Space,
   UI_ICON_SIZE_16,
@@ -108,7 +107,7 @@ export default function StorageScreen() {
         />
 
         <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}>
-          <Text style={styles.sectionCap}>{t('storage.usage')}</Text>
+          <Text style={commonThemedStyles.settingsSectionCap}>{t('storage.usage')}</Text>
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.usageRow}>
               <Text style={styles.usageLabel}>{t('storage.notesData')}</Text>
@@ -150,7 +149,7 @@ export default function StorageScreen() {
         />
 
         <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}>
-          <Text style={styles.sectionCapDanger}>{t('storage.dangerZone')}</Text>
+          <Text style={commonThemedStyles.settingsSectionCapSpaced}>{t('storage.dangerZone')}</Text>
           <RNView style={[commonThemedStyles.card, styles.dangerCard]}>
             <RNView style={styles.dangerContent}>
               <RNView style={styles.dangerTextContent}>
@@ -226,23 +225,6 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: UI_SIZE_15,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
-    },
-    sectionCapDanger: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      marginTop: Space.xl,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
     },
     usageRow: {
       ...commonStyles.rowBetween,

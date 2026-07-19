@@ -106,7 +106,9 @@ export default function GeneralSettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeIn.duration(Durations.fade)}>
-          <Text style={styles.sectionCap}>{t('settings.general.interface')}</Text>
+          <Text style={commonThemedStyles.settingsSectionCap}>
+            {t('settings.general.interface')}
+          </Text>
         </Animated.View>
 
         <Animated.View
@@ -142,7 +144,9 @@ export default function GeneralSettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayMedium)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.general.notesList')}</Text>
+          <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+            {t('settings.general.notesList')}
+          </Text>
         </Animated.View>
 
         <Animated.View
@@ -167,7 +171,9 @@ export default function GeneralSettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
-          <Text style={styles.sectionCapMargin}>{t('settings.general.editor')}</Text>
+          <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+            {t('settings.general.editor')}
+          </Text>
         </Animated.View>
 
         <Animated.View
@@ -228,23 +234,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: UI_SIZE_60,
       paddingTop: UI_SIZE_12,
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: 1.5,
-      marginBottom: UI_SIZE_12,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
-    },
-    sectionCapMargin: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: 1.5,
-      marginBottom: UI_SIZE_12,
-      marginTop: UI_SIZE_20,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
     },
     rowUnderline: {
       ...commonStyles.settingsRow,

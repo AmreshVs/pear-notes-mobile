@@ -5,7 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { useMediaSyncPolicy } from '@/components/settings/useMediaSyncPolicy'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
-import { Durations, FontSize, FontWeight, LetterSpacing, Space } from '@/constants/commonStyles'
+import { Durations, FontSize, FontWeight, Space } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
 export function MediaSyncSection() {
@@ -41,7 +41,7 @@ export function MediaSyncSection() {
 
   return (
     <Animated.View entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
-      <Text style={styles.sectionCap}>{t('settings.mediaSync.title')}</Text>
+      <Text style={commonThemedStyles.settingsSectionCap}>{t('settings.mediaSync.title')}</Text>
       <RNView style={commonThemedStyles.card}>
         <RNView style={styles.toggleRow}>
           <RNView style={styles.toggleInfo}>
@@ -80,14 +80,6 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     section: {
       marginTop: Space.lg,
-    },
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
     },
     toggleRow: {
       flexDirection: 'row',

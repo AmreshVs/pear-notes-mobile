@@ -78,7 +78,9 @@ export function BackgroundSyncSection() {
   return (
     <>
       <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
-        <Text style={styles.sectionCapMargin}>{t('sync.backgroundSync.header')}</Text>
+        <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+          {t('sync.backgroundSync.header')}
+        </Text>
       </Animated.View>
 
       <Animated.View
@@ -103,15 +105,6 @@ export function BackgroundSyncSection() {
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
-    sectionCapMargin: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: 1.5,
-      marginBottom: UI_SIZE_12,
-      marginTop: UI_SIZE_16,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
-    },
     rowLabel: {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.medium,

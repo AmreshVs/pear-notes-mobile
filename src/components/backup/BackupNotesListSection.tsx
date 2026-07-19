@@ -19,7 +19,6 @@ import {
   Durations,
   FontSize,
   FontWeight,
-  LetterSpacing,
   Space,
   UI_SIZE_12,
   UI_SIZE_14,
@@ -125,7 +124,7 @@ export function BackupNotesListSection({
       entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset + 20)}
       style={styles.perNoteSection}
     >
-      <Text style={styles.sectionCapMargin}>
+      <Text style={commonThemedStyles.settingsSectionCapSpaced}>
         {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
       </Text>
       {notesStorageInfo.map(renderNoteItem)}
@@ -144,14 +143,6 @@ const useStyles = createThemedStylesheet((theme) => {
     mediaSpacer: {
       width: UI_SIZE_14,
       marginLeft: Space.sm,
-    },
-    sectionCapMargin: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: LetterSpacing.caps,
-      marginBottom: Space.md,
-      textTransform: 'uppercase',
-      color: theme.colors.textMuted,
     },
     noteRow: {
       ...commonStyles.rowBetween,
