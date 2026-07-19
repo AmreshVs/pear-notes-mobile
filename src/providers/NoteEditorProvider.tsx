@@ -1,10 +1,8 @@
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
-import { deleteNote, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
-import type { DocumentPickerAsset } from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system'
 import * as Haptics from 'expo-haptics'
-import type { ImagePickerAsset } from 'expo-image-picker'
 import { SymbolView } from 'expo-symbols'
 import React, { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -13,7 +11,6 @@ import {
   Alert,
   Animated,
   Dimensions,
-  Image,
   Keyboard,
   PanResponder,
   Platform,
@@ -27,9 +24,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
-import { isImageFile } from '../utils/media'
 
 import { useNoteEditor } from './useNoteEditor'
+import { useNoteEditorActions } from './useNoteEditorActions'
 
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
@@ -57,23 +54,8 @@ import {
   UI_SIZE_48,
 } from '@/constants/commonStyles'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
-import {
-  CameraPermissionDeniedError,
-  copyVideoToUploadCache,
-  deleteAttachment,
-  downloadToCache,
-  pickDocuments,
-  pickImagesFromLibrary,
-  saveImageToPhotos,
-  scanDocument,
-  shareMessage,
-  takePhotoFromCamera,
-  takeVideoFromCamera,
-  toBackendPath,
-} from '@/lib/noteAttachmentManager'
+import { downloadToCache, saveImageToPhotos, shareMessage } from '@/lib/noteAttachmentManager'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
-import { toggleNoteLock } from '@/lib/noteLockActions'
-import { runNoteUpload } from '@/lib/noteUploadManager'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
 import { useNoteUpload } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
@@ -88,16 +70,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const styles = useStyles()
   const { t } = useTranslation()
 
+  const editor = useNoteEditor()
   const {
     editorRef,
     noteId,
     isOpen,
     isEditing,
-    setIsEditing,
     keyboardHeight,
     isSharing,
     setIsSharing,
-    loadedNoteRef,
     selectedImageSrc,
     setSelectedImageSrc,
     selectedAttachmentSrc,
@@ -130,7 +111,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setIsEdgeSwipeActive,
     noteData,
     handleYjsMessage,
-  } = useNoteEditor()
+  } = editor
 
   const isPreviewingRef = useRef(false)
   const currentUpload = useNoteUpload(noteId)
@@ -141,268 +122,60 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
 
-  const handleUpdate = useCallback(
-    (html: string) => {
-      if (!noteId || noteId === 'new') return
-      let finalHtml = html
-      if (resolveHyperdriveUrl) {
-        finalHtml = finalHtml.replaceAll(
-          resolveHyperdriveUrl(HYPERDRIVE_URL_PREFIX),
-          HYPERDRIVE_URL_PREFIX,
-        )
-      }
-      if (finalHtml === noteContentRef.current) return
-      noteContentRef.current = finalHtml
-      dispatch(updateNote({ key: noteId, title: titleRef.current, note: finalHtml } as any))
-    },
-    [dispatch, noteId, resolveHyperdriveUrl],
+  const editorLabels = useMemo(
+    () => ({
+      photo: t('noteEditor.upload.photo'),
+      file: t('noteEditor.upload.file'),
+      audio: t('noteEditor.upload.audio'),
+      scannedDoc: t('noteEditor.upload.scannedDoc'),
+      uploadFailedVideo: t('noteEditor.upload.failedVideo'),
+      unlockReason: t('noteCard.unlockReason'),
+      pageLabel: (count: number, total: number) =>
+        t('noteEditor.upload.pageCount', { count, total }),
+    }),
+    [t],
   )
 
-  const handleTitleChange = useCallback(
-    (newTitle: string) => {
-      if (titleRef.current === newTitle) return
-      titleRef.current = newTitle
-      if (!noteId || noteId === 'new') return
-      dispatch(updateNote({ key: noteId, title: newTitle, note: noteContentRef.current } as any))
-    },
-    [dispatch, noteId],
+  const handleUploadError = useCallback(
+    (message: string) => Alert.alert(t('noteEditor.upload.failedTitle'), message),
+    [t],
   )
 
-  const handleDone = useCallback(async () => {
-    await editorRef.current?.save()
-    editorRef.current?.blur()
-    Keyboard.dismiss()
-    setIsEditing(false)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-  }, [setIsEditing])
+  const handleCameraPermissionDenied = useCallback(() => showCameraPermissionAlert(t), [t])
 
-  const processMediaAsset = useCallback(
-    async (asset: ImagePickerAsset) => {
-      if (!noteId) return
-      const targetNoteId = noteId
+  const deleteUploadCache = useCallback(async (cacheUri: string) => {
+    await FileSystem.deleteAsync(cacheUri, { idempotent: true }).catch(() => {})
+  }, [])
 
-      if (asset.type === 'video') {
-        const displayName = asset.fileName || `video-${Date.now()}.mp4`
-        const mimeType = asset.mimeType || 'video/mp4'
-        let prepared
-        try {
-          prepared = await copyVideoToUploadCache(asset.uri, displayName)
-        } catch {
-          Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedVideo'))
-          return
-        }
-        try {
-          await runNoteUpload({
-            noteId: targetNoteId,
-            path: prepared.path,
-            fileName: displayName,
-            displayName,
-            attachment: { type: 'file', fileSize: prepared.size, fileType: mimeType },
-            insertLive: (link) => {
-              editorRef.current?.insertFileAttachment(link, displayName, prepared.size, mimeType)
-              setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-            },
-            resolveLink: resolveHyperdriveUrl,
-            isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-            onError: () =>
-              Alert.alert(t('noteEditor.upload.failedTitle'), t('noteEditor.upload.failedVideo')),
-          })
-        } finally {
-          await FileSystem.deleteAsync(prepared.cacheUri, { idempotent: true }).catch(() => {})
-        }
-        return
-      }
-
-      const { uri, width: assetWidth, height: assetHeight, fileName } = asset
-      const displayName = fileName || t('noteEditor.upload.photo')
-      const maxWidth = Dimensions.get('window').width - 40
-      const maxHeight = 400
-      let finalWidth = assetWidth
-      let finalHeight = assetHeight
-      if (assetWidth > maxWidth) {
-        const ratio = maxWidth / assetWidth
-        finalWidth = maxWidth
-        finalHeight = assetHeight * ratio
-      }
-      if (finalHeight > maxHeight) {
-        const ratio = maxHeight / finalHeight
-        finalHeight = maxHeight
-        finalWidth = finalWidth * ratio
-      }
-
-      await runNoteUpload({
-        noteId: targetNoteId,
-        path: toBackendPath(uri),
-        fileName: fileName || `image-${Date.now()}.jpg`,
-        displayName,
-        attachment: { type: 'image', width: finalWidth, height: finalHeight },
-        insertLive: (link) => {
-          editorRef.current?.insertImage(link, finalWidth, finalHeight)
-          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-        },
-        resolveLink: resolveHyperdriveUrl,
-        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-      })
-    },
-    [noteId, resolveHyperdriveUrl, t],
+  const handleBeforeToggleLock = useCallback(
+    () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
+    [],
   )
 
-  const handlePickImage = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    const assets = await pickImagesFromLibrary()
-    if (!assets) return
-    for (const asset of assets) {
-      await processMediaAsset(asset)
-    }
-  }, [processMediaAsset])
-
-  const handleTakePhoto = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    try {
-      const asset = await takePhotoFromCamera()
-      if (asset) {
-        await processMediaAsset(asset)
-      }
-    } catch (e) {
-      if (e instanceof CameraPermissionDeniedError) showCameraPermissionAlert(t)
-    }
-  }, [processMediaAsset, t])
-
-  const handleTakeVideo = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    try {
-      const asset = await takeVideoFromCamera()
-      if (asset) {
-        await processMediaAsset(asset)
-      }
-    } catch (e) {
-      if (e instanceof CameraPermissionDeniedError) showCameraPermissionAlert(t)
-    }
-  }, [processMediaAsset, t])
-
-  const handleScanDocument = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    if (!noteId) return
-    const targetNoteId = noteId
-    try {
-      const scannedImages = await scanDocument()
-      if (!scannedImages) return
-      const maxWidth = Dimensions.get('window').width - 40
-      const maxHeight = 400
-
-      for (let i = 0; i < scannedImages.length; i++) {
-        const uri = scannedImages[i]
-        const displayName =
-          scannedImages.length > 1
-            ? t('noteEditor.upload.pageCount', { count: i + 1, total: scannedImages.length })
-            : t('noteEditor.upload.scannedDoc')
-        const fileName = `scan-${Date.now()}-page${i + 1}.jpg`
-
-        let finalWidth = maxWidth
-        let finalHeight = maxHeight
-        try {
-          const { width: imgW, height: imgH } = await new Promise<{
-            width: number
-            height: number
-          }>((resolve, reject) => {
-            Image.getSize(uri, (w, h) => resolve({ width: w, height: h }), reject)
-          })
-          finalWidth = imgW
-          finalHeight = imgH
-          if (imgW > maxWidth) {
-            const ratio = maxWidth / imgW
-            finalWidth = maxWidth
-            finalHeight = imgH * ratio
-          }
-          if (finalHeight > maxHeight) {
-            const ratio = maxHeight / finalHeight
-            finalHeight = maxHeight
-            finalWidth = finalWidth * ratio
-          }
-        } catch {}
-
-        await runNoteUpload({
-          noteId: targetNoteId,
-          path: toBackendPath(uri),
-          fileName,
-          displayName,
-          attachment: { type: 'image', width: finalWidth, height: finalHeight },
-          insertLive: (link) => {
-            editorRef.current?.insertImage(link, finalWidth, finalHeight)
-            setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-          },
-          resolveLink: resolveHyperdriveUrl,
-          isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-        })
-      }
-    } catch {}
-  }, [noteId, resolveHyperdriveUrl, t])
-
-  const processDocumentAsset = useCallback(
-    async (asset: DocumentPickerAsset) => {
-      if (!noteId) return
-      const targetNoteId = noteId
-      const { uri, name, size, mimeType } = asset
-
-      if (isImageFile(name, mimeType)) {
-        const dimensions = await new Promise<{ width: number; height: number }>((resolve) => {
-          Image.getSize(
-            uri,
-            (w, h) => resolve({ width: w, height: h }),
-            () => resolve({ width: 0, height: 0 }),
-          )
-        })
-        if (dimensions.width > 0) {
-          await processMediaAsset({
-            type: 'image',
-            uri,
-            width: dimensions.width,
-            height: dimensions.height,
-            fileName: name,
-            mimeType,
-          } as ImagePickerAsset)
-        }
-        return
-      }
-
-      const isAudio = mimeType?.startsWith('audio/')
-      const displayName = name || t('noteEditor.upload.file')
-      await runNoteUpload({
-        noteId: targetNoteId,
-        path: toBackendPath(uri),
-        fileName: name || `file-${Date.now()}`,
-        displayName,
-        attachment: isAudio
-          ? { type: 'audio' }
-          : { type: 'file', fileSize: size || 0, fileType: mimeType || '' },
-        insertLive: (link) => {
-          if (isAudio) {
-            editorRef.current?.insertAudioAttachment(link, name || t('noteEditor.upload.audio'))
-          } else {
-            editorRef.current?.insertFileAttachment(
-              link,
-              name || t('noteEditor.upload.file'),
-              size || 0,
-              mimeType || '',
-            )
-          }
-          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-        },
-        resolveLink: resolveHyperdriveUrl,
-        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-      })
-    },
-    [noteId, resolveHyperdriveUrl, processMediaAsset, t],
-  )
-
-  const handlePickFile = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    const assets = await pickDocuments()
-    if (!assets) return
-    for (const asset of assets) {
-      await processDocumentAsset(asset)
-    }
-  }, [processDocumentAsset])
+  const {
+    handleUpdate,
+    handleTitleChange,
+    handlePickImage,
+    handleTakePhoto,
+    handleTakeVideo,
+    handlePickFile,
+    handleScanDocument,
+    handleRecordingDone,
+    handleMoveNote,
+    handleDeleteAttachment,
+    handleDone,
+    handleToggleLock,
+  } = useNoteEditorActions({
+    editor,
+    lockMethod,
+    screenWidth: Dimensions.get('window').width,
+    recordingFileNamePrefix: 'recording',
+    labels: editorLabels,
+    onUploadError: handleUploadError,
+    onCameraPermissionDenied: handleCameraPermissionDenied,
+    deleteUploadCache,
+    onBeforeToggleLock: handleBeforeToggleLock,
+  })
 
   const handleRecordAudio = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
@@ -410,29 +183,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     editorRef.current?.blur()
     setTimeout(() => setIsRecorderVisible(true), 100)
   }, [setIsRecorderVisible])
-
-  const handleRecordingDone = useCallback(
-    async (uri: string, _durationMs: number) => {
-      setIsRecorderVisible(false)
-      if (!noteId) return
-      const targetNoteId = noteId
-      const fileName = `recording-${Date.now()}.m4a`
-      await runNoteUpload({
-        noteId: targetNoteId,
-        path: toBackendPath(uri),
-        fileName,
-        displayName: fileName,
-        attachment: { type: 'audio' },
-        insertLive: (link) => {
-          editorRef.current?.insertAudioAttachment(link, fileName)
-          setTimeout(() => editorRef.current?.scrollToEnd(), 300)
-        },
-        resolveLink: resolveHyperdriveUrl,
-        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-      })
-    },
-    [noteId, resolveHyperdriveUrl, setIsRecorderVisible, t],
-  )
 
   const handleDeleteNote = useCallback(() => {
     if (!noteId) return
@@ -456,15 +206,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       },
     ])
   }, [noteId, dispatch, slideAnim, resetEditorState, t])
-
-  const handleMoveNote = useCallback(
-    (folderId: string) => {
-      if (!noteId) return
-      dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
-    },
-    [noteId, dispatch],
-  )
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
@@ -529,18 +270,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       },
     )
   }, [moveFolders, handleMoveNote, t])
-
-  const handleToggleLock = useCallback(() => {
-    if (!noteId) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
-    toggleNoteLock({
-      key: noteId,
-      currentlyLocked: !!noteData?.locked,
-      reason: t('noteCard.unlockReason'),
-      dispatch,
-      lockMethod,
-    })
-  }, [noteId, noteData?.locked, dispatch, lockMethod, t])
 
   const handleMoreOptions = useCallback(() => {
     if (!noteId) return
@@ -620,13 +349,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     },
     [t],
   )
-
-  const handleDeleteAttachment = useCallback(async (url: string) => {
-    if (!url) return
-    try {
-      await deleteAttachment(url)
-    } catch {}
-  }, [])
 
   const handleImageSaveToPhotos = useCallback(async () => {
     if (!selectedImageSrc) return
