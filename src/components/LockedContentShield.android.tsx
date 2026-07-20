@@ -1,6 +1,6 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { memo } from 'react'
 import { StyleSheet, View } from 'react-native'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'

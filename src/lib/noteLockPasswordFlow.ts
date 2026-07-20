@@ -1,5 +1,5 @@
-import { router } from 'expo-router'
 import { useSyncExternalStore } from 'react'
+import { router } from 'expo-router'
 
 let visible = false
 let resolver: ((ok: boolean) => void) | null = null

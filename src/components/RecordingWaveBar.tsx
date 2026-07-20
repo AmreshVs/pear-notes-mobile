@@ -1,12 +1,12 @@
 import { StyleSheet } from 'react-native'
 import Animated, {
-  useAnimatedStyle,
-  type SharedValue,
   Easing,
+  type SharedValue,
+  useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated'
 
-import { RECORDING_BARS, RECORDING_BAR_W } from '@/components/useAudioRecorderModal'
+import { RECORDING_BAR_W, RECORDING_BARS } from '@/components/useAudioRecorderModal'
 
 interface RecordingWaveBarProps {
   index: number

@@ -1,11 +1,8 @@
-import { usePathname } from 'expo-router'
-import { Check, ChevronDown, Coffee } from 'lucide-react-native'
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import { useBackupProgressBanner } from './useBackupProgressBanner'
-import { useBackupProgressBannerAnimation } from './useBackupProgressBannerAnimation'
+import { usePathname } from 'expo-router'
+import { Check, ChevronDown, Coffee } from 'lucide-react-native'
 
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -16,6 +13,9 @@ import {
   Space,
   UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
+
+import { useBackupProgressBanner } from './useBackupProgressBanner'
+import { useBackupProgressBannerAnimation } from './useBackupProgressBannerAnimation'
 
 export function BackupProgressBanner() {
   const theme = useTheme()

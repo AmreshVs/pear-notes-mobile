@@ -1,20 +1,19 @@
-import { formatBytes } from '@pear-notes/core/utils.js'
-import { router, Stack } from 'expo-router'
-import { Check, CloudUpload, Lock, RotateCcw, X } from 'lucide-react-native'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Modal,
   Pressable,
-  Text as RNText,
-  View as RNView,
   ScrollView,
   StyleSheet,
+  Text as RNText,
+  View as RNView,
 } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { router, Stack } from 'expo-router'
+import { Check, CloudUpload, Lock, RotateCcw, X } from 'lucide-react-native'
 
-import useBackupScreen from './useBackupScreen'
+import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { BackupStatsSection } from '@/components/backup/BackupStatsSection'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -29,13 +28,13 @@ import {
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_28,
   UI_ICON_SIZE_48,
-  UI_SIZE_15,
   UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_15,
   UI_SIZE_20,
   UI_SIZE_22,
   UI_SIZE_27,
   UI_SIZE_30,
-  UI_SIZE_4,
   UI_SIZE_48,
   UI_SIZE_54,
   UI_SIZE_60,
@@ -45,6 +44,8 @@ import {
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { formatBackupDate } from '@/lib/backupUtils'
 import { getBackupErrorMessage } from '@/utils/backupErrors'
+
+import useBackupScreen from './useBackupScreen'
 
 export default function BackupScreen() {
   const { t } = useTranslation()

@@ -1,9 +1,9 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'

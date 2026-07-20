@@ -1,8 +1,8 @@
-import { Fingerprint, Lock, ScanFace, ShieldAlert } from 'lucide-react-native'
 import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { Fingerprint, Lock, ScanFace, ShieldAlert } from 'lucide-react-native'
 
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'

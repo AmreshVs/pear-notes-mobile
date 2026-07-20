@@ -1,8 +1,8 @@
-import { HardDrive, Lock, RotateCcw } from 'lucide-react-native'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
+import { HardDrive, Lock, RotateCcw } from 'lucide-react-native'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -11,9 +11,9 @@ import {
   FontSize,
   FontWeight,
   Space,
+  UI_ICON_SIZE_16,
   UI_SIZE_2,
   UI_STROKE_WIDTH_1_8,
-  UI_ICON_SIZE_16,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 

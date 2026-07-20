@@ -1,7 +1,7 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Haptics from 'expo-haptics'
 import React, { memo, useCallback, useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import * as Haptics from 'expo-haptics'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
@@ -9,12 +9,12 @@ import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEd
 import {
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
-  UI_SIZE_12,
   UI_SIZE_2,
-  UI_SIZE_24,
   UI_SIZE_4,
-  UI_SIZE_44,
   UI_SIZE_8,
+  UI_SIZE_12,
+  UI_SIZE_24,
+  UI_SIZE_44,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'

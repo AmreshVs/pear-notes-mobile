@@ -1,17 +1,3 @@
-import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
-import {
-  createFolder,
-  deleteFolder,
-  getFolders,
-  setSelectedFolder,
-  updateFolder,
-} from '@pear-notes/core/store/slices/foldersSlice.js'
-import {
-  getNoteCountsPerFolder,
-  getSelectedNote,
-} from '@pear-notes/core/store/slices/notesSlice.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { Href, router, Stack } from 'expo-router'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -36,6 +22,21 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { Href, router, Stack } from 'expo-router'
+
+import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
+import {
+  createFolder,
+  deleteFolder,
+  getFolders,
+  setSelectedFolder,
+  updateFolder,
+} from '@pear-notes/core/store/slices/foldersSlice.js'
+import {
+  getNoteCountsPerFolder,
+  getSelectedNote,
+} from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -50,16 +51,16 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_4,
   UI_SIZE_48,
-  UI_SIZE_6,
-  UI_SIZE_8,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'

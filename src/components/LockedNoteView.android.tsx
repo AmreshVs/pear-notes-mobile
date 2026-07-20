@@ -1,8 +1,8 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -15,8 +15,8 @@ import {
   Space,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_40,
-  UI_SIZE_9999,
   UI_SIZE_28,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 

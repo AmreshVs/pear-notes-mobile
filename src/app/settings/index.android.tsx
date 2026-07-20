@@ -1,11 +1,11 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import Constants from 'expo-constants'
-import { router, Stack } from 'expo-router'
 import React, { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StatusBar, StyleSheet, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import Constants from 'expo-constants'
+import { router, Stack } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -17,6 +17,7 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -25,7 +26,6 @@ import {
   UI_SIZE_28,
   UI_SIZE_40,
   UI_SIZE_44,
-  UI_SIZE_8,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'

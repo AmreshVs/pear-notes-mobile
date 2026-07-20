@@ -1,11 +1,12 @@
-import { updateSyncedDevice } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
-import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, TextInput, View } from 'react-native'
 import Animated, { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+
+import { updateSyncedDevice } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -17,15 +18,15 @@ import {
   FontWeight,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
+  UI_SIZE_2,
+  UI_SIZE_6,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_18,
-  UI_SIZE_2,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_48,
-  UI_SIZE_6,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 

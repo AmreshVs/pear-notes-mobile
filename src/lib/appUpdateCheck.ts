@@ -1,8 +1,9 @@
+import { Platform } from 'react-native'
+import Constants from 'expo-constants'
+
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { APP_UPDATE_MANIFEST_URL } from '@pear-notes/core/constant.js'
 import { getUpdateStatus } from '@pear-notes/core/utils.js'
-import Constants from 'expo-constants'
-import { Platform } from 'react-native'
 
 export type AppUpdateStatus = {
   mandatory: boolean

@@ -1,7 +1,7 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'

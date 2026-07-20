@@ -1,6 +1,7 @@
-import HRPC from '@pear-notes/core/spec/hrpc/index.js'
-import * as ExpoBackgroundService from 'expo-background-service'
 import { AppState, AppStateStatus, Platform } from 'react-native'
+import * as ExpoBackgroundService from 'expo-background-service'
+
+import HRPC from '@pear-notes/core/spec/hrpc/index.js'
 
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 

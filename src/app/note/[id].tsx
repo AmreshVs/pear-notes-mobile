@@ -1,6 +1,6 @@
-import { useLocalSearchParams } from 'expo-router'
 import { useEffect } from 'react'
 import { StyleSheet } from 'react-native'
+import { useLocalSearchParams } from 'expo-router'
 
 import { createThemedStylesheet, View } from '@/components/Themed'
 import { useNoteEditor } from '@/providers/NoteEditorContext'

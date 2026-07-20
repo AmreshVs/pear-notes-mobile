@@ -1,7 +1,7 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View } from 'react-native'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -12,8 +12,8 @@ import {
   FontWeight,
   Space,
   UI_ICON_SIZE_40,
-  UI_SIZE_9999,
   UI_SIZE_28,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hideLockInfo, useLockInfoVisible } from '@/lib/lockInfoModal'

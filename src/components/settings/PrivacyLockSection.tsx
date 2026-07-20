@@ -1,10 +1,8 @@
-import { Fingerprint, KeyRound, LockKeyhole } from 'lucide-react-native'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, StyleSheet, Switch } from 'react-native'
+import { Pressable, StyleSheet, Switch, View as RNView } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-
-import { usePrivacyLock } from './usePrivacyLock'
+import { Fingerprint, KeyRound, LockKeyhole } from 'lucide-react-native'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -20,6 +18,8 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
+
+import { usePrivacyLock } from './usePrivacyLock'
 
 export function PrivacyLockSection() {
   const { t } = useTranslation()

@@ -1,6 +1,3 @@
-import { backendApi } from '@pear-notes/core/backend/api.js'
-import { BlurView } from 'expo-blur'
-import { Eye, EyeOff, Lock } from 'lucide-react-native'
 import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -8,10 +5,14 @@ import {
   Modal,
   Platform,
   Pressable,
-  View as RNView,
   StyleSheet,
   TextInput,
+  View as RNView,
 } from 'react-native'
+import { BlurView } from 'expo-blur'
+import { Eye, EyeOff, Lock } from 'lucide-react-native'
+
+import { backendApi } from '@pear-notes/core/backend/api.js'
 
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -24,8 +25,8 @@ import {
   Space,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_40,
-  UI_SIZE_54,
   UI_SIZE_8,
+  UI_SIZE_54,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'

@@ -1,25 +1,25 @@
-import { isValidInvite } from '@pear-notes/core/utils.js'
-import { Check, Globe, Link2, ScanLine, ShieldCheck, Smartphone } from 'lucide-react-native'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
-  View as RNView,
   ScrollView,
   StyleSheet,
   TextInput,
+  View as RNView,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import Reanimated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Check, Globe, Link2, ScanLine, ShieldCheck, Smartphone } from 'lucide-react-native'
 
-import useSyncScreen from './useSyncScreen'
+import { isValidInvite } from '@pear-notes/core/utils.js'
 
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
 import { SyncScannerModal } from '@/components/sync/SyncScannerModal'
-import { Text, createThemedStylesheet, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
+  commonStyles,
   FontSize,
   FontWeight,
   MonoFontFamily,
@@ -32,10 +32,11 @@ import {
   UI_ICON_SIZE_26,
   UI_SIZE_180,
   UI_SIZE_200,
-  commonStyles,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+
+import useSyncScreen from './useSyncScreen'
 
 export default function SyncScreen() {
   const { t } = useTranslation()

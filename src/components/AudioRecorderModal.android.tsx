@@ -1,19 +1,19 @@
-import Slider from '@react-native-community/slider'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View } from 'react-native'
-import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
+import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Slider from '@react-native-community/slider'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { RecordingWaveBar } from '@/components/RecordingWaveBar'
 import { createThemedStylesheetWithHooks, Text, Theme, useTheme } from '@/components/Themed'
 import {
-  RECORDING_BARS,
-  RECORDING_BAR_GAP,
-  useAudioRecorderModal,
-  fmtTimer,
   fmtShort,
+  fmtTimer,
+  RECORDING_BAR_GAP,
+  RECORDING_BARS,
+  useAudioRecorderModal,
 } from '@/components/useAudioRecorderModal'
 import {
   FontFamily,
@@ -23,21 +23,21 @@ import {
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_28,
   UI_ICON_SIZE_36,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_18,
-  UI_SIZE_2,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
   UI_SIZE_32,
   UI_SIZE_36,
-  UI_SIZE_4,
   UI_SIZE_40,
   UI_SIZE_48,
-  UI_SIZE_8,
 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {

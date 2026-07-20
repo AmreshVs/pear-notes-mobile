@@ -1,7 +1,7 @@
-import { Stack } from 'expo-router'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet } from 'react-native'
+import { Stack } from 'expo-router'
 
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { FontWeight } from '@/constants/commonStyles'

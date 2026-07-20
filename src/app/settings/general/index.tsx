@@ -1,3 +1,12 @@
+import { useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { useDispatch, useSelector } from 'react-redux'
+import Slider from '@react-native-community/slider'
+import { Stack } from 'expo-router'
+import { ChevronRight } from 'lucide-react-native'
+
 import {
   getEditorFontSize,
   getFontFamily,
@@ -6,14 +15,6 @@ import {
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
-import Slider from '@react-native-community/slider'
-import { Stack } from 'expo-router'
-import { ChevronRight } from 'lucide-react-native'
-import { useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { useDispatch, useSelector } from 'react-redux'
 
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
@@ -25,13 +26,13 @@ import {
   FontWeight,
   Space,
   UI_ICON_SIZE_15,
+  UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_18,
   UI_SIZE_20,
-  UI_SIZE_4,
   UI_SIZE_60,
-  UI_SIZE_8,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getFontOptions, getSortOptions, showPicker } from '@/utils/settingsUtils'

@@ -1,13 +1,12 @@
-import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
-import { updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import type { DocumentPickerAsset } from 'expo-document-picker'
-import * as Haptics from 'expo-haptics'
-import type { ImagePickerAsset } from 'expo-image-picker'
 import { useCallback } from 'react'
 import { Image, Keyboard } from 'react-native'
 import { useDispatch } from 'react-redux'
+import type { DocumentPickerAsset } from 'expo-document-picker'
+import * as Haptics from 'expo-haptics'
+import type { ImagePickerAsset } from 'expo-image-picker'
 
-import type { useNoteEditor } from './useNoteEditor'
+import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
+import { updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 
 import {
   CameraPermissionDeniedError,
@@ -28,6 +27,8 @@ import {
   isNoteUploadItemCancelled,
 } from '@/lib/uploadRegistry'
 import { isImageFile } from '@/utils/media'
+
+import type { useNoteEditor } from './useNoteEditor'
 
 const IMAGE_MAX_HEIGHT = 400
 const IMAGE_WIDTH_INSET = 40

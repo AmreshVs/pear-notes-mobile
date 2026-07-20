@@ -1,10 +1,8 @@
-import { Download, X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import { useAppUpdateBanner } from './useAppUpdateBanner'
+import { Download, X } from 'lucide-react-native'
 
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -16,6 +14,8 @@ import {
   UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+
+import { useAppUpdateBanner } from './useAppUpdateBanner'
 
 export function AppUpdateBanner() {
   const { t } = useTranslation()

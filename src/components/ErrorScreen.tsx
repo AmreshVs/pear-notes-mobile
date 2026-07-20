@@ -1,9 +1,7 @@
-import { AlertCircle, RotateCcw } from 'lucide-react-native'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity } from 'react-native'
-
-import { createThemedStylesheet, Text, View } from './Themed'
+import { AlertCircle, RotateCcw } from 'lucide-react-native'
 
 import {
   commonStyles,
@@ -14,6 +12,8 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_64,
 } from '@/constants/commonStyles'
+
+import { createThemedStylesheet, Text, View } from './Themed'
 
 interface ErrorScreenProps {
   message: string

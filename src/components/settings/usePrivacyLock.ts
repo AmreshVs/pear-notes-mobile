@@ -1,12 +1,13 @@
+import { useCallback, useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+import { router } from 'expo-router'
+
 import {
-  LOCK_SWITCHER_HIDE_KEY,
   LOCK_SCREENSHOT_PROTECTION_KEY,
+  LOCK_SWITCHER_HIDE_KEY,
 } from '@pear-notes/core/constant.js'
 import { clearLockPassword, getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLockPrivacyPreference, setLockPrivacyPreference } from '@pear-notes/core/utils.js'
-import { router } from 'expo-router'
-import { useCallback, useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 
 import useLockStatus from '@/app/settings/privacy/useLockStatus'
 import { authenticate } from '@/lib/deviceAuth'

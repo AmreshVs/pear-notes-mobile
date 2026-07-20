@@ -1,6 +1,7 @@
+import { useEffect, useRef } from 'react'
+
 import { METERED_CONNECTION_KEY } from '@pear-notes/core/constant.js'
 import { setMediaSyncFlag } from '@pear-notes/core/utils.js'
-import { useEffect, useRef } from 'react'
 
 import { getHoldMediaOnCellular } from '@/lib/mediaSyncPolicy'
 import { ConnectionKind, getConnectionKind, subscribeConnectionKind } from '@/lib/networkState'

@@ -1,25 +1,26 @@
-import {
-  deleteSyncedDevice,
-  updateSyncedDevice,
-} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
-import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
-import { Monitor, Smartphone, Trash2 } from 'lucide-react-native'
 import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Animated, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
 import Reanimated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
+import { Monitor, Smartphone, Trash2 } from 'lucide-react-native'
+
+import {
+  deleteSyncedDevice,
+  updateSyncedDevice,
+} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { SyncDeleteModal } from '@/components/sync/SyncDeleteModal'
-import { Text, createThemedStylesheet, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
+  commonStyles,
   FontSize,
   FontWeight,
   Radii,
   Space,
   UI_ICON_SIZE_17,
   UI_ICON_SIZE_18,
-  commonStyles,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getPlatformNames } from '@/utils/settingsUtils'

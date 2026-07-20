@@ -1,8 +1,8 @@
-import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import React, { useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'

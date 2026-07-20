@@ -1,8 +1,9 @@
-import { groupTransfersByNote } from '@pear-notes/core/utils.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+
+import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import type { DownloadItem } from '@/components/backup/DownloadsSection'

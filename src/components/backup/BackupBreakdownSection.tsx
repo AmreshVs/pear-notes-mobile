@@ -1,7 +1,7 @@
-import { FileText, Film, Image as ImageIcon, Mic } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
-import { View as RNView, StyleSheet } from 'react-native'
+import { StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FileText, Film, Image as ImageIcon, Mic } from 'lucide-react-native'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {

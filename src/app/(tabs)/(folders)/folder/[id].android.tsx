@@ -1,3 +1,25 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  Modal,
+  Pressable,
+  SectionList,
+  SectionListData,
+  SectionListRenderItemInfo,
+  StatusBar,
+  StyleSheet,
+  TextInput,
+  useWindowDimensions,
+  View,
+} from 'react-native'
+import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useDispatch, useSelector } from 'react-redux'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import * as Clipboard from 'expo-clipboard'
+import { router, Stack, useLocalSearchParams } from 'expo-router'
+
 import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
 import {
   deleteFolder,
@@ -18,27 +40,6 @@ import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Clipboard from 'expo-clipboard'
-import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import {
-  Modal,
-  Pressable,
-  SectionList,
-  SectionListData,
-  SectionListRenderItemInfo,
-  StatusBar,
-  StyleSheet,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from 'react-native'
-import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch, useSelector } from 'react-redux'
 
 import { AndroidEmptyState, AndroidNoteRow, useMD3Theme } from '@/components/android'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
@@ -52,6 +53,8 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
+  UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_14,
@@ -59,9 +62,7 @@ import {
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_4,
   UI_SIZE_48,
-  UI_SIZE_8,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'

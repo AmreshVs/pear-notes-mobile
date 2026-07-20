@@ -7,10 +7,6 @@ import {
   type OnChangeStateEvent,
 } from 'react-native-enriched'
 
-import { sanitizeTipTapHtml } from '../utils/sanitize-html'
-
-import { createThemedStylesheet, useColors } from './Themed'
-
 import {
   commonStyles,
   FontSize,
@@ -23,6 +19,10 @@ import {
   UI_SIZE_30,
   UI_SIZE_150,
 } from '@/constants/commonStyles'
+
+import { sanitizeTipTapHtml } from '../utils/sanitize-html'
+
+import { createThemedStylesheet, useColors } from './Themed'
 
 interface NoteEditorProps {
   initialContent: string

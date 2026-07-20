@@ -1,9 +1,10 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useDispatch } from 'react-redux'
+import { router } from 'expo-router'
+
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { loadSettings } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { isValidBackupPassword } from '@pear-notes/core/utils.js'
-import { router } from 'expo-router'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useDispatch } from 'react-redux'
 
 import { resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 import { getPasswordStrength } from '@/utils/passwordStrength'

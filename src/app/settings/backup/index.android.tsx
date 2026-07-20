@@ -1,6 +1,3 @@
-import { formatBytes } from '@pear-notes/core/utils.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -14,8 +11,10 @@ import {
 } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { router, Stack } from 'expo-router'
 
-import useBackupScreen from './useBackupScreen'
+import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -27,27 +26,29 @@ import {
   FontWeight,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
+  UI_ICON_SIZE_48,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_2,
   UI_SIZE_20,
   UI_SIZE_22,
   UI_SIZE_24,
   UI_SIZE_28,
   UI_SIZE_32,
-  UI_SIZE_4,
   UI_SIZE_40,
   UI_SIZE_48,
   UI_SIZE_54,
   UI_SIZE_72,
-  UI_SIZE_8,
   UI_SIZE_96,
   UI_SIZE_9999,
-  UI_ICON_SIZE_48,
 } from '@/constants/commonStyles'
 import { formatBackupDate, hexWithAlpha } from '@/lib/backupUtils'
 import { getBackupErrorMessage } from '@/utils/backupErrors'
+
+import useBackupScreen from './useBackupScreen'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

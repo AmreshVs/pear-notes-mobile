@@ -1,3 +1,13 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Alert, Platform } from 'react-native'
+import {
+  Easing,
+  runOnJS,
+  type SharedValue,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
 import {
   AudioModule,
   RecordingPresets,
@@ -8,16 +18,6 @@ import {
   useAudioRecorder,
 } from 'expo-audio'
 import * as Haptics from 'expo-haptics'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Alert, Platform } from 'react-native'
-import {
-  Easing,
-  runOnJS,
-  useSharedValue,
-  withTiming,
-  type SharedValue,
-} from 'react-native-reanimated'
 
 import { useToast } from '@/providers/ToastProvider'
 
@@ -32,7 +32,7 @@ function sampleAmp() {
   return Math.max(0.12, Math.min(1, energy + (Math.random() - 0.5) * 0.28))
 }
 
-export { RECORDING_BARS, RECORDING_BAR_W, RECORDING_BAR_GAP, RECORDING_WINDOW_MS }
+export { RECORDING_BAR_GAP, RECORDING_BAR_W, RECORDING_BARS, RECORDING_WINDOW_MS }
 
 export function fmtTimer(ms: number) {
   const s = Math.floor(ms / 1000)

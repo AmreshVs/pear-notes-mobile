@@ -1,7 +1,7 @@
-import { BlurView } from 'expo-blur'
-import { GlassView as ExpoGlassView } from 'expo-glass-effect'
 import React, { memo, useMemo } from 'react'
 import { StyleSheet, ViewProps, ViewStyle } from 'react-native'
+import { BlurView } from 'expo-blur'
+import { GlassView as ExpoGlassView } from 'expo-glass-effect'
 
 import { createThemedStylesheet, useTheme } from './Themed'
 

@@ -5,7 +5,7 @@ export interface AttachmentInfo {
   count: number
 }
 
-export { getPreview, getAttachmentInfo, getFirstImageUrl } from '@pear-notes/core/utils.js'
+export { getAttachmentInfo, getFirstImageUrl, getPreview } from '@pear-notes/core/utils.js'
 
 export function isChecklistNote(html: string): boolean {
   return !!html && html.includes('data-type="taskItem"')

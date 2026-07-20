@@ -1,8 +1,8 @@
-import * as Haptics from 'expo-haptics'
-import { SymbolView } from 'expo-symbols'
 import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import * as Haptics from 'expo-haptics'
+import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet } from '@/components/Themed'
@@ -11,10 +11,10 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_22,
+  UI_SIZE_6,
   UI_SIZE_24,
   UI_SIZE_42,
   UI_SIZE_44,
-  UI_SIZE_6,
 } from '@/constants/commonStyles'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null

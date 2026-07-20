@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, Pressable, View as RNView, StyleSheet } from 'react-native'
+import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
 import Animated, {
   Easing,
   runOnJS,
@@ -20,6 +20,8 @@ import {
   GlassIntensity,
   Layout,
   Radii,
+  UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -28,10 +30,8 @@ import {
   UI_SIZE_24,
   UI_SIZE_27,
   UI_SIZE_32,
-  UI_SIZE_4,
   UI_SIZE_40,
   UI_SIZE_54,
-  UI_SIZE_8,
 } from '@/constants/commonStyles'
 
 interface ClearStorageBottomSheetProps {

@@ -1,8 +1,3 @@
-import { COLLABORATION_ENABLED } from '@pear-notes/core/constant.js'
-import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
-import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { getCollaboratorIdentity } from '@pear-notes/core/utils.js'
 import {
   forwardRef,
   memo,
@@ -17,18 +12,24 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
 
-import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
-
-import { createThemedStylesheet, useTheme } from './Themed'
+import { COLLABORATION_ENABLED } from '@pear-notes/core/constant.js'
+import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getCollaboratorIdentity } from '@pear-notes/core/utils.js'
 
 import {
   FontSize,
   FontWeight,
+  UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_20,
-  UI_SIZE_8,
   UI_STROKE_WIDTH_1_5,
 } from '@/constants/commonStyles'
+
+import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
+
+import { createThemedStylesheet, useTheme } from './Themed'
 
 export interface TiptapStyleState {
   bold: { isActive: boolean }

@@ -1,11 +1,8 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { usePathname } from 'expo-router'
 import { ActivityIndicator, Pressable, StyleSheet } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import { useBackupProgressBanner } from './useBackupProgressBanner'
-import { useBackupProgressBannerAnimation } from './useBackupProgressBannerAnimation'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { usePathname } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -16,9 +13,12 @@ import {
   FontWeight,
   Space,
   UI_ICON_SIZE_20,
-  UI_SIZE_9999,
   UI_SIZE_16,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
+
+import { useBackupProgressBanner } from './useBackupProgressBanner'
+import { useBackupProgressBannerAnimation } from './useBackupProgressBannerAnimation'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

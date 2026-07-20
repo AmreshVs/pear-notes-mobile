@@ -1,13 +1,12 @@
-import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
-import { formatBytes } from '@pear-notes/core/utils.js'
-import { router, Stack } from 'expo-router'
-import { Database, Trash2, X } from 'lucide-react-native'
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { router, Stack } from 'expo-router'
+import { Database, Trash2, X } from 'lucide-react-native'
 
-import useStorageScreen from './useStorageScreen'
+import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
+import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { BackupBreakdownSection } from '@/components/backup/BackupBreakdownSection'
 import { BackupNotesListSection } from '@/components/backup/BackupNotesListSection'
@@ -34,6 +33,8 @@ import {
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+
+import useStorageScreen from './useStorageScreen'
 
 export default function StorageScreen() {
   const { t } = useTranslation()

@@ -1,5 +1,16 @@
-import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { memo, useCallback, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  ActivityIndicator,
+  Image,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View as RNView,
+  type ViewStyle,
+} from 'react-native'
+import Animated, { FadeIn, FadeOutUp } from 'react-native-reanimated'
+import { useSelector } from 'react-redux'
 import {
   Film,
   Folder,
@@ -10,21 +21,9 @@ import {
   Paperclip,
   Pin,
 } from 'lucide-react-native'
-import { memo, useCallback, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import {
-  ActivityIndicator,
-  Image,
-  Platform,
-  Pressable,
-  View as RNView,
-  StyleSheet,
-  type ViewStyle,
-} from 'react-native'
-import Animated, { FadeIn, FadeOutUp } from 'react-native-reanimated'
-import { useSelector } from 'react-redux'
 
-import { createThemedStylesheet, Text, useTheme } from './Themed'
+import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import {
   commonStyles,
@@ -40,6 +39,8 @@ import {
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import type { AttachmentInfo } from '@/utils/noteUtils'
+
+import { createThemedStylesheet, Text, useTheme } from './Themed'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 

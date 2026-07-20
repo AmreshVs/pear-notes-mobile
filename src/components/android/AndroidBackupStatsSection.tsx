@@ -1,12 +1,12 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_22, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_28, UI_SIZE_4, UI_SIZE_8, UI_SIZE_9999 } from '@/constants/commonStyles'
+import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_22, UI_SIZE_4, UI_SIZE_8, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_28, UI_SIZE_9999 } from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

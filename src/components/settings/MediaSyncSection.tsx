@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View as RNView, StyleSheet, Switch } from 'react-native'
+import { StyleSheet, Switch, View as RNView } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { useMediaSyncPolicy } from '@/components/settings/useMediaSyncPolicy'

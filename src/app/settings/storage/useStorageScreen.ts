@@ -1,3 +1,6 @@
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+
 import {
   deleteNoteMedia,
   getActiveDownloads,
@@ -14,8 +17,6 @@ import {
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
 
 import { clearStorageState } from '@/lib/clearStorageState'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'

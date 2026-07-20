@@ -1,6 +1,6 @@
-import { SymbolView } from 'expo-symbols'
 import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'

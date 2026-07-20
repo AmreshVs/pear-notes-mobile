@@ -1,3 +1,22 @@
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import {
+  ActivityIndicator,
+  Animated,
+  DimensionValue,
+  Modal,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View as RNView,
+} from 'react-native'
+import Reanimated, { Easing, FadeInDown } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useDispatch, useSelector } from 'react-redux'
+import { BlurView } from 'expo-blur'
+import { CameraView, useCameraPermissions } from 'expo-camera'
+import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
+
 import {
   clearStorage,
   confirmPairing,
@@ -13,27 +32,6 @@ import {
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
-import { BlurView } from 'expo-blur'
-import { CameraView, useCameraPermissions } from 'expo-camera'
-import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import {
-  ActivityIndicator,
-  Animated,
-  DimensionValue,
-  Modal,
-  Pressable,
-  View as RNView,
-  StyleSheet,
-  TextInput,
-} from 'react-native'
-import Reanimated, { Easing, FadeInDown } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch, useSelector } from 'react-redux'
-
-import { GlassView } from './GlassView'
-import { createThemedStylesheetWithHooks, Text, useColors, useTheme, View } from './Themed'
 
 import {
   commonStyles,
@@ -55,6 +53,9 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
+
+import { GlassView } from './GlassView'
+import { createThemedStylesheetWithHooks, Text, useColors, useTheme, View } from './Themed'
 
 const isAndroid = process.env.EXPO_OS === 'android'
 

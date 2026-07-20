@@ -1,3 +1,8 @@
+import { useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View as RNView, View } from 'react-native'
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Constants from 'expo-constants'
 import { router, Stack } from 'expo-router'
 import {
@@ -9,11 +14,6 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react-native'
-import { useCallback, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, StyleSheet, View } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -23,13 +23,13 @@ import {
   FontWeight,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_17,
+  UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_15,
   UI_SIZE_20,
   UI_SIZE_30,
   UI_SIZE_40,
   UI_SIZE_60,
-  UI_SIZE_8,
   UI_STROKE_WIDTH_1_8,
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'

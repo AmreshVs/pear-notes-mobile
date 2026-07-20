@@ -1,8 +1,9 @@
-import { groupTransfersByNote } from '@pear-notes/core/utils.js'
-import { CloudDownload, Pause, Play, RotateCw, WifiOff } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, ScrollView, StyleSheet } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeInDown } from 'react-native-reanimated'
+import { CloudDownload, Pause, Play, RotateCw, WifiOff } from 'lucide-react-native'
+
+import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {

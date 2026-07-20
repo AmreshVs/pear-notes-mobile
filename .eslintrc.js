@@ -1,19 +1,32 @@
 module.exports = {
   extends: 'universe/native',
-  plugins: ['import', 'react-native'],
+  plugins: ['import', 'react-native', 'simple-import-sort'],
   ignorePatterns: ['editor-bundle/**', 'src/utils/tiptap-editor-bundle.ts'],
   parserOptions: {
     warnOnUnsupportedTypeScriptVersion: false,
   },
   rules: {
-    'import/order': [
+    'simple-import-sort/imports': [
       'error',
       {
-        groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
-        'newlines-between': 'always',
-        alphabetize: { order: 'asc', caseInsensitive: true },
+        groups: [
+          // 0. Side-effect imports
+          ['^\\u0000'],
+          // 1. common 3rd party libs (react, react-native, expo, etc)
+          ['^react', '^@?\\w'],
+          // 2. @pear-notes/core
+          ['^@pear-notes/core'],
+          // 3. components, screen, lib, utils (aliases mapped via @/ or src/)
+          ['^@/'],
+          // 4. parent items (../)
+          ['^\\.\\.(?!/?$)'],
+          // 5. sibling/index items (./)
+          ['^\\./(?=.*/)(?!/?$)', '^\\.(?!/?$)', '^\\./?$'],
+        ],
       },
     ],
+    'simple-import-sort/exports': 'error',
+    'import/order': 'off',
     semi: ['error', 'never'],
     'no-extra-semi': 'error',
     'react-native/no-unused-styles': 'error',

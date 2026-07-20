@@ -1,6 +1,3 @@
-import { isValidInvite } from '@pear-notes/core/utils.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -16,8 +13,10 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { router, Stack } from 'expo-router'
 
-import useSyncScreen from './useSyncScreen'
+import { isValidInvite } from '@pear-notes/core/utils.js'
 
 import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
@@ -37,28 +36,30 @@ import {
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_30,
   UI_ICON_SIZE_48,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
-  UI_SIZE_120,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_17,
   UI_SIZE_18,
-  UI_SIZE_180,
-  UI_SIZE_2,
   UI_SIZE_20,
-  UI_SIZE_200,
   UI_SIZE_22,
   UI_SIZE_24,
   UI_SIZE_28,
   UI_SIZE_32,
   UI_SIZE_36,
-  UI_SIZE_4,
   UI_SIZE_40,
-  UI_SIZE_6,
-  UI_SIZE_8,
+  UI_SIZE_120,
+  UI_SIZE_180,
+  UI_SIZE_200,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+
+import useSyncScreen from './useSyncScreen'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string

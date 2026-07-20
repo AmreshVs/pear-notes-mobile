@@ -1,9 +1,9 @@
 import { BackgroundTaskResult, registerTaskAsync, unregisterTaskAsync } from 'expo-background-task'
 import * as TaskManager from 'expo-task-manager'
 
-import { BackgroundSyncMode } from './backgroundSync'
-
 import { EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS, wakeActiveWorklet } from '@/utils/worklet'
+
+import { BackgroundSyncMode } from './backgroundSync'
 
 export const BACKGROUND_SYNC_TASK_NAME = 'pear-notes-background-sync'
 

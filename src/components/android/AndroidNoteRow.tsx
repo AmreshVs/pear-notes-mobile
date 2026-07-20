@@ -1,7 +1,3 @@
-import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { formatDate } from '@pear-notes/core/utils.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { type ComponentProps, memo, useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native'
@@ -15,6 +11,11 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+
+import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { formatDate } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -24,14 +25,14 @@ import {
   FontSize,
   FontWeight,
   UI_ICON_SIZE_13,
+  UI_SIZE_4,
+  UI_SIZE_6,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
-  UI_SIZE_4,
-  UI_SIZE_6,
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'

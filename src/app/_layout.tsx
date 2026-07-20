@@ -1,15 +1,6 @@
 import '@/locales/i18n'
-import { backendApi } from '@pear-notes/core/backend/api.js'
-import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
-import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
-import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
-import { store } from '@pear-notes/core/store/store.js'
-import * as Crypto from 'expo-crypto'
-import { Directory, Paths } from 'expo-file-system'
-import { router, Stack, usePathname } from 'expo-router'
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation'
-import * as SplashScreen from 'expo-splash-screen'
-import * as SystemUI from 'expo-system-ui'
+import 'react-native-reanimated'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -22,8 +13,19 @@ import {
   View,
 } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import 'react-native-reanimated'
 import { Provider, useDispatch, useSelector } from 'react-redux'
+import * as Crypto from 'expo-crypto'
+import { Directory, Paths } from 'expo-file-system'
+import { router, Stack, usePathname } from 'expo-router'
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation'
+import * as SplashScreen from 'expo-splash-screen'
+import * as SystemUI from 'expo-system-ui'
+
+import { backendApi } from '@pear-notes/core/backend/api.js'
+import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
+import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
+import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
+import { store } from '@pear-notes/core/store/store.js'
 
 import { AppUpdateBanner } from '@/components/AppUpdateBanner'
 import { AppUpdateRequiredOverlay } from '@/components/AppUpdateRequiredOverlay'

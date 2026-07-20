@@ -1,4 +1,3 @@
-import { FolderPlus } from 'lucide-react-native'
 import { Pressable, StyleSheet } from 'react-native'
 import Animated, {
   Easing,
@@ -6,6 +5,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated'
+import { FolderPlus } from 'lucide-react-native'
 
 import { GlassView } from '@/components/GlassView'
 import { useColors } from '@/components/Themed'

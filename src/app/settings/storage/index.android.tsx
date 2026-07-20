@@ -1,14 +1,13 @@
-import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
-import { formatBytes } from '@pear-notes/core/utils.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { router, Stack } from 'expo-router'
 
-import useStorageScreen from './useStorageScreen'
+import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
+import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBackupBreakdownSection'
 import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
@@ -24,6 +23,9 @@ import {
   FontWeight,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
+  UI_ICON_SIZE_48,
+  UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -31,14 +33,13 @@ import {
   UI_SIZE_22,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_4,
   UI_SIZE_40,
   UI_SIZE_48,
-  UI_SIZE_8,
   UI_SIZE_96,
-  UI_ICON_SIZE_48,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+
+import useStorageScreen from './useStorageScreen'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

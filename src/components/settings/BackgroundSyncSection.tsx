@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, View as RNView, StyleSheet } from 'react-native'
+import { Pressable, StyleSheet, View as RNView } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
 import { createThemedStylesheet, Text } from '@/components/Themed'

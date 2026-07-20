@@ -1,8 +1,9 @@
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
-import * as LocalAuthentication from 'expo-local-authentication'
 import { useCallback, useEffect, useState } from 'react'
 import { Platform } from 'react-native'
 import { useSelector } from 'react-redux'
+import * as LocalAuthentication from 'expo-local-authentication'
+
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { isDeviceAuthSupported } from '@/lib/deviceAuth'
 import { markNoteUnlocked, unlockNote } from '@/lib/noteLock'

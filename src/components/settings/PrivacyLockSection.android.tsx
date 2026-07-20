@@ -1,10 +1,8 @@
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Switch, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-
-import { usePrivacyLock } from './usePrivacyLock'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -18,16 +16,18 @@ import {
   UI_ICON_SIZE_22,
   UI_SIZE_4,
   UI_SIZE_8,
-  UI_SIZE_9999,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_18,
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_44,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
+
+import { usePrivacyLock } from './usePrivacyLock'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

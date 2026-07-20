@@ -1,7 +1,7 @@
-import { ShieldCheck } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
-import { View as RNView, ScrollView, StyleSheet } from 'react-native'
+import { ScrollView, StyleSheet, View as RNView } from 'react-native'
 import Animated, { FadeIn } from 'react-native-reanimated'
+import { ShieldCheck } from 'lucide-react-native'
 
 import { PrivacyLockSection } from '@/components/settings/PrivacyLockSection'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'

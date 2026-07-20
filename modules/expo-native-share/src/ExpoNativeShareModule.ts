@@ -1,10 +1,10 @@
 import { NativeModule, requireNativeModule } from 'expo'
 
 import {
+  ExpoNativeCopyFileOptions,
   ExpoNativePreviewOptions,
   ExpoNativeSaveToPhotosOptions,
   ExpoNativeShareOptions,
-  ExpoNativeCopyFileOptions,
 } from './ExpoNativeShare.types'
 
 declare class ExpoNativeShareModule extends NativeModule {

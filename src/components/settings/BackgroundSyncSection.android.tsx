@@ -12,11 +12,11 @@ import {
   FontSize,
   FontWeight,
   UI_SIZE_4,
-  UI_SIZE_9999,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_28,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import {
   BackgroundSyncMode,

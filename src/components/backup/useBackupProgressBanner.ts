@@ -1,10 +1,11 @@
-import { getExportStatus, getImportStatus } from '@pear-notes/core/store/slices/backupSlice.js'
-import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
-import { router, usePathname } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import { useSelector } from 'react-redux'
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
+import { router, usePathname } from 'expo-router'
+
+import { getExportStatus, getImportStatus } from '@pear-notes/core/store/slices/backupSlice.js'
 
 import { clearImportCacheFile } from '@/lib/backupFileManager'
 

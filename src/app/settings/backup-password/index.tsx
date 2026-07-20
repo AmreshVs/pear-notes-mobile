@@ -1,5 +1,3 @@
-import { Stack, useLocalSearchParams } from 'expo-router'
-import { Check, Eye, EyeOff, Lock, X } from 'lucide-react-native'
 import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -7,14 +5,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  View as RNView,
   ScrollView,
   StyleSheet,
   TextInput,
+  View as RNView,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import useBackupPasswordScreen from './useBackupPasswordScreen'
+import { Stack, useLocalSearchParams } from 'expo-router'
+import { Check, Eye, EyeOff, Lock, X } from 'lucide-react-native'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -27,12 +25,14 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_28,
-  UI_SIZE_16,
   UI_SIZE_4,
-  UI_SIZE_54,
   UI_SIZE_8,
+  UI_SIZE_16,
+  UI_SIZE_54,
 } from '@/constants/commonStyles'
 import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
+
+import useBackupPasswordScreen from './useBackupPasswordScreen'
 
 export default function BackupPasswordScreen() {
   const { t } = useTranslation()

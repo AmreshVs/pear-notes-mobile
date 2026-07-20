@@ -1,5 +1,4 @@
 import { Buffer } from 'buffer'
-
 import * as FileSystem from 'expo-file-system/legacy'
 
 export const LAST_BACKUP_FILE = (FileSystem.documentDirectory ?? '') + 'lastBackup.json'

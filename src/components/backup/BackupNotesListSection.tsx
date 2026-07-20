@@ -1,3 +1,7 @@
+import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, Text as RNText, View as RNView } from 'react-native'
+import Animated, { FadeInDown } from 'react-native-reanimated'
 import {
   ChevronDown,
   ChevronRight,
@@ -8,10 +12,6 @@ import {
   PenLine,
   X,
 } from 'lucide-react-native'
-import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Pressable, Text as RNText, View as RNView, StyleSheet } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
 
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -20,10 +20,10 @@ import {
   FontSize,
   FontWeight,
   Space,
-  UI_SIZE_12,
-  UI_SIZE_14,
   UI_ICON_SIZE_14,
   UI_ICON_SIZE_16,
+  UI_SIZE_12,
+  UI_SIZE_14,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getMediaDisplayName } from '@/lib/backupUtils'

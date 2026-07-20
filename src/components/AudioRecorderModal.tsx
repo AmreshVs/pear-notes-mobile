@@ -1,20 +1,20 @@
-import Slider from '@react-native-community/slider'
-import { SymbolView } from 'expo-symbols'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View } from 'react-native'
-import Animated, { useAnimatedStyle, type SharedValue } from 'react-native-reanimated'
+import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Slider from '@react-native-community/slider'
+import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
 import { RecordingWaveBar } from '@/components/RecordingWaveBar'
-import { Text, Theme, useTheme, createThemedStylesheet } from '@/components/Themed'
+import { createThemedStylesheet, Text, Theme, useTheme } from '@/components/Themed'
 import {
-  RECORDING_BARS,
+  fmtShort,
+  fmtTimer,
   RECORDING_BAR_GAP,
   RECORDING_BAR_W,
+  RECORDING_BARS,
   useAudioRecorderModal,
-  fmtTimer,
-  fmtShort,
 } from '@/components/useAudioRecorderModal'
 import {
   FontFamily,

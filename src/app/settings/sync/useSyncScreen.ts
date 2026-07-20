@@ -1,3 +1,11 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Platform, ScrollView } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
+import { useCameraPermissions } from 'expo-camera'
+import * as Clipboard from 'expo-clipboard'
+import { router } from 'expo-router'
+
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteSyncedDevice,
@@ -15,13 +23,6 @@ import {
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, isValidInvite } from '@pear-notes/core/utils.js'
-import { useCameraPermissions } from 'expo-camera'
-import * as Clipboard from 'expo-clipboard'
-import { router } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Platform, ScrollView } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
 
 import { pendingInviteState } from '@/lib/pendingInviteState'
 

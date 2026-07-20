@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
 import { StyleSheet } from 'react-native'
 
-import { useMD3Theme } from './useMD3Theme'
-
 import { FontFamily, FontSize, FontWeight, LetterSpacing, Space } from '@/constants/commonStyles'
+
+import { useMD3Theme } from './useMD3Theme'
 
 export function useMD3CommonStyles() {
   const md3 = useMD3Theme()

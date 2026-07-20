@@ -1,13 +1,14 @@
-import { getTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import React, { memo, useMemo } from 'react'
 import {
   StyleSheet,
   Text as DefaultText,
   type TextStyle,
-  View as DefaultView,
   useColorScheme as useDeviceColorScheme,
+  View as DefaultView,
 } from 'react-native'
 import { useSelector } from 'react-redux'
+
+import { getTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import Colors from '@/constants/Colors'
 import { commonStyles, FontFamily } from '@/constants/commonStyles'

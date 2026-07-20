@@ -1,3 +1,8 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Animated, BackHandler, Dimensions, InteractionManager, Keyboard } from 'react-native'
+import { useSelector } from 'react-redux'
+import { router } from 'expo-router'
+
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import {
   ALL_NOTES_KEY,
@@ -8,10 +13,6 @@ import {
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { router } from 'expo-router'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, BackHandler, Dimensions, InteractionManager, Keyboard } from 'react-native'
-import { useSelector } from 'react-redux'
 
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 

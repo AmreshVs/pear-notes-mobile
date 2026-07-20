@@ -1,3 +1,7 @@
+import React, { useMemo } from 'react'
+import { Platform } from 'react-native'
+import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper'
+import { useSelector } from 'react-redux'
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -6,12 +10,9 @@ import {
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans'
 import { useMaterial3Theme } from '@pchmn/expo-material3-theme'
-import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { useFonts } from 'expo-font'
-import React, { useMemo } from 'react'
-import { Platform } from 'react-native'
-import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper'
-import { useSelector } from 'react-redux'
+
+import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { useResolvedColorScheme } from '@/components/Themed'
 import { AndroidDarkTheme, AndroidLightTheme, pearGold } from '@/theme/androidTheme'

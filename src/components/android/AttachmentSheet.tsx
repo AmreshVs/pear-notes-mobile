@@ -1,8 +1,8 @@
-import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { InteractionManager, Pressable, StyleSheet, Text, View } from 'react-native'
+import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
@@ -11,15 +11,14 @@ import {
   FontSize,
   FontWeight,
   UI_ICON_SIZE_26,
+  UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_36,
-  UI_SIZE_4,
-  UI_SIZE_64,
-  UI_SIZE_8
-} from '@/constants/commonStyles'
+  UI_SIZE_64} from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string

@@ -1,3 +1,10 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Alert, PermissionsAndroid, Platform } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
+import * as ExpoBackgroundService from 'expo-background-service'
+import { router } from 'expo-router'
+
 import {
   getExportStatus,
   getImportStatus,
@@ -12,18 +19,12 @@ import {
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
-import * as ExpoBackgroundService from 'expo-background-service'
-import { router } from 'expo-router'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Alert, PermissionsAndroid, Platform } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
 
 import {
-  InvalidBackupFileError,
   backupUriToPath,
   clearImportCacheFile,
   getTempBackupFilePath,
+  InvalidBackupFileError,
   pickBackupFile,
   rememberImportCacheFile,
   saveBackupToDevice,

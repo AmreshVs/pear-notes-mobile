@@ -1,7 +1,7 @@
+import { Platform, Share } from 'react-native'
 import * as DocumentPicker from 'expo-document-picker'
 import { File } from 'expo-file-system'
 import * as FileSystemLegacy from 'expo-file-system/legacy'
-import { Platform, Share } from 'react-native'
 
 export class InvalidBackupFileError extends Error {
   constructor() {

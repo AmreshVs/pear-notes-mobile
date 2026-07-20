@@ -1,16 +1,16 @@
-import { CameraView } from 'expo-camera'
-import { X } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { CameraView } from 'expo-camera'
+import { X } from 'lucide-react-native'
 
-import { Text, createThemedStylesheet } from '@/components/Themed'
+import { createThemedStylesheet, Text } from '@/components/Themed'
 import {
+  commonStyles,
   FontSize,
   FontWeight,
   Radii,
   Space,
   UI_ICON_SIZE_20,
-  commonStyles,
 } from '@/constants/commonStyles'
 
 type Props = {

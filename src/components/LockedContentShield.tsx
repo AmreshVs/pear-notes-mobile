@@ -1,6 +1,6 @@
-import { Lock } from 'lucide-react-native'
 import { memo } from 'react'
-import { View as RNView, StyleSheet } from 'react-native'
+import { StyleSheet, View as RNView } from 'react-native'
+import { Lock } from 'lucide-react-native'
 
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { useLockedContentShield } from '@/components/useLockedContentShield'

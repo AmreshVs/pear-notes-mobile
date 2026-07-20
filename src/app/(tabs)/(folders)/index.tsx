@@ -1,3 +1,11 @@
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
+import { Image } from 'expo-image'
+import { router, Stack } from 'expo-router'
+import { FolderPlus, SquarePen } from 'lucide-react-native'
+
 import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
 import {
   createFolder,
@@ -11,13 +19,6 @@ import {
   getNoteCountsPerFolder,
   getSelectedNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
-import { Image } from 'expo-image'
-import { router, Stack } from 'expo-router'
-import { FolderPlus, SquarePen } from 'lucide-react-native'
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
 
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'

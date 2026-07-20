@@ -1,18 +1,18 @@
-import { BlurView } from 'expo-blur'
-import { ShieldAlert } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { Animated, Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { BlurView } from 'expo-blur'
+import { ShieldAlert } from 'lucide-react-native'
 
 import { GlassView } from '@/components/GlassView'
-import { Text, createThemedStylesheet, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
+  commonStyles,
   FontSize,
   FontWeight,
   LetterSpacing,
   Radii,
   Space,
   UI_ICON_SIZE_40,
-  commonStyles,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'

@@ -1,7 +1,3 @@
-import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Haptics from 'expo-haptics'
 import React, { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -17,13 +13,11 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import * as Haptics from 'expo-haptics'
 
-import { AudioRecorderModal } from '../components/AudioRecorderModal'
-import { isImageFile } from '../utils/media'
-
-import { useToast } from './ToastProvider'
-import { useNoteEditor } from './useNoteEditor'
-import { useNoteEditorActions } from './useNoteEditorActions'
+import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { AttachmentSheet } from '@/components/android/AttachmentSheet'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
@@ -42,17 +36,17 @@ import {
   FontWeight,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_4,
   UI_SIZE_42,
-  UI_SIZE_6,
   UI_SIZE_72,
-  UI_SIZE_8,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
@@ -62,6 +56,13 @@ import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { parseNoteAttachmentsAndText } from '@/utils/noteParser'
+
+import { AudioRecorderModal } from '../components/AudioRecorderModal'
+import { isImageFile } from '../utils/media'
+
+import { useToast } from './ToastProvider'
+import { useNoteEditor } from './useNoteEditor'
+import { useNoteEditorActions } from './useNoteEditorActions'
 
 const MIME_TYPES: Record<string, string> = {
   jpg: 'image/jpeg',

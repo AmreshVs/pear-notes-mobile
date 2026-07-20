@@ -1,3 +1,11 @@
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
+import * as Clipboard from 'expo-clipboard'
+import { router, Stack, useLocalSearchParams } from 'expo-router'
+import { SymbolView } from 'expo-symbols'
+
 import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
 import {
   deleteFolder,
@@ -19,17 +27,11 @@ import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevices
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
-import * as Clipboard from 'expo-clipboard'
-import { Stack, router, useLocalSearchParams } from 'expo-router'
-import { SymbolView } from 'expo-symbols'
-import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
 
 import { NoteCard } from '@/components/NoteCard'
-import { Text, View, createThemedStylesheet, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
+  commonStyles,
   FontSize,
   FontWeight,
   LetterSpacing,
@@ -38,7 +40,6 @@ import {
   UI_ICON_SIZE_44,
   UI_SIZE_2,
   UI_SIZE_42,
-  commonStyles,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { toggleNoteLock } from '@/lib/noteLockActions'

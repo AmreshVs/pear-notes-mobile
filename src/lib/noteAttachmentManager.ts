@@ -1,6 +1,7 @@
+import * as FileSystem from 'expo-file-system/legacy'
+
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
-import * as FileSystem from 'expo-file-system/legacy'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 

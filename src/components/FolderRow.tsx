@@ -1,3 +1,7 @@
+import React, { memo, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
+import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
 import {
   ChevronRight,
   FileText,
@@ -5,12 +9,6 @@ import {
   LucideIcon,
   Trash2,
 } from 'lucide-react-native'
-import React, { memo, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, View as RNView, StyleSheet } from 'react-native'
-import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
-
-import { Text, Theme, useThemedStyles } from './Themed'
 
 import {
   commonStyles,
@@ -23,6 +21,8 @@ import {
   UI_ICON_SIZE_20,
   UI_STROKE_WIDTH_1_8,
 } from '@/constants/commonStyles'
+
+import { Text, Theme, useThemedStyles } from './Themed'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 

@@ -1,8 +1,6 @@
-import { AlertTriangle } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
-
-import { createThemedStylesheet, Text, useTheme, View } from './Themed'
+import { AlertTriangle } from 'lucide-react-native'
 
 import {
   FontFamily,
@@ -13,6 +11,8 @@ import {
   UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+
+import { createThemedStylesheet, Text, useTheme, View } from './Themed'
 
 interface AppErrorBoundaryProps {
   error: Error

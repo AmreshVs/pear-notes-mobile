@@ -1,3 +1,13 @@
+import React, { useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useDispatch, useSelector } from 'react-redux'
+import Slider from '@react-native-community/slider'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { router, Stack } from 'expo-router'
+
 import {
   getColorTheme,
   getEditorFontSize,
@@ -8,15 +18,6 @@ import {
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
-import Slider from '@react-native-community/slider'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
-import React, { useCallback, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch, useSelector } from 'react-redux'
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'

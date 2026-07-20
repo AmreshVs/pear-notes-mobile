@@ -1,8 +1,8 @@
-import { BlurView } from 'expo-blur'
-import { Fingerprint } from 'lucide-react-native'
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { BlurView } from 'expo-blur'
+import { Fingerprint } from 'lucide-react-native'
 
 import { GlassView } from '@/components/GlassView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'

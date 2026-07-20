@@ -1,12 +1,12 @@
-import { Image } from 'expo-image'
-import { useState, useMemo } from 'react'
-import { useWindowDimensions, StyleSheet, View } from 'react-native'
+import { useMemo, useState } from 'react'
+import { StyleSheet, useWindowDimensions, View } from 'react-native'
 import Animated, { Easing, Keyframe } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
-
-import { createThemedStylesheet } from './Themed'
+import { Image } from 'expo-image'
 
 import { commonStyles } from '@/constants/commonStyles'
+
+import { createThemedStylesheet } from './Themed'
 
 const DURATION = 600
 

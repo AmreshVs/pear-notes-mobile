@@ -1,9 +1,3 @@
-import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
-import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
-import * as FileSystem from 'expo-file-system'
-import * as Haptics from 'expo-haptics'
-import { SymbolView } from 'expo-symbols'
 import React, { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -21,11 +15,13 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
+import * as FileSystem from 'expo-file-system'
+import * as Haptics from 'expo-haptics'
+import { SymbolView } from 'expo-symbols'
 
-import ExpoNativeShareModule from '../../modules/expo-native-share'
-
-import { useNoteEditor } from './useNoteEditor'
-import { useNoteEditorActions } from './useNoteEditorActions'
+import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
+import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
@@ -50,6 +46,11 @@ import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { parseNoteAttachmentsAndText, resolveAttachmentFilename } from '@/utils/noteParser'
+
+import ExpoNativeShareModule from '../../modules/expo-native-share'
+
+import { useNoteEditor } from './useNoteEditor'
+import { useNoteEditorActions } from './useNoteEditorActions'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 

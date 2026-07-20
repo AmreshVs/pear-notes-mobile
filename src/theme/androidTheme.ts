@@ -1,6 +1,6 @@
-import { createMaterial3Theme } from '@pchmn/expo-material3-theme'
 import type { MD3Theme } from 'react-native-paper'
 import { MD3DarkTheme, MD3LightTheme } from 'react-native-paper'
+import { createMaterial3Theme } from '@pchmn/expo-material3-theme'
 
 export const pearGold = '#DCA323'
 export const pearGoldForeground = '#1a1300'
