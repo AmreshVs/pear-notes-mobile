@@ -1,16 +1,15 @@
+import {
+  LOCK_SWITCHER_HIDE_KEY,
+  LOCK_SCREENSHOT_PROTECTION_KEY,
+} from '@pear-notes/core/constant.js'
 import { clearLockPassword, getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getLockPrivacyPreference, setLockPrivacyPreference } from '@pear-notes/core/utils.js'
 import { router } from 'expo-router'
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import useLockStatus from '@/app/settings/privacy/useLockStatus'
 import { authenticate } from '@/lib/deviceAuth'
-import {
-  getLockPrivacyPreference,
-  LOCK_SCREENSHOT_PROTECTION_KEY,
-  LOCK_SWITCHER_HIDE_KEY,
-  setLockPrivacyPreference,
-} from '@/lib/lockPrivacy'
 import { clearUnlockedNotes } from '@/lib/noteLock'
 import { requestNoteLockPasswordScreen } from '@/lib/noteLockPasswordFlow'
 

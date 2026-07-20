@@ -1,6 +1,7 @@
+import { LOCK_SCREENSHOT_PROTECTION_KEY } from '@pear-notes/core/constant.js'
+import { getLockPrivacyPreference } from '@pear-notes/core/utils.js'
 import { useEffect } from 'react'
 
-import { getLockPrivacyPreference, LOCK_SCREENSHOT_PROTECTION_KEY } from '@/lib/lockPrivacy'
 import { disableScreenshotProtection, enableScreenshotProtection } from '@/lib/screenProtection'
 
 export function useLockedNoteScreenProtection(active: boolean) {

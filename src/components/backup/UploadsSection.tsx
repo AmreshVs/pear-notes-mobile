@@ -1,3 +1,4 @@
+import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 import { CloudUpload } from 'lucide-react-native'
 import { useTranslation } from 'react-i18next'
 import { View as RNView, ScrollView, StyleSheet } from 'react-native'
@@ -16,7 +17,6 @@ import {
   UI_SIZE_4,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { groupTransfersByNote } from '@/lib/backupUtils'
 
 export type UploadItem = {
   noteKey: string

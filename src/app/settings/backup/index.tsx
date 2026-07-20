@@ -1,3 +1,4 @@
+import { formatBytes } from '@pear-notes/core/utils.js'
 import { router, Stack } from 'expo-router'
 import { Check, CloudUpload, Lock, RotateCcw, X } from 'lucide-react-native'
 import { useCallback } from 'react'
@@ -42,7 +43,7 @@ import {
   UI_SIZE_96,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { formatBackupDate, formatBytes } from '@/lib/backupUtils'
+import { formatBackupDate } from '@/lib/backupUtils'
 import { getBackupErrorMessage } from '@/utils/backupErrors'
 
 export default function BackupScreen() {

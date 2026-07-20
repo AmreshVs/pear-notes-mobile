@@ -1,3 +1,4 @@
+import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
@@ -20,7 +21,6 @@ import {
   UI_SIZE_24,
   UI_SIZE_28,
 } from '@/constants/commonStyles'
-import { groupTransfersByNote } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

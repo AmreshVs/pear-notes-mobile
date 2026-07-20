@@ -1,4 +1,5 @@
 import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
+import { formatBytes } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 import { useMemo } from 'react'
@@ -37,7 +38,7 @@ import {
   UI_SIZE_96,
   UI_ICON_SIZE_48,
 } from '@/constants/commonStyles'
-import { formatBytes, hexWithAlpha } from '@/lib/backupUtils'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

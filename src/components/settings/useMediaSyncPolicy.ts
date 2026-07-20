@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-
 import {
-  getHoldMediaOnCellular,
-  getMediaSyncFlag,
   HOLD_MEDIA_ON_CELLULAR_KEY,
   MEDIA_SYNC_PAUSED_KEY,
   METERED_CONNECTION_KEY,
-  setMediaSyncFlag,
-} from '@/lib/mediaSyncPolicy'
+} from '@pear-notes/core/constant.js'
+import { getMediaSyncFlag, setMediaSyncFlag } from '@pear-notes/core/utils.js'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+import { getHoldMediaOnCellular } from '@/lib/mediaSyncPolicy'
 import { ConnectionKind, getConnectionKind, subscribeConnectionKind } from '@/lib/networkState'
 
 export function useMediaSyncPolicy() {

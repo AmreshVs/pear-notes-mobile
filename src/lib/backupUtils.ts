@@ -18,36 +18,6 @@ export function getMediaDisplayName(name: string, fallback: string): string {
   return name
 }
 
-export function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${units[i]}`
-}
-
-export type NoteTransferGroup<T> = { noteKey: string; title: string; items: T[] }
-
-export function groupTransfersByNote<T extends { noteKey: string }>(
-  items: T[],
-  noteTitles: Record<string, string>,
-  untitledLabel: string,
-): NoteTransferGroup<T>[] {
-  const order: string[] = []
-  const byNote = new Map<string, T[]>()
-  for (const item of items) {
-    if (!byNote.has(item.noteKey)) {
-      byNote.set(item.noteKey, [])
-      order.push(item.noteKey)
-    }
-    byNote.get(item.noteKey)?.push(item)
-  }
-  return order.map((noteKey) => ({
-    noteKey,
-    title: noteTitles[noteKey] || untitledLabel,
-    items: byNote.get(noteKey) ?? [],
-  }))
-}
-
 export function uint8ArrayToBase64(buffer: Uint8Array): string {
   return Buffer.from(buffer).toString('base64')
 }

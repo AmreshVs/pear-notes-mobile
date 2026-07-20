@@ -1,3 +1,4 @@
+import { formatBytes } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 import { useTranslation } from 'react-i18next'
@@ -45,7 +46,7 @@ import {
   UI_SIZE_9999,
   UI_ICON_SIZE_48,
 } from '@/constants/commonStyles'
-import { formatBackupDate, formatBytes, hexWithAlpha } from '@/lib/backupUtils'
+import { formatBackupDate, hexWithAlpha } from '@/lib/backupUtils'
 import { getBackupErrorMessage } from '@/utils/backupErrors'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {

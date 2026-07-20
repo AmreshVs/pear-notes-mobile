@@ -1,4 +1,5 @@
 import { updateSyncedDevice } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -27,7 +28,6 @@ import {
   UI_SIZE_6,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { getDeviceDisplayName } from '@/utils/deviceDisplay'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string

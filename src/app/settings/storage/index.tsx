@@ -1,4 +1,5 @@
 import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
+import { formatBytes } from '@pear-notes/core/utils.js'
 import { router, Stack } from 'expo-router'
 import { Database, Trash2, X } from 'lucide-react-native'
 import { useCallback } from 'react'
@@ -33,7 +34,6 @@ import {
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { formatBytes } from '@/lib/backupUtils'
 
 export default function StorageScreen() {
   const { t } = useTranslation()

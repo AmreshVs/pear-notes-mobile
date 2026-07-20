@@ -2,6 +2,7 @@ import {
   deleteSyncedDevice,
   updateSyncedDevice,
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 import { Monitor, Smartphone, Trash2 } from 'lucide-react-native'
 import { memo, useCallback, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -21,7 +22,6 @@ import {
   commonStyles,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { getDeviceDisplayName } from '@/utils/deviceDisplay'
 import { getPlatformNames } from '@/utils/settingsUtils'
 
 type Props = {
