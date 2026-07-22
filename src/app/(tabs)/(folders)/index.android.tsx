@@ -293,6 +293,7 @@ export default function AndroidFoldersScreen() {
               style={styles.searchInput}
               placeholder={t('folders.searchPlaceholder')}
               placeholderTextColor={c.onSurfaceVariant + '80'}
+              accessibilityLabel={t('folders.searchPlaceholder')}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"

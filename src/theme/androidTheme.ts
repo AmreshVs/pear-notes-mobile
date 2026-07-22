@@ -4,6 +4,8 @@ import { createMaterial3Theme } from '@pchmn/expo-material3-theme'
 
 export const pearGold = '#DCA323'
 export const pearGoldForeground = '#1a1300'
+export const pearGoldLight = '#dfb356'
+export const pearGoldText = '#a56f00'
 
 export const pearM3Theme = createMaterial3Theme(pearGold)
 
@@ -50,9 +52,9 @@ const lightOverrides = {
     level4: '#E8E8E8',
     level5: '#E0E0E0',
   },
-  primary: pearGold,
+  primary: pearGoldText,
   onPrimary: pearGoldForeground,
-  primaryContainer: pearGold,
+  primaryContainer: pearGoldLight,
   onPrimaryContainer: pearGoldForeground,
   secondary: '#5C5C5C',
   onSecondary: '#FFFFFF',

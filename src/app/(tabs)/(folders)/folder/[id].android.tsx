@@ -494,6 +494,7 @@ export default function AndroidFolderNotesScreen() {
             style={styles.searchInput}
             placeholder={t('folderView.searchPlaceholder')}
             placeholderTextColor={c.onSurfaceVariant + '80'}
+            accessibilityLabel={t('folderView.searchPlaceholder')}
             value={searchQuery}
             onChangeText={(text) => dispatch(setSearchQuery(text))}
             returnKeyType="search"
@@ -523,7 +524,7 @@ export default function AndroidFolderNotesScreen() {
         ListHeaderComponent={
           <View>
             <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
-            <Text style={styles.pageCount}>
+            <Text style={styles.pageCount} accessibilityLiveRegion="polite">
               {t('folderView.noteCount', { count: notes.length })}
             </Text>
           </View>

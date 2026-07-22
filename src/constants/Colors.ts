@@ -1,5 +1,6 @@
 const pearGold = '#DCA323'
 const pearGoldForeground = '#1a1300'
+const pearGoldText = '#a56f00'
 
 export default {
   light: {
@@ -8,15 +9,16 @@ export default {
     background: '#f2f2f7',
     surface: '#ffffff',
     surfaceSecondary: '#e5e5ea',
-    primary: pearGold,
+    primary: pearGoldText,
     onPrimary: pearGoldForeground,
     border: '#c6c6c8',
-    tint: pearGold,
+    tint: pearGoldText,
     tabIconDefault: '#8e8e93',
-    tabIconSelected: pearGold,
+    tabIconSelected: pearGoldText,
     separator: 'rgba(0, 0, 0, 0.1)',
     borderSecondary: 'rgba(0, 0, 0, 0.06)',
-    cardSelected: 'rgba(220, 163, 35, 0.08)',
+    cardSelected: 'rgba(165, 111, 0, 0.16)',
+    cardSelectedBorder: 'rgba(165, 111, 0, 0.5)',
     cardPressed: 'rgba(0, 0, 0, 0.03)',
     controlBackground: 'rgba(0, 0, 0, 0.07)',
     textMuted: 'rgba(0,0,0,0.45)',
@@ -64,7 +66,8 @@ export default {
     tabIconSelected: pearGold,
     separator: 'rgba(255, 255, 255, 0.1)',
     borderSecondary: 'rgba(255, 255, 255, 0.06)',
-    cardSelected: 'rgba(220, 163, 35, 0.12)',
+    cardSelected: 'rgba(220, 163, 35, 0.08)',
+    cardSelectedBorder: 'rgba(220, 163, 35, 0.22)',
     cardPressed: 'rgba(255, 255, 255, 0.04)',
     controlBackground: 'rgba(255, 255, 255, 0.08)',
     textMuted: 'rgba(255,255,255,0.45)',

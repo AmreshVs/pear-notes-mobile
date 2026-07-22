@@ -18,6 +18,7 @@ import {
   UI_SIZE_4,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { getDownloadStatusKey } from '@/utils/transferStatus'
 
 export type DownloadItem = {
   noteKey: string
@@ -58,6 +59,7 @@ export function DownloadsSection({
         : 0
     const isStuck =
       download.status === 'error' || (download.status === 'downloading' && download.stalled)
+    const statusKey = getDownloadStatusKey(download)
     return (
       <RNView key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <RNView style={styles.rowHeader}>
@@ -106,6 +108,7 @@ export function DownloadsSection({
         <RNView style={styles.progressTrack}>
           <RNView style={[styles.progressFill, { width: `${pct}%` }]} />
         </RNView>
+        {statusKey && <Text style={styles.statusCaption}>{t(statusKey)}</Text>}
       </RNView>
     )
   }
@@ -192,6 +195,11 @@ const useStyles = createThemedStylesheet((theme) => {
     sizeLabel: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
+      color: theme.colors.textMuted,
+    },
+    statusCaption: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
       color: theme.colors.textMuted,
     },
     retryBtn: {

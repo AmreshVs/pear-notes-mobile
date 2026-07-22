@@ -22,6 +22,7 @@ import {
   UI_SIZE_24,
   UI_SIZE_28,
 } from '@/constants/commonStyles'
+import { getDownloadStatusKey } from '@/utils/transferStatus'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -54,6 +55,7 @@ export function AndroidDownloadsSection({
         ? Math.min(100, Math.round((download.downloadedBytes / download.totalBytes) * 100))
         : 0
     const isStuck = download.status === 'error' || (download.status === 'downloading' && download.stalled)
+    const statusKey = getDownloadStatusKey(download)
     return (
       <View key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <View style={styles.rowHeader}>
@@ -118,6 +120,7 @@ export function AndroidDownloadsSection({
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${pct}%` }]} />
         </View>
+        {statusKey && <Text style={styles.statusCaption}>{t(statusKey)}</Text>}
       </View>
     )
   }
@@ -217,6 +220,12 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
+      color: c.onSurfaceVariant,
+    },
+    statusCaption: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.medium,
       color: c.onSurfaceVariant,
     },
     retryBtn: {

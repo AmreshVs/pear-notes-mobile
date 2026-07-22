@@ -87,6 +87,9 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
             <React.Fragment key={action.label}>
               <Pressable
                 onPress={action.onPress}
+                accessibilityRole="button"
+                accessibilityLabel={action.label}
+                accessibilityState={{ selected: !!action.selected }}
                 style={({ pressed }) => [
                   styles.actionRow,
                   pressed &&

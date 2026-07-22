@@ -76,7 +76,7 @@ export const FolderRow = memo(function FolderRow({
       exiting={FadeOut.duration(160)}
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
-      <Pressable onPress={() => onPress(id)} style={containerStyle}>
+      <Pressable onPress={() => onPress(id)} style={containerStyle} accessibilityRole="button">
         <RNView style={styles.leftContent}>
           <Icon
             size={UI_ICON_SIZE_20}
@@ -138,9 +138,12 @@ const createStyles = (theme: Theme) =>
       marginVertical: 1,
       minHeight: 52,
       backgroundColor: theme.colors.transparent,
+      borderWidth: 1,
+      borderColor: theme.colors.transparent,
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,
+      borderColor: theme.colors.cardSelectedBorder,
     },
     containerPressed: {
       backgroundColor: theme.colors.cardPressed,

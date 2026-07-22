@@ -1,4 +1,4 @@
-import { type ComponentProps, memo, useCallback, useState } from 'react'
+import { type ComponentProps, memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
@@ -93,6 +93,13 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const rawImageUrl = getFirstImageUrl(html)
   const hasChecklist = !masked && isChecklistNote(html)
   const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
+  const accessibilityLabel = useMemo(() => {
+    const parts = [title]
+    if (pinned) parts.push(t('noteCard.a11y.pinned'))
+    if (locked) parts.push(t('noteCard.a11y.locked'))
+    parts.push(dateLabel)
+    return parts.join(', ')
+  }, [title, pinned, locked, dateLabel, t])
 
   const resolvedImageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
   const colorTheme = useSelector(getColorTheme)
@@ -124,6 +131,8 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
         onLongPress={handleLongPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
         style={({ pressed }) => [
           styles.row,
           pressed && styles.rowPressed,

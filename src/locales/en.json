@@ -258,6 +258,10 @@
   "noteCard": {
     "untitled": "Untitled",
     "downloadComplete": "File downloaded successfully.",
+    "a11y": {
+      "pinned": "Pinned",
+      "locked": "Locked"
+    },
     "noAdditionalText": "No additional text",
     "lockedSummary": "Authenticate to view this note",
     "uploading": "Uploading… {{progress}}%",

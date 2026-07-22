@@ -177,6 +177,13 @@ export const NoteCard = memo(function NoteCard({
 
   const showThumbnail = !!imageUrl && !thumbError && !masked
   const displayTitle = title || t('noteCard.untitled')
+  const accessibilityLabel = useMemo(() => {
+    const parts = [displayTitle]
+    if (pinned) parts.push(t('noteCard.a11y.pinned'))
+    if (locked) parts.push(t('noteCard.a11y.locked'))
+    parts.push(date)
+    return parts.join(', ')
+  }, [displayTitle, pinned, locked, date, t])
   const showAttachment = !masked && !summary && !!attachment
   const AttachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
   const displaySummary = masked
@@ -188,7 +195,12 @@ export const NoteCard = memo(function NoteCard({
       entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
       exiting={FadeOutUp.duration(180)}
     >
-      <Pressable onPress={handlePress} style={getPressableStyle}>
+      <Pressable
+        onPress={handlePress}
+        style={getPressableStyle}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+      >
         <RNView style={styles.row}>
           <RNView style={styles.content}>
             <RNView style={styles.titleRow}>

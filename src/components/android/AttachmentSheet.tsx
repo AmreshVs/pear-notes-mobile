@@ -134,6 +134,8 @@ export function AttachmentSheet({
             <Pressable
               key={item.label}
               onPress={item.onPress}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
               style={({ pressed }) => [styles.gridItem, pressed && styles.gridItemPressed]}
             >
               <View style={styles.iconCircle}>

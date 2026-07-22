@@ -353,7 +353,7 @@ export default function FolderNotesScreen() {
       >
         <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
         <View style={styles.headerInfo}>
-          <Text style={commonThemedStyles.sectionCap}>
+          <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
             {t('folderView.noteCount', { count: notes.length })}
           </Text>
         </View>
