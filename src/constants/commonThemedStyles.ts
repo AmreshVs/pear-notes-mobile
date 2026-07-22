@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native'
 
 import { createThemedStylesheet, Theme } from '@/components/Themed'
 
-import { FontSize, FontWeight, LetterSpacing, Radii, Space } from './commonStyles'
+import { FontSize, FontWeight, LetterSpacing, Radii, Space, UI_SIZE_4 } from './commonStyles'
 
 export const createThemedStyles = (theme: Theme) => {
   const isDark = theme.isDark
@@ -47,6 +47,7 @@ export const createThemedStyles = (theme: Theme) => {
       letterSpacing: -0.3,
       textAlign: 'center',
       marginBottom: Space.sm,
+      paddingHorizontal: UI_SIZE_4,
       color: theme.colors.textMuted,
     },
     emptySubtitle: {

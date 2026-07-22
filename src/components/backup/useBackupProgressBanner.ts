@@ -20,7 +20,8 @@ export function useBackupProgressBanner() {
 
   const isExporting =
     exportStatus.step !== 'idle' && exportStatus.step !== 'done' && exportStatus.step !== 'error'
-  const isImporting = importStatus.step !== 'idle' && importStatus.step !== 'error'
+  const isImporting =
+    importStatus.step !== 'idle' && importStatus.step !== 'done' && importStatus.step !== 'error'
   const isExportComplete = exportStatus.step === 'done'
 
   const isActive = isExporting || isImporting

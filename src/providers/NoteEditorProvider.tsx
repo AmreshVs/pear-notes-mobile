@@ -152,6 +152,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleScanDocument,
     handleRecordingDone,
     handleMoveNote,
+    handleTogglePin,
     handleDeleteAttachment,
     handleDone,
     handleToggleLock,
@@ -266,27 +267,39 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
     if (Platform.OS === 'ios') {
       const lockLabel = noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')
+      const pinLabel = noteData?.pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin')
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options: [
             t('common.cancel'),
+            pinLabel,
             t('noteCard.actions.moveTo'),
             lockLabel,
             t('noteCard.actions.delete'),
           ],
           cancelButtonIndex: 0,
-          destructiveButtonIndex: 3,
+          destructiveButtonIndex: 4,
         },
         (index: number) => {
-          if (index === 1) showMoveToSheet()
-          else if (index === 2) handleToggleLock()
-          else if (index === 3) handleDeleteNote()
+          if (index === 1) handleTogglePin()
+          else if (index === 2) showMoveToSheet()
+          else if (index === 3) handleToggleLock()
+          else if (index === 4) handleDeleteNote()
         },
       )
     } else {
       handleDeleteNote()
     }
-  }, [noteId, noteData?.locked, showMoveToSheet, handleToggleLock, handleDeleteNote, t])
+  }, [
+    noteId,
+    noteData?.locked,
+    noteData?.pinned,
+    showMoveToSheet,
+    handleTogglePin,
+    handleToggleLock,
+    handleDeleteNote,
+    t,
+  ])
 
   const handleOpenAttachment = useCallback(
     async (url: string, fileName: string, attachmentId?: string) => {
@@ -611,6 +624,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                           </ExpoUI.RNHostView>
                         }
                       >
+                        <ExpoUI.Button
+                          label={
+                            noteData?.pinned
+                              ? t('noteCard.actions.unpin')
+                              : t('noteCard.actions.pin')
+                          }
+                          systemImage={noteData?.pinned ? 'pin.slash' : 'pin'}
+                          onPress={handleTogglePin}
+                        />
                         <ExpoUI.Menu
                           label={t('noteCard.actions.moveTo')}
                           systemImage="folder.badge.plus"

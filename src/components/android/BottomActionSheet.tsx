@@ -12,14 +12,12 @@ import {
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_SIZE_4,
-  UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_36,
-} from '@/constants/commonStyles'
+  UI_SIZE_36} from '@/constants/commonStyles'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string
@@ -77,10 +75,10 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
       onDismiss={onDismiss}
     >
       <BottomSheetView style={styles.container}>
-        <View style={styles.header}>
+        {/* <View style={styles.header}>
           <Text style={styles.title}>{title}</Text>
           {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        </View>
+        </View> */}
 
         <View style={styles.actionsCard}>
           {actions.map((action, index) => (
@@ -178,7 +176,6 @@ const useStyles = createThemedStylesheetWithHooks(
         fontWeight: FontWeight.bold,
         fontFamily: FontFamily.bold,
         letterSpacing: -0.3,
-        marginBottom: UI_SIZE_12,
         color: c.onSurface,
       },
       subtitle: {
@@ -212,7 +209,7 @@ const useStyles = createThemedStylesheetWithHooks(
         borderRadius: 9999,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: hexWithAlpha(c.primaryContainer, 0.35),
+        backgroundColor: hexWithAlpha(c.primaryContainer, 0.1),
       },
       iconCircleDestructive: {
         width: 44,

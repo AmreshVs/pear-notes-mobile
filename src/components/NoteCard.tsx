@@ -34,6 +34,8 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_12,
+  UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
@@ -250,9 +252,6 @@ export const NoteCard = memo(function NoteCard({
                       {folderName}
                     </Text>
                   </RNView>
-                  <Text variant="caption" style={styles.separator}>
-                    {'  •  '}
-                  </Text>
                 </>
               )}
               <Text variant="caption" style={styles.metadataText}>
@@ -398,14 +397,14 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       lineHeight: 19,
       opacity: 0.8,
-      marginBottom: Space.xs,
+      marginBottom: UI_SIZE_6,
       color: theme.colors.textSecondary,
     },
     attachmentRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: Space.xs,
-      marginBottom: Space.xs,
+      marginBottom: UI_SIZE_6,
     },
     attachmentLabel: {
       ...commonStyles.flex1,
@@ -446,9 +445,10 @@ const useStyles = createThemedStylesheet((theme) => {
       letterSpacing: 0.8,
       opacity: 0.6,
       color: theme.colors.textSecondary,
+      marginRight: UI_SIZE_8,
     },
     metadataTextPearTheme: {
-      color: theme.colors.primary,
+      color: theme.colors.textSecondary,
       opacity: 1,
     },
     separator: {

@@ -192,6 +192,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleScanDocument,
     handleRecordingDone,
     handleMoveNote,
+    handleTogglePin,
     handleDeleteAttachment,
     handleDone,
     handleToggleLock,
@@ -451,6 +452,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const moreSheetActions = useMemo(() => {
     const list = []
+    list.push({
+      icon: noteData?.pinned ? 'pin-off-outline' : 'pin-outline',
+      label: noteData?.pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin'),
+      onPress: () => {
+        setMoreSheetVisible(false)
+        handleTogglePin()
+      },
+    })
     if (moveFolders.length > 0) {
       list.push({
         icon: 'folder-move-outline',
@@ -479,9 +488,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [
     moveFolders,
     noteData?.locked,
+    noteData?.pinned,
     t,
     handleDeleteNote,
     handleToggleLock,
+    handleTogglePin,
     setMoreSheetVisible,
     setMoveDialogVisible,
   ])

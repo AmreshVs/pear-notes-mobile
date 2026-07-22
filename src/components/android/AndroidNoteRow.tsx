@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { Folder } from 'lucide-react-native'
 
 import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -24,9 +25,12 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Space,
+  UI_ICON_SIZE_12,
   UI_ICON_SIZE_13,
   UI_SIZE_4,
   UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_14,
@@ -169,7 +173,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                 color={c.onSurfaceVariant}
                 style={styles.checkboxIcon}
               />
-              <Text style={styles.preview} numberOfLines={1}>
+              <Text style={[styles.preview, styles.rowPreview]} numberOfLines={1}>
                 {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
               </Text>
             </View>
@@ -181,7 +185,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                 color={c.onSurfaceVariant}
                 style={styles.checkboxIcon}
               />
-              <Text style={styles.preview} numberOfLines={1}>
+              <Text style={[styles.preview, styles.rowPreview]} numberOfLines={1}>
                 {displayPreview}
               </Text>
             </View>
@@ -201,15 +205,15 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
           )}
 
           <View style={styles.meta}>
-            <Text style={styles.metaDate}>{dateLabel}</Text>
             {folderName && (
               <>
-                <Text style={styles.metaDot}>{'  •  '}</Text>
+                <Folder size={UI_ICON_SIZE_12} style={styles.folderIcon} />
                 <Text style={[styles.metaTag, isPearTheme && styles.metaTagPear]}>
                   {folderName.toUpperCase()}
                 </Text>
               </>
             )}
+            <Text style={styles.metaDate}>{dateLabel}</Text>
           </View>
         </View>
 
@@ -261,13 +265,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      letterSpacing: -0.2,
       color: c.onSurface,
     },
     preview: {
       fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
-      marginBottom: UI_SIZE_10,
+      marginBottom: UI_SIZE_4,
       lineHeight: UI_SIZE_20,
       color: c.onSurfaceVariant,
     },
@@ -275,14 +278,21 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       ...commonStyles.row,
       marginBottom: UI_SIZE_10,
     },
+    rowPreview: {
+      marginBottom: 0,
+    },
+    folderIcon: {
+      marginRight: Space.xs,
+      opacity: 0.7,
+      color: theme.colors.textSecondary,
+    },
     checkboxIcon: {
       marginRight: UI_SIZE_6,
-      marginTop: 1,
     },
     uploadRow: {
       ...commonStyles.row,
       gap: UI_SIZE_6,
-      marginBottom: UI_SIZE_10,
+      marginBottom: UI_SIZE_4,
     },
     uploadLabel: {
       ...commonStyles.flex1,
@@ -300,6 +310,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontFamily: FontFamily.extraBold,
       letterSpacing: 0.5,
       color: c.onSurfaceVariant,
+      opacity: 0.6,
+      marginLeft: UI_SIZE_8,
     },
     metaDot: {
       fontSize: FontSize.caption,

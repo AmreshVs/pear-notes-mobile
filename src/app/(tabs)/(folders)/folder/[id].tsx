@@ -39,6 +39,7 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_44,
   UI_SIZE_2,
+  UI_SIZE_4,
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -479,6 +480,7 @@ const useStyles = createThemedStylesheet((theme) => {
       textAlign: 'center',
       marginTop: Space.md,
       marginBottom: Space.sm,
+      paddingHorizontal: UI_SIZE_4,
       color: theme.colors.text,
     },
     ctaRow: {

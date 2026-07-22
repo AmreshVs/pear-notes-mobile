@@ -436,6 +436,12 @@ export function useNoteEditorActions({
     [noteId, dispatch],
   )
 
+  const handleTogglePin = useCallback(() => {
+    if (!noteId) return
+    dispatch(updateNote({ key: noteId, pinned: !noteData?.pinned } as any))
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+  }, [noteId, noteData?.pinned, dispatch])
+
   const handleDeleteAttachment = useCallback(async (url: string) => {
     if (!url) return
     try {
@@ -473,6 +479,7 @@ export function useNoteEditorActions({
     handleScanDocument,
     handleRecordingDone,
     handleMoveNote,
+    handleTogglePin,
     handleDeleteAttachment,
     handleDone,
     handleToggleLock,

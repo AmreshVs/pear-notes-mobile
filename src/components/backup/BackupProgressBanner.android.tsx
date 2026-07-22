@@ -49,6 +49,8 @@ export function BackupProgressBanner() {
     <Animated.View
       style={[styles.container, containerStyle]}
       pointerEvents={isVisible ? 'box-none' : 'none'}
+      importantForAccessibility={isVisible ? 'auto' : 'no-hide-descendants'}
+      accessibilityElementsHidden={!isVisible}
     >
       <Pressable
         onPress={handlePress}

@@ -19,6 +19,7 @@ import {
   Space,
   UI_ICON_SIZE_14,
   UI_ICON_SIZE_20,
+  UI_SIZE_4,
   UI_STROKE_WIDTH_1_8,
 } from '@/constants/commonStyles'
 
@@ -162,6 +163,7 @@ const createStyles = (theme: Theme) =>
       letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,
       opacity: 0.9,
+      paddingRight: UI_SIZE_4,
     },
     nameSelected: {
       opacity: 1,

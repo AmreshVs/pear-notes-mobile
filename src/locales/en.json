@@ -557,7 +557,8 @@
     "text": "Text",
     "textAllNotesDesc": "(all notes)",
     "syncedMedia": "Synced Media",
-    "items": "{{count}} items",
+    "items_one": "{{count}} item",
+    "items_other": "{{count}} items",
     "shareBackup": "Pear Notes backup",
     "shareError": "Share Failed",
     "clearStorage": "Clear Storage",
@@ -755,6 +756,7 @@
     "link": "Link",
     "insertTable": "Insert Table",
     "attachments": "Attachments",
+    "editNote": "Edit note",
     "undo": "Undo",
     "redo": "Redo",
     "types": {

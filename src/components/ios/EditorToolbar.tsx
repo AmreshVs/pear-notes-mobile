@@ -25,6 +25,7 @@ type ToolbarBtnProps = {
   active?: boolean
   tintActive: string
   tintDefault: string
+  a11yLabel: string
   styles: any
 }
 
@@ -34,6 +35,7 @@ const ToolbarBtn = memo(function ToolbarBtn({
   active,
   tintActive,
   tintDefault,
+  a11yLabel,
   styles,
 }: ToolbarBtnProps) {
   const btnStyle = useCallback(
@@ -46,7 +48,13 @@ const ToolbarBtn = memo(function ToolbarBtn({
   )
 
   return (
-    <Pressable onPress={onPress} style={btnStyle}>
+    <Pressable
+      onPress={onPress}
+      style={btnStyle}
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      accessibilityState={{ selected: !!active }}
+    >
       <SymbolView
         name={sf as any}
         size={UI_ICON_SIZE_22}
@@ -85,7 +93,11 @@ const AttachMenu = memo(function AttachMenu({
       <ExpoUI.Menu
         label={
           <ExpoUI.RNHostView matchContents>
-            <View style={styles.toolbarBtn}>
+            <View
+              style={styles.toolbarBtn}
+              accessibilityRole="button"
+              accessibilityLabel={t('formatting.attachments')}
+            >
               <SymbolView
                 name="paperclip"
                 size={UI_ICON_SIZE_22}
@@ -118,6 +130,7 @@ const AttachMenu = memo(function AttachMenu({
       sf="paperclip"
       tintActive={colors.primary}
       tintDefault={colors.text}
+      a11yLabel={t('formatting.attachments')}
       onPress={onPickFile}
       styles={styles}
     />
@@ -152,6 +165,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   onTakeVideo,
 }: EditorToolbarProps) {
   const styles = useStyles()
+  const { t } = useTranslation()
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     action()
@@ -206,17 +220,10 @@ export const EditorToolbar = memo(function EditorToolbar({
             />
             <View style={styles.divider} />
             <ToolbarBtn
-              sf="checkmark.square"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              active={isActive('checkboxList')}
-              onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
-              styles={styles}
-            />
-            <ToolbarBtn
               sf="textformat.size.larger"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.types.heading')}
               active={isActive('h1')}
               onPress={() => run(() => editorRef.current?.toggleH1())}
               styles={styles}
@@ -225,6 +232,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="textformat.size"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.types.subheading')}
               active={isActive('h2')}
               onPress={() => run(() => editorRef.current?.toggleH2())}
               styles={styles}
@@ -233,6 +241,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="bold"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.bold')}
               active={isActive('bold')}
               onPress={() => run(() => editorRef.current?.toggleBold())}
               styles={styles}
@@ -241,6 +250,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="italic"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.italic')}
               active={isActive('italic')}
               onPress={() => run(() => editorRef.current?.toggleItalic())}
               styles={styles}
@@ -249,6 +259,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="list.bullet"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.types.bulletedList')}
               active={isActive('unorderedList')}
               onPress={() => run(() => editorRef.current?.toggleUnorderedList())}
               styles={styles}
@@ -257,6 +268,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="list.number"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.types.numberedList')}
               active={isActive('orderedList')}
               onPress={() => run(() => editorRef.current?.toggleOrderedList())}
               styles={styles}
@@ -265,6 +277,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="checklist"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.checklist')}
               active={isActive('checkboxList')}
               onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
               styles={styles}
@@ -273,6 +286,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="text.quote"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.types.quoteBlock')}
               active={isActive('blockQuote')}
               onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
               styles={styles}
@@ -281,6 +295,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="chevron.left.forwardslash.chevron.right"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.codeBlock')}
               active={isActive('codeBlock')}
               onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
               styles={styles}
@@ -302,6 +317,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="square.and.pencil"
               tintActive={colors.primary}
               tintDefault={colors.text}
+              a11yLabel={t('formatting.editNote')}
               onPress={handleFocusEdit}
               styles={styles}
             />
