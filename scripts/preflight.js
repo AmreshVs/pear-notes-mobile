@@ -102,14 +102,26 @@ function checkCorePinned() {
 }
 
 function checkBackendBundle() {
-  const bundle = path.join(ROOT, 'src', 'backend', 'backend.bundle.js')
+  const relative = 'src/backend/backend.bundle.js'
+  const bundle = path.join(ROOT, relative)
+
   if (!fs.existsSync(bundle)) {
-    return fail('backend', 'src/backend/backend.bundle.js missing - run npm run bare-bundle')
+    return fail('backend', `${relative} missing - run npm run bare-bundle`)
   }
+
   const size = fs.statSync(bundle).size
-  if (size < 100_000)
+  if (size < 100_000) {
     return fail('backend', `backend.bundle.js is suspiciously small (${size} bytes)`)
-  pass('backend', `${(size / 1024 / 1024).toFixed(1)} MB`)
+  }
+
+  if (!tryRun(`git ls-files ${relative}`)) {
+    return fail(
+      'backend',
+      `${relative} is not tracked by git - eas build --local copies the project from git, so the build will fail to resolve it`,
+    )
+  }
+
+  pass('backend', `${(size / 1024 / 1024).toFixed(1)} MB, tracked`)
 }
 
 function checkEditorBundle() {

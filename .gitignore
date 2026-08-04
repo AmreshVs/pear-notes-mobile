@@ -41,9 +41,6 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
-# bare-bundle
-src/backend/backend.bundle.js
-
 # iOS
 ios/Pods/
 
