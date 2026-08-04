@@ -13,7 +13,10 @@
       "appleTeamId": "65S93235JA",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow Pear Notes to access your microphone to record voice notes.",
-        "NSCameraUsageDescription": "Allow Pear Notes to use the camera to take photos and videos for your notes."
+        "NSCameraUsageDescription": "Allow Pear Notes to use the camera to take photos and videos for your notes.",
+        "NSPhotoLibraryUsageDescription": "Allow Pear Notes to access your photo library so you can attach images and videos to your notes.",
+        "NSPhotoLibraryAddUsageDescription": "Allow Pear Notes to save images to your photo library.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -21,7 +24,17 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.amreshvs.pearnotes",
       "allowBackup": false,
-      "permissions": ["RECORD_AUDIO", "CAMERA"]
+      "permissions": [
+        "RECORD_AUDIO",
+        "CAMERA",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -79,6 +92,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "71499373-83a5-493b-838f-0279921208c3"
+      }
+    },
+    "owner": "vsamresh"
   }
 }

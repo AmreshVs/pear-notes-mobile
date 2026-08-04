@@ -31,4 +31,10 @@ module.exports = {
     'no-extra-semi': 'error',
     'react-native/no-unused-styles': 'error',
   },
+  overrides: [
+    {
+      files: ['scripts/**/*.js'],
+      env: { node: true },
+    },
+  ],
 }

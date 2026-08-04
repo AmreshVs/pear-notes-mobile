@@ -20,7 +20,14 @@
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "kickstart": "node scripts/kickstart.js",
-    "build:editor": "cd editor-bundle && npm install && npm run build"
+    "copy-core": "node scripts/copy-core.js && npm run bare-bundle",
+    "build:editor": "cd editor-bundle && npm install && npm run build",
+    "typecheck": "tsc --noEmit",
+    "version:set": "node scripts/set-version.js",
+    "preflight": "node scripts/preflight.js",
+    "release:ios": "node scripts/release.js --platform ios",
+    "release:android": "node scripts/release.js --platform android",
+    "release:all": "node scripts/release.js --platform all"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",

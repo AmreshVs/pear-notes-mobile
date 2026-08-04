@@ -2,7 +2,6 @@
 
 # dependencies
 node_modules/
-package-lock.json
 
 # Expo
 .expo/
@@ -46,13 +45,19 @@ yarn-error.*
 src/backend/backend.bundle.js
 
 # iOS
-ios/Podfile.lock
 ios/Pods/
 
 .agents/
 .claude/
 .agent/
 editor-bundle/node_modules/
-package-lock.json
 modules/*/android/build/
 modules/*/android/.gradle
+
+# release credentials — never commit
+credentials.json
+credentials/
+*.keystore
+*.aab
+*.apk
+*.ipa
