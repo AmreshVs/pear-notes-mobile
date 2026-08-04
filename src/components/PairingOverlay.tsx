@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
+import { router } from 'expo-router'
 import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 
 import {
@@ -99,6 +100,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
       Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start()
     }
   }, [isVisible, fadeAnim])
+
+  useEffect(() => {
+    if (deviceRemoved) {
+      router.dismissAll()
+    }
+  }, [])
 
   const handleClose = useCallback(() => {
     if (deviceRemoved) {

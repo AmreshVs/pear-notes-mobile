@@ -155,7 +155,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
               onKeyPress={handleKeyPress}
             />
           ) : (
-            <Text style={styles.deviceName} numberOfLines={1}>
+            <Text style={styles.deviceName} numberOfLines={1} ellipsizeMode="middle">
               {displayName}
             </Text>
           )}
@@ -227,7 +227,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      letterSpacing: -0.3,
       marginBottom: 3,
       color: c.onSurface,
     },

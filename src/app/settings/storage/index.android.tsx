@@ -36,6 +36,7 @@ import {
   UI_SIZE_40,
   UI_SIZE_48,
   UI_SIZE_96,
+  UI_SIZE_120,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
@@ -323,6 +324,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurfaceVariant,
     },
     reclaimBtn: {
+      minWidth: UI_SIZE_120,
+      alignItems: 'center',
       paddingHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_8,
       borderRadius: UI_SIZE_20,
@@ -336,6 +339,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.primary,
+      textAlign: 'center',
     },
     cardPressed: {
       opacity: 0.7,

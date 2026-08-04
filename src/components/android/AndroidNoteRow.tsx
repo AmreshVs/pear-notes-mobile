@@ -283,7 +283,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     },
     folderIcon: {
       marginRight: Space.xs,
-      opacity: 0.7,
       color: theme.colors.textSecondary,
     },
     checkboxIcon: {
@@ -325,7 +324,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       color: c.onSurfaceVariant,
     },
     metaTagPear: {
-      color: c.primary,
+      color: c.onSurfaceVariant,
     },
     thumbnail: {
       width: UI_SIZE_60,

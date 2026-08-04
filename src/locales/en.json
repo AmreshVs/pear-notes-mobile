@@ -104,7 +104,7 @@
       "pauseMedia": "Pause media transfers",
       "pauseMediaDesc": "Hold photos, video, and file transfers. Notes, folders, and settings keep syncing.",
       "heldNotice": "Media transfers are held. Queued items resume automatically once media is allowed again.",
-      "holdOnCellular": "Hold media on cellular",
+      "holdOnCellular": "Hold media transfers on cellular",
       "holdOnCellularDesc": "Automatically hold photos, video, and files while on a mobile connection.",
       "onWifi": "Currently on Wi-Fi",
       "onCellular": "Currently on cellular — media held",

@@ -442,12 +442,15 @@ export function useNoteEditorActions({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
   }, [noteId, noteData?.pinned, dispatch])
 
-  const handleDeleteAttachment = useCallback(async (url: string) => {
-    if (!url) return
-    try {
-      await deleteAttachment(url)
-    } catch {}
-  }, [])
+  const handleDeleteAttachment = useCallback(
+    async (url: string) => {
+      if (!noteId || !url) return
+      try {
+        await deleteAttachment(noteId, url)
+      } catch {}
+    },
+    [noteId],
+  )
 
   const handleDone = useCallback(async () => {
     await editorRef.current?.save()

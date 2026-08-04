@@ -98,17 +98,17 @@ export async function copyVideoToUploadCache(uri: string, fileName: string) {
   return { path: toBackendPath(cacheUri), cacheUri, size: (info as any).size || 0 }
 }
 
-export async function deleteAttachment(url: string) {
-  if (!url) return
+export async function deleteAttachment(noteKey: string, url: string) {
+  if (!noteKey || !url) return
   const queryIdx = url.indexOf('?')
-  let key: string | null = null
+  let mediaPath: string | null = null
   if (queryIdx !== -1 && url.slice(queryIdx).includes('blob=')) {
-    key = url.slice(queryIdx)
+    mediaPath = `${HYPERDRIVE_URL_PREFIX}/${url.slice(queryIdx)}`
   } else if (url.startsWith(HYPERDRIVE_URL_PREFIX)) {
-    key = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
+    mediaPath = url.replace(HYPERDRIVE_URL_PREFIX, '').replace(/^\//, '')
   }
-  if (!key) return
-  await backendApi.deleteFile(key)
+  if (!mediaPath) return
+  await backendApi.deleteNoteFile({ noteKey, mediaPath })
 }
 
 export const ATTACHMENT_CACHE_PREFIX = 'share-'

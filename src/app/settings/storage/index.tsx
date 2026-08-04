@@ -30,6 +30,7 @@ import {
   UI_SIZE_48,
   UI_SIZE_60,
   UI_SIZE_96,
+  UI_SIZE_120,
   UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -254,6 +255,8 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
     },
     reclaimBtn: {
+      minWidth: UI_SIZE_120,
+      alignItems: 'center',
       paddingHorizontal: Space.base,
       paddingVertical: Space.sm,
       borderRadius: Radii.md,
@@ -267,6 +270,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.primary,
+      textAlign: 'center',
     },
     dangerCard: {
       padding: Space.lg,

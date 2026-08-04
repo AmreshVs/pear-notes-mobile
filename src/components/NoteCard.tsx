@@ -434,13 +434,12 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     folderIcon: {
       marginRight: Space.xs,
-      opacity: 0.7,
       color: theme.colors.textSecondary,
     },
     metadataText: {
       fontSize: FontSize.caption,
-      fontFamily: FontFamily.bold,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
       opacity: 0.6,

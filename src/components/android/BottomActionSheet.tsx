@@ -165,25 +165,6 @@ const useStyles = createThemedStylesheetWithHooks(
         paddingHorizontal: UI_SIZE_20,
         paddingTop: UI_SIZE_4,
       },
-      header: {
-        paddingBottom: UI_SIZE_24,
-        paddingHorizontal: UI_SIZE_4,
-        paddingTop: 0,
-        gap: UI_SIZE_4,
-      },
-      title: {
-        fontSize: FontSize.title,
-        fontWeight: FontWeight.bold,
-        fontFamily: FontFamily.bold,
-        letterSpacing: -0.3,
-        color: c.onSurface,
-      },
-      subtitle: {
-        fontSize: FontSize.body,
-        fontFamily: FontFamily.regular,
-        lineHeight: 18,
-        color: c.onSurfaceVariant,
-      },
       actionsCard: {
         borderRadius: UI_SIZE_20,
         overflow: 'hidden',

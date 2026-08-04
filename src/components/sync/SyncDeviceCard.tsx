@@ -124,7 +124,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
               />
             ) : (
               <Pressable onPress={!isOther ? startEditing : undefined}>
-                <Text numberOfLines={1} style={styles.deviceName}>
+                <Text numberOfLines={1} style={styles.deviceName} ellipsizeMode="middle">
                   {getDeviceDisplayName(device) || t('sync.platforms.unknown')}
                 </Text>
               </Pressable>
@@ -186,7 +186,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
-      backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.1 : 0.08),
+      backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.15 : 0.08),
     },
     onlineDot: {
       position: 'absolute',
@@ -218,7 +218,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.medium,
       textTransform: 'none',
       letterSpacing: 0,
-      color: hexWithAlpha(theme.colors.primary, 0.56),
+      color: theme.colors.textSecondary,
     },
     renameInput: {
       fontSize: FontSize.subtitle,
