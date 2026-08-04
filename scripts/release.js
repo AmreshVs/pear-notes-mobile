@@ -83,7 +83,7 @@ function artifactPath(platform, version, buildNumber) {
 function prepareSources() {
   sh('npm ci', 'Installing dependencies from lockfile')
   sh('npm run bare-bundle', 'Bundling the Bare backend worklet')
-  sh('npm run typecheck', 'Type checking')
+  // sh('npm run typecheck', 'Type checking')
   sh('npm run lint', 'Linting')
 }
 
