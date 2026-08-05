@@ -242,6 +242,23 @@ function checkAndroidManifest() {
   pass('manifest', 'no dev-only permissions in release manifest')
 }
 
+function checkMediaPermissionsStripped() {
+  const manifest = fs.readFileSync(
+    path.join(ROOT, 'android', 'app', 'src', 'main', 'AndroidManifest.xml'),
+    'utf8',
+  )
+
+  const stripped = /READ_MEDIA_IMAGES"\s+tools:node="remove"/.test(manifest)
+  if (!stripped) {
+    return fail(
+      'media perms',
+      'READ_MEDIA_IMAGES is not stripped - expo-screen-capture merges it in and Play rejects the ' +
+        'build as an undeclared photo permission. Restore the tools:node="remove" entry.',
+    )
+  }
+  pass('media perms', 'READ_MEDIA_IMAGES stripped from the merged manifest')
+}
+
 function checkCleartextPolicy() {
   const manifestPath = path.join(ROOT, 'android', 'app', 'src', 'main', 'AndroidManifest.xml')
   const configPath = path.join(
@@ -456,6 +473,7 @@ checkReleaseSigning()
 checkVersionConsistency()
 checkVariantIds()
 checkAndroidManifest()
+checkMediaPermissionsStripped()
 checkCleartextPolicy()
 checkCodeShrinking()
 checkIosCompliance()
