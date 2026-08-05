@@ -55,6 +55,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHighest?: string
   outlineVariant?: string
   primaryContainer?: string
+  onPrimaryContainer?: string
   onSurfaceVariant?: string
   surfaceContainer?: string
 }
@@ -82,6 +83,7 @@ export default function AndroidBackupScreen() {
     handleDismissProgress,
     handleRestoreComplete,
     handleRestoreData,
+    handleRunInBackground,
   } = useBackupScreen()
 
   const progressTitle =
@@ -237,12 +239,20 @@ export default function AndroidBackupScreen() {
                   <Text style={styles.cancelBtnText}>{t('pairing.overlay.okay')}</Text>
                 </Pressable>
               ) : isExportDone ? null : (
-                <Pressable
-                  onPress={isExporting ? handleCancelExport : handleCancelImport}
-                  style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
-                >
-                  <Text style={styles.cancelBtnText}>{t('backup.progress.cancel')}</Text>
-                </Pressable>
+                <View style={styles.modalActions}>
+                  <Pressable
+                    onPress={handleRunInBackground}
+                    style={({ pressed }) => [styles.bgBtn, pressed && styles.bgBtnPressed]}
+                  >
+                    <Text style={styles.bgBtnText}>{t('backup.runInBackground')}</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={isExporting ? handleCancelExport : handleCancelImport}
+                    style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+                  >
+                    <Text style={styles.cancelBtnText}>{t('backup.progress.cancel')}</Text>
+                  </Pressable>
+                </View>
               )}
             </View>
           </View>
@@ -413,6 +423,27 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       height: '100%',
       borderRadius: UI_SIZE_2,
       backgroundColor: c.primary,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: UI_SIZE_8,
+    },
+    bgBtn: {
+      paddingVertical: UI_SIZE_12,
+      paddingHorizontal: UI_SIZE_20,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: c.primaryContainer ?? c.surfaceVariant,
+    },
+    bgBtnPressed: {
+      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
+    },
+    bgBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onPrimaryContainer ?? c.onSurface,
     },
     cancelBtn: {
       paddingVertical: UI_SIZE_12,

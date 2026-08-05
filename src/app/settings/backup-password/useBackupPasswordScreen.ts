@@ -9,7 +9,7 @@ import {
 } from '@pear-notes/core/store/slices/backupSlice.js'
 import { isValidBackupPassword } from '@pear-notes/core/utils.js'
 
-import { getTempBackupFilePath } from '@/lib/backupFileManager'
+import { getBackupExportPath } from '@/lib/backupFileManager'
 import { takePendingImportPath } from '@/lib/backupPasswordFlow'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
@@ -33,7 +33,7 @@ export default function useBackupPasswordScreen(mode?: string) {
     (restoringMessage: string) => {
       if (!canSubmit) return
       if (isCreate) {
-        const filePath = getTempBackupFilePath()
+        const filePath = getBackupExportPath()
         dispatch(startExportBackup({ password, filePath } as any))
         router.back()
         return

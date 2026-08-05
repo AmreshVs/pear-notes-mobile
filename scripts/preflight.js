@@ -316,6 +316,75 @@ function checkIosCompliance() {
   else pass('privacy', 'PrivacyInfo.xcprivacy present')
 }
 
+function checkBuildJdk() {
+  const javaHome = process.env.JAVA_HOME
+  const javaBin = javaHome ? `"${path.join(javaHome, 'bin', 'java')}"` : 'java'
+  const source = javaHome ? 'JAVA_HOME' : 'PATH'
+
+  const output = tryRun(`${javaBin} -version 2>&1`)
+  if (!output) return fail('jdk', `no JDK found via ${source} - install Temurin 21`)
+
+  const major = Number(output.match(/version "(\d+)/)?.[1])
+  if (!major) return warn('jdk', `could not parse a version from "${output.split('\n')[0]}"`)
+
+  if (major >= 17 && major <= 21) {
+    return pass('jdk', `${major} via ${source}`)
+  }
+
+  const supported = tryRun('/usr/libexec/java_home -v 21')
+  const remedy = supported
+    ? `export JAVA_HOME=${supported}`
+    : 'install Temurin 21 (brew install --cask temurin@21)'
+
+  if (major > 21 && major < 25) {
+    return warn(
+      'jdk',
+      `${major} via ${source} is untested with AGP 8.12 - if the CMake configure step fails, ${remedy}`,
+    )
+  }
+
+  fail(
+    'jdk',
+    `${major} via ${source} cannot build this project - AGP 8.12 fails the native CMake configure ` +
+      `step on JDK 25+ (":react-native-worklets:configureCMakeRelWithDebInfo"). ${remedy}`,
+  )
+}
+
+function checkCodeShrinking() {
+  const properties = fs.readFileSync(path.join(ROOT, 'android', 'gradle.properties'), 'utf8')
+  const rules = fs.readFileSync(path.join(ROOT, 'android', 'app', 'proguard-rules.pro'), 'utf8')
+
+  if (!/^android\.enableMinifyInReleaseBuilds=true$/m.test(properties)) {
+    return fail(
+      'r8',
+      'android.enableMinifyInReleaseBuilds is not true - the release bundle ships unshrunk dex ' +
+        'and Play rates the app bundle "Low"',
+    )
+  }
+
+  const keepsWorklet = /-keep class to\.holepunch\.bare\.kit\.Worklet\b/.test(rules)
+  const keepsIpc = /-keep class to\.holepunch\.bare\.kit\.IPC\b/.test(rules)
+
+  if (!keepsWorklet || !keepsIpc) {
+    return fail(
+      'r8',
+      'R8 is on but proguard-rules.pro is missing the bare-kit keep rules - native code resolves ' +
+        'Worklet/IPC by name, so the worklet will fail to start in the release build',
+    )
+  }
+
+  if (/-keep class to\.holepunch\.bare\.kit\.\*\*/.test(rules)) {
+    return fail(
+      'r8',
+      'a blanket to.holepunch.bare.kit.** keep retains MessagingService, which fails R8 on the ' +
+        'missing optional FirebaseMessagingService - keep only Worklet and IPC',
+    )
+  }
+
+  const shrinksResources = /^android\.enableShrinkResourcesInReleaseBuilds=true$/m.test(properties)
+  pass('r8', `enabled${shrinksResources ? ' with resource shrinking' : ''}, bare-kit keeps present`)
+}
+
 function checkToolchain() {
   const easVersion = tryRun('eas --version')?.match(/eas-cli\/(\S+)/)?.[1]
   if (!easVersion) fail('eas-cli', 'not installed - npm install -g eas-cli')
@@ -388,7 +457,9 @@ checkVersionConsistency()
 checkVariantIds()
 checkAndroidManifest()
 checkCleartextPolicy()
+checkCodeShrinking()
 checkIosCompliance()
+checkBuildJdk()
 checkToolchain()
 checkSubmitCredentials()
 report()

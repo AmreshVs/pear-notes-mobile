@@ -586,6 +586,7 @@
     "restoreCompleteDesc": "Your notes and data have been restored successfully.",
     "invalidFile": "Invalid File",
     "invalidFileDesc": "Please select a .pnbk backup file.",
+    "emptyFileDesc": "The backup file is empty. Please create the backup again.",
     "restoreError": "Restore Failed",
     "confirmExportTitle": "Backup Recovery Key",
     "confirmExportDesc": "Please make sure you have copied your Recovery Key securely. You will need it to restore this backup on other devices.",

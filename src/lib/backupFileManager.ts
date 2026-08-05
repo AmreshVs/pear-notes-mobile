@@ -1,7 +1,9 @@
 import { Platform, Share } from 'react-native'
 import * as DocumentPicker from 'expo-document-picker'
-import { File } from 'expo-file-system'
+import { Directory, File } from 'expo-file-system'
 import * as FileSystemLegacy from 'expo-file-system/legacy'
+
+const LEGACY_TEMP_BACKUP_NAME = 'temp_export.pnbk'
 
 export class InvalidBackupFileError extends Error {
   constructor() {
@@ -9,34 +11,45 @@ export class InvalidBackupFileError extends Error {
   }
 }
 
-export function getTempBackupFilePath(): string {
-  const cacheDir = FileSystemLegacy.cacheDirectory ?? ''
-  return cacheDir.replace('file://', '') + 'temp_export.pnbk'
+export class EmptyBackupFileError extends Error {
+  constructor() {
+    super('EmptyBackupFile')
+  }
 }
 
-export function getBackupFileName(): string {
+function getCacheDirectory(): string {
+  return FileSystemLegacy.cacheDirectory ?? ''
+}
+
+function getBackupFileName(): string {
   const date = new Date().toISOString().split('T')[0]
   return `pear-notes-${date}.pnbk`
 }
 
-function renameBackupInCache(exportFilePath: string): string {
-  const fileUri = (FileSystemLegacy.cacheDirectory ?? '') + getBackupFileName()
-  const destFile = new File(fileUri)
-  if (destFile.exists) destFile.delete()
-  new File(exportFilePath).copy(destFile)
-  return fileUri
+export function getBackupExportPath(): string {
+  return getCacheDirectory().replace('file://', '') + getBackupFileName()
+}
+
+function toFileUri(path: string): string {
+  return path.startsWith('/') ? `file://${path}` : path
+}
+
+function openExportedBackup(exportFilePath: string): File {
+  const file = new File(toFileUri(exportFilePath))
+  if (!file.exists || file.size <= 0) throw new EmptyBackupFileError()
+  return file
 }
 
 function deleteFileIfExists(path: string): void {
   try {
-    const file = new File(path)
+    const file = new File(toFileUri(path))
     if (file.exists) file.delete()
   } catch {}
 }
 
 export function clearBackupExportCache(exportFilePath: string): void {
   deleteFileIfExists(exportFilePath)
-  deleteFileIfExists((FileSystemLegacy.cacheDirectory ?? '') + getBackupFileName())
+  deleteFileIfExists(getCacheDirectory() + LEGACY_TEMP_BACKUP_NAME)
 }
 
 export async function sweepBackupCache(): Promise<void> {
@@ -48,7 +61,7 @@ export async function sweepBackupCache(): Promise<void> {
       entries
         .filter(
           (name) =>
-            name === 'temp_export.pnbk' ||
+            name === LEGACY_TEMP_BACKUP_NAME ||
             (name.startsWith('pear-notes-') && name.endsWith('.pnbk')),
         )
         .map((name) => FileSystemLegacy.deleteAsync(cacheDir + name, { idempotent: true })),
@@ -76,8 +89,9 @@ const SAF_DOCUMENTS_INITIAL_URI =
 
 export async function saveBackupToDevice(exportFilePath: string): Promise<boolean> {
   try {
+    const source = openExportedBackup(exportFilePath)
     if (Platform.OS === 'ios') {
-      const result = await Share.share({ url: renameBackupInCache(exportFilePath) })
+      const result = await Share.share({ url: toFileUri(exportFilePath) })
       return result.action !== Share.dismissedAction
     }
     const permissions =
@@ -85,14 +99,7 @@ export async function saveBackupToDevice(exportFilePath: string): Promise<boolea
         SAF_DOCUMENTS_INITIAL_URI,
       )
     if (!permissions.granted) return false
-    const uri = await FileSystemLegacy.StorageAccessFramework.createFileAsync(
-      permissions.directoryUri,
-      getBackupFileName(),
-      'application/octet-stream',
-    )
-    const srcFile = new File(exportFilePath)
-    const destFile = new File(uri)
-    srcFile.copy(destFile)
+    await source.copy(new Directory(permissions.directoryUri), { overwrite: true })
     return true
   } finally {
     clearBackupExportCache(exportFilePath)
@@ -104,11 +111,12 @@ export async function saveBackupWithShare(
   shareMessage?: string,
 ): Promise<boolean> {
   try {
+    openExportedBackup(exportFilePath)
     if (Platform.OS === 'ios') {
-      const result = await Share.share({ url: renameBackupInCache(exportFilePath) })
+      const result = await Share.share({ url: toFileUri(exportFilePath) })
       return result.action !== Share.dismissedAction
     }
-    const result = await Share.share({ message: shareMessage, url: exportFilePath })
+    const result = await Share.share({ message: shareMessage, url: toFileUri(exportFilePath) })
     return result.action !== Share.dismissedAction
   } finally {
     clearBackupExportCache(exportFilePath)

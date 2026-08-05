@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, PermissionsAndroid, Platform } from 'react-native'
+import { Alert, Platform } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
-import * as ExpoBackgroundService from 'expo-background-service'
 import { router } from 'expo-router'
 
 import {
+  cancelExportBackup,
+  cancelImportBackup,
   getExportStatus,
   getImportStatus,
   resetExport,
@@ -16,14 +17,22 @@ import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import {
   getTotalBlobBytes,
+  reclaimStorage,
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 
 import {
+  startBackupForegroundService,
+  stopBackupForegroundService,
+  updateBackupForegroundService,
+} from '@/lib/backupBackgroundService'
+import {
   backupUriToPath,
+  clearBackupExportCache,
   clearImportCacheFile,
-  getTempBackupFilePath,
+  EmptyBackupFileError,
+  getBackupExportPath,
   InvalidBackupFileError,
   pickBackupFile,
   rememberImportCacheFile,
@@ -91,30 +100,36 @@ function useBackupScreen() {
     if (isError) setHideModal(false)
   }, [isError])
 
+  useEffect(() => {
+    if (exportStatus.step === 'error') clearBackupExportCache(getBackupExportPath())
+  }, [exportStatus.step])
+
   const handleDismissProgress = useCallback(() => {
     dispatch(resetExport())
     dispatch(resetImport())
   }, [dispatch])
 
+  const backgroundServiceTitle =
+    exportStatus.step !== 'idle'
+      ? t('backup.progress.creatingTitle')
+      : t('backup.progress.restoringTitle')
+
   useEffect(() => {
-    if (isForegroundServiceActive) {
-      if (isActive) {
-        ExpoBackgroundService.updateService(
-          isExporting ? t('backup.title') : t('backup.restoreTitle'),
-          progressStatus.progress,
-          progressStatus.message,
-          100,
-        )
-      } else {
-        ExpoBackgroundService.stopService()
-        setIsForegroundServiceActive(false)
-      }
+    if (!isForegroundServiceActive) return
+    if (isActive) {
+      updateBackupForegroundService(
+        backgroundServiceTitle,
+        progressStatus.progress,
+        progressStatus.message,
+      )
+    } else {
+      stopBackupForegroundService()
+      setIsForegroundServiceActive(false)
     }
   }, [
     isForegroundServiceActive,
     isActive,
-    isExporting,
-    t,
+    backgroundServiceTitle,
     progressStatus.progress,
     progressStatus.message,
   ])
@@ -130,44 +145,41 @@ function useBackupScreen() {
 
   const handleRunInBackground = useCallback(async () => {
     setHideModal(true)
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-          {
-            title: t('backup.notificationPermissionTitle'),
-            message: t('backup.notificationPermissionDesc'),
-            buttonNeutral: t('backup.notificationPermissionAskMeLater'),
-            buttonNegative: t('backup.notificationPermissionCancel'),
-            buttonPositive: t('backup.notificationPermissionOK'),
-          },
-        )
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          ExpoBackgroundService.startService(
-            isExporting ? t('backup.title') : t('backup.restoreTitle'),
-            progressStatus.message,
-            100,
-          )
-          setIsForegroundServiceActive(true)
-        }
-      } catch (err) {
-        console.warn(err)
-      }
-    }
-  }, [t, isExporting, progressStatus.message])
+    const started = await startBackupForegroundService(
+      backgroundServiceTitle,
+      progressStatus.message,
+      {
+        title: t('backup.notificationPermissionTitle'),
+        message: t('backup.notificationPermissionDesc'),
+        buttonNeutral: t('backup.notificationPermissionAskMeLater'),
+        buttonNegative: t('backup.notificationPermissionCancel'),
+        buttonPositive: t('backup.notificationPermissionOK'),
+      },
+    )
+    setIsForegroundServiceActive(started)
+  }, [t, backgroundServiceTitle, progressStatus.message])
 
   const handleCancelExport = useCallback(() => {
+    dispatch(cancelExportBackup())
     dispatch(resetExport())
+    clearBackupExportCache(getBackupExportPath())
   }, [dispatch])
 
   const handleCancelImport = useCallback(() => {
+    dispatch(cancelImportBackup())
     dispatch(resetImport())
   }, [dispatch])
 
   const handleRestoreComplete = useCallback(() => {
+    dispatch(reclaimStorage())
     dispatch(resetImport())
     dispatch(setNeedsReload(true))
   }, [dispatch])
+
+  const getSaveErrorMessage = useCallback(
+    (e: unknown) => (e instanceof EmptyBackupFileError ? t('backup.emptyFileDesc') : String(e)),
+    [t],
+  )
 
   const handleSaveBackup = useCallback(async () => {
     await wait(SUCCESS_VISIBLE_MS)
@@ -175,30 +187,32 @@ function useBackupScreen() {
     if (Platform.OS === 'ios') {
       try {
         await wait(MODAL_DISMISS_DELAY_MS)
-        const saved = await saveBackupWithShare(getTempBackupFilePath(), t('backup.shareBackup'))
+        const saved = await saveBackupWithShare(getBackupExportPath(), t('backup.shareBackup'))
         if (saved) {
           await saveLastBackupDate()
           setLastBackupDate(new Date().toISOString())
         }
         dispatch(resetExport())
       } catch (e) {
+        console.log('handleSaveBackup', e)
         dispatch(resetExport())
-        Alert.alert(t('backup.shareError'), String(e))
+        Alert.alert(t('backup.shareError'), getSaveErrorMessage(e))
       }
     } else {
       try {
-        const saved = await saveBackupToDevice(getTempBackupFilePath())
+        const saved = await saveBackupToDevice(getBackupExportPath())
         if (saved) {
           await saveLastBackupDate()
           setLastBackupDate(new Date().toISOString())
         }
       } catch (e) {
-        showToast(String(e))
+        console.log('handleSaveBackup else', e)
+        showToast(getSaveErrorMessage(e))
       } finally {
         dispatch(resetExport())
       }
     }
-  }, [dispatch, showToast, t])
+  }, [dispatch, getSaveErrorMessage, showToast, t])
 
   useEffect(() => {
     if (exportStatus.step === 'done' && !savingRef.current) {
