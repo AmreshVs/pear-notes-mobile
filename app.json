@@ -16,7 +16,7 @@
         "NSCameraUsageDescription": "Allow Pear Notes to use the camera to take photos and videos for your notes.",
         "NSPhotoLibraryUsageDescription": "Allow Pear Notes to access your photo library so you can attach images and videos to your notes.",
         "NSPhotoLibraryAddUsageDescription": "Allow Pear Notes to save images to your photo library.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": true
       }
     },
     "android": {
