@@ -35,6 +35,8 @@
         "light": "Light",
         "dark": "Dark"
       },
+      "hapticFeedback": "Haptic Feedback",
+      "hapticFeedbackDesc": "Subtle vibration feedback to taps and actions.",
       "appThemeDesc": "Select your preferred aesthetic.",
       "sortNotesByDesc": "Choose your preferred sorting order.",
       "fontFamilyDesc": "Primary typeface for notes.",

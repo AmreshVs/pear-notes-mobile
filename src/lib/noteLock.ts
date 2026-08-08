@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
 import { authenticate } from '@/lib/deviceAuth'
+import { hapticSuccess } from '@/lib/haptics'
 
 const unlockedKeys = new Set<string>()
 const listeners = new Set<() => void>()
@@ -52,6 +53,7 @@ export async function unlockNote(key: string, reason: string): Promise<boolean> 
   if (ok) {
     unlockedKeys.add(key)
     emit()
+    hapticSuccess()
   }
   return ok
 }

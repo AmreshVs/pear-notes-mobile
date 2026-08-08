@@ -42,6 +42,7 @@ import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
+import { loadHapticsPreference } from '@/lib/haptics'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { useAttachmentCachePrune } from '@/lib/useAttachmentCachePrune'
 import { useMediaSyncAutoDetect } from '@/lib/useMediaSyncAutoDetect'
@@ -150,6 +151,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       }
       await backendApi.ready({ storage, encryption: key })
       workletRestartAttemptsRef.current = 0
+      loadHapticsPreference()
       dispatch(appReady())
       dispatch(initApp())
     } catch (e) {

@@ -6,6 +6,7 @@ import * as LocalAuthentication from 'expo-local-authentication'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { isDeviceAuthSupported } from '@/lib/deviceAuth'
+import { hapticSuccess } from '@/lib/haptics'
 import { markNoteUnlocked, unlockNote } from '@/lib/noteLock'
 import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 
@@ -59,7 +60,10 @@ export function useLockedNoteView(noteId: string) {
       try {
         if (isPassword) {
           const ok = await requestNoteLockPassword()
-          if (ok) markNoteUnlocked(noteId)
+          if (ok) {
+            markNoteUnlocked(noteId)
+            hapticSuccess()
+          }
         } else {
           await unlockNote(noteId, reason)
         }

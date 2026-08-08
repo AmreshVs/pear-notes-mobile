@@ -1,6 +1,6 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Switch, View as RNView } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 import Slider from '@react-native-community/slider'
@@ -18,6 +18,7 @@ import {
 
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
+import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -35,6 +36,7 @@ import {
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { hapticSelection } from '@/lib/haptics'
 import { getFontOptions, getSortOptions, showPicker } from '@/utils/settingsUtils'
 
 export default function GeneralSettingsScreen() {
@@ -48,9 +50,16 @@ export default function GeneralSettingsScreen() {
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
+  const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
+
+  const trackColor = useMemo(
+    () => ({ false: colors.controlBackground, true: colors.primary }),
+    [colors.controlBackground, colors.primary],
+  )
 
   const handleThemeSelect = useCallback(
     (themeKey: 'system' | 'light' | 'dark') => {
+      hapticSelection()
       dispatch(setTheme(themeKey))
     },
     [dispatch],
@@ -58,6 +67,7 @@ export default function GeneralSettingsScreen() {
 
   const handleSortSelect = useCallback(
     (val: string) => {
+      hapticSelection()
       dispatch(updateSetting({ key: 'sortBy', value: val }))
     },
     [dispatch],
@@ -75,6 +85,7 @@ export default function GeneralSettingsScreen() {
 
   const handleFontSelect = useCallback(
     (val: string) => {
+      hapticSelection()
       dispatch(updateSetting({ key: 'fontFamily', value: val }))
     },
     [dispatch],
@@ -117,7 +128,7 @@ export default function GeneralSettingsScreen() {
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
-            <RNView style={styles.stackedRow}>
+            <RNView style={styles.stackedRowUnderline}>
               <Text style={styles.rowLabel}>{t('settings.general.appTheme')}</Text>
               <RNView style={styles.segCtrl}>
                 {(['system', 'light', 'dark'] as const).map((themeKey, i) => {
@@ -140,6 +151,19 @@ export default function GeneralSettingsScreen() {
                   )
                 })}
               </RNView>
+            </RNView>
+
+            <RNView style={styles.toggleRow}>
+              <RNView style={styles.toggleInfo}>
+                <Text style={styles.rowLabel}>{t('settings.general.hapticFeedback')}</Text>
+                <Text style={styles.rowDesc}>{t('settings.general.hapticFeedbackDesc')}</Text>
+              </RNView>
+              <Switch
+                value={hapticsEnabled}
+                onValueChange={toggleHaptics}
+                trackColor={trackColor}
+                thumbColor={colors.white}
+              />
             </RNView>
           </RNView>
         </Animated.View>
@@ -250,10 +274,26 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
-    stackedRow: {
+    stackedRowUnderline: {
       paddingHorizontal: UI_SIZE_18,
       paddingVertical: Space.base,
       gap: Space.md,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.borderSecondary,
+    },
+    toggleRow: {
+      ...commonStyles.rowBetween,
+      paddingHorizontal: UI_SIZE_18,
+      paddingVertical: Space.base,
+      gap: Space.md,
+    },
+    toggleInfo: {
+      ...commonStyles.flex1,
+      gap: UI_SIZE_4,
+    },
+    rowDesc: {
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
     },
     segCtrl: {
       ...commonStyles.row,

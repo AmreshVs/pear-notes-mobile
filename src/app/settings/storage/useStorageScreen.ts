@@ -19,6 +19,7 @@ import {
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 
 import { clearStorageState } from '@/lib/clearStorageState'
+import { hapticLight, hapticWarning } from '@/lib/haptics'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
 
 function useStorageScreen() {
@@ -47,17 +48,20 @@ function useStorageScreen() {
 
   const handleDeleteMedia = useCallback(
     (noteKey: string, mediaPath: string) => {
+      hapticWarning()
       dispatch(deleteNoteMedia({ noteKey, mediaPath } as any))
     },
     [dispatch],
   )
 
   const handleReclaim = useCallback(() => {
+    hapticLight()
     dispatch(reclaimStorage())
   }, [dispatch])
 
   const handleRetryDownload = useCallback(
     (url: string) => {
+      hapticLight()
       dispatch(retryDownload({ url } as any))
     },
     [dispatch],
@@ -65,16 +69,19 @@ function useStorageScreen() {
 
   const handlePauseDownload = useCallback(
     (url: string) => {
+      hapticLight()
       dispatch(pauseDownload({ url } as any))
     },
     [dispatch],
   )
 
   const handleResetPress = useCallback(() => {
+    hapticLight()
     setResetSheetVisible(true)
   }, [])
 
   const handleResetConfirm = useCallback(() => {
+    hapticWarning()
     setResetSheetVisible(false)
     clearStorageState.setClearing(true)
     deleteDbEncryptionKey().catch(console.error)

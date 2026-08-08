@@ -35,6 +35,7 @@ import {
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export default function FoldersScreen() {
@@ -57,6 +58,7 @@ export default function FoldersScreen() {
   const archiveFolders = useMemo(() => folders.filter((f: any) => f.isTrash), [folders])
 
   const handleCreateNote = useCallback(() => {
+    hapticLight()
     creatingNoteRef.current = true
     dispatch(createNote({ title: '', note: '' } as any))
   }, [dispatch])
@@ -91,6 +93,7 @@ export default function FoldersScreen() {
   )
 
   const handleCreateFolder = useCallback(() => {
+    hapticLight()
     dispatch(createFolder({ name: t('folders.untitled') } as any))
   }, [dispatch, t])
 
@@ -102,6 +105,7 @@ export default function FoldersScreen() {
         (newName) => {
           const trimmed = newName?.trim()
           if (trimmed && trimmed !== currentName) {
+            hapticSuccess()
             dispatch(updateFolder({ id: folderId, name: trimmed } as any))
           }
         },
@@ -119,7 +123,10 @@ export default function FoldersScreen() {
         {
           text: t('folders.buttons.delete'),
           style: 'destructive',
-          onPress: () => dispatch(deleteFolder(folderId as any)),
+          onPress: () => {
+            hapticWarning()
+            dispatch(deleteFolder(folderId as any))
+          },
         },
       ])
     },

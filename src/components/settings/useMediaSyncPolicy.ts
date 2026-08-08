@@ -7,6 +7,7 @@ import {
 } from '@pear-notes/core/constant.js'
 import { getMediaSyncFlag, setMediaSyncFlag } from '@pear-notes/core/utils.js'
 
+import { hapticSelection } from '@/lib/haptics'
 import { getHoldMediaOnCellular } from '@/lib/mediaSyncPolicy'
 import { ConnectionKind, getConnectionKind, subscribeConnectionKind } from '@/lib/networkState'
 
@@ -39,6 +40,7 @@ export function useMediaSyncPolicy() {
   }, [])
 
   const toggleMediaPaused = useCallback(() => {
+    hapticSelection()
     setMediaPaused((current) => {
       const next = !current
       setMediaSyncFlag(MEDIA_SYNC_PAUSED_KEY, next)
@@ -47,6 +49,7 @@ export function useMediaSyncPolicy() {
   }, [])
 
   const toggleHoldOnCellular = useCallback(() => {
+    hapticSelection()
     setHoldOnCellular((current) => {
       const next = !current
       setMediaSyncFlag(HOLD_MEDIA_ON_CELLULAR_KEY, next)

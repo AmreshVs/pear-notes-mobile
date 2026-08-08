@@ -6,6 +6,7 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 import { loadSettings } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { isValidBackupPassword } from '@pear-notes/core/utils.js'
 
+import { hapticError, hapticSuccess } from '@/lib/haptics'
 import { resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
@@ -36,15 +37,18 @@ export default function useNoteLockPasswordScreen(mode?: string) {
     if (isCreate) {
       const done = await backendApi.setNoteLockPassword({ password })
       if (done) dispatch(loadSettings())
+      hapticSuccess()
       router.back()
       return null
     }
     const { valid, retryAfter } = await backendApi.verifyNoteLockPassword({ password })
     if (valid) {
+      hapticSuccess()
       resolveNoteLockPassword(true)
       router.back()
       return null
     }
+    hapticError()
     return { retryAfter }
   }, [canSubmit, isCreate, password, dispatch])
 

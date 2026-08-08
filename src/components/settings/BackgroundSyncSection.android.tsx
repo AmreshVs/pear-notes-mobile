@@ -25,6 +25,7 @@ import {
 } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { hapticSelection } from '@/lib/haptics'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -58,6 +59,7 @@ export function BackgroundSyncSection() {
   }, [])
 
   const commitMode = useCallback((next: BackgroundSyncMode) => {
+    hapticSelection()
     setMode(next)
     setBackgroundSyncMode(next)
     applyBackgroundSyncMode(next)

@@ -21,6 +21,7 @@ import {
   setBackgroundSyncMode,
 } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
+import { hapticSelection } from '@/lib/haptics'
 
 const MODES: BackgroundSyncMode[] = ['off', 'periodic']
 
@@ -47,6 +48,7 @@ export function BackgroundSyncSection() {
   }, [])
 
   const handleSelect = useCallback((next: BackgroundSyncMode) => {
+    hapticSelection()
     setMode(next)
     setBackgroundSyncMode(next)
     applyBackgroundSyncMode(next)

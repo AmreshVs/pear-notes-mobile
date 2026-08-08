@@ -11,6 +11,7 @@ import { isValidBackupPassword } from '@pear-notes/core/utils.js'
 
 import { getBackupExportPath } from '@/lib/backupFileManager'
 import { takePendingImportPath } from '@/lib/backupPasswordFlow'
+import { hapticLight } from '@/lib/haptics'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
 export default function useBackupPasswordScreen(mode?: string) {
@@ -32,6 +33,7 @@ export default function useBackupPasswordScreen(mode?: string) {
   const submit = useCallback(
     (restoringMessage: string) => {
       if (!canSubmit) return
+      hapticLight()
       if (isCreate) {
         const filePath = getBackupExportPath()
         dispatch(startExportBackup({ password, filePath } as any))

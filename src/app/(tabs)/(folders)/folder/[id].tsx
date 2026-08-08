@@ -43,6 +43,7 @@ import {
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { buildNoteSections } from '@/utils/noteSections'
@@ -70,10 +71,12 @@ export default function FolderNotesScreen() {
   const lastSelectedNoteRef = useRef<string | null>(selectedNote || null)
 
   const handleLinkDevice = useCallback(() => {
+    hapticLight()
     dispatch(setShowPairingInput(true))
   }, [dispatch])
 
   const handleRestoreBackup = useCallback(() => {
+    hapticLight()
     router.push('/settings/backup')
   }, [])
 
@@ -101,6 +104,7 @@ export default function FolderNotesScreen() {
   )
 
   const handleCreateNote = useCallback(() => {
+    hapticLight()
     creatingNoteRef.current = true
     dispatch(setSelectedFolder(id as any))
     dispatch(createNote({ title: '', note: '' } as any))
@@ -118,11 +122,15 @@ export default function FolderNotesScreen() {
             {
               text: t('folders.buttons.delete'),
               style: 'destructive',
-              onPress: () => dispatch(deleteNote(noteId as any)),
+              onPress: () => {
+                hapticWarning()
+                dispatch(deleteNote(noteId as any))
+              },
             },
           ],
         )
       } else {
+        hapticWarning()
         dispatch(deleteNote(noteId as any))
       }
     },
@@ -131,6 +139,7 @@ export default function FolderNotesScreen() {
 
   const handleMoveNote = useCallback(
     (noteId: string, folderId: string) => {
+      hapticSuccess()
       dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
     },
     [dispatch],
@@ -138,6 +147,7 @@ export default function FolderNotesScreen() {
 
   const handleTogglePinNote = useCallback(
     (noteId: string, currentlyPinned: boolean) => {
+      hapticMedium()
       dispatch(updateNote({ key: noteId, pinned: !currentlyPinned } as any))
     },
     [dispatch],
@@ -149,6 +159,7 @@ export default function FolderNotesScreen() {
         .filter(Boolean)
         .join('\n\n')
       await Clipboard.setStringAsync(plain)
+      hapticSuccess()
     },
     [t],
   )
@@ -191,6 +202,7 @@ export default function FolderNotesScreen() {
       (newName) => {
         const trimmed = newName?.trim()
         if (trimmed && trimmed !== folder.name) {
+          hapticSuccess()
           dispatch(updateFolder({ id, name: trimmed } as any))
         }
       },
@@ -206,6 +218,7 @@ export default function FolderNotesScreen() {
         text: t('folders.buttons.delete'),
         style: 'destructive',
         onPress: () => {
+          hapticWarning()
           dispatch(deleteFolder(id as any))
           router.back()
         },

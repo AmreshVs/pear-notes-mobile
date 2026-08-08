@@ -85,7 +85,7 @@ export default function AndroidSyncScreen() {
 
   const {
     tab,
-    setTab,
+    handleSelectTab,
     copied,
     pasteCode,
     setPasteCode,
@@ -197,7 +197,7 @@ export default function AndroidSyncScreen() {
                 return (
                   <Pressable
                     key={tValue}
-                    onPress={() => setTab(tValue)}
+                    onPress={() => handleSelectTab(tValue)}
                     style={[styles.segPill, active && styles.segPillActive]}
                   >
                     <Text style={[styles.segLabel, active && styles.segLabelActive]}>

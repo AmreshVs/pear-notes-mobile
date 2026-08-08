@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Switch, View } from 'react-native'
 import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
@@ -24,6 +24,7 @@ import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection.android'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
+import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -45,6 +46,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { hapticSelection } from '@/lib/haptics'
 import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
 
 export default function AndroidGeneralSettingsScreen() {
@@ -61,11 +63,17 @@ export default function AndroidGeneralSettingsScreen() {
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
   const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
+  const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
   const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
 
   const sliderMaxTrackColor = useMemo(() => hexWithAlpha(c.primary, 0.2), [c.primary])
+
+  const hapticsTrackColor = useMemo(
+    () => ({ false: hexWithAlpha(c.onSurface, 0.12), true: c.primary }),
+    [c.onSurface, c.primary],
+  )
 
   const supportsDynamicColor = useMemo(() => {
     return Platform.OS === 'android' && Number(Platform.Version) >= 31
@@ -96,6 +104,7 @@ export default function AndroidGeneralSettingsScreen() {
 
   const handleSortSelect = useCallback(
     (value: string) => {
+      hapticSelection()
       dispatch(updateSetting({ key: 'sortBy', value }))
       setSortBySheetVisible(false)
     },
@@ -133,6 +142,7 @@ export default function AndroidGeneralSettingsScreen() {
         label: f.label,
         selected: f.value === fontFamily,
         onPress: () => {
+          hapticSelection()
           dispatch(updateSetting({ key: 'fontFamily', value: f.value }))
           setFontSheetVisible(false)
         },
@@ -152,6 +162,7 @@ export default function AndroidGeneralSettingsScreen() {
 
   const handleSetTheme = useCallback(
     (themeValue: 'system' | 'light' | 'dark') => {
+      hapticSelection()
       dispatch(setTheme(themeValue))
     },
     [dispatch],
@@ -177,6 +188,7 @@ export default function AndroidGeneralSettingsScreen() {
 
   const handleSetColorTheme = useCallback(
     (colorTheme: AndroidColorTheme) => {
+      hapticSelection()
       dispatch(setColorTheme(colorTheme))
     },
     [dispatch],
@@ -253,6 +265,25 @@ export default function AndroidGeneralSettingsScreen() {
             <View style={styles.segContainer}>{colorThemeOptions.map(renderColorThemeOption)}</View>
           </Animated.View>
         )}
+
+        <Animated.View
+          entering={FadeInDown.duration(240).delay(70)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+          style={styles.groupCard}
+        >
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleInfo}>
+              <Text style={styles.rowTitle}>{t('settings.general.hapticFeedback')}</Text>
+              <Text style={styles.rowSubtitle}>{t('settings.general.hapticFeedbackDesc')}</Text>
+            </View>
+            <Switch
+              value={hapticsEnabled}
+              onValueChange={toggleHaptics}
+              trackColor={hapticsTrackColor}
+              thumbColor={c.onPrimary}
+            />
+          </View>
+        </Animated.View>
 
         <Animated.View entering={FadeIn.duration(220).delay(80)}>
           <Text style={md3Styles.settingsSectionCapSpaced}>{t('settings.general.notesList')}</Text>
@@ -420,6 +451,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     groupContentRow: {
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_18,
+    },
+    toggleRow: {
+      ...commonStyles.rowBetween,
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_18,
+      gap: UI_SIZE_16,
+    },
+    toggleInfo: {
+      ...commonStyles.flex1,
     },
     groupRowPressed: {
       backgroundColor: hexWithAlpha(c.onSurface, 0.08),

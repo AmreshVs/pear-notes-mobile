@@ -281,6 +281,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedImageSrc) return
     setImageSheetVisible(false)
     const src = selectedImageSrc
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
     await handleDeleteAttachment(src)
     editorRef.current?.deleteImage(src)
     setSelectedImageSrc(null)
@@ -334,6 +335,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedAttachmentSrc) return
     setAttachmentSheetVisible2(false)
     const url = selectedAttachmentSrc
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
     await handleDeleteAttachment(url)
     editorRef.current?.deleteAttachment(url)
     setSelectedAttachmentSrc(null)

@@ -367,7 +367,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         ? `image_${Date.now()}.jpg`
         : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
       await saveImageToPhotos(src, fileName)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
     } catch {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
       Alert.alert(t('common.error'), t('noteEditor.upload.failedVideo'))
     }
   }, [selectedImageSrc, setIsImageActionSheetOpen, t])
@@ -376,6 +378,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedImageSrc) return
     setIsImageActionSheetOpen(false)
     const src = selectedImageSrc
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
     await handleDeleteAttachment(src)
     editorRef.current?.deleteImage(src)
   }, [selectedImageSrc, setIsImageActionSheetOpen, handleDeleteAttachment])
@@ -429,6 +432,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedAttachmentSrc) return
     setIsAttachmentActionSheetOpen(false)
     const url = selectedAttachmentSrc
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
     await handleDeleteAttachment(url)
     editorRef.current?.deleteAttachment(url)
   }, [selectedAttachmentSrc, setIsAttachmentActionSheetOpen, handleDeleteAttachment])

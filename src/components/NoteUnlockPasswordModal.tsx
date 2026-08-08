@@ -30,6 +30,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { hapticError } from '@/lib/haptics'
 import {
   getNoteUnlockReason,
   resolveNoteLockPassword,
@@ -82,6 +83,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
     if (valid) {
       resolveNoteLockPassword(true)
     } else {
+      hapticError()
       setError(
         retryAfter > 0
           ? t('noteLockPassword.tooManyAttempts', { seconds: retryAfter })

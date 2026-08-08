@@ -24,6 +24,13 @@ import {
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, isValidInvite } from '@pear-notes/core/utils.js'
 
+import {
+  hapticLight,
+  hapticMedium,
+  hapticSelection,
+  hapticSuccess,
+  hapticWarning,
+} from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 
 function useSyncScreen() {
@@ -74,9 +81,15 @@ function useSyncScreen() {
     }
   }, [dispatch])
 
+  const handleSelectTab = useCallback((next: 'link' | 'devices') => {
+    hapticSelection()
+    setTab(next)
+  }, [])
+
   const handleCopy = useCallback(async () => {
     if (!inviteCode) return
     await Clipboard.setStringAsync(inviteCode)
+    hapticSuccess()
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [inviteCode])
@@ -133,6 +146,7 @@ function useSyncScreen() {
   const handleBarcodeScanned = useCallback(
     ({ data }: { data: string }) => {
       if (!data || hasScanned) return
+      hapticMedium()
       setHasScanned(true)
       setPasteCode(data.trim())
       setScannerVisible(false)
@@ -142,6 +156,7 @@ function useSyncScreen() {
   )
 
   const handleGenerateInvite = useCallback(() => {
+    hapticLight()
     dispatch(createInvite())
   }, [dispatch])
 
@@ -162,6 +177,7 @@ function useSyncScreen() {
   )
 
   const handleDeleteDevice = useCallback((deviceKey: string) => {
+    hapticLight()
     setDeviceToDeleteKey(deviceKey)
     setDeleteSheetVisible(true)
   }, [])
@@ -169,13 +185,14 @@ function useSyncScreen() {
   const handleConfirmDelete = useCallback(() => {
     setDeleteSheetVisible(false)
     if (deviceToDeleteKey) {
+      hapticWarning()
       dispatch(deleteSyncedDevice({ key: deviceToDeleteKey }))
     }
   }, [dispatch, deviceToDeleteKey])
 
   return {
     tab,
-    setTab,
+    handleSelectTab,
     copied,
     pasteCode,
     setPasteCode,

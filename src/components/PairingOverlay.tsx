@@ -52,6 +52,7 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
+import { hapticError, hapticMedium, hapticSuccess } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
 
@@ -106,6 +107,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
       router.dismissAll()
     }
   }, [])
+
+  useEffect(() => {
+    if (step === 'done') hapticSuccess()
+    else if (step === 'error' || step === 'rejected') hapticError()
+    else if (step === 'confirmation') hapticMedium()
+  }, [step])
 
   const handleClose = useCallback(() => {
     if (deviceRemoved) {
@@ -164,6 +171,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const handleBarcodeScanned = useCallback(
     ({ data }: { data: string }) => {
       if (!data || hasScanned) return
+      hapticMedium()
       setHasScanned(true)
       if (isValidInvite(data)) {
         setPendingInvite(extractInvite(data))

@@ -64,6 +64,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 type Folder = {
@@ -151,6 +152,7 @@ export default function AndroidFoldersScreen() {
   )
 
   const handleCreateFolder = useCallback(() => {
+    hapticLight()
     dispatch(createFolder({ name: t('folders.untitled') } as any))
   }, [dispatch, t])
 
@@ -163,6 +165,7 @@ export default function AndroidFoldersScreen() {
     if (!renameDialog) return
     const trimmed = renameText.trim()
     if (trimmed && trimmed !== renameDialog.name) {
+      hapticSuccess()
       dispatch(updateFolder({ id: renameDialog.id, name: trimmed } as any))
     }
     setRenameDialog(null)
@@ -172,6 +175,7 @@ export default function AndroidFoldersScreen() {
     (folderId: string) => {
       const folder = folders.find((f) => f.id === folderId || f.key === folderId)
       if (!folder || folder.isSystem) return
+      hapticMedium()
       setFolderSheet(folderId)
     },
     [folders],
@@ -194,6 +198,7 @@ export default function AndroidFoldersScreen() {
 
   const handleConfirmDelete = useCallback(() => {
     if (!deleteConfirmFolder) return
+    hapticWarning()
     dispatch(deleteFolder(deleteConfirmFolder as any))
     setDeleteConfirmFolder(null)
   }, [deleteConfirmFolder, dispatch])

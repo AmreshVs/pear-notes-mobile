@@ -66,6 +66,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { buildNoteSections } from '@/utils/noteSections'
 import { getPreview } from '@/utils/noteUtils'
@@ -172,6 +173,7 @@ export default function AndroidFolderNotesScreen() {
   )
 
   const handleCreateNote = useCallback(() => {
+    hapticLight()
     creatingNoteRef.current = true
     dispatch(setSelectedFolder(id as any))
     dispatch(createNote({ title: '', note: '' } as any))
@@ -179,6 +181,7 @@ export default function AndroidFolderNotesScreen() {
 
   const handleMoveNote = useCallback(
     (noteId: string, folderId: string) => {
+      hapticSuccess()
       dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
     },
     [dispatch],
@@ -195,6 +198,7 @@ export default function AndroidFolderNotesScreen() {
         .filter(Boolean)
         .join('\n\n')
       await Clipboard.setStringAsync(plain)
+      hapticSuccess()
     },
     [notes, t],
   )
@@ -203,6 +207,7 @@ export default function AndroidFolderNotesScreen() {
     (noteId: string) => {
       const note = notes.find((n: any) => n.key === noteId)
       if (!note) return
+      hapticMedium()
       setActiveNoteId(noteId)
       setNoteSheetVisible(true)
     },
@@ -216,6 +221,7 @@ export default function AndroidFolderNotesScreen() {
     if (isTrashFolder) {
       setTimeout(() => setDeleteConfirmNote(targetId), 300)
     } else {
+      hapticWarning()
       dispatch(deleteNote(targetId as any))
     }
   }, [activeNoteId, isTrashFolder, dispatch])
@@ -258,6 +264,7 @@ export default function AndroidFolderNotesScreen() {
     if (!activeNoteId) return
     const targetId = activeNoteId
     setNoteSheetVisible(false)
+    hapticMedium()
     dispatch(updateNote({ key: targetId, pinned: !activeNotePinned } as any))
   }, [activeNoteId, activeNotePinned, dispatch])
 
@@ -285,11 +292,13 @@ export default function AndroidFolderNotesScreen() {
 
   const handleConfirmDeleteNote = useCallback(() => {
     if (!deleteConfirmNote) return
+    hapticWarning()
     dispatch(deleteNote(deleteConfirmNote as any))
     setDeleteConfirmNote(null)
   }, [deleteConfirmNote, dispatch])
 
   const handleConfirmDeleteFolder = useCallback(() => {
+    hapticWarning()
     dispatch(deleteFolder(id as any))
     setShowFolderDeleteConfirm(false)
     router.back()
@@ -299,16 +308,19 @@ export default function AndroidFolderNotesScreen() {
     if (!renameDialog) return
     const trimmed = renameText.trim()
     if (trimmed && trimmed !== renameDialog.name) {
+      hapticSuccess()
       dispatch(updateFolder({ id: renameDialog.id, name: trimmed } as any))
     }
     setRenameDialog(null)
   }, [dispatch, renameDialog, renameText])
 
   const handleLinkDevice = useCallback(() => {
+    hapticLight()
     dispatch(setShowPairingInput(true))
   }, [dispatch])
 
   const handleRestoreBackup = useCallback(() => {
+    hapticLight()
     router.push('/settings/backup')
   }, [])
 

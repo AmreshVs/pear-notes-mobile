@@ -47,7 +47,7 @@ export default function SyncScreen() {
 
   const {
     tab,
-    setTab,
+    handleSelectTab,
     copied,
     pasteCode,
     setPasteCode,
@@ -73,7 +73,7 @@ export default function SyncScreen() {
   const renderTabPill = useCallback(
     (tabKey: 'link' | 'devices') => {
       const active = tab === tabKey
-      const handlePress = () => setTab(tabKey)
+      const handlePress = () => handleSelectTab(tabKey)
       return (
         <Pressable
           key={tabKey}
@@ -86,7 +86,7 @@ export default function SyncScreen() {
         </Pressable>
       )
     },
-    [tab, t, styles, setTab],
+    [tab, t, styles, handleSelectTab],
   )
 
   const renderLocalDevices = useCallback(() => {

@@ -11,6 +11,7 @@ import { getLockPrivacyPreference, setLockPrivacyPreference } from '@pear-notes/
 
 import useLockStatus from '@/app/settings/privacy/useLockStatus'
 import { authenticate } from '@/lib/deviceAuth'
+import { hapticSelection } from '@/lib/haptics'
 import { clearUnlockedNotes } from '@/lib/noteLock'
 import { requestNoteLockPasswordScreen } from '@/lib/noteLockPasswordFlow'
 
@@ -62,6 +63,7 @@ export function usePrivacyLock() {
   )
 
   const toggleScreenshotProtection = useCallback(() => {
+    hapticSelection()
     setScreenshotProtection((prev) => {
       const next = !prev
       setLockPrivacyPreference(LOCK_SCREENSHOT_PROTECTION_KEY, next)
@@ -71,6 +73,7 @@ export function usePrivacyLock() {
   }, [])
 
   const toggleSwitcherHide = useCallback(() => {
+    hapticSelection()
     setSwitcherHide((prev) => {
       const next = !prev
       setLockPrivacyPreference(LOCK_SWITCHER_HIDE_KEY, next)

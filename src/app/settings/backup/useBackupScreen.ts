@@ -40,6 +40,7 @@ import {
 } from '@/lib/backupFileManager'
 import { setPendingImportPath } from '@/lib/backupPasswordFlow'
 import { loadLastBackupDate, saveLastBackupDate } from '@/lib/backupUtils'
+import { hapticError, hapticSuccess } from '@/lib/haptics'
 import { authenticateWithLockMethod } from '@/lib/noteLockActions'
 import { useToast } from '@/providers/ToastProvider'
 
@@ -98,6 +99,14 @@ function useBackupScreen() {
   useEffect(() => {
     if (isError || isImportDone) setHideModal(false)
   }, [isError, isImportDone])
+
+  useEffect(() => {
+    if (isError) hapticError()
+  }, [isError])
+
+  useEffect(() => {
+    if (isExportDone || isImportDone) hapticSuccess()
+  }, [isExportDone, isImportDone])
 
   useEffect(() => {
     if (exportStatus.step === 'error') clearBackupExportCache(getBackupExportPath())

@@ -1,6 +1,7 @@
 import { updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { authenticate, isDeviceAuthSupported } from '@/lib/deviceAuth'
+import { hapticSuccess } from '@/lib/haptics'
 import { showLockUnavailable } from '@/lib/lockInfoModal'
 import { relockNote } from '@/lib/noteLock'
 import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
@@ -43,6 +44,7 @@ export async function toggleNoteLock({
     if (!ok) return
     dispatch(updateNote({ key, locked: false } as any))
     relockNote(key)
+    hapticSuccess()
     return
   }
   if (!usePassword) {
@@ -54,4 +56,5 @@ export async function toggleNoteLock({
   }
   dispatch(updateNote({ key, locked: true } as any))
   relockNote(key)
+  hapticSuccess()
 }
