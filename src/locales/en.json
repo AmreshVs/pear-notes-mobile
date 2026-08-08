@@ -239,9 +239,10 @@
       "trashEmptyTitle": "No Deleted Notes",
       "trashEmptySubtitle": "Notes you delete will appear here for recovery.",
       "onboardingTitle": "Start your first note",
-      "onboardingSubtitle": "Write something new or connect another device to sync your existing notes.",
+      "onboardingSubtitle": "Write something new, connect another device to sync, or restore from a backup file.",
       "newNoteBtn": "New note",
       "connectBtn": "Connect device",
+      "restoreBtn": "Restore from backup",
       "noNotesHint": "Tap + to create a note in this folder"
     },
     "sections": {
@@ -342,6 +343,7 @@
   },
   "noteEditor": {
     "placeholder": "Start writing...",
+    "loadFailed": "Editor failed to load",
     "upload": {
       "preparing": "Preparing...",
       "reading": "Reading...",
@@ -536,11 +538,17 @@
     "runInBackground": "Run in Background",
     "bannerReadyTitle": "Backup Ready",
     "bannerReadyAction": "Press here to save",
+    "bannerRestoredTitle": "Restore Complete",
+    "bannerRestoredAction": "Press here to finish",
     "notificationPermissionTitle": "Notification Permission",
     "notificationPermissionDesc": "Pear Notes needs notification permission to show backup progress while it runs in the background.",
     "notificationPermissionAskMeLater": "Ask Me Later",
     "notificationPermissionCancel": "Cancel",
     "notificationPermissionOK": "OK",
+    "notificationBackupComplete": "Backup complete",
+    "notificationBackupCompleteDesc": "Your backup was created successfully. Open the app to save it.",
+    "notificationRestoreComplete": "Restore complete",
+    "notificationRestoreCompleteDesc": "Your notes were restored successfully.",
     "lastBackup": "Last Backup",
     "noBackup": "Never",
     "notesSize": "Notes Size",

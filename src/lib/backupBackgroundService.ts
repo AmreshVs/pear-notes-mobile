@@ -12,6 +12,11 @@ export type NotificationPermissionStrings = {
 }
 
 let notificationPermissionAsked = false
+let serviceActive = false
+
+export function isBackupServiceActive(): boolean {
+  return serviceActive
+}
 
 async function ensureNotificationPermission(strings: NotificationPermissionStrings): Promise<void> {
   try {
@@ -35,6 +40,7 @@ export async function startBackupForegroundService(
   await ensureNotificationPermission(strings)
   try {
     ExpoBackgroundService.startService(title, message, MAX_PROGRESS)
+    serviceActive = true
     return true
   } catch (e) {
     console.warn('[backgroundService] start failed', e)
@@ -47,6 +53,7 @@ export function updateBackupForegroundService(
   progress: number,
   message: string,
 ): void {
+  if (!serviceActive) return
   try {
     ExpoBackgroundService.updateService(title, progress, message, MAX_PROGRESS)
   } catch (e) {
@@ -54,9 +61,14 @@ export function updateBackupForegroundService(
   }
 }
 
-export function stopBackupForegroundService(): void {
+export function stopBackupForegroundService(
+  completionTitle?: string,
+  completionMessage?: string,
+): void {
+  if (!serviceActive) return
+  serviceActive = false
   try {
-    ExpoBackgroundService.stopService()
+    ExpoBackgroundService.stopService(completionTitle, completionMessage)
   } catch (e) {
     console.warn('[backgroundService] stop failed', e)
   }

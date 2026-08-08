@@ -42,12 +42,16 @@ class ExpoBackgroundServiceModule : Module() {
       }
     }
 
-    Function("stop") {
+    Function("stop") { completionTitle: String?, completionMessage: String? ->
       appContext.reactContext?.let { context ->
         val intent = Intent(context, BackupForegroundService::class.java).apply {
           action = BackupForegroundService.ACTION_STOP
+          if (completionTitle != null) {
+            putExtra(BackupForegroundService.EXTRA_TITLE, completionTitle)
+            putExtra(BackupForegroundService.EXTRA_MESSAGE, completionMessage ?: "")
+          }
         }
-        
+
         context.startService(intent)
       }
     }

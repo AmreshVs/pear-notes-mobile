@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Linking, Modal, Pressable, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { CameraView, useCameraPermissions } from 'expo-camera'
@@ -59,6 +59,14 @@ export function AndroidScannerModal({
     [hasScanned, onBarcodeScanned],
   )
 
+  const handleRequestPermission = useCallback(async () => {
+    if (cameraPermission && !cameraPermission.granted && !cameraPermission.canAskAgain) {
+      await Linking.openSettings()
+      return
+    }
+    await requestCameraPermission()
+  }, [cameraPermission, requestCameraPermission])
+
   return (
     <Modal
       visible={visible}
@@ -96,7 +104,7 @@ export function AndroidScannerModal({
           <View style={styles.permissionCard}>
             <Text style={styles.scannerTitle}>{t('sync.permissions.cameraTitle')}</Text>
             <Text style={styles.scannerDesc}>{t('sync.permissions.cameraDescription')}</Text>
-            <Pressable onPress={requestCameraPermission} style={styles.permissionBtn}>
+            <Pressable onPress={handleRequestPermission} style={styles.permissionBtn}>
               <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
             </Pressable>
             <Pressable onPress={onClose} style={styles.permissionCancelBtn}>

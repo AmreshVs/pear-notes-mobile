@@ -17,6 +17,6 @@ export function updateService(
   ExpoBackgroundService.update(title, progress, message, maxProgress)
 }
 
-export function stopService(): void {
-  ExpoBackgroundService.stop()
+export function stopService(completionTitle?: string, completionMessage?: string): void {
+  ExpoBackgroundService.stop(completionTitle ?? null, completionMessage ?? null)
 }

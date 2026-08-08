@@ -10,6 +10,7 @@ import {
   Platform,
   StyleSheet,
   Text,
+  useColorScheme,
   View,
 } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
@@ -64,6 +65,7 @@ SplashScreen.preventAutoHideAsync()
 
 const documentDir = new Directory(Paths.document)
 const storage = documentDir.uri.replace(/^file:\/+/, '/')
+const MAX_WORKLET_RESTART_ATTEMPTS = 5
 
 export default function RootLayout() {
   const { t } = useTranslation()
@@ -80,7 +82,7 @@ export default function RootLayout() {
     })
   }, [])
 
-  const colorScheme = Appearance.getColorScheme()
+  const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const currentTheme = isDark ? Colors.dark : Colors.light
   const styles = getStyles(isDark)
@@ -111,6 +113,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
 
   const [fatalError, setFatalError] = useState<string | null>(null)
   const savedEncryptionKeyRef = useRef<string | null>(null)
+  const workletRestartAttemptsRef = useRef(0)
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
@@ -125,7 +128,14 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     try {
       setFatalError(null)
       await startWorklet(storage, {
-        onWorkletDied: () => initWorklet(),
+        onWorkletDied: () => {
+          workletRestartAttemptsRef.current += 1
+          if (workletRestartAttemptsRef.current > MAX_WORKLET_RESTART_ATTEMPTS) {
+            setFatalError(t('error.backendFailed'))
+            return
+          }
+          initWorklet()
+        },
         notificationTitle: t('sync.backgroundSync.notificationTitle'),
         notificationMessage: t('sync.backgroundSync.notificationMessage'),
       })
@@ -139,6 +149,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         await setDbEncryptionKey(key)
       }
       await backendApi.ready({ storage, encryption: key })
+      workletRestartAttemptsRef.current = 0
       dispatch(appReady())
       dispatch(initApp())
     } catch (e) {

@@ -27,6 +27,7 @@ type EmptyStateProps = {
   isTrash?: boolean
   onLinkDevice: () => void
   onCreateNote: () => void
+  onRestoreBackup: () => void
   height: number
 }
 
@@ -36,6 +37,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
   isTrash,
   onLinkDevice,
   onCreateNote,
+  onRestoreBackup,
   height,
 }: EmptyStateProps) {
   const { t } = useTranslation()
@@ -109,6 +111,19 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
               </Text>
             </Pressable>
           </View>
+          <Pressable
+            onPress={onRestoreBackup}
+            style={({ pressed }) => [styles.tertiaryBtn, pressed && styles.btnPressed]}
+          >
+            <MaterialCommunityIcons
+              name="restore"
+              size={UI_ICON_SIZE_20}
+              color={c.onSurfaceVariant}
+            />
+            <Text style={styles.tertiaryBtnText}>
+              {t('folderView.empty.restoreBtn')}
+            </Text>
+          </Pressable>
         </>
       ) : isTrash ? (
         <>
@@ -194,6 +209,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       borderWidth: 1,
       borderColor: c.outline,
     },
+    tertiaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_8,
+      marginTop: UI_SIZE_16,
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_12,
+      borderRadius: UI_SIZE_20,
+    },
     btnPressed: {
       opacity: 0.8,
     },
@@ -208,6 +232,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.primary,
+    },
+    tertiaryBtnText: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.onSurfaceVariant,
     },
   })
   return styles

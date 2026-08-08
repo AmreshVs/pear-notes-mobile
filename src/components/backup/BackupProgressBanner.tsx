@@ -12,6 +12,7 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_20,
+  UI_SIZE_50,
 } from '@/constants/commonStyles'
 
 import { useBackupProgressBanner } from './useBackupProgressBanner'
@@ -24,10 +25,13 @@ export function BackupProgressBanner() {
   const {
     t,
     isExporting,
-    isExportComplete,
+    isComplete,
+    isCollapsedCircle,
+    showCollapsedProgress,
     progressStatus,
     message,
-    isCollapsed,
+    completeTitle,
+    completeAction,
     isKeepAwake,
     isVisible,
     isIOS,
@@ -37,7 +41,7 @@ export function BackupProgressBanner() {
   } = useBackupProgressBanner()
 
   const { containerStyle, textContainerStyle, actionsContainerStyle } =
-    useBackupProgressBannerAnimation(isVisible, isCollapsed)
+    useBackupProgressBannerAnimation(isVisible, isCollapsedCircle)
 
   return (
     <Animated.View
@@ -50,25 +54,27 @@ export function BackupProgressBanner() {
         onPress={handlePress}
         style={({ pressed }) => [
           styles.banner,
-          isCollapsed && !isExportComplete && styles.bannerCollapsed,
+          isCollapsedCircle && styles.bannerCollapsed,
           pressed && commonStyles.pressed,
         ]}
       >
-        {isExportComplete ? (
+        {isComplete ? (
           <Check size={UI_ICON_SIZE_20} color={theme.colors.primary} />
-        ) : isCollapsed && progressStatus.progress > 0 ? (
-          <Text style={styles.collapsedPct}>{progressStatus.progress}%</Text>
+        ) : showCollapsedProgress ? (
+          <Text style={styles.collapsedPct} numberOfLines={1}>
+            {progressStatus.progress}%
+          </Text>
         ) : (
           <ActivityIndicator size="small" color={theme.colors.primary} />
         )}
 
-        {isExportComplete ? (
+        {isCollapsedCircle ? null : isComplete ? (
           <Animated.View style={styles.textContainer}>
             <Text style={styles.title} numberOfLines={1}>
-              {t('backup.bannerReadyTitle')}
+              {completeTitle}
             </Text>
             <Text style={styles.subtitle} numberOfLines={1}>
-              {t('backup.bannerReadyAction')}
+              {completeAction}
             </Text>
           </Animated.View>
         ) : (
@@ -135,10 +141,10 @@ const useStyles = createThemedStylesheetWithHooks(
       },
       bannerCollapsed: {
         justifyContent: 'center',
-        paddingHorizontal: Space.sm,
-        width: 50,
-        height: 50,
-        borderRadius: 25,
+        paddingHorizontal: Space.xs,
+        width: UI_SIZE_50,
+        height: UI_SIZE_50,
+        borderRadius: Radii.pill,
       },
       collapsedPct: {
         fontSize: FontSize.caption,

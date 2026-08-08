@@ -65,7 +65,7 @@ function useStorageScreen() {
 
   const handlePauseDownload = useCallback(
     (url: string) => {
-      dispatch(pauseDownload({ url }))
+      dispatch(pauseDownload({ url } as any))
     },
     [dispatch],
   )

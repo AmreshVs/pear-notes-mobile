@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake'
 import { router, usePathname } from 'expo-router'
 
 import { getExportStatus, getImportStatus } from '@pear-notes/core/store/slices/backupSlice.js'
 
+import { finishRestore } from '@/lib/backupActions'
+import { isBackupServiceActive, stopBackupForegroundService } from '@/lib/backupBackgroundService'
 import { clearImportCacheFile } from '@/lib/backupFileManager'
 
 const isIOS = Platform.OS === 'ios'
 
 export function useBackupProgressBanner() {
   const { t } = useTranslation()
+  const dispatch = useDispatch()
   const pathname = usePathname()
 
   const exportStatus = useSelector(getExportStatus) as any
@@ -23,15 +26,23 @@ export function useBackupProgressBanner() {
   const isImporting =
     importStatus.step !== 'idle' && importStatus.step !== 'done' && importStatus.step !== 'error'
   const isExportComplete = exportStatus.step === 'done'
+  const isImportComplete = importStatus.step === 'done'
+  const isComplete = isExportComplete || isImportComplete
 
   const isActive = isExporting || isImporting
   const isBackupScreen = pathname === '/settings/backup'
-  const isVisible = (isActive || isExportComplete) && !isBackupScreen
+  const isVisible = (isActive || isComplete) && !isBackupScreen
 
   const progressStatus = isExporting ? exportStatus : importStatus
   const message =
     progressStatus.message ||
     (isExporting ? t('backup.progress.backingUp') : t('backup.progress.restoring'))
+  const completeTitle = isExportComplete
+    ? t('backup.bannerReadyTitle')
+    : t('backup.bannerRestoredTitle')
+  const completeAction = isExportComplete
+    ? t('backup.bannerReadyAction')
+    : t('backup.bannerRestoredAction')
 
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [isKeepAwake, setIsKeepAwake] = useState(isIOS)
@@ -47,6 +58,23 @@ export function useBackupProgressBanner() {
   }, [importStatus.step])
 
   useEffect(() => {
+    if (isActive || !isBackupServiceActive()) return
+    if (isExportComplete) {
+      stopBackupForegroundService(
+        t('backup.notificationBackupComplete'),
+        t('backup.notificationBackupCompleteDesc'),
+      )
+    } else if (isImportComplete) {
+      stopBackupForegroundService(
+        t('backup.notificationRestoreComplete'),
+        t('backup.notificationRestoreCompleteDesc'),
+      )
+    } else {
+      stopBackupForegroundService()
+    }
+  }, [isActive, isExportComplete, isImportComplete, t])
+
+  useEffect(() => {
     if (isKeepAwake && isActive) {
       activateKeepAwakeAsync('backup-keep-awake')
     } else {
@@ -60,6 +88,8 @@ export function useBackupProgressBanner() {
   const handlePress = () => {
     if (isCollapsed) {
       setIsCollapsed(false)
+    } else if (isImportComplete) {
+      finishRestore(dispatch)
     } else {
       router.push('/settings/backup')
     }
@@ -73,12 +103,19 @@ export function useBackupProgressBanner() {
     setIsKeepAwake(!isKeepAwake)
   }
 
+  const isCollapsedCircle = isCollapsed && !isComplete
+  const showCollapsedProgress = isCollapsedCircle && progressStatus.progress > 0
+
   return {
     t,
     isExporting,
-    isExportComplete,
+    isComplete,
+    isCollapsedCircle,
+    showCollapsedProgress,
     progressStatus,
     message,
+    completeTitle,
+    completeAction,
     isCollapsed,
     isKeepAwake,
     isActive,

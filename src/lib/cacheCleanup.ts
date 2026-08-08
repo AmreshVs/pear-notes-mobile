@@ -4,6 +4,24 @@ import { ATTACHMENT_CACHE_PREFIX } from '@/lib/noteAttachmentManager'
 
 export const IN_SESSION_CACHE_MAX_AGE_MS = 30 * 60 * 1000
 
+const TRANSIENT_CACHE_DIRS = ['ImagePicker', 'Audio', 'AV', 'mlkit_docscan_ui_client']
+const UPLOAD_CACHE_PREFIX = 'upload-'
+
+export async function sweepTransientUploadCache(): Promise<void> {
+  const directory = FileSystem.cacheDirectory
+  if (!directory) return
+  try {
+    const names = await FileSystem.readDirectoryAsync(directory)
+    await Promise.all(
+      names
+        .filter(
+          (name) => name.startsWith(UPLOAD_CACHE_PREFIX) || TRANSIENT_CACHE_DIRS.includes(name),
+        )
+        .map((name) => FileSystem.deleteAsync(`${directory}${name}`, { idempotent: true })),
+    )
+  } catch {}
+}
+
 export async function pruneAttachmentCache(maxAgeMs = 0): Promise<number> {
   const directory = FileSystem.cacheDirectory
   if (!directory) return 0
@@ -23,7 +41,7 @@ export async function pruneAttachmentCache(maxAgeMs = 0): Promise<number> {
     const uri = `${directory}${name}`
     try {
       const info = await FileSystem.getInfoAsync(uri)
-      if (!info.exists || info.isDirectory) continue
+      if (!info.exists) continue
       if (maxAgeMs > 0) {
         const modified = (info.modificationTime ?? 0) * 1000
         if (modified > cutoff) continue

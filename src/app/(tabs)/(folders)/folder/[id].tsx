@@ -73,6 +73,10 @@ export default function FolderNotesScreen() {
     dispatch(setShowPairingInput(true))
   }, [dispatch])
 
+  const handleRestoreBackup = useCallback(() => {
+    router.push('/settings/backup')
+  }, [])
+
   const folder = useMemo(
     () => allFolders.find((f: any) => f.id === id || f.key === id),
     [allFolders, id],
@@ -412,6 +416,17 @@ export default function FolderNotesScreen() {
                     <Text style={styles.secondaryBtnText}>{t('folderView.empty.connectBtn')}</Text>
                   </Pressable>
                 </View>
+                <Pressable
+                  onPress={handleRestoreBackup}
+                  style={({ pressed }) => [styles.tertiaryBtn, pressed && commonStyles.pressed]}
+                >
+                  <SymbolView
+                    name="arrow.clockwise"
+                    size={UI_ICON_SIZE_16}
+                    tintColor={colors.textMuted}
+                  />
+                  <Text style={styles.tertiaryBtnText}>{t('folderView.empty.restoreBtn')}</Text>
+                </Pressable>
               </>
             ) : (
               <>
@@ -516,6 +531,19 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.primary,
       fontWeight: FontWeight.bold,
       fontSize: FontSize.body,
+    },
+    tertiaryBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+      marginTop: Space.md,
+      paddingVertical: Space.sm,
+      paddingHorizontal: Space.md,
+    },
+    tertiaryBtnText: {
+      color: theme.colors.textMuted,
+      fontWeight: FontWeight.semibold,
+      fontSize: FontSize.caption,
     },
     emptyTitle: {
       marginTop: Space.md,

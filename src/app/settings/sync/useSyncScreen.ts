@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, ScrollView } from 'react-native'
+import { Linking, Platform, ScrollView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
@@ -106,16 +106,24 @@ function useSyncScreen() {
     }
   }, [dispatch, pasteCode, notes.length])
 
+  const handleRequestCameraPermission = useCallback(async () => {
+    if (cameraPermission && !cameraPermission.granted && !cameraPermission.canAskAgain) {
+      await Linking.openSettings()
+      return cameraPermission
+    }
+    return requestCameraPermission()
+  }, [cameraPermission, requestCameraPermission])
+
   const handleOpenScanner = useCallback(async () => {
     if (Platform.OS === 'ios') {
       if (!cameraPermission?.granted) {
-        const result = await requestCameraPermission()
-        if (!result.granted) return
+        const result = await handleRequestCameraPermission()
+        if (!result?.granted) return
       }
     }
     setHasScanned(false)
     setScannerVisible(true)
-  }, [cameraPermission?.granted, requestCameraPermission])
+  }, [cameraPermission?.granted, handleRequestCameraPermission])
 
   const handleCloseScanner = useCallback(() => {
     setScannerVisible(false)
@@ -178,6 +186,7 @@ function useSyncScreen() {
     setDeleteSheetVisible,
     cameraPermission,
     requestCameraPermission,
+    handleRequestCameraPermission,
     scrollRef,
     inviteCode,
     expiresAt,

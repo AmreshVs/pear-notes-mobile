@@ -54,7 +54,7 @@ export default function SyncScreen() {
     scannerVisible,
     hasScanned,
     cameraPermission,
-    requestCameraPermission,
+    handleRequestCameraPermission,
     scrollRef,
     inviteCode,
     expiresAt,
@@ -374,7 +374,7 @@ export default function SyncScreen() {
         cameraGranted={cameraPermission?.granted ?? false}
         onClose={handleCloseScanner}
         onBarcodeScanned={handleBarcodeScanned}
-        onRequestPermission={requestCameraPermission}
+        onRequestPermission={handleRequestCameraPermission}
       />
     </KeyboardAvoidingView>
   )

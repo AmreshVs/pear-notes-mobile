@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
@@ -187,6 +188,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     ref,
   ) => {
     const styles = useStyles()
+    const { t } = useTranslation()
     const theme = useTheme()
     const { colors } = theme
     const fontSize = useSelector(getEditorFontSize)
@@ -559,9 +561,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
         {editorState === 'error' && (
           <View style={styles.overlay}>
-            <Text style={styles.errorText}>Editor failed to load</Text>
+            <Text style={styles.errorText}>{t('noteEditor.loadFailed')}</Text>
             <Pressable onPress={handleRetry} style={styles.retryBtn}>
-              <Text style={styles.retryText}>Retry</Text>
+              <Text style={styles.retryText}>{t('error.retry')}</Text>
             </Pressable>
           </View>
         )}

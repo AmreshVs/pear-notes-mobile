@@ -151,7 +151,7 @@ export default function AndroidFoldersScreen() {
   )
 
   const handleCreateFolder = useCallback(() => {
-    dispatch(createFolder({ name: t('folders.untitled') }))
+    dispatch(createFolder({ name: t('folders.untitled') } as any))
   }, [dispatch, t])
 
   const openRenameDialog = useCallback((id: string, name: string) => {
@@ -163,7 +163,7 @@ export default function AndroidFoldersScreen() {
     if (!renameDialog) return
     const trimmed = renameText.trim()
     if (trimmed && trimmed !== renameDialog.name) {
-      dispatch(updateFolder({ id: renameDialog.id, name: trimmed }))
+      dispatch(updateFolder({ id: renameDialog.id, name: trimmed } as any))
     }
     setRenameDialog(null)
   }, [dispatch, renameDialog, renameText])
@@ -194,7 +194,7 @@ export default function AndroidFoldersScreen() {
 
   const handleConfirmDelete = useCallback(() => {
     if (!deleteConfirmFolder) return
-    dispatch(deleteFolder(deleteConfirmFolder))
+    dispatch(deleteFolder(deleteConfirmFolder as any))
     setDeleteConfirmFolder(null)
   }, [deleteConfirmFolder, dispatch])
 

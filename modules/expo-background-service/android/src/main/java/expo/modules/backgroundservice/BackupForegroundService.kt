@@ -16,6 +16,7 @@ class BackupForegroundService : Service() {
     companion object {
         const val CHANNEL_ID = "backup_channel"
         const val NOTIFICATION_ID = 12345
+        const val COMPLETION_NOTIFICATION_ID = 12346
 
         const val ACTION_START = "ACTION_START"
         const val ACTION_UPDATE = "ACTION_UPDATE"
@@ -49,6 +50,13 @@ class BackupForegroundService : Service() {
                 updateNotification(title, message, progress, maxProgress)
             }
             ACTION_STOP -> {
+                val completionTitle = intent.getStringExtra(EXTRA_TITLE)
+                if (completionTitle != null) {
+                    postCompletionNotification(
+                        completionTitle,
+                        intent.getStringExtra(EXTRA_MESSAGE) ?: ""
+                    )
+                }
                 stopForeground(true)
                 stopSelf()
             }
@@ -112,6 +120,28 @@ class BackupForegroundService : Service() {
         if (maxProgress > 0) builder.setProgress(maxProgress, progress, false)
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
+    }
+
+    private fun postCompletionNotification(title: String, message: String) {
+        createNotificationChannel()
+
+        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setSmallIcon(applicationInfo.icon)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(COMPLETION_NOTIFICATION_ID, builder.build())
     }
 
     private fun createNotificationChannel() {

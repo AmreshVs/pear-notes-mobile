@@ -28,6 +28,7 @@ export const UI_SIZE_30 = 30
 export const UI_SIZE_32 = 32
 export const UI_SIZE_40 = 40
 export const UI_SIZE_48 = 48
+export const UI_SIZE_50 = 50
 export const UI_SIZE_54 = 54
 export const UI_SIZE_56 = 56
 export const UI_SIZE_60 = 60

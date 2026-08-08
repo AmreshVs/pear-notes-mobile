@@ -308,6 +308,10 @@ export default function AndroidFolderNotesScreen() {
     dispatch(setShowPairingInput(true))
   }, [dispatch])
 
+  const handleRestoreBackup = useCallback(() => {
+    router.push('/settings/backup')
+  }, [])
+
   const sections = useMemo(
     () => buildNoteSections(notes, t, isTrashFolder),
     [notes, t, isTrashFolder],
@@ -538,6 +542,7 @@ export default function AndroidFolderNotesScreen() {
             isTrash={isTrashFolder}
             onLinkDevice={handleLinkDevice}
             onCreateNote={handleCreateNote}
+            onRestoreBackup={handleRestoreBackup}
             height={height}
           />
         }

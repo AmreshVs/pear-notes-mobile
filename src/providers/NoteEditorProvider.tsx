@@ -41,7 +41,12 @@ import {
   UI_SIZE_48,
 } from '@/constants/commonStyles'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
-import { downloadToCache, saveImageToPhotos, shareMessage } from '@/lib/noteAttachmentManager'
+import {
+  cleanupCachedAttachment,
+  downloadToCache,
+  saveImageToPhotos,
+  shareMessage,
+} from '@/lib/noteAttachmentManager'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
@@ -320,7 +325,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         editorRef.current?.setAttachmentLoading(url, false, attachmentId)
         isPreviewingRef.current = false
         if (localUri) {
-          await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+          await cleanupCachedAttachment(localUri)
         }
       }
     },
@@ -346,7 +351,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         editorRef.current?.setAttachmentLoading(url, false, attachmentId)
         isPreviewingRef.current = false
         if (localUri) {
-          await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+          await cleanupCachedAttachment(localUri)
         }
       }
     },

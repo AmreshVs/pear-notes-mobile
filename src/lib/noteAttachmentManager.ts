@@ -98,6 +98,14 @@ export async function copyVideoToUploadCache(uri: string, fileName: string) {
   return { path: toBackendPath(cacheUri), cacheUri, size: (info as any).size || 0 }
 }
 
+export async function deleteCachedAsset(uri: string) {
+  const cacheDir = FileSystem.cacheDirectory
+  if (!uri || !cacheDir) return
+  const normalized = uri.startsWith('/') ? `file://${uri}` : uri
+  if (!normalized.startsWith(cacheDir)) return
+  await FileSystem.deleteAsync(normalized, { idempotent: true }).catch(() => {})
+}
+
 export async function deleteAttachment(noteKey: string, url: string) {
   if (!noteKey || !url) return
   const queryIdx = url.indexOf('?')
@@ -113,20 +121,51 @@ export async function deleteAttachment(noteKey: string, url: string) {
 
 export const ATTACHMENT_CACHE_PREFIX = 'share-'
 
+let attachmentCacheSequence = 0
+
+function sanitizeAttachmentFileName(fileName: string): string {
+  const stripped = (fileName || '')
+    .split('?')[0]
+    .split(/[/\\]/)
+    .pop()!
+    .replace(/[\x00-\x1f]/g, '')
+    .trim()
+  return stripped || `file_${Date.now()}`
+}
+
+async function createAttachmentCacheDir(): Promise<string> {
+  attachmentCacheSequence += 1
+  const dir = `${FileSystem.cacheDirectory}${ATTACHMENT_CACHE_PREFIX}${Date.now()}-${attachmentCacheSequence}/`
+  await FileSystem.makeDirectoryAsync(dir, { intermediates: true })
+  return dir
+}
+
+export async function cleanupCachedAttachment(localUri: string) {
+  if (!localUri) return
+  const cacheDir = FileSystem.cacheDirectory || ''
+  let target = localUri
+  if (cacheDir && localUri.startsWith(cacheDir)) {
+    const relative = localUri.slice(cacheDir.length)
+    const topSegment = relative.split('/')[0]
+    if (topSegment.startsWith(ATTACHMENT_CACHE_PREFIX)) {
+      target = `${cacheDir}${topSegment}`
+    }
+  }
+  await FileSystem.deleteAsync(target, { idempotent: true }).catch(() => {})
+}
+
 export async function downloadToCache(
   url: string,
   fileName: string,
   onProgress?: (progress: number) => void,
 ): Promise<string> {
+  const dir = await createAttachmentCacheDir()
+  const dest = `${dir}${sanitizeAttachmentFileName(fileName)}`
   if (url.startsWith('data:')) {
-    const safeFileName = fileName || `file_${Date.now()}`
-    const localUri = `${FileSystem.cacheDirectory}${ATTACHMENT_CACHE_PREFIX}${safeFileName}`
     const base64 = url.split(',')[1] || ''
-    await FileSystem.writeAsStringAsync(localUri, base64, { encoding: 'base64' })
-    return localUri
+    await FileSystem.writeAsStringAsync(dest, base64, { encoding: 'base64' })
+    return dest
   }
-  const ext = fileName.split('.').pop() || 'bin'
-  const dest = `${FileSystem.cacheDirectory}${ATTACHMENT_CACHE_PREFIX}${Date.now()}.${ext}`
   if (!onProgress) {
     const { uri } = await FileSystem.downloadAsync(url, dest)
     return uri
@@ -151,7 +190,7 @@ export async function saveImageToPhotos(url: string, fileName: string) {
   try {
     await ExpoNativeShareModule.saveToPhotos({ url: localUri })
   } finally {
-    await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+    await cleanupCachedAttachment(localUri)
   }
 }
 
@@ -160,7 +199,7 @@ export async function previewAttachment(url: string, fileName: string) {
   try {
     await ExpoNativeShareModule.preview({ url: localUri })
   } finally {
-    await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+    await cleanupCachedAttachment(localUri)
   }
 }
 
@@ -169,7 +208,7 @@ export async function shareAttachment(url: string, fileName: string) {
   try {
     await ExpoNativeShareModule.share({ message: '', urls: [localUri], resolveOnDismiss: true })
   } finally {
-    await FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+    await cleanupCachedAttachment(localUri)
   }
 }
 

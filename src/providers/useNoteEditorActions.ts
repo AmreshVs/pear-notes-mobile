@@ -12,6 +12,7 @@ import {
   CameraPermissionDeniedError,
   copyVideoToUploadCache,
   deleteAttachment,
+  deleteCachedAsset,
   pickDocuments,
   pickImagesFromLibrary,
   scanDocument,
@@ -168,6 +169,7 @@ export function useNoteEditorActions({
           })
         } finally {
           await deleteUploadCache(prepared.cacheUri)
+          await deleteCachedAsset(asset.uri)
         }
         return
       }
@@ -176,20 +178,24 @@ export function useNoteEditorActions({
       const displayName = fileName || labels.photo
       const { finalWidth, finalHeight } = fitImage(assetWidth, assetHeight)
 
-      await runNoteUpload({
-        noteId: targetNoteId,
-        itemId,
-        path: toBackendPath(uri),
-        fileName: fileName || `image-${Date.now()}.jpg`,
-        displayName,
-        attachment: { type: 'image', width: finalWidth, height: finalHeight },
-        insertLive: (link) => {
-          editorRef.current?.insertImage(link, finalWidth, finalHeight)
-          setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
-        },
-        resolveLink: resolveHyperdriveUrl,
-        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-      })
+      try {
+        await runNoteUpload({
+          noteId: targetNoteId,
+          itemId,
+          path: toBackendPath(uri),
+          fileName: fileName || `image-${Date.now()}.jpg`,
+          displayName,
+          attachment: { type: 'image', width: finalWidth, height: finalHeight },
+          insertLive: (link) => {
+            editorRef.current?.insertImage(link, finalWidth, finalHeight)
+            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+          },
+          resolveLink: resolveHyperdriveUrl,
+          isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+        })
+      } finally {
+        await deleteCachedAsset(uri)
+      }
     },
     [
       noteId,
@@ -235,31 +241,35 @@ export function useNoteEditorActions({
 
       const isAudio = mimeType?.startsWith('audio/')
       const displayName = name || labels.file
-      await runNoteUpload({
-        noteId: targetNoteId,
-        itemId,
-        path: toBackendPath(uri),
-        fileName: name || `file-${Date.now()}`,
-        displayName,
-        attachment: isAudio
-          ? { type: 'audio' }
-          : { type: 'file', fileSize: size || 0, fileType: mimeType || '' },
-        insertLive: (link) => {
-          if (isAudio) {
-            editorRef.current?.insertAudioAttachment(link, name || labels.audio)
-          } else {
-            editorRef.current?.insertFileAttachment(
-              link,
-              name || labels.file,
-              size || 0,
-              mimeType || '',
-            )
-          }
-          setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
-        },
-        resolveLink: resolveHyperdriveUrl,
-        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-      })
+      try {
+        await runNoteUpload({
+          noteId: targetNoteId,
+          itemId,
+          path: toBackendPath(uri),
+          fileName: name || `file-${Date.now()}`,
+          displayName,
+          attachment: isAudio
+            ? { type: 'audio' }
+            : { type: 'file', fileSize: size || 0, fileType: mimeType || '' },
+          insertLive: (link) => {
+            if (isAudio) {
+              editorRef.current?.insertAudioAttachment(link, name || labels.audio)
+            } else {
+              editorRef.current?.insertFileAttachment(
+                link,
+                name || labels.file,
+                size || 0,
+                mimeType || '',
+              )
+            }
+            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+          },
+          resolveLink: resolveHyperdriveUrl,
+          isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+        })
+      } finally {
+        await deleteCachedAsset(uri)
+      }
     },
     [noteId, resolveHyperdriveUrl, processMediaAsset, editorRef, loadedNoteRef, labels],
   )
@@ -374,20 +384,24 @@ export function useNoteEditorActions({
           finalHeight = fitted.finalHeight
         } catch {}
 
-        await runNoteUpload({
-          noteId: targetNoteId,
-          itemId,
-          path: toBackendPath(uri),
-          fileName,
-          displayName,
-          attachment: { type: 'image', width: finalWidth, height: finalHeight },
-          insertLive: (link) => {
-            editorRef.current?.insertImage(link, finalWidth, finalHeight)
-            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
-          },
-          resolveLink: resolveHyperdriveUrl,
-          isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-        })
+        try {
+          await runNoteUpload({
+            noteId: targetNoteId,
+            itemId,
+            path: toBackendPath(uri),
+            fileName,
+            displayName,
+            attachment: { type: 'image', width: finalWidth, height: finalHeight },
+            insertLive: (link) => {
+              editorRef.current?.insertImage(link, finalWidth, finalHeight)
+              setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+            },
+            resolveLink: resolveHyperdriveUrl,
+            isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+          })
+        } finally {
+          await deleteCachedAsset(uri)
+        }
       }
       clearNoteUploadQueue(targetNoteId)
     } catch {}
@@ -401,20 +415,24 @@ export function useNoteEditorActions({
       const fileName = `${recordingFileNamePrefix}-${Date.now()}.m4a`
       const itemId = nextUploadItemId()
       enqueueNoteUploads(targetNoteId, [{ id: itemId, fileName }])
-      await runNoteUpload({
-        noteId: targetNoteId,
-        itemId,
-        path: toBackendPath(uri),
-        fileName,
-        displayName: fileName,
-        attachment: { type: 'audio' },
-        insertLive: (link) => {
-          editorRef.current?.insertAudioAttachment(link, fileName)
-          setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
-        },
-        resolveLink: resolveHyperdriveUrl,
-        isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-      })
+      try {
+        await runNoteUpload({
+          noteId: targetNoteId,
+          itemId,
+          path: toBackendPath(uri),
+          fileName,
+          displayName: fileName,
+          attachment: { type: 'audio' },
+          insertLive: (link) => {
+            editorRef.current?.insertAudioAttachment(link, fileName)
+            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+          },
+          resolveLink: resolveHyperdriveUrl,
+          isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+        })
+      } finally {
+        await deleteCachedAsset(uri)
+      }
       clearNoteUploadQueue(targetNoteId)
     },
     [

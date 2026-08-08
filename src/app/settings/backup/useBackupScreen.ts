@@ -17,11 +17,10 @@ import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import {
   getTotalBlobBytes,
-  reclaimStorage,
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
-import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 
+import { finishRestore } from '@/lib/backupActions'
 import {
   startBackupForegroundService,
   stopBackupForegroundService,
@@ -97,8 +96,8 @@ function useBackupScreen() {
   const isActive = exportStatus.step !== 'idle' || importStatus.step !== 'idle'
 
   useEffect(() => {
-    if (isError) setHideModal(false)
-  }, [isError])
+    if (isError || isImportDone) setHideModal(false)
+  }, [isError, isImportDone])
 
   useEffect(() => {
     if (exportStatus.step === 'error') clearBackupExportCache(getBackupExportPath())
@@ -171,9 +170,7 @@ function useBackupScreen() {
   }, [dispatch])
 
   const handleRestoreComplete = useCallback(() => {
-    dispatch(reclaimStorage())
-    dispatch(resetImport())
-    dispatch(setNeedsReload(true))
+    finishRestore(dispatch)
   }, [dispatch])
 
   const getSaveErrorMessage = useCallback(
@@ -194,7 +191,7 @@ function useBackupScreen() {
         }
         dispatch(resetExport())
       } catch (e) {
-        console.log('handleSaveBackup', e)
+        console.error('handleSaveBackup', e)
         dispatch(resetExport())
         Alert.alert(t('backup.shareError'), getSaveErrorMessage(e))
       }
@@ -206,7 +203,7 @@ function useBackupScreen() {
           setLastBackupDate(new Date().toISOString())
         }
       } catch (e) {
-        console.log('handleSaveBackup else', e)
+        console.error('handleSaveBackup else', e)
         showToast(getSaveErrorMessage(e))
       } finally {
         dispatch(resetExport())
