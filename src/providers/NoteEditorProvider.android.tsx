@@ -146,11 +146,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
-  const lockOverlayStyle = useMemo(
-    () => [styles.lockOverlay, { top: insets.top + 52 }],
-    [styles.lockOverlay, insets.top],
-  )
-
   const editorLabels = useMemo(
     () => ({
       photo: t('noteEditor.upload.photo'),
@@ -554,6 +549,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           onAttachmentLongPress={handleAttachmentLongPress}
         />
 
+        {isNoteLocked && (
+          <View style={styles.lockOverlay}>
+            <LockedNoteView noteId={noteId ?? ''} />
+          </View>
+        )}
+
         <View style={styles.floatingLeft} pointerEvents="box-none">
           <Pressable
             onPress={closeNote}
@@ -614,12 +615,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                 color={c.onPrimaryContainer}
               />
             </Pressable>
-          </View>
-        )}
-
-        {isNoteLocked && (
-          <View style={lockOverlayStyle}>
-            <LockedNoteView noteId={noteId ?? ''} />
           </View>
         )}
 
@@ -804,6 +799,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     lockOverlay: {
       position: 'absolute',
+      top: 0,
       left: 0,
       right: 0,
       bottom: 0,
