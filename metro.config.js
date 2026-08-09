@@ -20,6 +20,6 @@ config.resolver.extraNodeModules = {
   ),
 }
 config.resolver.unstable_enableSymlinks = true
-config.watchFolders = [path.resolve(projectRoot, '../SharedLocales')]
+config.watchFolders = [path.resolve(projectRoot)]
 
 module.exports = config
