@@ -42,13 +42,8 @@ import {
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
-import {
-  type AttachmentKind,
-  getAttachmentInfo,
-  getFirstImageUrl,
-  getPreview,
-  isChecklistNote,
-} from '@/utils/noteUtils'
+import { getNoteMetadata } from '@/utils/noteMetadata'
+import { type AttachmentKind } from '@/utils/noteUtils'
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name']
 
@@ -89,13 +84,13 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const masked = locked && !isNoteUnlocked(note.key)
 
   const title = note.value?.title || t('noteCard.untitled')
-  const html = note.value?.note || ''
-  const previewText = masked ? t('noteCard.lockedSummary') : getPreview(html)
-  const attachment = masked ? null : getAttachmentInfo(html)
+  const metadata = getNoteMetadata(note.value)
+  const previewText = masked ? t('noteCard.lockedSummary') : metadata.preview
+  const attachment = masked ? null : metadata.attachment
   const showAttachment = !previewText && !!attachment
   const displayPreview = previewText || t('noteCard.noAdditionalText')
-  const rawImageUrl = getFirstImageUrl(html)
-  const hasChecklist = !masked && isChecklistNote(html)
+  const rawImageUrl = metadata.imageUrl
+  const hasChecklist = !masked && metadata.isChecklist
   const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
   const accessibilityLabel = useMemo(() => {
     const parts = [title]

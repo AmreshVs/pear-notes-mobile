@@ -49,6 +49,7 @@ import {
   UI_SIZE_72,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { copyFileToSAF, downloadToCache, shareMessage } from '@/lib/noteAttachmentManager'
@@ -133,6 +134,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   } = editor
 
   const isPreviewingRef = useRef(false)
+
+  const shouldMountEditor = useDeferredEditorMount(isOpen)
 
   useNoteLockVersion()
   const uploadQueue = useNoteUploadQueue(noteId)
@@ -526,28 +529,30 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           translucent
         />
 
-        <TiptapEditor
-          ref={editorRef}
-          noteId={noteId ?? 'new'}
-          initialContent=""
-          initialTitle=""
-          safeAreaTop={insets.top + 52}
-          safeAreaBottom={
-            keyboardHeight > 0 ? 42 + 24 + UI_SIZE_72 : insets.bottom + 12 + UI_SIZE_72
-          }
-          backgroundColor={c.background}
-          onContentChange={handleUpdate}
-          onYjsMessage={handleYjsMessage}
-          onTitleChange={handleTitleChange}
-          onStyleStateChange={handleStyleStateChange}
-          onEditorFocus={handleEditorFocus}
-          onEditorBlur={handleEditorBlur}
-          onOpenAttachment={handleOpenAttachment}
-          onPreviewAttachment={handlePreviewAttachment}
-          onDeleteAttachment={handleDeleteAttachment}
-          onImageLongPress={handleImageLongPress}
-          onAttachmentLongPress={handleAttachmentLongPress}
-        />
+        {shouldMountEditor && (
+          <TiptapEditor
+            ref={editorRef}
+            noteId={noteId ?? 'new'}
+            initialContent=""
+            initialTitle=""
+            safeAreaTop={insets.top + 52}
+            safeAreaBottom={
+              keyboardHeight > 0 ? 42 + 24 + UI_SIZE_72 : insets.bottom + 12 + UI_SIZE_72
+            }
+            backgroundColor={c.background}
+            onContentChange={handleUpdate}
+            onYjsMessage={handleYjsMessage}
+            onTitleChange={handleTitleChange}
+            onStyleStateChange={handleStyleStateChange}
+            onEditorFocus={handleEditorFocus}
+            onEditorBlur={handleEditorBlur}
+            onOpenAttachment={handleOpenAttachment}
+            onPreviewAttachment={handlePreviewAttachment}
+            onDeleteAttachment={handleDeleteAttachment}
+            onImageLongPress={handleImageLongPress}
+            onAttachmentLongPress={handleAttachmentLongPress}
+          />
+        )}
 
         {isNoteLocked && (
           <View style={styles.lockOverlay}>

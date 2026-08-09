@@ -40,6 +40,7 @@ import {
   UI_SIZE_32,
   UI_SIZE_48,
 } from '@/constants/commonStyles'
+import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import {
   cleanupCachedAttachment,
@@ -110,6 +111,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   } = editor
 
   const isPreviewingRef = useRef(false)
+
+  const shouldMountEditor = useDeferredEditorMount(isOpen)
 
   useNoteLockVersion()
   const lockMethod = useSelector(getLockMethod)
@@ -699,26 +702,28 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </View>
           </View>
 
-          <TiptapEditor
-            ref={editorRef}
-            noteId={noteId ?? 'new'}
-            initialContent=""
-            initialTitle=""
-            safeAreaTop={insets.top + 52}
-            safeAreaBottom={0}
-            scrollEnabled={!isEdgeSwipeActive}
-            onContentChange={handleUpdate}
-            onTitleChange={handleTitleChange}
-            onStyleStateChange={handleStyleStateChange}
-            onEditorFocus={handleEditorFocus}
-            onEditorBlur={handleEditorBlur}
-            onOpenAttachment={handleOpenAttachment}
-            onPreviewAttachment={handlePreviewAttachment}
-            onDeleteAttachment={handleDeleteAttachment}
-            onImageLongPress={handleImageLongPress}
-            onAttachmentLongPress={handleAttachmentLongPress}
-            onYjsMessage={handleYjsMessage}
-          />
+          {shouldMountEditor && (
+            <TiptapEditor
+              ref={editorRef}
+              noteId={noteId ?? 'new'}
+              initialContent=""
+              initialTitle=""
+              safeAreaTop={insets.top + 52}
+              safeAreaBottom={0}
+              scrollEnabled={!isEdgeSwipeActive}
+              onContentChange={handleUpdate}
+              onTitleChange={handleTitleChange}
+              onStyleStateChange={handleStyleStateChange}
+              onEditorFocus={handleEditorFocus}
+              onEditorBlur={handleEditorBlur}
+              onOpenAttachment={handleOpenAttachment}
+              onPreviewAttachment={handlePreviewAttachment}
+              onDeleteAttachment={handleDeleteAttachment}
+              onImageLongPress={handleImageLongPress}
+              onAttachmentLongPress={handleAttachmentLongPress}
+              onYjsMessage={handleYjsMessage}
+            />
+          )}
 
           {isOpen && !isNoteLocked && (
             <EditorToolbar

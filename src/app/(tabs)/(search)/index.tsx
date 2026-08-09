@@ -1,6 +1,6 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet } from 'react-native'
+import { FlatList, type ListRenderItemInfo, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { format } from 'date-fns'
 import { Stack } from 'expo-router'
@@ -13,7 +13,9 @@ import { createThemedStylesheet, Text, useTheme, View } from '@/components/Theme
 import { commonStyles, Space } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
-import { getAttachmentInfo, getFirstImageUrl, getPreview } from '@/utils/noteUtils'
+import { getNoteMetadata } from '@/utils/noteMetadata'
+
+const noteKeyExtractor = (note: any) => note.key
 
 export default function SearchScreen() {
   const { t } = useTranslation()
@@ -35,34 +37,57 @@ export default function SearchScreen() {
   )
 
   const renderNoteItem = useCallback(
-    (note: any, index: number) => {
-      const handlePress = () => handleSelectNote(note.key)
+    ({ item: note, index }: ListRenderItemInfo<any>) => {
       const formattedDate = format(
         new Date(note.value?.updatedAt || note.value?.createdAt || 0),
         'MMM d',
       )
-      const html = note.value?.note
+      const metadata = getNoteMetadata(note.value)
 
       return (
         <NoteCard
-          key={note.key}
           id={note.key}
           title={note.value?.title}
           date={formattedDate}
-          summary={getPreview(html)}
-          attachment={getAttachmentInfo(html)}
-          rawImageUrl={getFirstImageUrl(html)}
+          summary={metadata.preview}
+          attachment={metadata.attachment}
+          rawImageUrl={metadata.imageUrl}
           folderName={note.value?.folderName}
           selected={false}
           isLast={index === notes.length - 1}
           animationIndex={index}
           locked={note.value?.locked === true}
           pinned={note.value?.pinned === true}
-          onPress={handlePress}
+          onPress={handleSelectNote}
         />
       )
     },
     [notes.length, handleSelectNote],
+  )
+
+  const listEmpty = useMemo(
+    () => (
+      <View style={commonThemedStyles.emptyContainer}>
+        {searchQuery.trim().length > 0 ? (
+          <>
+            <Text style={commonThemedStyles.emptyTitle}>{t('search.empty.noMatches')}</Text>
+            <Text style={commonThemedStyles.emptySubtitle}>{t('search.empty.tryDifferent')}</Text>
+          </>
+        ) : (
+          <>
+            <Text style={commonThemedStyles.emptyTitle}>{t('search.empty.searchNotes')}</Text>
+            <Text style={commonThemedStyles.emptySubtitle}>{t('search.empty.typeToFind')}</Text>
+          </>
+        )}
+      </View>
+    ),
+    [
+      searchQuery,
+      t,
+      commonThemedStyles.emptyContainer,
+      commonThemedStyles.emptyTitle,
+      commonThemedStyles.emptySubtitle,
+    ],
   )
 
   return (
@@ -85,31 +110,16 @@ export default function SearchScreen() {
           },
         }}
       />
-      <ScrollView
+      <FlatList
+        data={notes}
+        keyExtractor={noteKeyExtractor}
+        renderItem={renderNoteItem}
+        ListEmptyComponent={listEmpty}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-      >
-        {notes.length === 0 ? (
-          <View style={commonThemedStyles.emptyContainer}>
-            {searchQuery.trim().length > 0 ? (
-              <>
-                <Text style={commonThemedStyles.emptyTitle}>{t('search.empty.noMatches')}</Text>
-                <Text style={commonThemedStyles.emptySubtitle}>
-                  {t('search.empty.tryDifferent')}
-                </Text>
-              </>
-            ) : (
-              <>
-                <Text style={commonThemedStyles.emptyTitle}>{t('search.empty.searchNotes')}</Text>
-                <Text style={commonThemedStyles.emptySubtitle}>{t('search.empty.typeToFind')}</Text>
-              </>
-            )}
-          </View>
-        ) : (
-          <View style={styles.listContainer}>{notes.map(renderNoteItem)}</View>
-        )}
-      </ScrollView>
+        keyboardShouldPersistTaps="handled"
+      />
     </View>
   )
 }
@@ -122,11 +132,9 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     scrollContent: {
       flexGrow: 1,
+      paddingTop: Space.sm,
       paddingBottom: Space.scrollBottom,
       paddingHorizontal: Space.base,
-    },
-    listContainer: {
-      paddingTop: Space.sm,
     },
   })
   return styles

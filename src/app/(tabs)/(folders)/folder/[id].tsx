@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
+import {
+  Alert,
+  Pressable,
+  SectionList,
+  type SectionListData,
+  type SectionListRenderItemInfo,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
@@ -46,8 +54,11 @@ import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+import { getNoteMetadata } from '@/utils/noteMetadata'
 import { buildNoteSections } from '@/utils/noteSections'
-import { getAttachmentInfo, getFirstImageUrl, getPreview } from '@/utils/noteUtils'
+import { getPreview } from '@/utils/noteUtils'
+
+const noteKeyExtractor = (note: any) => note.key
 
 export default function FolderNotesScreen() {
   const { height } = useWindowDimensions()
@@ -188,12 +199,6 @@ export default function FolderNotesScreen() {
     [dispatch, lockMethod, t],
   )
 
-  const attachmentByKey = useMemo(() => {
-    const map = new Map<string, ReturnType<typeof getAttachmentInfo>>()
-    for (const n of notes as any[]) map.set(n.key, getAttachmentInfo(n.value?.note))
-    return map
-  }, [notes])
-
   const handleRenameFolder = useCallback(() => {
     if (!folder) return
     Alert.prompt(
@@ -254,12 +259,13 @@ export default function FolderNotesScreen() {
   )
 
   const renderNoteCard = useCallback(
-    (note: any, index: number, sectionIndex: number, sectionDataLength: number) => {
-      const isLast = index === sectionDataLength - 1
-      const animationIndex = sectionIndex * 3 + index
+    ({ item: note, index, section }: SectionListRenderItemInfo<any>) => {
+      const isLast = index === section.data.length - 1
+      const animationIndex = index
 
       const isLocked = note.value?.locked === true
       const isPinned = note.value?.pinned === true
+      const metadata = getNoteMetadata(note.value)
 
       const folderName =
         folder?.id === ALL_NOTES_KEY
@@ -268,13 +274,12 @@ export default function FolderNotesScreen() {
 
       return (
         <NoteCard
-          key={note.key}
           id={note.key}
           title={note.value?.title}
           date={formatDate(note.value?.updatedAt || note.value?.createdAt)}
-          summary={getPreview(note.value?.note)}
-          attachment={attachmentByKey.get(note.key) ?? null}
-          rawImageUrl={getFirstImageUrl(note.value?.note)}
+          summary={metadata.preview}
+          attachment={metadata.attachment}
+          rawImageUrl={metadata.imageUrl}
           folderName={folderName}
           selected={false}
           isLast={isLast}
@@ -294,7 +299,6 @@ export default function FolderNotesScreen() {
     [
       allFolders,
       folder?.id,
-      attachmentByKey,
       handleSelectNote,
       handleDeleteNote,
       handleCopyNoteById,
@@ -306,26 +310,139 @@ export default function FolderNotesScreen() {
     ],
   )
 
-  const renderSection = useCallback(
-    (section: any, sectionIndex: number) => {
-      const renderItem = (note: any, index: number) =>
-        renderNoteCard(note, index, sectionIndex, section.data.length)
+  const renderSectionHeader = useCallback(
+    ({ section }: { section: SectionListData<any> }) => (
+      <View style={styles.sectionHeader}>
+        <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
+      </View>
+    ),
+    [styles.sectionHeader, commonThemedStyles.sectionCap],
+  )
 
-      return (
-        <View key={section.title} style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
-          </View>
-          <View style={styles.listContainer}>{section.data.map(renderItem)}</View>
+  const listHeader = useMemo(
+    () => (
+      <>
+        <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
+        <View style={styles.headerInfo}>
+          <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
+            {t('folderView.noteCount', { count: notes.length })}
+          </Text>
         </View>
-      )
-    },
+      </>
+    ),
     [
-      renderNoteCard,
-      styles.section,
-      styles.sectionHeader,
-      styles.listContainer,
+      folder?.name,
+      notes.length,
+      t,
+      styles.pageTitle,
+      styles.headerInfo,
       commonThemedStyles.sectionCap,
+    ],
+  )
+
+  const listEmpty = useMemo(
+    () => (
+      <View style={emptyStateStyle}>
+        {searchQuery.trim().length > 0 ? (
+          <>
+            <SymbolView
+              name="magnifyingglass"
+              size={UI_ICON_SIZE_44}
+              tintColor={colors.textMuted}
+            />
+            <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
+              {t('folderView.empty.noMatchesTitle')}
+            </Text>
+            <Text style={commonThemedStyles.emptySubtitle}>
+              {t('folderView.empty.noMatchesSubtitle')}
+            </Text>
+          </>
+        ) : isTrashFolder ? (
+          <>
+            <SymbolView name="trash" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
+            <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
+              {t('folderView.empty.trashEmptyTitle')}
+            </Text>
+            <Text style={commonThemedStyles.emptySubtitle}>
+              {t('folderView.empty.trashEmptySubtitle')}
+            </Text>
+          </>
+        ) : localPreferences['isSynced'] !== true && allNotes.length === 0 ? (
+          <>
+            <SymbolView name="book.closed" size={UI_ICON_SIZE_44} tintColor={colors.primary} />
+            <Text style={styles.onboardingTitle}>{t('folderView.empty.onboardingTitle')}</Text>
+            <Text style={commonThemedStyles.emptySubtitle}>
+              {t('folderView.empty.onboardingSubtitle')}
+            </Text>
+            <View style={styles.ctaRow}>
+              <Pressable
+                onPress={handleCreateNote}
+                style={({ pressed }) => [styles.primaryBtn, pressed && commonStyles.pressed]}
+              >
+                <SymbolView name="plus" size={UI_ICON_SIZE_16} tintColor={colors.onPrimary} />
+                <Text style={styles.primaryBtnText}>{t('folderView.empty.newNoteBtn')}</Text>
+              </Pressable>
+              <Pressable
+                onPress={handleLinkDevice}
+                style={({ pressed }) => [styles.secondaryBtn, pressed && commonStyles.pressed]}
+              >
+                <SymbolView
+                  name="laptopcomputer.and.iphone"
+                  size={UI_ICON_SIZE_16}
+                  tintColor={colors.primary}
+                />
+                <Text style={styles.secondaryBtnText}>{t('folderView.empty.connectBtn')}</Text>
+              </Pressable>
+            </View>
+            <Pressable
+              onPress={handleRestoreBackup}
+              style={({ pressed }) => [styles.tertiaryBtn, pressed && commonStyles.pressed]}
+            >
+              <SymbolView
+                name="arrow.clockwise"
+                size={UI_ICON_SIZE_16}
+                tintColor={colors.textMuted}
+              />
+              <Text style={styles.tertiaryBtnText}>{t('folderView.empty.restoreBtn')}</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <SymbolView name="note.text" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
+            <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
+              {t('folderView.empty.noNotesTitle')}
+            </Text>
+            <Text style={commonThemedStyles.emptySubtitle}>
+              {t('folderView.empty.noNotesSubtitle')}
+            </Text>
+          </>
+        )}
+      </View>
+    ),
+    [
+      emptyStateStyle,
+      searchQuery,
+      isTrashFolder,
+      localPreferences,
+      allNotes.length,
+      colors.textMuted,
+      colors.primary,
+      colors.onPrimary,
+      commonThemedStyles.emptyTitle,
+      commonThemedStyles.emptySubtitle,
+      styles.emptyTitle,
+      styles.onboardingTitle,
+      styles.ctaRow,
+      styles.primaryBtn,
+      styles.primaryBtnText,
+      styles.secondaryBtn,
+      styles.secondaryBtnText,
+      styles.tertiaryBtn,
+      styles.tertiaryBtnText,
+      handleCreateNote,
+      handleLinkDevice,
+      handleRestoreBackup,
+      t,
     ],
   )
 
@@ -364,99 +481,19 @@ export default function FolderNotesScreen() {
           </Stack.Toolbar.Menu>
         )}
       </Stack.Toolbar>
-      <ScrollView
+      <SectionList
+        sections={groupedNotes}
+        keyExtractor={noteKeyExtractor}
+        renderItem={renderNoteCard}
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled={false}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
-        <View style={styles.headerInfo}>
-          <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
-            {t('folderView.noteCount', { count: notes.length })}
-          </Text>
-        </View>
-
-        {groupedNotes.length === 0 ? (
-          <View style={emptyStateStyle}>
-            {searchQuery.trim().length > 0 ? (
-              <>
-                <SymbolView
-                  name="magnifyingglass"
-                  size={UI_ICON_SIZE_44}
-                  tintColor={colors.textMuted}
-                />
-                <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
-                  {t('folderView.empty.noMatchesTitle')}
-                </Text>
-                <Text style={commonThemedStyles.emptySubtitle}>
-                  {t('folderView.empty.noMatchesSubtitle')}
-                </Text>
-              </>
-            ) : isTrashFolder ? (
-              <>
-                <SymbolView name="trash" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
-                <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
-                  {t('folderView.empty.trashEmptyTitle')}
-                </Text>
-                <Text style={commonThemedStyles.emptySubtitle}>
-                  {t('folderView.empty.trashEmptySubtitle')}
-                </Text>
-              </>
-            ) : localPreferences['isSynced'] !== true && allNotes.length === 0 ? (
-              <>
-                <SymbolView name="book.closed" size={UI_ICON_SIZE_44} tintColor={colors.primary} />
-                <Text style={styles.onboardingTitle}>{t('folderView.empty.onboardingTitle')}</Text>
-                <Text style={commonThemedStyles.emptySubtitle}>
-                  {t('folderView.empty.onboardingSubtitle')}
-                </Text>
-                <View style={styles.ctaRow}>
-                  <Pressable
-                    onPress={handleCreateNote}
-                    style={({ pressed }) => [styles.primaryBtn, pressed && commonStyles.pressed]}
-                  >
-                    <SymbolView name="plus" size={UI_ICON_SIZE_16} tintColor={colors.onPrimary} />
-                    <Text style={styles.primaryBtnText}>{t('folderView.empty.newNoteBtn')}</Text>
-                  </Pressable>
-                  <Pressable
-                    onPress={handleLinkDevice}
-                    style={({ pressed }) => [styles.secondaryBtn, pressed && commonStyles.pressed]}
-                  >
-                    <SymbolView
-                      name="laptopcomputer.and.iphone"
-                      size={UI_ICON_SIZE_16}
-                      tintColor={colors.primary}
-                    />
-                    <Text style={styles.secondaryBtnText}>{t('folderView.empty.connectBtn')}</Text>
-                  </Pressable>
-                </View>
-                <Pressable
-                  onPress={handleRestoreBackup}
-                  style={({ pressed }) => [styles.tertiaryBtn, pressed && commonStyles.pressed]}
-                >
-                  <SymbolView
-                    name="arrow.clockwise"
-                    size={UI_ICON_SIZE_16}
-                    tintColor={colors.textMuted}
-                  />
-                  <Text style={styles.tertiaryBtnText}>{t('folderView.empty.restoreBtn')}</Text>
-                </Pressable>
-              </>
-            ) : (
-              <>
-                <SymbolView name="note.text" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
-                <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
-                  {t('folderView.empty.noNotesTitle')}
-                </Text>
-                <Text style={commonThemedStyles.emptySubtitle}>
-                  {t('folderView.empty.noNotesSubtitle')}
-                </Text>
-              </>
-            )}
-          </View>
-        ) : (
-          groupedNotes.map(renderSection)
-        )}
-      </ScrollView>
+        keyboardShouldPersistTaps="handled"
+      />
     </View>
   )
 }
@@ -484,18 +521,12 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     headerInfo: {
       marginLeft: Space.base,
-      marginBottom: Space.sm,
-    },
-    section: {
-      marginBottom: Space.sm,
     },
     sectionHeader: {
       marginLeft: Space.base,
+      marginTop: Space.sm,
       paddingVertical: Space.xs,
       marginBottom: UI_SIZE_2,
-    },
-    listContainer: {
-      backgroundColor: theme.colors.transparent,
     },
     emptyStateWrapper: {
       alignItems: 'center',

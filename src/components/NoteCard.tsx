@@ -46,6 +46,8 @@ import { createThemedStylesheet, Text, useTheme } from './Themed'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
+const ENTER_ANIMATION_MAX_INDEX = 8
+
 const ATTACHMENT_ICONS = {
   image: ImageIcon,
   video: Film,
@@ -80,6 +82,61 @@ interface NoteCardProps {
   moveFolders?: MoveFolder[]
   onMoveTo?: (id: string, folderId: string) => void
 }
+
+const MoveFolderButton = memo(function MoveFolderButton({
+  noteId,
+  folderId,
+  folderName,
+  onMoveTo,
+}: {
+  noteId: string
+  folderId: string
+  folderName: string
+  onMoveTo: (id: string, folderId: string) => void
+}) {
+  const handlePress = useCallback(() => onMoveTo(noteId, folderId), [onMoveTo, noteId, folderId])
+  return <ExpoUI.Button label={folderName} systemImage="folder" onPress={handlePress} />
+})
+
+const MoveToMenu = memo(function MoveToMenu({
+  noteId,
+  moveFolders,
+  onMoveTo,
+}: {
+  noteId: string
+  moveFolders?: MoveFolder[]
+  onMoveTo: (id: string, folderId: string) => void
+}) {
+  const { t } = useTranslation()
+  const renderFolder = useCallback(
+    (folder: MoveFolder) => (
+      <MoveFolderButton
+        key={folder.id}
+        noteId={noteId}
+        folderId={folder.id}
+        folderName={folder.name}
+        onMoveTo={onMoveTo}
+      />
+    ),
+    [noteId, onMoveTo],
+  )
+
+  return (
+    <ExpoUI.Menu label={t('noteCard.actions.moveTo')} systemImage="folder.badge.plus">
+      {moveFolders && moveFolders.length > 0 ? (
+        moveFolders.map(renderFolder)
+      ) : (
+        <ExpoUI.Button
+          label={t('noteCard.actions.noFolders')}
+          systemImage="folder.badge.minus"
+          onPress={noop}
+        />
+      )}
+    </ExpoUI.Menu>
+  )
+})
+
+function noop() {}
 
 function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
   return (
@@ -192,11 +249,16 @@ export const NoteCard = memo(function NoteCard({
     ? t('noteCard.lockedSummary')
     : summary || t('noteCard.noAdditionalText')
 
+  const entering = useMemo(
+    () =>
+      animationIndex <= ENTER_ANIMATION_MAX_INDEX
+        ? FadeIn.duration(220).delay(animationIndex * 35)
+        : undefined,
+    [animationIndex],
+  )
+
   const card = (
-    <Animated.View
-      entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
-      exiting={FadeOutUp.duration(180)}
-    >
+    <Animated.View entering={entering} exiting={FadeOutUp.duration(180)}>
       <Pressable
         onPress={handlePress}
         style={getPressableStyle}
@@ -279,32 +341,13 @@ export const NoteCard = memo(function NoteCard({
     return card
   }
 
-  const { Host, ContextMenu, Button, Menu } = ExpoUI
+  const { Host, ContextMenu, Button } = ExpoUI
 
   return (
     <Host>
       <ContextMenu>
         <ContextMenu.Items>
-          {onMoveTo && (
-            <Menu label={t('noteCard.actions.moveTo')} systemImage="folder.badge.plus">
-              {moveFolders && moveFolders.length > 0 ? (
-                moveFolders.map((folder) => (
-                  <Button
-                    key={folder.id}
-                    label={folder.name}
-                    systemImage="folder"
-                    onPress={() => onMoveTo(id, folder.id)}
-                  />
-                ))
-              ) : (
-                <Button
-                  label={t('noteCard.actions.noFolders')}
-                  systemImage="folder.badge.minus"
-                  onPress={() => {}}
-                />
-              )}
-            </Menu>
-          )}
+          {onMoveTo && <MoveToMenu noteId={id} moveFolders={moveFolders} onMoveTo={onMoveTo} />}
 
           {onCopy && (
             <Button
