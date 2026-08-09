@@ -35,7 +35,11 @@ import { ErrorScreen } from '@/components/ErrorScreen'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
-import { createThemedStylesheet, useResolvedColorScheme } from '@/components/Themed'
+import {
+  ColorSchemeProvider,
+  createThemedStylesheet,
+  useResolvedColorScheme,
+} from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
@@ -91,7 +95,9 @@ export default function RootLayout() {
   return (
     <View style={commonStyles.flex1}>
       <Provider key={remountKey} store={store}>
-        <RootLayoutInner triggerReload={triggerReload} />
+        <ColorSchemeProvider>
+          <RootLayoutInner triggerReload={triggerReload} />
+        </ColorSchemeProvider>
       </Provider>
       {isClearing && (
         <View style={styles.overlay}>

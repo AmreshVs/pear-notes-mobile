@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react'
-import { InteractionManager } from 'react-native'
+
+const DEFERRED_MOUNT_TIMEOUT = 2000
 
 export function useDeferredEditorMount(forceMount: boolean): boolean {
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => setIsReady(true))
-    return () => task.cancel()
+    const handle = requestIdleCallback(() => setIsReady(true), {
+      timeout: DEFERRED_MOUNT_TIMEOUT,
+    })
+    return () => cancelIdleCallback(handle)
   }, [])
 
   return isReady || forceMount

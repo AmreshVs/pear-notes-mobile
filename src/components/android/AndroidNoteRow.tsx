@@ -1,6 +1,6 @@
 import { type ComponentProps, memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Image, Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
   FadeInDown,
@@ -12,10 +12,11 @@ import Animated, {
 } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { Image } from 'expo-image'
 import { Folder } from 'lucide-react-native'
 
 import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -42,6 +43,7 @@ import {
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
+import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 import { type AttachmentKind } from '@/utils/noteUtils'
 
@@ -62,6 +64,16 @@ type NoteRowProps = {
   folderName?: string
   onPress: (noteKey: string) => void
   onLongPress: (noteKey: string) => void
+}
+
+function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
+  return (
+    prev.note.key === next.note.key &&
+    prev.note.value === next.note.value &&
+    prev.folderName === next.folderName &&
+    prev.onPress === next.onPress &&
+    prev.onLongPress === next.onLongPress
+  )
 }
 
 export const AndroidNoteRow = memo(function AndroidNoteRow({
@@ -100,7 +112,11 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
     return parts.join(', ')
   }, [title, pinned, locked, dateLabel, t])
 
-  const resolvedImageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
+  const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
+  const resolvedImageUrl = useMemo(
+    () => resolveHyperdriveUrl(rawImageUrl, hyperdriveServerAddress),
+    [rawImageUrl, hyperdriveServerAddress],
+  )
   const colorTheme = useSelector(getColorTheme)
   const isPearTheme = colorTheme === 'pear'
   const [thumbError, setThumbError] = useState(false)
@@ -109,6 +125,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const scale = useSharedValue(1)
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
 
+  const handleThumbError = useCallback(() => setThumbError(true), [])
   const handlePress = useCallback(() => onPress(note.key), [onPress, note.key])
   const handleLongPress = useCallback(() => onLongPress(note.key), [onLongPress, note.key])
   const handlePressIn = useCallback(() => {
@@ -214,16 +231,19 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
 
         {showThumb && (
           <Image
-            source={{ uri: resolvedImageUrl }}
+            source={resolvedImageUrl}
             style={styles.thumbnail}
-            resizeMode="cover"
-            onError={() => setThumbError(true)}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            recyclingKey={note.key}
+            transition={0}
+            onError={handleThumbError}
           />
         )}
       </Pressable>
     </Animated.View>
   )
-})
+}, areNoteRowPropsEqual)
 
 const useRowHooks = () => {
   const md3 = useMD3Theme()

@@ -2,7 +2,6 @@ import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
-  Image,
   Platform,
   Pressable,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 } from 'react-native'
 import Animated, { FadeIn, FadeOutUp } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
+import { Image } from 'expo-image'
 import {
   Film,
   Folder,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react-native'
 
 import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { getHyperdriveAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import {
   commonStyles,
@@ -40,6 +40,7 @@ import {
 } from '@/constants/commonStyles'
 import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
+import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import type { AttachmentInfo } from '@/utils/noteUtils'
 
 import { createThemedStylesheet, Text, useTheme } from './Themed'
@@ -192,11 +193,16 @@ export const NoteCard = memo(function NoteCard({
   const upload = uploadQueue.activeItem
   const masked = locked === true && !isNoteUnlocked(id)
 
-  const imageUrl = useSelector((state: any) => getHyperdriveAddress(state, rawImageUrl))
+  const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
+  const imageUrl = useMemo(
+    () => resolveHyperdriveUrl(rawImageUrl, hyperdriveServerAddress),
+    [rawImageUrl, hyperdriveServerAddress],
+  )
   const colorTheme = useSelector(getColorTheme)
   const isPearTheme = colorTheme === 'pear'
 
   const handlePress = useCallback(() => onPress(id), [onPress, id])
+  const handleThumbError = useCallback(() => setThumbError(true), [])
   const handleDelete = useCallback(() => onDelete?.(id), [onDelete, id])
   const handleCopy = useCallback(() => onCopy?.(id), [onCopy, id])
   const handleToggleLock = useCallback(
@@ -324,10 +330,13 @@ export const NoteCard = memo(function NoteCard({
 
           {showThumbnail && (
             <Image
-              source={{ uri: imageUrl }}
+              source={imageUrl}
               style={styles.thumbnail}
-              resizeMode="cover"
-              onError={() => setThumbError(true)}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              recyclingKey={id}
+              transition={0}
+              onError={handleThumbError}
             />
           )}
         </RNView>

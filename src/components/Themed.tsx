@@ -1,5 +1,6 @@
-import React, { memo, useMemo } from 'react'
+import React, { createContext, memo, useContext, useMemo, useRef } from 'react'
 import {
+  Appearance,
   StyleSheet,
   Text as DefaultText,
   type TextStyle,
@@ -24,32 +25,56 @@ const WEIGHT_TO_FONT_FAMILY: Record<string, string> = {
   '900': FontFamily.extraBold,
 }
 
-export function useResolvedColorScheme(): 'light' | 'dark' {
+const ColorSchemeContext = createContext<'light' | 'dark' | null>(null)
+
+export function ColorSchemeProvider({ children }: { children: React.ReactNode }) {
   const deviceColorScheme = useDeviceColorScheme()
   const themeSetting: string = useSelector(getTheme) ?? 'system'
 
-  if (themeSetting === 'dark') return 'dark'
-  if (themeSetting === 'light') return 'light'
-  return deviceColorScheme === 'dark' ? 'dark' : 'light'
+  const colorScheme = useMemo<'light' | 'dark'>(() => {
+    if (themeSetting === 'dark') return 'dark'
+    if (themeSetting === 'light') return 'light'
+    return deviceColorScheme === 'dark' ? 'dark' : 'light'
+  }, [themeSetting, deviceColorScheme])
+
+  return <ColorSchemeContext.Provider value={colorScheme}>{children}</ColorSchemeContext.Provider>
 }
 
-export type Theme = ReturnType<typeof useTheme>
+export function useResolvedColorScheme(): 'light' | 'dark' {
+  const colorScheme = useContext(ColorSchemeContext)
+  return colorScheme ?? (Appearance.getColorScheme() === 'dark' ? 'dark' : 'light')
+}
 
-export function useTheme() {
-  const colorScheme = useResolvedColorScheme()
-  const isDark = colorScheme === 'dark'
+export type Theme = {
+  colors: (typeof Colors)['light']
+  colorScheme: 'light' | 'dark'
+  isDark: boolean
+  spacing: typeof Spacing
+  layout: typeof Layout
+  typography: typeof Typography
+}
 
-  return useMemo(
-    () => ({
-      colors: Colors[colorScheme],
-      colorScheme,
-      isDark,
-      spacing: Spacing,
-      layout: Layout,
-      typography: Typography,
-    }),
-    [colorScheme, isDark],
-  )
+const THEMES: Record<'light' | 'dark', Theme> = {
+  light: {
+    colors: Colors.light,
+    colorScheme: 'light',
+    isDark: false,
+    spacing: Spacing,
+    layout: Layout,
+    typography: Typography,
+  },
+  dark: {
+    colors: Colors.dark,
+    colorScheme: 'dark',
+    isDark: true,
+    spacing: Spacing,
+    layout: Layout,
+    typography: Typography,
+  },
+}
+
+export function useTheme(): Theme {
+  return THEMES[useResolvedColorScheme()]
 }
 
 export function useColors() {
@@ -63,11 +88,29 @@ export function useThemedStyles<T>(factory: (theme: Theme) => T): T {
 }
 
 export const createThemedStylesheet = <T extends object>(builder: (theme: Theme) => T) => {
+  const cache = new Map<string, T>()
   return () => {
     const theme = useTheme()
-    const stylesheet = useMemo(() => builder(theme), [theme])
+    let stylesheet = cache.get(theme.colorScheme)
+    if (!stylesheet) {
+      stylesheet = builder(theme)
+      cache.set(theme.colorScheme, stylesheet)
+    }
     return stylesheet
   }
+}
+
+function isShallowEqual(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false
+
+  const aKeys = Object.keys(a)
+  const bKeys = Object.keys(b)
+  if (aKeys.length !== bKeys.length) return false
+
+  return aKeys.every((key) =>
+    Object.is((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]),
+  )
 }
 
 export const createThemedStylesheetWithHooks = <T extends object, Output>(
@@ -77,8 +120,17 @@ export const createThemedStylesheetWithHooks = <T extends object, Output>(
   return () => {
     const theme = useTheme()
     const hooksOutput = hooks()
-    const stylesheet = useMemo(() => builder(theme, hooksOutput), [hooksOutput, theme])
-    return stylesheet
+    const cacheRef = useRef<{ theme: Theme; hooksOutput: Output; stylesheet: T } | null>(null)
+
+    if (
+      !cacheRef.current ||
+      cacheRef.current.theme !== theme ||
+      !isShallowEqual(cacheRef.current.hooksOutput, hooksOutput)
+    ) {
+      cacheRef.current = { theme, hooksOutput, stylesheet: builder(theme, hooksOutput) }
+    }
+
+    return cacheRef.current.stylesheet
   }
 }
 
