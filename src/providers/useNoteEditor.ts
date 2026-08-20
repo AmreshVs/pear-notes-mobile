@@ -107,6 +107,10 @@ export function useNoteEditor() {
     const hide = Keyboard.addListener(hideEvent, () => {
       if (!isOpen) return
       setKeyboardHeight(0)
+      if (!isIos) {
+        editorRef.current?.blur()
+        setIsEditing(false)
+      }
     })
     return () => {
       show.remove()

@@ -225,7 +225,7 @@ function checkVariantIds() {
     )
   }
 
-  pass('variant', `prod ${prodId}, dev ${prodId}.dev`)
+  pass('variant', `android ${prodId}/${prodId}.dev, ios ${iosIds.Release}/${iosIds.Debug}`)
 }
 
 function checkAndroidManifest() {
@@ -309,13 +309,24 @@ function checkCleartextPolicy() {
 function checkIosCompliance() {
   const plist = fs.readFileSync(path.join(ROOT, 'ios', 'pearnotes', 'Info.plist'), 'utf8')
 
+  const usesNonExempt = /<key>ITSAppUsesNonExemptEncryption<\/key>\s*<true\/>/.test(plist)
+  const hasComplianceCode = plist.includes('ITSEncryptionExportComplianceCode')
+
   if (!plist.includes('ITSAppUsesNonExemptEncryption')) {
     warn(
       'export',
       'ITSAppUsesNonExemptEncryption not declared - every TestFlight upload will block on a manual questionnaire',
     )
+  } else if (usesNonExempt && !hasComplianceCode) {
+    fail(
+      'export',
+      'ITSAppUsesNonExemptEncryption is true but ITSEncryptionExportComplianceCode is missing - upload rejected with error 90592 until the code issued by App Store Connect is added',
+    )
   } else {
-    pass('export', 'export compliance declared')
+    pass(
+      'export',
+      usesNonExempt ? 'non-exempt encryption declared with code' : 'exempt encryption declared',
+    )
   }
 
   if (plist.includes('$(PRODUCT_NAME) to access')) {

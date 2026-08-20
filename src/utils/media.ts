@@ -6,3 +6,6 @@ export const isAudioFile = (name?: string, mimeType?: string): boolean =>
 
 export const isVideoFile = (name?: string, mimeType?: string): boolean =>
   mimeType?.startsWith('video/') || /\.(mp4|mov|m4v|mkv|webm|avi)$/i.test(name || '')
+
+export const getAttachmentFileName = (url: string, fallback: string): string =>
+  url.split('/').pop()?.split('?')[0] || fallback

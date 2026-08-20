@@ -9,28 +9,35 @@ export function buildNoteSections(
   t: TranslateFn,
   isTrashFolder: boolean,
 ): NoteSection[] {
-  const sections: Record<string, any[]> = {
-    [t('folderView.sections.pinned')]: [],
-    [t('folderView.sections.today')]: [],
-    [t('folderView.sections.yesterday')]: [],
-    [t('folderView.sections.last7Days')]: [],
-    [t('folderView.sections.older')]: [],
-  }
+  const pinned: any[] = []
+  const today: any[] = []
+  const yesterday: any[] = []
+  const last7Days: any[] = []
+  const older: any[] = []
   const now = Date.now()
 
   notes.forEach((note: any) => {
     if (!isTrashFolder && note.value?.pinned === true) {
-      sections[t('folderView.sections.pinned')].push(note)
+      pinned.push(note)
       return
     }
     const diff = now - (note.value?.updatedAt || note.value?.createdAt || 0)
-    if (diff < DAY_MS) sections[t('folderView.sections.today')].push(note)
-    else if (diff < 2 * DAY_MS) sections[t('folderView.sections.yesterday')].push(note)
-    else if (diff < 7 * DAY_MS) sections[t('folderView.sections.last7Days')].push(note)
-    else sections[t('folderView.sections.older')].push(note)
+    if (diff < DAY_MS) today.push(note)
+    else if (diff < 2 * DAY_MS) yesterday.push(note)
+    else if (diff < 7 * DAY_MS) last7Days.push(note)
+    else older.push(note)
   })
 
-  return Object.entries(sections)
-    .filter(([, data]) => data.length > 0)
-    .map(([title, data]) => ({ title, data }))
+  const sections: NoteSection[] = []
+  if (pinned.length > 0) sections.push({ title: t('folderView.sections.pinned'), data: pinned })
+  if (today.length > 0) sections.push({ title: t('folderView.sections.today'), data: today })
+  if (yesterday.length > 0) {
+    sections.push({ title: t('folderView.sections.yesterday'), data: yesterday })
+  }
+  if (last7Days.length > 0) {
+    sections.push({ title: t('folderView.sections.last7Days'), data: last7Days })
+  }
+  if (older.length > 0) sections.push({ title: t('folderView.sections.older'), data: older })
+
+  return sections
 }

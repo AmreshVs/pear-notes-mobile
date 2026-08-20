@@ -65,6 +65,12 @@ import {
   UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import {
+  LIST_BATCH_RENDER_COUNT,
+  LIST_BATCHING_PERIOD_MS,
+  LIST_INITIAL_RENDER_COUNT,
+  LIST_WINDOW_SIZE,
+} from '@/constants/constants'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
@@ -343,6 +349,44 @@ export default function AndroidFolderNotesScreen() {
     [isAllNotes, folderNameMap, handleSelectNote, handleNoteLongPress],
   )
 
+  const listHeader = useMemo(
+    () => (
+      <View>
+        <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
+        <Text style={styles.pageCount} accessibilityLiveRegion="polite">
+          {t('folderView.noteCount', { count: notes.length })}
+        </Text>
+      </View>
+    ),
+    [folder?.name, notes.length, t, styles.pageTitle, styles.pageCount],
+  )
+
+  const listEmpty = useMemo(
+    () => (
+      <AndroidEmptyState
+        hasSearch={searchQuery.trim().length > 0}
+        isOnboarding={
+          !isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0
+        }
+        isTrash={isTrashFolder}
+        onLinkDevice={handleLinkDevice}
+        onCreateNote={handleCreateNote}
+        onRestoreBackup={handleRestoreBackup}
+        height={height}
+      />
+    ),
+    [
+      searchQuery,
+      isTrashFolder,
+      localPreferences,
+      allNotes.length,
+      handleLinkDevice,
+      handleCreateNote,
+      handleRestoreBackup,
+      height,
+    ],
+  )
+
   const renderSectionHeader = useCallback(
     ({ section }: { section: SectionListData<any> }) =>
       section.title ? <Text style={styles.sectionCap}>{section.title}</Text> : null,
@@ -537,27 +581,12 @@ export default function AndroidFolderNotesScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews
-        ListHeaderComponent={
-          <View>
-            <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
-            <Text style={styles.pageCount} accessibilityLiveRegion="polite">
-              {t('folderView.noteCount', { count: notes.length })}
-            </Text>
-          </View>
-        }
-        ListEmptyComponent={
-          <AndroidEmptyState
-            hasSearch={searchQuery.trim().length > 0}
-            isOnboarding={
-              !isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0
-            }
-            isTrash={isTrashFolder}
-            onLinkDevice={handleLinkDevice}
-            onCreateNote={handleCreateNote}
-            onRestoreBackup={handleRestoreBackup}
-            height={height}
-          />
-        }
+        initialNumToRender={LIST_INITIAL_RENDER_COUNT}
+        maxToRenderPerBatch={LIST_BATCH_RENDER_COUNT}
+        windowSize={LIST_WINDOW_SIZE}
+        updateCellsBatchingPeriod={LIST_BATCHING_PERIOD_MS}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
       />
 
       {!isTrashFolder && (

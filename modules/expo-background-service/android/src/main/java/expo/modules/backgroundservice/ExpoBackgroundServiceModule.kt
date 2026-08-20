@@ -3,11 +3,24 @@ package expo.modules.backgroundservice
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.core.content.ContextCompat
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class ExpoBackgroundServiceModule : Module() {
+  private fun deliver(intent: Intent, context: Context, asForeground: Boolean) {
+    try {
+      if (asForeground && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        ContextCompat.startForegroundService(context, intent)
+      } else {
+        context.startService(intent)
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "service intent rejected: ${intent.action}", e)
+    }
+  }
+
   override fun definition() = ModuleDefinition {
     Name("ExpoBackgroundService")
 
@@ -19,12 +32,8 @@ class ExpoBackgroundServiceModule : Module() {
           putExtra(BackupForegroundService.EXTRA_MESSAGE, message)
           putExtra(BackupForegroundService.EXTRA_MAX_PROGRESS, maxProgress)
         }
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-          ContextCompat.startForegroundService(context, intent)
-        } else {
-          context.startService(intent)
-        }
+
+        deliver(intent, context, true)
       }
     }
 
@@ -38,7 +47,7 @@ class ExpoBackgroundServiceModule : Module() {
           putExtra(BackupForegroundService.EXTRA_MAX_PROGRESS, maxProgress)
         }
 
-        context.startService(intent)
+        deliver(intent, context, false)
       }
     }
 
@@ -52,8 +61,12 @@ class ExpoBackgroundServiceModule : Module() {
           }
         }
 
-        context.startService(intent)
+        deliver(intent, context, false)
       }
     }
+  }
+
+  companion object {
+    private const val TAG = "ExpoBackgroundService"
   }
 }

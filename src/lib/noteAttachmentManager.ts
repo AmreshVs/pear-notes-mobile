@@ -3,6 +3,8 @@ import * as FileSystem from 'expo-file-system/legacy'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 
+import { ensureFileExtension } from '@/lib/fileSignature'
+
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
 export async function pickImagesFromLibrary() {
@@ -164,11 +166,11 @@ export async function downloadToCache(
   if (url.startsWith('data:')) {
     const base64 = url.split(',')[1] || ''
     await FileSystem.writeAsStringAsync(dest, base64, { encoding: 'base64' })
-    return dest
+    return ensureFileExtension(dest)
   }
   if (!onProgress) {
     const { uri } = await FileSystem.downloadAsync(url, dest)
-    return uri
+    return ensureFileExtension(uri)
   }
   const resumable = FileSystem.createDownloadResumable(
     url,
@@ -182,7 +184,7 @@ export async function downloadToCache(
   )
   const result = await resumable.downloadAsync()
   if (!result) throw new Error('Download failed')
-  return result.uri
+  return ensureFileExtension(result.uri)
 }
 
 export async function saveImageToPhotos(url: string, fileName: string) {

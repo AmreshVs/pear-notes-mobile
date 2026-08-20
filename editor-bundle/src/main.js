@@ -958,6 +958,7 @@ function createEditorSession(collaborator, html) {
       broadcastStyleState(editor)
     },
     onSelectionUpdate: ({ editor }) => broadcastStyleState(editor),
+    onTransaction: ({ editor }) => broadcastStyleState(editor),
     onFocus: () => sendToRN({ type: 'focus' }),
     onBlur: ({ editor }) => {
       flushContentChange(editor.getHTML(), editor.getText())

@@ -22,7 +22,6 @@ import {
   Pin,
 } from 'lucide-react-native'
 
-import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import {
@@ -38,7 +37,8 @@ import {
   UI_SIZE_8,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
-import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
+import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import type { AttachmentInfo } from '@/utils/noteUtils'
@@ -188,18 +188,17 @@ export const NoteCard = memo(function NoteCard({
   const { colors } = useTheme()
   const lockIconColor = colors.primary
   const [thumbError, setThumbError] = useState(false)
-  useNoteLockVersion()
+  const isUnlocked = useIsNoteUnlocked(id)
   const uploadQueue = useNoteUploadQueue(id)
   const upload = uploadQueue.activeItem
-  const masked = locked === true && !isNoteUnlocked(id)
+  const masked = locked === true && !isUnlocked
 
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
   const imageUrl = useMemo(
     () => resolveHyperdriveUrl(rawImageUrl, hyperdriveServerAddress),
     [rawImageUrl, hyperdriveServerAddress],
   )
-  const colorTheme = useSelector(getColorTheme)
-  const isPearTheme = colorTheme === 'pear'
+  const isPearTheme = useAndroidColorTheme() === 'pear'
 
   const handlePress = useCallback(() => onPress(id), [onPress, id])
   const handleThumbError = useCallback(() => setThumbError(true), [])

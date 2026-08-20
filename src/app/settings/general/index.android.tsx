@@ -9,12 +9,10 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { router, Stack } from 'expo-router'
 
 import {
-  getColorTheme,
   getEditorFontSize,
   getFontFamily,
   getSortBy,
   getTheme,
-  setColorTheme,
   setTheme,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
@@ -45,9 +43,10 @@ import {
   UI_SIZE_40,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import { AndroidColorTheme, setAndroidColorTheme } from '@/lib/androidColorTheme'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticSelection } from '@/lib/haptics'
-import type { AndroidColorTheme } from '@/providers/AndroidPaperProvider'
 
 export default function AndroidGeneralSettingsScreen() {
   const { t } = useTranslation()
@@ -62,7 +61,7 @@ export default function AndroidGeneralSettingsScreen() {
   const fontFamily = useSelector(getFontFamily)
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
-  const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
+  const androidColorTheme = useAndroidColorTheme()
   const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
@@ -186,13 +185,10 @@ export default function AndroidGeneralSettingsScreen() {
     [currentTheme, handleSetTheme, styles, t],
   )
 
-  const handleSetColorTheme = useCallback(
-    (colorTheme: AndroidColorTheme) => {
-      hapticSelection()
-      dispatch(setColorTheme(colorTheme))
-    },
-    [dispatch],
-  )
+  const handleSetColorTheme = useCallback((colorTheme: AndroidColorTheme) => {
+    hapticSelection()
+    setAndroidColorTheme(colorTheme)
+  }, [])
 
   const renderColorThemeOption = useCallback(
     (opt: (typeof colorThemeOptions)[number]) => {

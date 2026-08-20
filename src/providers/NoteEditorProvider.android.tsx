@@ -52,14 +52,15 @@ import {
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { hasFileExtension } from '@/lib/fileSignature'
 import { copyFileToSAF, downloadToCache, shareMessage } from '@/lib/noteAttachmentManager'
-import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
+import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { parseNoteAttachmentsAndText } from '@/utils/noteParser'
 
 import { AudioRecorderModal } from '../components/AudioRecorderModal'
-import { isImageFile } from '../utils/media'
+import { getAttachmentFileName, isImageFile } from '../utils/media'
 
 import { useToast } from './ToastProvider'
 import { useNoteEditor } from './useNoteEditor'
@@ -69,9 +70,31 @@ const MIME_TYPES: Record<string, string> = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
   png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  heic: 'image/heic',
+  avif: 'image/avif',
+  bmp: 'image/bmp',
   pdf: 'application/pdf',
   m4a: 'audio/mp4',
+  mp3: 'audio/mpeg',
+  wav: 'audio/wav',
+  ogg: 'audio/ogg',
   mp4: 'video/mp4',
+  mov: 'video/quicktime',
+  webm: 'video/webm',
+  zip: 'application/zip',
+}
+
+const FALLBACK_MIME_TYPE = 'application/octet-stream'
+const FALLBACK_IMAGE_FILE_NAME = 'image'
+const FALLBACK_FILE_NAME = 'file'
+
+function applyDownloadedExtension(fileName: string, localPath: string): string {
+  if (hasFileExtension(fileName)) return fileName
+  const localName = localPath.split('/').pop() || ''
+  if (!hasFileExtension(localName)) return fileName
+  return `${fileName}.${localName.split('.').pop()}`
 }
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
@@ -137,7 +160,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const shouldMountEditor = useDeferredEditorMount(isOpen)
 
-  useNoteLockVersion()
   const uploadQueue = useNoteUploadQueue(noteId)
   const hasUploadQueue = uploadQueue.items.length > 0
   const uploadBannerBottom = useMemo(
@@ -146,7 +168,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [keyboardHeight, insets.bottom],
   )
   const lockMethod = useSelector(getLockMethod)
-  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
+  const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
+  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
   const editorLabels = useMemo(
@@ -242,11 +265,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             }),
           )
           if (localPath) {
-            const ext = fileName.split('.').pop()?.toLowerCase() || ''
-            const mimeType = MIME_TYPES[ext] || 'application/octet-stream'
+            const targetName = applyDownloadedExtension(fileName, localPath)
+            const ext = targetName.split('.').pop()?.toLowerCase() || ''
+            const mimeType = MIME_TYPES[ext] || FALLBACK_MIME_TYPE
             const uri = await FileSystem.StorageAccessFramework.createFileAsync(
               permissions.directoryUri,
-              fileName,
+              targetName,
               mimeType,
             )
             await copyFileToSAF(localPath, uri)
@@ -290,7 +314,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setImageSheetVisible(false)
     const src = selectedImageSrc
     setSelectedImageSrc(null)
-    await executeShare(src, src.split('/').pop() || 'image.jpg')
+    await executeShare(src, getAttachmentFileName(src, FALLBACK_IMAGE_FILE_NAME))
   }, [selectedImageSrc, executeShare, setImageSheetVisible, setSelectedImageSrc])
 
   const handleImageMenuDownload = useCallback(async () => {
@@ -298,7 +322,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setImageSheetVisible(false)
     const src = selectedImageSrc
     setSelectedImageSrc(null)
-    await executeDownload(src, src.split('/').pop() || 'image.jpg')
+    await executeDownload(src, getAttachmentFileName(src, FALLBACK_IMAGE_FILE_NAME))
   }, [selectedImageSrc, executeDownload, setImageSheetVisible, setSelectedImageSrc])
 
   const handleAttachmentLongPress = useCallback(
@@ -316,7 +340,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedAttachmentSrc) return
     setAttachmentSheetVisible2(false)
     const src = selectedAttachmentSrc
-    const fileName = selectedAttachmentFileName || src.split('/').pop() || 'file'
+    const fileName = selectedAttachmentFileName || getAttachmentFileName(src, FALLBACK_FILE_NAME)
     setSelectedAttachmentSrc(null)
     setSelectedAttachmentFileName(null)
     await executeShare(src, fileName)
@@ -350,7 +374,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedAttachmentSrc) return
     setAttachmentSheetVisible2(false)
     const src = selectedAttachmentSrc
-    const fileName = selectedAttachmentFileName || src.split('/').pop() || 'file'
+    const fileName = selectedAttachmentFileName || getAttachmentFileName(src, FALLBACK_FILE_NAME)
     setSelectedAttachmentSrc(null)
     setSelectedAttachmentFileName(null)
     await executeDownload(src, fileName)

@@ -1,0 +1,4 @@
+export const LIST_INITIAL_RENDER_COUNT = 10
+export const LIST_BATCH_RENDER_COUNT = 6
+export const LIST_WINDOW_SIZE = 7
+export const LIST_BATCHING_PERIOD_MS = 60

@@ -90,7 +90,7 @@ export default function RootLayout() {
   const colorScheme = useColorScheme()
   const isDark = colorScheme === 'dark'
   const currentTheme = isDark ? Colors.dark : Colors.light
-  const styles = getStyles(isDark)
+  const styles = isDark ? darkOverlayStyles : lightOverlayStyles
 
   return (
     <View style={commonStyles.flex1}>
@@ -158,6 +158,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       await backendApi.ready({ storage, encryption: key })
       workletRestartAttemptsRef.current = 0
       loadHapticsPreference()
+      getBackgroundSyncMode().then(applyBackgroundSyncMode)
       dispatch(appReady())
       dispatch(initApp())
     } catch (e) {
@@ -172,10 +173,6 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
 
   useEffect(() => {
     sweepBackupCache()
-  }, [])
-
-  useEffect(() => {
-    getBackgroundSyncMode().then(applyBackgroundSyncMode)
   }, [])
 
   const encryptionKey = receiverStatus?.encryptionKey
@@ -260,6 +257,30 @@ function SplashGate() {
   return null
 }
 
+const CustomDarkTheme = {
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    background: Colors.dark.background,
+    card: Colors.dark.surface,
+    text: Colors.dark.text,
+    border: Colors.dark.border,
+    primary: Colors.dark.primary,
+  },
+}
+
+const CustomLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: Colors.light.background,
+    card: Colors.light.surface,
+    text: Colors.light.text,
+    border: Colors.light.border,
+    primary: Colors.light.primary,
+  },
+}
+
 function RootLayoutNav() {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
@@ -267,30 +288,6 @@ function RootLayoutNav() {
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
   }, [isDark])
-
-  const CustomDarkTheme = {
-    ...DarkTheme,
-    colors: {
-      ...DarkTheme.colors,
-      background: Colors.dark.background,
-      card: Colors.dark.surface,
-      text: Colors.dark.text,
-      border: Colors.dark.border,
-      primary: Colors.dark.primary,
-    },
-  }
-
-  const CustomLightTheme = {
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      background: Colors.light.background,
-      card: Colors.light.surface,
-      text: Colors.light.text,
-      border: Colors.light.border,
-      primary: Colors.light.primary,
-    },
-  }
 
   return (
     <ThemeProvider value={isDark ? CustomDarkTheme : CustomLightTheme}>
@@ -329,7 +326,7 @@ function RootLayoutNav() {
   )
 }
 
-const getStyles = (isDark: boolean) => {
+const createOverlayStyles = (isDark: boolean) => {
   const currentTheme = isDark ? Colors.dark : Colors.light
   const styles = StyleSheet.create({
     overlay: {
@@ -355,3 +352,6 @@ const getStyles = (isDark: boolean) => {
   })
   return styles
 }
+
+const lightOverlayStyles = createOverlayStyles(false)
+const darkOverlayStyles = createOverlayStyles(true)

@@ -15,7 +15,6 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { Image } from 'expo-image'
 import { Folder } from 'lucide-react-native'
 
-import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
@@ -40,14 +39,17 @@ import {
   UI_SIZE_24,
   UI_SIZE_60,
 } from '@/constants/commonStyles'
+import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
+import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 import { type AttachmentKind } from '@/utils/noteUtils'
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name']
+
+const ENTER_ANIMATION_MAX_INDEX = 10
 
 const ATTACHMENT_ICONS: Record<AttachmentKind, MaterialIconName> = {
   image: 'image-outline',
@@ -88,12 +90,12 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const md3 = useMD3Theme()
   const c = md3.colors
 
-  useNoteLockVersion()
+  const isUnlocked = useIsNoteUnlocked(note.key)
   const uploadQueue = useNoteUploadQueue(note.key)
   const upload = uploadQueue.activeItem
   const locked = note.value?.locked === true
   const pinned = note.value?.pinned === true
-  const masked = locked && !isNoteUnlocked(note.key)
+  const masked = locked && !isUnlocked
 
   const title = note.value?.title || t('noteCard.untitled')
   const metadata = getNoteMetadata(note.value)
@@ -117,10 +119,19 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
     () => resolveHyperdriveUrl(rawImageUrl, hyperdriveServerAddress),
     [rawImageUrl, hyperdriveServerAddress],
   )
-  const colorTheme = useSelector(getColorTheme)
-  const isPearTheme = colorTheme === 'pear'
+  const isPearTheme = useAndroidColorTheme() === 'pear'
   const [thumbError, setThumbError] = useState(false)
   const showThumb = !!resolvedImageUrl && !thumbError && !masked
+
+  const entering = useMemo(
+    () =>
+      index <= ENTER_ANIMATION_MAX_INDEX
+        ? FadeInDown.duration(200)
+            .delay(index * 30)
+            .easing(Easing.out(Easing.cubic))
+        : undefined,
+    [index],
+  )
 
   const scale = useSharedValue(1)
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
@@ -137,11 +148,11 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
 
   return (
     <Animated.View
-      entering={FadeInDown.duration(200).delay(Math.min(index, 10) * 30).easing(Easing.out(Easing.cubic))}
+      entering={entering}
       exiting={FadeOutUp.duration(160)}
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-      style={animStyle}
     >
+      <Animated.View style={animStyle}>
       <Pressable
         onPress={handlePress}
         onLongPress={handleLongPress}
@@ -241,6 +252,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
           />
         )}
       </Pressable>
+      </Animated.View>
     </Animated.View>
   )
 }, areNoteRowPropsEqual)

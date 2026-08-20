@@ -48,7 +48,7 @@ import {
   saveImageToPhotos,
   shareMessage,
 } from '@/lib/noteAttachmentManager'
-import { isNoteUnlocked, useNoteLockVersion } from '@/lib/noteLock'
+import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { parseNoteAttachmentsAndText, resolveAttachmentFilename } from '@/utils/noteParser'
@@ -114,9 +114,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const shouldMountEditor = useDeferredEditorMount(isOpen)
 
-  useNoteLockVersion()
   const lockMethod = useSelector(getLockMethod)
-  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlocked(noteId)
+  const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
+  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
 

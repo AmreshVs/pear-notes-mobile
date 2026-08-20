@@ -9,14 +9,14 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.amreshvs.pearnotes",
-      "appleTeamId": "65S93235JA",
+      "bundleIdentifier": "com.amreshvs.pear-notes",
+      "appleTeamId": "DRQUZF86A2",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Allow Pear Notes to access your microphone to record voice notes.",
         "NSCameraUsageDescription": "Allow Pear Notes to use the camera to take photos and videos for your notes.",
         "NSPhotoLibraryUsageDescription": "Allow Pear Notes to access your photo library so you can attach images and videos to your notes.",
         "NSPhotoLibraryAddUsageDescription": "Allow Pear Notes to save images to your photo library.",
-        "ITSAppUsesNonExemptEncryption": true
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {

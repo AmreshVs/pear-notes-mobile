@@ -3,7 +3,7 @@ import * as ExpoBackgroundService from 'expo-background-service'
 
 import HRPC from '@pear-notes/core/spec/hrpc/index.js'
 
-import { getBackgroundSyncMode } from '@/lib/backgroundSync'
+import { getCachedBackgroundSyncMode } from '@/lib/backgroundSync'
 
 const { setRPC } = require('@pear-notes/core/rpc.js')
 const FramedStream = require('framed-stream')
@@ -23,20 +23,17 @@ let _appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
 let _foregroundServiceActive = false
 let _notificationStrings = { title: '', message: '' }
 
-async function handleBackground(worklet: any) {
-  if (Platform.OS === 'android') {
+function handleBackground(worklet: any) {
+  if (Platform.OS === 'android' && getCachedBackgroundSyncMode() === 'always-on') {
     try {
-      const mode = await getBackgroundSyncMode()
-      if (mode === 'always-on') {
-        ExpoBackgroundService.startService(
-          _notificationStrings.title,
-          _notificationStrings.message,
-          0,
-        )
-        _foregroundServiceActive = true
-        worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
-        return
-      }
+      ExpoBackgroundService.startService(
+        _notificationStrings.title,
+        _notificationStrings.message,
+        0,
+      )
+      _foregroundServiceActive = true
+      worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+      return
     } catch {}
   }
 

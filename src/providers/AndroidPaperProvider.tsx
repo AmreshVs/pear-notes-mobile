@@ -1,7 +1,6 @@
 import React, { useMemo } from 'react'
 import { Platform } from 'react-native'
 import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper'
-import { useSelector } from 'react-redux'
 import {
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -12,12 +11,9 @@ import {
 import { useMaterial3Theme } from '@pchmn/expo-material3-theme'
 import { useFonts } from 'expo-font'
 
-import { getColorTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
-
 import { useResolvedColorScheme } from '@/components/Themed'
+import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { AndroidDarkTheme, AndroidLightTheme, pearGold } from '@/theme/androidTheme'
-
-export type AndroidColorTheme = 'default' | 'material_you'
 
 interface AndroidPaperProviderProps {
   children: React.ReactNode
@@ -26,7 +22,7 @@ interface AndroidPaperProviderProps {
 export function AndroidPaperProvider({ children }: AndroidPaperProviderProps) {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
-  const androidColorTheme = useSelector(getColorTheme) as AndroidColorTheme
+  const androidColorTheme = useAndroidColorTheme()
 
   const { theme: m3Theme } = useMaterial3Theme({ fallbackSourceColor: pearGold })
 

@@ -5,10 +5,8 @@ import { hapticSuccess } from '@/lib/haptics'
 
 const unlockedKeys = new Set<string>()
 const listeners = new Set<() => void>()
-let version = 0
 
 function emit() {
-  version++
   for (const listener of listeners) listener()
 }
 
@@ -17,14 +15,6 @@ function subscribe(listener: () => void) {
   return () => {
     listeners.delete(listener)
   }
-}
-
-function getSnapshot() {
-  return version
-}
-
-export function isNoteUnlocked(key: string): boolean {
-  return unlockedKeys.has(key)
 }
 
 export function relockNote(key: string) {
@@ -58,6 +48,6 @@ export async function unlockNote(key: string, reason: string): Promise<boolean> 
   return ok
 }
 
-export function useNoteLockVersion(): number {
-  return useSyncExternalStore(subscribe, getSnapshot)
+export function useIsNoteUnlocked(key: string | null): boolean {
+  return useSyncExternalStore(subscribe, () => (key ? unlockedKeys.has(key) : false))
 }
