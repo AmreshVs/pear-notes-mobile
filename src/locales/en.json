@@ -770,6 +770,13 @@
     "editNote": "Edit note",
     "undo": "Undo",
     "redo": "Redo",
+    "subscript": "Subscript",
+    "superscript": "Superscript",
+    "horizontalRule": "Divider",
+    "alignLeft": "Align Left",
+    "alignCenter": "Align Center",
+    "alignRight": "Align Right",
+    "alignJustify": "Justify",
     "types": {
       "title": "Title",
       "heading": "Heading",

@@ -4,6 +4,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import * as Haptics from 'expo-haptics'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 import {
@@ -17,6 +18,7 @@ import {
   UI_SIZE_44,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ToolbarBtnProps = {
@@ -47,6 +49,10 @@ const ToolbarBtn = memo(function ToolbarBtn({ icon, onPress, active, c, styles }
   )
 })
 
+type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
+  surfaceContainerHigh?: string
+}
+
 type EditorToolbarProps = {
   isActive: (key: keyof TiptapStyleState) => boolean
   editorRef: React.RefObject<TiptapEditorHandle | null>
@@ -62,7 +68,9 @@ export const EditorToolbar = memo(function EditorToolbar({
 }: EditorToolbarProps) {
   const styles = useStyles()
   const md3 = useMD3Theme()
-  const c = md3.colors
+  const c = md3.colors as ExtendedColors
+  const { showEndFade, handleScrollLayout, handleContentSizeChange, handleScroll } =
+    useScrollEdgeFade()
 
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
@@ -76,12 +84,17 @@ export const EditorToolbar = memo(function EditorToolbar({
 
   return (
     <View style={containerStyle}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="always"
-      >
+      <View style={styles.scrollWrap}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="always"
+          onLayout={handleScrollLayout}
+          onContentSizeChange={handleContentSizeChange}
+          onScroll={handleScroll}
+          scrollEventThrottle={16}
+        >
         <ToolbarBtn
           icon="checkbox-marked-outline"
           active={isActive('checkboxList')}
@@ -105,6 +118,13 @@ export const EditorToolbar = memo(function EditorToolbar({
           styles={styles}
         />
         <ToolbarBtn
+          icon="format-header-3"
+          active={isActive('h3')}
+          onPress={() => run(() => editorRef.current?.toggleH3())}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
           icon="format-bold"
           active={isActive('bold')}
           onPress={() => run(() => editorRef.current?.toggleBold())}
@@ -115,6 +135,41 @@ export const EditorToolbar = memo(function EditorToolbar({
           icon="format-italic"
           active={isActive('italic')}
           onPress={() => run(() => editorRef.current?.toggleItalic())}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-underline"
+          active={isActive('underline')}
+          onPress={() => run(() => editorRef.current?.toggleUnderline())}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-strikethrough-variant"
+          active={isActive('strike')}
+          onPress={() => run(() => editorRef.current?.toggleStrike())}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-color-highlight"
+          active={isActive('highlight')}
+          onPress={() => run(() => editorRef.current?.toggleHighlight())}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-subscript"
+          active={isActive('subscript')}
+          onPress={() => run(() => editorRef.current?.toggleSubscript())}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-superscript"
+          active={isActive('superscript')}
+          onPress={() => run(() => editorRef.current?.toggleSuperscript())}
           c={c}
           styles={styles}
         />
@@ -146,7 +201,47 @@ export const EditorToolbar = memo(function EditorToolbar({
           c={c}
           styles={styles}
         />
-      </ScrollView>
+        <ToolbarBtn
+          icon="minus"
+          onPress={() => run(() => editorRef.current?.setHorizontalRule())}
+          c={c}
+          styles={styles}
+        />
+        <View style={styles.divider} />
+        <ToolbarBtn
+          icon="format-align-left"
+          active={isActive('alignLeft')}
+          onPress={() => run(() => editorRef.current?.setTextAlign('left'))}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-align-center"
+          active={isActive('alignCenter')}
+          onPress={() => run(() => editorRef.current?.setTextAlign('center'))}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-align-right"
+          active={isActive('alignRight')}
+          onPress={() => run(() => editorRef.current?.setTextAlign('right'))}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="format-align-justify"
+          active={isActive('alignJustify')}
+          onPress={() => run(() => editorRef.current?.setTextAlign('justify'))}
+          c={c}
+          styles={styles}
+        />
+        </ScrollView>
+        <ScrollEdgeFade
+          color={c.surfaceContainerHigh ?? c.surface}
+          visible={showEndFade}
+        />
+      </View>
 
       <View style={styles.divider} />
 
@@ -185,6 +280,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),
       elevation: 6,
       shadowColor: theme.colors.black,
+    },
+    scrollWrap: {
+      flex: 1,
     },
     scrollContent: {
       flexDirection: 'row',

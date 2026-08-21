@@ -47,6 +47,12 @@ export interface TiptapStyleState {
   codeBlock: { isActive: boolean }
   link: { isActive: boolean }
   highlight: { isActive: boolean }
+  subscript: { isActive: boolean }
+  superscript: { isActive: boolean }
+  alignLeft: { isActive: boolean }
+  alignCenter: { isActive: boolean }
+  alignRight: { isActive: boolean }
+  alignJustify: { isActive: boolean }
 }
 
 export interface TiptapEditorHandle {
@@ -54,6 +60,9 @@ export interface TiptapEditorHandle {
   toggleItalic: () => void
   toggleUnderline: () => void
   toggleStrike: () => void
+  toggleSubscript: () => void
+  toggleSuperscript: () => void
+  setHorizontalRule: () => void
   toggleH1: () => void
   toggleH2: () => void
   toggleH3: () => void
@@ -486,6 +495,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         toggleItalic: () => sendCommand({ type: 'toggleItalic' }),
         toggleUnderline: () => sendCommand({ type: 'toggleUnderline' }),
         toggleStrike: () => sendCommand({ type: 'toggleStrike' }),
+        toggleSubscript: () => sendCommand({ type: 'toggleSubscript' }),
+        toggleSuperscript: () => sendCommand({ type: 'toggleSuperscript' }),
+        setHorizontalRule: () => sendCommand({ type: 'setHorizontalRule' }),
         toggleH1: () => sendCommand({ type: 'toggleH1' }),
         toggleH2: () => sendCommand({ type: 'toggleH2' }),
         toggleH3: () => sendCommand({ type: 'toggleH3' }),

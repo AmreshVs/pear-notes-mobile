@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
+import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
 import { createThemedStylesheet } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 import {
@@ -16,6 +17,7 @@ import {
   UI_SIZE_42,
   UI_SIZE_44,
 } from '@/constants/commonStyles'
+import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -166,6 +168,8 @@ export const EditorToolbar = memo(function EditorToolbar({
 }: EditorToolbarProps) {
   const styles = useStyles()
   const { t } = useTranslation()
+  const { showEndFade, handleScrollLayout, handleContentSizeChange, handleScroll } =
+    useScrollEdgeFade()
   const run = useCallback((action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     action()
@@ -203,11 +207,16 @@ export const EditorToolbar = memo(function EditorToolbar({
     <View style={[styles.floatingToolbar, { bottom: toolbarBottom }]}>
       <GlassView intensity={40} borderRadius={28} style={styles.glassBar} isInteractive>
         {isEditing ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.toolbarRow}
-          >
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.toolbarRow}
+              onLayout={handleScrollLayout}
+              onContentSizeChange={handleContentSizeChange}
+              onScroll={handleScroll}
+              scrollEventThrottle={16}
+            >
             <AttachMenu
               colors={colors}
               onPickImage={handlePickImageEdit}
@@ -223,7 +232,7 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="textformat.size.larger"
               tintActive={colors.primary}
               tintDefault={colors.text}
-              a11yLabel={t('formatting.types.heading')}
+              a11yLabel={t('formatting.types.title')}
               active={isActive('h1')}
               onPress={() => run(() => editorRef.current?.toggleH1())}
               styles={styles}
@@ -232,9 +241,18 @@ export const EditorToolbar = memo(function EditorToolbar({
               sf="textformat.size"
               tintActive={colors.primary}
               tintDefault={colors.text}
-              a11yLabel={t('formatting.types.subheading')}
+              a11yLabel={t('formatting.types.heading')}
               active={isActive('h2')}
               onPress={() => run(() => editorRef.current?.toggleH2())}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="textformat.size.smaller"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.types.subheading')}
+              active={isActive('h3')}
+              onPress={() => run(() => editorRef.current?.toggleH3())}
               styles={styles}
             />
             <ToolbarBtn
@@ -253,6 +271,51 @@ export const EditorToolbar = memo(function EditorToolbar({
               a11yLabel={t('formatting.italic')}
               active={isActive('italic')}
               onPress={() => run(() => editorRef.current?.toggleItalic())}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="underline"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.underline')}
+              active={isActive('underline')}
+              onPress={() => run(() => editorRef.current?.toggleUnderline())}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="strikethrough"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.strikethrough')}
+              active={isActive('strike')}
+              onPress={() => run(() => editorRef.current?.toggleStrike())}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="highlighter"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.highlight')}
+              active={isActive('highlight')}
+              onPress={() => run(() => editorRef.current?.toggleHighlight())}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="textformat.subscript"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.subscript')}
+              active={isActive('subscript')}
+              onPress={() => run(() => editorRef.current?.toggleSubscript())}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="textformat.superscript"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.superscript')}
+              active={isActive('superscript')}
+              onPress={() => run(() => editorRef.current?.toggleSuperscript())}
               styles={styles}
             />
             <ToolbarBtn
@@ -300,7 +363,54 @@ export const EditorToolbar = memo(function EditorToolbar({
               onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
               styles={styles}
             />
-          </ScrollView>
+            <ToolbarBtn
+              sf="minus"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.horizontalRule')}
+              onPress={() => run(() => editorRef.current?.setHorizontalRule())}
+              styles={styles}
+            />
+            <View style={styles.divider} />
+            <ToolbarBtn
+              sf="text.alignleft"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.alignLeft')}
+              active={isActive('alignLeft')}
+              onPress={() => run(() => editorRef.current?.setTextAlign('left'))}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="text.aligncenter"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.alignCenter')}
+              active={isActive('alignCenter')}
+              onPress={() => run(() => editorRef.current?.setTextAlign('center'))}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="text.alignright"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.alignRight')}
+              active={isActive('alignRight')}
+              onPress={() => run(() => editorRef.current?.setTextAlign('right'))}
+              styles={styles}
+            />
+            <ToolbarBtn
+              sf="text.justify"
+              tintActive={colors.primary}
+              tintDefault={colors.text}
+              a11yLabel={t('formatting.alignJustify')}
+              active={isActive('alignJustify')}
+              onPress={() => run(() => editorRef.current?.setTextAlign('justify'))}
+              styles={styles}
+            />
+            </ScrollView>
+            <ScrollEdgeFade color={colors.background} visible={showEndFade} />
+          </>
         ) : (
           <View style={styles.toolbarRowCompact}>
             <AttachMenu

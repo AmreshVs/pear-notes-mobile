@@ -9,6 +9,7 @@
   --c-code-bg: #f0f0f2;
   --c-code: #2d5016;
   --c-codeblock-bg: #f4f4f5;
+  --c-highlight: #fef08a;
   --hl-keyword: #d73a49;
   --hl-string: #032f62;
   --hl-comment: #6a737d;
@@ -29,6 +30,7 @@
     --c-code-bg: #1c1c1e;
     --c-code: #a8ff78;
     --c-codeblock-bg: #141414;
+    --c-highlight: #854d0e;
     --hl-keyword: #ff79c6;
     --hl-string: #f1fa8c;
     --hl-comment: #6272a4;
@@ -265,6 +267,8 @@ body {
 .tiptap mark {
   border-radius: 3px;
   padding: 1px 2px;
+  background-color: var(--c-highlight);
+  color: inherit;
 }
 
 .tiptap img {

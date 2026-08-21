@@ -246,6 +246,12 @@ function broadcastStyleState(ed) {
       codeBlock: { isActive: ed.isActive('codeBlock') },
       link: { isActive: ed.isActive('link') },
       highlight: { isActive: ed.isActive('highlight') },
+      subscript: { isActive: ed.isActive('subscript') },
+      superscript: { isActive: ed.isActive('superscript') },
+      alignLeft: { isActive: ed.isActive({ textAlign: 'left' }) },
+      alignCenter: { isActive: ed.isActive({ textAlign: 'center' }) },
+      alignRight: { isActive: ed.isActive({ textAlign: 'right' }) },
+      alignJustify: { isActive: ed.isActive({ textAlign: 'justify' }) },
     }
     const json = JSON.stringify(state)
     if (json === lastStyleJSON) return
@@ -1110,6 +1116,15 @@ window.editorBridge = {
         break
       case 'toggleUnderline':
         ch().toggleUnderline().run()
+        break
+      case 'toggleSubscript':
+        ch().toggleSubscript().run()
+        break
+      case 'toggleSuperscript':
+        ch().toggleSuperscript().run()
+        break
+      case 'setHorizontalRule':
+        ch().setHorizontalRule().run()
         break
       case 'toggleStrike':
         ch().toggleStrike().run()
