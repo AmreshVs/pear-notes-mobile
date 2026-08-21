@@ -17,6 +17,8 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 
 const FOCUS_TITLE_DELAY = 250
+const IOS_TOOLBAR_INSET_TYPING = 76
+const IOS_TOOLBAR_INSET_IDLE = 96
 
 export function useNoteEditor() {
   const editorRef = useRef<TiptapEditorHandle>(null)
@@ -98,7 +100,9 @@ export function useNoteEditor() {
       if (!isOpen) return
       setKeyboardHeight(e.endCoordinates.height)
       setIsEditing(true)
-      if (!isIos) {
+      if (isIos) {
+        editorRef.current?.setBottomInset(e.endCoordinates.height, IOS_TOOLBAR_INSET_TYPING)
+      } else {
         setTimeout(() => {
           editorRef.current?.setKeyboardInset(50, true)
         }, 50)
@@ -107,7 +111,9 @@ export function useNoteEditor() {
     const hide = Keyboard.addListener(hideEvent, () => {
       if (!isOpen) return
       setKeyboardHeight(0)
-      if (!isIos) {
+      if (isIos) {
+        editorRef.current?.setBottomInset(0, IOS_TOOLBAR_INSET_IDLE)
+      } else {
         editorRef.current?.blur()
         setIsEditing(false)
       }

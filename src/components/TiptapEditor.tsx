@@ -88,6 +88,7 @@ export interface TiptapEditorHandle {
   scrollToTop: () => void
   scrollToEnd: () => void
   setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
+  setBottomInset: (keyboardHeight: number, toolbarHeight: number) => void
   setAttachmentLoading: (
     url: string,
     loading: boolean,
@@ -550,6 +551,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }
         },
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
+        setBottomInset: (keyboardHeight, toolbarHeight) =>
+          sendCommand({ type: 'setBottomInset', keyboardHeight, toolbarHeight }),
         setAttachmentLoading: (url, loading, attachmentId, progress) =>
           sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId, progress }),
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),

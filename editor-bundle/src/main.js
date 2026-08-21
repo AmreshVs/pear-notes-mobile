@@ -225,6 +225,70 @@ function flushContentChange(html, text) {
   sendToRN({ type: 'contentChange', html, text })
 }
 
+const CARET_BOTTOM_OBSTRUCTION = 96
+const CARET_SCROLL_MARGIN = 12
+const CARET_RECHECK_DELAY_MS = 120
+const CARET_RESCROLL_DELAY_MS = 250
+
+let caretBottomInset = CARET_BOTTOM_OBSTRUCTION
+let hostBottomInset = null
+
+function applyBottomInset() {
+  if (!hostBottomInset) return
+  const viewport = window.visualViewport
+  const visualHeight = (viewport && viewport.height) || window.innerHeight
+  const viewportShrink = Math.max(0, window.innerHeight - visualHeight)
+  const keyboardCovered = Math.max(0, hostBottomInset.keyboardHeight - viewportShrink)
+  caretBottomInset = keyboardCovered + hostBottomInset.toolbarHeight
+  document.documentElement.style.setProperty('--bottom-inset', `${caretBottomInset}px`)
+}
+
+function getCaretRect() {
+  const selection = window.getSelection()
+  if (!selection || !selection.rangeCount) return null
+  const range = selection.getRangeAt(0)
+  const rangeRect = range.getBoundingClientRect()
+  if (rangeRect && (rangeRect.height || rangeRect.top || rangeRect.bottom)) return rangeRect
+  let node = range.startContainer
+  if (node && node.nodeType === 3) node = node.parentElement
+  return node && node.getBoundingClientRect ? node.getBoundingClientRect() : null
+}
+
+function scrollEditorBy(delta) {
+  const scrollers = [document.scrollingElement, document.documentElement, document.body]
+  for (const scroller of scrollers) {
+    if (scroller && scroller.scrollHeight - scroller.clientHeight > 1) {
+      scroller.scrollTop += delta
+      return
+    }
+  }
+  window.scrollBy(0, delta)
+}
+
+function adjustCaretScroll() {
+  if (!editor || !editor.isFocused) return
+  const rect = getCaretRect()
+  if (!rect) return
+  const viewport = window.visualViewport
+  const viewportHeight = (viewport && viewport.height) || window.innerHeight
+  const viewportTop = (viewport && viewport.offsetTop) || 0
+  const overflow = rect.bottom - (viewportTop + viewportHeight - caretBottomInset)
+  if (overflow > 0) scrollEditorBy(overflow + CARET_SCROLL_MARGIN)
+}
+
+let caretScrollFrame = null
+let caretScrollTimer = null
+function keepCaretVisible() {
+  if (!caretScrollFrame) {
+    caretScrollFrame = requestAnimationFrame(() => {
+      caretScrollFrame = null
+      adjustCaretScroll()
+    })
+  }
+  clearTimeout(caretScrollTimer)
+  caretScrollTimer = setTimeout(adjustCaretScroll, CARET_RECHECK_DELAY_MS)
+}
+
 let styleTimer = null
 let lastStyleJSON = ''
 function broadcastStyleState(ed) {
@@ -962,8 +1026,12 @@ function createEditorSession(collaborator, html) {
     onUpdate: ({ editor }) => {
       scheduleContentChange(editor.getHTML(), editor.getText())
       broadcastStyleState(editor)
+      keepCaretVisible()
     },
-    onSelectionUpdate: ({ editor }) => broadcastStyleState(editor),
+    onSelectionUpdate: ({ editor }) => {
+      broadcastStyleState(editor)
+      keepCaretVisible()
+    },
     onTransaction: ({ editor }) => broadcastStyleState(editor),
     onFocus: () => sendToRN({ type: 'focus' }),
     onBlur: ({ editor }) => {
@@ -1101,6 +1169,17 @@ window.editorBridge = {
       case 'getHTML':
         sendToRN({ type: 'htmlResponse', requestId: msg.requestId, html: editor.getHTML() })
         break
+
+      case 'setBottomInset': {
+        hostBottomInset = {
+          keyboardHeight: Number(msg.keyboardHeight) || 0,
+          toolbarHeight: Number(msg.toolbarHeight) || CARET_BOTTOM_OBSTRUCTION,
+        }
+        applyBottomInset()
+        keepCaretVisible()
+        setTimeout(keepCaretVisible, CARET_RESCROLL_DELAY_MS)
+        break
+      }
 
       case 'scrollToTop':
         window.scrollTo(0, 0)
@@ -1315,5 +1394,12 @@ document.addEventListener(
   },
   true,
 )
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    applyBottomInset()
+    keepCaretVisible()
+  })
+}
 
 sendToRN({ type: 'ready' })
