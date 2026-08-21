@@ -11,6 +11,7 @@ const { Worklet } = require('react-native-bare-kit')
 
 const BACKGROUND_WAKEUP_DEADLINE_MS = 25_000
 export const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
+const KEEP_ALIVE_RENEWAL_MS = 60 * 1000
 
 interface StartWorkletOptions {
   onWorkletDied?: () => void
@@ -21,7 +22,29 @@ interface StartWorkletOptions {
 let _activeWorklet: any = null
 let _appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null
 let _foregroundServiceActive = false
+let _keepAliveTimer: ReturnType<typeof setInterval> | null = null
 let _notificationStrings = { title: '', message: '' }
+
+function stopKeepAlive() {
+  if (!_keepAliveTimer) return
+  clearInterval(_keepAliveTimer)
+  _keepAliveTimer = null
+}
+
+function startKeepAlive(worklet: any) {
+  stopKeepAlive()
+  _keepAliveTimer = setInterval(() => {
+    if (!worklet || worklet.terminated) {
+      stopKeepAlive()
+      return
+    }
+    try {
+      worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+    } catch {
+      stopKeepAlive()
+    }
+  }, KEEP_ALIVE_RENEWAL_MS)
+}
 
 function handleBackground(worklet: any) {
   if (Platform.OS === 'android' && getCachedBackgroundSyncMode() === 'always-on') {
@@ -33,6 +56,7 @@ function handleBackground(worklet: any) {
       )
       _foregroundServiceActive = true
       worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+      startKeepAlive(worklet)
       return
     } catch {}
   }
@@ -55,6 +79,8 @@ export function wakeActiveWorklet(deadlineMs: number): boolean {
 }
 
 function handleActive(worklet: any, onWorkletDied?: () => void) {
+  stopKeepAlive()
+
   if (_foregroundServiceActive) {
     ExpoBackgroundService.stopService()
     _foregroundServiceActive = false
@@ -83,6 +109,7 @@ function attachAppStateHandler(worklet: any, onWorkletDied?: () => void) {
 }
 
 export async function startWorklet(storagePath: string, options?: StartWorkletOptions) {
+  stopKeepAlive()
   _appStateSubscription?.remove()
   _appStateSubscription = null
 

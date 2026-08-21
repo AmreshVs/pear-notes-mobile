@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.NotificationCompat
 
@@ -15,6 +16,8 @@ class BackupForegroundService : Service() {
 
     companion object {
         const val TAG = "BackupForegroundService"
+        const val WAKE_LOCK_TAG = "PearNotes::BackgroundService"
+        const val WAKE_LOCK_TIMEOUT_MS = 6L * 60 * 60 * 1000
         const val CHANNEL_ID = "backup_channel"
         const val NOTIFICATION_ID = 12345
         const val COMPLETION_NOTIFICATION_ID = 12346
@@ -30,6 +33,7 @@ class BackupForegroundService : Service() {
     }
 
     private var currentTitle: String = "Backup in progress"
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action ?: return START_NOT_STICKY
@@ -58,6 +62,7 @@ class BackupForegroundService : Service() {
                         intent.getStringExtra(EXTRA_MESSAGE) ?: ""
                     )
                 }
+                releaseWakeLock()
                 stopForeground(true)
                 stopSelf()
             }
@@ -68,13 +73,44 @@ class BackupForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onTimeout(startId: Int) {
+        releaseWakeLock()
         stopForeground(true)
         stopSelf()
     }
 
     override fun onTimeout(startId: Int, fgsType: Int) {
+        releaseWakeLock()
         stopForeground(true)
         stopSelf()
+    }
+
+    override fun onDestroy() {
+        releaseWakeLock()
+        super.onDestroy()
+    }
+
+    private fun acquireWakeLock() {
+        if (wakeLock?.isHeld == true) return
+        try {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = powerManager
+                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG)
+                .apply {
+                    setReferenceCounted(false)
+                    acquire(WAKE_LOCK_TIMEOUT_MS)
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "could not acquire wake lock", e)
+        }
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) wakeLock?.release()
+        } catch (e: Exception) {
+            Log.e(TAG, "could not release wake lock", e)
+        }
+        wakeLock = null
     }
 
     private fun startForegroundService(title: String, message: String, maxProgress: Int) {
@@ -102,8 +138,10 @@ class BackupForegroundService : Service() {
 
         try {
             startForeground(NOTIFICATION_ID, builder.build())
+            acquireWakeLock()
         } catch (e: Exception) {
             Log.e(TAG, "startForeground rejected by the system", e)
+            releaseWakeLock()
             stopSelf()
         }
     }
