@@ -14,7 +14,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Haptics from 'expo-haptics'
 
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
@@ -53,6 +52,7 @@ import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hasFileExtension } from '@/lib/fileSignature'
+import { hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { copyFileToSAF, downloadToCache, shareMessage } from '@/lib/noteAttachmentManager'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
@@ -274,7 +274,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               mimeType,
             )
             await copyFileToSAF(localPath, uri)
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+            hapticSuccess()
             showToast(t('noteCard.downloadComplete', 'File downloaded successfully.'))
           } else {
             showToast(t('noteEditor.upload.failedDownload', 'Could not download the file.'))
@@ -292,7 +292,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleImageLongPress = useCallback(
     (src: string) => {
       if (!src) return
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      hapticMedium()
       setSelectedImageSrc(src)
       setImageSheetVisible(true)
     },
@@ -303,7 +303,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedImageSrc) return
     setImageSheetVisible(false)
     const src = selectedImageSrc
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    hapticWarning()
     await handleDeleteAttachment(src)
     editorRef.current?.deleteImage(src)
     setSelectedImageSrc(null)
@@ -328,7 +328,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleAttachmentLongPress = useCallback(
     (url: string, fileName: string) => {
       if (!url) return
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      hapticMedium()
       setSelectedAttachmentSrc(url)
       setSelectedAttachmentFileName(fileName)
       setAttachmentSheetVisible2(true)
@@ -357,7 +357,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedAttachmentSrc) return
     setAttachmentSheetVisible2(false)
     const url = selectedAttachmentSrc
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    hapticWarning()
     await handleDeleteAttachment(url)
     editorRef.current?.deleteAttachment(url)
     setSelectedAttachmentSrc(null)
@@ -454,7 +454,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleDeleteNote = useCallback(() => {
     if (!noteId) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     setDialogInfo({
       title: t('noteCard.actions.delete'),
       message: t('noteCard.deleteConfirmation'),
@@ -523,7 +523,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     setIsSharing(true)
     const title = titleRef.current || t('noteCard.untitled')
     const html = noteContentRef.current || ''

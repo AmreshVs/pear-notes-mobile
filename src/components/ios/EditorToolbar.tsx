@@ -1,7 +1,6 @@
 import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
-import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
@@ -18,6 +17,7 @@ import {
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
+import { hapticLight } from '@/lib/haptics'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -171,7 +171,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   const { showEndFade, handleScrollLayout, handleContentSizeChange, handleScroll } =
     useScrollEdgeFade()
   const run = useCallback((action: () => void) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    hapticLight()
     action()
   }, [])
 

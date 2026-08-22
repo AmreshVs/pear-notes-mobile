@@ -1,7 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Haptics from 'expo-haptics'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
@@ -20,6 +19,7 @@ import {
 } from '@/constants/commonStyles'
 import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { hapticLight } from '@/lib/haptics'
 
 type ToolbarBtnProps = {
   icon: string
@@ -73,7 +73,7 @@ export const EditorToolbar = memo(function EditorToolbar({
     useScrollEdgeFade()
 
   const run = useCallback((action: () => void) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    hapticLight()
     action()
   }, [])
 

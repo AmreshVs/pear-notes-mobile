@@ -16,7 +16,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import * as FileSystem from 'expo-file-system'
-import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
 
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
@@ -42,6 +41,13 @@ import {
 } from '@/constants/commonStyles'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
+import {
+  hapticError,
+  hapticLight,
+  hapticMedium,
+  hapticSuccess,
+  hapticWarning,
+} from '@/lib/haptics'
 import {
   cleanupCachedAttachment,
   downloadToCache,
@@ -146,7 +152,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const handleBeforeToggleLock = useCallback(
-    () => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium),
+    () => hapticMedium(),
     [],
   )
 
@@ -177,7 +183,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   })
 
   const handleRecordAudio = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     Keyboard.dismiss()
     editorRef.current?.blur()
     setTimeout(() => setIsRecorderVisible(true), 100)
@@ -185,7 +191,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleDeleteNote = useCallback(() => {
     if (!noteId) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     Alert.alert(t('noteCard.actions.delete'), t('noteCard.deleteConfirmation'), [
       { text: t('common.cancel'), style: 'cancel' },
       {
@@ -208,7 +214,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     setIsSharing(true)
     const title = titleRef.current || t('noteCard.untitled')
     const html = noteContentRef.current || ''
@@ -272,7 +278,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleMoreOptions = useCallback(() => {
     if (!noteId) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     if (Platform.OS === 'ios') {
       const lockLabel = noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')
       const pinLabel = noteData?.pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin')
@@ -313,7 +319,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     async (url: string, fileName: string, attachmentId?: string) => {
       if (!url || isPreviewingRef.current) return
       isPreviewingRef.current = true
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      hapticLight()
       editorRef.current?.setAttachmentLoading(url, true, attachmentId)
       let localUri: string | null = null
       try {
@@ -339,7 +345,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     async (url: string, fileName: string, attachmentId?: string) => {
       if (!url || isPreviewingRef.current) return
       isPreviewingRef.current = true
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      hapticLight()
       editorRef.current?.setAttachmentLoading(url, true, attachmentId)
       let localUri: string | null = null
       try {
@@ -370,9 +376,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         ? `image_${Date.now()}.jpg`
         : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
       await saveImageToPhotos(src, fileName)
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      hapticSuccess()
     } catch {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      hapticError()
       Alert.alert(t('common.error'), t('noteEditor.upload.failedVideo'))
     }
   }, [selectedImageSrc, setIsImageActionSheetOpen, t])
@@ -381,7 +387,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedImageSrc) return
     setIsImageActionSheetOpen(false)
     const src = selectedImageSrc
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    hapticWarning()
     await handleDeleteAttachment(src)
     editorRef.current?.deleteImage(src)
   }, [selectedImageSrc, setIsImageActionSheetOpen, handleDeleteAttachment])
@@ -389,7 +395,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleImageLongPress = useCallback(
     (src: string, rect?: { x: number; y: number; width: number; height: number }) => {
       if (!src) return
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      hapticMedium()
       setSelectedImageSrc(src)
 
       if (Platform.OS === 'ios') {
@@ -435,7 +441,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedAttachmentSrc) return
     setIsAttachmentActionSheetOpen(false)
     const url = selectedAttachmentSrc
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    hapticWarning()
     await handleDeleteAttachment(url)
     editorRef.current?.deleteAttachment(url)
   }, [selectedAttachmentSrc, setIsAttachmentActionSheetOpen, handleDeleteAttachment])
@@ -447,7 +453,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       rect?: { x: number; y: number; width: number; height: number },
     ) => {
       if (!url) return
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      hapticMedium()
       setSelectedAttachmentSrc(url)
       setSelectedAttachmentFileName(fileName)
 

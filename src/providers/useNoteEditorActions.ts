@@ -2,12 +2,12 @@ import { useCallback } from 'react'
 import { Image, Keyboard } from 'react-native'
 import { useDispatch } from 'react-redux'
 import type { DocumentPickerAsset } from 'expo-document-picker'
-import * as Haptics from 'expo-haptics'
 import type { ImagePickerAsset } from 'expo-image-picker'
 
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 
+import { hapticLight, hapticMedium, hapticSuccess } from '@/lib/haptics'
 import {
   CameraPermissionDeniedError,
   copyVideoToUploadCache,
@@ -275,7 +275,7 @@ export function useNoteEditorActions({
   )
 
   const handlePickImage = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     const assets = await pickImagesFromLibrary()
     if (!assets || !noteId) return
     const queued = assets.map((asset) => ({
@@ -291,7 +291,7 @@ export function useNoteEditorActions({
   }, [processMediaAsset, noteId, labels])
 
   const handleTakePhoto = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     try {
       const asset = await takePhotoFromCamera()
       if (asset && noteId) {
@@ -308,7 +308,7 @@ export function useNoteEditorActions({
   }, [processMediaAsset, onCameraPermissionDenied, noteId, labels])
 
   const handleTakeVideo = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     try {
       const asset = await takeVideoFromCamera()
       if (asset && noteId) {
@@ -325,7 +325,7 @@ export function useNoteEditorActions({
   }, [processMediaAsset, onCameraPermissionDenied, noteId, labels])
 
   const handlePickFile = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     const assets = await pickDocuments()
     if (!assets || !noteId) return
     const queued = assets.map((asset) => ({
@@ -341,7 +341,7 @@ export function useNoteEditorActions({
   }, [processDocumentAsset, noteId, labels])
 
   const handleScanDocument = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     if (!noteId) return
     const targetNoteId = noteId
     try {
@@ -449,7 +449,7 @@ export function useNoteEditorActions({
     (folderId: string) => {
       if (!noteId) return
       dispatch(updateNote({ key: noteId, folderKey: folderId } as any))
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+      hapticSuccess()
     },
     [noteId, dispatch],
   )
@@ -457,7 +457,7 @@ export function useNoteEditorActions({
   const handleTogglePin = useCallback(() => {
     if (!noteId) return
     dispatch(updateNote({ key: noteId, pinned: !noteData?.pinned } as any))
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    hapticLight()
   }, [noteId, noteData?.pinned, dispatch])
 
   const handleDeleteAttachment = useCallback(
@@ -475,7 +475,7 @@ export function useNoteEditorActions({
     editorRef.current?.blur()
     Keyboard.dismiss()
     setIsEditing(false)
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    hapticLight()
   }, [setIsEditing, editorRef])
 
   const handleToggleLock = useCallback(() => {
