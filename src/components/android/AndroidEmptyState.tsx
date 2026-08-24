@@ -1,10 +1,11 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
-import Animated, { FadeIn } from 'react-native-reanimated'
+import { FadeIn } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   FontFamily,
@@ -19,6 +20,7 @@ import {
   UI_SIZE_24,
   UI_SIZE_40,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type EmptyStateProps = {
@@ -44,9 +46,11 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors
+  const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   return (
-    <Animated.View
+    <MotionView
       entering={FadeIn.duration(300)}
       style={[styles.wrapper, { marginTop: height * 0.2 }]}
     >
@@ -80,10 +84,8 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
           <View style={styles.ctaRow}>
             <Pressable
               onPress={onCreateNote}
-              style={({ pressed }) => [
-                styles.primaryBtn,
-                pressed && styles.btnPressed,
-              ]}
+              android_ripple={ripplePrimary}
+              style={styles.primaryBtn}
             >
               <MaterialCommunityIcons
                 name="plus"
@@ -96,10 +98,8 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
             </Pressable>
             <Pressable
               onPress={onLinkDevice}
-              style={({ pressed }) => [
-                styles.secondaryBtn,
-                pressed && styles.btnPressed,
-              ]}
+              android_ripple={ripple}
+              style={styles.secondaryBtn}
             >
               <MaterialCommunityIcons
                 name="devices"
@@ -113,7 +113,8 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
           </View>
           <Pressable
             onPress={onRestoreBackup}
-            style={({ pressed }) => [styles.tertiaryBtn, pressed && styles.btnPressed]}
+            android_ripple={ripple}
+            style={styles.tertiaryBtn}
           >
             <MaterialCommunityIcons
               name="restore"
@@ -154,7 +155,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
           </Text>
         </>
       )}
-    </Animated.View>
+    </MotionView>
   )
 })
 
@@ -191,6 +192,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       marginTop: UI_SIZE_24,
     },
     primaryBtn: {
+      overflow: 'hidden',
       flexDirection: 'row',
       alignItems: 'center',
       gap: UI_SIZE_8,
@@ -200,6 +202,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       backgroundColor: c.primary,
     },
     secondaryBtn: {
+      overflow: 'hidden',
       flexDirection: 'row',
       alignItems: 'center',
       gap: UI_SIZE_8,
@@ -210,6 +213,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       borderColor: c.outline,
     },
     tertiaryBtn: {
+      overflow: 'hidden',
       flexDirection: 'row',
       alignItems: 'center',
       gap: UI_SIZE_8,

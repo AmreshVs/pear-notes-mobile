@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import { FileText, Film, Image as ImageIcon, Mic } from 'lucide-react-native'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -47,7 +48,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
   if (!hasItems) return null
 
   return (
-    <Animated.View
+    <MotionView
       entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}
       style={styles.breakdownSection}
     >
@@ -102,7 +103,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
           </RNView>
         )}
       </RNView>
-    </Animated.View>
+    </MotionView>
   )
 }
 

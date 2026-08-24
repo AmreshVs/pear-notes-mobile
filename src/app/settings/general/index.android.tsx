@@ -1,7 +1,8 @@
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, Switch, View } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import { Switch } from 'react-native-paper'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import Slider from '@react-native-community/slider'
@@ -20,6 +21,7 @@ import {
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection.android'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
@@ -45,6 +47,7 @@ import {
 } from '@/constants/commonStyles'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { AndroidColorTheme, setAndroidColorTheme } from '@/lib/androidColorTheme'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticSelection } from '@/lib/haptics'
 
@@ -68,11 +71,8 @@ export default function AndroidGeneralSettingsScreen() {
   const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
 
   const sliderMaxTrackColor = useMemo(() => hexWithAlpha(c.primary, 0.2), [c.primary])
-
-  const hapticsTrackColor = useMemo(
-    () => ({ false: hexWithAlpha(c.onSurface, 0.12), true: c.primary }),
-    [c.onSurface, c.primary],
-  )
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const supportsDynamicColor = useMemo(() => {
     return Platform.OS === 'android' && Number(Platform.Version) >= 31
@@ -174,6 +174,7 @@ export default function AndroidGeneralSettingsScreen() {
         <Pressable
           key={tValue}
           onPress={() => handleSetTheme(tValue)}
+          android_ripple={ripple}
           style={[styles.segItem, isActive && styles.segItemActive]}
         >
           <Text style={[styles.segText, isActive && styles.segTextActive]}>
@@ -182,7 +183,7 @@ export default function AndroidGeneralSettingsScreen() {
         </Pressable>
       )
     },
-    [currentTheme, handleSetTheme, styles, t],
+    [currentTheme, handleSetTheme, ripple, styles, t],
   )
 
   const handleSetColorTheme = useCallback((colorTheme: AndroidColorTheme) => {
@@ -197,13 +198,14 @@ export default function AndroidGeneralSettingsScreen() {
         <Pressable
           key={opt.value}
           onPress={() => handleSetColorTheme(opt.value)}
+          android_ripple={ripple}
           style={[styles.segItem, isActive && styles.segItemActive]}
         >
           <Text style={[styles.segText, isActive && styles.segTextActive]}>{opt.label}</Text>
         </Pressable>
       )
     },
-    [androidColorTheme, handleSetColorTheme, styles],
+    [androidColorTheme, handleSetColorTheme, ripple, styles],
   )
 
   const handleFontSizeChange = useCallback(
@@ -223,25 +225,27 @@ export default function AndroidGeneralSettingsScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={styles.root.backgroundColor}
-      />
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={UI_SIZE_12} style={styles.iconBtn}>
+        <Pressable
+          onPress={() => router.back()}
+          android_ripple={rippleBorderless}
+          hitSlop={UI_SIZE_12}
+          style={styles.iconBtn}
+        >
           <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('layouts.general')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Animated.View entering={FadeIn.duration(220).delay(20)}>
+        <MotionView entering={FadeIn.duration(220).delay(20)}>
           <Text style={md3Styles.settingsSectionCap}>{t('settings.general.interface')}</Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(240).delay(40)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.card}
@@ -250,19 +254,19 @@ export default function AndroidGeneralSettingsScreen() {
           <View style={styles.segContainer}>
             {(['system', 'light', 'dark'] as const).map(renderThemeOption)}
           </View>
-        </Animated.View>
+        </MotionView>
         {supportsDynamicColor && (
-          <Animated.View
+          <MotionView
             entering={FadeInDown.duration(240).delay(60)}
             layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             style={styles.card}
           >
             <Text style={styles.cardTitle}>{t('settings.general.colorTheme')}</Text>
             <View style={styles.segContainer}>{colorThemeOptions.map(renderColorThemeOption)}</View>
-          </Animated.View>
+          </MotionView>
         )}
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(240).delay(70)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.groupCard}
@@ -272,27 +276,23 @@ export default function AndroidGeneralSettingsScreen() {
               <Text style={styles.rowTitle}>{t('settings.general.hapticFeedback')}</Text>
               <Text style={styles.rowSubtitle}>{t('settings.general.hapticFeedbackDesc')}</Text>
             </View>
-            <Switch
-              value={hapticsEnabled}
-              onValueChange={toggleHaptics}
-              trackColor={hapticsTrackColor}
-              thumbColor={c.onPrimary}
-            />
+            <Switch value={hapticsEnabled} onValueChange={toggleHaptics} />
           </View>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View entering={FadeIn.duration(220).delay(80)}>
+        <MotionView entering={FadeIn.duration(220).delay(80)}>
           <Text style={md3Styles.settingsSectionCapSpaced}>{t('settings.general.notesList')}</Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(240).delay(100)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.groupCard}
         >
           <Pressable
             onPress={handleOpenSortSheet}
-            style={({ pressed }) => [styles.groupPressRow, pressed && styles.groupRowPressed]}
+            android_ripple={ripple}
+            style={styles.groupPressRow}
           >
             <View style={commonStyles.flex1}>
               <Text style={styles.rowTitle}>{t('settings.general.sortNotesBy')}</Text>
@@ -307,20 +307,21 @@ export default function AndroidGeneralSettingsScreen() {
               color={c.onSurfaceVariant}
             />
           </Pressable>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View entering={FadeIn.duration(220).delay(120)}>
+        <MotionView entering={FadeIn.duration(220).delay(120)}>
           <Text style={md3Styles.settingsSectionCapSpaced}>{t('settings.general.editor')}</Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(240).delay(140)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.groupCard}
         >
           <Pressable
             onPress={handleOpenFontSheet}
-            style={({ pressed }) => [styles.groupPressRow, pressed && styles.groupRowPressed]}
+            android_ripple={ripple}
+            style={styles.groupPressRow}
           >
             <View style={commonStyles.flex1}>
               <Text style={styles.rowTitle}>{t('settings.general.fontFamily')}</Text>
@@ -366,7 +367,7 @@ export default function AndroidGeneralSettingsScreen() {
               />
             </View>
           </View>
-        </Animated.View>
+        </MotionView>
 
         <BackgroundSyncSection />
 
@@ -457,9 +458,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     toggleInfo: {
       ...commonStyles.flex1,
     },
-    groupRowPressed: {
-      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
-    },
     groupDivider: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: hexWithAlpha(c.outlineVariant, 0.5),
@@ -479,6 +477,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       padding: UI_SIZE_4,
     },
     segItem: {
+      overflow: 'hidden',
       ...commonStyles.flex1,
       paddingVertical: UI_SIZE_12,
       borderRadius: UI_SIZE_9999,

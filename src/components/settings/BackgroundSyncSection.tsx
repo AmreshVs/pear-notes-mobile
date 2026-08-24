@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text } from '@/components/Themed'
 import {
   commonStyles,
@@ -79,13 +80,13 @@ export function BackgroundSyncSection() {
 
   return (
     <>
-      <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
+      <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
         <Text style={commonThemedStyles.settingsSectionCapSpaced}>
           {t('sync.backgroundSync.header')}
         </Text>
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View
+      <MotionView
         entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
       >
@@ -100,7 +101,7 @@ export function BackgroundSyncSection() {
             </Text>
           </RNView>
         </RNView>
-      </Animated.View>
+      </MotionView>
     </>
   )
 }

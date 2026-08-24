@@ -1,12 +1,14 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_22, UI_SIZE_4, UI_SIZE_8, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_28, UI_SIZE_9999 } from '@/constants/commonStyles'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -38,7 +40,7 @@ export function AndroidBackupStatsSection({
 
   return (
     <>
-      <Animated.View entering={FadeInDown.duration(240).delay(100)} style={styles.infoCard}>
+      <MotionView entering={FadeInDown.duration(240).delay(100)} style={styles.infoCard}>
         <View style={styles.infoIconWrap}>
           <MaterialCommunityIcons name="history" size={UI_ICON_SIZE_22} color={c.primary} />
         </View>
@@ -48,9 +50,9 @@ export function AndroidBackupStatsSection({
             {lastBackupDate ? formatBackupDate(lastBackupDate) : t('backup.noBackup')}
           </Text>
         </View>
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View entering={FadeInDown.duration(240).delay(130)} style={styles.statsRow}>
+      <MotionView entering={FadeInDown.duration(240).delay(130)} style={styles.statsRow}>
         <View style={styles.statCard}>
           <View style={styles.statIconWrap}>
             <MaterialCommunityIcons name="database-outline" size={UI_ICON_SIZE_22} color={c.primary} />
@@ -65,16 +67,9 @@ export function AndroidBackupStatsSection({
           <Text style={styles.statLabel}>{t('backup.encryption')}</Text>
           <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>
         </View>
-      </Animated.View>
+      </MotionView>
     </>
   )
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
 }
 
 const useStatsHooks = () => {

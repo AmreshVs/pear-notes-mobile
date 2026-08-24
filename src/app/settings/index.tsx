@@ -1,9 +1,8 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View as RNView, View } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import Constants from 'expo-constants'
 import { router, Stack } from 'expo-router'
 import {
   ChevronRight,
@@ -12,28 +11,29 @@ import {
   RefreshCw,
   ShieldCheck,
   SlidersHorizontal,
-  X,
 } from 'lucide-react-native'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   Durations,
+  FontFamily,
   FontSize,
   FontWeight,
+  Space,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_17,
   UI_SIZE_8,
   UI_SIZE_12,
-  UI_SIZE_15,
   UI_SIZE_20,
-  UI_SIZE_30,
   UI_SIZE_40,
+  UI_SIZE_44,
   UI_SIZE_60,
   UI_STROKE_WIDTH_1_8,
-  UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { getAppVersionLabel } from '@/lib/appVersion'
 
 export default function SettingsScreen() {
   const { t } = useTranslation()
@@ -90,54 +90,62 @@ export default function SettingsScreen() {
           headerRight: () => (
             <Pressable
               onPress={handleClose}
-              hitSlop={8}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.done')}
               style={({ pressed }) => [styles.closeBtn, pressed && commonStyles.pressed]}
             >
-              <X size={UI_ICON_SIZE_16} color={colors.text} strokeWidth={UI_STROKE_WIDTH_2_5} />
+              <Text style={styles.closeLabel}>{t('common.done')}</Text>
             </Pressable>
           ),
         }}
       />
 
-      <View style={styles.scroll}>
-        <Animated.View
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
-          <RNView style={commonThemedStyles.card}>
-            {sections.map(({ key, Icon, label, onPress }, i) => (
-              <Pressable
-                key={key}
-                onPress={onPress}
-                style={({ pressed }) => [
-                  i < sections.length - 1 ? styles.rowUnderline : commonStyles.settingsRow,
-                  pressed && commonStyles.pressed,
-                ]}
-              >
-                <RNView style={commonStyles.settingsRowLeft}>
-                  <RNView style={commonThemedStyles.iconBox34}>
-                    <Icon
-                      size={UI_ICON_SIZE_17}
-                      color={colors.primary}
-                      strokeWidth={UI_STROKE_WIDTH_1_8}
-                    />
-                  </RNView>
-                  <Text style={styles.rowLabel}>{label}</Text>
-                </RNView>
-                <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
-              </Pressable>
-            ))}
-          </RNView>
-        </Animated.View>
-      </View>
-      <View style={commonStyles.flex1} />
-      <Animated.View
-        style={styles.footerContainer}
-        entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.footer}>{t('settings.footer')}</Text>
-        <Text style={styles.version}>v{Constants.expoConfig?.version ?? '1.0.0'}</Text>
-      </Animated.View>
+        <View style={styles.scroll}>
+          <MotionView
+            entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+          >
+            <RNView style={commonThemedStyles.card}>
+              {sections.map(({ key, Icon, label, onPress }, i) => (
+                <Pressable
+                  key={key}
+                  onPress={onPress}
+                  style={({ pressed }) => [
+                    i < sections.length - 1 ? styles.rowUnderline : commonStyles.settingsRow,
+                    pressed && commonStyles.pressed,
+                  ]}
+                >
+                  <RNView style={commonStyles.settingsRowLeft}>
+                    <RNView style={commonThemedStyles.iconBox34}>
+                      <Icon
+                        size={UI_ICON_SIZE_17}
+                        color={colors.primary}
+                        strokeWidth={UI_STROKE_WIDTH_1_8}
+                      />
+                    </RNView>
+                    <Text style={styles.rowLabel}>{label}</Text>
+                  </RNView>
+                  <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
+                </Pressable>
+              ))}
+            </RNView>
+          </MotionView>
+        </View>
+        <View style={commonStyles.flex1} />
+        <MotionView
+          style={styles.footerContainer}
+          entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
+        >
+          <Text style={styles.footer}>{t('settings.footer')}</Text>
+          <Text style={styles.version}>{getAppVersionLabel()}</Text>
+        </MotionView>
+      </ScrollView>
     </RNView>
   )
 }
@@ -146,6 +154,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
   const styles = StyleSheet.create({
     footerContainer: {
       marginBottom: insets.bottom + UI_SIZE_12,
+    },
+    scrollContainer: {
+      flexGrow: 1,
     },
     scroll: {
       paddingHorizontal: UI_SIZE_20,
@@ -177,9 +188,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     },
     closeBtn: {
       ...commonStyles.centered,
-      width: UI_SIZE_30,
-      height: UI_SIZE_30,
-      borderRadius: UI_SIZE_15,
+      minWidth: UI_SIZE_44,
+      minHeight: UI_SIZE_44,
+      paddingHorizontal: Space.sm,
+    },
+    closeLabel: {
+      fontSize: FontSize.subtitle,
+      fontFamily: FontFamily.semiBold,
+      color: theme.colors.primary,
     },
   })
 

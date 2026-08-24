@@ -1,7 +1,7 @@
-import { memo, useCallback, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, TextInput, View } from 'react-native'
-import Animated, { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
@@ -9,6 +9,7 @@ import { updateSyncedDevice } from '@pear-notes/core/store/slices/syncedDevicesS
 import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
@@ -29,6 +30,8 @@ import {
   UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string
@@ -53,13 +56,6 @@ type DeviceCardProps = {
   onDelete: (key: string) => void
 }
 
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
-}
-
 export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   device,
   isLocal,
@@ -70,6 +66,8 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const styles = useStyles()
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleDanger = useMemo(() => androidRipple(c.error), [c.error])
 
   const platformKey =
     device.platform === 'darwin'
@@ -123,7 +121,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   )
 
   return (
-    <Animated.View
+    <MotionView
       entering={FadeInDown.duration(Durations.fade).delay(
         Math.min(index, 6) * Durations.delayShort,
       )}
@@ -131,10 +129,8 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
     >
       <Pressable
         onPress={!isLocal ? undefined : startEditing}
-        style={({ pressed }) => [
-          styles.deviceCard,
-          pressed && styles.deviceCardPressed,
-        ]}
+        android_ripple={ripple}
+        style={styles.deviceCard}
       >
         <View style={styles.deviceIconCircle}>
           <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_20} color={c.primary} />
@@ -170,6 +166,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
         {!isLocal && (
           <Pressable
             onPress={() => onDelete(device.key)}
+            android_ripple={rippleDanger}
             hitSlop={UI_SIZE_12}
             style={styles.deviceDeleteBtn}
           >
@@ -177,7 +174,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
           </Pressable>
         )}
       </Pressable>
-    </Animated.View>
+    </MotionView>
   )
 })
 
@@ -190,6 +187,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
     deviceCard: {
+      overflow: 'hidden',
       ...commonStyles.row,
       borderRadius: UI_SIZE_24,
       paddingHorizontal: UI_SIZE_20,

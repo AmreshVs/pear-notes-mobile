@@ -18,20 +18,16 @@ import {
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_36,
-  UI_SIZE_64} from '@/constants/commonStyles'
+  UI_SIZE_64,
+} from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string
   surfaceContainer: string
   surfaceContainerHigh: string
   surfaceContainerHighest: string
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
 }
 
 type AttachItem = {
@@ -65,6 +61,7 @@ export function AttachmentSheet({
   const ref = useRef<BottomSheetModal>(null)
   const styles = useStyles()
   const { colors } = useMD3Theme()
+  const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
   const pendingActionRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
@@ -136,7 +133,8 @@ export function AttachmentSheet({
               onPress={item.onPress}
               accessibilityRole="button"
               accessibilityLabel={item.label}
-              style={({ pressed }) => [styles.gridItem, pressed && styles.gridItemPressed]}
+              android_ripple={ripple}
+              style={styles.gridItem}
             >
               <View style={styles.iconCircle}>
                 <MaterialCommunityIcons
@@ -197,9 +195,6 @@ const useStyles = createThemedStylesheetWithHooks(
         alignItems: 'center',
         gap: UI_SIZE_8,
         paddingVertical: UI_SIZE_4,
-      },
-      gridItemPressed: {
-        opacity: 0.7,
       },
       iconCircle: {
         width: UI_SIZE_64,

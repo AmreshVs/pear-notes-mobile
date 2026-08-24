@@ -260,7 +260,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       paddingHorizontal: Space.md,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
     },
     input: {
       flex: 1,
@@ -343,7 +343,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     confirmBtn: {
       ...commonStyles.centered,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: Radii.lg,
       backgroundColor: theme.colors.primary,
     },

@@ -1,7 +1,9 @@
 import React, { memo, useMemo } from 'react'
-import { StyleSheet, ViewProps, ViewStyle } from 'react-native'
+import { StyleSheet, View as DefaultView, ViewProps, ViewStyle } from 'react-native'
 import { BlurView } from 'expo-blur'
 import { GlassView as ExpoGlassView } from 'expo-glass-effect'
+
+import { useReduceTransparency } from '@/hooks/useReduceTransparency'
 
 import { createThemedStylesheet, useTheme } from './Themed'
 
@@ -21,6 +23,7 @@ export const GlassView = memo(function GlassView({
 }: GlassViewProps) {
   const styles = useStyles()
   const theme = useTheme()
+  const reduceTransparency = useReduceTransparency()
 
   const blurTint = theme.isDark ? 'dark' : 'light'
 
@@ -29,7 +32,20 @@ export const GlassView = memo(function GlassView({
     [borderRadius, styles.container, style],
   )
 
+  const opaqueStyle = useMemo(
+    () => [styles.container, styles.opaque, { borderRadius }, style],
+    [borderRadius, styles.container, styles.opaque, style],
+  )
+
   const blurStyle = useMemo(() => [StyleSheet.absoluteFill, { borderRadius }], [borderRadius])
+
+  if (reduceTransparency) {
+    return (
+      <DefaultView {...props} style={opaqueStyle}>
+        {children}
+      </DefaultView>
+    )
+  }
 
   return (
     <ExpoGlassView {...props} style={containerStyle}>
@@ -46,6 +62,10 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.glassBackground,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.glassBorder,
+    },
+    opaque: {
+      backgroundColor: theme.colors.surface,
+      borderColor: theme.colors.border,
     },
   })
   return styles

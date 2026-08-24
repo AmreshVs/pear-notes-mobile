@@ -70,6 +70,7 @@ export function getEditorHtml(): string {
       outline: none;
       color: var(--c-text);
       font-size: 17px;
+      -webkit-text-size-adjust: none;
       font-family: -apple-system, BlinkMacSystemFont, 'San Francisco',
                    'Helvetica Neue', Arial, sans-serif;
       line-height: 1.65;
@@ -87,9 +88,9 @@ export function getEditorHtml(): string {
       height: 0;
     }
 
-    .tiptap h1 { font-size: 26px; font-weight: 700; margin: 20px 0 8px; line-height: 1.3; }
-    .tiptap h2 { font-size: 22px; font-weight: 600; margin: 16px 0 6px; line-height: 1.3; }
-    .tiptap h3 { font-size: 19px; font-weight: 600; margin: 12px 0 4px; line-height: 1.3; }
+    .tiptap h1 { font-size: 1.53em; font-weight: 700; margin: 20px 0 8px; line-height: 1.3; }
+    .tiptap h2 { font-size: 1.29em; font-weight: 600; margin: 16px 0 6px; line-height: 1.3; }
+    .tiptap h3 { font-size: 1.12em; font-weight: 600; margin: 12px 0 4px; line-height: 1.3; }
     .tiptap :is(h1,h2,h3):first-child { margin-top: 0; }
 
     .tiptap p { margin: 0 0 6px; }
@@ -134,7 +135,7 @@ export function getEditorHtml(): string {
     }
     .tiptap pre code {
       background: none; color: var(--c-code); padding: 0;
-      border-radius: 0; font-size: 13px;
+      border-radius: 0; font-size: 0.76em;
       font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'Courier New', monospace;
     }
 
@@ -157,7 +158,7 @@ export function getEditorHtml(): string {
 
     .tiptap table {
       border-collapse: collapse; width: 100%;
-      margin: 8px 0; font-size: 15px;
+      margin: 8px 0; font-size: 0.88em;
     }
     .tiptap table td, .tiptap table th {
       border: 1px solid var(--c-border);

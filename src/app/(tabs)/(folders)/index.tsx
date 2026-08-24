@@ -33,6 +33,7 @@ import {
   UI_ICON_SIZE_22,
   UI_SIZE_8,
   UI_SIZE_42,
+  UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -291,6 +292,9 @@ const useStyles = createThemedStylesheet((theme) => {
       marginLeft: Space.base,
     },
     iconBtn: {
+      ...commonStyles.centered,
+      minWidth: UI_SIZE_44,
+      minHeight: UI_SIZE_44,
       padding: Space.sm,
     },
     gearIcon: {

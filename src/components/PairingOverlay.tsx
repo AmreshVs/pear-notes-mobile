@@ -34,6 +34,7 @@ import {
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 
+import { MotionView } from '@/components/MotionView'
 import {
   commonStyles,
   FontSize,
@@ -525,7 +526,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
   if (!isVisible) return null
 
   return (
-    <Animated.View style={fadeStyle}>
+    <MotionView style={fadeStyle}>
       {isAndroid ? (
         <RNView style={styles.androidScrim} />
       ) : (
@@ -602,7 +603,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           )}
         </View>
       </Modal>
-    </Animated.View>
+    </MotionView>
   )
 })
 

@@ -5,6 +5,7 @@ import {
   Text as DefaultText,
   type TextStyle,
   useColorScheme as useDeviceColorScheme,
+  useWindowDimensions,
   View as DefaultView,
 } from 'react-native'
 import { useSelector } from 'react-redux'
@@ -15,6 +16,7 @@ import Colors from '@/constants/Colors'
 import { commonStyles, FontFamily } from '@/constants/commonStyles'
 import { Layout, Spacing } from '@/constants/Spacing'
 import { Typography } from '@/constants/Typography'
+import { useSystemReduceMotion } from '@/hooks/useReduceMotion'
 
 const WEIGHT_TO_FONT_FAMILY: Record<string, string> = {
   '400': FontFamily.regular,
@@ -26,9 +28,21 @@ const WEIGHT_TO_FONT_FAMILY: Record<string, string> = {
 }
 
 const ColorSchemeContext = createContext<'light' | 'dark' | null>(null)
+const FontScaleContext = createContext(1)
+const ReduceMotionContext = createContext(false)
+
+export function useFontScale(): number {
+  return useContext(FontScaleContext)
+}
+
+export function useReduceMotion(): boolean {
+  return useContext(ReduceMotionContext)
+}
 
 export function ColorSchemeProvider({ children }: { children: React.ReactNode }) {
   const deviceColorScheme = useDeviceColorScheme()
+  const { fontScale } = useWindowDimensions()
+  const reduceMotion = useSystemReduceMotion()
   const themeSetting: string = useSelector(getTheme) ?? 'system'
 
   const colorScheme = useMemo<'light' | 'dark'>(() => {
@@ -37,7 +51,13 @@ export function ColorSchemeProvider({ children }: { children: React.ReactNode })
     return deviceColorScheme === 'dark' ? 'dark' : 'light'
   }, [themeSetting, deviceColorScheme])
 
-  return <ColorSchemeContext.Provider value={colorScheme}>{children}</ColorSchemeContext.Provider>
+  return (
+    <ColorSchemeContext.Provider value={colorScheme}>
+      <FontScaleContext.Provider value={fontScale}>
+        <ReduceMotionContext.Provider value={reduceMotion}>{children}</ReduceMotionContext.Provider>
+      </FontScaleContext.Provider>
+    </ColorSchemeContext.Provider>
+  )
 }
 
 export function useResolvedColorScheme(): 'light' | 'dark' {
@@ -149,6 +169,8 @@ export const Text = memo(function Text(props: TextProps) {
   const { style, lightColor, darkColor, variant = 'body', ...otherProps } = props
   const theme = useTheme()
 
+  const fontScale = useFontScale()
+
   const color =
     theme.colorScheme === 'light' ? lightColor || theme.colors.text : darkColor || theme.colors.text
   const typographyStyle = Typography[variant]
@@ -159,8 +181,11 @@ export const Text = memo(function Text(props: TextProps) {
       flat.fontFamily =
         WEIGHT_TO_FONT_FAMILY[String(flat.fontWeight ?? '400')] ?? FontFamily.regular
     }
+    if (typeof flat.lineHeight === 'number') {
+      flat.lineHeight = flat.lineHeight * fontScale
+    }
     return flat
-  }, [color, typographyStyle, style])
+  }, [color, typographyStyle, style, fontScale])
 
   return <DefaultText style={combinedStyle} {...otherProps} />
 })
@@ -194,15 +219,6 @@ export const Card = memo(function Card(props: ViewProps) {
   return <View {...props} style={combinedStyle} />
 })
 
-export const GlassCard = memo(function GlassCard(props: ViewProps) {
-  const styles = useStyles()
-  const combinedStyle = useMemo(
-    () => [styles.glassCard, props.style],
-    [styles.glassCard, props.style],
-  )
-  return <View {...props} style={combinedStyle} />
-})
-
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     container: {
@@ -215,14 +231,6 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.surface,
       borderWidth: 1,
       borderColor: theme.colors.border,
-    },
-    glassCard: {
-      padding: theme.spacing.md,
-      borderRadius: 24,
-      backgroundColor: theme.colors.glassBackground,
-      borderWidth: 1,
-      borderColor: theme.colors.glassBorder,
-      boxShadow: `0 8px 32px ${theme.colors.glassShadow}`,
     },
   })
   return styles

@@ -1,5 +1,12 @@
 import React, { memo, useCallback, useMemo } from 'react'
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { useTranslation } from 'react-i18next'
+import {
+  Pressable,
+  type PressableAndroidRippleConfig,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -18,6 +25,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight } from '@/lib/haptics'
 
@@ -25,21 +33,34 @@ type ToolbarBtnProps = {
   icon: string
   onPress: () => void
   active?: boolean
+  a11yLabel: string
+  ripple: PressableAndroidRippleConfig
   c: any
   styles: any
 }
 
-const ToolbarBtn = memo(function ToolbarBtn({ icon, onPress, active, c, styles }: ToolbarBtnProps) {
-  const style = useCallback(
-    ({ pressed }: { pressed: boolean }) => [
-      styles.btn,
-      active && styles.btnActive,
-      pressed && styles.btnPressed,
-    ],
-    [active, styles],
+const ToolbarBtn = memo(function ToolbarBtn({
+  icon,
+  onPress,
+  active,
+  a11yLabel,
+  ripple,
+  c,
+  styles,
+}: ToolbarBtnProps) {
+  const style = useMemo(
+    () => [styles.btn, active && styles.btnActive],
+    [active, styles.btn, styles.btnActive],
   )
   return (
-    <Pressable onPress={onPress} style={style}>
+    <Pressable
+      onPress={onPress}
+      android_ripple={ripple}
+      style={style}
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      accessibilityState={{ selected: !!active }}
+    >
       <MaterialCommunityIcons
         name={icon as any}
         size={UI_ICON_SIZE_22}
@@ -66,11 +87,18 @@ export const EditorToolbar = memo(function EditorToolbar({
   toolbarBottom,
   onAttachPress,
 }: EditorToolbarProps) {
+  const { t } = useTranslation()
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const { showEndFade, handleScrollLayout, handleContentSizeChange, handleScroll } =
     useScrollEdgeFade()
+
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleAttach = useMemo(
+    () => androidRipple(c.onPrimaryContainer),
+    [c.onPrimaryContainer],
+  )
 
   const run = useCallback((action: () => void) => {
     hapticLight()
@@ -97,142 +125,182 @@ export const EditorToolbar = memo(function EditorToolbar({
         >
         <ToolbarBtn
           icon="checkbox-marked-outline"
+          a11yLabel={t('formatting.checklist')}
           active={isActive('checkboxList')}
           onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <View style={styles.divider} />
         <ToolbarBtn
           icon="format-header-1"
+          a11yLabel={t('formatting.types.title')}
           active={isActive('h1')}
           onPress={() => run(() => editorRef.current?.toggleH1())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-header-2"
+          a11yLabel={t('formatting.types.heading')}
           active={isActive('h2')}
           onPress={() => run(() => editorRef.current?.toggleH2())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-header-3"
+          a11yLabel={t('formatting.types.subheading')}
           active={isActive('h3')}
           onPress={() => run(() => editorRef.current?.toggleH3())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-bold"
+          a11yLabel={t('formatting.bold')}
           active={isActive('bold')}
           onPress={() => run(() => editorRef.current?.toggleBold())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-italic"
+          a11yLabel={t('formatting.italic')}
           active={isActive('italic')}
           onPress={() => run(() => editorRef.current?.toggleItalic())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-underline"
+          a11yLabel={t('formatting.underline')}
           active={isActive('underline')}
           onPress={() => run(() => editorRef.current?.toggleUnderline())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-strikethrough-variant"
+          a11yLabel={t('formatting.strikethrough')}
           active={isActive('strike')}
           onPress={() => run(() => editorRef.current?.toggleStrike())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-color-highlight"
+          a11yLabel={t('formatting.highlight')}
           active={isActive('highlight')}
           onPress={() => run(() => editorRef.current?.toggleHighlight())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-subscript"
+          a11yLabel={t('formatting.subscript')}
           active={isActive('subscript')}
           onPress={() => run(() => editorRef.current?.toggleSubscript())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-superscript"
+          a11yLabel={t('formatting.superscript')}
           active={isActive('superscript')}
           onPress={() => run(() => editorRef.current?.toggleSuperscript())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-list-bulleted"
+          a11yLabel={t('formatting.types.bulletedList')}
           active={isActive('unorderedList')}
           onPress={() => run(() => editorRef.current?.toggleUnorderedList())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-list-numbered"
+          a11yLabel={t('formatting.types.numberedList')}
           active={isActive('orderedList')}
           onPress={() => run(() => editorRef.current?.toggleOrderedList())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-quote-close"
+          a11yLabel={t('formatting.types.quoteBlock')}
           active={isActive('blockQuote')}
           onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="code-tags"
+          a11yLabel={t('formatting.codeBlock')}
           active={isActive('codeBlock')}
           onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="minus"
+          a11yLabel={t('formatting.horizontalRule')}
           onPress={() => run(() => editorRef.current?.setHorizontalRule())}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <View style={styles.divider} />
         <ToolbarBtn
           icon="format-align-left"
+          a11yLabel={t('formatting.alignLeft')}
           active={isActive('alignLeft')}
           onPress={() => run(() => editorRef.current?.setTextAlign('left'))}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-align-center"
+          a11yLabel={t('formatting.alignCenter')}
           active={isActive('alignCenter')}
           onPress={() => run(() => editorRef.current?.setTextAlign('center'))}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-align-right"
+          a11yLabel={t('formatting.alignRight')}
           active={isActive('alignRight')}
           onPress={() => run(() => editorRef.current?.setTextAlign('right'))}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
         <ToolbarBtn
           icon="format-align-justify"
+          a11yLabel={t('formatting.alignJustify')}
           active={isActive('alignJustify')}
           onPress={() => run(() => editorRef.current?.setTextAlign('justify'))}
+          ripple={ripple}
           c={c}
           styles={styles}
         />
@@ -247,7 +315,10 @@ export const EditorToolbar = memo(function EditorToolbar({
 
       <Pressable
         onPress={() => run(onAttachPress)}
-        style={({ pressed }) => [styles.addBtn, pressed && styles.btnPressed]}
+        android_ripple={rippleAttach}
+        accessibilityRole="button"
+        accessibilityLabel={t('formatting.attachments')}
+        style={styles.addBtn}
       >
         <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_24} color={c.onPrimaryContainer} />
       </Pressable>
@@ -291,6 +362,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       paddingHorizontal: UI_SIZE_2,
     },
     btn: {
+      overflow: 'hidden',
       width: UI_SIZE_44,
       height: UI_SIZE_44,
       borderRadius: UI_SIZE_9999,

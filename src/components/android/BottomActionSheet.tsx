@@ -17,7 +17,10 @@ import {
   UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_36} from '@/constants/commonStyles'
+  UI_SIZE_36,
+} from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string
@@ -25,13 +28,6 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh: string
   surfaceContainerHighest: string
   surfaceContainerLowest: string
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
 }
 
 export type SheetAction = {
@@ -64,6 +60,8 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
   }, [visible])
 
   const backgroundStyle = useMemo(() => styles.sheetBackground, [styles.sheetBackground])
+  const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
+  const rippleDestructive = useMemo(() => androidRipple(colors.error), [colors.error])
 
   return (
     <BottomSheetModal
@@ -85,14 +83,11 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
             <React.Fragment key={action.label}>
               <Pressable
                 onPress={action.onPress}
+                android_ripple={action.destructive ? rippleDestructive : ripple}
                 accessibilityRole="button"
                 accessibilityLabel={action.label}
                 accessibilityState={{ selected: !!action.selected }}
-                style={({ pressed }) => [
-                  styles.actionRow,
-                  pressed &&
-                    (action.destructive ? styles.actionRowPressedDestructive : styles.actionRowPressed),
-                ]}
+                style={styles.actionRow}
               >
                 <View
                   style={
@@ -127,7 +122,7 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
                     <MaterialCommunityIcons
                       name="chevron-right"
                       size={UI_ICON_SIZE_18}
-                      color={hexWithAlpha(colors.onSurfaceVariant, 0.4)}
+                      color={colors.onSurfaceVariant}
                     />
                   )
                 )}
@@ -177,12 +172,6 @@ const useStyles = createThemedStylesheetWithHooks(
         paddingVertical: UI_SIZE_14,
         gap: UI_SIZE_16,
         minHeight: 62,
-      },
-      actionRowPressed: {
-        backgroundColor: hexWithAlpha(c.primaryContainer, 0.18),
-      },
-      actionRowPressedDestructive: {
-        backgroundColor: hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.18),
       },
       iconCircle: {
         width: 44,

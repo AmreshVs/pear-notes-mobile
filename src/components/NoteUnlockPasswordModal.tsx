@@ -26,6 +26,7 @@ import {
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_40,
   UI_SIZE_8,
+  UI_SIZE_50,
   UI_SIZE_54,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -224,7 +225,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       paddingHorizontal: Space.md,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       width: '100%',
     },
     input: {
@@ -249,7 +250,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     btn: {
       flex: 1,
-      height: 50,
+      minHeight: UI_SIZE_50,
+      paddingVertical: Space.sm,
       borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',

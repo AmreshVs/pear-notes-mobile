@@ -1,7 +1,7 @@
 import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
-import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
 import {
   ChevronRight,
   FileText,
@@ -10,6 +10,7 @@ import {
   Trash2,
 } from 'lucide-react-native'
 
+import { MotionView } from '@/components/MotionView'
 import {
   commonStyles,
   FontSize,
@@ -72,7 +73,7 @@ export const FolderRow = memo(function FolderRow({
   )
 
   const row = (
-    <Animated.View
+    <MotionView
       entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
       exiting={FadeOut.duration(160)}
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
@@ -94,7 +95,7 @@ export const FolderRow = memo(function FolderRow({
           </RNView>
         </RNView>
       </Pressable>
-    </Animated.View>
+    </MotionView>
   )
 
   if (isSystem || !ExpoUI || (!onRename && !onDelete)) {

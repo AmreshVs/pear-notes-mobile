@@ -1,11 +1,13 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, Switch, View } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Pressable, StyleSheet, View } from 'react-native'
+import { Switch } from 'react-native-paper'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
@@ -69,18 +71,13 @@ export function PrivacyLockSection() {
       ? t('settings.privacy.noteLockDesc', { method: t(getLockMethodLabelKey(deviceMethod)) })
       : t('settings.privacy.noteLockUnavailableDesc')
 
-  const trackColor = useMemo(
-    () => ({ false: hexWithAlpha(c.onSurface, 0.15), true: c.primary }),
-    [c.onSurface, c.primary],
-  )
-
   return (
     <>
-      <Animated.View entering={FadeIn.duration(220).delay(20)}>
+      <MotionView entering={FadeIn.duration(220).delay(20)}>
         <Text style={md3Styles.settingsSectionCap}>{t('settings.privacy.header')}</Text>
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View
+      <MotionView
         entering={FadeInDown.duration(240).delay(40)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.infoCard}
@@ -92,9 +89,9 @@ export function PrivacyLockSection() {
           <Text style={styles.rowTitle}>{t('settings.privacy.noteLock')}</Text>
           <Text style={styles.rowSubtitle}>{methodDesc}</Text>
         </View>
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View
+      <MotionView
         entering={FadeInDown.duration(240).delay(80)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.card}
@@ -162,9 +159,9 @@ export function PrivacyLockSection() {
             </Text>
           </Pressable>
         </View>
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View
+      <MotionView
         entering={FadeInDown.duration(240).delay(120)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.groupCard}
@@ -174,12 +171,7 @@ export function PrivacyLockSection() {
             <Text style={styles.rowTitle}>{t('settings.privacy.blockScreenshots')}</Text>
             <Text style={styles.rowSubtitle}>{t('settings.privacy.blockScreenshotsDesc')}</Text>
           </View>
-          <Switch
-            value={screenshotProtection}
-            onValueChange={toggleScreenshotProtection}
-            trackColor={trackColor}
-            thumbColor={c.onPrimary}
-          />
+          <Switch value={screenshotProtection} onValueChange={toggleScreenshotProtection} />
         </View>
 
         <View style={styles.separator} />
@@ -189,14 +181,9 @@ export function PrivacyLockSection() {
             <Text style={styles.rowTitle}>{t('settings.privacy.hideInSwitcher')}</Text>
             <Text style={styles.rowSubtitle}>{t('settings.privacy.hideInSwitcherDesc')}</Text>
           </View>
-          <Switch
-            value={switcherHide}
-            onValueChange={toggleSwitcherHide}
-            trackColor={trackColor}
-            thumbColor={c.onPrimary}
-          />
+          <Switch value={switcherHide} onValueChange={toggleSwitcherHide} />
         </View>
-      </Animated.View>
+      </MotionView>
     </>
   )
 }

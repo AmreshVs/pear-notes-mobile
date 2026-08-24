@@ -13,8 +13,8 @@ import {
   UI_ICON_SIZE_22,
   UI_SIZE_6,
   UI_SIZE_24,
-  UI_SIZE_42,
   UI_SIZE_44,
+  UI_SIZE_52,
 } from '@/constants/commonStyles'
 import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
 import { hapticLight } from '@/lib/haptics'
@@ -468,8 +468,8 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'flex-start',
     },
     toolbarBtn: {
-      width: UI_SIZE_42,
-      height: 52,
+      width: UI_SIZE_44,
+      height: UI_SIZE_52,
       justifyContent: 'center',
       alignItems: 'center',
       borderRadius: Radii.md,

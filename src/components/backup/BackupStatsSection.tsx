@@ -1,9 +1,10 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import { HardDrive, Lock, RotateCcw } from 'lucide-react-native'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -38,7 +39,7 @@ export function BackupStatsSection({
 
   return (
     <>
-      <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}>
+      <MotionView entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}>
         <RNView style={commonThemedStyles.card}>
           <RNView style={styles.infoRow}>
             <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
@@ -56,9 +57,9 @@ export function BackupStatsSection({
             </RNView>
           </RNView>
         </RNView>
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View
+      <MotionView
         entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
         style={styles.statsRow}
       >
@@ -80,7 +81,7 @@ export function BackupStatsSection({
           <Text style={styles.statLabel}>{t('backup.encryption')}</Text>
           <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>
         </RNView>
-      </Animated.View>
+      </MotionView>
     </>
   )
 }

@@ -13,6 +13,7 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_40,
+  UI_SIZE_50,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -97,7 +98,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     modalBtn: {
       flex: 1,
-      height: 50,
+      minHeight: UI_SIZE_50,
+      paddingVertical: Space.sm,
       borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',

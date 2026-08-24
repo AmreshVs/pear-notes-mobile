@@ -14,6 +14,7 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_40,
+  UI_SIZE_50,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hideLockInfo, useLockInfoVisible } from '@/lib/lockInfoModal'
@@ -115,7 +116,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     btn: {
       flex: 1,
-      height: 50,
+      minHeight: UI_SIZE_50,
+      paddingVertical: Space.sm,
       borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',

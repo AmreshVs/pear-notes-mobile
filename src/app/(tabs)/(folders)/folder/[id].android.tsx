@@ -71,6 +71,7 @@ import {
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
@@ -115,6 +116,9 @@ export default function AndroidFolderNotesScreen() {
 
   const searchBarHeight = useSharedValue(0)
   const searchBarOpacity = useSharedValue(0)
+
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const folder = useMemo(
     () => allFolders.find((f: any) => f.id === id || f.key === id),
@@ -496,17 +500,15 @@ export default function AndroidFolderNotesScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={c.background}
-      />
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.appBar}>
         <View style={styles.appBarLeft}>
           <Pressable
             onPress={handleBack}
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+            android_ripple={rippleBorderless}
+            style={styles.iconBtn}
             hitSlop={UI_SIZE_8}
           >
             <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
@@ -516,7 +518,8 @@ export default function AndroidFolderNotesScreen() {
         <View style={styles.appBarRight}>
           <Pressable
             onPress={toggleSearch}
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+            android_ripple={rippleBorderless}
+            style={styles.iconBtn}
             hitSlop={UI_SIZE_8}
           >
             <MaterialCommunityIcons
@@ -528,7 +531,8 @@ export default function AndroidFolderNotesScreen() {
           {!folder?.isSystem && (
             <Pressable
               onPress={handleOpenFolderOptions}
-              style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+              android_ripple={rippleBorderless}
+              style={styles.iconBtn}
               hitSlop={UI_SIZE_8}
             >
               <MaterialCommunityIcons
@@ -553,14 +557,18 @@ export default function AndroidFolderNotesScreen() {
             ref={searchInputRef}
             style={styles.searchInput}
             placeholder={t('folderView.searchPlaceholder')}
-            placeholderTextColor={c.onSurfaceVariant + '80'}
+            placeholderTextColor={c.onSurfaceVariant}
             accessibilityLabel={t('folderView.searchPlaceholder')}
             value={searchQuery}
             onChangeText={(text) => dispatch(setSearchQuery(text))}
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (
-            <Pressable onPress={handleClearSearch} hitSlop={UI_SIZE_8}>
+            <Pressable
+              onPress={handleClearSearch}
+              android_ripple={rippleBorderless}
+              hitSlop={UI_SIZE_8}
+            >
               <MaterialCommunityIcons
                 name="close-circle"
                 size={UI_ICON_SIZE_16}
@@ -617,10 +625,14 @@ export default function AndroidFolderNotesScreen() {
               label={t('folders.renameLabel')}
             />
             <View style={styles.dialogActions}>
-              <Pressable onPress={handleCloseRenameDialog} style={styles.dialogBtn}>
+              <Pressable
+                onPress={handleCloseRenameDialog}
+                android_ripple={ripple}
+                style={styles.dialogBtn}
+              >
                 <Text style={styles.dialogBtnCancel}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={confirmRename} style={styles.dialogBtn}>
+              <Pressable onPress={confirmRename} android_ripple={ripple} style={styles.dialogBtn}>
                 <Text style={styles.dialogBtnRename}>{t('folders.buttons.rename')}</Text>
               </Pressable>
             </View>
@@ -714,11 +726,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       ...commonStyles.row,
     },
     iconBtn: {
+      overflow: 'hidden',
       padding: UI_SIZE_8,
       borderRadius: UI_SIZE_9999,
-    },
-    iconBtnPressed: {
-      backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
     },
     searchWrap: {
       paddingHorizontal: UI_SIZE_20,

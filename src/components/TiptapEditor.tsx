@@ -30,7 +30,7 @@ import {
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
-import { createThemedStylesheet, useTheme } from './Themed'
+import { createThemedStylesheet, useFontScale, useTheme } from './Themed'
 
 export interface TiptapStyleState {
   bold: { isActive: boolean }
@@ -201,7 +201,12 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const { t } = useTranslation()
     const theme = useTheme()
     const { colors } = theme
-    const fontSize = useSelector(getEditorFontSize)
+    const editorFontSize = useSelector(getEditorFontSize)
+    const systemFontScale = useFontScale()
+    const fontSize = useMemo(
+      () => Math.round(editorFontSize * systemFontScale),
+      [editorFontSize, systemFontScale],
+    )
     const fontFamily = useSelector(getFontFamily)
     const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
     const webViewRef = useRef<WebView>(null)

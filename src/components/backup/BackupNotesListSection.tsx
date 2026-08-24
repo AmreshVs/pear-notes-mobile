@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text as RNText, View as RNView } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import {
   ChevronDown,
   ChevronRight,
@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react-native'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -120,7 +121,7 @@ export function BackupNotesListSection({
   if (notesStorageInfo.length === 0) return null
 
   return (
-    <Animated.View
+    <MotionView
       entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset + 20)}
       style={styles.perNoteSection}
     >
@@ -128,7 +129,7 @@ export function BackupNotesListSection({
         {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
       </Text>
       {notesStorageInfo.map(renderNoteItem)}
-    </Animated.View>
+    </MotionView>
   )
 }
 

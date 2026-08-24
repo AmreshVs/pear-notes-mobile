@@ -1,25 +1,17 @@
 import { type ComponentProps, memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
-import Animated, {
-  Easing,
-  FadeInDown,
-  FadeOutUp,
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated'
+import { Easing, FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
-import { Folder } from 'lucide-react-native'
 
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
+import { MotionView } from '@/components/MotionView'
+import { createThemedStylesheetWithHooks, Text, useFontScale } from '@/components/Themed'
 import {
   commonStyles,
   FontFamily,
@@ -39,10 +31,17 @@ import {
   UI_SIZE_24,
   UI_SIZE_60,
 } from '@/constants/commonStyles'
+import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
+import {
+  isAccessibilityTextSize,
+  MAX_FONT_SCALE_CHROME,
+  scaledLineCount,
+} from '@/utils/dynamicType'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 import { type AttachmentKind } from '@/utils/noteUtils'
@@ -121,7 +120,12 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   )
   const isPearTheme = useAndroidColorTheme() === 'pear'
   const [thumbError, setThumbError] = useState(false)
-  const showThumb = !!resolvedImageUrl && !thumbError && !masked
+  const fontScale = useFontScale()
+  const titleLines = scaledLineCount(1, fontScale)
+  const previewLines = scaledLineCount(1, fontScale)
+
+  const showThumb =
+    !!resolvedImageUrl && !thumbError && !masked && !isAccessibilityTextSize(fontScale)
 
   const entering = useMemo(
     () =>
@@ -133,37 +137,31 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
     [index],
   )
 
-  const scale = useSharedValue(1)
-  const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const handleThumbError = useCallback(() => setThumbError(true), [])
   const handlePress = useCallback(() => onPress(note.key), [onPress, note.key])
   const handleLongPress = useCallback(() => onLongPress(note.key), [onLongPress, note.key])
-  const handlePressIn = useCallback(() => {
-    scale.value = withTiming(0.985, { duration: 120, easing: Easing.out(Easing.cubic) })
-  }, [scale])
-  const handlePressOut = useCallback(() => {
-    scale.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) })
-  }, [scale])
+  const accessibilityActions = useMemo(
+    () => [{ name: NOTE_ACTION.options, label: t('noteCard.actions.options') }],
+    [t],
+  )
 
   return (
-    <Animated.View
+    <MotionView
       entering={entering}
       exiting={FadeOutUp.duration(160)}
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
-      <Animated.View style={animStyle}>
       <Pressable
         onPress={handlePress}
         onLongPress={handleLongPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
+        android_ripple={ripple}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
-        style={({ pressed }) => [
-          styles.row,
-          pressed && styles.rowPressed,
-        ]}
+        accessibilityActions={accessibilityActions}
+        onAccessibilityAction={handleLongPress}
+        style={styles.row}
       >
         <View style={styles.content}>
           <View style={styles.titleRow}>
@@ -183,7 +181,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                 style={styles.lockIcon}
               />
             )}
-            <Text style={styles.title} numberOfLines={1}>
+            <Text style={styles.title} numberOfLines={titleLines}>
               {title}
             </Text>
           </View>
@@ -196,7 +194,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                 color={c.onSurfaceVariant}
                 style={styles.checkboxIcon}
               />
-              <Text style={[styles.preview, styles.rowPreview]} numberOfLines={1}>
+              <Text style={[styles.preview, styles.rowPreview]} numberOfLines={previewLines}>
                 {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
               </Text>
             </View>
@@ -208,12 +206,12 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                 color={c.onSurfaceVariant}
                 style={styles.checkboxIcon}
               />
-              <Text style={[styles.preview, styles.rowPreview]} numberOfLines={1}>
+              <Text style={[styles.preview, styles.rowPreview]} numberOfLines={previewLines}>
                 {displayPreview}
               </Text>
             </View>
           ) : (
-            <Text style={styles.preview} numberOfLines={1}>
+            <Text style={styles.preview} numberOfLines={previewLines}>
               {displayPreview}
             </Text>
           )}
@@ -230,13 +228,23 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
           <View style={styles.meta}>
             {folderName && (
               <>
-                <Folder size={UI_ICON_SIZE_12} style={styles.folderIcon} />
-                <Text style={[styles.metaTag, isPearTheme && styles.metaTagPear]}>
+                <MaterialCommunityIcons
+                  name="folder-outline"
+                  size={UI_ICON_SIZE_12}
+                  color={c.onSurfaceVariant}
+                  style={styles.folderIcon}
+                />
+                <Text
+                  maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
+                  style={[styles.metaTag, isPearTheme && styles.metaTagPear]}
+                >
                   {folderName.toUpperCase()}
                 </Text>
               </>
             )}
-            <Text style={styles.metaDate}>{dateLabel}</Text>
+            <Text maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME} style={styles.metaDate}>
+              {dateLabel}
+            </Text>
           </View>
         </View>
 
@@ -252,8 +260,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
           />
         )}
       </Pressable>
-      </Animated.View>
-    </Animated.View>
+    </MotionView>
   )
 }, areNoteRowPropsEqual)
 
@@ -262,10 +269,11 @@ const useRowHooks = () => {
   return { md3 }
 }
 
-const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
+const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
   const c = md3.colors as any
   const styles = StyleSheet.create({
     row: {
+      overflow: 'hidden',
       borderRadius: UI_SIZE_24,
       padding: UI_SIZE_20,
       marginBottom: UI_SIZE_12,
@@ -310,7 +318,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     },
     folderIcon: {
       marginRight: Space.xs,
-      color: theme.colors.textSecondary,
     },
     checkboxIcon: {
       marginRight: UI_SIZE_6,

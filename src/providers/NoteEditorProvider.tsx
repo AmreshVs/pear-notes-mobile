@@ -27,10 +27,11 @@ import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
-import { createThemedStylesheet, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, useReduceMotion, useTheme } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import {
+  Radii,
   Space,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
@@ -41,13 +42,8 @@ import {
 } from '@/constants/commonStyles'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
-import {
-  hapticError,
-  hapticLight,
-  hapticMedium,
-  hapticSuccess,
-  hapticWarning,
-} from '@/lib/haptics'
+import { hapticError, hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
+import { snapTo } from '@/lib/motion'
 import {
   cleanupCachedAttachment,
   downloadToCache,
@@ -67,6 +63,7 @@ import { useNoteEditorActions } from './useNoteEditorActions'
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReduceMotion()
   const { colors } = useTheme()
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
@@ -151,10 +148,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     await FileSystem.deleteAsync(cacheUri, { idempotent: true }).catch(() => {})
   }, [])
 
-  const handleBeforeToggleLock = useCallback(
-    () => hapticMedium(),
-    [],
-  )
+  const handleBeforeToggleLock = useCallback(() => hapticMedium(), [])
 
   const {
     handleUpdate,
@@ -200,6 +194,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         onPress: () => {
           dispatch(deleteNote(noteId as any))
           const w = Dimensions.get('window').width
+          if (reduceMotion) {
+            snapTo(slideAnim, w, resetEditorState)
+            return
+          }
           Animated.timing(slideAnim, {
             toValue: w,
             duration: 250,
@@ -210,7 +208,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         },
       },
     ])
-  }, [noteId, dispatch, slideAnim, resetEditorState, t])
+  }, [noteId, dispatch, slideAnim, resetEditorState, reduceMotion, t])
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
@@ -517,24 +515,32 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           }
 
           setIsEdgeSwipeActive(false)
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            useNativeDriver: true,
-            damping: 24,
-            stiffness: 260,
-          }).start()
+          if (reduceMotion) {
+            snapTo(slideAnim, 0)
+          } else {
+            Animated.spring(slideAnim, {
+              toValue: 0,
+              useNativeDriver: true,
+              damping: 24,
+              stiffness: 260,
+            }).start()
+          }
         },
         onPanResponderTerminate: () => {
           setIsEdgeSwipeActive(false)
-          Animated.spring(slideAnim, {
-            toValue: 0,
-            useNativeDriver: true,
-            damping: 24,
-            stiffness: 260,
-          }).start()
+          if (reduceMotion) {
+            snapTo(slideAnim, 0)
+          } else {
+            Animated.spring(slideAnim, {
+              toValue: 0,
+              useNativeDriver: true,
+              damping: 24,
+              stiffness: 260,
+            }).start()
+          }
         },
       }),
-    [closeNote, isOpen, slideAnim, setIsEdgeSwipeActive],
+    [closeNote, isOpen, slideAnim, setIsEdgeSwipeActive, reduceMotion],
   )
 
   const contextValue = useMemo(
@@ -573,6 +579,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               <GlassView intensity={40} borderRadius={24} style={styles.headerBtn}>
                 <Pressable
                   onPress={closeNote}
+                  accessibilityRole="button"
+                  accessibilityLabel={t('common.back')}
                   style={({ pressed }) => [styles.headerBtnInner, pressed && styles.pressed]}
                 >
                   <SymbolView
@@ -588,25 +596,29 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               <View style={styles.flex1} />
 
               {isNoteLocked ? null : isEditing ? (
-                <GlassView intensity={40} borderRadius={22} style={styles.headerBtn}>
+                <View style={styles.doneBtn}>
                   <Pressable
                     onPress={handleDone}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('common.done')}
                     style={({ pressed }) => [styles.headerBtnInner, pressed && styles.pressed]}
                   >
                     <SymbolView
                       name="checkmark"
                       size={UI_ICON_SIZE_22}
-                      tintColor={colors.text}
+                      tintColor={colors.onPrimary}
                       weight="semibold"
                       fallback={<View />}
                     />
                   </Pressable>
-                </GlassView>
+                </View>
               ) : (
                 <GlassView intensity={40} borderRadius={24} style={styles.headerPill} isInteractive>
                   <Pressable
                     onPress={handleShare}
                     disabled={isSharing}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('noteCard.actions.share')}
                     style={({ pressed }) => [
                       styles.headerBtnInner,
                       (pressed || isSharing) && styles.pressed,
@@ -630,7 +642,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       <ExpoUI.Menu
                         label={
                           <ExpoUI.RNHostView matchContents>
-                            <View style={styles.headerBtnInner}>
+                            <View
+                              style={styles.headerBtnInner}
+                              accessible
+                              accessibilityRole="button"
+                              accessibilityLabel={t('noteCard.actions.options')}
+                            >
                               <SymbolView
                                 name="ellipsis"
                                 size={UI_ICON_SIZE_24}
@@ -692,6 +709,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   ) : (
                     <Pressable
                       onPress={handleMoreOptions}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('noteCard.actions.options')}
                       style={({ pressed }) => [styles.headerBtnInner, pressed && styles.pressed]}
                     >
                       <SymbolView
@@ -927,6 +946,15 @@ const useStyles = createThemedStylesheet((theme) => {
       height: UI_SIZE_48,
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    doneBtn: {
+      width: UI_SIZE_48,
+      height: UI_SIZE_48,
+      borderRadius: Radii.pill,
+      justifyContent: 'center',
+      alignItems: 'center',
+      overflow: 'hidden',
+      backgroundColor: theme.colors.primary,
     },
     headerPill: {
       height: UI_SIZE_48,

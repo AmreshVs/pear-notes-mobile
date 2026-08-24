@@ -1,12 +1,13 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import type { UploadItem } from '@/components/backup/UploadsSection'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -87,12 +88,12 @@ export function AndroidUploadsSection({
   const groups = groupTransfersByNote(uploads, noteTitles, t('noteCard.untitled'))
 
   return (
-    <Animated.View entering={FadeInDown.duration(240)} style={styles.section}>
+    <MotionView entering={FadeInDown.duration(240)} style={styles.section}>
       <Text style={styles.sectionTitle}>
         {t('storage.syncingToDevices')} ({uploads.length})
       </Text>
       <View style={styles.groupList}>{groups.map(renderGroup)}</View>
-    </Animated.View>
+    </MotionView>
   )
 }
 

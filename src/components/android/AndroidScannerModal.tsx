@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Modal, Pressable, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -25,6 +25,7 @@ import {
   UI_SIZE_280,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string
@@ -50,6 +51,9 @@ export function AndroidScannerModal({
   const theme = useTheme()
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const styles = useStyles()
+  const md3Colors = useMD3Theme().colors
+  const ripple = useMemo(() => androidRipple(md3Colors.onSurface), [md3Colors.onSurface])
+  const rippleOnScrim = useMemo(() => androidRipple(theme.colors.white), [theme.colors.white])
 
   const handleBarcodeScanned = useCallback(
     ({ data }: { data: string }) => {
@@ -87,7 +91,11 @@ export function AndroidScannerModal({
               <View style={styles.scannerFrame} />
             </View>
             <View style={styles.scannerHeader}>
-              <Pressable onPress={onClose} style={styles.scannerCloseBtn}>
+              <Pressable
+                onPress={onClose}
+                android_ripple={rippleOnScrim}
+                style={styles.scannerCloseBtn}
+              >
                 <MaterialCommunityIcons
                   name="close"
                   size={UI_ICON_SIZE_20}
@@ -104,10 +112,14 @@ export function AndroidScannerModal({
           <View style={styles.permissionCard}>
             <Text style={styles.scannerTitle}>{t('sync.permissions.cameraTitle')}</Text>
             <Text style={styles.scannerDesc}>{t('sync.permissions.cameraDescription')}</Text>
-            <Pressable onPress={handleRequestPermission} style={styles.permissionBtn}>
+            <Pressable
+              onPress={handleRequestPermission}
+              android_ripple={ripple}
+              style={styles.permissionBtn}
+            >
               <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
             </Pressable>
-            <Pressable onPress={onClose} style={styles.permissionCancelBtn}>
+            <Pressable onPress={onClose} android_ripple={ripple} style={styles.permissionCancelBtn}>
               <Text style={styles.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
             </Pressable>
           </View>
@@ -154,6 +166,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       top: insets.top + UI_SIZE_16,
     },
     scannerCloseBtn: {
+      overflow: 'hidden',
       width: UI_SIZE_42,
       height: UI_SIZE_42,
       borderRadius: UI_SIZE_9999,
@@ -191,6 +204,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_12,
     },
     permissionBtn: {
+      overflow: 'hidden',
       marginTop: UI_SIZE_8,
       borderRadius: UI_SIZE_9999,
       paddingHorizontal: UI_SIZE_32,

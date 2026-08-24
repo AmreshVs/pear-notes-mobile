@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import { CloudUpload } from 'lucide-react-native'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -80,7 +81,7 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
   const groups = groupTransfersByNote(uploads, noteTitles, t('noteCard.untitled'))
 
   return (
-    <Animated.View entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
+    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
       <Text style={commonThemedStyles.settingsSectionCap}>
         {t('storage.syncingToDevices')} ({uploads.length})
       </Text>
@@ -92,7 +93,7 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
       >
         {groups.map(renderGroup)}
       </ScrollView>
-    </Animated.View>
+    </MotionView>
   )
 }
 

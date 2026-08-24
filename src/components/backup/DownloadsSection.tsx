@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import { CloudDownload, Pause, Play, RotateCw, WifiOff } from 'lucide-react-native'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -127,7 +128,7 @@ export function DownloadsSection({
   const groups = groupTransfersByNote(downloads, noteTitles, t('noteCard.untitled'))
 
   return (
-    <Animated.View entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
+    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
       <Text style={commonThemedStyles.settingsSectionCap}>
         {t('storage.syncingFromDevices')} ({downloads.length})
       </Text>
@@ -139,7 +140,7 @@ export function DownloadsSection({
       >
         {groups.map(renderGroup)}
       </ScrollView>
-    </Animated.View>
+    </MotionView>
   )
 }
 

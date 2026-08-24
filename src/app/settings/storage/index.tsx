@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { router, Stack } from 'expo-router'
 import { Database, Trash2, X } from 'lucide-react-native'
 
@@ -13,6 +13,7 @@ import { BackupNotesListSection } from '@/components/backup/BackupNotesListSecti
 import { DownloadsSection } from '@/components/backup/DownloadsSection'
 import { UploadsSection } from '@/components/backup/UploadsSection'
 import { ClearStorageBottomSheet } from '@/components/bottomsheet/ClearStorageAppBottomSheet'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -86,13 +87,13 @@ export default function StorageScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(Durations.fade)} style={styles.heroContainer}>
+        <MotionView entering={FadeIn.duration(Durations.fade)} style={styles.heroContainer}>
           <RNView style={styles.heroIcon}>
             <Database size={UI_ICON_SIZE_48} color={colors.primary} strokeWidth={1.5} />
           </RNView>
           <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
-        </Animated.View>
+        </MotionView>
 
         <DownloadsSection
           downloads={activeDownloads}
@@ -108,7 +109,7 @@ export default function StorageScreen() {
           formatBytes={formatBytes}
         />
 
-        <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}>
+        <MotionView entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}>
           <Text style={commonThemedStyles.settingsSectionCap}>{t('storage.usage')}</Text>
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.usageRow}>
@@ -139,7 +140,7 @@ export default function StorageScreen() {
               </Pressable>
             </RNView>
           </RNView>
-        </Animated.View>
+        </MotionView>
 
         <BackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
 
@@ -150,7 +151,7 @@ export default function StorageScreen() {
           mediaKind={mediaKind}
         />
 
-        <Animated.View entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}>
+        <MotionView entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}>
           <Text style={commonThemedStyles.settingsSectionCapSpaced}>{t('storage.dangerZone')}</Text>
           <RNView style={[commonThemedStyles.card, styles.dangerCard]}>
             <RNView style={styles.dangerContent}>
@@ -167,7 +168,7 @@ export default function StorageScreen() {
               <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
             </Pressable>
           </RNView>
-        </Animated.View>
+        </MotionView>
       </ScrollView>
 
       <ClearStorageBottomSheet

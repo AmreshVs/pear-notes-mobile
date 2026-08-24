@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated'
+import { FadeInDown, FadeOutDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Download, X } from 'lucide-react-native'
 
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -26,7 +27,7 @@ export function AppUpdateBanner() {
   if (!isVisible) return null
 
   return (
-    <Animated.View
+    <MotionView
       style={styles.container}
       entering={FadeInDown.duration(300)}
       exiting={FadeOutDown.duration(200)}
@@ -62,7 +63,7 @@ export function AppUpdateBanner() {
           <Text style={styles.updateBtnText}>{t('update.banner.updateButton')}</Text>
         </Pressable>
       </RNView>
-    </Animated.View>
+    </MotionView>
   )
 }
 

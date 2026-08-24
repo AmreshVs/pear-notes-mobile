@@ -1,5 +1,4 @@
 import '@/locales/i18n'
-import 'react-native-reanimated'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -14,6 +13,7 @@ import {
   View,
 } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
+import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 import * as Crypto from 'expo-crypto'
 import { Directory, Paths } from 'expo-file-system'
@@ -38,6 +38,7 @@ import { PairingOverlay } from '@/components/PairingOverlay'
 import {
   ColorSchemeProvider,
   createThemedStylesheet,
+  useReduceMotion,
   useResolvedColorScheme,
 } from '@/components/Themed'
 import Colors from '@/constants/Colors'
@@ -284,6 +285,7 @@ const CustomLightTheme = {
 function RootLayoutNav() {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
+  const reduceMotion = useReduceMotion()
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
@@ -291,6 +293,7 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={isDark ? CustomDarkTheme : CustomLightTheme}>
+      <ReducedMotionConfig mode={reduceMotion ? ReduceMotion.Always : ReduceMotion.Never} />
       <AndroidPaperProvider>
         <SheetProvider>
           <ToastProvider>
@@ -308,6 +311,7 @@ function RootLayoutNav() {
                   options={{
                     presentation: 'modal',
                     headerShown: false,
+                    sheetGrabberVisible: true,
                   }}
                 />
               </Stack>

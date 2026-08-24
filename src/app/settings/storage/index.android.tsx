@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -15,6 +15,7 @@ import { AndroidDownloadsSection } from '@/components/android/AndroidDownloadsSe
 import { AndroidUploadsSection } from '@/components/android/AndroidUploadsSection'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -38,6 +39,7 @@ import {
   UI_SIZE_96,
   UI_SIZE_120,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 import useStorageScreen from './useStorageScreen'
@@ -76,6 +78,10 @@ export default function AndroidStorageScreen() {
     handleResetCancel,
   } = useStorageScreen()
 
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleDanger = useMemo(() => androidRipple(c.error), [c.error])
+
   const resetActions = useMemo(
     () => [
       {
@@ -90,21 +96,23 @@ export default function AndroidStorageScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
-        backgroundColor={c.background}
-      />
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.iconBtn}>
+        <Pressable
+          onPress={() => router.back()}
+          android_ripple={rippleBorderless}
+          hitSlop={UI_SIZE_12}
+          style={styles.iconBtn}
+        >
           <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('layouts.storage')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Animated.View entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
               name="database-outline"
@@ -114,7 +122,7 @@ export default function AndroidStorageScreen() {
           </View>
           <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
-        </Animated.View>
+        </MotionView>
 
         <AndroidDownloadsSection
           downloads={activeDownloads}
@@ -130,7 +138,7 @@ export default function AndroidStorageScreen() {
           formatBytes={formatBytes}
         />
 
-        <Animated.View entering={FadeInDown.duration(240).delay(60)}>
+        <MotionView entering={FadeInDown.duration(240).delay(60)}>
           <Text style={styles.sectionTitle}>{t('storage.usage')}</Text>
           <View style={styles.usageCard}>
             <View style={styles.usageRow}>
@@ -149,11 +157,8 @@ export default function AndroidStorageScreen() {
               <Pressable
                 onPress={handleReclaim}
                 disabled={isReclaiming}
-                style={({ pressed }) => [
-                  styles.reclaimBtn,
-                  isReclaiming && styles.reclaimBtnDisabled,
-                  pressed && styles.cardPressed,
-                ]}
+                android_ripple={ripple}
+                style={[styles.reclaimBtn, isReclaiming && styles.reclaimBtnDisabled]}
               >
                 <Text style={styles.reclaimBtnText}>
                   {isReclaiming ? t('storage.compacting') : t('storage.compactNow')}
@@ -161,7 +166,7 @@ export default function AndroidStorageScreen() {
               </Pressable>
             </View>
           </View>
-        </Animated.View>
+        </MotionView>
 
         <AndroidBackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
 
@@ -172,7 +177,7 @@ export default function AndroidStorageScreen() {
           mediaKind={mediaKind}
         />
 
-        <Animated.View entering={FadeInDown.duration(240).delay(180)}>
+        <MotionView entering={FadeInDown.duration(240).delay(180)}>
           <Text style={styles.sectionTitleDanger}>{t('storage.dangerZone')}</Text>
           <View style={styles.dangerCard}>
             <View style={styles.dangerTextContent}>
@@ -181,7 +186,8 @@ export default function AndroidStorageScreen() {
             </View>
             <Pressable
               onPress={handleResetPress}
-              style={({ pressed }) => [styles.dangerBtn, pressed && styles.cardPressed]}
+              android_ripple={rippleDanger}
+              style={styles.dangerBtn}
             >
               <MaterialCommunityIcons
                 name="trash-can-outline"
@@ -191,7 +197,7 @@ export default function AndroidStorageScreen() {
               <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
             </Pressable>
           </View>
-        </Animated.View>
+        </MotionView>
       </ScrollView>
 
       <BottomActionSheet
@@ -324,6 +330,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurfaceVariant,
     },
     reclaimBtn: {
+      overflow: 'hidden',
       minWidth: UI_SIZE_120,
       alignItems: 'center',
       paddingHorizontal: UI_SIZE_16,
@@ -340,9 +347,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       color: c.primary,
       textAlign: 'center',
-    },
-    cardPressed: {
-      opacity: 0.7,
     },
     dangerCard: {
       ...commonStyles.centered,
@@ -368,6 +372,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       lineHeight: FontSize.caption * 1.4,
     },
     dangerBtn: {
+      overflow: 'hidden',
       ...commonStyles.row,
       ...commonStyles.centered,
       gap: UI_SIZE_8,

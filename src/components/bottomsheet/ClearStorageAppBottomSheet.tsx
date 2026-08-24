@@ -274,7 +274,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     confirmBtn: {
       ...commonStyles.centered,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: UI_SIZE_27,
       backgroundColor: theme.colors.error,
     },
@@ -285,7 +285,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     cancelBtn: {
       ...commonStyles.centered,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: UI_SIZE_27,
       backgroundColor: theme.colors.sheetCancelBackground,
       borderWidth: 1,

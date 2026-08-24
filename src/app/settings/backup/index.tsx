@@ -9,13 +9,14 @@ import {
   Text as RNText,
   View as RNView,
 } from 'react-native'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { router, Stack } from 'expo-router'
 import { Check, CloudUpload, Lock, RotateCcw, X } from 'lucide-react-native'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { BackupStatsSection } from '@/components/backup/BackupStatsSection'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -106,18 +107,15 @@ export default function BackupScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
           <RNView style={styles.heroIcon}>
             <CloudUpload size={UI_ICON_SIZE_48} color={colors.primary} strokeWidth={1.5} />
           </RNView>
           <Text style={styles.heroTitle}>{t('backup.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('backup.hero.description')}</Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(60)}
-          style={styles.buttonsContainer}
-        >
+        <MotionView entering={FadeInDown.duration(240).delay(60)} style={styles.buttonsContainer}>
           <Pressable
             onPress={handleCreateBackup}
             disabled={isActive}
@@ -143,9 +141,9 @@ export default function BackupScreen() {
             <RotateCcw size={UI_ICON_SIZE_18} color={colors.text} strokeWidth={2} />
             <Text style={styles.secondaryBtnText}>{t('backup.restoreData')}</Text>
           </Pressable>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(240).delay(120)}
           style={[commonThemedStyles.card, styles.recoveryCard]}
         >
@@ -154,7 +152,7 @@ export default function BackupScreen() {
             <Text style={styles.recoveryTitle}>{t('backup.protectedTitle')}</Text>
           </RNView>
           <Text style={styles.recoveryDesc}>{t('backup.protectedDesc')}</Text>
-        </Animated.View>
+        </MotionView>
 
         <BackupStatsSection
           lastBackupDate={lastBackupDate}
@@ -327,7 +325,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xl,
     },
     primaryBtn: {
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: Radii.lg,
       backgroundColor: theme.colors.primary,
       ...commonStyles.row,
@@ -341,7 +339,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.onPrimary,
     },
     secondaryBtn: {
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: Radii.lg,
       backgroundColor: theme.colors.controlBackground,
       borderWidth: 1,
