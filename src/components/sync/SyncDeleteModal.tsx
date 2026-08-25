@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { Animated, Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { ShieldAlert } from 'lucide-react-native'
 
 import { GlassView } from '@/components/GlassView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -49,7 +49,11 @@ export function SyncDeleteModal({ visible, fadeAnim, onCancel, onConfirm }: Prop
           <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.dangerIcon}>
-                <ShieldAlert size={UI_ICON_SIZE_40} color={colors.error} />
+                <SymbolIcon
+                  name="exclamationmark.shield"
+                  size={UI_ICON_SIZE_40}
+                  color={colors.error}
+                />
               </RNView>
 
               <Text style={styles.modalTitle}>{t('sync.delete.title')}</Text>

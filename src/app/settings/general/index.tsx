@@ -5,7 +5,6 @@ import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reani
 import { useDispatch, useSelector } from 'react-redux'
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
-import { ChevronRight } from 'lucide-react-native'
 
 import {
   getEditorFontSize,
@@ -20,6 +19,7 @@ import { MotionView } from '@/components/MotionView'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -176,7 +176,11 @@ export default function GeneralSettingsScreen() {
                   {getSortOptions(t).find((o) => o.value === sortBy)?.label ??
                     t('settings.general.sortOptions.updatedAt')}
                 </Text>
-                <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
+                <SymbolIcon
+                  name="chevron.forward"
+                  size={UI_ICON_SIZE_15}
+                  color={colors.textMuted}
+                />
               </RNView>
             </Pressable>
           </RNView>
@@ -202,7 +206,11 @@ export default function GeneralSettingsScreen() {
                 <Text style={styles.rowVal}>
                   {getFontOptions(t).find((o) => o.value === fontFamily)?.label ?? fontFamily}
                 </Text>
-                <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
+                <SymbolIcon
+                  name="chevron.forward"
+                  size={UI_ICON_SIZE_15}
+                  color={colors.textMuted}
+                />
               </RNView>
             </Pressable>
 

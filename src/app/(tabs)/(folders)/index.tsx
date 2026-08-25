@@ -2,9 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
-import { Image } from 'expo-image'
 import { router, Stack } from 'expo-router'
-import { FolderPlus, SquarePen } from 'lucide-react-native'
 
 import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
 import {
@@ -22,6 +20,7 @@ import {
 
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
   commonStyles,
@@ -159,10 +158,10 @@ export default function FoldersScreen() {
         accessibilityRole="button"
         accessibilityLabel={t('folders.a11y.openSettings')}
       >
-        <Image source="sf:gearshape" style={styles.gearIcon} />
+        <SymbolIcon name="gearshape" size={UI_ICON_SIZE_22} color={colors.text} />
       </Pressable>
     ),
-    [iconBtnStyle, handleOpenSettings, styles.gearIcon, t],
+    [iconBtnStyle, handleOpenSettings, colors.text, t],
   )
 
   const headerRight = useCallback(
@@ -176,7 +175,7 @@ export default function FoldersScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('folders.a11y.newFolder')}
         >
-          <FolderPlus size={UI_ICON_SIZE_20} color={colors.text} strokeWidth={1.8} />
+          <SymbolIcon name="folder.badge.plus" size={UI_ICON_SIZE_20} color={colors.text} />
         </Pressable>
         <View style={commonThemedStyles.pillDivider} />
         <Pressable
@@ -187,7 +186,7 @@ export default function FoldersScreen() {
           accessibilityRole="button"
           accessibilityLabel={t('folders.a11y.newNote')}
         >
-          <SquarePen size={UI_ICON_SIZE_20} color={colors.text} strokeWidth={1.8} />
+          <SymbolIcon name="square.and.pencil" size={UI_ICON_SIZE_20} color={colors.text} />
         </Pressable>
       </GlassView>
     ),
@@ -296,11 +295,6 @@ const useStyles = createThemedStylesheet((theme) => {
       minWidth: UI_SIZE_44,
       minHeight: UI_SIZE_44,
       padding: Space.sm,
-    },
-    gearIcon: {
-      width: UI_ICON_SIZE_22,
-      height: UI_ICON_SIZE_22,
-      tintColor: theme.colors.text,
     },
   })
   return styles

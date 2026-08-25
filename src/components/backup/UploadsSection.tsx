@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
-import { CloudUpload } from 'lucide-react-native'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
 import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -51,7 +51,12 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
       <RNView key={upload.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <RNView style={styles.rowHeader}>
           <RNView style={styles.rowMeta}>
-            <CloudUpload size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+            <SymbolIcon
+              name="icloud.and.arrow.up"
+              size={UI_ICON_SIZE_16}
+              color={colors.primary}
+              weight="medium"
+            />
             <Text style={styles.fileName} numberOfLines={1}>
               {upload.fileName || t('storage.attachment')}
             </Text>

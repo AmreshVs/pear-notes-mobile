@@ -1,11 +1,11 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
-import { CloudDownload, Pause, Play, RotateCw, WifiOff } from 'lucide-react-native'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
 import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -65,12 +65,22 @@ export function DownloadsSection({
       <RNView key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
         <RNView style={styles.rowHeader}>
           <RNView style={styles.rowMeta}>
-            <CloudDownload size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+            <SymbolIcon
+              name="icloud.and.arrow.down"
+              size={UI_ICON_SIZE_16}
+              color={colors.primary}
+              weight="medium"
+            />
             <Text style={styles.fileName} numberOfLines={1}>
               {download.fileName || t('storage.attachment')}
             </Text>
             {!download.sourceOnline && (
-              <WifiOff size={UI_ICON_SIZE_16} color={colors.textMuted} strokeWidth={2} />
+              <SymbolIcon
+                name="wifi.slash"
+                size={UI_ICON_SIZE_16}
+                color={colors.textMuted}
+                weight="medium"
+              />
             )}
           </RNView>
           <RNView style={styles.rowActions}>
@@ -83,7 +93,12 @@ export function DownloadsSection({
                 hitSlop={8}
                 style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
               >
-                <Pause size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+                <SymbolIcon
+                  name="pause.fill"
+                  size={UI_ICON_SIZE_16}
+                  color={colors.primary}
+                  weight="medium"
+                />
               </Pressable>
             )}
             {download.status === 'paused' && (
@@ -92,7 +107,12 @@ export function DownloadsSection({
                 hitSlop={8}
                 style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
               >
-                <Play size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+                <SymbolIcon
+                  name="play.fill"
+                  size={UI_ICON_SIZE_16}
+                  color={colors.primary}
+                  weight="medium"
+                />
               </Pressable>
             )}
             {isStuck && (
@@ -101,7 +121,12 @@ export function DownloadsSection({
                 hitSlop={8}
                 style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
               >
-                <RotateCw size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+                <SymbolIcon
+                  name="arrow.clockwise"
+                  size={UI_ICON_SIZE_16}
+                  color={colors.primary}
+                  weight="medium"
+                />
               </Pressable>
             )}
           </RNView>

@@ -3,10 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { router } from 'expo-router'
-import { Check } from 'lucide-react-native'
 
 import { getFontFamily, updateSetting } from '@pear-notes/core/store/slices/settingsSlice.js'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
 import {
   commonStyles,
@@ -54,7 +54,9 @@ export default function FontFamilyScreen() {
           ]}
         >
           <Text style={styles.rowLabel}>{option.label}</Text>
-          {selected && <Check size={UI_ICON_SIZE_20} color={colors.primary} />}
+          {selected && (
+            <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+          )}
         </Pressable>
       )
     },

@@ -2,18 +2,9 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text as RNText, View as RNView } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
-import {
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  Film,
-  Image as ImageIcon,
-  Mic,
-  PenLine,
-  X,
-} from 'lucide-react-native'
 
 import { MotionView } from '@/components/MotionView'
+import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -52,15 +43,17 @@ export function BackupNotesListSection({
 
   const renderMediaItem = (m: any, noteKey: string) => {
     const kind = mediaKind(m.name)
-    let Icon = FileText
-    if (kind === 'image') Icon = ImageIcon
-    else if (kind === 'video') Icon = Film
-    else if (kind === 'audio') Icon = Mic
+    const iconName = MEDIA_ICONS[kind] ?? 'doc.text'
 
     return (
       <RNView key={m.path} style={styles.mediaRow}>
         <RNView style={styles.mediaHeaderActions}>
-          <Icon size={UI_ICON_SIZE_14} color={colors.textMuted} strokeWidth={2} />
+          <SymbolIcon
+            name={iconName}
+            size={UI_ICON_SIZE_14}
+            color={colors.textMuted}
+            weight="medium"
+          />
           <RNText style={styles.mediaName} numberOfLines={1}>
             {getMediaDisplayName(m.name, t('backup.syncedMedia'))}
           </RNText>
@@ -72,7 +65,12 @@ export function BackupNotesListSection({
             hitSlop={8}
             style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
           >
-            <X size={UI_ICON_SIZE_14} color={colors.textMuted} strokeWidth={2} />
+            <SymbolIcon
+              name="xmark"
+              size={UI_ICON_SIZE_14}
+              color={colors.textMuted}
+              weight="medium"
+            />
           </Pressable>
         </RNView>
       </RNView>
@@ -93,9 +91,19 @@ export function BackupNotesListSection({
           <RNView style={styles.noteHeaderActions}>
             <RNText style={styles.noteSize}>{formatBytes(note.totalSize)}</RNText>
             {isExpanded ? (
-              <ChevronDown size={UI_ICON_SIZE_16} color={colors.textMuted} strokeWidth={2} />
+              <SymbolIcon
+                name="chevron.down"
+                size={UI_ICON_SIZE_16}
+                color={colors.textMuted}
+                weight="medium"
+              />
             ) : (
-              <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} strokeWidth={2} />
+              <SymbolIcon
+                name="chevron.forward"
+                size={UI_ICON_SIZE_16}
+                color={colors.textMuted}
+                weight="medium"
+              />
             )}
           </RNView>
         </Pressable>
@@ -103,7 +111,12 @@ export function BackupNotesListSection({
           <RNView>
             <RNView style={styles.mediaRow}>
               <RNView style={styles.mediaHeaderActions}>
-                <PenLine size={UI_ICON_SIZE_14} color={colors.textMuted} strokeWidth={2} />
+                <SymbolIcon
+                  name="pencil"
+                  size={UI_ICON_SIZE_14}
+                  color={colors.textMuted}
+                  weight="medium"
+                />
                 <RNText style={styles.mediaName} numberOfLines={1}>
                   {t('backup.text')}
                 </RNText>
@@ -131,6 +144,12 @@ export function BackupNotesListSection({
       {notesStorageInfo.map(renderNoteItem)}
     </MotionView>
   )
+}
+
+const MEDIA_ICONS: Record<string, IconName> = {
+  image: 'photo',
+  video: 'video',
+  audio: 'mic',
 }
 
 const useStyles = createThemedStylesheet((theme) => {

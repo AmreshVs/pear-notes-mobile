@@ -11,20 +11,11 @@ import {
 import { FadeIn, FadeOutUp } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import { Image } from 'expo-image'
-import {
-  Film,
-  Folder,
-  Image as ImageIcon,
-  Lock,
-  LockOpen,
-  Mic,
-  Paperclip,
-  Pin,
-} from 'lucide-react-native'
 
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import { MotionView } from '@/components/MotionView'
+import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
   FontFamily,
@@ -56,13 +47,13 @@ const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 const ENTER_ANIMATION_MAX_INDEX = 8
 
-const ATTACHMENT_ICONS = {
-  image: ImageIcon,
-  video: Film,
-  audio: Mic,
-  file: Paperclip,
-  mixed: Paperclip,
-} as const
+const ATTACHMENT_ICONS: Record<string, IconName> = {
+  image: 'photo',
+  video: 'video',
+  audio: 'mic',
+  file: 'paperclip',
+  mixed: 'paperclip',
+}
 
 interface MoveFolder {
   id: string
@@ -259,7 +250,7 @@ export const NoteCard = memo(function NoteCard({
     return parts.join(', ')
   }, [displayTitle, pinned, locked, date, t])
   const showAttachment = !masked && !summary && !!attachment
-  const AttachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
+  const attachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
   const displaySummary = masked
     ? t('noteCard.lockedSummary')
     : summary || t('noteCard.noAdditionalText')
@@ -315,21 +306,25 @@ export const NoteCard = memo(function NoteCard({
         <RNView style={styles.row}>
           <RNView style={styles.content}>
             <RNView style={styles.titleRow}>
-              {pinned && <Pin size={UI_ICON_SIZE_12} color={lockIconColor} fill={lockIconColor} />}
+              {pinned && <SymbolIcon name="pin" size={UI_ICON_SIZE_12} color={lockIconColor} />}
               {locked &&
                 (masked ? (
-                  <Lock size={UI_ICON_SIZE_12} color={lockIconColor} />
+                  <SymbolIcon name="lock" size={UI_ICON_SIZE_12} color={lockIconColor} />
                 ) : (
-                  <LockOpen size={UI_ICON_SIZE_12} color={lockIconColor} />
+                  <SymbolIcon name="lock.open" size={UI_ICON_SIZE_12} color={lockIconColor} />
                 ))}
               <Text variant="bodyBold" numberOfLines={titleLines} style={titleStyle}>
                 {displayTitle}
               </Text>
             </RNView>
 
-            {showAttachment && AttachmentIcon ? (
+            {showAttachment && attachmentIcon ? (
               <RNView style={styles.attachmentRow}>
-                <AttachmentIcon size={UI_ICON_SIZE_12} color={colors.textSecondary} />
+                <SymbolIcon
+                  name={attachmentIcon}
+                  size={UI_ICON_SIZE_12}
+                  color={colors.textSecondary}
+                />
                 <Text variant="caption" numberOfLines={1} style={styles.attachmentLabel}>
                   {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
                 </Text>
@@ -353,7 +348,12 @@ export const NoteCard = memo(function NoteCard({
               {folderName && (
                 <>
                   <RNView style={styles.folderTag}>
-                    <Folder size={UI_ICON_SIZE_12} style={styles.folderIcon} />
+                    <SymbolIcon
+                      name="folder"
+                      size={UI_ICON_SIZE_12}
+                      style={styles.folderIcon}
+                      color={colors.textSecondary}
+                    />
                     <Text
                       variant="caption"
                       maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
@@ -532,7 +532,6 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     folderIcon: {
       marginRight: Space.xs,
-      color: theme.colors.textSecondary,
     },
     metadataText: {
       fontSize: FontSize.caption,

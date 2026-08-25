@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { CameraView } from 'expo-camera'
-import { X } from 'lucide-react-native'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text } from '@/components/Themed'
 import {
   commonStyles,
@@ -57,7 +57,12 @@ export function SyncScannerModal({
                 onPress={onClose}
                 style={({ pressed }) => [styles.scannerCloseBtn, pressed && commonStyles.pressed]}
               >
-                <X size={UI_ICON_SIZE_20} color={styles.scannerTitle.color} strokeWidth={2.2} />
+                <SymbolIcon
+                  name="xmark"
+                  size={UI_ICON_SIZE_20}
+                  color={styles.scannerTitle.color}
+                  weight="semibold"
+                />
               </Pressable>
             </RNView>
             <RNView style={styles.scannerFooter}>

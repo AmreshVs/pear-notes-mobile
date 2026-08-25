@@ -1,9 +1,6 @@
-import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { FadeIn, FadeInDown } from 'react-native-reanimated'
-import { router, Stack } from 'expo-router'
-import { Database, Trash2, X } from 'lucide-react-native'
 
 import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
@@ -14,6 +11,7 @@ import { DownloadsSection } from '@/components/backup/DownloadsSection'
 import { UploadsSection } from '@/components/backup/UploadsSection'
 import { ClearStorageBottomSheet } from '@/components/bottomsheet/ClearStorageAppBottomSheet'
 import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -25,14 +23,11 @@ import {
   Space,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_48,
-  UI_SIZE_15,
   UI_SIZE_22,
-  UI_SIZE_30,
   UI_SIZE_48,
   UI_SIZE_60,
   UI_SIZE_96,
   UI_SIZE_120,
-  UI_STROKE_WIDTH_2_5,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
@@ -45,7 +40,6 @@ export default function StorageScreen() {
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
 
-  const handleBack = useCallback(() => router.back(), [])
   const {
     totalBlobBytes,
     totalOnDiskBytes,
@@ -65,23 +59,8 @@ export default function StorageScreen() {
     handleResetCancel,
   } = useStorageScreen()
 
-  const renderHeaderRight = useCallback(
-    () => (
-      <Pressable
-        onPress={handleBack}
-        hitSlop={8}
-        style={({ pressed }) => [styles.closeBtn, pressed && commonStyles.pressed]}
-      >
-        <X size={UI_ICON_SIZE_16} color={colors.text} strokeWidth={UI_STROKE_WIDTH_2_5} />
-      </Pressable>
-    ),
-    [handleBack, styles, colors.text],
-  )
-
   return (
     <RNView style={styles.container}>
-      <Stack.Screen options={{ headerRight: renderHeaderRight }} />
-
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scroll}
@@ -89,7 +68,7 @@ export default function StorageScreen() {
       >
         <MotionView entering={FadeIn.duration(Durations.fade)} style={styles.heroContainer}>
           <RNView style={styles.heroIcon}>
-            <Database size={UI_ICON_SIZE_48} color={colors.primary} strokeWidth={1.5} />
+            <SymbolIcon name="cylinder.split.1x2" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
           <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
@@ -164,7 +143,12 @@ export default function StorageScreen() {
               onPress={handleResetPress}
               style={({ pressed }) => [styles.dangerBtn, pressed && commonStyles.pressed]}
             >
-              <Trash2 size={UI_ICON_SIZE_16} color={colors.error} strokeWidth={2} />
+              <SymbolIcon
+                name="trash"
+                size={UI_ICON_SIZE_16}
+                color={colors.error}
+                weight="medium"
+              />
               <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
             </Pressable>
           </RNView>
@@ -221,13 +205,6 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
       textAlign: 'center',
       lineHeight: UI_SIZE_22,
-    },
-    closeBtn: {
-      width: UI_SIZE_30,
-      height: UI_SIZE_30,
-      borderRadius: UI_SIZE_15,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     usageRow: {
       ...commonStyles.rowBetween,

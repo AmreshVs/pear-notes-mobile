@@ -2,9 +2,9 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
-import { HardDrive, Lock, RotateCcw } from 'lucide-react-native'
 
 import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -14,7 +14,6 @@ import {
   Space,
   UI_ICON_SIZE_16,
   UI_SIZE_2,
-  UI_STROKE_WIDTH_1_8,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
@@ -43,10 +42,10 @@ export function BackupStatsSection({
         <RNView style={commonThemedStyles.card}>
           <RNView style={styles.infoRow}>
             <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-              <RotateCcw
+              <SymbolIcon
+                name="arrow.counterclockwise"
                 size={UI_ICON_SIZE_16}
                 color={colors.primary}
-                strokeWidth={UI_STROKE_WIDTH_1_8}
               />
             </RNView>
             <RNView style={styles.infoText}>
@@ -65,18 +64,14 @@ export function BackupStatsSection({
       >
         <RNView style={[commonThemedStyles.card, styles.statCard]}>
           <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-            <HardDrive
-              size={UI_ICON_SIZE_16}
-              color={colors.primary}
-              strokeWidth={UI_STROKE_WIDTH_1_8}
-            />
+            <SymbolIcon name="internaldrive" size={UI_ICON_SIZE_16} color={colors.primary} />
           </RNView>
           <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
           <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
         </RNView>
         <RNView style={[commonThemedStyles.card, styles.statCard]}>
           <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-            <Lock size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={UI_STROKE_WIDTH_1_8} />
+            <SymbolIcon name="lock" size={UI_ICON_SIZE_16} color={colors.primary} />
           </RNView>
           <Text style={styles.statLabel}>{t('backup.encryption')}</Text>
           <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>

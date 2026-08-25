@@ -2,15 +2,9 @@ import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
-import {
-  ChevronRight,
-  FileText,
-  Folder as FolderIcon,
-  LucideIcon,
-  Trash2,
-} from 'lucide-react-native'
 
 import { MotionView } from '@/components/MotionView'
+import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
   FontSize,
@@ -21,17 +15,16 @@ import {
   UI_ICON_SIZE_14,
   UI_ICON_SIZE_20,
   UI_SIZE_4,
-  UI_STROKE_WIDTH_1_8,
 } from '@/constants/commonStyles'
 
 import { Text, Theme, useThemedStyles } from './Themed'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
-const ICON_MAP: Record<string, LucideIcon> = {
-  Folder: FolderIcon,
-  Trash: Trash2,
-  All: FileText,
+const ICON_MAP: Record<string, IconName> = {
+  Folder: 'folder',
+  Trash: 'trash',
+  All: 'doc.text',
 }
 
 interface FolderRowProps {
@@ -61,7 +54,7 @@ export const FolderRow = memo(function FolderRow({
 }: FolderRowProps) {
   const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
-  const Icon = ICON_MAP[icon || 'Folder'] || FolderIcon
+  const iconName = ICON_MAP[icon || 'Folder'] ?? 'folder'
 
   const containerStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
@@ -80,18 +73,14 @@ export const FolderRow = memo(function FolderRow({
     >
       <Pressable onPress={() => onPress(id)} style={containerStyle} accessibilityRole="button">
         <RNView style={styles.leftContent}>
-          <Icon
-            size={UI_ICON_SIZE_20}
-            color={styles.icon.color}
-            strokeWidth={UI_STROKE_WIDTH_1_8}
-          />
+          <SymbolIcon name={iconName} size={UI_ICON_SIZE_20} color={styles.icon.color} />
           <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
         </RNView>
 
         <RNView style={styles.rightContent}>
           {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
           <RNView style={styles.chevronWrap}>
-            <ChevronRight size={UI_ICON_SIZE_14} color={styles.count.color} />
+            <SymbolIcon name="chevron.forward" size={UI_ICON_SIZE_14} color={styles.count.color} />
           </RNView>
         </RNView>
       </Pressable>

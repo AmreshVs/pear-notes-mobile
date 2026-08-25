@@ -2,10 +2,10 @@ import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { FadeIn, FadeInDown } from 'react-native-reanimated'
-import { Fingerprint, Lock, ScanFace, ShieldAlert } from 'lucide-react-native'
 
 import { GlassView } from '@/components/GlassView'
 import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import { useLockedNoteView } from '@/components/useLockedNoteView'
 import {
@@ -37,12 +37,20 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   const btnTextColor = colors.onPrimary
 
   const renderIcon = () => {
-    if (unavailable) return <ShieldAlert size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
+    if (unavailable)
+      return (
+        <SymbolIcon
+          name="exclamationmark.shield"
+          size={UI_ICON_SIZE_40}
+          color={iconColor}
+          weight="medium"
+        />
+      )
     if (biometric === 'face')
-      return <ScanFace size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
+      return <SymbolIcon name="faceid" size={UI_ICON_SIZE_40} color={iconColor} weight="medium" />
     if (biometric === 'fingerprint')
-      return <Fingerprint size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
-    return <Lock size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
+      return <SymbolIcon name="touchid" size={UI_ICON_SIZE_40} color={iconColor} weight="medium" />
+    return <SymbolIcon name="lock" size={UI_ICON_SIZE_40} color={iconColor} weight="medium" />
   }
 
   const description = isPassword
@@ -81,7 +89,12 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
             <ActivityIndicator size="small" color={btnTextColor} />
           ) : (
             <>
-              <Lock size={UI_ICON_SIZE_20} color={btnTextColor} strokeWidth={2.5} />
+              <SymbolIcon
+                name="lock"
+                size={UI_ICON_SIZE_20}
+                color={btnTextColor}
+                weight="semibold"
+              />
               <Text style={styles.unlockBtnText}>{unlockLabel}</Text>
             </>
           )}

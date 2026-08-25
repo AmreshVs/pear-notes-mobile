@@ -14,7 +14,6 @@ import {
   UI_SIZE_6,
   UI_SIZE_24,
   UI_SIZE_44,
-  UI_SIZE_52,
 } from '@/constants/commonStyles'
 import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
 import { hapticLight } from '@/lib/haptics'
@@ -91,7 +90,7 @@ const AttachMenu = memo(function AttachMenu({
 }: AttachMenuProps) {
   const { t } = useTranslation()
   return ExpoUI ? (
-    <ExpoUI.Host matchContents style={{ width: UI_SIZE_44, height: 52 }}>
+    <ExpoUI.Host matchContents style={styles.attachHost}>
       <ExpoUI.Menu
         label={
           <ExpoUI.RNHostView matchContents>
@@ -469,10 +468,14 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     toolbarBtn: {
       width: UI_SIZE_44,
-      height: UI_SIZE_52,
+      height: UI_SIZE_44,
       justifyContent: 'center',
       alignItems: 'center',
-      borderRadius: Radii.md,
+      borderRadius: Radii.pill,
+    },
+    attachHost: {
+      width: UI_SIZE_44,
+      height: UI_SIZE_44,
     },
     toolbarBtnActive: {
       backgroundColor: theme.colors.primary + '33',

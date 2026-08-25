@@ -2,9 +2,9 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Switch, View as RNView } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { Fingerprint, KeyRound, LockKeyhole } from 'lucide-react-native'
 
 import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -65,7 +65,7 @@ export function PrivacyLockSection() {
         <RNView style={styles.card}>
           <RNView style={styles.infoRow}>
             <RNView style={styles.iconBox}>
-              <LockKeyhole size={UI_ICON_SIZE_20} color={colors.primary} strokeWidth={1.8} />
+              <SymbolIcon name="lock.shield" size={UI_ICON_SIZE_20} color={colors.primary} />
             </RNView>
             <RNView style={commonStyles.flex1}>
               <Text style={styles.rowTitle}>{t('settings.privacy.noteLock')}</Text>
@@ -87,10 +87,11 @@ export function PrivacyLockSection() {
                   !lockAvailable && styles.segmentBtnDisabled,
                 ]}
               >
-                <Fingerprint
+                <SymbolIcon
+                  name="touchid"
                   size={UI_ICON_SIZE_16}
                   color={!isPassword ? colors.onPrimary : colors.textMuted}
-                  strokeWidth={2}
+                  weight="medium"
                 />
                 <Text style={!isPassword ? styles.segmentTextActive : styles.segmentText}>
                   {t('settings.privacy.biometric')}
@@ -105,10 +106,11 @@ export function PrivacyLockSection() {
                   passwordDisabled && styles.segmentBtnDisabled,
                 ]}
               >
-                <KeyRound
+                <SymbolIcon
+                  name="key"
                   size={UI_ICON_SIZE_16}
                   color={isPassword ? colors.onPrimary : colors.textMuted}
-                  strokeWidth={2}
+                  weight="medium"
                 />
                 <Text style={isPassword ? styles.segmentTextActive : styles.segmentText}>
                   {t('settings.privacy.password')}

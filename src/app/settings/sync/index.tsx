@@ -11,10 +11,10 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import Reanimated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { Check, Globe, Link2, ScanLine, ShieldCheck, Smartphone } from 'lucide-react-native'
 
 import { isValidInvite } from '@pear-notes/core/utils.js'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
 import { SyncScannerModal } from '@/components/sync/SyncScannerModal'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -147,7 +147,7 @@ export default function SyncScreen() {
               {!inviteCode ? (
                 <>
                   <RNView style={styles.iconRing}>
-                    <Globe size={UI_ICON_SIZE_26} color={colors.primary} strokeWidth={1.5} />
+                    <SymbolIcon name="globe" size={UI_ICON_SIZE_26} color={colors.primary} />
                   </RNView>
 
                   <Text style={styles.heroTitle}>{t('sync.hero.title')}</Text>
@@ -178,10 +178,10 @@ export default function SyncScreen() {
                 <>
                   <RNView style={styles.inviteHeader}>
                     <RNView style={styles.iconPill}>
-                      <ShieldCheck
+                      <SymbolIcon
+                        name="checkmark.shield"
                         size={UI_ICON_SIZE_18}
                         color={colors.primary}
-                        strokeWidth={1.5}
                       />
                     </RNView>
                     <RNView style={commonStyles.flex1}>
@@ -231,9 +231,19 @@ export default function SyncScreen() {
                     ]}
                   >
                     {copied ? (
-                      <Check size={UI_ICON_SIZE_14} color={colors.white} strokeWidth={2.5} />
+                      <SymbolIcon
+                        name="checkmark"
+                        size={UI_ICON_SIZE_14}
+                        color={colors.white}
+                        weight="semibold"
+                      />
                     ) : (
-                      <Link2 size={UI_ICON_SIZE_14} color={colors.onPrimary} strokeWidth={2.2} />
+                      <SymbolIcon
+                        name="link"
+                        size={UI_ICON_SIZE_14}
+                        color={colors.onPrimary}
+                        weight="semibold"
+                      />
                     )}
                     <Text style={[styles.btnText, copied && styles.btnTextCopied]}>
                       {copied ? t('sync.invite.copied') : t('sync.invite.copyBtn')}
@@ -245,10 +255,10 @@ export default function SyncScreen() {
 
             {inviteCode && (
               <Reanimated.View entering={FadeIn.duration(220).delay(80)} style={styles.warningCard}>
-                <ShieldCheck
+                <SymbolIcon
+                  name="checkmark.shield"
                   size={UI_ICON_SIZE_14}
                   color={colors.primary}
-                  strokeWidth={1.8}
                   style={styles.iconTopFix}
                 />
                 <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
@@ -262,7 +272,11 @@ export default function SyncScreen() {
                   <Text style={styles.invitePasteText}>{t('sync.paste.header')}</Text>
                 </RNView>
                 <Pressable onPress={handleOpenScanner} style={styles.scanPillBtn}>
-                  <ScanLine size={UI_ICON_SIZE_14} color={colors.primary} />
+                  <SymbolIcon
+                    name="qrcode.viewfinder"
+                    size={UI_ICON_SIZE_14}
+                    color={colors.primary}
+                  />
                   <Text style={styles.scanPillBtnText}>{t('sync.paste.scanBtn')}</Text>
                 </Pressable>
               </RNView>
@@ -300,7 +314,8 @@ export default function SyncScreen() {
             </Reanimated.View>
 
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
-              <ShieldCheck
+              <SymbolIcon
+                name="checkmark.shield"
                 size={UI_ICON_SIZE_13}
                 color={colors.primary}
                 style={styles.iconTopFix}
@@ -351,13 +366,14 @@ export default function SyncScreen() {
                 entering={FadeInDown.duration(220).delay(100)}
                 style={styles.emptyCard}
               >
-                <Smartphone size={UI_ICON_SIZE_22} color={colors.textMuted} strokeWidth={1.5} />
+                <SymbolIcon name="iphone" size={UI_ICON_SIZE_22} color={colors.textMuted} />
                 <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
               </Reanimated.View>
             )}
 
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
-              <ShieldCheck
+              <SymbolIcon
+                name="checkmark.shield"
                 size={UI_ICON_SIZE_13}
                 color={colors.primary}
                 style={styles.iconTopFix}

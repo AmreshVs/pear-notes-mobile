@@ -1,8 +1,8 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, TouchableOpacity } from 'react-native'
-import { AlertCircle, RotateCcw } from 'lucide-react-native'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
   FontSize,
@@ -26,17 +26,18 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) =>
 
   return (
     <View style={styles.container}>
-      <AlertCircle
+      <SymbolIcon
+        name="exclamationmark.circle"
         size={UI_ICON_SIZE_64}
         color={styles.icon.color}
-        strokeWidth={1.5}
         style={styles.icon}
       />
       <Text style={styles.title}>{t('error.initFailed')}</Text>
       <Text style={styles.message}>{message}</Text>
 
       <TouchableOpacity style={styles.button} onPress={onRetry} activeOpacity={0.7}>
-        <RotateCcw
+        <SymbolIcon
+          name="arrow.counterclockwise"
           size={UI_ICON_SIZE_20}
           color={styles.buttonText.color}
           style={styles.buttonIcon}

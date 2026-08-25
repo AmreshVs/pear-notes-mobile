@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { StyleSheet, View as RNView } from 'react-native'
-import { Lock } from 'lucide-react-native'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { useLockedContentShield } from '@/components/useLockedContentShield'
 import { commonStyles, Radii, Space, UI_ICON_SIZE_40 } from '@/constants/commonStyles'
@@ -20,7 +20,7 @@ export const LockedContentShield = memo(function LockedContentShield({
   return (
     <RNView style={styles.overlay}>
       <RNView style={styles.iconRing}>
-        <Lock size={UI_ICON_SIZE_40} color={colors.primary} strokeWidth={2} />
+        <SymbolIcon name="lock" size={UI_ICON_SIZE_40} color={colors.primary} weight="medium" />
       </RNView>
     </RNView>
   )

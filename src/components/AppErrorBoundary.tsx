@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet } from 'react-native'
-import { AlertTriangle } from 'lucide-react-native'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import {
   FontFamily,
   FontSize,
@@ -28,7 +28,7 @@ export function AppErrorBoundary({ error, retry }: AppErrorBoundaryProps) {
     <View style={styles.container}>
       <View style={styles.card}>
         <View style={styles.iconBadge}>
-          <AlertTriangle size={UI_ICON_SIZE_40} color={colors.error} />
+          <SymbolIcon name="exclamationmark.triangle" size={UI_ICON_SIZE_40} color={colors.error} />
         </View>
         <Text style={styles.title}>{t('errorBoundary.title')}</Text>
         <Text style={styles.message}>{t('errorBoundary.message')}</Text>

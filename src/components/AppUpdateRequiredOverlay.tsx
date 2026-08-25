@@ -2,9 +2,9 @@ import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { Download } from 'lucide-react-native'
 
 import { GlassView } from '@/components/GlassView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -47,7 +47,11 @@ export const AppUpdateRequiredOverlay = memo(function AppUpdateRequiredOverlay()
           <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.icon}>
-                <Download size={UI_ICON_SIZE_40} color={colors.primary} />
+                <SymbolIcon
+                  name="square.and.arrow.down"
+                  size={UI_ICON_SIZE_40}
+                  color={colors.primary}
+                />
               </RNView>
 
               <Text style={styles.title}>{t('update.overlay.title')}</Text>

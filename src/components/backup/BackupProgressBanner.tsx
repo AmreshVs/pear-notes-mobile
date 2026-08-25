@@ -2,8 +2,8 @@ import { ActivityIndicator, Pressable, StyleSheet } from 'react-native'
 import Animated from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { usePathname } from 'expo-router'
-import { Check, ChevronDown, Coffee } from 'lucide-react-native'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -59,7 +59,7 @@ export function BackupProgressBanner() {
         ]}
       >
         {isComplete ? (
-          <Check size={UI_ICON_SIZE_20} color={theme.colors.primary} />
+          <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={theme.colors.primary} />
         ) : showCollapsedProgress ? (
           <Text style={styles.collapsedPct} numberOfLines={1}>
             {progressStatus.progress}%
@@ -94,7 +94,8 @@ export function BackupProgressBanner() {
                   onPress={toggleKeepAwake}
                   style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
                 >
-                  <Coffee
+                  <SymbolIcon
+                    name="hourglass"
                     size={UI_ICON_SIZE_20}
                     color={isKeepAwake ? theme.colors.primary : theme.colors.textSecondary}
                   />
@@ -105,7 +106,11 @@ export function BackupProgressBanner() {
                 onPress={toggleCollapse}
                 style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
               >
-                <ChevronDown size={UI_ICON_SIZE_20} color={theme.colors.textSecondary} />
+                <SymbolIcon
+                  name="chevron.down"
+                  size={UI_ICON_SIZE_20}
+                  color={theme.colors.textSecondary}
+                />
               </Pressable>
             </Animated.View>
           </>

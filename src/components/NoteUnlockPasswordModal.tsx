@@ -10,11 +10,11 @@ import {
   View as RNView,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { Eye, EyeOff, Lock } from 'lucide-react-native'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
 
 import { GlassView } from '@/components/GlassView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -111,7 +111,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
           <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.icon}>
-                <Lock size={UI_ICON_SIZE_40} color={colors.primary} />
+                <SymbolIcon name="lock" size={UI_ICON_SIZE_40} color={colors.primary} />
               </RNView>
 
               <Text style={styles.title}>{t('noteLockPassword.enterTitle')}</Text>
@@ -133,9 +133,9 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
                 />
                 <Pressable onPress={toggleSecure} hitSlop={UI_SIZE_8} style={styles.eyeBtn}>
                   {secure ? (
-                    <Eye size={UI_ICON_SIZE_18} color={colors.textMuted} />
+                    <SymbolIcon name="eye" size={UI_ICON_SIZE_18} color={colors.textMuted} />
                   ) : (
-                    <EyeOff size={UI_ICON_SIZE_18} color={colors.textMuted} />
+                    <SymbolIcon name="eye.slash" size={UI_ICON_SIZE_18} color={colors.textMuted} />
                   )}
                 </Pressable>
               </RNView>

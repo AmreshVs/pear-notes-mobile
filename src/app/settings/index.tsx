@@ -4,16 +4,9 @@ import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-n
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, Stack } from 'expo-router'
-import {
-  ChevronRight,
-  Database,
-  Download,
-  RefreshCw,
-  ShieldCheck,
-  SlidersHorizontal,
-} from 'lucide-react-native'
 
 import { MotionView } from '@/components/MotionView'
+import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -30,7 +23,6 @@ import {
   UI_SIZE_40,
   UI_SIZE_44,
   UI_SIZE_60,
-  UI_STROKE_WIDTH_1_8,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getAppVersionLabel } from '@/lib/appVersion'
@@ -50,31 +42,31 @@ export default function SettingsScreen() {
     () => [
       {
         key: 'general',
-        Icon: SlidersHorizontal,
+        icon: 'slider.horizontal.3' as IconName,
         label: t('layouts.general'),
         onPress: () => router.push('/settings/general' as any),
       },
       {
         key: 'privacy',
-        Icon: ShieldCheck,
+        icon: 'checkmark.shield' as IconName,
         label: t('settings.privacy.rowTitle'),
         onPress: () => router.push('/settings/privacy' as any),
       },
       {
         key: 'sync',
-        Icon: RefreshCw,
+        icon: 'arrow.clockwise' as IconName,
         label: t('settings.sync.linkAndSync'),
         onPress: () => router.push('/settings/sync'),
       },
       {
         key: 'backup',
-        Icon: Download,
+        icon: 'square.and.arrow.down' as IconName,
         label: t('settings.backup.backupAndRestore'),
         onPress: () => router.push('/settings/backup' as any),
       },
       {
         key: 'storage',
-        Icon: Database,
+        icon: 'cylinder.split.1x2' as IconName,
         label: t('settings.storage.storageTitle'),
         onPress: () => router.push('/settings/storage' as any),
       },
@@ -112,7 +104,7 @@ export default function SettingsScreen() {
             layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           >
             <RNView style={commonThemedStyles.card}>
-              {sections.map(({ key, Icon, label, onPress }, i) => (
+              {sections.map(({ key, icon, label, onPress }, i) => (
                 <Pressable
                   key={key}
                   onPress={onPress}
@@ -123,15 +115,15 @@ export default function SettingsScreen() {
                 >
                   <RNView style={commonStyles.settingsRowLeft}>
                     <RNView style={commonThemedStyles.iconBox34}>
-                      <Icon
-                        size={UI_ICON_SIZE_17}
-                        color={colors.primary}
-                        strokeWidth={UI_STROKE_WIDTH_1_8}
-                      />
+                      <SymbolIcon name={icon} size={UI_ICON_SIZE_17} color={colors.primary} />
                     </RNView>
                     <Text style={styles.rowLabel}>{label}</Text>
                   </RNView>
-                  <ChevronRight size={UI_ICON_SIZE_16} color={colors.textMuted} />
+                  <SymbolIcon
+                    name="chevron.forward"
+                    size={UI_ICON_SIZE_16}
+                    color={colors.textMuted}
+                  />
                 </Pressable>
               ))}
             </RNView>
