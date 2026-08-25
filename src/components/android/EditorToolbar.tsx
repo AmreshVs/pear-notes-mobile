@@ -34,7 +34,7 @@ type ToolbarBtnProps = {
   onPress: () => void
   active?: boolean
   a11yLabel: string
-  ripple: PressableAndroidRippleConfig
+  ripple: PressableAndroidRippleConfig | undefined
   c: any
   styles: any
 }

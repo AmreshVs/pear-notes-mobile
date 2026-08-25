@@ -1,6 +1,6 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { Platform, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { router } from 'expo-router'
 
@@ -17,6 +17,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hapticSelection } from '@/lib/haptics'
+import { getFontPreviewVariant } from '@/utils/fontPreview'
 import { getFontOptions } from '@/utils/settingsUtils'
 
 export default function FontFamilyScreen() {
@@ -38,6 +39,11 @@ export default function FontFamilyScreen() {
     [dispatch],
   )
 
+  const previewStyles = useMemo(
+    () => ({ sans: styles.previewSans, serif: styles.previewSerif, mono: styles.previewMono }),
+    [styles.previewSans, styles.previewSerif, styles.previewMono],
+  )
+
   const renderOption = useCallback(
     (option: { label: string; value: string }, index: number) => {
       const selected = option.value === fontFamily
@@ -53,14 +59,16 @@ export default function FontFamilyScreen() {
             pressed && commonStyles.pressed,
           ]}
         >
-          <Text style={styles.rowLabel}>{option.label}</Text>
+          <Text style={[styles.rowLabel, previewStyles[getFontPreviewVariant(option.value)]]}>
+            {option.label}
+          </Text>
           {selected && (
             <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
           )}
         </Pressable>
       )
     },
-    [fontFamily, handleSelect, options.length, styles, colors.primary],
+    [fontFamily, handleSelect, options.length, styles, colors.primary, previewStyles],
   )
 
   return (
@@ -99,6 +107,15 @@ const useStyles = createThemedStylesheet((theme) => {
     rowLabel: {
       fontSize: FontSize.subtitle,
       color: theme.colors.text,
+    },
+    previewSans: {
+      fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
+    },
+    previewSerif: {
+      fontFamily: Platform.select({ ios: 'Georgia', android: 'serif' }),
+    },
+    previewMono: {
+      fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace' }),
     },
   })
   return styles

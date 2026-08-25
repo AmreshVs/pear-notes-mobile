@@ -50,6 +50,7 @@ import { AndroidColorTheme, setAndroidColorTheme } from '@/lib/androidColorTheme
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticSelection } from '@/lib/haptics'
+import { getFontOptions } from '@/utils/settingsUtils'
 
 export default function AndroidGeneralSettingsScreen() {
   const { t } = useTranslation()
@@ -68,7 +69,6 @@ export default function AndroidGeneralSettingsScreen() {
   const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
-  const [fontSheetVisible, setFontSheetVisible] = React.useState(false)
 
   const sliderMaxTrackColor = useMemo(() => hexWithAlpha(c.primary, 0.2), [c.primary])
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
@@ -83,20 +83,6 @@ export default function AndroidGeneralSettingsScreen() {
       { label: t('settings.general.sortOptions.updatedAt'), value: 'updatedAt' },
       { label: t('settings.general.sortOptions.createdAt'), value: 'createdAt' },
       { label: t('settings.general.sortOptions.title'), value: 'title' },
-    ],
-    [t],
-  )
-
-  const FONT_OPTIONS = useMemo(
-    () => [
-      { label: t('settings.general.fontOptions.Inter'), value: 'Inter' },
-      { label: t('settings.general.fontOptions.Outfit'), value: 'Outfit' },
-      { label: t('settings.general.fontOptions.Lora'), value: 'Lora' },
-      { label: t('settings.general.fontOptions.Newsreader'), value: 'Newsreader' },
-      { label: t('settings.general.fontOptions.IBM Plex Mono'), value: 'IBM Plex Mono' },
-      { label: t('settings.general.fontOptions.System'), value: 'System' },
-      { label: t('settings.general.fontOptions.Serif'), value: 'Serif' },
-      { label: t('settings.general.fontOptions.Mono'), value: 'Mono' },
     ],
     [t],
   )
@@ -132,21 +118,6 @@ export default function AndroidGeneralSettingsScreen() {
       },
     ],
     [handleSortSelect, t, sortBy],
-  )
-
-  const fontActions = useMemo(
-    () =>
-      FONT_OPTIONS.map((f) => ({
-        icon: 'format-font',
-        label: f.label,
-        selected: f.value === fontFamily,
-        onPress: () => {
-          hapticSelection()
-          dispatch(updateSetting({ key: 'fontFamily', value: f.value }))
-          setFontSheetVisible(false)
-        },
-      })),
-    [dispatch, FONT_OPTIONS, fontFamily],
   )
 
   const colorThemeOptions = useMemo(() => {
@@ -220,7 +191,7 @@ export default function AndroidGeneralSettingsScreen() {
   }, [])
 
   const handleOpenFontSheet = useCallback(() => {
-    setFontSheetVisible(true)
+    router.push('/settings/font' as any)
   }, [])
 
   return (
@@ -326,7 +297,7 @@ export default function AndroidGeneralSettingsScreen() {
             <View style={commonStyles.flex1}>
               <Text style={styles.rowTitle}>{t('settings.general.fontFamily')}</Text>
               <Text style={styles.rowSubtitle}>
-                {FONT_OPTIONS.find((o) => o.value === fontFamily)?.label ?? fontFamily}
+                {getFontOptions(t).find((o) => o.value === fontFamily)?.label ?? fontFamily}
               </Text>
             </View>
             <MaterialCommunityIcons
@@ -379,13 +350,6 @@ export default function AndroidGeneralSettingsScreen() {
         onDismiss={() => setSortBySheetVisible(false)}
         title={t('settings.general.sortNotesBy')}
         actions={sortByActions}
-      />
-
-      <BottomActionSheet
-        visible={fontSheetVisible}
-        onDismiss={() => setFontSheetVisible(false)}
-        title={t('settings.general.fontFamily')}
-        actions={fontActions}
       />
     </View>
   )

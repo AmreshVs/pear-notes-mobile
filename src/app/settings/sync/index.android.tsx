@@ -221,6 +221,7 @@ export default function AndroidSyncScreen() {
               {!inviteCode ? (
                 <MotionView
                   entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+                  style={styles.heroCard}
                 >
                   <View style={styles.heroSection}>
                     <View style={styles.heroCircle}>
@@ -259,6 +260,7 @@ export default function AndroidSyncScreen() {
               ) : (
                 <MotionView
                   entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+                  style={styles.heroCard}
                 >
                   <View style={styles.heroSection}>
                     <View style={styles.heroCircle}>
@@ -540,9 +542,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     tabContent: {
       ...commonStyles.flex1,
     },
+    heroCard: {
+      borderRadius: UI_SIZE_28,
+      paddingHorizontal: UI_SIZE_20,
+      paddingTop: UI_SIZE_28,
+      paddingBottom: UI_SIZE_24,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
     heroSection: {
       alignItems: 'center',
-      marginBottom: UI_SIZE_8,
       position: 'relative',
     },
     heroCircle: {
@@ -577,7 +585,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       lineHeight: UI_SIZE_22,
       textAlign: 'center',
       marginBottom: UI_SIZE_32,
-      paddingHorizontal: UI_SIZE_16,
+      paddingHorizontal: UI_SIZE_8,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
     },
@@ -588,7 +596,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.row,
       justifyContent: 'center',
       paddingVertical: UI_SIZE_18,
-      marginBottom: UI_SIZE_12,
       backgroundColor: c.primary,
     },
     generateBtnText: {
