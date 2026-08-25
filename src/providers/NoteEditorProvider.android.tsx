@@ -671,9 +671,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <EditorToolbar
             isActive={isActive}
             editorRef={editorRef}
-            toolbarBottom={
-              keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12
-            }
             onAttachPress={() => {
               Keyboard.dismiss()
               editorRef.current?.blur()

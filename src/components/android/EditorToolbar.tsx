@@ -7,9 +7,12 @@ import {
   StyleSheet,
   View,
 } from 'react-native'
+import { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
@@ -77,14 +80,12 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 type EditorToolbarProps = {
   isActive: (key: keyof TiptapStyleState) => boolean
   editorRef: React.RefObject<TiptapEditorHandle | null>
-  toolbarBottom: number
   onAttachPress: () => void
 }
 
 export const EditorToolbar = memo(function EditorToolbar({
   isActive,
   editorRef,
-  toolbarBottom,
   onAttachPress,
 }: EditorToolbarProps) {
   const { t } = useTranslation()
@@ -105,13 +106,18 @@ export const EditorToolbar = memo(function EditorToolbar({
     action()
   }, [])
 
-  const containerStyle = useMemo(
-    () => [styles.container, { bottom: toolbarBottom }],
-    [styles.container, toolbarBottom],
-  )
+  const keyboard = useAnimatedKeyboard()
+  const insets = useSafeAreaInsets()
+
+  const containerStyle = useAnimatedStyle(() => ({
+    bottom:
+      keyboard.height.value > 0
+        ? keyboard.height.value + UI_SIZE_12
+        : insets.bottom + UI_SIZE_12,
+  }))
 
   return (
-    <View style={containerStyle}>
+    <MotionView style={[styles.container, containerStyle]}>
       <View style={styles.scrollWrap}>
         <ScrollView
           horizontal
@@ -322,7 +328,7 @@ export const EditorToolbar = memo(function EditorToolbar({
       >
         <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_24} color={c.onPrimaryContainer} />
       </Pressable>
-    </View>
+    </MotionView>
   )
 })
 
