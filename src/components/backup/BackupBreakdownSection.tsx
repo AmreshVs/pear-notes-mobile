@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
-import { FileText, Film, Image as ImageIcon, Mic } from 'lucide-react-native'
+import { FadeInDown } from 'react-native-reanimated'
 
+import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -47,7 +48,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
   if (!hasItems) return null
 
   return (
-    <Animated.View
+    <MotionView
       entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}
       style={styles.breakdownSection}
     >
@@ -56,7 +57,12 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
         {buckets.image.count > 0 && (
           <RNView style={styles.breakdownRow}>
             <RNView style={styles.breakdownRowMeta}>
-              <ImageIcon size={UI_ICON_SIZE_18} color={colors.textMuted} strokeWidth={2} />
+              <SymbolIcon
+                name="photo"
+                size={UI_ICON_SIZE_18}
+                color={colors.textMuted}
+                weight="medium"
+              />
               <Text style={styles.breakdownTitle}>{t('backup.images')}</Text>
               <Text style={styles.breakdownCount}>
                 {t('backup.items', { count: buckets.image.count })}
@@ -68,7 +74,12 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
         {buckets.video.count > 0 && (
           <RNView style={styles.breakdownRow}>
             <RNView style={styles.breakdownRowMeta}>
-              <Film size={UI_ICON_SIZE_18} color={colors.textMuted} strokeWidth={2} />
+              <SymbolIcon
+                name="video"
+                size={UI_ICON_SIZE_18}
+                color={colors.textMuted}
+                weight="medium"
+              />
               <Text style={styles.breakdownTitle}>{t('backup.videos')}</Text>
               <Text style={styles.breakdownCount}>
                 {t('backup.items', { count: buckets.video.count })}
@@ -80,7 +91,12 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
         {buckets.audio.count > 0 && (
           <RNView style={styles.breakdownRow}>
             <RNView style={styles.breakdownRowMeta}>
-              <Mic size={UI_ICON_SIZE_18} color={colors.textMuted} strokeWidth={2} />
+              <SymbolIcon
+                name="mic"
+                size={UI_ICON_SIZE_18}
+                color={colors.textMuted}
+                weight="medium"
+              />
               <Text style={styles.breakdownTitle}>{t('backup.audio')}</Text>
               <Text style={styles.breakdownCount}>
                 {t('backup.items', { count: buckets.audio.count })}
@@ -92,7 +108,12 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
         {buckets.file.count > 0 && (
           <RNView style={styles.breakdownRow}>
             <RNView style={styles.breakdownRowMeta}>
-              <FileText size={UI_ICON_SIZE_18} color={colors.textMuted} strokeWidth={2} />
+              <SymbolIcon
+                name="doc.text"
+                size={UI_ICON_SIZE_18}
+                color={colors.textMuted}
+                weight="medium"
+              />
               <Text style={styles.breakdownTitle}>{t('backup.files')}</Text>
               <Text style={styles.breakdownCount}>
                 {t('backup.items', { count: buckets.file.count })}
@@ -102,7 +123,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
           </RNView>
         )}
       </RNView>
-    </Animated.View>
+    </MotionView>
   )
 }
 

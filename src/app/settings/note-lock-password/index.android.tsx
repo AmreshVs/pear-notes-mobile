@@ -33,6 +33,7 @@ import {
   UI_SIZE_54,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
@@ -52,6 +53,8 @@ export default function AndroidNoteLockPasswordScreen() {
   const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const styles = useStyles()
 
   const {
@@ -111,14 +114,16 @@ export default function AndroidNoteLockPasswordScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={styles.root.backgroundColor}
-      />
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={UI_SIZE_12} style={styles.iconBtn}>
+        <Pressable
+          onPress={() => router.back()}
+          android_ripple={rippleBorderless}
+          hitSlop={UI_SIZE_12}
+          style={styles.iconBtn}
+        >
           <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>
@@ -163,7 +168,12 @@ export default function AndroidNoteLockPasswordScreen() {
               style={styles.input}
               autoFocus={!isCreate}
             />
-            <Pressable onPress={toggleSecure} hitSlop={UI_SIZE_12} style={styles.eyeBtn}>
+            <Pressable
+              onPress={toggleSecure}
+              android_ripple={rippleBorderless}
+              hitSlop={UI_SIZE_12}
+              style={styles.eyeBtn}
+            >
               <MaterialCommunityIcons
                 name={secure ? 'eye-outline' : 'eye-off-outline'}
                 size={UI_ICON_SIZE_20}
@@ -209,11 +219,8 @@ export default function AndroidNoteLockPasswordScreen() {
           <Pressable
             onPress={handleSubmit}
             disabled={!canSubmit}
-            style={({ pressed }) => [
-              styles.confirmBtn,
-              !canSubmit && styles.confirmBtnDisabled,
-              pressed && commonStyles.pressed,
-            ]}
+            android_ripple={ripplePrimary}
+            style={[styles.confirmBtn, !canSubmit && styles.confirmBtnDisabled]}
           >
             <Text style={[styles.confirmBtnText, !canSubmit && styles.confirmBtnTextDisabled]}>
               {isCreate ? t('noteLockPassword.createButton') : t('noteLockPassword.unlockButton')}
@@ -300,7 +307,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
       borderRadius: UI_SIZE_16,
       paddingHorizontal: UI_SIZE_16,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
     },
     input: {
       flex: 1,
@@ -381,8 +388,9 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       backgroundColor: c.background,
     },
     confirmBtn: {
+      overflow: 'hidden',
       ...commonStyles.centered,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: UI_SIZE_9999,
       backgroundColor: c.primary,
     },

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { Animated, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
 import Reanimated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
-import { Monitor, Smartphone, Trash2 } from 'lucide-react-native'
 
 import {
   deleteSyncedDevice,
@@ -11,6 +10,7 @@ import {
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
+import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import { SyncDeleteModal } from '@/components/sync/SyncDeleteModal'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -43,7 +43,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
   const styles = useStyles()
   const dispatch = useDispatch()
   const { t } = useTranslation()
-  const Icon = device.deviceType === 'desktop' ? Monitor : Smartphone
+  const iconName: IconName = device.deviceType === 'desktop' ? 'desktopcomputer' : 'iphone'
 
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(device.title || '')
@@ -105,7 +105,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
       >
         <RNView style={styles.deviceRow}>
           <RNView style={styles.deviceIcon}>
-            <Icon size={UI_ICON_SIZE_18} color={colors.primary} strokeWidth={1.5} />
+            <SymbolIcon name={iconName} size={UI_ICON_SIZE_18} color={colors.primary} />
             {device.isLocal && <RNView style={styles.onlineDot} />}
           </RNView>
 
@@ -143,7 +143,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
               hitSlop={12}
               style={({ pressed }) => [styles.deleteBtn, pressed && commonStyles.pressed]}
             >
-              <Trash2 size={UI_ICON_SIZE_17} color={colors.error} strokeWidth={1.5} />
+              <SymbolIcon name="trash" size={UI_ICON_SIZE_17} color={colors.error} />
             </Pressable>
           )}
         </RNView>

@@ -86,13 +86,18 @@ function applyToInfoPlist(version, buildNumber) {
   write(INFO_PLIST, updated)
 }
 
-function applyToJson(file, version) {
+function applyToJson(file, version, buildNumber) {
   const contents = read(file)
   const parsed = JSON.parse(contents)
   const indent = contents.match(/\n(\s+)"/)?.[1]?.length ?? 2
 
-  if (file === APP_JSON) parsed.expo.version = version
-  else parsed.version = version
+  if (file === APP_JSON) {
+    parsed.expo.version = version
+    if (parsed.expo.ios) parsed.expo.ios.buildNumber = String(buildNumber)
+    if (parsed.expo.android) parsed.expo.android.versionCode = Number(buildNumber)
+  } else {
+    parsed.version = version
+  }
 
   write(file, `${JSON.stringify(parsed, null, indent)}\n`)
 }
@@ -117,8 +122,8 @@ function main() {
     fail(`build number must be a positive integer, got "${buildNumber}"`)
   }
 
-  applyToJson(APP_JSON, version)
-  applyToJson(PACKAGE_JSON, version)
+  applyToJson(APP_JSON, version, buildNumber)
+  applyToJson(PACKAGE_JSON, version, buildNumber)
   applyToGradle(version, buildNumber)
   applyToXcodeProject(version, buildNumber)
   applyToInfoPlist(version, buildNumber)

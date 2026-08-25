@@ -74,7 +74,6 @@
     "framed-stream": "^1.0.1",
     "hrpc": "^4.3.0",
     "i18next": "^26.0.3",
-    "lucide-react-native": "^0.575.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-i18next": "^17.0.2",

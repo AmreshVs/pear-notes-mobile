@@ -11,10 +11,10 @@ import {
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
 import Reanimated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
-import { Check, Globe, Link2, ScanLine, ShieldCheck, Smartphone } from 'lucide-react-native'
 
 import { isValidInvite } from '@pear-notes/core/utils.js'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
 import { SyncScannerModal } from '@/components/sync/SyncScannerModal'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -27,9 +27,11 @@ import {
   Space,
   UI_ICON_SIZE_13,
   UI_ICON_SIZE_14,
-  UI_ICON_SIZE_18,
+  UI_ICON_SIZE_16,
   UI_ICON_SIZE_22,
-  UI_ICON_SIZE_26,
+  UI_ICON_SIZE_44,
+  UI_SIZE_36,
+  UI_SIZE_120,
   UI_SIZE_180,
   UI_SIZE_200,
 } from '@/constants/commonStyles'
@@ -60,6 +62,7 @@ export default function SyncScreen() {
     expiresAt,
     isLoading,
     syncedDevices,
+    isSynced,
     handleCopy,
     handleConnect,
     handleOpenScanner,
@@ -146,8 +149,22 @@ export default function SyncScreen() {
             <Reanimated.View entering={FadeInDown.duration(240).delay(40)} style={styles.heroCard}>
               {!inviteCode ? (
                 <>
-                  <RNView style={styles.iconRing}>
-                    <Globe size={UI_ICON_SIZE_26} color={colors.primary} strokeWidth={1.5} />
+                  <RNView style={styles.heroSection}>
+                    <RNView style={styles.heroCircle}>
+                      <SymbolIcon
+                        name="laptopcomputer.and.iphone"
+                        size={UI_ICON_SIZE_44}
+                        color={colors.primary}
+                      />
+                    </RNView>
+                    <RNView style={styles.heroBadge}>
+                      <SymbolIcon
+                        name="arrow.triangle.2.circlepath"
+                        size={UI_ICON_SIZE_16}
+                        color={colors.onPrimary}
+                        weight="semibold"
+                      />
+                    </RNView>
                   </RNView>
 
                   <Text style={styles.heroTitle}>{t('sync.hero.title')}</Text>
@@ -176,37 +193,34 @@ export default function SyncScreen() {
                 </>
               ) : (
                 <>
-                  <RNView style={styles.inviteHeader}>
-                    <RNView style={styles.iconPill}>
-                      <ShieldCheck
-                        size={UI_ICON_SIZE_18}
+                  <RNView style={styles.heroSection}>
+                    <RNView style={styles.heroCircle}>
+                      <SymbolIcon
+                        name="checkmark.shield"
+                        size={UI_ICON_SIZE_44}
                         color={colors.primary}
-                        strokeWidth={1.5}
                       />
-                    </RNView>
-                    <RNView style={commonStyles.flex1}>
-                      <Text style={styles.inviteTitle}>{t('sync.invite.header')}</Text>
-                      <Text style={styles.inviteSub}>{formatExpiry(expiresAt)}</Text>
                     </RNView>
                   </RNView>
 
-                  {inviteCode ? (
-                    <Reanimated.View
-                      entering={FadeIn.duration(220).delay(70)}
-                      style={styles.qrSection}
-                    >
-                      <RNView style={styles.qrImageWrap}>
-                        <QRCode
-                          value={inviteCode}
-                          size={UI_SIZE_180}
-                          backgroundColor={colors.white}
-                          color={colors.qrDark}
-                        />
-                      </RNView>
-                      <Text style={styles.qrTitle}>{t('sync.invite.qrTitle')}</Text>
-                      <Text style={styles.qrDescription}>{t('sync.invite.qrDescription')}</Text>
-                    </Reanimated.View>
-                  ) : null}
+                  <Text style={styles.heroTitle}>{t('sync.invite.header')}</Text>
+                  <Text style={styles.heroDesc}>{formatExpiry(expiresAt)}</Text>
+
+                  <Reanimated.View
+                    entering={FadeIn.duration(220).delay(70)}
+                    style={styles.qrSection}
+                  >
+                    <RNView style={styles.qrImageWrap}>
+                      <QRCode
+                        value={inviteCode}
+                        size={UI_SIZE_180}
+                        backgroundColor={colors.white}
+                        color={colors.qrDark}
+                      />
+                    </RNView>
+                    <Text style={styles.qrTitle}>{t('sync.invite.qrTitle')}</Text>
+                    <Text style={styles.qrDescription}>{t('sync.invite.qrDescription')}</Text>
+                  </Reanimated.View>
 
                   <Text style={styles.codeLabel}>{t('sync.invite.codeLabel')}</Text>
 
@@ -231,76 +245,91 @@ export default function SyncScreen() {
                     ]}
                   >
                     {copied ? (
-                      <Check size={UI_ICON_SIZE_14} color={colors.white} strokeWidth={2.5} />
+                      <SymbolIcon
+                        name="checkmark"
+                        size={UI_ICON_SIZE_14}
+                        color={colors.white}
+                        weight="semibold"
+                      />
                     ) : (
-                      <Link2 size={UI_ICON_SIZE_14} color={colors.onPrimary} strokeWidth={2.2} />
+                      <SymbolIcon
+                        name="link"
+                        size={UI_ICON_SIZE_14}
+                        color={colors.onPrimary}
+                        weight="semibold"
+                      />
                     )}
                     <Text style={[styles.btnText, copied && styles.btnTextCopied]}>
                       {copied ? t('sync.invite.copied') : t('sync.invite.copyBtn')}
                     </Text>
                   </Pressable>
+
+                  <RNView style={styles.warningCard}>
+                    <SymbolIcon
+                      name="checkmark.shield"
+                      size={UI_ICON_SIZE_14}
+                      color={colors.primary}
+                      style={styles.iconTopFix}
+                    />
+                    <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
+                  </RNView>
                 </>
               )}
             </Reanimated.View>
 
-            {inviteCode && (
-              <Reanimated.View entering={FadeIn.duration(220).delay(80)} style={styles.warningCard}>
-                <ShieldCheck
-                  size={UI_ICON_SIZE_14}
-                  color={colors.primary}
-                  strokeWidth={1.8}
-                  style={styles.iconTopFix}
-                />
-                <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
+            {!isSynced && (
+              <Reanimated.View entering={FadeInDown.duration(220).delay(110)}>
+                <RNView style={styles.invitePasteHeader}>
+                  <RNView style={styles.invitePasteLeft}>
+                    <Text style={styles.plusIcon}>+</Text>
+                    <Text style={styles.invitePasteText}>{t('sync.paste.header')}</Text>
+                  </RNView>
+                  <Pressable onPress={handleOpenScanner} style={styles.scanPillBtn}>
+                    <SymbolIcon
+                      name="qrcode.viewfinder"
+                      size={UI_ICON_SIZE_14}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.scanPillBtnText}>{t('sync.paste.scanBtn')}</Text>
+                  </Pressable>
+                </RNView>
+
+                <RNView style={styles.inputRow}>
+                  <TextInput
+                    value={pasteCode}
+                    onChangeText={setPasteCode}
+                    onSubmitEditing={handleConnect}
+                    onFocus={handleScrollToEnd}
+                    placeholder={t('sync.paste.placeholder')}
+                    placeholderTextColor={colors.textMuted}
+                    style={styles.codeInput}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                  />
+
+                  <Pressable
+                    onPress={handleConnect}
+                    disabled={isLoading || !isValidInvite(pasteCode)}
+                    style={({ pressed }) => [
+                      styles.linkBtn,
+                      styles.linkBtnBg,
+                      (isLoading || !isValidInvite(pasteCode)) && styles.linkBtnDisabled,
+                      pressed && commonStyles.pressed,
+                    ]}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator size="small" color={colors.onPrimary} />
+                    ) : (
+                      <Text style={styles.linkBtnText}>{t('sync.paste.linkBtn')}</Text>
+                    )}
+                  </Pressable>
+                </RNView>
               </Reanimated.View>
             )}
 
-            <Reanimated.View entering={FadeInDown.duration(220).delay(110)}>
-              <RNView style={styles.invitePasteHeader}>
-                <RNView style={styles.invitePasteLeft}>
-                  <Text style={styles.plusIcon}>+</Text>
-                  <Text style={styles.invitePasteText}>{t('sync.paste.header')}</Text>
-                </RNView>
-                <Pressable onPress={handleOpenScanner} style={styles.scanPillBtn}>
-                  <ScanLine size={UI_ICON_SIZE_14} color={colors.primary} />
-                  <Text style={styles.scanPillBtnText}>{t('sync.paste.scanBtn')}</Text>
-                </Pressable>
-              </RNView>
-
-              <RNView style={styles.inputRow}>
-                <TextInput
-                  value={pasteCode}
-                  onChangeText={setPasteCode}
-                  onSubmitEditing={handleConnect}
-                  onFocus={handleScrollToEnd}
-                  placeholder={t('sync.paste.placeholder')}
-                  placeholderTextColor={colors.textMuted}
-                  style={styles.codeInput}
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-
-                <Pressable
-                  onPress={handleConnect}
-                  disabled={isLoading || !isValidInvite(pasteCode)}
-                  style={({ pressed }) => [
-                    styles.linkBtn,
-                    styles.linkBtnBg,
-                    (isLoading || !isValidInvite(pasteCode)) && styles.linkBtnDisabled,
-                    pressed && commonStyles.pressed,
-                  ]}
-                >
-                  {isLoading ? (
-                    <ActivityIndicator size="small" color={colors.onPrimary} />
-                  ) : (
-                    <Text style={styles.linkBtnText}>{t('sync.paste.linkBtn')}</Text>
-                  )}
-                </Pressable>
-              </RNView>
-            </Reanimated.View>
-
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
-              <ShieldCheck
+              <SymbolIcon
+                name="checkmark.shield"
                 size={UI_ICON_SIZE_13}
                 color={colors.primary}
                 style={styles.iconTopFix}
@@ -351,13 +380,14 @@ export default function SyncScreen() {
                 entering={FadeInDown.duration(220).delay(100)}
                 style={styles.emptyCard}
               >
-                <Smartphone size={UI_ICON_SIZE_22} color={colors.textMuted} strokeWidth={1.5} />
+                <SymbolIcon name="iphone" size={UI_ICON_SIZE_22} color={colors.textMuted} />
                 <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
               </Reanimated.View>
             )}
 
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
-              <ShieldCheck
+              <SymbolIcon
+                name="checkmark.shield"
                 size={UI_ICON_SIZE_13}
                 color={colors.primary}
                 style={styles.iconTopFix}
@@ -433,27 +463,41 @@ const useStyles = createThemedStylesheet((theme) => {
     heroCard: {
       borderRadius: 22,
       borderWidth: 1,
-      paddingHorizontal: Space.xl,
-      paddingTop: 28,
+      paddingHorizontal: Space.lg,
+      paddingTop: Space.xl,
       paddingBottom: Space.xl,
-      alignItems: 'center',
-      marginBottom: Space.base,
+      marginBottom: Space.xl,
       backgroundColor: cardBg,
       borderColor: cardBorder,
     },
-    iconRing: {
-      width: 58,
-      height: 58,
-      borderRadius: 17,
+    heroSection: {
+      alignItems: 'center',
+      position: 'relative',
+    },
+    heroCircle: {
+      width: UI_SIZE_120,
+      height: UI_SIZE_120,
+      borderRadius: Radii.pill,
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: 18,
       backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.13 : 0.1),
     },
+    heroBadge: {
+      position: 'absolute',
+      bottom: 0,
+      right: '33%',
+      width: UI_SIZE_36,
+      height: UI_SIZE_36,
+      borderRadius: Radii.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.primary,
+    },
     heroTitle: {
-      fontSize: FontSize.title,
+      fontSize: FontSize.heading,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.5,
+      marginTop: Space.lg,
       marginBottom: Space.md,
       textAlign: 'center',
       color: theme.colors.text,
@@ -462,8 +506,8 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       lineHeight: 21,
       textAlign: 'center',
-      marginBottom: 22,
-      paddingHorizontal: 6,
+      marginBottom: Space.xxl,
+      paddingHorizontal: Space.sm,
       color: theme.colors.textMuted,
     },
     generateBtn: {
@@ -486,42 +530,14 @@ const useStyles = createThemedStylesheet((theme) => {
     btnTextCopied: {
       color: theme.colors.white,
     },
-    inviteHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 14,
-      width: '100%',
-      paddingBottom: Space.base,
-    },
-    iconPill: {
-      width: 42,
-      height: 42,
-      borderRadius: Radii.md,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.13 : 0.1),
-    },
-    inviteTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
-      color: theme.colors.text,
-    },
-    inviteSub: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.medium,
-      color: theme.colors.textMuted,
-    },
     codeLabel: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       letterSpacing: 1.4,
       textTransform: 'uppercase',
-      paddingTop: 14,
       paddingBottom: Space.md,
       width: '100%',
       color: theme.colors.textMuted,
-      borderTopColor: cardBorder,
-      borderTopWidth: 1,
     },
     codeBox: {
       borderWidth: 1,
@@ -546,7 +562,7 @@ const useStyles = createThemedStylesheet((theme) => {
     qrSection: {
       width: '100%',
       alignItems: 'center',
-      marginBottom: Space.md,
+      marginBottom: Space.lg,
     },
     qrImageWrap: {
       width: UI_SIZE_200,
@@ -593,7 +609,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderWidth: 1,
       borderRadius: Radii.md,
       padding: 14,
-      marginBottom: Space.xl,
+      marginTop: Space.md,
       backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.07 : 0.08),
       borderColor: hexWithAlpha(theme.colors.primary, isDark ? 0.2 : 0.25),
     },

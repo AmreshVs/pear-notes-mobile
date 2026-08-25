@@ -10,11 +10,11 @@ import {
   View as RNView,
 } from 'react-native'
 import { BlurView } from 'expo-blur'
-import { Eye, EyeOff, Lock } from 'lucide-react-native'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
 
 import { GlassView } from '@/components/GlassView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -26,6 +26,7 @@ import {
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_40,
   UI_SIZE_8,
+  UI_SIZE_50,
   UI_SIZE_54,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -110,7 +111,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
           <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.icon}>
-                <Lock size={UI_ICON_SIZE_40} color={colors.primary} />
+                <SymbolIcon name="lock" size={UI_ICON_SIZE_40} color={colors.primary} />
               </RNView>
 
               <Text style={styles.title}>{t('noteLockPassword.enterTitle')}</Text>
@@ -132,9 +133,9 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
                 />
                 <Pressable onPress={toggleSecure} hitSlop={UI_SIZE_8} style={styles.eyeBtn}>
                   {secure ? (
-                    <Eye size={UI_ICON_SIZE_18} color={colors.textMuted} />
+                    <SymbolIcon name="eye" size={UI_ICON_SIZE_18} color={colors.textMuted} />
                   ) : (
-                    <EyeOff size={UI_ICON_SIZE_18} color={colors.textMuted} />
+                    <SymbolIcon name="eye.slash" size={UI_ICON_SIZE_18} color={colors.textMuted} />
                   )}
                 </Pressable>
               </RNView>
@@ -224,7 +225,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       paddingHorizontal: Space.md,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       width: '100%',
     },
     input: {
@@ -249,7 +250,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     btn: {
       flex: 1,
-      height: 50,
+      minHeight: UI_SIZE_50,
+      paddingVertical: Space.sm,
       borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',

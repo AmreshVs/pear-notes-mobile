@@ -1,11 +1,10 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, Switch, View as RNView } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 import Slider from '@react-native-community/slider'
-import { Stack } from 'expo-router'
-import { ChevronRight } from 'lucide-react-native'
+import { router, Stack } from 'expo-router'
 
 import {
   getEditorFontSize,
@@ -16,9 +15,11 @@ import {
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 
+import { MotionView } from '@/components/MotionView'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -83,23 +84,9 @@ export default function GeneralSettingsScreen() {
     )
   }, [t, handleSortSelect, sortBy])
 
-  const handleFontSelect = useCallback(
-    (val: string) => {
-      hapticSelection()
-      dispatch(updateSetting({ key: 'fontFamily', value: val }))
-    },
-    [dispatch],
-  )
-
   const handleFontFamilyPress = useCallback(() => {
-    showPicker(
-      t('settings.general.fontFamily'),
-      getFontOptions(t),
-      fontFamily,
-      handleFontSelect,
-      t('common.cancel'),
-    )
-  }, [t, handleFontSelect, fontFamily])
+    router.push('/settings/font' as any)
+  }, [])
 
   const handleFontSizeChange = useCallback(
     (val: number) => {
@@ -117,13 +104,13 @@ export default function GeneralSettingsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(Durations.fade)}>
+        <MotionView entering={FadeIn.duration(Durations.fade)}>
           <Text style={commonThemedStyles.settingsSectionCap}>
             {t('settings.general.interface')}
           </Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
@@ -166,15 +153,15 @@ export default function GeneralSettingsScreen() {
               />
             </RNView>
           </RNView>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayMedium)}>
+        <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayMedium)}>
           <Text style={commonThemedStyles.settingsSectionCapSpaced}>
             {t('settings.general.notesList')}
           </Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
@@ -189,19 +176,23 @@ export default function GeneralSettingsScreen() {
                   {getSortOptions(t).find((o) => o.value === sortBy)?.label ??
                     t('settings.general.sortOptions.updatedAt')}
                 </Text>
-                <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
+                <SymbolIcon
+                  name="chevron.forward"
+                  size={UI_ICON_SIZE_15}
+                  color={colors.textMuted}
+                />
               </RNView>
             </Pressable>
           </RNView>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
+        <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
           <Text style={commonThemedStyles.settingsSectionCapSpaced}>
             {t('settings.general.editor')}
           </Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
@@ -215,7 +206,11 @@ export default function GeneralSettingsScreen() {
                 <Text style={styles.rowVal}>
                   {getFontOptions(t).find((o) => o.value === fontFamily)?.label ?? fontFamily}
                 </Text>
-                <ChevronRight size={UI_ICON_SIZE_15} color={colors.textMuted} />
+                <SymbolIcon
+                  name="chevron.forward"
+                  size={UI_ICON_SIZE_15}
+                  color={colors.textMuted}
+                />
               </RNView>
             </Pressable>
 
@@ -243,7 +238,7 @@ export default function GeneralSettingsScreen() {
               </RNView>
             </RNView>
           </RNView>
-        </Animated.View>
+        </MotionView>
 
         <BackgroundSyncSection />
 

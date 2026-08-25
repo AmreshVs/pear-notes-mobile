@@ -14,7 +14,6 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import * as Haptics from 'expo-haptics'
 
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
@@ -27,7 +26,7 @@ import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
-import { createThemedStylesheetWithHooks } from '@/components/Themed'
+import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import {
@@ -51,8 +50,11 @@ import {
 } from '@/constants/commonStyles'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hasFileExtension } from '@/lib/fileSignature'
+import { hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
+import { snapTo } from '@/lib/motion'
 import { copyFileToSAF, downloadToCache, shareMessage } from '@/lib/noteAttachmentManager'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
@@ -98,9 +100,13 @@ function applyDownloadedExtension(fileName: string, localPath: string): string {
 }
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
+  const reduceMotion = useReduceMotion()
   const { t } = useTranslation()
   const theme = useMD3Theme()
   const c = theme.colors
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleSave = useMemo(() => androidRipple(c.onPrimaryContainer), [c.onPrimaryContainer])
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
   const styles = useStyles()
@@ -274,7 +280,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               mimeType,
             )
             await copyFileToSAF(localPath, uri)
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+            hapticSuccess()
             showToast(t('noteCard.downloadComplete', 'File downloaded successfully.'))
           } else {
             showToast(t('noteEditor.upload.failedDownload', 'Could not download the file.'))
@@ -292,7 +298,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleImageLongPress = useCallback(
     (src: string) => {
       if (!src) return
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      hapticMedium()
       setSelectedImageSrc(src)
       setImageSheetVisible(true)
     },
@@ -303,7 +309,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedImageSrc) return
     setImageSheetVisible(false)
     const src = selectedImageSrc
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    hapticWarning()
     await handleDeleteAttachment(src)
     editorRef.current?.deleteImage(src)
     setSelectedImageSrc(null)
@@ -328,7 +334,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleAttachmentLongPress = useCallback(
     (url: string, fileName: string) => {
       if (!url) return
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+      hapticMedium()
       setSelectedAttachmentSrc(url)
       setSelectedAttachmentFileName(fileName)
       setAttachmentSheetVisible2(true)
@@ -357,7 +363,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (!selectedAttachmentSrc) return
     setAttachmentSheetVisible2(false)
     const url = selectedAttachmentSrc
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)
+    hapticWarning()
     await handleDeleteAttachment(url)
     editorRef.current?.deleteAttachment(url)
     setSelectedAttachmentSrc(null)
@@ -454,7 +460,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleDeleteNote = useCallback(() => {
     if (!noteId) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     setDialogInfo({
       title: t('noteCard.actions.delete'),
       message: t('noteCard.deleteConfirmation'),
@@ -463,6 +469,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       onConfirm: () => {
         dispatch(deleteNote(noteId as any))
         const w = Dimensions.get('window').width
+        if (reduceMotion) {
+          snapTo(slideAnim, w, resetEditorState)
+          return
+        }
         Animated.timing(slideAnim, {
           toValue: w,
           duration: 250,
@@ -472,7 +482,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         })
       },
     })
-  }, [noteId, dispatch, slideAnim, resetEditorState, setDialogInfo, t])
+  }, [noteId, dispatch, slideAnim, resetEditorState, setDialogInfo, reduceMotion, t])
 
   const moreSheetActions = useMemo(() => {
     const list = []
@@ -523,7 +533,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     setIsSharing(true)
     const title = titleRef.current || t('noteCard.untitled')
     const html = noteContentRef.current || ''
@@ -547,11 +557,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         style={[styles.animatedView, { transform: [{ translateX: slideAnim }] }]}
         pointerEvents={isOpen ? 'auto' : 'none'}
       >
-        <StatusBar
-          barStyle={theme.dark ? 'light-content' : 'dark-content'}
-          backgroundColor="transparent"
-          translucent
-        />
+        <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
 
         {shouldMountEditor && (
           <TiptapEditor
@@ -587,7 +593,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         <View style={styles.floatingLeft} pointerEvents="box-none">
           <Pressable
             onPress={closeNote}
-            style={({ pressed }) => [styles.floatingIconBtn, pressed && styles.pressed]}
+            accessibilityRole="button"
+            accessibilityLabel={t('common.back')}
+            android_ripple={rippleBorderless}
+            style={styles.floatingIconBtn}
             hitSlop={8}
           >
             <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_22} color={c.primary} />
@@ -598,7 +607,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <View style={styles.floatingRight} pointerEvents="box-none">
             <Pressable
               onPress={handleShare}
-              style={({ pressed }) => [styles.floatingIconBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={t('noteCard.actions.share')}
+              android_ripple={rippleBorderless}
+              style={styles.floatingIconBtn}
               hitSlop={8}
             >
               <MaterialCommunityIcons
@@ -610,7 +622,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
             <Pressable
               onPress={() => setMoreSheetVisible(true)}
-              style={({ pressed }) => [styles.floatingIconBtn, pressed && styles.pressed]}
+              accessibilityRole="button"
+              accessibilityLabel={t('noteCard.actions.options')}
+              android_ripple={rippleBorderless}
+              style={styles.floatingIconBtn}
               hitSlop={8}
             >
               <MaterialCommunityIcons
@@ -636,7 +651,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   setTimeout(() => editorRef.current?.focus(), 100)
                 }
               }}
-              style={({ pressed }) => [styles.saveBtn, pressed && styles.savePressed]}
+              accessibilityRole="button"
+              accessibilityLabel={isEditing ? t('common.done') : t('formatting.editNote')}
+              android_ripple={rippleSave}
+              style={styles.saveBtn}
             >
               <MaterialCommunityIcons
                 name={isEditing ? 'check' : 'pencil-outline'}
@@ -653,9 +671,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <EditorToolbar
             isActive={isActive}
             editorRef={editorRef}
-            toolbarBottom={
-              keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12
-            }
             onAttachPress={() => {
               Keyboard.dismiss()
               editorRef.current?.blur()
@@ -715,7 +730,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               <Text style={styles.infoDialogTitle}>{dialogInfo?.title}</Text>
               <Text style={styles.infoDialogMessage}>{dialogInfo?.message}</Text>
               <View style={styles.dialogActions}>
-                <Pressable onPress={() => setDialogInfo(null)} style={styles.dialogBtn}>
+                <Pressable
+                  onPress={() => setDialogInfo(null)}
+                  android_ripple={ripple}
+                  style={styles.dialogBtn}
+                >
                   <Text
                     style={
                       dialogInfo?.onConfirm
@@ -734,6 +753,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       dialogInfo.onConfirm!()
                       setDialogInfo(null)
                     }}
+                    android_ripple={ripple}
                     style={styles.dialogBtn}
                   >
                     <Text
@@ -851,6 +871,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       zIndex: 20,
     },
     floatingIconBtn: {
+      overflow: 'hidden',
       width: 38,
       height: 38,
       borderRadius: UI_SIZE_9999,
@@ -931,12 +952,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     dialogBtn: {
       paddingHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_10,
-    },
-    pressed: {
-      opacity: 0.7,
-    },
-    savePressed: {
-      opacity: 0.8,
     },
   })
   return styles

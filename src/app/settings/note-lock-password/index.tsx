@@ -12,8 +12,8 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Stack, useLocalSearchParams } from 'expo-router'
-import { Check, Eye, EyeOff, Lock, TriangleAlert, X } from 'lucide-react-native'
 
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -90,9 +90,19 @@ export default function NoteLockPasswordScreen() {
       return (
         <RNView key={rule.key} style={styles.ruleRow}>
           {met ? (
-            <Check size={UI_ICON_SIZE_16} color={colors.success} strokeWidth={2.5} />
+            <SymbolIcon
+              name="checkmark"
+              size={UI_ICON_SIZE_16}
+              color={colors.success}
+              weight="semibold"
+            />
           ) : (
-            <X size={UI_ICON_SIZE_16} color={colors.textMuted} strokeWidth={2.5} />
+            <SymbolIcon
+              name="xmark"
+              size={UI_ICON_SIZE_16}
+              color={colors.textMuted}
+              weight="semibold"
+            />
           )}
           <Text style={met ? styles.ruleTextMet : styles.ruleText}>{t(rule.labelKey)}</Text>
         </RNView>
@@ -119,7 +129,7 @@ export default function NoteLockPasswordScreen() {
           showsVerticalScrollIndicator={false}
         >
           <RNView style={styles.iconCircle}>
-            <Lock size={UI_ICON_SIZE_28} color={colors.primary} strokeWidth={2} />
+            <SymbolIcon name="lock" size={UI_ICON_SIZE_28} color={colors.primary} weight="medium" />
           </RNView>
 
           <Text style={styles.subtitle}>
@@ -128,7 +138,12 @@ export default function NoteLockPasswordScreen() {
 
           {isCreate && (
             <RNView style={styles.warningBox}>
-              <TriangleAlert size={UI_ICON_SIZE_16} color={colors.primary} strokeWidth={2} />
+              <SymbolIcon
+                name="exclamationmark.triangle"
+                size={UI_ICON_SIZE_16}
+                color={colors.primary}
+                weight="medium"
+              />
               <Text style={styles.warningText}>{t('noteLockPassword.warning')}</Text>
             </RNView>
           )}
@@ -147,9 +162,9 @@ export default function NoteLockPasswordScreen() {
             />
             <Pressable onPress={toggleSecure} hitSlop={UI_SIZE_8} style={styles.eyeBtn}>
               {secure ? (
-                <Eye size={UI_ICON_SIZE_18} color={colors.textMuted} />
+                <SymbolIcon name="eye" size={UI_ICON_SIZE_18} color={colors.textMuted} />
               ) : (
-                <EyeOff size={UI_ICON_SIZE_18} color={colors.textMuted} />
+                <SymbolIcon name="eye.slash" size={UI_ICON_SIZE_18} color={colors.textMuted} />
               )}
             </Pressable>
           </RNView>
@@ -260,7 +275,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       paddingHorizontal: Space.md,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
     },
     input: {
       flex: 1,
@@ -343,7 +358,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     confirmBtn: {
       ...commonStyles.centered,
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: Radii.lg,
       backgroundColor: theme.colors.primary,
     },

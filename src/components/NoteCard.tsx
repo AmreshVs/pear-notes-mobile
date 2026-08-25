@@ -8,22 +8,14 @@ import {
   View as RNView,
   type ViewStyle,
 } from 'react-native'
-import Animated, { FadeIn, FadeOutUp } from 'react-native-reanimated'
+import { FadeIn, FadeOutUp } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import { Image } from 'expo-image'
-import {
-  Film,
-  Folder,
-  Image as ImageIcon,
-  Lock,
-  LockOpen,
-  Mic,
-  Paperclip,
-  Pin,
-} from 'lucide-react-native'
 
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
+import { MotionView } from '@/components/MotionView'
+import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
   FontFamily,
@@ -37,25 +29,31 @@ import {
   UI_SIZE_8,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
+import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
+import {
+  isAccessibilityTextSize,
+  MAX_FONT_SCALE_CHROME,
+  scaledLineCount,
+} from '@/utils/dynamicType'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import type { AttachmentInfo } from '@/utils/noteUtils'
 
-import { createThemedStylesheet, Text, useTheme } from './Themed'
+import { createThemedStylesheet, Text, useFontScale, useTheme } from './Themed'
 
 const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 const ENTER_ANIMATION_MAX_INDEX = 8
 
-const ATTACHMENT_ICONS = {
-  image: ImageIcon,
-  video: Film,
-  audio: Mic,
-  file: Paperclip,
-  mixed: Paperclip,
-} as const
+const ATTACHMENT_ICONS: Record<string, IconName> = {
+  image: 'photo',
+  video: 'video',
+  audio: 'mic',
+  file: 'paperclip',
+  mixed: 'paperclip',
+}
 
 interface MoveFolder {
   id: string
@@ -239,7 +237,10 @@ export const NoteCard = memo(function NoteCard({
     [selected, styles.title, styles.titleSelected, styles.titleNormal],
   )
 
-  const showThumbnail = !!imageUrl && !thumbError && !masked
+  const fontScale = useFontScale()
+  const titleLines = scaledLineCount(1, fontScale)
+  const summaryLines = scaledLineCount(2, fontScale)
+  const showThumbnail = !!imageUrl && !thumbError && !masked && !isAccessibilityTextSize(fontScale)
   const displayTitle = title || t('noteCard.untitled')
   const accessibilityLabel = useMemo(() => {
     const parts = [displayTitle]
@@ -249,7 +250,7 @@ export const NoteCard = memo(function NoteCard({
     return parts.join(', ')
   }, [displayTitle, pinned, locked, date, t])
   const showAttachment = !masked && !summary && !!attachment
-  const AttachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
+  const attachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
   const displaySummary = masked
     ? t('noteCard.lockedSummary')
     : summary || t('noteCard.noAdditionalText')
@@ -262,38 +263,74 @@ export const NoteCard = memo(function NoteCard({
     [animationIndex],
   )
 
+  const accessibilityActions = useMemo(() => {
+    const actions: { name: string; label: string }[] = []
+    if (onTogglePin)
+      actions.push({
+        name: NOTE_ACTION.togglePin,
+        label: pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin'),
+      })
+    if (onToggleLock)
+      actions.push({
+        name: NOTE_ACTION.toggleLock,
+        label: locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
+      })
+    if (onCopy) actions.push({ name: NOTE_ACTION.copy, label: t('noteCard.actions.copyNote') })
+    if (onDelete) actions.push({ name: NOTE_ACTION.delete, label: t('noteCard.actions.delete') })
+    return actions
+  }, [onTogglePin, onToggleLock, onCopy, onDelete, pinned, locked, t])
+
+  const handleAccessibilityAction = useCallback(
+    (event: { nativeEvent: { actionName: string } }) => {
+      const runner = {
+        [NOTE_ACTION.togglePin]: handleTogglePin,
+        [NOTE_ACTION.toggleLock]: handleToggleLock,
+        [NOTE_ACTION.copy]: handleCopy,
+        [NOTE_ACTION.delete]: handleDelete,
+      }[event.nativeEvent.actionName]
+      runner?.()
+    },
+    [handleTogglePin, handleToggleLock, handleCopy, handleDelete],
+  )
+
   const card = (
-    <Animated.View entering={entering} exiting={FadeOutUp.duration(180)}>
+    <MotionView entering={entering} exiting={FadeOutUp.duration(180)}>
       <Pressable
         onPress={handlePress}
         style={getPressableStyle}
         accessibilityRole="button"
         accessibilityLabel={accessibilityLabel}
+        accessibilityActions={accessibilityActions}
+        onAccessibilityAction={handleAccessibilityAction}
       >
         <RNView style={styles.row}>
           <RNView style={styles.content}>
             <RNView style={styles.titleRow}>
-              {pinned && <Pin size={UI_ICON_SIZE_12} color={lockIconColor} fill={lockIconColor} />}
+              {pinned && <SymbolIcon name="pin" size={UI_ICON_SIZE_12} color={lockIconColor} />}
               {locked &&
                 (masked ? (
-                  <Lock size={UI_ICON_SIZE_12} color={lockIconColor} />
+                  <SymbolIcon name="lock" size={UI_ICON_SIZE_12} color={lockIconColor} />
                 ) : (
-                  <LockOpen size={UI_ICON_SIZE_12} color={lockIconColor} />
+                  <SymbolIcon name="lock.open" size={UI_ICON_SIZE_12} color={lockIconColor} />
                 ))}
-              <Text variant="bodyBold" numberOfLines={1} style={titleStyle}>
+              <Text variant="bodyBold" numberOfLines={titleLines} style={titleStyle}>
                 {displayTitle}
               </Text>
             </RNView>
 
-            {showAttachment && AttachmentIcon ? (
+            {showAttachment && attachmentIcon ? (
               <RNView style={styles.attachmentRow}>
-                <AttachmentIcon size={UI_ICON_SIZE_12} color={colors.textSecondary} />
+                <SymbolIcon
+                  name={attachmentIcon}
+                  size={UI_ICON_SIZE_12}
+                  color={colors.textSecondary}
+                />
                 <Text variant="caption" numberOfLines={1} style={styles.attachmentLabel}>
                   {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
                 </Text>
               </RNView>
             ) : (
-              <Text variant="caption" numberOfLines={2} style={styles.summary}>
+              <Text variant="caption" numberOfLines={summaryLines} style={styles.summary}>
                 {displaySummary}
               </Text>
             )}
@@ -311,9 +348,15 @@ export const NoteCard = memo(function NoteCard({
               {folderName && (
                 <>
                   <RNView style={styles.folderTag}>
-                    <Folder size={UI_ICON_SIZE_12} style={styles.folderIcon} />
+                    <SymbolIcon
+                      name="folder"
+                      size={UI_ICON_SIZE_12}
+                      style={styles.folderIcon}
+                      color={colors.textSecondary}
+                    />
                     <Text
                       variant="caption"
+                      maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
                       style={[styles.metadataText, isPearTheme && styles.metadataTextPearTheme]}
                     >
                       {folderName}
@@ -321,7 +364,11 @@ export const NoteCard = memo(function NoteCard({
                   </RNView>
                 </>
               )}
-              <Text variant="caption" style={styles.metadataText}>
+              <Text
+                variant="caption"
+                maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
+                style={styles.metadataText}
+              >
                 {date}
               </Text>
             </RNView>
@@ -340,7 +387,7 @@ export const NoteCard = memo(function NoteCard({
           )}
         </RNView>
       </Pressable>
-    </Animated.View>
+    </MotionView>
   )
 
   const hasActions = onDelete || onCopy || onMoveTo || onToggleLock || onTogglePin
@@ -485,7 +532,6 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     folderIcon: {
       marginRight: Space.xs,
-      color: theme.colors.textSecondary,
     },
     metadataText: {
       fontSize: FontSize.caption,
@@ -493,7 +539,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontFamily: FontFamily.extraBold,
       textTransform: 'uppercase',
       letterSpacing: 0.8,
-      opacity: 0.6,
       color: theme.colors.textSecondary,
       marginRight: UI_SIZE_8,
     },

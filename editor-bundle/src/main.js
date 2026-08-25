@@ -225,22 +225,28 @@ function flushContentChange(html, text) {
   sendToRN({ type: 'contentChange', html, text })
 }
 
+const CARET_AUTOSCROLL_ENABLED = true
+
 const CARET_BOTTOM_OBSTRUCTION = 96
 const CARET_SCROLL_MARGIN = 12
 const CARET_RECHECK_DELAY_MS = 120
 const CARET_RESCROLL_DELAY_MS = 250
+const PROGRAMMATIC_SCROLL_GRACE_MS = 150
+let programmaticScrollUntil = 0
+let lastSelectionFrom = null
 
 let caretBottomInset = CARET_BOTTOM_OBSTRUCTION
 let hostBottomInset = null
 
 function applyBottomInset() {
   if (!hostBottomInset) return
-  const viewport = window.visualViewport
-  const visualHeight = (viewport && viewport.height) || window.innerHeight
-  const viewportShrink = Math.max(0, window.innerHeight - visualHeight)
-  const keyboardCovered = Math.max(0, hostBottomInset.keyboardHeight - viewportShrink)
-  caretBottomInset = keyboardCovered + hostBottomInset.toolbarHeight
-  document.documentElement.style.setProperty('--bottom-inset', `${caretBottomInset}px`)
+  // Everything below is measured in *layout* viewport coordinates, which is what
+  // getBoundingClientRect returns and what window.innerHeight reports. visualViewport is
+  // deliberately not consulted: WKWebView does not shrink it for the keyboard the way
+  // Safari does, so anything derived from it is unreliable here.
+  const obstructed = hostBottomInset.keyboardHeight + hostBottomInset.toolbarHeight
+  caretBottomInset = obstructed
+  document.documentElement.style.setProperty('--bottom-inset', `${obstructed}px`)
 }
 
 function getCaretRect() {
@@ -254,7 +260,15 @@ function getCaretRect() {
   return node && node.getBoundingClientRect ? node.getBoundingClientRect() : null
 }
 
+function scrollDocumentToTop() {
+  window.scrollTo(0, 0)
+  if (document.scrollingElement) document.scrollingElement.scrollTop = 0
+  document.body.scrollTop = 0
+  document.documentElement.scrollTop = 0
+}
+
 function scrollEditorBy(delta) {
+  programmaticScrollUntil = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS
   const scrollers = [document.scrollingElement, document.documentElement, document.body]
   for (const scroller of scrollers) {
     if (scroller && scroller.scrollHeight - scroller.clientHeight > 1) {
@@ -266,18 +280,32 @@ function scrollEditorBy(delta) {
 }
 
 function adjustCaretScroll() {
+  if (!CARET_AUTOSCROLL_ENABLED) return
   if (!editor || !editor.isFocused) return
   const rect = getCaretRect()
   if (!rect) return
-  const viewport = window.visualViewport
-  const viewportHeight = (viewport && viewport.height) || window.innerHeight
-  const viewportTop = (viewport && viewport.offsetTop) || 0
-  const overflow = rect.bottom - (viewportTop + viewportHeight - caretBottomInset)
+  // rect is layout-viewport relative, so compare against window.innerHeight. caretBottomInset
+  // already covers the keyboard plus the floating toolbar above it.
+  const overflow = rect.bottom - (window.innerHeight - caretBottomInset)
   if (overflow > 0) scrollEditorBy(overflow + CARET_SCROLL_MARGIN)
 }
 
 let caretScrollFrame = null
 let caretScrollTimer = null
+
+// A correction is only ever queued in response to a real change — the document, the caret
+// position, or the keyboard. Plain scrolling triggers nothing. The one hazard left is a
+// correction queued just before the user starts dragging, so a scroll cancels anything
+// pending. It never blocks a *fresh* trigger, which is what keeps the keyboard-open and
+// Enter-at-the-bottom cases working.
+function cancelPendingCaretScroll() {
+  if (caretScrollFrame) {
+    cancelAnimationFrame(caretScrollFrame)
+    caretScrollFrame = null
+  }
+  clearTimeout(caretScrollTimer)
+}
+
 function keepCaretVisible() {
   if (!caretScrollFrame) {
     caretScrollFrame = requestAnimationFrame(() => {
@@ -288,6 +316,15 @@ function keepCaretVisible() {
   clearTimeout(caretScrollTimer)
   caretScrollTimer = setTimeout(adjustCaretScroll, CARET_RECHECK_DELAY_MS)
 }
+
+window.addEventListener(
+  'scroll',
+  () => {
+    if (Date.now() < programmaticScrollUntil) return
+    cancelPendingCaretScroll()
+  },
+  { passive: true, capture: true },
+)
 
 let styleTimer = null
 let lastStyleJSON = ''
@@ -1030,6 +1067,11 @@ function createEditorSession(collaborator, html) {
     },
     onSelectionUpdate: ({ editor }) => {
       broadcastStyleState(editor)
+      // WebKit fires selectionchange while a focused contenteditable is scrolled, which would
+      // otherwise drag the view back to the caret. Only react when the caret actually moved.
+      const from = editor.state.selection.from
+      if (from === lastSelectionFrom) return
+      lastSelectionFrom = from
       keepCaretVisible()
     },
     onTransaction: ({ editor }) => broadcastStyleState(editor),
@@ -1139,6 +1181,9 @@ window.editorBridge = {
           currentNoteId = msg.noteId
           if (msg.html != null) editor.commands.setContent(msg.html, false)
         }
+        // The WebView is reused across notes, so a freshly loaded note would otherwise
+        // inherit the previous note's scroll offset. Reset once layout has settled.
+        requestAnimationFrame(scrollDocumentToTop)
         break
       }
 
@@ -1182,9 +1227,7 @@ window.editorBridge = {
       }
 
       case 'scrollToTop':
-        window.scrollTo(0, 0)
-        document.body.scrollTop = 0
-        document.documentElement.scrollTop = 0
+        scrollDocumentToTop()
         break
 
       case 'toggleBold':
@@ -1354,7 +1397,7 @@ window.editorBridge = {
 
       case 'focus':
         editor.view.dom.dispatchEvent(new MouseEvent('click', { bubbles: true }))
-        editor.commands.focus()
+        editor.commands.focus(null, { scrollIntoView: false })
         break
 
       case 'focusTitle': {

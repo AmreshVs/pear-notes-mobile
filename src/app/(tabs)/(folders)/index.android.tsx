@@ -11,15 +11,7 @@ import {
   View,
 } from 'react-native'
 import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
-import Animated, {
-  Easing,
-  FadeIn,
-  FadeInDown,
-  LinearTransition,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -40,6 +32,7 @@ import {
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -63,6 +56,7 @@ import {
   UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
@@ -90,6 +84,8 @@ export default function AndroidFoldersScreen() {
   const md3 = useMD3Theme()
   const theme = useTheme()
   const c = md3.colors as ExtendedColors
+  const screenRipple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const screenRippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const styles = useStyles()
@@ -258,10 +254,7 @@ export default function AndroidFoldersScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={c.background}
-      />
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <ScrollView
@@ -270,20 +263,21 @@ export default function AndroidFoldersScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Animated.View entering={FadeIn.duration(200)} style={styles.header}>
+        <MotionView entering={FadeIn.duration(200)} style={styles.header}>
           <View>
             <Text style={styles.pageTitle}>{t('folders.title')}</Text>
           </View>
           <Pressable
             onPress={handleOpenSettings}
-            style={({ pressed }) => [styles.gearBtn, pressed && styles.gearBtnPressed]}
+            android_ripple={screenRippleBorderless}
+            style={styles.gearBtn}
             hitSlop={UI_SIZE_8}
           >
             <MaterialCommunityIcons name="cog-outline" size={UI_ICON_SIZE_24} color={c.onSurface} />
           </Pressable>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(220).delay(40).easing(Easing.out(Easing.cubic))}
           style={styles.searchWrap}
         >
@@ -297,16 +291,16 @@ export default function AndroidFoldersScreen() {
             <TextInput
               style={styles.searchInput}
               placeholder={t('folders.searchPlaceholder')}
-              placeholderTextColor={c.onSurfaceVariant + '80'}
+              placeholderTextColor={c.onSurfaceVariant}
               accessibilityLabel={t('folders.searchPlaceholder')}
               value={searchQuery}
               onChangeText={setSearchQuery}
               returnKeyType="search"
             />
           </View>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(240).delay(80).easing(Easing.out(Easing.cubic))}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.listCard}
@@ -331,10 +325,10 @@ export default function AndroidFoldersScreen() {
               <Text style={styles.emptyText}>{t('folders.noFoldersFound')}</Text>
             </View>
           )}
-        </Animated.View>
+        </MotionView>
 
         {archiveFolders.length > 0 && (
-          <Animated.View
+          <MotionView
             entering={FadeInDown.duration(240).delay(120).easing(Easing.out(Easing.cubic))}
             style={styles.archiveSection}
           >
@@ -357,7 +351,7 @@ export default function AndroidFoldersScreen() {
                 />
               ))}
             </View>
-          </Animated.View>
+          </MotionView>
         )}
       </ScrollView>
 
@@ -388,10 +382,18 @@ export default function AndroidFoldersScreen() {
               label={t('folders.renameLabel')}
             />
             <View style={styles.dialogActions}>
-              <Pressable onPress={handleCloseRenameDialog} style={styles.dialogBtn}>
+              <Pressable
+                onPress={handleCloseRenameDialog}
+                android_ripple={screenRipple}
+                style={styles.dialogBtn}
+              >
                 <Text style={styles.dialogBtnTextCancel}>{t('common.cancel')}</Text>
               </Pressable>
-              <Pressable onPress={confirmRename} style={styles.dialogBtn}>
+              <Pressable
+                onPress={confirmRename}
+                android_ripple={screenRipple}
+                style={styles.dialogBtn}
+              >
                 <Text style={styles.dialogBtnTextRename}>{t('folders.buttons.rename')}</Text>
               </Pressable>
             </View>
@@ -443,20 +445,10 @@ const VaultFolderRow = memo(function VaultFolderRow({
 }: VaultFolderRowProps) {
   const { t } = useTranslation()
   const styles = useStyles()
-  const scale = useSharedValue(1)
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }))
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const handlePress = useCallback(() => onPress(id), [id, onPress])
   const handleLongPress = useCallback(() => onLongPress(id), [id, onLongPress])
-  const handlePressIn = useCallback(() => {
-    scale.value = withTiming(0.97, { duration: 120, easing: Easing.out(Easing.cubic) })
-  }, [scale])
-  const handlePressOut = useCallback(() => {
-    scale.value = withTiming(1, { duration: 180, easing: Easing.out(Easing.cubic) })
-  }, [scale])
 
   const iconName = isAll ? 'folder-account' : isTrash ? 'delete-outline' : 'folder-outline'
   const iconColor = isTrash ? c.error : c.primary
@@ -465,48 +457,39 @@ const VaultFolderRow = memo(function VaultFolderRow({
       ? t(count === 1 ? 'folderView.noteCount_one' : 'folderView.noteCount_other', { count })
       : null
 
-  const getPressableStyle = useCallback(
-    ({ pressed }: { pressed: boolean }) => [
-      styles.row,
-      !isLast && styles.rowDivider,
-      pressed && styles.rowPressed,
-    ],
-    [isLast, styles],
+  const rowStyle = useMemo(
+    () => [styles.row, !isLast && styles.rowDivider],
+    [isLast, styles.row, styles.rowDivider],
   )
 
   return (
-    <Animated.View layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
-      <Animated.View style={animatedStyle}>
-        <Pressable
-          onPress={handlePress}
-          onLongPress={handleLongPress}
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          style={getPressableStyle}
-        >
-          <View style={styles.rowLeft}>
-            <View
-              style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}
-            >
-              <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_22} color={iconColor} />
+    <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
+      <Pressable
+        onPress={handlePress}
+        onLongPress={handleLongPress}
+        android_ripple={ripple}
+        style={rowStyle}
+      >
+        <View style={styles.rowLeft}>
+          <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
+            <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_22} color={iconColor} />
+          </View>
+          <Text style={styles.rowNameText}>{name}</Text>
+        </View>
+        <View style={styles.rowRight}>
+          {countLabel && (
+            <View style={styles.countBadge}>
+              <Text style={styles.countText}>{countLabel}</Text>
             </View>
-            <Text style={styles.rowNameText}>{name}</Text>
-          </View>
-          <View style={styles.rowRight}>
-            {countLabel && (
-              <View style={styles.countBadge}>
-                <Text style={styles.countText}>{countLabel}</Text>
-              </View>
-            )}
-            <MaterialCommunityIcons
-              name="chevron-right"
-              size={UI_ICON_SIZE_18}
-              color={hexWithAlpha(c.onSurfaceVariant, 0.5)}
-            />
-          </View>
-        </Pressable>
-      </Animated.View>
-    </Animated.View>
+          )}
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={UI_ICON_SIZE_18}
+            color={c.onSurfaceVariant}
+          />
+        </View>
+      </Pressable>
+    </MotionView>
   )
 })
 
@@ -527,7 +510,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     },
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,
-      paddingTop: 52,
+      paddingTop: insets.top + UI_SIZE_24,
       paddingBottom: insets.bottom + 100,
     },
     header: {
@@ -545,12 +528,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       marginBottom: UI_SIZE_4,
     },
     gearBtn: {
+      overflow: 'hidden',
       ...commonStyles.headerBtn,
       borderRadius: UI_SIZE_9999,
       marginTop: -4,
-    },
-    gearBtnPressed: {
-      backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
     },
     searchWrap: {
       marginBottom: UI_SIZE_16,
@@ -663,9 +644,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     rowDivider: {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: hexWithAlpha(c.outlineVariant, 0.2),
-    },
-    rowPressed: {
-      backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surface, 0.5),
     },
     rowLeft: {
       ...commonStyles.row,

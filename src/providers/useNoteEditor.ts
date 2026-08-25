@@ -14,13 +14,16 @@ import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
+import { useReduceMotion } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
+import { snapTo } from '@/lib/motion'
 
 const FOCUS_TITLE_DELAY = 250
 const IOS_TOOLBAR_INSET_TYPING = 76
 const IOS_TOOLBAR_INSET_IDLE = 96
 
 export function useNoteEditor() {
+  const reduceMotion = useReduceMotion()
   const editorRef = useRef<TiptapEditorHandle>(null)
   const [noteId, setNoteId] = useState<string | null>(null)
   const [isOpen, setIsOpen] = useState(false)
@@ -149,12 +152,16 @@ export function useNoteEditor() {
     editorRef.current?.scrollToTop()
     editorRef.current?.setTitle(noteData?.title || '')
 
-    Animated.spring(slideAnim, {
-      toValue: 0,
-      useNativeDriver: true,
-      damping: 20,
-      stiffness: 200,
-    }).start()
+    if (reduceMotion) {
+      snapTo(slideAnim, 0)
+    } else {
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        useNativeDriver: true,
+        damping: 20,
+        stiffness: 200,
+      }).start()
+    }
 
     isLoadingNoteRef.current = true
     InteractionManager.runAfterInteractions(() => {
@@ -196,12 +203,16 @@ export function useNoteEditor() {
     if (isClosingRef.current) return
     isClosingRef.current = true
     const w = Dimensions.get('window').width
+    if (reduceMotion) {
+      snapTo(slideAnim, w, resetEditorState)
+      return
+    }
     Animated.timing(slideAnim, {
       toValue: w,
       duration: 250,
       useNativeDriver: true,
     }).start(resetEditorState)
-  }, [resetEditorState, slideAnim])
+  }, [resetEditorState, slideAnim, reduceMotion])
 
   const closeNote = useCallback(() => {
     editorRef.current?.blur()

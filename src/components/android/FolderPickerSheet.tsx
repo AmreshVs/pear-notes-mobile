@@ -23,19 +23,14 @@ import {
   UI_SIZE_28,
   UI_SIZE_32,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string
   surfaceContainer: string
   surfaceContainerHigh: string
   surfaceContainerHighest: string
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
 }
 
 type FolderItem = {
@@ -65,6 +60,8 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
   }, [visible])
 
   const backgroundStyle = useMemo(() => styles.sheetBackground, [styles.sheetBackground])
+  const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
+  const rippleBorderless = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
 
   return (
     <BottomSheetModal
@@ -78,7 +75,8 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
         <View style={styles.headerRow}>
           <Pressable
             onPress={onDismiss}
-            style={({ pressed }) => [styles.backBtn, pressed && styles.backBtnPressed]}
+            android_ripple={rippleBorderless}
+            style={styles.backBtn}
             hitSlop={8}
           >
             <MaterialCommunityIcons
@@ -101,7 +99,8 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
               <React.Fragment key={folder.id}>
                 <Pressable
                   onPress={() => onSelect(folder.id)}
-                  style={({ pressed }) => [styles.folderRow, pressed && styles.folderRowPressed]}
+                  android_ripple={ripple}
+                  style={styles.folderRow}
                 >
                   <View style={styles.iconCircle}>
                     <MaterialCommunityIcons
@@ -114,7 +113,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
                   <MaterialCommunityIcons
                     name="chevron-right"
                     size={UI_ICON_SIZE_18}
-                    color={hexWithAlpha(colors.onSurfaceVariant, 0.4)}
+                    color={colors.onSurfaceVariant}
                   />
                 </Pressable>
                 {index < folders.length - 1 && <View style={styles.separator} />}
@@ -160,11 +159,9 @@ const useStyles = createThemedStylesheetWithHooks(
         gap: UI_SIZE_4,
       },
       backBtn: {
+        overflow: 'hidden',
         padding: UI_SIZE_8,
         borderRadius: 9999,
-      },
-      backBtnPressed: {
-        backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),
       },
       headerTitle: {
         fontSize: FontSize.title,
@@ -191,9 +188,6 @@ const useStyles = createThemedStylesheetWithHooks(
         paddingVertical: UI_SIZE_14,
         gap: UI_SIZE_16,
         minHeight: 62,
-      },
-      folderRowPressed: {
-        backgroundColor: hexWithAlpha(c.primaryContainer, 0.18),
       },
       iconCircle: {
         width: 44,

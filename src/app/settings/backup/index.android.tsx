@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -9,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -18,6 +19,7 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -45,6 +47,7 @@ import {
   UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { formatBackupDate, hexWithAlpha } from '@/lib/backupUtils'
 import { getBackupErrorMessage } from '@/utils/backupErrors'
 
@@ -65,6 +68,9 @@ export default function AndroidBackupScreen() {
   const theme = useMD3Theme()
   const c = theme.colors as ExtendedColors
   const styles = useStyles()
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const {
     importStatus,
     totalBlobBytes,
@@ -95,21 +101,23 @@ export default function AndroidBackupScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={theme.dark ? 'light-content' : 'dark-content'}
-        backgroundColor={c.background}
-      />
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.iconBtn}>
+        <Pressable
+          onPress={() => router.back()}
+          android_ripple={rippleBorderless}
+          hitSlop={UI_SIZE_12}
+          style={styles.iconBtn}
+        >
           <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('backup.title')}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <Animated.View entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
               name="cloud-upload-outline"
@@ -119,20 +127,14 @@ export default function AndroidBackupScreen() {
           </View>
           <Text style={styles.heroTitle}>{t('backup.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('backup.hero.description')}</Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(60)}
-          style={styles.buttonsContainer}
-        >
+        <MotionView entering={FadeInDown.duration(240).delay(60)} style={styles.buttonsContainer}>
           <Pressable
             onPress={handleCreateBackup}
             disabled={isActive}
-            style={({ pressed }) => [
-              styles.primaryBtn,
-              pressed && styles.btnPressed,
-              isActive && styles.btnDisabled,
-            ]}
+            android_ripple={ripplePrimary}
+            style={[styles.primaryBtn, isActive && styles.btnDisabled]}
           >
             <MaterialCommunityIcons
               name="cloud-upload"
@@ -145,24 +147,21 @@ export default function AndroidBackupScreen() {
           <Pressable
             onPress={handleRestoreData}
             disabled={isActive}
-            style={({ pressed }) => [
-              styles.secondaryBtn,
-              pressed && styles.btnPressed,
-              isActive && styles.btnDisabled,
-            ]}
+            android_ripple={ripple}
+            style={[styles.secondaryBtn, isActive && styles.btnDisabled]}
           >
             <MaterialCommunityIcons name="restore" size={UI_ICON_SIZE_20} color={c.onSurface} />
             <Text style={styles.secondaryBtnText}>{t('backup.restoreData')}</Text>
           </Pressable>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View entering={FadeInDown.duration(240).delay(120)} style={styles.recoveryCard}>
+        <MotionView entering={FadeInDown.duration(240).delay(120)} style={styles.recoveryCard}>
           <View style={styles.recoveryHeader}>
             <MaterialCommunityIcons name="lock-outline" size={UI_ICON_SIZE_20} color={c.primary} />
             <Text style={styles.recoveryTitle}>{t('backup.protectedTitle')}</Text>
           </View>
           <Text style={styles.recoveryDesc}>{t('backup.protectedDesc')}</Text>
-        </Animated.View>
+        </MotionView>
 
         <AndroidBackupStatsSection
           lastBackupDate={lastBackupDate}
@@ -227,14 +226,16 @@ export default function AndroidBackupScreen() {
               {isError ? (
                 <Pressable
                   onPress={handleDismissProgress}
-                  style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+                  android_ripple={ripple}
+                  style={styles.cancelBtn}
                 >
                   <Text style={styles.cancelBtnText}>{t('backup.progress.dismiss')}</Text>
                 </Pressable>
               ) : isImportDone ? (
                 <Pressable
                   onPress={handleRestoreComplete}
-                  style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+                  android_ripple={ripple}
+                  style={styles.cancelBtn}
                 >
                   <Text style={styles.cancelBtnText}>{t('pairing.overlay.okay')}</Text>
                 </Pressable>
@@ -242,13 +243,15 @@ export default function AndroidBackupScreen() {
                 <View style={styles.modalActions}>
                   <Pressable
                     onPress={handleRunInBackground}
-                    style={({ pressed }) => [styles.bgBtn, pressed && styles.bgBtnPressed]}
+                    android_ripple={ripple}
+                    style={styles.bgBtn}
                   >
                     <Text style={styles.bgBtnText}>{t('backup.runInBackground')}</Text>
                   </Pressable>
                   <Pressable
                     onPress={isExporting ? handleCancelExport : handleCancelImport}
-                    style={({ pressed }) => [styles.cancelBtn, pressed && styles.cancelBtnPressed]}
+                    android_ripple={ripple}
+                    style={styles.cancelBtn}
                   >
                     <Text style={styles.cancelBtnText}>{t('backup.progress.cancel')}</Text>
                   </Pressable>
@@ -332,7 +335,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_24,
     },
     primaryBtn: {
-      height: UI_SIZE_54,
+      overflow: 'hidden',
+      minHeight: UI_SIZE_54,
       borderRadius: UI_SIZE_9999,
       backgroundColor: c.primary,
       ...commonStyles.row,
@@ -346,7 +350,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onPrimary,
     },
     secondaryBtn: {
-      height: UI_SIZE_54,
+      overflow: 'hidden',
+      minHeight: UI_SIZE_54,
       borderRadius: UI_SIZE_9999,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       ...commonStyles.row,
@@ -359,7 +364,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
-    btnPressed: { opacity: 0.7 },
     btnDisabled: { opacity: 0.4 },
     overlayCenter: {
       flex: 1,
@@ -431,13 +435,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_8,
     },
     bgBtn: {
+      overflow: 'hidden',
       paddingVertical: UI_SIZE_12,
       paddingHorizontal: UI_SIZE_20,
       borderRadius: UI_SIZE_9999,
       backgroundColor: c.primaryContainer ?? c.surfaceVariant,
-    },
-    bgBtnPressed: {
-      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
     },
     bgBtnText: {
       fontSize: FontSize.body,
@@ -446,12 +448,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onPrimaryContainer ?? c.onSurface,
     },
     cancelBtn: {
+      overflow: 'hidden',
       paddingVertical: UI_SIZE_12,
       paddingHorizontal: UI_SIZE_24,
       borderRadius: UI_SIZE_9999,
-    },
-    cancelBtnPressed: {
-      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
     },
     cancelBtnText: {
       fontSize: FontSize.body,

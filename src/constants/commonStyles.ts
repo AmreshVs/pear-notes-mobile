@@ -29,6 +29,7 @@ export const UI_SIZE_32 = 32
 export const UI_SIZE_40 = 40
 export const UI_SIZE_48 = 48
 export const UI_SIZE_50 = 50
+export const UI_SIZE_52 = 52
 export const UI_SIZE_54 = 54
 export const UI_SIZE_56 = 56
 export const UI_SIZE_60 = 60
@@ -134,6 +135,7 @@ export const Durations = {
   delayExtraLong: 150,
   delayReset: 180,
   delayFooter: 220,
+  toast: 3000,
 } as const
 
 export const GlassIntensity = {
@@ -251,7 +253,8 @@ export const commonStyles = StyleSheet.create({
   },
 
   primaryBtn: {
-    height: 50,
+    minHeight: UI_SIZE_50,
+    paddingVertical: Space.sm,
     borderRadius: Radii.md,
     alignItems: 'center',
     justifyContent: 'center',

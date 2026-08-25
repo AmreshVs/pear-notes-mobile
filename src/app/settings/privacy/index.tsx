@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeIn } from 'react-native-reanimated'
-import { ShieldCheck } from 'lucide-react-native'
+import { FadeIn } from 'react-native-reanimated'
 
+import { MotionView } from '@/components/MotionView'
 import { PrivacyLockSection } from '@/components/settings/PrivacyLockSection'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -29,13 +30,13 @@ export default function PrivacyScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(Durations.fade)} style={styles.hero}>
+        <MotionView entering={FadeIn.duration(Durations.fade)} style={styles.hero}>
           <RNView style={styles.heroIcon}>
-            <ShieldCheck size={UI_ICON_SIZE_48} color={colors.primary} strokeWidth={1.5} />
+            <SymbolIcon name="checkmark.shield" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
           <Text style={styles.heroTitle}>{t('settings.privacy.screenTitle')}</Text>
           <Text style={styles.heroDesc}>{t('settings.privacy.screenDesc')}</Text>
-        </Animated.View>
+        </MotionView>
 
         <PrivacyLockSection />
       </ScrollView>

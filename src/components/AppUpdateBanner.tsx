@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated'
+import { FadeInDown, FadeOutDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Download, X } from 'lucide-react-native'
 
+import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -26,7 +27,7 @@ export function AppUpdateBanner() {
   if (!isVisible) return null
 
   return (
-    <Animated.View
+    <MotionView
       style={styles.container}
       entering={FadeInDown.duration(300)}
       exiting={FadeOutDown.duration(200)}
@@ -34,7 +35,11 @@ export function AppUpdateBanner() {
       <RNView style={styles.banner}>
         <RNView style={styles.infoRow}>
           <RNView style={styles.iconCircle}>
-            <Download size={UI_ICON_SIZE_20} color={theme.colors.primary} />
+            <SymbolIcon
+              name="square.and.arrow.down"
+              size={UI_ICON_SIZE_20}
+              color={theme.colors.primary}
+            />
           </RNView>
 
           <RNView style={styles.textContainer}>
@@ -51,7 +56,7 @@ export function AppUpdateBanner() {
             accessibilityLabel={t('update.banner.dismiss')}
             style={({ pressed }) => [styles.dismissBtn, pressed && commonStyles.pressed]}
           >
-            <X size={UI_ICON_SIZE_20} color={theme.colors.textSecondary} />
+            <SymbolIcon name="xmark" size={UI_ICON_SIZE_20} color={theme.colors.textSecondary} />
           </Pressable>
         </RNView>
 
@@ -62,7 +67,7 @@ export function AppUpdateBanner() {
           <Text style={styles.updateBtnText}>{t('update.banner.updateButton')}</Text>
         </Pressable>
       </RNView>
-    </Animated.View>
+    </MotionView>
   )
 }
 

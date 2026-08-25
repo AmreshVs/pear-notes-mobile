@@ -1,4 +1,3 @@
-import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -9,13 +8,13 @@ import {
   Text as RNText,
   View as RNView,
 } from 'react-native'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
-import { router, Stack } from 'expo-router'
-import { Check, CloudUpload, Lock, RotateCcw, X } from 'lucide-react-native'
+import { FadeIn, FadeInDown } from 'react-native-reanimated'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { BackupStatsSection } from '@/components/backup/BackupStatsSection'
+import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -24,17 +23,14 @@ import {
   FontWeight,
   Radii,
   Space,
-  UI_ICON_SIZE_16,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_28,
   UI_ICON_SIZE_48,
   UI_SIZE_2,
   UI_SIZE_4,
-  UI_SIZE_15,
   UI_SIZE_20,
   UI_SIZE_22,
   UI_SIZE_27,
-  UI_SIZE_30,
   UI_SIZE_48,
   UI_SIZE_54,
   UI_SIZE_60,
@@ -53,7 +49,6 @@ export default function BackupScreen() {
   const { colors } = theme
   const styles = useStyles()
 
-  const handleBack = useCallback(() => router.back(), [])
   const {
     importStatus,
     totalBlobBytes,
@@ -84,40 +79,22 @@ export default function BackupScreen() {
         ? t('backup.progress.creatingTitle')
         : t('backup.progress.restoringTitle')
 
-  const renderHeaderRight = useCallback(
-    () => (
-      <Pressable
-        onPress={handleBack}
-        hitSlop={8}
-        style={({ pressed }) => [styles.closeBtn, pressed && commonStyles.pressed]}
-      >
-        <X size={UI_ICON_SIZE_16} color={colors.text} strokeWidth={2.5} />
-      </Pressable>
-    ),
-    [handleBack, styles, colors.text],
-  )
-
   return (
     <RNView style={styles.container}>
-      <Stack.Screen options={{ headerRight: renderHeaderRight }} />
-
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
           <RNView style={styles.heroIcon}>
-            <CloudUpload size={UI_ICON_SIZE_48} color={colors.primary} strokeWidth={1.5} />
+            <SymbolIcon name="icloud.and.arrow.up" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
           <Text style={styles.heroTitle}>{t('backup.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('backup.hero.description')}</Text>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
-          entering={FadeInDown.duration(240).delay(60)}
-          style={styles.buttonsContainer}
-        >
+        <MotionView entering={FadeInDown.duration(240).delay(60)} style={styles.buttonsContainer}>
           <Pressable
             onPress={handleCreateBackup}
             disabled={isActive}
@@ -127,7 +104,12 @@ export default function BackupScreen() {
               isActive && styles.btnDisabled,
             ]}
           >
-            <CloudUpload size={UI_ICON_SIZE_18} color={colors.onPrimary} strokeWidth={2} />
+            <SymbolIcon
+              name="icloud.and.arrow.up"
+              size={UI_ICON_SIZE_18}
+              color={colors.onPrimary}
+              weight="medium"
+            />
             <Text style={styles.primaryBtnText}>{t('backup.createBackup')}</Text>
           </Pressable>
 
@@ -140,21 +122,26 @@ export default function BackupScreen() {
               isActive && styles.btnDisabled,
             ]}
           >
-            <RotateCcw size={UI_ICON_SIZE_18} color={colors.text} strokeWidth={2} />
+            <SymbolIcon
+              name="arrow.counterclockwise"
+              size={UI_ICON_SIZE_18}
+              color={colors.text}
+              weight="medium"
+            />
             <Text style={styles.secondaryBtnText}>{t('backup.restoreData')}</Text>
           </Pressable>
-        </Animated.View>
+        </MotionView>
 
-        <Animated.View
+        <MotionView
           entering={FadeInDown.duration(240).delay(120)}
           style={[commonThemedStyles.card, styles.recoveryCard]}
         >
           <RNView style={styles.recoveryHeader}>
-            <Lock size={UI_ICON_SIZE_18} color={colors.primary} strokeWidth={2} />
+            <SymbolIcon name="lock" size={UI_ICON_SIZE_18} color={colors.primary} weight="medium" />
             <Text style={styles.recoveryTitle}>{t('backup.protectedTitle')}</Text>
           </RNView>
           <Text style={styles.recoveryDesc}>{t('backup.protectedDesc')}</Text>
-        </Animated.View>
+        </MotionView>
 
         <BackupStatsSection
           lastBackupDate={lastBackupDate}
@@ -178,9 +165,18 @@ export default function BackupScreen() {
                 )}
                 <RNView style={styles.progressIconInner}>
                   {isImportDone || isExportDone ? (
-                    <Check size={UI_ICON_SIZE_28} color={colors.primary} strokeWidth={2} />
+                    <SymbolIcon
+                      name="checkmark"
+                      size={UI_ICON_SIZE_28}
+                      color={colors.primary}
+                      weight="medium"
+                    />
                   ) : (
-                    <CloudUpload size={UI_ICON_SIZE_28} color={colors.primary} strokeWidth={1.5} />
+                    <SymbolIcon
+                      name="icloud.and.arrow.up"
+                      size={UI_ICON_SIZE_28}
+                      color={colors.primary}
+                    />
                   )}
                 </RNView>
               </RNView>
@@ -284,13 +280,6 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
       lineHeight: FontSize.caption * 1.4,
     },
-    closeBtn: {
-      width: UI_SIZE_30,
-      height: UI_SIZE_30,
-      borderRadius: UI_SIZE_15,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     heroContainer: {
       alignItems: 'center',
       paddingVertical: Space.xl,
@@ -327,7 +316,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xl,
     },
     primaryBtn: {
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: Radii.lg,
       backgroundColor: theme.colors.primary,
       ...commonStyles.row,
@@ -341,7 +330,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.onPrimary,
     },
     secondaryBtn: {
-      height: UI_SIZE_54,
+      minHeight: UI_SIZE_54,
       borderRadius: Radii.lg,
       backgroundColor: theme.colors.controlBackground,
       borderWidth: 1,

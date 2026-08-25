@@ -16,7 +16,6 @@ import { useDispatch, useSelector } from 'react-redux'
 import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { router } from 'expo-router'
-import { Check, Globe, Link2, ScanLine, ShieldAlert, ShieldCheck, X } from 'lucide-react-native'
 
 import {
   clearStorage,
@@ -34,6 +33,8 @@ import {
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 
+import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
   FontSize,
@@ -189,7 +190,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     if (step === 'done') {
       return (
         <View style={styles.iconDone}>
-          <Check size={UI_ICON_SIZE_40} color={colors.success} strokeWidth={3} />
+          <SymbolIcon name="checkmark" size={UI_ICON_SIZE_40} color={colors.success} />
         </View>
       )
     }
@@ -197,14 +198,14 @@ export const PairingOverlay = memo(function PairingOverlay() {
     if (showPairingInput) {
       return (
         <View style={styles.iconGold}>
-          <Link2 size={UI_ICON_SIZE_40} color={colors.primary} />
+          <SymbolIcon name="link" size={UI_ICON_SIZE_40} color={colors.primary} />
         </View>
       )
     }
 
     return (
       <View style={styles.iconGold}>
-        <ShieldCheck size={UI_ICON_SIZE_40} color={colors.primary} />
+        <SymbolIcon name="checkmark.shield" size={UI_ICON_SIZE_40} color={colors.primary} />
       </View>
     )
   }, [step, showPairingInput, styles.iconDone, styles.iconGold, colors, styles.icon])
@@ -213,7 +214,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
     () => (
       <View style={styles.loaderWrap}>
         <View style={styles.syncIconWrapper}>
-          <Globe size={UI_ICON_SIZE_40} color={colors.primary} style={styles.globeIcon} />
+          <SymbolIcon
+            name="globe"
+            size={UI_ICON_SIZE_40}
+            color={colors.primary}
+            style={styles.globeIcon}
+          />
         </View>
         <ActivityIndicator size="large" color={colors.primary} style={StyleSheet.absoluteFill} />
       </View>
@@ -285,7 +291,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
       return (
         <View style={styles.cardInner}>
           <View style={[styles.icon, styles.errorIcon]}>
-            <ShieldAlert size={UI_ICON_SIZE_40} color={colors.error} strokeWidth={2.5} />
+            <SymbolIcon
+              name="exclamationmark.shield"
+              size={UI_ICON_SIZE_40}
+              color={colors.error}
+              weight="semibold"
+            />
           </View>
           <Text style={styles.title}>{t('pairing.overlay.deviceRemovedTitle')}</Text>
           <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
@@ -325,7 +336,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
       return (
         <View style={styles.cardInner}>
           <View style={[styles.icon, styles.errorIcon]}>
-            <ShieldAlert size={UI_ICON_SIZE_40} color={colors.error} strokeWidth={2.5} />
+            <SymbolIcon
+              name="exclamationmark.shield"
+              size={UI_ICON_SIZE_40}
+              color={colors.error}
+              weight="semibold"
+            />
           </View>
           <Text style={styles.title}>
             {isRejected
@@ -374,7 +390,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       return (
         <View style={styles.cardInner}>
           <View style={styles.iconGold}>
-            <Link2 size={UI_ICON_SIZE_40} color={colors.primary} />
+            <SymbolIcon name="link" size={UI_ICON_SIZE_40} color={colors.primary} />
           </View>
           <Text style={styles.title}>{t('pairing.overlay.mergeTitle')}</Text>
           <Text style={styles.sub}>{t('pairing.overlay.mergeDesc')}</Text>
@@ -400,7 +416,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
             <View style={styles.inputHeader}>
               <Text style={styles.inputLabelText}>{t('pairing.overlay.inviteCode')}</Text>
               <Pressable onPress={handleOpenScanner} style={styles.scanBtn}>
-                <ScanLine size={UI_ICON_SIZE_16} color={colors.primary} />
+                <SymbolIcon
+                  name="qrcode.viewfinder"
+                  size={UI_ICON_SIZE_16}
+                  color={colors.primary}
+                />
                 <Text style={styles.scanBtnText}>{t('pairing.overlay.scanBtn')}</Text>
               </Pressable>
             </View>
@@ -525,7 +545,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
   if (!isVisible) return null
 
   return (
-    <Animated.View style={fadeStyle}>
+    <MotionView style={fadeStyle}>
       {isAndroid ? (
         <RNView style={styles.androidScrim} />
       ) : (
@@ -575,7 +595,12 @@ export const PairingOverlay = memo(function PairingOverlay() {
               </View>
               <View style={styles.scannerHeader}>
                 <Pressable onPress={() => setIsScanning(false)} style={styles.scannerCloseBtn}>
-                  <X size={UI_ICON_SIZE_20} color={theme.colors.white} strokeWidth={2.2} />
+                  <SymbolIcon
+                    name="xmark"
+                    size={UI_ICON_SIZE_20}
+                    color={theme.colors.white}
+                    weight="semibold"
+                  />
                 </Pressable>
               </View>
               <View style={styles.scannerFooter}>
@@ -602,7 +627,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           )}
         </View>
       </Modal>
-    </Animated.View>
+    </MotionView>
   )
 })
 

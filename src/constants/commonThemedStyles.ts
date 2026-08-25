@@ -2,7 +2,15 @@ import { StyleSheet } from 'react-native'
 
 import { createThemedStylesheet, Theme } from '@/components/Themed'
 
-import { FontSize, FontWeight, LetterSpacing, Radii, Space, UI_SIZE_4 } from './commonStyles'
+import {
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Radii,
+  Space,
+  UI_SIZE_4,
+  UI_SIZE_50,
+} from './commonStyles'
 
 export const createThemedStyles = (theme: Theme) => {
   const isDark = theme.isDark
@@ -82,7 +90,8 @@ export const createThemedStyles = (theme: Theme) => {
       backgroundColor: theme.colors.cardSelected,
     },
     cancelBtn: {
-      height: 50,
+      minHeight: UI_SIZE_50,
+      paddingVertical: Space.sm,
       borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',

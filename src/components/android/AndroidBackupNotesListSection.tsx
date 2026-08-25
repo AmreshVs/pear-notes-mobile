@@ -1,14 +1,16 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_14, UI_ICON_SIZE_20, UI_SIZE_8, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_20 } from '@/constants/commonStyles'
-import { getMediaDisplayName } from '@/lib/backupUtils'
+import { androidRipple } from '@/lib/androidRipple'
+import { getMediaDisplayName,hexWithAlpha  } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -35,6 +37,8 @@ export function AndroidBackupNotesListSection({
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const [expandedNote, setExpandedNote] = useState<string | null>(null)
 
@@ -57,8 +61,9 @@ export function AndroidBackupNotesListSection({
           <Text style={styles.mediaSize}>{formatBytes(m.size)}</Text>
           <Pressable
             onPress={() => handleDeleteMedia(noteKey, m.path)}
-            hitSlop={8}
-            style={({ pressed }) => [{ opacity: pressed ? 0.5 : 1 }]}
+            android_ripple={rippleBorderless}
+            hitSlop={UI_SIZE_8}
+            
           >
             <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_14} color={c.onSurfaceVariant} />
           </Pressable>
@@ -73,7 +78,8 @@ export function AndroidBackupNotesListSection({
       <View key={note.key} style={styles.noteCard}>
         <Pressable
           onPress={() => setExpandedNote(isExpanded ? null : note.key)}
-          style={({ pressed }) => [styles.noteRow, pressed && { opacity: 0.7 }]}
+          android_ripple={ripple}
+          style={styles.noteRow}
         >
           <Text style={styles.noteTitle} numberOfLines={1}>
             {note.title || t('noteCard.untitled')}
@@ -113,20 +119,13 @@ export function AndroidBackupNotesListSection({
   if (notesStorageInfo.length === 0) return null
 
   return (
-    <Animated.View entering={FadeInDown.duration(240).delay(170)} style={styles.perNoteSection}>
+    <MotionView entering={FadeInDown.duration(240).delay(170)} style={styles.perNoteSection}>
       <Text style={styles.sectionTitle}>
         {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
       </Text>
       {notesStorageInfo.map(renderNoteItem)}
-    </Animated.View>
+    </MotionView>
   )
-}
-
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
 }
 
 const useListHooks = () => {

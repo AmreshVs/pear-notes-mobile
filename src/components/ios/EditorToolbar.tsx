@@ -1,7 +1,6 @@
 import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
-import * as Haptics from 'expo-haptics'
 import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
@@ -14,10 +13,10 @@ import {
   UI_ICON_SIZE_22,
   UI_SIZE_6,
   UI_SIZE_24,
-  UI_SIZE_42,
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
+import { hapticLight } from '@/lib/haptics'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
@@ -91,7 +90,7 @@ const AttachMenu = memo(function AttachMenu({
 }: AttachMenuProps) {
   const { t } = useTranslation()
   return ExpoUI ? (
-    <ExpoUI.Host matchContents style={{ width: UI_SIZE_44, height: 52 }}>
+    <ExpoUI.Host matchContents style={styles.attachHost}>
       <ExpoUI.Menu
         label={
           <ExpoUI.RNHostView matchContents>
@@ -171,7 +170,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   const { showEndFade, handleScrollLayout, handleContentSizeChange, handleScroll } =
     useScrollEdgeFade()
   const run = useCallback((action: () => void) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    hapticLight()
     action()
   }, [])
 
@@ -468,11 +467,15 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'flex-start',
     },
     toolbarBtn: {
-      width: UI_SIZE_42,
-      height: 52,
+      width: UI_SIZE_44,
+      height: UI_SIZE_44,
       justifyContent: 'center',
       alignItems: 'center',
-      borderRadius: Radii.md,
+      borderRadius: Radii.pill,
+    },
+    attachHost: {
+      width: UI_SIZE_44,
+      height: UI_SIZE_44,
     },
     toolbarBtnActive: {
       backgroundColor: theme.colors.primary + '33',

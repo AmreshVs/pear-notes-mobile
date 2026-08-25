@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { StyleSheet, useWindowDimensions, View } from 'react-native'
-import Animated, { Easing, Keyframe } from 'react-native-reanimated'
+import { Easing, Keyframe } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
 import { Image } from 'expo-image'
 
+import { MotionView } from '@/components/MotionView'
 import { commonStyles } from '@/constants/commonStyles'
 
 import { createThemedStylesheet } from './Themed'
@@ -42,7 +43,7 @@ export function AnimatedSplashOverlay() {
   if (!visible) return null
 
   return (
-    <Animated.View
+    <MotionView
       entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
         'worklet'
         if (finished) {
@@ -101,14 +102,14 @@ export function AnimatedIcon() {
 
   return (
     <View style={styles.iconContainer}>
-      <Animated.View entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
+      <MotionView entering={glowKeyframe.duration(60 * 1000 * 4)} style={styles.glow}>
         <Image style={styles.glow} source={require('@/assets/images/logo-glow.png')} />
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View entering={keyframe.duration(DURATION)} style={styles.background} />
-      <Animated.View style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
+      <MotionView entering={keyframe.duration(DURATION)} style={styles.background} />
+      <MotionView style={styles.imageContainer} entering={logoKeyframe.duration(DURATION)}>
         <Image style={styles.image} source={require('@/assets/images/expo-logo.png')} />
-      </Animated.View>
+      </MotionView>
     </View>
   )
 }

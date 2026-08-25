@@ -1,10 +1,11 @@
 import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View as RNView } from 'react-native'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
-import { Fingerprint, Lock, ScanFace, ShieldAlert } from 'lucide-react-native'
+import { FadeIn, FadeInDown } from 'react-native-reanimated'
 
 import { GlassView } from '@/components/GlassView'
+import { MotionView } from '@/components/MotionView'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import { useLockedNoteView } from '@/components/useLockedNoteView'
 import {
@@ -17,6 +18,8 @@ import {
   Space,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_40,
+  UI_SIZE_52,
+  UI_SIZE_200,
 } from '@/constants/commonStyles'
 
 export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId: string }) {
@@ -34,12 +37,20 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   const btnTextColor = colors.onPrimary
 
   const renderIcon = () => {
-    if (unavailable) return <ShieldAlert size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
+    if (unavailable)
+      return (
+        <SymbolIcon
+          name="exclamationmark.shield"
+          size={UI_ICON_SIZE_40}
+          color={iconColor}
+          weight="medium"
+        />
+      )
     if (biometric === 'face')
-      return <ScanFace size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
+      return <SymbolIcon name="faceid" size={UI_ICON_SIZE_40} color={iconColor} weight="medium" />
     if (biometric === 'fingerprint')
-      return <Fingerprint size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
-    return <Lock size={UI_ICON_SIZE_40} color={iconColor} strokeWidth={2} />
+      return <SymbolIcon name="touchid" size={UI_ICON_SIZE_40} color={iconColor} weight="medium" />
+    return <SymbolIcon name="lock" size={UI_ICON_SIZE_40} color={iconColor} weight="medium" />
   }
 
   const description = isPassword
@@ -78,7 +89,12 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
             <ActivityIndicator size="small" color={btnTextColor} />
           ) : (
             <>
-              <Lock size={UI_ICON_SIZE_20} color={btnTextColor} strokeWidth={2.5} />
+              <SymbolIcon
+                name="lock"
+                size={UI_ICON_SIZE_20}
+                color={btnTextColor}
+                weight="semibold"
+              />
               <Text style={styles.unlockBtnText}>{unlockLabel}</Text>
             </>
           )}
@@ -88,13 +104,13 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   )
 
   return (
-    <Animated.View entering={FadeIn.duration(220)} style={styles.container}>
-      <Animated.View entering={FadeInDown.duration(260)} style={styles.card}>
+    <MotionView entering={FadeIn.duration(220)} style={styles.container}>
+      <MotionView entering={FadeInDown.duration(260)} style={styles.card}>
         <GlassView intensity={50} style={styles.glass}>
           <RNView style={styles.inner}>{content}</RNView>
         </GlassView>
-      </Animated.View>
-    </Animated.View>
+      </MotionView>
+    </MotionView>
   )
 })
 
@@ -155,8 +171,9 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       gap: Space.sm,
-      height: 52,
-      minWidth: 200,
+      minHeight: UI_SIZE_52,
+      minWidth: UI_SIZE_200,
+      paddingVertical: Space.sm,
       paddingHorizontal: Space.xl,
       borderRadius: Radii.md,
       backgroundColor: theme.colors.primary,

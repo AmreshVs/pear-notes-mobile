@@ -1,10 +1,11 @@
 import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated'
+import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import { useLockedNoteView } from '@/components/useLockedNoteView'
 import {
@@ -67,8 +68,8 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
         : t('noteCard.unlock')
 
   return (
-    <Animated.View entering={FadeIn.duration(220)} style={styles.container}>
-      <Animated.View entering={FadeInDown.duration(260)} style={styles.card}>
+    <MotionView entering={FadeIn.duration(220)} style={styles.container}>
+      <MotionView entering={FadeInDown.duration(260)} style={styles.card}>
         <View style={[styles.iconChip, unavailable && styles.iconChipWarn]}>
           <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_40} color={iconColor} />
         </View>
@@ -93,8 +94,8 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
             )}
           </Pressable>
         ) : null}
-      </Animated.View>
-    </Animated.View>
+      </MotionView>
+    </MotionView>
   )
 })
 

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native'
+import { Alert, Pressable, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
@@ -43,6 +43,11 @@ import {
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import {
+  LIST_BATCH_RENDER_COUNT,
+  LIST_INITIAL_RENDER_COUNT,
+  LIST_WINDOW_SIZE,
+} from '@/constants/constants'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
@@ -92,7 +97,11 @@ export default function FolderNotesScreen() {
   )
 
   const groupedNotes = useMemo(
-    () => buildNoteSections(notes, t, isTrashFolder),
+    () =>
+      buildNoteSections(notes, t, isTrashFolder).map((section, sectionIndex) => ({
+        ...section,
+        sectionIndex,
+      })),
     [notes, t, isTrashFolder],
   )
 
@@ -301,28 +310,22 @@ export default function FolderNotesScreen() {
     ],
   )
 
-  const renderSection = useCallback(
-    (section: any, sectionIndex: number) => {
-      const renderItem = (note: any, index: number) =>
-        renderNoteCard(note, index, sectionIndex, section.data.length)
-
-      return (
-        <View key={section.title} style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
-          </View>
-          <View style={styles.listContainer}>{section.data.map(renderItem)}</View>
-        </View>
-      )
-    },
-    [
-      renderNoteCard,
-      styles.section,
-      styles.sectionHeader,
-      styles.listContainer,
-      commonThemedStyles.sectionCap,
-    ],
+  const renderItem = useCallback(
+    ({ item, index, section }: any) =>
+      renderNoteCard(item, index, section.sectionIndex, section.data.length),
+    [renderNoteCard],
   )
+
+  const renderSectionHeader = useCallback(
+    ({ section }: any) => (
+      <View style={section.sectionIndex === 0 ? styles.sectionHeader : styles.sectionHeaderSpaced}>
+        <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
+      </View>
+    ),
+    [styles.sectionHeader, styles.sectionHeaderSpaced, commonThemedStyles.sectionCap],
+  )
+
+  const noteKey = useCallback((item: any) => item.key, [])
 
   const listHeader = useMemo(
     () => (
@@ -486,14 +489,23 @@ export default function FolderNotesScreen() {
           </Stack.Toolbar.Menu>
         )}
       </Stack.Toolbar>
-      <ScrollView
+      <SectionList
+        sections={groupedNotes}
+        keyExtractor={noteKey}
+        renderItem={renderItem}
+        renderSectionHeader={renderSectionHeader}
+        stickySectionHeadersEnabled={false}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={listEmpty}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
-      >
-        {listHeader}
-        {groupedNotes.length === 0 ? listEmpty : groupedNotes.map(renderSection)}
-      </ScrollView>
+        keyboardShouldPersistTaps="handled"
+        removeClippedSubviews
+        initialNumToRender={LIST_INITIAL_RENDER_COUNT}
+        maxToRenderPerBatch={LIST_BATCH_RENDER_COUNT}
+        windowSize={LIST_WINDOW_SIZE}
+      />
     </View>
   )
 }
@@ -523,16 +535,16 @@ const useStyles = createThemedStylesheet((theme) => {
       marginLeft: Space.base,
       marginBottom: Space.sm,
     },
-    section: {
-      marginBottom: Space.sm,
-    },
     sectionHeader: {
       marginLeft: Space.base,
       paddingVertical: Space.xs,
       marginBottom: UI_SIZE_2,
     },
-    listContainer: {
-      backgroundColor: theme.colors.transparent,
+    sectionHeaderSpaced: {
+      marginLeft: Space.base,
+      paddingVertical: Space.xs,
+      marginBottom: UI_SIZE_2,
+      marginTop: Space.sm,
     },
     emptyStateWrapper: {
       alignItems: 'center',

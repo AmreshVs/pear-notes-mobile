@@ -17,8 +17,8 @@ import {
   useAudioPlayerStatus,
   useAudioRecorder,
 } from 'expo-audio'
-import * as Haptics from 'expo-haptics'
 
+import { hapticLight, hapticMedium, hapticSuccess } from '@/lib/haptics'
 import { useToast } from '@/providers/ToastProvider'
 
 const RECORDING_WINDOW_MS = 30000
@@ -239,7 +239,7 @@ export function useAudioRecorderModal({
   }, [player])
 
   const handleRecord = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
 
     if (!hasPermission) {
       const { granted } = await AudioModule.requestRecordingPermissionsAsync()
@@ -292,7 +292,7 @@ export function useAudioRecorderModal({
   }, [clearTimer, hasPermission, liveBars, recorder, stopPlayback, t])
 
   const handleStop = useCallback(async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)
+    hapticMedium()
     clearTimer()
     try {
       await recorder.stop()
@@ -315,7 +315,7 @@ export function useAudioRecorderModal({
   const handlePlayPause = useCallback(async () => {
     if (!recordedUri) return
 
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    hapticLight()
     try {
       if (playerStatus.playing) {
         stopPlayback()
@@ -343,7 +343,7 @@ export function useAudioRecorderModal({
     async (deltaSec: number) => {
       if (!recordedUri) return
 
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+      hapticLight()
       const currentMs = player.currentTime * 1000
       const newMs = Math.max(0, Math.min(recordedDuration || 1, currentMs + deltaSec * 1000))
 
@@ -431,7 +431,7 @@ export function useAudioRecorderModal({
       return
     }
 
-    await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
+    hapticSuccess()
     onDone(uri, durationRef.current || elapsed)
   }, [clearTimer, elapsed, onCancel, onDone, phase, recordedUri, recorder, stopPlayback])
 

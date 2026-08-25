@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -23,6 +23,7 @@ import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -58,6 +59,8 @@ import {
   UI_SIZE_200,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 import useSyncScreen from './useSyncScreen'
 
@@ -68,18 +71,14 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   onBackground: string
 }
 
-function hexWithAlpha(hex: string, alpha: number): string {
-  const a = Math.round(alpha * 255)
-    .toString(16)
-    .padStart(2, '0')
-  return hex.length === 7 ? `${hex}${a}` : hex
-}
-
 export default function AndroidSyncScreen() {
   const { t } = useTranslation()
   const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const styles = useStyles()
   const md3Styles = useMD3CommonStyles()
 
@@ -170,14 +169,16 @@ export default function AndroidSyncScreen() {
 
   return (
     <View style={styles.root}>
-      <StatusBar
-        barStyle={theme.isDark ? 'light-content' : 'dark-content'}
-        backgroundColor={c.background}
-      />
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.appBar}>
-        <Pressable onPress={() => router.back()} hitSlop={UI_SIZE_8} style={styles.iconBtn}>
+        <Pressable
+          onPress={() => router.back()}
+          android_ripple={rippleBorderless}
+          hitSlop={UI_SIZE_8}
+          style={styles.iconBtn}
+        >
           <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
         </Pressable>
         <Text style={styles.appBarTitle}>{t('sync.title')}</Text>
@@ -190,7 +191,7 @@ export default function AndroidSyncScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Animated.View entering={FadeIn.duration(Durations.fade)} style={styles.segRow}>
+          <MotionView entering={FadeIn.duration(Durations.fade)} style={styles.segRow}>
             <View style={styles.segTrack}>
               {(['link', 'devices'] as const).map((tValue) => {
                 const active = tab === tValue
@@ -198,6 +199,7 @@ export default function AndroidSyncScreen() {
                   <Pressable
                     key={tValue}
                     onPress={() => handleSelectTab(tValue)}
+                    android_ripple={ripple}
                     style={[styles.segPill, active && styles.segPillActive]}
                   >
                     <Text style={[styles.segLabel, active && styles.segLabelActive]}>
@@ -207,18 +209,19 @@ export default function AndroidSyncScreen() {
                 )
               })}
             </View>
-          </Animated.View>
+          </MotionView>
 
           {tab === 'link' ? (
-            <Animated.View
+            <MotionView
               key="link-tab"
               entering={FadeIn.duration(Durations.fade)}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.tabContent}
             >
               {!inviteCode ? (
-                <Animated.View
+                <MotionView
                   entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+                  style={styles.heroCard}
                 >
                   <View style={styles.heroSection}>
                     <View style={styles.heroCircle}>
@@ -243,11 +246,8 @@ export default function AndroidSyncScreen() {
                   <Pressable
                     onPress={handleGenerateInvite}
                     disabled={isLoading}
-                    style={({ pressed }) => [
-                      styles.generateBtn,
-                      pressed && commonStyles.pressed,
-                      isLoading && styles.btnDisabled,
-                    ]}
+                    android_ripple={ripplePrimary}
+                    style={[styles.generateBtn, isLoading && styles.btnDisabled]}
                   >
                     {isLoading && (
                       <ActivityIndicator size="small" color={loaderColor} style={styles.mr8} />
@@ -256,10 +256,11 @@ export default function AndroidSyncScreen() {
                       {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateBtn')}
                     </Text>
                   </Pressable>
-                </Animated.View>
+                </MotionView>
               ) : (
-                <Animated.View
+                <MotionView
                   entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+                  style={styles.heroCard}
                 >
                   <View style={styles.heroSection}>
                     <View style={styles.heroCircle}>
@@ -298,10 +299,10 @@ export default function AndroidSyncScreen() {
 
                   <Pressable
                     onPress={handleCopy}
-                    style={({ pressed }) => [
+                    android_ripple={ripplePrimary}
+                    style={[
                       styles.generateBtn,
                       copied ? styles.copyBtnSuccess : styles.copyBtnDefault,
-                      pressed && commonStyles.pressed,
                     ]}
                   >
                     <MaterialCommunityIcons
@@ -328,11 +329,11 @@ export default function AndroidSyncScreen() {
                     />
                     <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
                   </View>
-                </Animated.View>
+                </MotionView>
               )}
 
               {!isSynced && (
-                <Animated.View
+                <MotionView
                   entering={FadeInDown.duration(Durations.fade).delay(Durations.delayMedium)}
                   style={styles.invitePasteSection}
                 >
@@ -341,7 +342,11 @@ export default function AndroidSyncScreen() {
                       <Text style={styles.plusIcon}>+</Text>
                       <Text style={styles.invitePasteTitle}>{t('sync.alreadyHaveInvite')}</Text>
                     </View>
-                    <Pressable onPress={handleOpenScanner} style={styles.scanPillSmall}>
+                    <Pressable
+                      onPress={handleOpenScanner}
+                      android_ripple={ripple}
+                      style={styles.scanPillSmall}
+                    >
                       <MaterialCommunityIcons
                         name="qrcode-scan"
                         size={UI_ICON_SIZE_14}
@@ -358,7 +363,7 @@ export default function AndroidSyncScreen() {
                       onSubmitEditing={handleConnect}
                       onFocus={handleScrollToEnd}
                       placeholder={t('sync.paste.placeholder')}
-                      placeholderTextColor={hexWithAlpha(c.onSurfaceVariant, 0.4)}
+                      placeholderTextColor={c.onSurfaceVariant}
                       style={styles.pasteInput}
                       autoCapitalize="none"
                       autoCorrect={false}
@@ -366,9 +371,9 @@ export default function AndroidSyncScreen() {
                     <Pressable
                       onPress={handleConnect}
                       disabled={isLoading || !isValidInvite(pasteCode)}
-                      style={({ pressed }) => [
+                      android_ripple={ripplePrimary}
+                      style={[
                         styles.linkPillBtn,
-                        pressed && commonStyles.pressed,
                         (isLoading || !isValidInvite(pasteCode)) && styles.linkPillBtnDisabled,
                       ]}
                     >
@@ -379,10 +384,10 @@ export default function AndroidSyncScreen() {
                       )}
                     </Pressable>
                   </View>
-                </Animated.View>
+                </MotionView>
               )}
 
-              <Animated.View
+              <MotionView
                 entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
                 style={styles.footNoteRow}
               >
@@ -393,10 +398,10 @@ export default function AndroidSyncScreen() {
                   style={styles.warningIconMargin}
                 />
                 <Text style={styles.footNoteText}>{t('sync.footer')}</Text>
-              </Animated.View>
-            </Animated.View>
+              </MotionView>
+            </MotionView>
           ) : (
-            <Animated.View
+            <MotionView
               key="devices-tab"
               entering={FadeIn.duration(Durations.fade)}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
@@ -421,20 +426,17 @@ export default function AndroidSyncScreen() {
               {otherDevices.length > 0 ? (
                 <View style={styles.deviceList}>{otherDevices.map(renderOtherDeviceCard)}</View>
               ) : (
-                <Animated.View
-                  entering={FadeInDown.duration(Durations.fade)}
-                  style={styles.emptyCard}
-                >
+                <MotionView entering={FadeInDown.duration(Durations.fade)} style={styles.emptyCard}>
                   <MaterialCommunityIcons
                     name="cellphone-link"
                     size={UI_ICON_SIZE_30}
                     color={c.onSurfaceVariant}
                   />
                   <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
-                </Animated.View>
+                </MotionView>
               )}
 
-              <Animated.View
+              <MotionView
                 entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
                 style={styles.footNoteRow}
               >
@@ -445,8 +447,8 @@ export default function AndroidSyncScreen() {
                   style={styles.warningIconMargin}
                 />
                 <Text style={styles.footNoteText}>{t('sync.footer')}</Text>
-              </Animated.View>
-            </Animated.View>
+              </MotionView>
+            </MotionView>
           )}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -540,9 +542,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     tabContent: {
       ...commonStyles.flex1,
     },
+    heroCard: {
+      borderRadius: UI_SIZE_28,
+      paddingHorizontal: UI_SIZE_20,
+      paddingTop: UI_SIZE_28,
+      paddingBottom: UI_SIZE_24,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
     heroSection: {
       alignItems: 'center',
-      marginBottom: UI_SIZE_8,
       position: 'relative',
     },
     heroCircle: {
@@ -577,17 +585,17 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       lineHeight: UI_SIZE_22,
       textAlign: 'center',
       marginBottom: UI_SIZE_32,
-      paddingHorizontal: UI_SIZE_16,
+      paddingHorizontal: UI_SIZE_8,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
     },
     generateBtn: {
+      overflow: 'hidden',
       borderRadius: UI_SIZE_9999,
       width: '100%',
       ...commonStyles.row,
       justifyContent: 'center',
       paddingVertical: UI_SIZE_18,
-      marginBottom: UI_SIZE_12,
       backgroundColor: c.primary,
     },
     generateBtnText: {
@@ -710,6 +718,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurface,
     },
     scanPillSmall: {
+      overflow: 'hidden',
       ...commonStyles.row,
       gap: UI_SIZE_4,
       paddingVertical: UI_SIZE_6,
@@ -741,6 +750,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurface,
     },
     linkPillBtn: {
+      overflow: 'hidden',
       borderRadius: UI_SIZE_9999,
       paddingHorizontal: UI_SIZE_24,
       paddingVertical: UI_SIZE_12,

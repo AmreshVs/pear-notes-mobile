@@ -1,12 +1,14 @@
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import type { DownloadItem } from '@/components/backup/DownloadsSection'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -22,6 +24,7 @@ import {
   UI_SIZE_24,
   UI_SIZE_28,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { getDownloadStatusKey } from '@/utils/transferStatus'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -48,6 +51,7 @@ export function AndroidDownloadsSection({
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const renderDownloadItem = (download: DownloadItem, index: number) => {
     const pct =
@@ -83,8 +87,9 @@ export function AndroidDownloadsSection({
             {download.status === 'downloading' && !download.stalled && (
               <Pressable
                 onPress={() => onPause(download.url)}
-                hitSlop={8}
-                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+                android_ripple={rippleBorderless}
+                hitSlop={UI_SIZE_8}
+                style={styles.retryBtn}
               >
                 <MaterialCommunityIcons
                   name="pause-circle-outline"
@@ -96,8 +101,9 @@ export function AndroidDownloadsSection({
             {download.status === 'paused' && (
               <Pressable
                 onPress={() => onRetry(download.url)}
-                hitSlop={8}
-                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+                android_ripple={rippleBorderless}
+                hitSlop={UI_SIZE_8}
+                style={styles.retryBtn}
               >
                 <MaterialCommunityIcons
                   name="play-circle-outline"
@@ -109,8 +115,9 @@ export function AndroidDownloadsSection({
             {isStuck && (
               <Pressable
                 onPress={() => onRetry(download.url)}
-                hitSlop={8}
-                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+                android_ripple={rippleBorderless}
+                hitSlop={UI_SIZE_8}
+                style={styles.retryBtn}
               >
                 <MaterialCommunityIcons name="restore" size={UI_ICON_SIZE_18} color={c.primary} />
               </Pressable>
@@ -139,12 +146,12 @@ export function AndroidDownloadsSection({
   const groups = groupTransfersByNote(downloads, noteTitles, t('noteCard.untitled'))
 
   return (
-    <Animated.View entering={FadeInDown.duration(240)} style={styles.section}>
+    <MotionView entering={FadeInDown.duration(240)} style={styles.section}>
       <Text style={styles.sectionTitle}>
         {t('storage.syncingFromDevices')} ({downloads.length})
       </Text>
       <View style={styles.groupList}>{groups.map(renderGroup)}</View>
-    </Animated.View>
+    </MotionView>
   )
 }
 

@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useMemo } from 'react'
 import {
   ActivityIndicator,
   Pressable,
@@ -24,6 +24,7 @@ import {
   UI_SIZE_16,
   UI_SIZE_20,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 
 type UploadBannerProps = {
   fileName: string
@@ -43,6 +44,7 @@ export const UploadBanner = memo(function UploadBanner({
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors
+  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const showProgress = typeof progress === 'number'
 
   return (
@@ -76,8 +78,9 @@ export const UploadBanner = memo(function UploadBanner({
       {showProgress && onCancel ? (
         <Pressable
           onPress={onCancel}
+          android_ripple={rippleBorderless}
           hitSlop={UI_SIZE_12}
-          style={({ pressed }) => [styles.uploadCancel, pressed && styles.uploadCancelPressed]}
+          style={styles.uploadCancel}
         >
           <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_20} color={c.onSurface} />
         </Pressable>
@@ -153,6 +156,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       backgroundColor: c.primary,
     },
     uploadCancel: {
+      overflow: 'hidden',
       width: UI_SIZE_20 + UI_SIZE_12,
       height: UI_SIZE_20 + UI_SIZE_12,
       marginLeft: UI_SIZE_6,

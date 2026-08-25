@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
-import Animated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
@@ -115,11 +116,11 @@ export function BackgroundSyncSection() {
 
   return (
     <>
-      <Animated.View entering={FadeIn.duration(220).delay(120)}>
+      <MotionView entering={FadeIn.duration(220).delay(120)}>
         <Text style={md3Styles.settingsSectionCapSpaced}>{t('sync.backgroundSync.header')}</Text>
-      </Animated.View>
+      </MotionView>
 
-      <Animated.View
+      <MotionView
         entering={FadeInDown.duration(240).delay(140)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.card}
@@ -127,7 +128,7 @@ export function BackgroundSyncSection() {
         <Text style={styles.cardTitle}>{t('sync.backgroundSync.modeLabel')}</Text>
         <View style={styles.segContainer}>{MODES.map(renderSegment)}</View>
         <Text style={styles.cardDesc}>{t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}Desc`)}</Text>
-      </Animated.View>
+      </MotionView>
     </>
   )
 }

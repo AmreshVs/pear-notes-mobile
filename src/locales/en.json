@@ -505,6 +505,7 @@
     "audioRecording": "Audio Recording"
   },
   "common": {
+    "back": "Back",
     "cancel": "Cancel",
     "clear": "Clear",
     "close": "Close",
@@ -517,6 +518,7 @@
     "restart": "Restart",
     "download": "Download",
     "delete": "Delete",
+    "done": "Done",
     "play": "Play"
   },
   "permissions": {

@@ -1,6 +1,6 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, Switch, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
+import { Switch } from 'react-native-paper'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -17,7 +17,6 @@ export function MediaSyncSection() {
   const { t } = useTranslation()
   const styles = useStyles()
   const md3Styles = useMD3CommonStyles()
-  const c = useMD3Theme().colors
   const {
     mediaPaused,
     holdOnCellular,
@@ -39,11 +38,6 @@ export function MediaSyncSection() {
           ? t('settings.mediaSync.offline')
           : t('settings.mediaSync.connectionUnknown')
 
-  const trackColor = useMemo(
-    () => ({ false: hexWithAlpha(c.onSurface, 0.12), true: c.primary }),
-    [c.onSurface, c.primary],
-  )
-
   return (
     <View style={styles.section}>
       <Text style={md3Styles.settingsSectionCap}>{t('settings.mediaSync.title')}</Text>
@@ -53,7 +47,7 @@ export function MediaSyncSection() {
             <Text style={styles.rowTitle}>{t('settings.mediaSync.pauseMedia')}</Text>
             <Text style={styles.rowDesc}>{t('settings.mediaSync.pauseMediaDesc')}</Text>
           </View>
-          <Switch value={mediaPaused} onValueChange={toggleMediaPaused} trackColor={trackColor} />
+          <Switch value={mediaPaused} onValueChange={toggleMediaPaused} />
         </View>
 
         <View style={styles.divider} />
@@ -63,11 +57,7 @@ export function MediaSyncSection() {
             <Text style={styles.rowTitle}>{t('settings.mediaSync.holdOnCellular')}</Text>
             <Text style={styles.rowDesc}>{connectionLabel}</Text>
           </View>
-          <Switch
-            value={holdOnCellular}
-            onValueChange={toggleHoldOnCellular}
-            trackColor={trackColor}
-          />
+          <Switch value={holdOnCellular} onValueChange={toggleHoldOnCellular} />
         </View>
       </View>
       {isHeld && <Text style={styles.heldNotice}>{t('settings.mediaSync.heldNotice')}</Text>}

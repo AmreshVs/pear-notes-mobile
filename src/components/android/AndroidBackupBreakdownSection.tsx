@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
-import Animated, { FadeInDown } from 'react-native-reanimated'
+import { FadeInDown } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_20, UI_SIZE_8,UI_SIZE_12, UI_SIZE_20, UI_SIZE_24, UI_SIZE_28 } from '@/constants/commonStyles'
 
@@ -50,7 +51,7 @@ export function AndroidBackupBreakdownSection({
   if (!hasItems) return null
 
   return (
-    <Animated.View entering={FadeInDown.duration(240).delay(160)} style={styles.breakdownSection}>
+    <MotionView entering={FadeInDown.duration(240).delay(160)} style={styles.breakdownSection}>
       <Text style={styles.sectionTitle}>{t('backup.breakdownByType')}</Text>
       <View style={styles.breakdownCard}>
         {buckets.image.count > 0 && (
@@ -110,7 +111,7 @@ export function AndroidBackupBreakdownSection({
           </View>
         )}
       </View>
-    </Animated.View>
+    </MotionView>
   )
 }
 
