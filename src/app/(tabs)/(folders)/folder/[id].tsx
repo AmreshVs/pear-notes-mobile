@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
+import {
+  Alert,
+  Platform,
+  Pressable,
+  SectionList,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
@@ -54,6 +61,11 @@ import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 import { buildNoteSections } from '@/utils/noteSections'
 import { getPreview } from '@/utils/noteUtils'
+
+// iOS 26 can host the search field inside the bottom toolbar, letting the new note
+// button sit right next to it. Older versions keep the search bar in the header.
+const SUPPORTS_TOOLBAR_SEARCH =
+  Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26
 
 export default function FolderNotesScreen() {
   const { height } = useWindowDimensions()
@@ -465,6 +477,8 @@ export default function FolderNotesScreen() {
           headerSearchBarOptions: {
             placeholder: t('folderView.searchPlaceholder'),
             hideWhenScrolling: false,
+            placement: SUPPORTS_TOOLBAR_SEARCH ? 'integrated' : 'automatic',
+            allowToolbarIntegration: true,
             textColor: colors.text,
             hintTextColor: colors.textSecondary,
             headerIconColor: colors.textSecondary,
@@ -474,11 +488,8 @@ export default function FolderNotesScreen() {
           },
         }}
       />
-      <Stack.Toolbar placement="right">
-        {!isTrashFolder && (
-          <Stack.Toolbar.Button icon="square.and.pencil" onPress={handleCreateNote} />
-        )}
-        {!folder?.isSystem && (
+      {!folder?.isSystem && (
+        <Stack.Toolbar placement="right">
           <Stack.Toolbar.Menu icon="ellipsis">
             <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
               {t('folders.renameTitle')}
@@ -487,8 +498,21 @@ export default function FolderNotesScreen() {
               {t('folders.deleteTitle')}
             </Stack.Toolbar.MenuAction>
           </Stack.Toolbar.Menu>
-        )}
-      </Stack.Toolbar>
+        </Stack.Toolbar>
+      )}
+      {(!isTrashFolder || SUPPORTS_TOOLBAR_SEARCH) && (
+        <Stack.Toolbar placement="bottom">
+          <Stack.Toolbar.SearchBarSlot />
+          <Stack.Toolbar.Spacer />
+          {!isTrashFolder && (
+            <Stack.Toolbar.Button
+              icon="square.and.pencil"
+              accessibilityLabel={t('folderView.empty.newNoteBtn')}
+              onPress={handleCreateNote}
+            />
+          )}
+        </Stack.Toolbar>
+      )}
       <SectionList
         sections={groupedNotes}
         keyExtractor={noteKey}
