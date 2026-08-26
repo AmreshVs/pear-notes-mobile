@@ -1,21 +1,27 @@
 {
-  "fill" : "automatic",
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.90748,0.69987,-0.06400,1.00000",
+      "display-p3:0.89307,0.55566,0.20325,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 1
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.3
+      }
+    }
+  },
   "groups" : [
     {
       "layers" : [
         {
           "glass" : false,
-          "hidden" : false,
-          "image-name-specializations" : [
-            {
-              "value" : "pear-notes-logo.png"
-            },
-            {
-              "appearance" : "dark",
-              "value" : "pear-notes-logo-dark.png"
-            }
-          ],
-          "name" : "pear-notes-logo-dark"
+          "image-name" : "pear.png",
+          "name" : "pear"
         }
       ],
       "shadow" : {
@@ -28,9 +34,33 @@
       }
     },
     {
+      "hidden" : false,
       "layers" : [
-
+        {
+          "image-name" : "Line1.png",
+          "name" : "Line1"
+        },
+        {
+          "image-name" : "Line2.png",
+          "name" : "Line2"
+        },
+        {
+          "image-name" : "Line3.png",
+          "name" : "Line3"
+        },
+        {
+          "image-name" : "Line4.png",
+          "name" : "Line4"
+        }
       ],
+      "name" : "Lines",
+      "position" : {
+        "scale" : 0.96,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
@@ -41,9 +71,27 @@
       }
     },
     {
+      "hidden" : false,
       "layers" : [
-
+        {
+          "image-name" : "Note1.png",
+          "name" : "Note1",
+          "opacity" : 1
+        },
+        {
+          "image-name" : "Note2.png",
+          "name" : "Note2",
+          "opacity" : 0.8
+        }
       ],
+      "name" : "Note",
+      "position" : {
+        "scale" : 0.96,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
@@ -58,9 +106,6 @@
     "circles" : [
       "watchOS"
     ],
-    "squares" : [
-      "iOS",
-      "macOS"
-    ]
+    "squares" : "shared"
   }
 }
