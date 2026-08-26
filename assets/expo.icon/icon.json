@@ -1,35 +1,111 @@
 {
-  "fill": {
-    "automatic-gradient": "extended-srgb:0.00000,0.47843,1.00000,1.00000"
+  "fill" : {
+    "linear-gradient" : [
+      "display-p3:0.90748,0.69987,-0.06400,1.00000",
+      "display-p3:0.89307,0.55566,0.20325,1.00000"
+    ],
+    "orientation" : {
+      "start" : {
+        "x" : 0.5,
+        "y" : 1
+      },
+      "stop" : {
+        "x" : 0.5,
+        "y" : 0.3
+      }
+    }
   },
-  "groups": [
+  "groups" : [
     {
-      "layers": [
+      "layers" : [
         {
-          "image-name": "expo-symbol 2.svg",
-          "name": "expo-symbol 2",
-          "position": {
-            "scale": 1,
-            "translation-in-points": [1.1008400065293245e-5, -16.046875]
-          }
-        },
-        {
-          "image-name": "grid.png",
-          "name": "grid"
+          "glass" : false,
+          "image-name" : "pear.png",
+          "name" : "pear"
         }
       ],
-      "shadow": {
-        "kind": "neutral",
-        "opacity": 0.5
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
       },
-      "translucency": {
-        "enabled": true,
-        "value": 0.5
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "hidden" : false,
+      "layers" : [
+        {
+          "image-name" : "Line1.png",
+          "name" : "Line1"
+        },
+        {
+          "image-name" : "Line2.png",
+          "name" : "Line2"
+        },
+        {
+          "image-name" : "Line3.png",
+          "name" : "Line3"
+        },
+        {
+          "image-name" : "Line4.png",
+          "name" : "Line4"
+        }
+      ],
+      "name" : "Lines",
+      "position" : {
+        "scale" : 0.96,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
+      }
+    },
+    {
+      "hidden" : false,
+      "layers" : [
+        {
+          "image-name" : "Note1.png",
+          "name" : "Note1",
+          "opacity" : 1
+        },
+        {
+          "image-name" : "Note2.png",
+          "name" : "Note2",
+          "opacity" : 0.8
+        }
+      ],
+      "name" : "Note",
+      "position" : {
+        "scale" : 0.96,
+        "translation-in-points" : [
+          0,
+          0
+        ]
+      },
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.5
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.5
       }
     }
   ],
-  "supported-platforms": {
-    "circles": ["watchOS"],
-    "squares": "shared"
+  "supported-platforms" : {
+    "circles" : [
+      "watchOS"
+    ],
+    "squares" : "shared"
   }
 }

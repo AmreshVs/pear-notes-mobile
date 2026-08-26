@@ -8,6 +8,7 @@
     "scheme": "pearnotes",
     "userInterfaceStyle": "automatic",
     "ios": {
+      "icon": "./assets/expo.icon",
       "supportsTablet": true,
       "bundleIdentifier": "com.amreshvs.pear-notes",
       "appleTeamId": "DRQUZF86A2",
