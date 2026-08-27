@@ -392,7 +392,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = F4B5F5BACA37C55C32ACF26B /* Pods-pearnotes.debug.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Pear notes Dev";
+				APP_DISPLAY_NAME = "Pear Notes Dev";
 				ASSETCATALOG_COMPILER_APPICON_NAME = expo;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = pearnotes/pearnotes.entitlements;
@@ -433,7 +433,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 58E94FA66FC710E6C25923E2 /* Pods-pearnotes.release.xcconfig */;
 			buildSettings = {
-				APP_DISPLAY_NAME = "Pear notes";
+				APP_DISPLAY_NAME = "Pear Notes";
 				ASSETCATALOG_COMPILER_APPICON_NAME = expo;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = pearnotes/pearnotes.entitlements;

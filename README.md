@@ -1,4 +1,4 @@
-# Pear notes
+# Pear Notes
 
 A high-performance decentralized mobile application built with [Pear Expo Starter](https://github.com/AmreshVs/expo-bare-template).
 
