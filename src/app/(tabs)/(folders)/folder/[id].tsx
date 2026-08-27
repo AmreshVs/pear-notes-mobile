@@ -1,9 +1,9 @@
+import * as Clipboard from 'expo-clipboard'
+import { router, Stack, useLocalSearchParams } from 'expo-router'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
-import * as Clipboard from 'expo-clipboard'
-import { router, Stack, useLocalSearchParams } from 'expo-router'
 
 import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
 import {
@@ -457,8 +457,8 @@ export default function FolderNotesScreen() {
       headerSearchBarOptions: {
         placeholder: t('folderView.searchPlaceholder'),
         hideWhenScrolling: false,
-        placement: SUPPORTS_TOOLBAR_SEARCH ? ('integrated' as const) : ('automatic' as const),
-        allowToolbarIntegration: false,
+        placement: 'automatic',
+        allowToolbarIntegration: true,
         textColor: colors.text,
         hintTextColor: colors.textSecondary,
         headerIconColor: colors.textSecondary,
