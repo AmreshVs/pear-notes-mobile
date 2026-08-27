@@ -25,6 +25,7 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_12,
+  UI_ICON_SIZE_22,
   UI_SIZE_6,
   UI_SIZE_8,
   UI_SIZE_56,
@@ -69,6 +70,8 @@ interface NoteCardProps {
   rawImageUrl?: string | null
   folderName?: string
   selected?: boolean
+  selecting?: boolean
+  checked?: boolean
   isLast?: boolean
   animationIndex?: number
   locked?: boolean
@@ -80,6 +83,7 @@ interface NoteCardProps {
   onTogglePin?: (id: string, currentlyPinned: boolean) => void
   moveFolders?: MoveFolder[]
   onMoveTo?: (id: string, folderId: string) => void
+  onToggleSelect?: (id: string) => void
 }
 
 const MoveFolderButton = memo(function MoveFolderButton({
@@ -147,6 +151,8 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.rawImageUrl === next.rawImageUrl &&
     prev.folderName === next.folderName &&
     prev.selected === next.selected &&
+    prev.selecting === next.selecting &&
+    prev.checked === next.checked &&
     prev.isLast === next.isLast &&
     prev.locked === next.locked &&
     prev.pinned === next.pinned &&
@@ -156,7 +162,8 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.onCopy === next.onCopy &&
     prev.onToggleLock === next.onToggleLock &&
     prev.onTogglePin === next.onTogglePin &&
-    prev.onMoveTo === next.onMoveTo
+    prev.onMoveTo === next.onMoveTo &&
+    prev.onToggleSelect === next.onToggleSelect
   )
 }
 
@@ -169,6 +176,8 @@ export const NoteCard = memo(function NoteCard({
   rawImageUrl,
   folderName,
   selected,
+  selecting,
+  checked,
   isLast,
   animationIndex = 0,
   locked,
@@ -180,6 +189,7 @@ export const NoteCard = memo(function NoteCard({
   onTogglePin,
   moveFolders,
   onMoveTo,
+  onToggleSelect,
 }: NoteCardProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -198,7 +208,13 @@ export const NoteCard = memo(function NoteCard({
   )
   const isPearTheme = useAndroidColorTheme() === 'pear'
 
-  const handlePress = useCallback(() => onPress(id), [onPress, id])
+  const handlePress = useCallback(() => {
+    if (selecting) {
+      onToggleSelect?.(id)
+      return
+    }
+    onPress(id)
+  }, [selecting, onToggleSelect, onPress, id])
   const handleThumbError = useCallback(() => setThumbError(true), [])
   const handleDelete = useCallback(() => onDelete?.(id), [onDelete, id])
   const handleCopy = useCallback(() => onCopy?.(id), [onCopy, id])
@@ -215,7 +231,7 @@ export const NoteCard = memo(function NoteCard({
     ({ pressed }: { pressed: boolean }): ViewStyle[] => [
       styles.container,
       !isLast ? styles.borderBottom : {},
-      selected
+      selected || checked
         ? styles.containerSelected
         : pressed
           ? styles.containerPressed
@@ -223,6 +239,7 @@ export const NoteCard = memo(function NoteCard({
     ],
     [
       selected,
+      checked,
       styles.container,
       styles.containerSelected,
       styles.containerPressed,
@@ -304,6 +321,15 @@ export const NoteCard = memo(function NoteCard({
         onAccessibilityAction={handleAccessibilityAction}
       >
         <RNView style={styles.row}>
+          {selecting && (
+            <RNView style={styles.selectionIndicator}>
+              <SymbolIcon
+                name={checked ? 'checkmark.circle.fill' : 'circle'}
+                size={UI_ICON_SIZE_22}
+                color={checked ? colors.primary : colors.textMuted}
+              />
+            </RNView>
+          )}
           <RNView style={styles.content}>
             <RNView style={styles.titleRow}>
               {pinned && <SymbolIcon name="pin" size={UI_ICON_SIZE_12} color={lockIconColor} />}
@@ -390,7 +416,7 @@ export const NoteCard = memo(function NoteCard({
     </MotionView>
   )
 
-  const hasActions = onDelete || onCopy || onMoveTo || onToggleLock || onTogglePin
+  const hasActions = !selecting && (onDelete || onCopy || onMoveTo || onToggleLock || onTogglePin)
 
   if (!ExpoUI || !hasActions) {
     return card
@@ -471,6 +497,9 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     content: {
       ...commonStyles.flex1,
+    },
+    selectionIndicator: {
+      justifyContent: 'center',
     },
     titleRow: {
       flexDirection: 'row',

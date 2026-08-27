@@ -1,17 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Alert,
-  Platform,
-  Pressable,
-  SectionList,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native'
+import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { SymbolView } from 'expo-symbols'
 
 import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
 import {
@@ -23,9 +15,11 @@ import {
 import {
   createNote,
   deleteNote,
+  deleteNotes,
   getFilteredNotes,
   getNotes,
   getSelectedNote,
+  moveNotes,
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -35,7 +29,9 @@ import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
+import { FolderEmptyState } from '@/components/FolderEmptyState'
 import { NoteCard } from '@/components/NoteCard'
+import { NoteSelectionToolbar } from '@/components/NoteSelectionToolbar'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
   commonStyles,
@@ -43,10 +39,7 @@ import {
   FontWeight,
   LetterSpacing,
   Space,
-  UI_ICON_SIZE_16,
-  UI_ICON_SIZE_44,
   UI_SIZE_2,
-  UI_SIZE_4,
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -62,8 +55,8 @@ import { getNoteMetadata } from '@/utils/noteMetadata'
 import { buildNoteSections } from '@/utils/noteSections'
 import { getPreview } from '@/utils/noteUtils'
 
-// iOS 26 can host the search field inside the bottom toolbar, letting the new note
-// button sit right next to it. Older versions keep the search bar in the header.
+import { useNoteSelection } from './useNoteSelection'
+
 const SUPPORTS_TOOLBAR_SEARCH =
   Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26
 
@@ -71,8 +64,7 @@ export default function FolderNotesScreen() {
   const { height } = useWindowDimensions()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t } = useTranslation()
-  const theme = useTheme()
-  const { colors, isDark } = theme
+  const { colors, isDark } = useTheme()
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
@@ -117,6 +109,20 @@ export default function FolderNotesScreen() {
     [notes, t, isTrashFolder],
   )
 
+  const orderedKeys = useMemo(() => notes.map((note: any) => note.key), [notes])
+
+  const {
+    isSelecting,
+    selectedKeys,
+    selectedCount,
+    isAllSelected,
+    toggleSelect,
+    startSelecting,
+    selectAll,
+    clearSelection,
+    exitSelection,
+  } = useNoteSelection(id as string, orderedKeys)
+
   const handleSelectNote = useCallback(
     (noteId: string) => {
       dispatch(setSelectedNote(noteId as any))
@@ -124,6 +130,54 @@ export default function FolderNotesScreen() {
     },
     [dispatch, openNote],
   )
+
+  const handleStartSelecting = useCallback(() => {
+    hapticLight()
+    startSelecting()
+  }, [startSelecting])
+
+  const handleToggleSelect = useCallback(
+    (noteId: string) => {
+      hapticLight()
+      toggleSelect(noteId)
+    },
+    [toggleSelect],
+  )
+
+  const handleBulkMove = useCallback(
+    (folderId: string) => {
+      hapticSuccess()
+      dispatch(moveNotes({ keys: selectedKeys, folderKey: folderId } as any))
+      exitSelection()
+    },
+    [dispatch, selectedKeys, exitSelection],
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    const count = selectedKeys.length
+    if (count === 0) return
+    const isTrash = id === RECENTLY_DELETED_KEY
+    Alert.alert(
+      isTrash
+        ? t('folderView.selection.confirmPermanentDeleteTitle', { count })
+        : t('folderView.selection.confirmDeleteTitle', { count }),
+      isTrash
+        ? t('folderView.selection.confirmPermanentDeleteBody')
+        : t('folderView.selection.confirmDeleteBody'),
+      [
+        { text: t('folders.buttons.cancel'), style: 'cancel' },
+        {
+          text: t('folders.buttons.delete'),
+          style: 'destructive',
+          onPress: () => {
+            hapticWarning()
+            dispatch(deleteNotes(selectedKeys as any))
+            exitSelection()
+          },
+        },
+      ],
+    )
+  }, [dispatch, selectedKeys, exitSelection, id, t])
 
   const handleCreateNote = useCallback(() => {
     hapticLight()
@@ -294,11 +348,14 @@ export default function FolderNotesScreen() {
           rawImageUrl={metadata.imageUrl}
           folderName={folderName}
           selected={false}
+          selecting={isSelecting}
+          checked={selectedKeys.includes(note.key)}
           isLast={isLast}
           animationIndex={animationIndex}
           locked={isLocked}
           pinned={isPinned}
           onPress={handleSelectNote}
+          onToggleSelect={handleToggleSelect}
           onDelete={handleDeleteNote}
           onCopy={handleCopyNoteById}
           onToggleLock={handleToggleLockNote}
@@ -311,6 +368,9 @@ export default function FolderNotesScreen() {
     [
       allFolders,
       folder?.id,
+      isSelecting,
+      selectedKeys,
+      handleToggleSelect,
       handleSelectNote,
       handleDeleteNote,
       handleCopyNoteById,
@@ -345,7 +405,9 @@ export default function FolderNotesScreen() {
         <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
         <View style={styles.headerInfo}>
           <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
-            {t('folderView.noteCount', { count: notes.length })}
+            {isSelecting
+              ? t('folderView.selection.selectedCount', { count: selectedCount })
+              : t('folderView.noteCount', { count: notes.length })}
           </Text>
         </View>
       </>
@@ -353,6 +415,8 @@ export default function FolderNotesScreen() {
     [
       folder?.name,
       notes.length,
+      isSelecting,
+      selectedCount,
       t,
       styles.pageTitle,
       styles.headerInfo,
@@ -362,82 +426,15 @@ export default function FolderNotesScreen() {
 
   const listEmpty = useMemo(
     () => (
-      <View style={emptyStateStyle}>
-        {searchQuery.trim().length > 0 ? (
-          <>
-            <SymbolView
-              name="magnifyingglass"
-              size={UI_ICON_SIZE_44}
-              tintColor={colors.textMuted}
-            />
-            <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
-              {t('folderView.empty.noMatchesTitle')}
-            </Text>
-            <Text style={commonThemedStyles.emptySubtitle}>
-              {t('folderView.empty.noMatchesSubtitle')}
-            </Text>
-          </>
-        ) : isTrashFolder ? (
-          <>
-            <SymbolView name="trash" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
-            <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
-              {t('folderView.empty.trashEmptyTitle')}
-            </Text>
-            <Text style={commonThemedStyles.emptySubtitle}>
-              {t('folderView.empty.trashEmptySubtitle')}
-            </Text>
-          </>
-        ) : localPreferences['isSynced'] !== true && allNotes.length === 0 ? (
-          <>
-            <SymbolView name="book.closed" size={UI_ICON_SIZE_44} tintColor={colors.primary} />
-            <Text style={styles.onboardingTitle}>{t('folderView.empty.onboardingTitle')}</Text>
-            <Text style={commonThemedStyles.emptySubtitle}>
-              {t('folderView.empty.onboardingSubtitle')}
-            </Text>
-            <View style={styles.ctaRow}>
-              <Pressable
-                onPress={handleCreateNote}
-                style={({ pressed }) => [styles.primaryBtn, pressed && commonStyles.pressed]}
-              >
-                <SymbolView name="plus" size={UI_ICON_SIZE_16} tintColor={colors.onPrimary} />
-                <Text style={styles.primaryBtnText}>{t('folderView.empty.newNoteBtn')}</Text>
-              </Pressable>
-              <Pressable
-                onPress={handleLinkDevice}
-                style={({ pressed }) => [styles.secondaryBtn, pressed && commonStyles.pressed]}
-              >
-                <SymbolView
-                  name="laptopcomputer.and.iphone"
-                  size={UI_ICON_SIZE_16}
-                  tintColor={colors.primary}
-                />
-                <Text style={styles.secondaryBtnText}>{t('folderView.empty.connectBtn')}</Text>
-              </Pressable>
-            </View>
-            <Pressable
-              onPress={handleRestoreBackup}
-              style={({ pressed }) => [styles.tertiaryBtn, pressed && commonStyles.pressed]}
-            >
-              <SymbolView
-                name="arrow.clockwise"
-                size={UI_ICON_SIZE_16}
-                tintColor={colors.textMuted}
-              />
-              <Text style={styles.tertiaryBtnText}>{t('folderView.empty.restoreBtn')}</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            <SymbolView name="note.text" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
-            <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
-              {t('folderView.empty.noNotesTitle')}
-            </Text>
-            <Text style={commonThemedStyles.emptySubtitle}>
-              {t('folderView.empty.noNotesSubtitle')}
-            </Text>
-          </>
-        )}
-      </View>
+      <FolderEmptyState
+        containerStyle={emptyStateStyle}
+        hasSearchQuery={searchQuery.trim().length > 0}
+        isTrash={isTrashFolder}
+        showOnboarding={localPreferences['isSynced'] !== true && allNotes.length === 0}
+        onCreateNote={handleCreateNote}
+        onLinkDevice={handleLinkDevice}
+        onRestoreBackup={handleRestoreBackup}
+      />
     ),
     [
       emptyStateStyle,
@@ -445,73 +442,82 @@ export default function FolderNotesScreen() {
       isTrashFolder,
       localPreferences,
       allNotes.length,
-      colors.textMuted,
-      colors.primary,
-      colors.onPrimary,
-      commonThemedStyles.emptyTitle,
-      commonThemedStyles.emptySubtitle,
-      styles.emptyTitle,
-      styles.onboardingTitle,
-      styles.ctaRow,
-      styles.primaryBtn,
-      styles.primaryBtnText,
-      styles.secondaryBtn,
-      styles.secondaryBtnText,
-      styles.tertiaryBtn,
-      styles.tertiaryBtnText,
       handleCreateNote,
       handleLinkDevice,
       handleRestoreBackup,
-      t,
     ],
+  )
+
+  const screenOptions = useMemo(
+    () => ({
+      headerTitle: '',
+      headerLargeTitle: false,
+      headerTransparent: true,
+      headerBlurEffect: isDark ? ('dark' as const) : ('light' as const),
+      headerSearchBarOptions: {
+        placeholder: t('folderView.searchPlaceholder'),
+        hideWhenScrolling: false,
+        placement: SUPPORTS_TOOLBAR_SEARCH ? ('integrated' as const) : ('automatic' as const),
+        allowToolbarIntegration: false,
+        textColor: colors.text,
+        hintTextColor: colors.textSecondary,
+        headerIconColor: colors.textSecondary,
+        onChangeText: (event: { nativeEvent: { text: string } }) => {
+          dispatch(setSearchQuery(event.nativeEvent.text as any))
+        },
+      },
+    }),
+    [isDark, t, colors.text, colors.textSecondary, dispatch],
   )
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          headerTitle: '',
-          headerLargeTitle: false,
-          headerTransparent: true,
-          headerBlurEffect: isDark ? 'dark' : 'light',
-          headerSearchBarOptions: {
-            placeholder: t('folderView.searchPlaceholder'),
-            hideWhenScrolling: false,
-            placement: SUPPORTS_TOOLBAR_SEARCH ? 'integrated' : 'automatic',
-            allowToolbarIntegration: true,
-            textColor: colors.text,
-            hintTextColor: colors.textSecondary,
-            headerIconColor: colors.textSecondary,
-            onChangeText: (event) => {
-              dispatch(setSearchQuery(event.nativeEvent.text))
-            },
-          },
-        }}
-      />
-      {!folder?.isSystem && (
-        <Stack.Toolbar placement="right">
-          <Stack.Toolbar.Menu icon="ellipsis">
-            <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
-              {t('folders.renameTitle')}
-            </Stack.Toolbar.MenuAction>
-            <Stack.Toolbar.MenuAction icon="trash" destructive onPress={handleDeleteFolder}>
-              {t('folders.deleteTitle')}
-            </Stack.Toolbar.MenuAction>
-          </Stack.Toolbar.Menu>
-        </Stack.Toolbar>
-      )}
-      {(!isTrashFolder || SUPPORTS_TOOLBAR_SEARCH) && (
-        <Stack.Toolbar placement="bottom">
-          <Stack.Toolbar.SearchBarSlot />
-          <Stack.Toolbar.Spacer />
-          {!isTrashFolder && (
+      <Stack.Screen options={screenOptions} />
+      {isSelecting ? (
+        <NoteSelectionToolbar
+          selectedCount={selectedCount}
+          isAllSelected={isAllSelected}
+          isTrash={isTrashFolder}
+          moveFolders={moveFolders}
+          onSelectAll={selectAll}
+          onClearSelection={clearSelection}
+          onDone={exitSelection}
+          onMoveTo={handleBulkMove}
+          onDelete={handleBulkDelete}
+        />
+      ) : (
+        <>
+          <Stack.Toolbar placement="right">
+            {!folder?.isSystem && (
+              <Stack.Toolbar.Menu icon="ellipsis" accessibilityLabel={t('folders.options')}>
+                <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
+                  {t('folders.renameTitle')}
+                </Stack.Toolbar.MenuAction>
+                <Stack.Toolbar.MenuAction icon="trash" destructive onPress={handleDeleteFolder}>
+                  {t('folders.deleteTitle')}
+                </Stack.Toolbar.MenuAction>
+              </Stack.Toolbar.Menu>
+            )}
             <Stack.Toolbar.Button
-              icon="square.and.pencil"
-              accessibilityLabel={t('folderView.empty.newNoteBtn')}
-              onPress={handleCreateNote}
+              icon="checkmark.circle"
+              accessibilityLabel={t('folderView.selection.select')}
+              onPress={handleStartSelecting}
             />
+          </Stack.Toolbar>
+          {(!isTrashFolder || SUPPORTS_TOOLBAR_SEARCH) && (
+            <Stack.Toolbar placement="bottom">
+              <Stack.Toolbar.SearchBarSlot />
+              <Stack.Toolbar.Spacer />
+              {!isTrashFolder && (
+                <Stack.Toolbar.Button
+                  icon="square.and.pencil"
+                  accessibilityLabel={t('folderView.empty.newNoteBtn')}
+                  onPress={handleCreateNote}
+                />
+              )}
+            </Stack.Toolbar>
           )}
-        </Stack.Toolbar>
+        </>
       )}
       <SectionList
         sections={groupedNotes}
@@ -573,66 +579,6 @@ const useStyles = createThemedStylesheet((theme) => {
     emptyStateWrapper: {
       alignItems: 'center',
       paddingHorizontal: Space.xxxl,
-    },
-    onboardingTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      letterSpacing: -0.3,
-      textAlign: 'center',
-      marginTop: Space.md,
-      marginBottom: Space.sm,
-      paddingHorizontal: UI_SIZE_4,
-      color: theme.colors.text,
-    },
-    ctaRow: {
-      flexDirection: 'row',
-      gap: Space.sm,
-      marginTop: Space.lg,
-    },
-    primaryBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Space.xs,
-      paddingHorizontal: Space.lg,
-      paddingVertical: Space.md,
-      borderRadius: Space.sm,
-      backgroundColor: theme.colors.primary,
-    },
-    secondaryBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Space.xs,
-      paddingHorizontal: Space.lg,
-      paddingVertical: Space.md,
-      borderRadius: Space.sm,
-      borderWidth: 1,
-      borderColor: theme.colors.separator,
-    },
-    primaryBtnText: {
-      color: theme.colors.onPrimary,
-      fontWeight: FontWeight.bold,
-      fontSize: FontSize.body,
-    },
-    secondaryBtnText: {
-      color: theme.colors.primary,
-      fontWeight: FontWeight.bold,
-      fontSize: FontSize.body,
-    },
-    tertiaryBtn: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Space.xs,
-      marginTop: Space.md,
-      paddingVertical: Space.sm,
-      paddingHorizontal: Space.md,
-    },
-    tertiaryBtnText: {
-      color: theme.colors.textMuted,
-      fontWeight: FontWeight.semibold,
-      fontSize: FontSize.caption,
-    },
-    emptyTitle: {
-      marginTop: Space.md,
     },
   })
   return styles

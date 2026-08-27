@@ -20,8 +20,8 @@
       "layers" : [
         {
           "glass" : false,
-          "image-name" : "pear.png",
-          "name" : "pear"
+          "image-name" : "pear (2).png",
+          "name" : "pear (2)"
         }
       ],
       "shadow" : {
@@ -34,33 +34,13 @@
       }
     },
     {
-      "hidden" : false,
       "layers" : [
         {
-          "image-name" : "Line1.png",
-          "name" : "Line1"
-        },
-        {
-          "image-name" : "Line2.png",
-          "name" : "Line2"
-        },
-        {
-          "image-name" : "Line3.png",
-          "name" : "Line3"
-        },
-        {
-          "image-name" : "Line4.png",
-          "name" : "Line4"
+          "image-name" : "Line1 2.png",
+          "name" : "Line1 2"
         }
       ],
       "name" : "Lines",
-      "position" : {
-        "scale" : 0.96,
-        "translation-in-points" : [
-          0,
-          0
-        ]
-      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5
@@ -71,27 +51,33 @@
       }
     },
     {
-      "hidden" : false,
       "layers" : [
         {
-          "image-name" : "Note1.png",
-          "name" : "Note1",
-          "opacity" : 1
+          "glass" : false,
+          "image-name" : "Note1 2.png",
+          "name" : "Note1 2"
         },
         {
-          "image-name" : "Note2.png",
-          "name" : "Note2",
-          "opacity" : 0.8
+          "glass" : false,
+          "image-name" : "Note2 2.png",
+          "name" : "Note2 2"
+        },
+        {
+          "glass" : false,
+          "hidden-specializations" : [
+            {
+              "value" : false
+            },
+            {
+              "appearance" : "dark",
+              "value" : true
+            }
+          ],
+          "image-name" : "Layer 6.png",
+          "name" : "Layer 6"
         }
       ],
       "name" : "Note",
-      "position" : {
-        "scale" : 0.96,
-        "translation-in-points" : [
-          0,
-          0
-        ]
-      },
       "shadow" : {
         "kind" : "neutral",
         "opacity" : 0.5

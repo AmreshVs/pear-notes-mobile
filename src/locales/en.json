@@ -256,7 +256,22 @@
     },
     "permanentlyDeleteTitle": "Permanently Delete",
     "permanentlyDeleteSubtitle": "This note cannot be recovered.",
-    "noAdditionalText": "No additional text"
+    "noAdditionalText": "No additional text",
+    "selection": {
+      "select": "Select Notes",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "selectedCount_one": "{{count}} SELECTED",
+      "selectedCount_other": "{{count}} SELECTED",
+      "move": "Move to",
+      "restore": "Restore to",
+      "confirmDeleteTitle_one": "Delete 1 note?",
+      "confirmDeleteTitle_other": "Delete {{count}} notes?",
+      "confirmDeleteBody": "They will be moved to Recently Deleted.",
+      "confirmPermanentDeleteTitle_one": "Permanently delete 1 note?",
+      "confirmPermanentDeleteTitle_other": "Permanently delete {{count}} notes?",
+      "confirmPermanentDeleteBody": "These notes cannot be recovered."
+    }
   },
   "noteCard": {
     "untitled": "Untitled",

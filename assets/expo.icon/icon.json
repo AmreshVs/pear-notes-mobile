@@ -1,111 +1,95 @@
 {
-  "fill" : {
-    "linear-gradient" : [
+  "fill": {
+    "linear-gradient": [
       "display-p3:0.90748,0.69987,-0.06400,1.00000",
       "display-p3:0.89307,0.55566,0.20325,1.00000"
     ],
-    "orientation" : {
-      "start" : {
-        "x" : 0.5,
-        "y" : 1
+    "orientation": {
+      "start": {
+        "x": 0.5,
+        "y": 1
       },
-      "stop" : {
-        "x" : 0.5,
-        "y" : 0.3
+      "stop": {
+        "x": 0.5,
+        "y": 0.3
       }
     }
   },
-  "groups" : [
+  "groups": [
     {
-      "layers" : [
+      "layers": [
         {
-          "glass" : false,
-          "image-name" : "pear.png",
-          "name" : "pear"
+          "glass": false,
+          "image-name": "pear (2).png",
+          "name": "pear (2)"
         }
       ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     },
     {
-      "hidden" : false,
-      "layers" : [
+      "layers": [
         {
-          "image-name" : "Line1.png",
-          "name" : "Line1"
-        },
-        {
-          "image-name" : "Line2.png",
-          "name" : "Line2"
-        },
-        {
-          "image-name" : "Line3.png",
-          "name" : "Line3"
-        },
-        {
-          "image-name" : "Line4.png",
-          "name" : "Line4"
+          "image-name": "Line1 2.png",
+          "name": "Line1 2"
         }
       ],
-      "name" : "Lines",
-      "position" : {
-        "scale" : 0.96,
-        "translation-in-points" : [
-          0,
-          0
-        ]
+      "name": "Lines",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     },
     {
-      "hidden" : false,
-      "layers" : [
+      "layers": [
         {
-          "image-name" : "Note1.png",
-          "name" : "Note1",
-          "opacity" : 1
+          "glass": false,
+          "image-name": "Note1 2.png",
+          "name": "Note1 2"
         },
         {
-          "image-name" : "Note2.png",
-          "name" : "Note2",
-          "opacity" : 0.8
+          "glass": false,
+          "image-name": "Note2 2.png",
+          "name": "Note2 2"
+        },
+        {
+          "glass": false,
+          "hidden-specializations": [
+            {
+              "value": false
+            },
+            {
+              "appearance": "dark",
+              "value": true
+            }
+          ],
+          "image-name": "Layer 6.png",
+          "name": "Layer 6"
         }
       ],
-      "name" : "Note",
-      "position" : {
-        "scale" : 0.96,
-        "translation-in-points" : [
-          0,
-          0
-        ]
+      "name": "Note",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
-      },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     }
   ],
-  "supported-platforms" : {
-    "circles" : [
-      "watchOS"
-    ],
-    "squares" : "shared"
+  "supported-platforms": {
+    "circles": ["watchOS"],
+    "squares": "shared"
   }
 }

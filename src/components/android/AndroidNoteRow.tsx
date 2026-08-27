@@ -20,6 +20,7 @@ import {
   Space,
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_13,
+  UI_ICON_SIZE_24,
   UI_SIZE_4,
   UI_SIZE_6,
   UI_SIZE_8,
@@ -63,6 +64,8 @@ type NoteRowProps = {
   index: number
   isLast: boolean
   folderName?: string
+  selecting?: boolean
+  checked?: boolean
   onPress: (noteKey: string) => void
   onLongPress: (noteKey: string) => void
 }
@@ -72,6 +75,8 @@ function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
     prev.note.key === next.note.key &&
     prev.note.value === next.note.value &&
     prev.folderName === next.folderName &&
+    prev.selecting === next.selecting &&
+    prev.checked === next.checked &&
     prev.onPress === next.onPress &&
     prev.onLongPress === next.onLongPress
   )
@@ -81,6 +86,8 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   note,
   index,
   folderName,
+  selecting,
+  checked,
   onPress,
   onLongPress,
 }: NoteRowProps) {
@@ -161,8 +168,17 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
         accessibilityLabel={accessibilityLabel}
         accessibilityActions={accessibilityActions}
         onAccessibilityAction={handleLongPress}
-        style={styles.row}
+        accessibilityState={selecting ? { selected: checked } : undefined}
+        style={[styles.row, selecting && checked && styles.rowChecked]}
       >
+        {selecting && (
+          <MaterialCommunityIcons
+            name={checked ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
+            size={UI_ICON_SIZE_24}
+            color={checked ? c.primary : c.onSurfaceVariant}
+            style={styles.selectionIcon}
+          />
+        )}
         <View style={styles.content}>
           <View style={styles.titleRow}>
             {pinned && (
@@ -280,6 +296,12 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
       ...commonStyles.row,
       gap: UI_SIZE_16,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
+    rowChecked: {
+      backgroundColor: hexWithAlpha(c.primary, 0.16),
+    },
+    selectionIcon: {
+      alignSelf: 'center',
     },
     rowPressed: {
       backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.6),

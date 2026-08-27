@@ -1,0 +1,173 @@
+import { memo, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, StyleSheet, View } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+
+import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
+import {
+  commonStyles,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  UI_ICON_SIZE_24,
+  UI_SIZE_4,
+  UI_SIZE_8,
+  UI_SIZE_12,
+  UI_SIZE_48,
+} from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
+
+type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
+  surfaceContainerHigh?: string
+}
+
+type AndroidSelectionAppBarProps = {
+  selectedCount: number
+  isAllSelected: boolean
+  isTrash: boolean
+  canMove: boolean
+  onClose: () => void
+  onToggleSelectAll: () => void
+  onMove: () => void
+  onDelete: () => void
+}
+
+export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
+  selectedCount,
+  isAllSelected,
+  isTrash,
+  canMove,
+  onClose,
+  onToggleSelectAll,
+  onMove,
+  onDelete,
+}: AndroidSelectionAppBarProps) {
+  const { t } = useTranslation()
+  const styles = useStyles()
+  const md3 = useMD3Theme()
+  const c = md3.colors as ExtendedColors
+
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const hasSelection = selectedCount > 0
+  const actionColor = hasSelection ? c.onSurface : c.onSurfaceVariant
+
+  return (
+    <View style={styles.appBar}>
+      <Pressable
+        onPress={onClose}
+        android_ripple={ripple}
+        style={styles.iconBtn}
+        hitSlop={UI_SIZE_8}
+        accessibilityRole="button"
+        accessibilityLabel={t('common.close')}
+      >
+        <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_24} color={c.onSurface} />
+      </Pressable>
+
+      <Text style={styles.title} accessibilityLiveRegion="polite">
+        {t('folderView.selection.selectedCount', { count: selectedCount })}
+      </Text>
+
+      <View style={styles.actions}>
+        <Pressable
+          onPress={onToggleSelectAll}
+          android_ripple={ripple}
+          style={styles.iconBtn}
+          hitSlop={UI_SIZE_8}
+          accessibilityRole="button"
+          accessibilityLabel={
+            isAllSelected
+              ? t('folderView.selection.deselectAll')
+              : t('folderView.selection.selectAll')
+          }
+        >
+          <MaterialCommunityIcons
+            name={isAllSelected ? 'checkbox-multiple-marked' : 'checkbox-multiple-marked-outline'}
+            size={UI_ICON_SIZE_24}
+            color={c.onSurface}
+          />
+        </Pressable>
+
+        {canMove && (
+          <Pressable
+            onPress={onMove}
+            android_ripple={ripple}
+            style={styles.iconBtn}
+            disabled={!hasSelection}
+            hitSlop={UI_SIZE_8}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isTrash ? t('folderView.selection.restore') : t('folderView.selection.move')
+            }
+          >
+            <MaterialCommunityIcons
+              name={isTrash ? 'backup-restore' : 'folder-move-outline'}
+              size={UI_ICON_SIZE_24}
+              color={actionColor}
+            />
+          </Pressable>
+        )}
+
+        <Pressable
+          onPress={onDelete}
+          android_ripple={ripple}
+          style={styles.iconBtn}
+          disabled={!hasSelection}
+          hitSlop={UI_SIZE_8}
+          accessibilityRole="button"
+          accessibilityLabel={t('noteCard.actions.delete')}
+        >
+          <MaterialCommunityIcons
+            name="delete-outline"
+            size={UI_ICON_SIZE_24}
+            color={hasSelection ? c.error : c.onSurfaceVariant}
+          />
+        </Pressable>
+      </View>
+    </View>
+  )
+})
+
+const useSelectionAppBarHooks = () => {
+  const md3 = useMD3Theme()
+  const insets = useSafeAreaInsets()
+  return { md3, insets }
+}
+
+const useStyles = createThemedStylesheetWithHooks(
+  (theme, { md3, insets }: ReturnType<typeof useSelectionAppBarHooks>) => {
+    const c = md3.colors as ExtendedColors
+    const styles = StyleSheet.create({
+      appBar: {
+        ...commonStyles.row,
+        alignItems: 'center',
+        paddingHorizontal: UI_SIZE_8,
+        paddingTop: insets.top + UI_SIZE_4,
+        paddingBottom: UI_SIZE_4,
+        backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      },
+      title: {
+        ...commonStyles.flex1,
+        marginLeft: UI_SIZE_12,
+        fontSize: FontSize.title,
+        fontFamily: FontFamily.bold,
+        fontWeight: FontWeight.bold,
+        color: c.onSurface,
+      },
+      actions: {
+        ...commonStyles.row,
+        alignItems: 'center',
+      },
+      iconBtn: {
+        width: UI_SIZE_48,
+        height: UI_SIZE_48,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+    })
+    return styles
+  },
+  useSelectionAppBarHooks,
+)

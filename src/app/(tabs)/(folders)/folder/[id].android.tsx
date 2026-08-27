@@ -13,10 +13,9 @@ import {
   View,
 } from 'react-native'
 import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
-import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 
@@ -30,9 +29,11 @@ import {
 import {
   createNote,
   deleteNote,
+  deleteNotes,
   getFilteredNotes,
   getNotes,
   getSelectedNote,
+  moveNotes,
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -42,6 +43,8 @@ import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import { AndroidEmptyState, AndroidNoteRow, useMD3Theme } from '@/components/android'
+import { AndroidFolderAppBar } from '@/components/android/AndroidFolderAppBar'
+import { AndroidSelectionAppBar } from '@/components/android/AndroidSelectionAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -50,14 +53,9 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_16,
-  UI_ICON_SIZE_20,
-  UI_ICON_SIZE_24,
   UI_SIZE_4,
-  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
-  UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
@@ -72,11 +70,12 @@ import {
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
 import { androidRipple } from '@/lib/androidRipple'
-import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { buildNoteSections } from '@/utils/noteSections'
 import { getPreview } from '@/utils/noteUtils'
+
+import { useNoteSelection } from './useNoteSelection'
 
 function noteKey(note: any): string {
   return note.key
@@ -109,6 +108,8 @@ export default function AndroidFolderNotesScreen() {
   const [renameText, setRenameText] = useState('')
   const [deleteConfirmNote, setDeleteConfirmNote] = useState<string | null>(null)
   const [showFolderDeleteConfirm, setShowFolderDeleteConfirm] = useState(false)
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
+  const [bulkFolderPickerVisible, setBulkFolderPickerVisible] = useState(false)
 
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote)
@@ -118,7 +119,6 @@ export default function AndroidFolderNotesScreen() {
   const searchBarOpacity = useSharedValue(0)
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const folder = useMemo(
     () => allFolders.find((f: any) => f.id === id || f.key === id),
@@ -174,13 +174,79 @@ export default function AndroidFolderNotesScreen() {
     if (selectedNote) lastSelectedNoteRef.current = selectedNote
   }, [selectedNote])
 
+  const orderedKeys = useMemo(() => notes.map((note: any) => note.key), [notes])
+
+  const {
+    isSelecting,
+    selectedKeys,
+    selectedCount,
+    isAllSelected,
+    toggleSelect,
+    startSelecting,
+    selectAll,
+    clearSelection,
+    exitSelection,
+  } = useNoteSelection(id as string, orderedKeys)
+
   const handleSelectNote = useCallback(
     (noteId: string) => {
+      if (isSelecting) {
+        hapticLight()
+        toggleSelect(noteId)
+        return
+      }
       dispatch(setSelectedNote(noteId as any))
       router.push(`/note/${noteId}`)
     },
-    [dispatch],
+    [dispatch, isSelecting, toggleSelect],
   )
+
+  const handleStartSelecting = useCallback(() => {
+    hapticLight()
+    startSelecting()
+  }, [startSelecting])
+
+  const handleToggleSelectAll = useCallback(() => {
+    hapticLight()
+    if (isAllSelected) {
+      clearSelection()
+      return
+    }
+    selectAll()
+  }, [isAllSelected, clearSelection, selectAll])
+
+  const handleOpenBulkMove = useCallback(() => {
+    setBulkFolderPickerVisible(true)
+  }, [])
+
+  const handleCloseBulkMove = useCallback(() => {
+    setBulkFolderPickerVisible(false)
+  }, [])
+
+  const handleConfirmBulkMove = useCallback(
+    (folderId: string) => {
+      hapticSuccess()
+      dispatch(moveNotes({ keys: selectedKeys, folderKey: folderId } as any))
+      setBulkFolderPickerVisible(false)
+      exitSelection()
+    },
+    [dispatch, selectedKeys, exitSelection],
+  )
+
+  const handleOpenBulkDelete = useCallback(() => {
+    setShowBulkDeleteConfirm(true)
+  }, [])
+
+  const handleCloseBulkDelete = useCallback(() => {
+    setShowBulkDeleteConfirm(false)
+  }, [])
+
+  const handleConfirmBulkDelete = useCallback(() => {
+    hapticWarning()
+    dispatch(deleteNotes(selectedKeys as any))
+    setShowBulkDeleteConfirm(false)
+    exitSelection()
+  }, [dispatch, selectedKeys, exitSelection])
 
   const handleCreateNote = useCallback(() => {
     hapticLight()
@@ -218,10 +284,14 @@ export default function AndroidFolderNotesScreen() {
       const note = notes.find((n: any) => n.key === noteId)
       if (!note) return
       hapticMedium()
+      if (isSelecting) {
+        toggleSelect(noteId)
+        return
+      }
       setActiveNoteId(noteId)
       setNoteSheetVisible(true)
     },
-    [notes],
+    [notes, isSelecting, toggleSelect],
   )
 
   const handleNoteSheetDelete = useCallback(() => {
@@ -235,6 +305,14 @@ export default function AndroidFolderNotesScreen() {
       dispatch(deleteNote(targetId as any))
     }
   }, [activeNoteId, isTrashFolder, dispatch])
+
+  const handleNoteSheetSelect = useCallback(() => {
+    if (!activeNoteId) return
+    const targetId = activeNoteId
+    setNoteSheetVisible(false)
+    hapticLight()
+    startSelecting(targetId)
+  }, [activeNoteId, startSelecting])
 
   const handleNoteSheetCopy = useCallback(async () => {
     if (!activeNoteId) return
@@ -346,11 +424,13 @@ export default function AndroidFolderNotesScreen() {
         index={index}
         isLast={index === section.data.length - 1}
         folderName={isAllNotes ? folderNameMap[note.value?.folderKey] : undefined}
+        selecting={isSelecting}
+        checked={selectedKeys.includes(note.key)}
         onPress={handleSelectNote}
         onLongPress={handleNoteLongPress}
       />
     ),
-    [isAllNotes, folderNameMap, handleSelectNote, handleNoteLongPress],
+    [isAllNotes, folderNameMap, isSelecting, selectedKeys, handleSelectNote, handleNoteLongPress],
   )
 
   const listHeader = useMemo(
@@ -358,11 +438,13 @@ export default function AndroidFolderNotesScreen() {
       <View>
         <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
         <Text style={styles.pageCount} accessibilityLiveRegion="polite">
-          {t('folderView.noteCount', { count: notes.length })}
+          {isSelecting
+            ? t('folderView.selection.selectedCount', { count: selectedCount })
+            : t('folderView.noteCount', { count: notes.length })}
         </Text>
       </View>
     ),
-    [folder?.name, notes.length, t, styles.pageTitle, styles.pageCount],
+    [folder?.name, notes.length, isSelecting, selectedCount, t, styles.pageTitle, styles.pageCount],
   )
 
   const listEmpty = useMemo(
@@ -399,6 +481,11 @@ export default function AndroidFolderNotesScreen() {
 
   const noteSheetActions = useMemo(
     () => [
+      {
+        icon: 'checkbox-multiple-marked-outline',
+        label: t('folderView.selection.select'),
+        onPress: handleNoteSheetSelect,
+      },
       ...(!isTrashFolder
         ? [
             {
@@ -437,6 +524,7 @@ export default function AndroidFolderNotesScreen() {
       },
     ],
     [
+      handleNoteSheetSelect,
       handleNoteSheetCopy,
       handleNoteSheetMove,
       handleNoteSheetDelete,
@@ -462,6 +550,13 @@ export default function AndroidFolderNotesScreen() {
     dispatch(setSearchQuery(''))
   }, [dispatch])
 
+  const handleChangeSearch = useCallback(
+    (text: string) => {
+      dispatch(setSearchQuery(text))
+    },
+    [dispatch],
+  )
+
   const handleCloseRenameDialog = useCallback(() => {
     setRenameDialog(null)
   }, [])
@@ -486,6 +581,18 @@ export default function AndroidFolderNotesScreen() {
     [handleConfirmDeleteNote, t],
   )
 
+  const bulkDeleteConfirmActions = useMemo(
+    () => [
+      {
+        icon: 'delete-outline',
+        label: t('folders.buttons.delete'),
+        onPress: handleConfirmBulkDelete,
+        destructive: true,
+      },
+    ],
+    [handleConfirmBulkDelete, t],
+  )
+
   const deleteFolderConfirmActions = useMemo(
     () => [
       {
@@ -503,81 +610,32 @@ export default function AndroidFolderNotesScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.appBar}>
-        <View style={styles.appBarLeft}>
-          <Pressable
-            onPress={handleBack}
-            android_ripple={rippleBorderless}
-            style={styles.iconBtn}
-            hitSlop={UI_SIZE_8}
-          >
-            <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-          </Pressable>
-        </View>
-
-        <View style={styles.appBarRight}>
-          <Pressable
-            onPress={toggleSearch}
-            android_ripple={rippleBorderless}
-            style={styles.iconBtn}
-            hitSlop={UI_SIZE_8}
-          >
-            <MaterialCommunityIcons
-              name={searchVisible ? 'close' : 'magnify'}
-              size={UI_ICON_SIZE_24}
-              color={c.primary}
-            />
-          </Pressable>
-          {!folder?.isSystem && (
-            <Pressable
-              onPress={handleOpenFolderOptions}
-              android_ripple={rippleBorderless}
-              style={styles.iconBtn}
-              hitSlop={UI_SIZE_8}
-            >
-              <MaterialCommunityIcons
-                name="dots-vertical"
-                size={UI_ICON_SIZE_24}
-                color={c.primary}
-              />
-            </Pressable>
-          )}
-        </View>
-      </View>
-
-      <Animated.View style={[styles.searchWrap, searchBarAnimStyle]}>
-        <View style={styles.searchPill}>
-          <MaterialCommunityIcons
-            name="magnify"
-            size={UI_ICON_SIZE_20}
-            color={c.onSurfaceVariant}
-            style={styles.searchIcon}
-          />
-          <TextInput
-            ref={searchInputRef}
-            style={styles.searchInput}
-            placeholder={t('folderView.searchPlaceholder')}
-            placeholderTextColor={c.onSurfaceVariant}
-            accessibilityLabel={t('folderView.searchPlaceholder')}
-            value={searchQuery}
-            onChangeText={(text) => dispatch(setSearchQuery(text))}
-            returnKeyType="search"
-          />
-          {searchQuery.length > 0 && (
-            <Pressable
-              onPress={handleClearSearch}
-              android_ripple={rippleBorderless}
-              hitSlop={UI_SIZE_8}
-            >
-              <MaterialCommunityIcons
-                name="close-circle"
-                size={UI_ICON_SIZE_16}
-                color={c.onSurfaceVariant}
-              />
-            </Pressable>
-          )}
-        </View>
-      </Animated.View>
+      {isSelecting ? (
+        <AndroidSelectionAppBar
+          selectedCount={selectedCount}
+          isAllSelected={isAllSelected}
+          isTrash={isTrashFolder}
+          canMove={moveFolders.length > 0}
+          onClose={exitSelection}
+          onToggleSelectAll={handleToggleSelectAll}
+          onMove={handleOpenBulkMove}
+          onDelete={handleOpenBulkDelete}
+        />
+      ) : (
+        <AndroidFolderAppBar
+          searchVisible={searchVisible}
+          searchQuery={searchQuery}
+          showFolderOptions={!folder?.isSystem}
+          searchInputRef={searchInputRef}
+          searchBarStyle={searchBarAnimStyle}
+          onBack={handleBack}
+          onStartSelecting={handleStartSelecting}
+          onToggleSearch={toggleSearch}
+          onOpenFolderOptions={handleOpenFolderOptions}
+          onChangeSearch={handleChangeSearch}
+          onClearSearch={handleClearSearch}
+        />
+      )}
 
       <SectionList
         sections={sections}
@@ -597,7 +655,7 @@ export default function AndroidFolderNotesScreen() {
         ListEmptyComponent={listEmpty}
       />
 
-      {!isTrashFolder && (
+      {!isTrashFolder && !isSelecting && (
         <FAB
           icon="plus"
           onPress={handleCreateNote}
@@ -677,6 +735,29 @@ export default function AndroidFolderNotesScreen() {
         onSelect={handleConfirmMove}
       />
 
+      <FolderPickerSheet
+        visible={bulkFolderPickerVisible}
+        onDismiss={handleCloseBulkMove}
+        folders={moveFolders.map((f: any) => ({ id: f.id, name: f.name }))}
+        onSelect={handleConfirmBulkMove}
+      />
+
+      <BottomActionSheet
+        visible={showBulkDeleteConfirm}
+        onDismiss={handleCloseBulkDelete}
+        title={
+          isTrashFolder
+            ? t('folderView.selection.confirmPermanentDeleteTitle', { count: selectedCount })
+            : t('folderView.selection.confirmDeleteTitle', { count: selectedCount })
+        }
+        subtitle={
+          isTrashFolder
+            ? t('folderView.selection.confirmPermanentDeleteBody')
+            : t('folderView.selection.confirmDeleteBody')
+        }
+        actions={bulkDeleteConfirmActions}
+      />
+
       <BottomActionSheet
         visible={!!deleteConfirmNote}
         onDismiss={() => setDeleteConfirmNote(null)}
@@ -709,48 +790,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
-    },
-    appBar: {
-      ...commonStyles.row,
-      justifyContent: 'space-between',
-      paddingHorizontal: UI_SIZE_8,
-      paddingTop: insets.top + UI_SIZE_4,
-      backgroundColor: c.background,
-    },
-    appBarLeft: {
-      ...commonStyles.row,
-      gap: UI_SIZE_4,
-      ...commonStyles.flex1,
-    },
-    appBarRight: {
-      ...commonStyles.row,
-    },
-    iconBtn: {
-      overflow: 'hidden',
-      padding: UI_SIZE_8,
-      borderRadius: UI_SIZE_9999,
-    },
-    searchWrap: {
-      paddingHorizontal: UI_SIZE_20,
-    },
-    searchPill: {
-      ...commonStyles.row,
-      borderRadius: UI_SIZE_9999,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_14,
-      borderWidth: StyleSheet.hairlineWidth,
-      backgroundColor: c.surfaceContainer,
-      borderColor: hexWithAlpha(c.outlineVariant, 0.15),
-    },
-    searchIcon: {
-      marginRight: UI_SIZE_10,
-    },
-    searchInput: {
-      ...commonStyles.flex1,
-      fontSize: FontSize.subtitle,
-      fontFamily: FontFamily.medium,
-      paddingVertical: 0,
-      color: c.onSurface,
     },
     listContent: {
       paddingHorizontal: UI_SIZE_20,
