@@ -121,6 +121,58 @@ lowlight.register('bash', langBash)
 lowlight.register('sh', langBash)
 lowlight.register('json', langJSON)
 
+// Tiptap's stock task-item node view toggles the checkbox with
+// `editor.chain().focus()`, which focuses the contenteditable and pops the
+// on-screen keyboard every time a box is ticked. Handle the tap ourselves and
+// dispatch a plain transaction so ticking a box never changes focus.
+const TaskItemNoFocusSteal = TaskItem.extend({
+  addNodeView() {
+    const renderTaskItem = this.parent?.()
+    if (!renderTaskItem) return renderTaskItem
+
+    return (props) => {
+      const nodeView = renderTaskItem(props)
+      const label = nodeView?.dom?.querySelector?.('label')
+      if (!label) return nodeView
+
+      const { editor, getPos } = props
+
+      // Keep the tap from reaching ProseMirror, which would otherwise move the
+      // selection into the list item and focus the editor.
+      label.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+      })
+      label.addEventListener('click', (e) => e.stopPropagation(), true)
+
+      // Stopping propagation while the event is still on its way down means the
+      // stock `change` handler on the input never runs. The native toggle has
+      // already happened, so only the document needs catching up.
+      label.addEventListener(
+        'change',
+        (e) => {
+          e.stopPropagation()
+          if (!editor.isEditable || typeof getPos !== 'function') return
+          const pos = getPos()
+          if (typeof pos !== 'number') return
+          const { state } = editor.view
+          const taskItem = state.doc.nodeAt(pos)
+          if (!taskItem) return
+          editor.view.dispatch(
+            state.tr.setNodeMarkup(pos, undefined, {
+              ...taskItem.attrs,
+              checked: e.target.checked,
+            }),
+          )
+        },
+        true,
+      )
+
+      return nodeView
+    }
+  },
+})
+
 const ImageWithSize = Image.extend({
   addAttributes() {
     return { ...this.parent?.(), width: { default: null }, height: { default: null } }
@@ -995,7 +1047,7 @@ function createEditorSession(collaborator, html) {
     Underline,
     Strike,
     TaskList,
-    TaskItem.configure({ nested: true }),
+    TaskItemNoFocusSteal.configure({ nested: true }),
     TextAlign.configure({ types: ['heading', 'paragraph'] }),
     Link.configure({ openOnClick: false }),
     Highlight.configure({ multicolor: true }),
