@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Animated, BackHandler, Dimensions, InteractionManager, Keyboard } from 'react-native'
+import {
+  Animated,
+  AppState,
+  AppStateStatus,
+  BackHandler,
+  Dimensions,
+  InteractionManager,
+  Keyboard,
+} from 'react-native'
 import { useSelector } from 'react-redux'
 import { router } from 'expo-router'
 
@@ -125,6 +133,32 @@ export function useNoteEditor() {
       show.remove()
       hide.remove()
     }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const isIos = process.env.EXPO_OS === 'ios'
+
+    const resetKeyboardLayout = () => {
+      setKeyboardHeight(0)
+      setIsEditing(false)
+      isEditorFocusedRef.current = false
+      editorRef.current?.blur()
+      if (isIos) editorRef.current?.setBottomInset(0, IOS_TOOLBAR_INSET_IDLE)
+    }
+
+    const subscription = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'background') {
+        Keyboard.dismiss()
+        return
+      }
+      if (next !== 'active') return
+      if (Keyboard.isVisible()) return
+      resetKeyboardLayout()
+    })
+
+    return () => subscription.remove()
   }, [isOpen])
 
   useEffect(() => {

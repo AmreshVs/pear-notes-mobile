@@ -31,6 +31,7 @@ type AndroidSelectionAppBarProps = {
   onClose: () => void
   onToggleSelectAll: () => void
   onMove: () => void
+  onRestore: () => void
   onDelete: () => void
 }
 
@@ -42,6 +43,7 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
   onClose,
   onToggleSelectAll,
   onMove,
+  onRestore,
   onDelete,
 }: AndroidSelectionAppBarProps) {
   const { t } = useTranslation()
@@ -90,24 +92,40 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
           />
         </Pressable>
 
-        {canMove && (
+        {isTrash ? (
           <Pressable
-            onPress={onMove}
+            onPress={onRestore}
             android_ripple={ripple}
             style={styles.iconBtn}
             disabled={!hasSelection}
             hitSlop={UI_SIZE_8}
             accessibilityRole="button"
-            accessibilityLabel={
-              isTrash ? t('folderView.selection.restore') : t('folderView.selection.move')
-            }
+            accessibilityLabel={t('folderView.selection.restore')}
           >
             <MaterialCommunityIcons
-              name={isTrash ? 'backup-restore' : 'folder-move-outline'}
+              name="backup-restore"
               size={UI_ICON_SIZE_24}
               color={actionColor}
             />
           </Pressable>
+        ) : (
+          canMove && (
+            <Pressable
+              onPress={onMove}
+              android_ripple={ripple}
+              style={styles.iconBtn}
+              disabled={!hasSelection}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('folderView.selection.move')}
+            >
+              <MaterialCommunityIcons
+                name="folder-move-outline"
+                size={UI_ICON_SIZE_24}
+                color={actionColor}
+              />
+            </Pressable>
+          )
         )}
 
         <Pressable
@@ -117,7 +135,9 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
           disabled={!hasSelection}
           hitSlop={UI_SIZE_8}
           accessibilityRole="button"
-          accessibilityLabel={t('noteCard.actions.delete')}
+          accessibilityLabel={
+            isTrash ? t('folderView.permanentlyDeleteTitle') : t('noteCard.actions.delete')
+          }
         >
           <MaterialCommunityIcons
             name="delete-outline"

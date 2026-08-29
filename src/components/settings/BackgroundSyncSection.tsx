@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
@@ -16,44 +16,25 @@ import {
   UI_SIZE_18,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import {
-  BackgroundSyncMode,
-  getBackgroundSyncMode,
-  setBackgroundSyncMode,
-} from '@/lib/backgroundSync'
-import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
-import { hapticSelection } from '@/lib/haptics'
+import { BackgroundSyncMode } from '@/lib/backgroundSync'
+
+import { BACKGROUND_SYNC_MODE_LOCALE_KEY, useBackgroundSync } from './useBackgroundSync'
 
 const MODES: BackgroundSyncMode[] = ['off', 'periodic']
-
-const MODE_LOCALE_KEY: Record<BackgroundSyncMode, string> = {
-  off: 'off',
-  periodic: 'periodic',
-  'always-on': 'alwaysOn',
-}
 
 export function BackgroundSyncSection() {
   const { t } = useTranslation()
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
-  const [mode, setMode] = useState<BackgroundSyncMode>('off')
+  const { mode, hasLinkedDevices, commitMode } = useBackgroundSync()
 
-  useEffect(() => {
-    let active = true
-    getBackgroundSyncMode().then((value) => {
-      if (active) setMode(value)
-    })
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const handleSelect = useCallback((next: BackgroundSyncMode) => {
-    hapticSelection()
-    setMode(next)
-    setBackgroundSyncMode(next)
-    applyBackgroundSyncMode(next)
-  }, [])
+  const handleSelect = useCallback(
+    (next: BackgroundSyncMode) => {
+      if (!hasLinkedDevices) return
+      commitMode(next)
+    },
+    [hasLinkedDevices, commitMode],
+  )
 
   const renderSegment = useCallback(
     (item: BackgroundSyncMode, i: number) => {
@@ -62,6 +43,7 @@ export function BackgroundSyncSection() {
         <Pressable
           key={item}
           onPress={() => handleSelect(item)}
+          disabled={!hasLinkedDevices}
           style={[
             styles.segPill,
             isActive && styles.segPillActive,
@@ -70,12 +52,12 @@ export function BackgroundSyncSection() {
           ]}
         >
           <Text style={[styles.segText, isActive && styles.segTextActive]}>
-            {t(`sync.backgroundSync.${MODE_LOCALE_KEY[item]}`)}
+            {t(`sync.backgroundSync.${BACKGROUND_SYNC_MODE_LOCALE_KEY[item]}`)}
           </Text>
         </Pressable>
       )
     },
-    [mode, handleSelect, styles, t],
+    [mode, handleSelect, hasLinkedDevices, styles, t],
   )
 
   return (
@@ -92,12 +74,20 @@ export function BackgroundSyncSection() {
       >
         <RNView style={commonThemedStyles.card}>
           <RNView style={styles.stackedRow}>
-            <Text style={styles.rowLabel}>{t('sync.backgroundSync.modeLabel')}</Text>
-            <RNView style={styles.segCtrl}>{MODES.map(renderSegment)}</RNView>
+            <Text style={[styles.rowLabel, !hasLinkedDevices && commonStyles.disabled]}>
+              {hasLinkedDevices
+                ? t('sync.backgroundSync.modeLabel')
+                : t('sync.backgroundSync.unlinkedTitle')}
+            </Text>
+            <RNView style={[styles.segCtrl, !hasLinkedDevices && commonStyles.disabled]}>
+              {MODES.map(renderSegment)}
+            </RNView>
           </RNView>
           <RNView style={styles.descRow}>
             <Text style={styles.rowDesc}>
-              {t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}Desc`)}
+              {hasLinkedDevices
+                ? t(`sync.backgroundSync.${BACKGROUND_SYNC_MODE_LOCALE_KEY[mode]}Desc`)
+                : t('sync.backgroundSync.unlinkedDesc')}
             </Text>
           </RNView>
         </RNView>

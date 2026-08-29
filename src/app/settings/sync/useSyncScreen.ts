@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Linking, Platform, ScrollView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { useCameraPermissions } from 'expo-camera'
@@ -22,7 +21,7 @@ import {
   resetInvite,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
-import { extractInvite, isValidInvite } from '@pear-notes/core/utils.js'
+import { extractInvite, getInviteRemainingMs, isValidInvite } from '@pear-notes/core/utils.js'
 
 import {
   hapticLight,
@@ -33,8 +32,9 @@ import {
 } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 
+const INVITE_COUNTDOWN_TICK_MS = 1000
+
 function useSyncScreen() {
-  const { t } = useTranslation()
   const dispatch = useDispatch()
 
   const inviteCode = useSelector(getInvite)
@@ -52,6 +52,7 @@ function useSyncScreen() {
   const [hasScanned, setHasScanned] = useState(false)
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false)
   const [deviceToDeleteKey, setDeviceToDeleteKey] = useState<string | null>(null)
+  const [countdownTick, setCountdownTick] = useState(0)
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const scrollRef = useRef<ScrollView>(null)
@@ -80,6 +81,12 @@ function useSyncScreen() {
       }
     }
   }, [dispatch])
+
+  useEffect(() => {
+    if (!inviteCode || !expiresAt) return
+    const timer = setInterval(() => setCountdownTick((n) => n + 1), INVITE_COUNTDOWN_TICK_MS)
+    return () => clearInterval(timer)
+  }, [inviteCode, expiresAt])
 
   const handleSelectTab = useCallback((next: 'link' | 'devices') => {
     hapticSelection()
@@ -164,23 +171,18 @@ function useSyncScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
   }, [])
 
-  const formatExpiry = useCallback(
-    (ts: number | null) => {
-      if (!ts) return t('sync.invite.permanent')
-      const ms = ts < 10000000000 ? ts * 1000 : ts
-      const d = new Date(ms)
-      if (isNaN(d.getTime())) return t('sync.invite.permanent')
-      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      return t('sync.invite.expiry', { time: timeStr })
-    },
-    [t],
-  )
-
   const handleDeleteDevice = useCallback((deviceKey: string) => {
     hapticLight()
     setDeviceToDeleteKey(deviceKey)
     setDeleteSheetVisible(true)
   }, [])
+
+  const inviteRemainingMs = useMemo(
+    () => getInviteRemainingMs(expiresAt),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [expiresAt, countdownTick],
+  )
+  const inviteExpired = !!inviteCode && !!expiresAt && inviteRemainingMs <= 0
 
   const handleConfirmDelete = useCallback(() => {
     setDeleteSheetVisible(false)
@@ -207,6 +209,8 @@ function useSyncScreen() {
     scrollRef,
     inviteCode,
     expiresAt,
+    inviteRemainingMs,
+    inviteExpired,
     isLoading,
     syncedDevices,
     isSynced,
@@ -217,7 +221,6 @@ function useSyncScreen() {
     handleBarcodeScanned,
     handleGenerateInvite,
     handleScrollToEnd,
-    formatExpiry,
     handleDeleteDevice,
     handleConfirmDelete,
   }

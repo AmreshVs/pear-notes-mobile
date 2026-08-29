@@ -16,7 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 
-import { isValidInvite } from '@pear-notes/core/utils.js'
+import { INVITE_EXPIRY_MINUTES } from '@pear-notes/core/constant.js'
+import { formatInviteCountdown, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
@@ -94,7 +95,8 @@ export default function AndroidSyncScreen() {
     setDeleteSheetVisible,
     scrollRef,
     inviteCode,
-    expiresAt,
+    inviteRemainingMs,
+    inviteExpired,
     isLoading,
     syncedDevices,
     isSynced,
@@ -105,7 +107,6 @@ export default function AndroidSyncScreen() {
     handleBarcodeScanned,
     handleGenerateInvite,
     handleScrollToEnd,
-    formatExpiry,
     handleDeleteDevice,
     handleConfirmDelete,
   } = useSyncScreen()
@@ -218,7 +219,7 @@ export default function AndroidSyncScreen() {
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.tabContent}
             >
-              {!inviteCode ? (
+              {!inviteCode || inviteExpired ? (
                 <MotionView
                   entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
                   style={styles.heroCard}
@@ -240,8 +241,14 @@ export default function AndroidSyncScreen() {
                     </View>
                   </View>
 
-                  <Text style={styles.heroTitle}>{t('sync.hero.title')}</Text>
-                  <Text style={styles.heroDesc}>{t('sync.hero.description')}</Text>
+                  <Text style={styles.heroTitle}>
+                    {inviteExpired ? t('sync.invite.expiredTitle') : t('sync.hero.title')}
+                  </Text>
+                  <Text style={styles.heroDesc}>
+                    {inviteExpired
+                      ? t('sync.invite.expiredDesc', { minutes: INVITE_EXPIRY_MINUTES })
+                      : t('sync.hero.description')}
+                  </Text>
 
                   <Pressable
                     onPress={handleGenerateInvite}
@@ -253,7 +260,11 @@ export default function AndroidSyncScreen() {
                       <ActivityIndicator size="small" color={loaderColor} style={styles.mr8} />
                     )}
                     <Text style={styles.generateBtnText}>
-                      {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateBtn')}
+                      {isLoading
+                        ? t('sync.hero.preparing')
+                        : inviteExpired
+                          ? t('sync.invite.regenerateBtn')
+                          : t('sync.hero.generateBtn')}
                     </Text>
                   </Pressable>
                 </MotionView>
@@ -273,7 +284,11 @@ export default function AndroidSyncScreen() {
                   </View>
 
                   <Text style={styles.heroTitle}>{t('sync.invite.header')}</Text>
-                  <Text style={styles.heroDesc}>{formatExpiry(expiresAt)}</Text>
+                  <Text style={styles.heroDesc}>
+                    {t('sync.invite.expiresIn', {
+                      countdown: formatInviteCountdown(inviteRemainingMs),
+                    })}
+                  </Text>
 
                   <View style={styles.qrWrap}>
                     <View style={styles.qrBox}>

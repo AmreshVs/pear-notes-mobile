@@ -4,6 +4,8 @@ import { Pressable, StyleSheet, View } from 'react-native'
 import { FadeIn } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
+import { TRASH_RETENTION_DAYS } from '@pear-notes/core/constant.js'
+
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -137,7 +139,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
             {t('folderView.empty.trashEmptyTitle')}
           </Text>
           <Text style={styles.subtitle}>
-            {t('folderView.empty.trashEmptySubtitle')}
+            {t('folderView.empty.trashEmptySubtitle', { days: TRASH_RETENTION_DAYS })}
           </Text>
         </>
       ) : (

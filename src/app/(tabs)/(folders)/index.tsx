@@ -94,7 +94,24 @@ export default function FoldersScreen() {
 
   const handleCreateFolder = useCallback(() => {
     hapticLight()
-    dispatch(createFolder({ name: t('folders.untitled') } as any))
+    Alert.prompt(
+      t('folders.newFolderTitle'),
+      undefined,
+      [
+        { text: t('folders.buttons.cancel'), style: 'cancel' },
+        {
+          text: t('folders.buttons.create'),
+          onPress: (name?: string) => {
+            const trimmed = name?.trim()
+            if (!trimmed) return
+            hapticSuccess()
+            dispatch(createFolder({ name: trimmed } as any))
+          },
+        },
+      ],
+      'plain-text',
+      '',
+    )
   }, [dispatch, t])
 
   const handleRenameFolder = useCallback(

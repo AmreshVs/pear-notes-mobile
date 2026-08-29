@@ -97,7 +97,7 @@ export default function AndroidFoldersScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
-  const [renameDialog, setRenameDialog] = useState<{ id: string; name: string } | null>(null)
+  const [folderDialog, setFolderDialog] = useState<{ id: string; name: string } | null>(null)
   const [renameText, setRenameText] = useState('')
 
   const creatingNoteRef = useRef(false)
@@ -149,23 +149,31 @@ export default function AndroidFoldersScreen() {
 
   const handleCreateFolder = useCallback(() => {
     hapticLight()
-    dispatch(createFolder({ name: t('folders.untitled') } as any))
-  }, [dispatch, t])
+    setRenameText('')
+    setFolderDialog({ id: '', name: '' })
+  }, [])
 
   const openRenameDialog = useCallback((id: string, name: string) => {
     setRenameText(name)
-    setRenameDialog({ id, name })
+    setFolderDialog({ id, name })
   }, [])
 
-  const confirmRename = useCallback(() => {
-    if (!renameDialog) return
+  const confirmFolderDialog = useCallback(() => {
+    if (!folderDialog) return
     const trimmed = renameText.trim()
-    if (trimmed && trimmed !== renameDialog.name) {
-      hapticSuccess()
-      dispatch(updateFolder({ id: renameDialog.id, name: trimmed } as any))
+    if (!trimmed) {
+      setFolderDialog(null)
+      return
     }
-    setRenameDialog(null)
-  }, [dispatch, renameDialog, renameText])
+    if (!folderDialog.id) {
+      hapticSuccess()
+      dispatch(createFolder({ name: trimmed } as any))
+    } else if (trimmed !== folderDialog.name) {
+      hapticSuccess()
+      dispatch(updateFolder({ id: folderDialog.id, name: trimmed } as any))
+    }
+    setFolderDialog(null)
+  }, [dispatch, folderDialog, renameText])
 
   const handleFolderLongPress = useCallback(
     (folderId: string) => {
@@ -207,8 +215,8 @@ export default function AndroidFoldersScreen() {
     router.push('/settings')
   }, [])
 
-  const handleCloseRenameDialog = useCallback(() => {
-    setRenameDialog(null)
+  const handleCloseFolderDialog = useCallback(() => {
+    setFolderDialog(null)
   }, [])
 
   const handleCloseFolderSheet = useCallback(() => {
@@ -216,6 +224,8 @@ export default function AndroidFoldersScreen() {
   }, [])
 
   const handleNoop = useCallback(() => {}, [])
+
+  const isCreatingFolder = !!folderDialog && !folderDialog.id
 
   const sheetTitle = useMemo(() => {
     if (!folderSheet) return t('folders.untitled')
@@ -365,36 +375,41 @@ export default function AndroidFoldersScreen() {
       />
 
       <Modal
-        visible={!!renameDialog}
+        visible={!!folderDialog}
         transparent
         animationType="fade"
-        onRequestClose={handleCloseRenameDialog}
+        onRequestClose={handleCloseFolderDialog}
         statusBarTranslucent
       >
-        <Pressable style={styles.modalOverlay} onPress={handleCloseRenameDialog}>
+        <Pressable style={styles.modalOverlay} onPress={handleCloseFolderDialog}>
           <Pressable style={styles.renameDialog} onPress={handleNoop}>
-            <Text style={styles.dialogTitle}>{t('folders.renameTitle')}</Text>
+            <Text style={styles.dialogTitle}>
+              {isCreatingFolder ? t('folders.newFolderTitle') : t('folders.renameTitle')}
+            </Text>
             <PaperTextInput
               value={renameText}
               onChangeText={setRenameText}
+              onSubmitEditing={confirmFolderDialog}
               autoFocus
               mode="outlined"
-              label={t('folders.renameLabel')}
+              label={isCreatingFolder ? t('folders.newFolderLabel') : t('folders.renameLabel')}
             />
             <View style={styles.dialogActions}>
               <Pressable
-                onPress={handleCloseRenameDialog}
+                onPress={handleCloseFolderDialog}
                 android_ripple={screenRipple}
                 style={styles.dialogBtn}
               >
                 <Text style={styles.dialogBtnTextCancel}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
-                onPress={confirmRename}
+                onPress={confirmFolderDialog}
                 android_ripple={screenRipple}
                 style={styles.dialogBtn}
               >
-                <Text style={styles.dialogBtnTextRename}>{t('folders.buttons.rename')}</Text>
+                <Text style={styles.dialogBtnTextRename}>
+                  {isCreatingFolder ? t('folders.buttons.create') : t('folders.buttons.rename')}
+                </Text>
               </Pressable>
             </View>
           </Pressable>

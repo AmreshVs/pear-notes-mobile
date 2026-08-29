@@ -2,15 +2,15 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
-  Animated,
   DimensionValue,
+  KeyboardAvoidingView,
   Modal,
   Pressable,
   StyleSheet,
   TextInput,
   View as RNView,
 } from 'react-native'
-import Reanimated, { Easing, FadeInDown } from 'react-native-reanimated'
+import Reanimated, { Easing, FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import { BlurView } from 'expo-blur'
@@ -37,6 +37,7 @@ import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
+  Durations,
   FontSize,
   FontWeight,
   LetterSpacing,
@@ -73,7 +74,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const [isScanning, setIsScanning] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
-  const fadeAnim = useMemo(() => new Animated.Value(0), [])
 
   useEffect(() => {
     return pendingInviteState.subscribe((invite) => {
@@ -96,14 +96,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const { step, progress, userData, localKey, data } = activeStatus
 
   useEffect(() => {
-    if (isVisible) {
-      Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start()
-    } else {
-      Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start()
-    }
-  }, [isVisible, fadeAnim])
-
-  useEffect(() => {
     if (deviceRemoved) {
       router.dismissAll()
     }
@@ -111,7 +103,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   useEffect(() => {
     if (step === 'done') hapticSuccess()
-    else if (step === 'error' || step === 'rejected') hapticError()
+    else if (step === 'error' || step === 'rejected' || step === 'expired') hapticError()
     else if (step === 'confirmation') hapticMedium()
   }, [step])
 
@@ -286,6 +278,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     const isDone = step === 'done'
     const isError = step === 'error'
     const isRejected = step === 'rejected'
+    const isExpired = step === 'expired'
 
     if (deviceRemoved) {
       return (
@@ -332,7 +325,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       )
     }
 
-    if (isError || isRejected) {
+    if (isError || isRejected || isExpired) {
       return (
         <View style={styles.cardInner}>
           <View style={[styles.icon, styles.errorIcon]}>
@@ -344,14 +337,18 @@ export const PairingOverlay = memo(function PairingOverlay() {
             />
           </View>
           <Text style={styles.title}>
-            {isRejected
-              ? t('pairing.overlay.pairingRejectedTitle')
-              : t('pairing.overlay.pairingFailedTitle')}
+            {isExpired
+              ? t('pairing.overlay.pairingExpiredTitle')
+              : isRejected
+                ? t('pairing.overlay.pairingRejectedTitle')
+                : t('pairing.overlay.pairingFailedTitle')}
           </Text>
           <Text style={styles.sub}>
-            {isRejected
-              ? t('pairing.overlay.pairingRejectedDesc')
-              : t('pairing.overlay.pairingFailedDesc')}
+            {isExpired
+              ? t('pairing.overlay.pairingExpiredDesc')
+              : isRejected
+                ? t('pairing.overlay.pairingRejectedDesc')
+                : t('pairing.overlay.pairingFailedDesc')}
           </Text>
           <Pressable onPress={handleResetAfterFailedPairing} style={[styles.btn, styles.errorBtn]}>
             <Text style={styles.errorBtnText}>{t('pairing.overlay.okay')}</Text>
@@ -537,15 +534,14 @@ export const PairingOverlay = memo(function PairingOverlay() {
     handleCancelMerge,
   ])
 
-  const fadeStyle = useMemo(
-    () => [styles.fadeWrapper, { opacity: fadeAnim }],
-    [fadeAnim, styles.fadeWrapper],
-  )
-
   if (!isVisible) return null
 
   return (
-    <MotionView style={fadeStyle}>
+    <MotionView
+      style={styles.fadeWrapper}
+      entering={FadeIn.duration(Durations.overlayFade)}
+      exiting={FadeOut.duration(Durations.overlayFadeOut)}
+    >
       {isAndroid ? (
         <RNView style={styles.androidScrim} />
       ) : (
@@ -556,7 +552,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
       )}
       <Pressable style={StyleSheet.absoluteFill} />
 
-      <View style={styles.center} pointerEvents="box-none">
+      <KeyboardAvoidingView
+        behavior={isAndroid ? undefined : 'padding'}
+        style={styles.center}
+        pointerEvents="box-none"
+      >
         <Reanimated.View
           key={`${step}-${pendingInvite ? 'merge' : showPairingInput ? 'input' : 'flow'}`}
           entering={FadeInDown.duration(240)}
@@ -574,7 +574,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
             )}
           </Reanimated.View>
         </Reanimated.View>
-      </View>
+      </KeyboardAvoidingView>
       <Modal
         visible={isScanning}
         animationType="slide"

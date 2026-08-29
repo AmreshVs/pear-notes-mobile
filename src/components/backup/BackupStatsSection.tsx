@@ -37,47 +37,27 @@ export function BackupStatsSection({
   const commonThemedStyles = useCommonThemedStyles()
 
   return (
-    <>
-      <MotionView entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}>
-        <RNView style={commonThemedStyles.card}>
-          <RNView style={styles.infoRow}>
-            <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-              <SymbolIcon
-                name="arrow.counterclockwise"
-                size={UI_ICON_SIZE_16}
-                color={colors.primary}
-              />
-            </RNView>
-            <RNView style={styles.infoText}>
-              <Text style={styles.infoLabel}>{t('backup.lastBackup')}</Text>
-              <Text style={styles.infoValue}>
-                {lastBackupDate ? formatBackupDate(lastBackupDate) : t('backup.noBackup')}
-              </Text>
-            </RNView>
-          </RNView>
+    <MotionView
+      entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}
+      style={styles.statsRow}
+    >
+      <RNView style={[commonThemedStyles.card, styles.statCard]}>
+        <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
+          <SymbolIcon name="arrow.counterclockwise" size={UI_ICON_SIZE_16} color={colors.primary} />
         </RNView>
-      </MotionView>
-
-      <MotionView
-        entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
-        style={styles.statsRow}
-      >
-        <RNView style={[commonThemedStyles.card, styles.statCard]}>
-          <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-            <SymbolIcon name="internaldrive" size={UI_ICON_SIZE_16} color={colors.primary} />
-          </RNView>
-          <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
-          <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
+        <Text style={styles.statLabel}>{t('backup.lastBackup')}</Text>
+        <Text style={styles.statValue}>
+          {lastBackupDate ? formatBackupDate(lastBackupDate) : t('backup.noBackup')}
+        </Text>
+      </RNView>
+      <RNView style={[commonThemedStyles.card, styles.statCard]}>
+        <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
+          <SymbolIcon name="internaldrive" size={UI_ICON_SIZE_16} color={colors.primary} />
         </RNView>
-        <RNView style={[commonThemedStyles.card, styles.statCard]}>
-          <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
-            <SymbolIcon name="lock" size={UI_ICON_SIZE_16} color={colors.primary} />
-          </RNView>
-          <Text style={styles.statLabel}>{t('backup.encryption')}</Text>
-          <Text style={styles.statValue}>{t('backup.encryptionValue')}</Text>
-        </RNView>
-      </MotionView>
-    </>
+        <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
+        <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
+      </RNView>
+    </MotionView>
   )
 }
 
@@ -86,28 +66,9 @@ const useStyles = createThemedStylesheet((theme) => {
     goldIconBox: {
       backgroundColor: theme.colors.cardSelected,
     },
-    infoRow: {
-      ...commonStyles.row,
-      padding: Space.base,
-      gap: Space.md,
-    },
-    infoText: {
-      flex: 1,
-    },
-    infoLabel: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      color: theme.colors.text,
-      marginBottom: UI_SIZE_2,
-    },
-    infoValue: {
-      fontSize: FontSize.body,
-      color: theme.colors.textMuted,
-    },
     statsRow: {
       ...commonStyles.row,
       gap: Space.md,
-      marginTop: Space.md,
     },
     statCard: {
       flex: 1,

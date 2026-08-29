@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, type StyleProp, StyleSheet, type ViewStyle } from 'react-native'
 import { SymbolView } from 'expo-symbols'
 
+import { TRASH_RETENTION_DAYS } from '@pear-notes/core/constant.js'
+
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
   commonStyles,
@@ -62,7 +64,7 @@ export const FolderEmptyState = memo(function FolderEmptyState({
           {t('folderView.empty.trashEmptyTitle')}
         </Text>
         <Text style={commonThemedStyles.emptySubtitle}>
-          {t('folderView.empty.trashEmptySubtitle')}
+          {t('folderView.empty.trashEmptySubtitle', { days: TRASH_RETENTION_DAYS })}
         </Text>
       </View>
     )

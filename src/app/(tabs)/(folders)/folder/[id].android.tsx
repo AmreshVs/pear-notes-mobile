@@ -19,7 +19,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 
-import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
+import {
+  ALL_NOTES_KEY,
+  RECENTLY_DELETED_KEY,
+  TRASH_RETENTION_DAYS,
+} from '@pear-notes/core/constant.js'
 import {
   deleteFolder,
   getFolders,
@@ -34,6 +38,9 @@ import {
   getNotes,
   getSelectedNote,
   moveNotes,
+  purgeExpiredTrash,
+  restoreNote,
+  restoreNotes,
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -174,6 +181,10 @@ export default function AndroidFolderNotesScreen() {
     if (selectedNote) lastSelectedNoteRef.current = selectedNote
   }, [selectedNote])
 
+  useEffect(() => {
+    if (isTrashFolder) dispatch(purgeExpiredTrash())
+  }, [isTrashFolder, dispatch])
+
   const orderedKeys = useMemo(() => notes.map((note: any) => note.key), [notes])
 
   const {
@@ -232,6 +243,13 @@ export default function AndroidFolderNotesScreen() {
     },
     [dispatch, selectedKeys, exitSelection],
   )
+
+  const handleBulkRestore = useCallback(() => {
+    if (selectedKeys.length === 0) return
+    hapticSuccess()
+    dispatch(restoreNotes(selectedKeys as any))
+    exitSelection()
+  }, [dispatch, selectedKeys, exitSelection])
 
   const handleOpenBulkDelete = useCallback(() => {
     setShowBulkDeleteConfirm(true)
@@ -324,6 +342,14 @@ export default function AndroidFolderNotesScreen() {
     setNoteSheetVisible(false)
     setFolderPickerVisible(true)
   }, [])
+
+  const handleNoteSheetRestore = useCallback(() => {
+    if (!activeNoteId) return
+    const targetId = activeNoteId
+    setNoteSheetVisible(false)
+    hapticSuccess()
+    dispatch(restoreNote(targetId as any))
+  }, [activeNoteId, dispatch])
 
   const activeNoteLocked = useMemo(
     () => notes.find((n: any) => n.key === activeNoteId)?.value?.locked === true,
@@ -442,9 +468,24 @@ export default function AndroidFolderNotesScreen() {
             ? t('folderView.selection.selectedCount', { count: selectedCount })
             : t('folderView.noteCount', { count: notes.length })}
         </Text>
+        {isTrashFolder && notes.length > 0 && (
+          <Text style={styles.retentionNotice}>
+            {t('folderView.trashRetentionNotice', { days: TRASH_RETENTION_DAYS })}
+          </Text>
+        )}
       </View>
     ),
-    [folder?.name, notes.length, isSelecting, selectedCount, t, styles.pageTitle, styles.pageCount],
+    [
+      folder?.name,
+      notes.length,
+      isSelecting,
+      isTrashFolder,
+      selectedCount,
+      t,
+      styles.pageTitle,
+      styles.pageCount,
+      styles.retentionNotice,
+    ],
   )
 
   const listEmpty = useMemo(
@@ -479,22 +520,35 @@ export default function AndroidFolderNotesScreen() {
     [styles.sectionCap],
   )
 
-  const noteSheetActions = useMemo(
+  const trashNoteSheetActions = useMemo(
+    () => [
+      {
+        icon: 'backup-restore',
+        label: t('noteCard.actions.restore'),
+        onPress: handleNoteSheetRestore,
+      },
+      {
+        icon: 'delete-outline',
+        label: t('folderView.permanentlyDeleteTitle'),
+        onPress: handleNoteSheetDelete,
+        destructive: true as const,
+      },
+    ],
+    [handleNoteSheetRestore, handleNoteSheetDelete, t],
+  )
+
+  const folderNoteSheetActions = useMemo(
     () => [
       {
         icon: 'checkbox-multiple-marked-outline',
         label: t('folderView.selection.select'),
         onPress: handleNoteSheetSelect,
       },
-      ...(!isTrashFolder
-        ? [
-            {
-              icon: activeNotePinned ? 'pin-off-outline' : 'pin-outline',
-              label: activeNotePinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin'),
-              onPress: handleNoteSheetTogglePin,
-            },
-          ]
-        : []),
+      {
+        icon: activeNotePinned ? 'pin-off-outline' : 'pin-outline',
+        label: activeNotePinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin'),
+        onPress: handleNoteSheetTogglePin,
+      },
       { icon: 'content-copy', label: t('noteCard.actions.copyNote'), onPress: handleNoteSheetCopy },
       ...(moveFolders.length > 0
         ? [
@@ -505,20 +559,14 @@ export default function AndroidFolderNotesScreen() {
             },
           ]
         : []),
-      ...(!isTrashFolder
-        ? [
-            {
-              icon: activeNoteLocked ? 'lock-off-outline' : 'lock-outline',
-              label: activeNoteLocked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
-              onPress: handleNoteSheetToggleLock,
-            },
-          ]
-        : []),
+      {
+        icon: activeNoteLocked ? 'lock-off-outline' : 'lock-outline',
+        label: activeNoteLocked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
+        onPress: handleNoteSheetToggleLock,
+      },
       {
         icon: 'delete-outline',
-        label: isTrashFolder
-          ? t('folderView.permanentlyDeleteTitle')
-          : t('noteCard.actions.delete'),
+        label: t('noteCard.actions.delete'),
         onPress: handleNoteSheetDelete,
         destructive: true as const,
       },
@@ -533,10 +581,11 @@ export default function AndroidFolderNotesScreen() {
       activeNoteLocked,
       activeNotePinned,
       moveFolders.length,
-      isTrashFolder,
       t,
     ],
   )
+
+  const noteSheetActions = isTrashFolder ? trashNoteSheetActions : folderNoteSheetActions
 
   const handleBack = useCallback(() => {
     router.back()
@@ -619,6 +668,7 @@ export default function AndroidFolderNotesScreen() {
           onClose={exitSelection}
           onToggleSelectAll={handleToggleSelectAll}
           onMove={handleOpenBulkMove}
+          onRestore={handleBulkRestore}
           onDelete={handleOpenBulkDelete}
         />
       ) : (
@@ -753,7 +803,7 @@ export default function AndroidFolderNotesScreen() {
         subtitle={
           isTrashFolder
             ? t('folderView.selection.confirmPermanentDeleteBody')
-            : t('folderView.selection.confirmDeleteBody')
+            : t('folderView.selection.confirmDeleteBody', { days: TRASH_RETENTION_DAYS })
         }
         actions={bulkDeleteConfirmActions}
       />
@@ -812,6 +862,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       letterSpacing: 1.2,
       color: c.onSurfaceVariant,
       marginBottom: UI_SIZE_4,
+    },
+    retentionNotice: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
+      color: c.onSurfaceVariant,
+      lineHeight: FontSize.caption * 1.4,
+      marginBottom: UI_SIZE_12,
     },
     sectionCap: {
       fontSize: FontSize.caption,

@@ -5,7 +5,11 @@ import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 
-import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
+import {
+  ALL_NOTES_KEY,
+  RECENTLY_DELETED_KEY,
+  TRASH_RETENTION_DAYS,
+} from '@pear-notes/core/constant.js'
 import {
   deleteFolder,
   getFolders,
@@ -20,6 +24,9 @@ import {
   getNotes,
   getSelectedNote,
   moveNotes,
+  purgeExpiredTrash,
+  restoreNote,
+  restoreNotes,
   setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -153,6 +160,13 @@ export default function FolderNotesScreen() {
     [dispatch, selectedKeys, exitSelection],
   )
 
+  const handleBulkRestore = useCallback(() => {
+    if (selectedKeys.length === 0) return
+    hapticSuccess()
+    dispatch(restoreNotes(selectedKeys as any))
+    exitSelection()
+  }, [dispatch, selectedKeys, exitSelection])
+
   const handleBulkDelete = useCallback(() => {
     const count = selectedKeys.length
     if (count === 0) return
@@ -163,7 +177,7 @@ export default function FolderNotesScreen() {
         : t('folderView.selection.confirmDeleteTitle', { count }),
       isTrash
         ? t('folderView.selection.confirmPermanentDeleteBody')
-        : t('folderView.selection.confirmDeleteBody'),
+        : t('folderView.selection.confirmDeleteBody', { days: TRASH_RETENTION_DAYS }),
       [
         { text: t('folders.buttons.cancel'), style: 'cancel' },
         {
@@ -178,6 +192,14 @@ export default function FolderNotesScreen() {
       ],
     )
   }, [dispatch, selectedKeys, exitSelection, id, t])
+
+  const handleRestoreNote = useCallback(
+    (noteId: string) => {
+      hapticSuccess()
+      dispatch(restoreNote(noteId as any))
+    },
+    [dispatch],
+  )
 
   const handleCreateNote = useCallback(() => {
     hapticLight()
@@ -310,6 +332,10 @@ export default function FolderNotesScreen() {
     }
   }, [selectedNote])
 
+  useEffect(() => {
+    if (isTrashFolder) dispatch(purgeExpiredTrash())
+  }, [isTrashFolder, dispatch])
+
   const scrollContentStyle = useMemo(
     () => [
       styles.scrollContent,
@@ -357,11 +383,12 @@ export default function FolderNotesScreen() {
           onPress={handleSelectNote}
           onToggleSelect={handleToggleSelect}
           onDelete={handleDeleteNote}
-          onCopy={handleCopyNoteById}
-          onToggleLock={handleToggleLockNote}
+          onRestore={isTrashFolder ? handleRestoreNote : undefined}
+          onCopy={isTrashFolder ? undefined : handleCopyNoteById}
+          onToggleLock={isTrashFolder ? undefined : handleToggleLockNote}
           onTogglePin={isTrashFolder ? undefined : handleTogglePinNote}
-          moveFolders={moveFolders}
-          onMoveTo={handleMoveNote}
+          moveFolders={isTrashFolder ? undefined : moveFolders}
+          onMoveTo={isTrashFolder ? undefined : handleMoveNote}
         />
       )
     },
@@ -373,6 +400,7 @@ export default function FolderNotesScreen() {
       handleToggleSelect,
       handleSelectNote,
       handleDeleteNote,
+      handleRestoreNote,
       handleCopyNoteById,
       handleTogglePinNote,
       handleToggleLockNote,
@@ -410,16 +438,23 @@ export default function FolderNotesScreen() {
               : t('folderView.noteCount', { count: notes.length })}
           </Text>
         </View>
+        {isTrashFolder && notes.length > 0 && (
+          <Text style={styles.retentionNotice}>
+            {t('folderView.trashRetentionNotice', { days: TRASH_RETENTION_DAYS })}
+          </Text>
+        )}
       </>
     ),
     [
       folder?.name,
       notes.length,
       isSelecting,
+      isTrashFolder,
       selectedCount,
       t,
       styles.pageTitle,
       styles.headerInfo,
+      styles.retentionNotice,
       commonThemedStyles.sectionCap,
     ],
   )
@@ -483,6 +518,7 @@ export default function FolderNotesScreen() {
           onClearSelection={clearSelection}
           onDone={exitSelection}
           onMoveTo={handleBulkMove}
+          onRestore={handleBulkRestore}
           onDelete={handleBulkDelete}
         />
       ) : (
@@ -564,6 +600,13 @@ const useStyles = createThemedStylesheet((theme) => {
     headerInfo: {
       marginLeft: Space.base,
       marginBottom: Space.sm,
+    },
+    retentionNotice: {
+      marginHorizontal: Space.base,
+      marginBottom: Space.base,
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+      lineHeight: FontSize.caption * 1.4,
     },
     sectionHeader: {
       marginLeft: Space.base,

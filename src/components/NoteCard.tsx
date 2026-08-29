@@ -78,6 +78,7 @@ interface NoteCardProps {
   pinned?: boolean
   onPress: (id: string) => void
   onDelete?: (id: string) => void
+  onRestore?: (id: string) => void
   onCopy?: (id: string) => void
   onToggleLock?: (id: string, currentlyLocked: boolean) => void
   onTogglePin?: (id: string, currentlyPinned: boolean) => void
@@ -159,6 +160,7 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.moveFolders === next.moveFolders &&
     prev.onPress === next.onPress &&
     prev.onDelete === next.onDelete &&
+    prev.onRestore === next.onRestore &&
     prev.onCopy === next.onCopy &&
     prev.onToggleLock === next.onToggleLock &&
     prev.onTogglePin === next.onTogglePin &&
@@ -184,6 +186,7 @@ export const NoteCard = memo(function NoteCard({
   pinned,
   onPress,
   onDelete,
+  onRestore,
   onCopy,
   onToggleLock,
   onTogglePin,
@@ -217,6 +220,7 @@ export const NoteCard = memo(function NoteCard({
   }, [selecting, onToggleSelect, onPress, id])
   const handleThumbError = useCallback(() => setThumbError(true), [])
   const handleDelete = useCallback(() => onDelete?.(id), [onDelete, id])
+  const handleRestore = useCallback(() => onRestore?.(id), [onRestore, id])
   const handleCopy = useCallback(() => onCopy?.(id), [onCopy, id])
   const handleToggleLock = useCallback(
     () => onToggleLock?.(id, locked === true),
@@ -268,6 +272,9 @@ export const NoteCard = memo(function NoteCard({
   }, [displayTitle, pinned, locked, date, t])
   const showAttachment = !masked && !summary && !!attachment
   const attachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
+  const deleteLabel = onRestore
+    ? t('folderView.permanentlyDeleteTitle')
+    : t('noteCard.actions.delete')
   const displaySummary = masked
     ? t('noteCard.lockedSummary')
     : summary || t('noteCard.noAdditionalText')
@@ -293,9 +300,10 @@ export const NoteCard = memo(function NoteCard({
         label: locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
       })
     if (onCopy) actions.push({ name: NOTE_ACTION.copy, label: t('noteCard.actions.copyNote') })
-    if (onDelete) actions.push({ name: NOTE_ACTION.delete, label: t('noteCard.actions.delete') })
+    if (onRestore) actions.push({ name: NOTE_ACTION.restore, label: t('noteCard.actions.restore') })
+    if (onDelete) actions.push({ name: NOTE_ACTION.delete, label: deleteLabel })
     return actions
-  }, [onTogglePin, onToggleLock, onCopy, onDelete, pinned, locked, t])
+  }, [onTogglePin, onToggleLock, onCopy, onRestore, onDelete, pinned, locked, deleteLabel, t])
 
   const handleAccessibilityAction = useCallback(
     (event: { nativeEvent: { actionName: string } }) => {
@@ -303,11 +311,12 @@ export const NoteCard = memo(function NoteCard({
         [NOTE_ACTION.togglePin]: handleTogglePin,
         [NOTE_ACTION.toggleLock]: handleToggleLock,
         [NOTE_ACTION.copy]: handleCopy,
+        [NOTE_ACTION.restore]: handleRestore,
         [NOTE_ACTION.delete]: handleDelete,
       }[event.nativeEvent.actionName]
       runner?.()
     },
-    [handleTogglePin, handleToggleLock, handleCopy, handleDelete],
+    [handleTogglePin, handleToggleLock, handleCopy, handleRestore, handleDelete],
   )
 
   const card = (
@@ -416,7 +425,8 @@ export const NoteCard = memo(function NoteCard({
     </MotionView>
   )
 
-  const hasActions = !selecting && (onDelete || onCopy || onMoveTo || onToggleLock || onTogglePin)
+  const hasActions =
+    !selecting && (onDelete || onRestore || onCopy || onMoveTo || onToggleLock || onTogglePin)
 
   if (!ExpoUI || !hasActions) {
     return card
@@ -428,6 +438,14 @@ export const NoteCard = memo(function NoteCard({
     <Host>
       <ContextMenu>
         <ContextMenu.Items>
+          {onRestore && (
+            <Button
+              label={t('noteCard.actions.restore')}
+              systemImage="arrow.uturn.backward"
+              onPress={handleRestore}
+            />
+          )}
+
           {onMoveTo && <MoveToMenu noteId={id} moveFolders={moveFolders} onMoveTo={onMoveTo} />}
 
           {onCopy && (
@@ -456,7 +474,7 @@ export const NoteCard = memo(function NoteCard({
 
           {onDelete && (
             <Button
-              label={t('noteCard.actions.delete')}
+              label={deleteLabel}
               systemImage="trash"
               role="destructive"
               onPress={handleDelete}

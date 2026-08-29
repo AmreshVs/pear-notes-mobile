@@ -99,6 +99,8 @@ export const Layout = {
   scrollPaddingBottom: 60,
 } as const
 
+export const OPACITY_DISABLED = 0.4
+
 export const Radii = {
   xs: 4,
   sm: 8,
@@ -125,6 +127,8 @@ export const Space = {
 } as const
 
 export const Durations = {
+  overlayFade: 300,
+  overlayFadeOut: 200,
   sheetOpen: 340,
   sheetClose: 260,
   fade: 220,
@@ -202,6 +206,8 @@ export const commonStyles = StyleSheet.create({
   },
 
   pressed: { opacity: 0.5 },
+
+  disabled: { opacity: OPACITY_DISABLED },
 
   headerBtn: { padding: Space.sm },
 

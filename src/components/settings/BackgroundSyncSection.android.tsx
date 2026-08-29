@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
@@ -19,14 +19,10 @@ import {
   UI_SIZE_28,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import {
-  BackgroundSyncMode,
-  getBackgroundSyncMode,
-  setBackgroundSyncMode,
-} from '@/lib/backgroundSync'
-import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
+import { BackgroundSyncMode } from '@/lib/backgroundSync'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { hapticSelection } from '@/lib/haptics'
+
+import { BACKGROUND_SYNC_MODE_LOCALE_KEY, useBackgroundSync } from './useBackgroundSync'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -37,38 +33,15 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 const MODES: BackgroundSyncMode[] = ['off', 'periodic', 'always-on']
 
-const MODE_LOCALE_KEY: Record<BackgroundSyncMode, string> = {
-  off: 'off',
-  periodic: 'periodic',
-  'always-on': 'alwaysOn',
-}
-
 export function BackgroundSyncSection() {
   const { t } = useTranslation()
   const styles = useStyles()
   const md3Styles = useMD3CommonStyles()
-  const [mode, setMode] = useState<BackgroundSyncMode>('off')
-
-  useEffect(() => {
-    let active = true
-    getBackgroundSyncMode().then((value) => {
-      if (active) setMode(value)
-    })
-    return () => {
-      active = false
-    }
-  }, [])
-
-  const commitMode = useCallback((next: BackgroundSyncMode) => {
-    hapticSelection()
-    setMode(next)
-    setBackgroundSyncMode(next)
-    applyBackgroundSyncMode(next)
-  }, [])
+  const { mode, hasLinkedDevices, commitMode } = useBackgroundSync()
 
   const handleSelect = useCallback(
     async (next: BackgroundSyncMode) => {
-      if (next === mode) return
+      if (next === mode || !hasLinkedDevices) return
 
       if (next === 'always-on') {
         try {
@@ -93,7 +66,7 @@ export function BackgroundSyncSection() {
 
       commitMode(next)
     },
-    [mode, t, commitMode],
+    [mode, hasLinkedDevices, t, commitMode],
   )
 
   const renderSegment = useCallback(
@@ -103,15 +76,16 @@ export function BackgroundSyncSection() {
         <Pressable
           key={item}
           onPress={() => handleSelect(item)}
+          disabled={!hasLinkedDevices}
           style={[styles.segItem, active && styles.segItemActive]}
         >
           <Text style={[styles.segText, active && styles.segTextActive]}>
-            {t(`sync.backgroundSync.${MODE_LOCALE_KEY[item]}`)}
+            {t(`sync.backgroundSync.${BACKGROUND_SYNC_MODE_LOCALE_KEY[item]}`)}
           </Text>
         </Pressable>
       )
     },
-    [mode, handleSelect, styles, t],
+    [mode, handleSelect, hasLinkedDevices, styles, t],
   )
 
   return (
@@ -125,9 +99,19 @@ export function BackgroundSyncSection() {
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.card}
       >
-        <Text style={styles.cardTitle}>{t('sync.backgroundSync.modeLabel')}</Text>
-        <View style={styles.segContainer}>{MODES.map(renderSegment)}</View>
-        <Text style={styles.cardDesc}>{t(`sync.backgroundSync.${MODE_LOCALE_KEY[mode]}Desc`)}</Text>
+        <Text style={[styles.cardTitle, !hasLinkedDevices && commonStyles.disabled]}>
+          {hasLinkedDevices
+            ? t('sync.backgroundSync.modeLabel')
+            : t('sync.backgroundSync.unlinkedTitle')}
+        </Text>
+        <View style={[styles.segContainer, !hasLinkedDevices && commonStyles.disabled]}>
+          {MODES.map(renderSegment)}
+        </View>
+        <Text style={styles.cardDesc}>
+          {hasLinkedDevices
+            ? t(`sync.backgroundSync.${BACKGROUND_SYNC_MODE_LOCALE_KEY[mode]}Desc`)
+            : t('sync.backgroundSync.unlinkedDesc')}
+        </Text>
       </MotionView>
     </>
   )

@@ -12,7 +12,8 @@ import {
 import QRCode from 'react-native-qrcode-svg'
 import Reanimated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
-import { isValidInvite } from '@pear-notes/core/utils.js'
+import { INVITE_EXPIRY_MINUTES } from '@pear-notes/core/constant.js'
+import { formatInviteCountdown, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
@@ -59,7 +60,8 @@ export default function SyncScreen() {
     handleRequestCameraPermission,
     scrollRef,
     inviteCode,
-    expiresAt,
+    inviteRemainingMs,
+    inviteExpired,
     isLoading,
     syncedDevices,
     isSynced,
@@ -70,7 +72,6 @@ export default function SyncScreen() {
     handleBarcodeScanned,
     handleGenerateInvite,
     handleScrollToEnd,
-    formatExpiry,
   } = useSyncScreen()
 
   const renderTabPill = useCallback(
@@ -147,7 +148,7 @@ export default function SyncScreen() {
             style={styles.pad}
           >
             <Reanimated.View entering={FadeInDown.duration(240).delay(40)} style={styles.heroCard}>
-              {!inviteCode ? (
+              {!inviteCode || inviteExpired ? (
                 <>
                   <RNView style={styles.heroSection}>
                     <RNView style={styles.heroCircle}>
@@ -167,8 +168,14 @@ export default function SyncScreen() {
                     </RNView>
                   </RNView>
 
-                  <Text style={styles.heroTitle}>{t('sync.hero.title')}</Text>
-                  <Text style={styles.heroDesc}>{t('sync.hero.description')}</Text>
+                  <Text style={styles.heroTitle}>
+                    {inviteExpired ? t('sync.invite.expiredTitle') : t('sync.hero.title')}
+                  </Text>
+                  <Text style={styles.heroDesc}>
+                    {inviteExpired
+                      ? t('sync.invite.expiredDesc', { minutes: INVITE_EXPIRY_MINUTES })
+                      : t('sync.hero.description')}
+                  </Text>
 
                   <Pressable
                     onPress={handleGenerateInvite}
@@ -187,7 +194,11 @@ export default function SyncScreen() {
                       />
                     )}
                     <Text style={styles.btnText}>
-                      {isLoading ? t('sync.hero.preparing') : t('sync.hero.generateBtn')}
+                      {isLoading
+                        ? t('sync.hero.preparing')
+                        : inviteExpired
+                          ? t('sync.invite.regenerateBtn')
+                          : t('sync.hero.generateBtn')}
                     </Text>
                   </Pressable>
                 </>
@@ -204,7 +215,11 @@ export default function SyncScreen() {
                   </RNView>
 
                   <Text style={styles.heroTitle}>{t('sync.invite.header')}</Text>
-                  <Text style={styles.heroDesc}>{formatExpiry(expiresAt)}</Text>
+                  <Text style={styles.heroDesc}>
+                    {t('sync.invite.expiresIn', {
+                      countdown: formatInviteCountdown(inviteRemainingMs),
+                    })}
+                  </Text>
 
                   <Reanimated.View
                     entering={FadeIn.duration(220).delay(70)}

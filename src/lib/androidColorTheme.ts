@@ -35,10 +35,10 @@ async function readStoredColorTheme(): Promise<AndroidColorTheme> {
   try {
     const value = await backendApi.getPreference({ key: ANDROID_COLOR_THEME_KEY })
     currentColorTheme = normalize(value)
+    loaded = true
   } catch {
     currentColorTheme = DEFAULT_COLOR_THEME
   }
-  loaded = true
   pendingLoad = null
   notify()
   return currentColorTheme

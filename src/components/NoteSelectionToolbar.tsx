@@ -18,6 +18,7 @@ type NoteSelectionToolbarProps = {
   onClearSelection: () => void
   onDone: () => void
   onMoveTo: (folderId: string) => void
+  onRestore: () => void
   onDelete: () => void
 }
 
@@ -30,6 +31,7 @@ export const NoteSelectionToolbar = memo(function NoteSelectionToolbar({
   onClearSelection,
   onDone,
   onMoveTo,
+  onRestore,
   onDelete,
 }: NoteSelectionToolbarProps) {
   const { t } = useTranslation()
@@ -67,20 +69,29 @@ export const NoteSelectionToolbar = memo(function NoteSelectionToolbar({
             : t('folderView.selection.selectAll')}
         </Stack.Toolbar.Button>
         <Stack.Toolbar.Spacer />
-        <Stack.Toolbar.Menu
-          icon={isTrash ? 'arrow.uturn.backward' : 'folder'}
-          disabled={!hasSelection || moveActions.length === 0}
-          accessibilityLabel={
-            isTrash ? t('folderView.selection.restore') : t('folderView.selection.move')
-          }
-        >
-          {moveActions}
-        </Stack.Toolbar.Menu>
+        {isTrash ? (
+          <Stack.Toolbar.Button
+            icon="arrow.uturn.backward"
+            disabled={!hasSelection}
+            accessibilityLabel={t('folderView.selection.restore')}
+            onPress={onRestore}
+          />
+        ) : (
+          <Stack.Toolbar.Menu
+            icon="folder"
+            disabled={!hasSelection || moveActions.length === 0}
+            accessibilityLabel={t('folderView.selection.move')}
+          >
+            {moveActions}
+          </Stack.Toolbar.Menu>
+        )}
         <Stack.Toolbar.Button
           icon="trash"
           tintColor={colors.error}
           disabled={!hasSelection}
-          accessibilityLabel={t('noteCard.actions.delete')}
+          accessibilityLabel={
+            isTrash ? t('folderView.permanentlyDeleteTitle') : t('noteCard.actions.delete')
+          }
           onPress={onDelete}
         />
       </Stack.Toolbar>

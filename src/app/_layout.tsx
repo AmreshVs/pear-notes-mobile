@@ -43,6 +43,7 @@ import {
 } from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
+import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
@@ -159,6 +160,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       await backendApi.ready({ storage, encryption: key })
       workletRestartAttemptsRef.current = 0
       loadHapticsPreference()
+      loadAndroidColorTheme()
       getBackgroundSyncMode().then(applyBackgroundSyncMode)
       dispatch(appReady())
       dispatch(initApp())
