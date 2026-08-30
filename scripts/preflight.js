@@ -523,6 +523,17 @@ function checkSubmitCredentials() {
   } else {
     pass('asc app id', ascAppId)
   }
+
+  const appleTeamId = easJson.submit?.production?.ios?.appleTeamId
+  if (!appleTeamId) {
+    fail(
+      'apple team',
+      'eas.json submit.production.ios.appleTeamId is missing - the release script exports it as ' +
+        'EXPO_APPLE_TEAM_ID, and without it "eas build" stops to prompt for the team id',
+    )
+  } else {
+    pass('apple team', `${appleTeamId} (exported as EXPO_APPLE_TEAM_ID)`)
+  }
 }
 
 function report() {

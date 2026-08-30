@@ -118,6 +118,28 @@ function readBuildNumber() {
   return Number(gradle.match(/versionCode\s+(\d+)/)?.[1] ?? 0)
 }
 
+function readSubmitProfile(profile) {
+  const easJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'eas.json'), 'utf8'))
+  return easJson.submit?.[profile]?.ios ?? {}
+}
+
+function appleEnv(profile) {
+  const { appleTeamId } = readSubmitProfile(profile)
+
+  if (!appleTeamId) {
+    abort(
+      `eas.json submit.${profile}.ios.appleTeamId is not set.\n` +
+        '  Without it "eas build" stops to ask for the Apple Team ID and the release is no longer ' +
+        'unattended.',
+    )
+  }
+
+  return {
+    EXPO_APPLE_TEAM_ID: appleTeamId,
+    EXPO_APPLE_TEAM_TYPE: process.env.EXPO_APPLE_TEAM_TYPE ?? 'INDIVIDUAL',
+  }
+}
+
 function artifactPath(platform, version, buildNumber) {
   const extension = platform === 'ios' ? 'ipa' : 'aab'
   return path.join(ARTIFACT_DIR, `pear-notes-${version}-${buildNumber}.${extension}`)
@@ -159,7 +181,11 @@ async function buildLocally(platform, profile, version, buildNumber) {
   const { status, failure } = await sh(
     `eas build --local --non-interactive --platform ${platform} --profile ${profile} --output "${output}"`,
     `Building ${platform} ${version} (${buildNumber}) locally`,
-    { heartbeat: `still building ${platform}`, allowFailure: true },
+    {
+      heartbeat: `still building ${platform}`,
+      allowFailure: true,
+      env: platform === 'ios' ? appleEnv(profile) : {},
+    },
   )
 
   if (status !== 0) return { file: null, failure }
@@ -182,7 +208,7 @@ function resolvePlayKey() {
 }
 
 async function submit(platform, profile, artifact) {
-  const env = {}
+  const env = platform === 'ios' ? appleEnv(profile) : {}
 
   if (platform === 'android') {
     const key = resolvePlayKey()
