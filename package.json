@@ -29,13 +29,14 @@
     "release:ios": "node scripts/release.js --platform ios",
     "release:android": "node scripts/release.js --platform android",
     "release:all": "node scripts/release.js --platform all",
-    "creds:check": "node scripts/check-eas-credentials.js"
+    "creds:check": "node scripts/check-eas-credentials.js",
+    "pin-core": "node scripts/pin-core.js"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~56.0.25",
     "@pchmn/expo-material3-theme": "^1.4.0",
-    "@pear-notes/core": "github:AmreshVs/pear-notes-core",
+    "@pear-notes/core": "github:AmreshVs/pear-notes-core#3997da257abc1ef3e17414c5898c87346491d384",
     "@react-native-community/slider": "^5.1.2",
     "@react-native-vector-icons/material-design-icons": "^13.1.2",
     "@reduxjs/toolkit": "2.12.0",

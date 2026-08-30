@@ -19,6 +19,7 @@ function parseArgs(argv) {
     profile: PROFILE,
     skipSubmit: false,
     skipPreflight: false,
+    submitOnly: false,
     bump: true,
     commit: true,
     version: null,
@@ -33,6 +34,7 @@ function parseArgs(argv) {
     else if (arg === '--no-bump') args.bump = false
     else if (arg === '--no-commit') args.commit = false
     else if (arg === '--skip-preflight') args.skipPreflight = true
+    else if (arg === '--submit-only') args.submitOnly = true
   }
 
   return args
@@ -71,9 +73,17 @@ function sh(command, description, options = {}) {
 
     const finish = (status) => {
       if (stop) stop()
-      if (status !== 0) abort(`\`${command}\` exited with code ${status}`)
-      console.log(`\x1b[2m    took ${formatDuration(Date.now() - started)}\x1b[0m`)
-      resolve()
+      const durationMs = Date.now() - started
+
+      if (status !== 0) {
+        const failure = `\`${command}\` exited with code ${status}`
+        if (!options.allowFailure) abort(failure)
+        console.log(`\x1b[31m    failed after ${formatDuration(durationMs)}\x1b[0m`)
+        return resolve({ status, durationMs, failure })
+      }
+
+      console.log(`\x1b[2m    took ${formatDuration(durationMs)}\x1b[0m`)
+      resolve({ status: 0, durationMs })
     }
 
     child.on('error', () => finish(1))
@@ -146,16 +156,21 @@ async function buildLocally(platform, profile, version, buildNumber) {
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
   const output = artifactPath(platform, version, buildNumber)
 
-  await sh(
+  const { status, failure } = await sh(
     `eas build --local --non-interactive --platform ${platform} --profile ${profile} --output "${output}"`,
     `Building ${platform} ${version} (${buildNumber}) locally`,
-    { heartbeat: `still building ${platform}` },
+    { heartbeat: `still building ${platform}`, allowFailure: true },
   )
 
-  if (!fs.existsSync(output)) abort(`expected artifact was not produced at ${output}`)
+  if (status !== 0) return { file: null, failure }
+
+  if (!fs.existsSync(output)) {
+    return { file: null, failure: `expected artifact was not produced at ${output}` }
+  }
+
   const sizeMb = (fs.statSync(output).size / 1e6).toFixed(1)
   console.log(`\n  artifact: ${path.relative(ROOT, output)} (${sizeMb} MB)`)
-  return output
+  return { file: output, failure: null }
 }
 
 function resolvePlayKey() {
@@ -177,7 +192,7 @@ async function submit(platform, profile, artifact) {
       console.log(`  Configure it once:  node scripts/setup-play-key.js <path-to-key.json>`)
       console.log(`  Or upload by hand:  ${path.relative(ROOT, artifact)}`)
       console.log('  Play Console -> Testing -> Internal testing -> Create new release')
-      return
+      return { skipped: true, failure: null }
     }
 
     cleanups.push(key.cleanup)
@@ -186,14 +201,57 @@ async function submit(platform, profile, artifact) {
   }
 
   try {
-    await sh(
+    const { failure } = await sh(
       `eas submit --non-interactive --platform ${platform} --profile ${profile} --path "${artifact}"`,
       `Submitting ${platform} build to the store`,
-      { env, heartbeat: `still uploading ${platform}` },
+      { env, heartbeat: `still uploading ${platform}`, allowFailure: true },
     )
+    return { skipped: false, failure }
   } finally {
     runCleanups()
   }
+}
+
+function summarise(outcomes, totalMs) {
+  const width = Math.max(...outcomes.map((o) => o.platform.length))
+
+  console.log(`\n\x1b[1mSummary\x1b[0m`)
+  for (const outcome of outcomes) {
+    const mark =
+      outcome.status === 'ok'
+        ? '\x1b[32mok     \x1b[0m'
+        : outcome.status === 'skipped'
+          ? '\x1b[33mskipped\x1b[0m'
+          : '\x1b[31mFAILED \x1b[0m'
+    console.log(`  ${mark}  ${outcome.platform.padEnd(width)}  ${outcome.detail}`)
+  }
+  console.log(`\n  \x1b[2mtotal ${formatDuration(totalMs)}\x1b[0m`)
+}
+
+function finish(outcomes, totalMs, version, buildNumber, commit) {
+  summarise(outcomes, totalMs)
+
+  const failed = outcomes.filter((o) => o.status === 'failed')
+
+  if (failed.length === 0) {
+    console.log(
+      `\n\x1b[32mDone.\x1b[0m Pear Notes ${version} (${buildNumber})${commit ? ` from ${commit}` : ''}`,
+    )
+    console.log(`  Tag and push the release:`)
+    console.log(`    git tag v${version}+${buildNumber} && git push --follow-tags\n`)
+    return
+  }
+
+  console.log(
+    `\n\x1b[31m${failed.length} of ${outcomes.length} platform(s) failed.\x1b[0m ` +
+      'The others completed and are unaffected.',
+  )
+  console.log('  Fix the cause, then retry just the failures without rebuilding:')
+  for (const outcome of failed) {
+    console.log(`    npm run release:${outcome.platform} -- --submit-only`)
+  }
+  console.log('')
+  process.exitCode = 1
 }
 
 async function main() {
@@ -203,6 +261,34 @@ async function main() {
 
   if (platforms.includes('ios') && process.platform !== 'darwin') {
     abort('local iOS builds require macOS')
+  }
+
+  if (args.submitOnly) {
+    const version = readVersion()
+    const buildNumber = readBuildNumber()
+    heading(`Submitting existing artifacts for ${version} (${buildNumber})`)
+
+    const outcomes = []
+    for (const platform of platforms) {
+      const file = artifactPath(platform, version, buildNumber)
+
+      if (!fs.existsSync(file)) {
+        console.error(`\n\x1b[31m  no artifact at ${path.relative(ROOT, file)}\x1b[0m`)
+        console.error('  --submit-only uploads what a previous run built. Drop the flag to build.')
+        outcomes.push({ platform, status: 'failed', detail: 'no artifact on disk' })
+        continue
+      }
+
+      const result = await submit(platform, args.profile, file)
+      outcomes.push({
+        platform,
+        status: result.skipped ? 'skipped' : result.failure ? 'failed' : 'ok',
+        detail: result.skipped ? 'no upload key' : result.failure ? 'submit failed' : 'submitted',
+      })
+    }
+
+    finish(outcomes, Date.now() - started, version, buildNumber, null)
+    return
   }
 
   if (!args.skipPreflight) {
@@ -222,24 +308,45 @@ async function main() {
   const commit = capture('git rev-parse --short HEAD')
   heading(`Releasing Pear Notes ${version} (build ${buildNumber}) from ${commit}`)
 
-  const artifacts = []
+  const outcomes = []
+
   for (const platform of platforms) {
-    artifacts.push({
-      platform,
-      file: await buildLocally(platform, args.profile, version, buildNumber),
-    })
+    const { file, failure } = await buildLocally(platform, args.profile, version, buildNumber)
+
+    if (failure) {
+      console.error(`\n\x1b[31m  ${platform} build failed: ${failure}\x1b[0m`)
+      console.error('  Continuing with the remaining platforms.')
+      outcomes.push({ platform, status: 'failed', detail: 'build failed' })
+      continue
+    }
+
+    if (args.skipSubmit) {
+      outcomes.push({
+        platform,
+        status: 'ok',
+        detail: `built, not uploaded (${path.relative(ROOT, file)})`,
+      })
+      continue
+    }
+
+    const result = await submit(platform, args.profile, file)
+
+    if (result.skipped) {
+      outcomes.push({ platform, status: 'skipped', detail: 'built, no upload key' })
+      continue
+    }
+
+    if (result.failure) {
+      console.error(`\n\x1b[31m  ${platform} submit failed.\x1b[0m The build is kept at`)
+      console.error(`  ${path.relative(ROOT, file)} — retry with --submit-only, no rebuild needed.`)
+      outcomes.push({ platform, status: 'failed', detail: 'built ok, submit failed' })
+      continue
+    }
+
+    outcomes.push({ platform, status: 'ok', detail: 'built and submitted' })
   }
 
-  if (args.skipSubmit) {
-    console.log('\n  --no-submit set, skipping store upload.')
-  } else {
-    for (const { platform, file } of artifacts) await submit(platform, args.profile, file)
-  }
-
-  console.log(`\n\x1b[32mDone.\x1b[0m Pear Notes ${version} (${buildNumber}) from ${commit}`)
-  console.log(`  Total time: ${formatDuration(Date.now() - started)}`)
-  console.log(`  Tag and push the release:`)
-  console.log(`    git tag v${version}+${buildNumber} && git push --follow-tags\n`)
+  finish(outcomes, Date.now() - started, version, buildNumber, commit)
 }
 
 process.on('exit', runCleanups)
