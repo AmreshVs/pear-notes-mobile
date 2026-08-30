@@ -28,7 +28,8 @@
     "play-key": "node scripts/setup-play-key.js",
     "release:ios": "node scripts/release.js --platform ios",
     "release:android": "node scripts/release.js --platform android",
-    "release:all": "node scripts/release.js --platform all"
+    "release:all": "node scripts/release.js --platform all",
+    "creds:check": "node scripts/check-eas-credentials.js"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
