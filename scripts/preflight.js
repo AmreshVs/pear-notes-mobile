@@ -2,6 +2,8 @@ const { execSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 
+const play = require('./playCredentials')
+
 const ROOT = path.resolve(__dirname, '..')
 
 const checks = []
@@ -443,13 +445,25 @@ function checkToolchain() {
 
 function checkSubmitCredentials() {
   const easJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'eas.json'), 'utf8'))
-  const androidKey = easJson.submit?.production?.android?.serviceAccountKeyPath
   const ascAppId = easJson.submit?.production?.ios?.ascAppId
 
-  if (androidKey && !fs.existsSync(path.join(ROOT, androidKey))) {
-    pass('play creds', 'no service account key - the aab will be uploaded manually')
-  } else if (androidKey) {
-    pass('play creds', 'service account key present')
+  let playKey = null
+  try {
+    playKey = play.describe()
+  } catch (error) {
+    fail('play creds', error.message)
+  }
+
+  if (playKey === null) {
+    pass('play creds', 'no upload key - the aab will be uploaded manually')
+  } else if (playKey?.source === 'sealed') {
+    pass('play creds', `sealed, ${playKey.email}`)
+  } else if (playKey?.source === 'plaintext') {
+    warn(
+      'play creds',
+      `${path.relative(ROOT, playKey.path)} is plaintext on disk - seal it with ` +
+        '"node scripts/setup-play-key.js credentials/play-service-account.json"',
+    )
   }
 
   if (!ascAppId || ascAppId.startsWith('REPLACE_')) {

@@ -1,13 +1,16 @@
-import React, { memo, useCallback, useMemo } from 'react'
+import React, { memo, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  AppState,
+  type AppStateStatus,
+  Keyboard,
   Pressable,
   type PressableAndroidRippleConfig,
   ScrollView,
   StyleSheet,
   View,
 } from 'react-native'
-import { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated'
+import { useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
@@ -108,10 +111,29 @@ export const EditorToolbar = memo(function EditorToolbar({
 
   const keyboard = useAnimatedKeyboard()
   const insets = useSafeAreaInsets()
+  const keyboardTrusted = useSharedValue(0)
+
+  useEffect(() => {
+    const show = Keyboard.addListener('keyboardDidShow', () => {
+      keyboardTrusted.value = 1
+    })
+    const hide = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardTrusted.value = 0
+    })
+    const appState = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next !== 'active') keyboardTrusted.value = 0
+    })
+
+    return () => {
+      show.remove()
+      hide.remove()
+      appState.remove()
+    }
+  }, [keyboardTrusted])
 
   const containerStyle = useAnimatedStyle(() => ({
     bottom:
-      keyboard.height.value > 0
+      keyboardTrusted.value === 1 && keyboard.height.value > 0
         ? keyboard.height.value + UI_SIZE_12
         : insets.bottom + UI_SIZE_12,
   }))

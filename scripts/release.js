@@ -1,12 +1,17 @@
-const { execSync, spawnSync } = require('child_process')
+const { execSync, spawn, spawnSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
+
+const play = require('./playCredentials')
+const { formatDuration, startHeartbeat } = require('./progress')
 
 const ROOT = path.resolve(__dirname, '..')
 const ARTIFACT_DIR = path.join(ROOT, 'build')
 
 const PLATFORMS = ['ios', 'android']
 const PROFILE = 'production'
+
+const cleanups = []
 
 function parseArgs(argv) {
   const args = {
@@ -37,15 +42,43 @@ function heading(text) {
   console.log(`\n\x1b[1m==> ${text}\x1b[0m`)
 }
 
+function runCleanups() {
+  while (cleanups.length) {
+    try {
+      cleanups.pop()()
+    } catch {}
+  }
+}
+
 function abort(message) {
+  runCleanups()
   console.error(`\n\x1b[31mrelease failed: ${message}\x1b[0m\n`)
   process.exit(1)
 }
 
-function sh(command, description) {
+function sh(command, description, options = {}) {
   heading(description ?? command)
-  const result = spawnSync(command, { cwd: ROOT, stdio: 'inherit', shell: true })
-  if (result.status !== 0) abort(`\`${command}\` exited with code ${result.status}`)
+  const started = Date.now()
+  const stop = options.heartbeat ? startHeartbeat(options.heartbeat, started) : null
+
+  return new Promise((resolve) => {
+    const child = spawn(command, {
+      cwd: ROOT,
+      stdio: 'inherit',
+      shell: true,
+      env: { ...process.env, ...(options.env ?? {}) },
+    })
+
+    const finish = (status) => {
+      if (stop) stop()
+      if (status !== 0) abort(`\`${command}\` exited with code ${status}`)
+      console.log(`\x1b[2m    took ${formatDuration(Date.now() - started)}\x1b[0m`)
+      resolve()
+    }
+
+    child.on('error', () => finish(1))
+    child.on('close', finish)
+  })
 }
 
 function capture(command) {
@@ -80,22 +113,20 @@ function artifactPath(platform, version, buildNumber) {
   return path.join(ARTIFACT_DIR, `pear-notes-${version}-${buildNumber}.${extension}`)
 }
 
-function prepareSources() {
-  sh('npm run lint', 'Linting')
-  // sh('npm ci', 'Installing dependencies from lockfile')
-  sh('npm run bare-bundle', 'Bundling the Bare backend worklet')
-  // sh('npm run typecheck', 'Type checking')
+async function prepareSources() {
+  await sh('npm run lint', 'Linting')
+  await sh('npm run bare-bundle', 'Bundling the Bare backend worklet')
 }
 
-function applyVersion({ bump, version }) {
+async function applyVersion({ bump, version }) {
   if (!bump && !version) return
   const flags = [version ? `--version ${version}` : '', bump ? '--bump' : '']
     .filter(Boolean)
     .join(' ')
-  sh(`node scripts/set-version.js ${flags}`, 'Setting release version')
+  await sh(`node scripts/set-version.js ${flags}`, 'Setting release version')
 }
 
-function commitVersion({ commit, version, buildNumber }) {
+async function commitVersion({ commit, version, buildNumber }) {
   if (capture('git status --porcelain') === '') return
 
   if (!commit) {
@@ -105,50 +136,70 @@ function commitVersion({ commit, version, buildNumber }) {
     )
   }
 
-  sh(
+  await sh(
     `git commit -am "Release ${version} (${buildNumber})"`,
     `Committing version bump ${version} (${buildNumber})`,
   )
 }
 
-function buildLocally(platform, profile, version, buildNumber) {
+async function buildLocally(platform, profile, version, buildNumber) {
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
   const output = artifactPath(platform, version, buildNumber)
 
-  sh(
+  await sh(
     `eas build --local --non-interactive --platform ${platform} --profile ${profile} --output "${output}"`,
     `Building ${platform} ${version} (${buildNumber}) locally`,
+    { heartbeat: `still building ${platform}` },
   )
 
   if (!fs.existsSync(output)) abort(`expected artifact was not produced at ${output}`)
-  console.log(`\n  artifact: ${path.relative(ROOT, output)}`)
+  const sizeMb = (fs.statSync(output).size / 1e6).toFixed(1)
+  console.log(`\n  artifact: ${path.relative(ROOT, output)} (${sizeMb} MB)`)
   return output
 }
 
-function playServiceAccountKey(profile) {
-  const easJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'eas.json'), 'utf8'))
-  const keyPath = easJson.submit?.[profile]?.android?.serviceAccountKeyPath
-  if (!keyPath) return null
-  return fs.existsSync(path.join(ROOT, keyPath)) ? keyPath : null
+function resolvePlayKey() {
+  try {
+    return play.materialize()
+  } catch (error) {
+    abort(`${error.message}${error.hint ? `\n  hint: ${error.hint}` : ''}`)
+  }
 }
 
-function submit(platform, profile, artifact) {
-  if (platform === 'android' && !playServiceAccountKey(profile)) {
-    heading('Skipping Play upload - no service account key')
-    console.log(`  Upload manually: ${path.relative(ROOT, artifact)}`)
-    console.log('  Play Console -> Testing -> Internal testing -> Create new release')
-    return
+async function submit(platform, profile, artifact) {
+  const env = {}
+
+  if (platform === 'android') {
+    const key = resolvePlayKey()
+
+    if (!key) {
+      heading('Skipping Play upload - no upload key configured')
+      console.log(`  Configure it once:  node scripts/setup-play-key.js <path-to-key.json>`)
+      console.log(`  Or upload by hand:  ${path.relative(ROOT, artifact)}`)
+      console.log('  Play Console -> Testing -> Internal testing -> Create new release')
+      return
+    }
+
+    cleanups.push(key.cleanup)
+    env[play.ENV_VAR] = key.path
+    console.log(`\n  Play upload key: ${key.email} (${key.source})`)
   }
 
-  sh(
-    `eas submit --non-interactive --platform ${platform} --profile ${profile} --path "${artifact}"`,
-    `Submitting ${platform} build to the store`,
-  )
+  try {
+    await sh(
+      `eas submit --non-interactive --platform ${platform} --profile ${profile} --path "${artifact}"`,
+      `Submitting ${platform} build to the store`,
+      { env, heartbeat: `still uploading ${platform}` },
+    )
+  } finally {
+    runCleanups()
+  }
 }
 
-function main() {
+async function main() {
   const args = parseArgs(process.argv.slice(2))
   const platforms = resolvePlatforms(args.platform)
+  const started = Date.now()
 
   if (platforms.includes('ios') && process.platform !== 'darwin') {
     abort('local iOS builds require macOS')
@@ -160,31 +211,45 @@ function main() {
     if (preflight.status !== 0) abort('preflight checks did not pass')
   }
 
-  prepareSources()
-  applyVersion(args)
+  await prepareSources()
+  await applyVersion(args)
 
   const version = readVersion()
   const buildNumber = readBuildNumber()
 
-  commitVersion({ commit: args.commit, version, buildNumber })
+  await commitVersion({ commit: args.commit, version, buildNumber })
 
   const commit = capture('git rev-parse --short HEAD')
   heading(`Releasing Pear Notes ${version} (build ${buildNumber}) from ${commit}`)
 
   const artifacts = []
   for (const platform of platforms) {
-    artifacts.push({ platform, file: buildLocally(platform, args.profile, version, buildNumber) })
+    artifacts.push({
+      platform,
+      file: await buildLocally(platform, args.profile, version, buildNumber),
+    })
   }
 
   if (args.skipSubmit) {
     console.log('\n  --no-submit set, skipping store upload.')
   } else {
-    for (const { platform, file } of artifacts) submit(platform, args.profile, file)
+    for (const { platform, file } of artifacts) await submit(platform, args.profile, file)
   }
 
   console.log(`\n\x1b[32mDone.\x1b[0m Pear Notes ${version} (${buildNumber}) from ${commit}`)
+  console.log(`  Total time: ${formatDuration(Date.now() - started)}`)
   console.log(`  Tag and push the release:`)
   console.log(`    git tag v${version}+${buildNumber} && git push --follow-tags\n`)
 }
 
-main()
+process.on('exit', runCleanups)
+process.on('SIGINT', () => {
+  runCleanups()
+  process.exit(130)
+})
+process.on('SIGTERM', () => {
+  runCleanups()
+  process.exit(143)
+})
+
+main().catch((error) => abort(error.message))

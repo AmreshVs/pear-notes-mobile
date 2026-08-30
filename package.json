@@ -10,10 +10,10 @@
   "private": true,
   "scripts": {
     "start:clean": "watchman watch-del $PWD; watchman watch-project $PWD && expo start --dev-client --clear",
-    "android": "expo run:android --device",
+    "android": "expo run:android",
     "android:release": "cd android && ./gradlew assembleRelease",
     "android:bundle": "cd android && ./gradlew bundleRelease",
-    "ios": "expo run:ios --device",
+    "ios": "expo run:ios",
     "ios:release": "expo run:ios --device --configuration Release",
     "schema": "node ./src/spec/schema.js",
     "bare-bundle": " npx bare-pack --host ios --host android  --linked --out src/backend/backend.bundle.js src/backend/main.mjs",
@@ -25,6 +25,7 @@
     "typecheck": "tsc --noEmit",
     "version:set": "node scripts/set-version.js",
     "preflight": "node scripts/preflight.js",
+    "play-key": "node scripts/setup-play-key.js",
     "release:ios": "node scripts/release.js --platform ios",
     "release:android": "node scripts/release.js --platform android",
     "release:all": "node scripts/release.js --platform all"

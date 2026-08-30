@@ -146,15 +146,22 @@ export function useNoteEditor() {
       isEditorFocusedRef.current = false
       editorRef.current?.blur()
       if (isIos) editorRef.current?.setBottomInset(0, IOS_TOOLBAR_INSET_IDLE)
+      else editorRef.current?.setKeyboardInset(0)
     }
 
     const subscription = AppState.addEventListener('change', (next: AppStateStatus) => {
       if (next === 'background') {
         Keyboard.dismiss()
+        if (!isIos) resetKeyboardLayout()
         return
       }
       if (next !== 'active') return
-      if (Keyboard.isVisible()) return
+      if (isIos) {
+        if (Keyboard.isVisible()) return
+        resetKeyboardLayout()
+        return
+      }
+      Keyboard.dismiss()
       resetKeyboardLayout()
     })
 
