@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react'
+import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
@@ -34,6 +34,8 @@ interface FolderRowProps {
   icon?: string
   selected?: boolean
   isSystem?: boolean
+  grouped?: boolean
+  isLast?: boolean
   animationIndex?: number
   onPress: (id: string) => void
   onRename?: (id: string, currentName: string) => void
@@ -47,6 +49,8 @@ export const FolderRow = memo(function FolderRow({
   icon,
   selected,
   isSystem,
+  grouped,
+  isLast,
   animationIndex = 0,
   onPress,
   onRename,
@@ -59,10 +63,12 @@ export const FolderRow = memo(function FolderRow({
   const containerStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
       styles.container,
+      grouped && styles.containerGrouped,
+      isLast && styles.containerLast,
       selected && styles.containerSelected,
       pressed && styles.containerPressed,
     ],
-    [styles, selected],
+    [styles, selected, grouped, isLast],
   )
 
   const row = (
@@ -129,14 +135,21 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       ...commonStyles.rowBetween,
-      paddingVertical: Space.md,
+      paddingVertical: Space.lg,
       paddingHorizontal: Space.base,
       borderRadius: Radii.md,
       marginVertical: 1,
       minHeight: 52,
       backgroundColor: theme.colors.transparent,
-      borderWidth: 1,
-      borderColor: theme.colors.transparent,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderColor: theme.colors.border,
+    },
+    containerGrouped: {
+      borderRadius: 0,
+      marginVertical: 0,
+    },
+    containerLast: {
+      borderBottomWidth: 0,
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,

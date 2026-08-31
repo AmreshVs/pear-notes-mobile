@@ -213,7 +213,7 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     root: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.backgroundElevated,
     },
     scroll: {
       paddingHorizontal: Space.xl,
@@ -325,7 +325,7 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingTop: Space.md,
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: theme.colors.borderSecondary,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.backgroundElevated,
     },
     confirmBtn: {
       ...commonStyles.centered,

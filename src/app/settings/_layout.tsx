@@ -17,6 +17,7 @@ export default function SettingsLayout() {
         headerTintColor: colors.primary,
         headerTitleStyle: styles.headerTitle,
         headerStyle: styles.header,
+        contentStyle: styles.content,
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
       }}
@@ -43,7 +44,10 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.subtitle,
     },
     header: {
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.backgroundElevated,
+    },
+    content: {
+      backgroundColor: theme.colors.backgroundElevated,
     },
   })
   return styles

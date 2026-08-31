@@ -391,7 +391,9 @@ export default function FolderNotesScreen() {
           selected={false}
           selecting={isSelecting}
           checked={selectedKeys.includes(note.key)}
+          isFirst={index === 0}
           isLast={isLast}
+          grouped
           animationIndex={animationIndex}
           locked={isLocked}
           pinned={isPinned}

@@ -19,6 +19,10 @@ export const createThemedStyles = (theme: Theme) => {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
+    modalContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.backgroundElevated,
+    },
     sectionCap: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
@@ -79,7 +83,7 @@ export const createThemedStyles = (theme: Theme) => {
       borderWidth: 1,
       overflow: 'hidden',
       borderColor: theme.colors.borderSecondary,
-      backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.9)',
+      backgroundColor: theme.colors.cardSurface,
     },
     iconBox34: {
       width: 34,

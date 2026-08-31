@@ -28,6 +28,7 @@ import {
   UI_ICON_SIZE_22,
   UI_SIZE_6,
   UI_SIZE_8,
+  UI_SIZE_16,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { NOTE_ACTION } from '@/constants/noteActions'
@@ -72,7 +73,9 @@ interface NoteCardProps {
   selected?: boolean
   selecting?: boolean
   checked?: boolean
+  isFirst?: boolean
   isLast?: boolean
+  grouped?: boolean
   animationIndex?: number
   locked?: boolean
   pinned?: boolean
@@ -154,7 +157,9 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.selected === next.selected &&
     prev.selecting === next.selecting &&
     prev.checked === next.checked &&
+    prev.isFirst === next.isFirst &&
     prev.isLast === next.isLast &&
+    prev.grouped === next.grouped &&
     prev.locked === next.locked &&
     prev.pinned === next.pinned &&
     prev.moveFolders === next.moveFolders &&
@@ -180,7 +185,9 @@ export const NoteCard = memo(function NoteCard({
   selected,
   selecting,
   checked,
+  isFirst,
   isLast,
+  grouped,
   animationIndex = 0,
   locked,
   pinned,
@@ -232,25 +239,25 @@ export const NoteCard = memo(function NoteCard({
   )
 
   const getPressableStyle = useCallback(
-    ({ pressed }: { pressed: boolean }): ViewStyle[] => [
-      styles.container,
-      !isLast ? styles.borderBottom : {},
-      selected || checked
-        ? styles.containerSelected
-        : pressed
-          ? styles.containerPressed
-          : styles.containerNormal,
-    ],
-    [
-      selected,
-      checked,
-      styles.container,
-      styles.containerSelected,
-      styles.containerPressed,
-      styles.containerNormal,
-      styles.borderBottom,
-      isLast,
-    ],
+    ({ pressed }: { pressed: boolean }): ViewStyle[] => {
+      const base: ViewStyle[] = [
+        styles.container,
+        grouped ? styles.containerGrouped : {},
+        grouped && isFirst ? styles.containerGroupedFirst : {},
+        grouped && isLast ? styles.containerGroupedLast : {},
+        !grouped && !isLast ? styles.borderBottom : {},
+      ]
+      if (selected || checked) return [...base, styles.containerSelected]
+      if (pressed)
+        return [...base, grouped ? styles.containerGroupedPressed : styles.containerPressed]
+      return [...base, grouped ? styles.containerGroupedNormal : styles.containerNormal]
+    },
+    [selected, checked, styles, grouped, isFirst, isLast],
+  )
+
+  const rowStyle = useMemo(
+    () => (grouped && !isLast ? [styles.row, styles.rowSeparator] : styles.row),
+    [grouped, isLast, styles.row, styles.rowSeparator],
   )
 
   const titleStyle = useMemo(
@@ -329,7 +336,7 @@ export const NoteCard = memo(function NoteCard({
         accessibilityActions={accessibilityActions}
         onAccessibilityAction={handleAccessibilityAction}
       >
-        <RNView style={styles.row}>
+        <RNView style={rowStyle}>
           {selecting && (
             <RNView style={styles.selectionIndicator}>
               <SymbolIcon
@@ -497,6 +504,36 @@ const useStyles = createThemedStylesheet((theme) => {
     containerNormal: {
       backgroundColor: theme.colors.transparent,
     },
+    containerGrouped: {
+      marginHorizontal: Space.base,
+      marginVertical: 0,
+      borderRadius: 0,
+      borderLeftWidth: 1,
+      borderRightWidth: 1,
+      borderColor: theme.colors.borderSecondary,
+    },
+    containerGroupedFirst: {
+      borderTopWidth: 1,
+      borderTopLeftRadius: Radii.card,
+      borderTopRightRadius: Radii.card,
+    },
+    containerGroupedLast: {
+      borderBottomWidth: 1,
+      borderBottomLeftRadius: Radii.card,
+      borderBottomRightRadius: Radii.card,
+      paddingVertical: UI_SIZE_16,
+    },
+    containerGroupedNormal: {
+      backgroundColor: theme.colors.cardSurface,
+    },
+    containerGroupedPressed: {
+      backgroundColor: theme.colors.surfaceSecondary,
+    },
+    rowSeparator: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.colors.border,
+      paddingVertical: UI_SIZE_16,
+    },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,
     },
@@ -527,8 +564,8 @@ const useStyles = createThemedStylesheet((theme) => {
     title: {
       ...commonStyles.flex1,
       fontSize: FontSize.subtitle,
-      fontFamily: FontFamily.bold,
-      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.extraBold,
+      fontWeight: FontWeight.heavy,
       marginBottom: Space.xs,
       letterSpacing: LetterSpacing.tight,
     },

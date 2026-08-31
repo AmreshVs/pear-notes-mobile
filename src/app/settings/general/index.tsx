@@ -96,7 +96,7 @@ export default function GeneralSettingsScreen() {
   )
 
   return (
-    <RNView style={commonThemedStyles.screenContainer}>
+    <RNView style={commonThemedStyles.modalContainer}>
       <Stack.Screen options={{ title: t('layouts.general') }} />
 
       <ScrollView

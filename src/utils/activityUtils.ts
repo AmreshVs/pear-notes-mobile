@@ -1,4 +1,8 @@
-import { findDeviceByLocalKey, getActivityDeviceLabel } from '@pear-notes/core/activity.js'
+import {
+  findDeviceByLocalKey,
+  getActivityDeviceLabel,
+  getActivityMessage,
+} from '@pear-notes/core/activity.js'
 import { ACTIVITY_EVENT } from '@pear-notes/core/constant.js'
 
 import { getPlatformNames, type PickerOption } from '@/utils/settingsUtils'
@@ -95,30 +99,11 @@ export function canExpandActivity(entry: ActivityEntry, hidden: boolean): boolea
   return DIFFABLE_EVENTS.has(entry.event) && !!entry.hasDiff && !hidden
 }
 
-export function getActivityMessage(
+export function buildActivityMessage(
   entry: ActivityEntry,
   t: TranslateFn,
   hidden: boolean,
   showTarget: boolean,
 ): string {
-  const target = hidden ? t('activity.lockedNote') : entry.targetTitle || t('activity.untitledNote')
-
-  const attachmentLabel =
-    entry.meta?.fileName ||
-    (entry.meta?.kind ? t(`activity.attachmentKinds.${entry.meta.kind}`, { defaultValue: '' }) : '')
-
-  const params = {
-    target,
-    from: entry.meta?.from || entry.meta?.fromFolder || '',
-    to: entry.meta?.to || entry.meta?.toFolder || '',
-    fileName: attachmentLabel,
-    platform: entry.meta?.platform || t('activity.unknownPlatform'),
-    defaultValue: entry.event,
-  }
-
-  if (showTarget) return t(`activity.events.${entry.event}`, params)
-  return t(`activity.eventsShort.${entry.event}`, {
-    ...params,
-    defaultValue: t(`activity.events.${entry.event}`, params),
-  })
+  return getActivityMessage(entry, t, { hidden, showTarget })
 }

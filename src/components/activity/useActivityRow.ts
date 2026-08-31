@@ -8,10 +8,10 @@ import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSli
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import {
   type ActivityEntry,
+  buildActivityMessage,
   canExpandActivity,
   formatActivityTime,
   getActivityDeviceName,
-  getActivityMessage,
   isActivityHidden,
   isMobileActivityDevice,
 } from '@/utils/activityUtils'
@@ -44,7 +44,7 @@ export function useActivityRow(entry: ActivityEntry, showTarget: boolean) {
   )
 
   const message = useMemo(
-    () => getActivityMessage(entry, t, hidden, showTarget),
+    () => buildActivityMessage(entry, t, hidden, showTarget),
     [entry, t, hidden, showTarget],
   )
 

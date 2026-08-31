@@ -80,7 +80,7 @@
           "image": "./assets/images/icon.png",
           "resizeMode": "contain",
           "dark": {
-            "backgroundColor": "#202020",
+            "backgroundColor": "#090909",
             "image": "./assets/images/icon.png"
           }
         }

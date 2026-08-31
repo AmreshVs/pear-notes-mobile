@@ -137,7 +137,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
 const useStyles = createThemedStylesheetWithHooks(
   (theme, { md3Theme, screenHeight }) => {
     const c = md3Theme.colors as ExtendedColors
-    const sheetBg = c.background
+    const sheetBg = c.surfaceContainerLow ?? c.surface
 
     const styles = StyleSheet.create({
       sheetBackground: {

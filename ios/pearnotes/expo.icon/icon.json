@@ -1,97 +1,95 @@
 {
-  "fill" : {
-    "linear-gradient" : [
+  "fill": {
+    "linear-gradient": [
       "display-p3:0.90748,0.69987,-0.06400,1.00000",
       "display-p3:0.89307,0.55566,0.20325,1.00000"
     ],
-    "orientation" : {
-      "start" : {
-        "x" : 0.5,
-        "y" : 1
+    "orientation": {
+      "start": {
+        "x": 0.5,
+        "y": 1
       },
-      "stop" : {
-        "x" : 0.5,
-        "y" : 0.3
+      "stop": {
+        "x": 0.5,
+        "y": 0.3
       }
     }
   },
-  "groups" : [
+  "groups": [
     {
-      "layers" : [
+      "layers": [
         {
-          "glass" : false,
-          "image-name" : "pear (2).png",
-          "name" : "pear (2)"
+          "glass": false,
+          "image-name": "pear (2).png",
+          "name": "pear (2)"
         }
       ],
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     },
     {
-      "layers" : [
+      "layers": [
         {
-          "image-name" : "Line1 2.png",
-          "name" : "Line1 2"
+          "image-name": "Line1 2.png",
+          "name": "Line1 2"
         }
       ],
-      "name" : "Lines",
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+      "name": "Lines",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     },
     {
-      "layers" : [
+      "layers": [
         {
-          "glass" : false,
-          "image-name" : "Note1 2.png",
-          "name" : "Note1 2"
+          "glass": false,
+          "image-name": "Note1 2.png",
+          "name": "Note1 2"
         },
         {
-          "glass" : false,
-          "image-name" : "Note2 2.png",
-          "name" : "Note2 2"
+          "glass": false,
+          "image-name": "Note2 2.png",
+          "name": "Note2 2"
         },
         {
-          "glass" : false,
-          "hidden-specializations" : [
+          "glass": false,
+          "hidden-specializations": [
             {
-              "value" : false
+              "value": false
             },
             {
-              "appearance" : "dark",
-              "value" : true
+              "appearance": "dark",
+              "value": true
             }
           ],
-          "image-name" : "Layer 6.png",
-          "name" : "Layer 6"
+          "image-name": "Layer 6.png",
+          "name": "Layer 6"
         }
       ],
-      "name" : "Note",
-      "shadow" : {
-        "kind" : "neutral",
-        "opacity" : 0.5
+      "name": "Note",
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
       },
-      "translucency" : {
-        "enabled" : true,
-        "value" : 0.5
+      "translucency": {
+        "enabled": true,
+        "value": 0.5
       }
     }
   ],
-  "supported-platforms" : {
-    "circles" : [
-      "watchOS"
-    ],
-    "squares" : "shared"
+  "supported-platforms": {
+    "circles": ["watchOS"],
+    "squares": "shared"
   }
 }

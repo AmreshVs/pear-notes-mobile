@@ -157,7 +157,7 @@ export function AttachmentSheet({
 const useStyles = createThemedStylesheetWithHooks(
   (theme, md3Theme) => {
     const c = md3Theme.colors as ExtendedColors
-    const sheetBg = c.background
+    const sheetBg = c.surfaceContainerLow ?? c.surface
 
     const styles = StyleSheet.create({
       sheetBackground: {

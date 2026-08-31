@@ -16,7 +16,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
+import {
+  getActivityLogEnabled,
+  getLockMethod,
+} from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { AttachmentSheet } from '@/components/android/AttachmentSheet'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
@@ -30,7 +33,6 @@ import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/T
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import {
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -178,6 +180,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [keyboardHeight, insets.bottom],
   )
   const lockMethod = useSelector(getLockMethod)
+  const activityEnabled = useSelector(getActivityLogEnabled) as boolean
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
@@ -515,14 +518,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       label: noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
       onPress: handleToggleLock,
     })
-    list.push({
-      icon: 'history',
-      label: t('noteEditor.menu.noteHistory'),
-      onPress: () => {
-        setMoreSheetVisible(false)
-        setHistoryVisible(true)
-      },
-    })
+    if (activityEnabled) {
+      list.push({
+        icon: 'history',
+        label: t('noteEditor.menu.noteHistory'),
+        onPress: () => {
+          setMoreSheetVisible(false)
+          setHistoryVisible(true)
+        },
+      })
+    }
     list.push({
       icon: 'delete-outline',
       label: t('noteCard.actions.delete'),
@@ -538,6 +543,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteData?.locked,
     noteData?.pinned,
     noteId,
+    activityEnabled,
     setHistoryVisible,
     t,
     handleDeleteNote,

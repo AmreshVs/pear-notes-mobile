@@ -58,7 +58,6 @@ import {
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
-  UI_SIZE_28,
   UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
@@ -513,7 +512,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
           </Text>
         </View>
         <View style={styles.rowRight}>
-          {count > 0 && (
+          {count && (
             <View style={styles.countBadge}>
               <Text style={styles.countText}>{count}</Text>
             </View>
@@ -553,7 +552,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       ...commonStyles.row,
       justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: UI_SIZE_28,
+      marginBottom: UI_SIZE_4,
     },
     pageTitle: {
       fontSize: FontSize.hero,

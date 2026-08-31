@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
@@ -263,6 +263,8 @@ export default function FoldersScreen() {
           icon={getFolderIcon(folder)}
           isSystem={folder.isSystem}
           animationIndex={startIndex + index}
+          grouped
+          isLast={index === foldersToRender.length - 1}
           onPress={handleSelectFolder}
           onRename={folder.isSystem ? undefined : handleRenameFolder}
           onDelete={folder.isSystem ? undefined : handleDeleteFolder}
@@ -304,7 +306,9 @@ export default function FoldersScreen() {
         contentContainerStyle={styles.scrollContent}
       >
         <Text style={styles.pageTitle}>{t('folders.title')}</Text>
-        <View style={styles.section}>{renderFolders(topFolders)}</View>
+        {topFolders.length > 0 && (
+          <View style={[commonThemedStyles.card, styles.group]}>{renderFolders(topFolders)}</View>
+        )}
 
         {topFolders.length === 0 && archiveFolders.length === 0 && (
           <Text style={styles.emptyText}>{t('folders.noFoldersFound')}</Text>
@@ -315,7 +319,9 @@ export default function FoldersScreen() {
             <Text style={[commonThemedStyles.sectionCap, styles.sectionHeaderMargin]}>
               {t('folders.archiveHeader')}
             </Text>
-            {renderFolders(archiveFolders, topFolders.length)}
+            <View style={[commonThemedStyles.card, styles.group]}>
+              {renderFolders(archiveFolders, topFolders.length)}
+            </View>
           </View>
         )}
       </ScrollView>
@@ -341,15 +347,15 @@ const useStyles = createThemedStylesheet((theme) => {
       letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,
       marginLeft: Space.base,
-      marginBottom: Space.sm,
+      marginBottom: Space.lg,
     },
     headerPill: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: Space.sm,
     },
-    section: {
-      backgroundColor: theme.colors.transparent,
+    group: {
+      marginHorizontal: Space.base,
     },
     archiveSection: {
       marginTop: Space.xxl,

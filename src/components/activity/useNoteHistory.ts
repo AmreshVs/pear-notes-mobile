@@ -21,9 +21,11 @@ export function useNoteHistory(noteId: string) {
 
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
+  const noteUpdatedAt = noteData?.updatedAt
+
   useEffect(() => {
     if (noteId) dispatch(fetchNoteActivity({ noteKey: noteId } as any))
-  }, [dispatch, noteId])
+  }, [dispatch, noteId, noteUpdatedAt])
 
   const groups: ActivityGroup[] = useMemo(() => groupActivityByDay(entries), [entries])
 

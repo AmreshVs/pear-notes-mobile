@@ -89,7 +89,7 @@ export default function SettingsScreen() {
   )
 
   return (
-    <RNView style={commonThemedStyles.screenContainer}>
+    <RNView style={commonThemedStyles.modalContainer}>
       <Stack.Screen
         options={{
           title: t('settings.title'),

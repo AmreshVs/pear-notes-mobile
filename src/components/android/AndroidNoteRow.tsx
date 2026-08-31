@@ -17,6 +17,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Radii,
   Space,
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_13,
@@ -29,7 +30,6 @@ import {
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
-  UI_SIZE_24,
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { NOTE_ACTION } from '@/constants/noteActions'
@@ -290,7 +290,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
   const styles = StyleSheet.create({
     row: {
       overflow: 'hidden',
-      borderRadius: UI_SIZE_24,
+      borderRadius: Radii.xl,
       padding: UI_SIZE_20,
       marginBottom: UI_SIZE_12,
       ...commonStyles.row,

@@ -10,7 +10,7 @@ export const pearGoldText = '#a56f00'
 export const pearM3Theme = createMaterial3Theme(pearGold)
 
 const obsidianOverrides = {
-  background: '#1a1a1a',
+  background: '#090909',
   surface: '#1e1e20',
   surfaceVariant: '#222224',
   surfaceContainer: '#1e1e20',
@@ -41,7 +41,7 @@ const lightOverrides = {
   surfaceVariant: '#E4E4E4',
   surfaceContainer: '#FFFFFF',
   surfaceContainerLowest: '#F5F5F5',
-  surfaceContainerLow: '#F5F5F5',
+  surfaceContainerLow: '#f2f2f7',
   surfaceContainerHigh: '#FFFFFF',
   surfaceContainerHighest: '#E8E8E8',
   elevation: {

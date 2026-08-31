@@ -19,7 +19,10 @@ import * as FileSystem from 'expo-file-system'
 import { SymbolView } from 'expo-symbols'
 
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
+import {
+  getActivityLogEnabled,
+  getLockMethod,
+} from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { NoteHistoryModal } from '@/components/activity/NoteHistoryModal'
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
@@ -120,6 +123,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const shouldMountEditor = useDeferredEditorMount(isOpen)
 
   const lockMethod = useSelector(getLockMethod)
+  const activityEnabled = useSelector(getActivityLogEnabled) as boolean
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
@@ -267,7 +271,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         { label: pinLabel, run: handleTogglePin },
         { label: t('noteCard.actions.moveTo'), run: showMoveToSheet },
         { label: lockLabel, run: handleToggleLock },
-        { label: t('noteEditor.menu.noteHistory'), run: handleOpenNoteHistory },
+        ...(activityEnabled
+          ? [{ label: t('noteEditor.menu.noteHistory'), run: handleOpenNoteHistory }]
+          : []),
         { label: t('noteCard.actions.delete'), run: handleDeleteNote },
       ]
       ActionSheetIOS.showActionSheetWithOptions(
@@ -287,6 +293,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteId,
     noteData?.locked,
     noteData?.pinned,
+    activityEnabled,
     handleOpenNoteHistory,
     showMoveToSheet,
     handleTogglePin,
@@ -680,11 +687,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                           systemImage={noteData?.locked ? 'lock.slash' : 'lock'}
                           onPress={handleToggleLock}
                         />
-                        <ExpoUI.Button
-                          label={t('noteEditor.menu.noteHistory')}
-                          systemImage="clock.arrow.circlepath"
-                          onPress={handleOpenNoteHistory}
-                        />
+                        {activityEnabled ? (
+                          <ExpoUI.Button
+                            label={t('noteEditor.menu.noteHistory')}
+                            systemImage="clock.arrow.circlepath"
+                            onPress={handleOpenNoteHistory}
+                          />
+                        ) : null}
                         <ExpoUI.Button
                           label={t('noteCard.actions.delete')}
                           systemImage="trash"
