@@ -228,7 +228,7 @@ const useStyles = createThemedStylesheet((theme) => {
     card: {
       padding: theme.spacing.md,
       borderRadius: theme.layout.borderRadius.md,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.cardSurface,
       borderWidth: 1,
       borderColor: theme.colors.border,
     },

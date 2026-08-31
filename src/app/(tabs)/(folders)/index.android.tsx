@@ -512,7 +512,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
           </Text>
         </View>
         <View style={styles.rowRight}>
-          {count && (
+          {count > 0 && (
             <View style={styles.countBadge}>
               <Text style={styles.countText}>{count}</Text>
             </View>

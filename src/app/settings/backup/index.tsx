@@ -352,7 +352,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     progressCard: {
       borderRadius: Radii.xl,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.cardSurface,
       marginHorizontal: Space.xl,
     },
     progressIconWrap: {

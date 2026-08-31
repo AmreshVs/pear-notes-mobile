@@ -106,7 +106,7 @@ export function ActivityRow({ entry, expanded, showTarget = true, onToggle }: Pr
 
 const useStyles = createThemedStylesheet((theme) => {
   const cardBase = {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.cardSurface,
     borderRadius: Radii.card,
     borderWidth: StyleSheet.hairlineWidth,
     overflow: 'hidden' as const,

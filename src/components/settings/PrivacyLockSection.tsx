@@ -157,7 +157,7 @@ export function PrivacyLockSection() {
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.colors.cardSurface,
       borderRadius: Radii.card,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
