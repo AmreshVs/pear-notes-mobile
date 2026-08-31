@@ -1,5 +1,11 @@
 import { ActionSheetIOS, Platform } from 'react-native'
 
+import {
+  ACTIVITY_FILTER,
+  ACTIVITY_RETENTION_DAY_OPTIONS,
+  ACTIVITY_RETENTION_FOREVER,
+} from '@pear-notes/core/constant.js'
+
 import type { DeviceAuthMethod } from '@/lib/deviceAuth'
 
 const LOCK_METHOD_LABEL_KEYS_IOS: Record<DeviceAuthMethod, string> = {
@@ -72,4 +78,27 @@ export function getPlatformNames(t: (key: string) => string): Record<string, str
     android: t('sync.platforms.Android'),
     ios: t('sync.platforms.iOS'),
   }
+}
+
+export type PickerOption = { label: string; value: string }
+
+export function getActivityRetentionOptions(
+  t: (key: string, options?: any) => string,
+): PickerOption[] {
+  return ACTIVITY_RETENTION_DAY_OPTIONS.map((days: number) => ({
+    label:
+      days === ACTIVITY_RETENTION_FOREVER
+        ? t('activity.settings.keepEverything')
+        : t('activity.settings.days', { count: days }),
+    value: String(days),
+  }))
+}
+
+export function getActivityFilterOptions(t: (key: string) => string): PickerOption[] {
+  return [
+    { label: t('activity.filters.all'), value: ACTIVITY_FILTER.ALL },
+    { label: t('activity.filters.notes'), value: ACTIVITY_FILTER.NOTES },
+    { label: t('activity.filters.folders'), value: ACTIVITY_FILTER.FOLDERS },
+    { label: t('activity.filters.devices'), value: ACTIVITY_FILTER.DEVICES },
+  ]
 }

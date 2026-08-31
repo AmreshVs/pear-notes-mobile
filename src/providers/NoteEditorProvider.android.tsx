@@ -30,6 +30,7 @@ import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/T
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import {
+  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -57,10 +58,11 @@ import { hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { snapTo } from '@/lib/motion'
 import { copyFileToSAF, downloadToCache, shareMessage } from '@/lib/noteAttachmentManager'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
+import { buildNoteSharePayload } from '@/lib/noteShare'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
-import { parseNoteAttachmentsAndText } from '@/utils/noteParser'
 
+import { NoteHistoryModal } from '../components/activity/NoteHistoryModal'
 import { AudioRecorderModal } from '../components/AudioRecorderModal'
 import { getAttachmentFileName, isImageFile } from '../utils/media'
 
@@ -141,6 +143,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     attachmentSheetVisible2,
     setAttachmentSheetVisible2,
     isRecorderVisible,
+    historyVisible,
+    setHistoryVisible,
     setIsRecorderVisible,
     recorderEverOpened,
     setRecorderEverOpened,
@@ -484,6 +488,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     })
   }, [noteId, dispatch, slideAnim, resetEditorState, setDialogInfo, reduceMotion, t])
 
+  const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [setHistoryVisible])
+
   const moreSheetActions = useMemo(() => {
     const list = []
     list.push({
@@ -510,6 +516,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       onPress: handleToggleLock,
     })
     list.push({
+      icon: 'history',
+      label: t('noteEditor.menu.noteHistory'),
+      onPress: () => {
+        setMoreSheetVisible(false)
+        setHistoryVisible(true)
+      },
+    })
+    list.push({
       icon: 'delete-outline',
       label: t('noteCard.actions.delete'),
       onPress: () => {
@@ -523,6 +537,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     moveFolders,
     noteData?.locked,
     noteData?.pinned,
+    noteId,
+    setHistoryVisible,
     t,
     handleDeleteNote,
     handleToggleLock,
@@ -535,15 +551,19 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     if (isSharing) return
     hapticMedium()
     setIsSharing(true)
-    const title = titleRef.current || t('noteCard.untitled')
-    const html = noteContentRef.current || ''
-    const { plainText: rawPlainText } = parseNoteAttachmentsAndText(html)
-    const message = title ? `${title}\n\n${rawPlainText}` : rawPlainText
     try {
-      await shareMessage(message)
-    } catch {}
-    setIsSharing(false)
-  }, [isSharing, setIsSharing, t])
+      const { message, urls } = await buildNoteSharePayload({
+        title: titleRef.current || t('noteCard.untitled'),
+        html: noteContentRef.current || '',
+        resolveHyperdriveUrl,
+      })
+      await shareMessage(message, urls)
+    } catch (error) {
+      console.error('handleShare', error)
+    } finally {
+      setIsSharing(false)
+    }
+  }, [isSharing, setIsSharing, resolveHyperdriveUrl, t])
 
   const contextValue = useMemo(
     () => ({ openNote, closeNote, isOpen }),
@@ -820,6 +840,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           },
         ]}
       />
+
+      {!!noteId && (
+        <NoteHistoryModal
+          visible={historyVisible}
+          noteId={noteId}
+          onClose={handleCloseNoteHistory}
+        />
+      )}
 
       {recorderEverOpened && (
         <AudioRecorderModal

@@ -29,6 +29,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="backup-password" options={{ title: t('layouts.backupPassword') }} />
       <Stack.Screen name="note-lock-password" options={{ title: t('layouts.noteLockPassword') }} />
       <Stack.Screen name="storage" options={{ title: t('layouts.storage') }} />
+      <Stack.Screen name="activity" options={{ title: t('layouts.activity') }} />
       <Stack.Screen name="font" options={{ title: t('settings.general.fontFamily') }} />
     </Stack>
   )

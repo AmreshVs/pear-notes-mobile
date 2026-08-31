@@ -106,6 +106,12 @@ export default function AndroidSyncScreen() {
     handleCloseScanner,
     handleBarcodeScanned,
     handleGenerateInvite,
+    handleShareQr,
+    handleAttachQrImage,
+    isSharingQr,
+    scanError,
+    handleQrRef,
+    inviteExpiringSoon,
     handleScrollToEnd,
     handleDeleteDevice,
     handleConfirmDelete,
@@ -284,15 +290,30 @@ export default function AndroidSyncScreen() {
                   </View>
 
                   <Text style={styles.heroTitle}>{t('sync.invite.header')}</Text>
-                  <Text style={styles.heroDesc}>
-                    {t('sync.invite.expiresIn', {
-                      countdown: formatInviteCountdown(inviteRemainingMs),
-                    })}
-                  </Text>
+                  <View
+                    style={[styles.countdownPill, inviteExpiringSoon && styles.countdownPillUrgent]}
+                  >
+                    <MaterialCommunityIcons
+                      name="timer-outline"
+                      size={UI_ICON_SIZE_14}
+                      color={inviteExpiringSoon ? c.error : c.primary}
+                    />
+                    <Text
+                      style={[
+                        styles.countdownText,
+                        inviteExpiringSoon && styles.countdownTextUrgent,
+                      ]}
+                    >
+                      {t('sync.invite.expiresIn', {
+                        countdown: formatInviteCountdown(inviteRemainingMs),
+                      })}
+                    </Text>
+                  </View>
 
                   <View style={styles.qrWrap}>
                     <View style={styles.qrBox}>
                       <QRCode
+                        getRef={handleQrRef}
                         value={inviteCode}
                         size={UI_SIZE_180}
                         backgroundColor={theme.colors.white}
@@ -301,6 +322,19 @@ export default function AndroidSyncScreen() {
                     </View>
                     <Text style={styles.qrTitle}>{t('sync.invite.qrTitle')}</Text>
                     <Text style={styles.qrDescription}>{t('sync.invite.qrDescription')}</Text>
+                    <Pressable
+                      onPress={handleShareQr}
+                      disabled={isSharingQr}
+                      android_ripple={ripple}
+                      style={[styles.shareQrBtn, isSharingQr && styles.btnDisabled]}
+                    >
+                      <MaterialCommunityIcons
+                        name="share-variant"
+                        size={UI_ICON_SIZE_14}
+                        color={c.primary}
+                      />
+                      <Text style={styles.shareQrBtnText}>{t('sync.invite.shareQrBtn')}</Text>
+                    </Pressable>
                   </View>
 
                   <Text style={styles.codeLabelText}>{t('sync.invite.codeLabel')}</Text>
@@ -357,18 +391,36 @@ export default function AndroidSyncScreen() {
                       <Text style={styles.plusIcon}>+</Text>
                       <Text style={styles.invitePasteTitle}>{t('sync.alreadyHaveInvite')}</Text>
                     </View>
-                    <Pressable
-                      onPress={handleOpenScanner}
-                      android_ripple={ripple}
-                      style={styles.scanPillSmall}
-                    >
-                      <MaterialCommunityIcons
-                        name="qrcode-scan"
-                        size={UI_ICON_SIZE_14}
-                        color={c.primary}
-                      />
-                      <Text style={styles.scanPillSmallText}>{t('sync.paste.scanBtn')}</Text>
-                    </Pressable>
+                    <View style={styles.pastePillRow}>
+                      <Pressable
+                        onPress={handleAttachQrImage}
+                        android_ripple={ripple}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('sync.paste.attachBtn')}
+                        style={styles.scanPillSmall}
+                      >
+                        <MaterialCommunityIcons
+                          name="image-outline"
+                          size={UI_ICON_SIZE_14}
+                          color={c.primary}
+                        />
+                        <Text style={styles.scanPillSmallText}>{t('sync.paste.attachBtn')}</Text>
+                      </Pressable>
+                      <Pressable
+                        onPress={handleOpenScanner}
+                        android_ripple={ripple}
+                        accessibilityRole="button"
+                        accessibilityLabel={t('sync.paste.scanBtn')}
+                        style={styles.scanPillSmall}
+                      >
+                        <MaterialCommunityIcons
+                          name="qrcode-scan"
+                          size={UI_ICON_SIZE_14}
+                          color={c.primary}
+                        />
+                        <Text style={styles.scanPillSmallText}>{t('sync.paste.scanBtn')}</Text>
+                      </Pressable>
+                    </View>
                   </View>
 
                   <View style={styles.pasteRow}>
@@ -382,6 +434,7 @@ export default function AndroidSyncScreen() {
                       style={styles.pasteInput}
                       autoCapitalize="none"
                       autoCorrect={false}
+                      multiline={false}
                     />
                     <Pressable
                       onPress={handleConnect}
@@ -399,6 +452,10 @@ export default function AndroidSyncScreen() {
                       )}
                     </Pressable>
                   </View>
+
+                  {!scannerVisible && !!scanError && (
+                    <Text style={styles.pasteError}>{t(scanError)}</Text>
+                  )}
                 </MotionView>
               )}
 
@@ -472,6 +529,8 @@ export default function AndroidSyncScreen() {
         visible={scannerVisible}
         onClose={handleCloseScanner}
         onBarcodeScanned={handleBarcodeScanned}
+        onAttachImage={handleAttachQrImage}
+        scanError={scanError}
         hasScanned={hasScanned}
       />
 
@@ -538,6 +597,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     segPill: {
       ...commonStyles.flex1,
+      overflow: 'hidden',
       paddingVertical: UI_SIZE_12,
       borderRadius: UI_SIZE_9999,
       ...commonStyles.centered,
@@ -651,6 +711,44 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurfaceVariant,
       paddingHorizontal: UI_SIZE_20,
     },
+    shareQrBtn: {
+      overflow: 'hidden',
+      ...commonStyles.row,
+      gap: UI_SIZE_6,
+      marginTop: UI_SIZE_12,
+      paddingVertical: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_16,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(c.primary, 0.1),
+    },
+    shareQrBtnText: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.primary,
+    },
+    countdownPill: {
+      ...commonStyles.row,
+      alignSelf: 'center',
+      gap: UI_SIZE_6,
+      paddingVertical: UI_SIZE_6,
+      paddingHorizontal: UI_SIZE_12,
+      borderRadius: UI_SIZE_9999,
+      marginBottom: UI_SIZE_32,
+      backgroundColor: hexWithAlpha(c.primary, 0.12),
+    },
+    countdownPillUrgent: {
+      backgroundColor: hexWithAlpha(c.error, 0.14),
+    },
+    countdownText: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.primary,
+    },
+    countdownTextUrgent: {
+      color: c.error,
+    },
     codeLabelText: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
@@ -715,6 +813,18 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.row,
       justifyContent: 'space-between',
       marginBottom: UI_SIZE_14,
+    },
+    pastePillRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_8,
+    },
+    pasteError: {
+      marginTop: UI_SIZE_8,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.error,
     },
     invitePasteLeft: {
       ...commonStyles.row,

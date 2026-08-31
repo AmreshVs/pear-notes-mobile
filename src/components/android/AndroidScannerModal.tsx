@@ -26,6 +26,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string
@@ -38,6 +39,8 @@ type AndroidScannerModalProps = {
   visible: boolean
   onClose: () => void
   onBarcodeScanned: (event: { data: string }) => void
+  onAttachImage: () => void
+  scanError: string | null
   hasScanned: boolean
 }
 
@@ -45,6 +48,8 @@ export function AndroidScannerModal({
   visible,
   onClose,
   onBarcodeScanned,
+  onAttachImage,
+  scanError,
   hasScanned,
 }: AndroidScannerModalProps) {
   const { t } = useTranslation()
@@ -106,6 +111,19 @@ export function AndroidScannerModal({
             <View style={styles.scannerFooter}>
               <Text style={styles.scannerTitle}>{t('sync.scanner.title')}</Text>
               <Text style={styles.scannerDesc}>{t('sync.scanner.description')}</Text>
+              {!!scanError && <Text style={styles.scannerError}>{t(scanError)}</Text>}
+              <Pressable
+                onPress={onAttachImage}
+                android_ripple={rippleOnScrim}
+                style={styles.attachBtn}
+              >
+                <MaterialCommunityIcons
+                  name="image-outline"
+                  size={UI_ICON_SIZE_20}
+                  color={theme.colors.white}
+                />
+                <Text style={styles.attachBtnText}>{t('sync.scanner.attachBtn')}</Text>
+              </Pressable>
             </View>
           </>
         ) : (
@@ -119,6 +137,15 @@ export function AndroidScannerModal({
             >
               <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
             </Pressable>
+            <Pressable onPress={onAttachImage} android_ripple={ripple} style={styles.attachBtn}>
+              <MaterialCommunityIcons
+                name="image-outline"
+                size={UI_ICON_SIZE_20}
+                color={styles.attachBtnText.color}
+              />
+              <Text style={styles.attachBtnText}>{t('sync.scanner.attachBtn')}</Text>
+            </Pressable>
+            {!!scanError && <Text style={styles.scannerError}>{t(scanError)}</Text>}
             <Pressable onPress={onClose} android_ripple={ripple} style={styles.permissionCancelBtn}>
               <Text style={styles.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
             </Pressable>
@@ -196,6 +223,29 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       textAlign: 'center',
       color: theme.colors.overlayText,
       fontFamily: FontFamily.regular,
+    },
+    scannerError: {
+      fontSize: FontSize.caption,
+      textAlign: 'center',
+      color: c.error,
+      fontFamily: FontFamily.semiBold,
+    },
+    attachBtn: {
+      overflow: 'hidden',
+      ...commonStyles.row,
+      alignSelf: 'center',
+      gap: UI_SIZE_8,
+      marginTop: UI_SIZE_8,
+      paddingVertical: UI_SIZE_12,
+      paddingHorizontal: UI_SIZE_20,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(theme.colors.white, 0.16),
+    },
+    attachBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: theme.colors.white,
     },
     permissionCard: {
       ...commonStyles.flex1,

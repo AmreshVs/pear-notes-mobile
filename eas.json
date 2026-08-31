@@ -42,7 +42,7 @@
       "android": {
         "serviceAccountKeyPath": "$PEAR_NOTES_PLAY_SERVICE_ACCOUNT_KEY",
         "track": "internal",
-        "releaseStatus": "draft",
+        "releaseStatus": "completed",
         "changesNotSentForReview": false
       },
       "ios": {

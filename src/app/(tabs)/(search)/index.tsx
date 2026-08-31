@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { format } from 'date-fns'
 import { Stack } from 'expo-router'
 
+import { SEARCH_QUERY_MAX_LENGTH } from '@pear-notes/core/constant.js'
 import { getFilteredNotes, setSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 
@@ -90,6 +91,12 @@ export default function SearchScreen() {
     ],
   )
 
+  const handleSearchChange = useCallback(
+    (event: { nativeEvent: { text: string } }) =>
+      dispatch(setSearchQuery(event.nativeEvent.text.slice(0, SEARCH_QUERY_MAX_LENGTH))),
+    [dispatch],
+  )
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -104,9 +111,7 @@ export default function SearchScreen() {
             textColor: colors.text,
             hintTextColor: colors.textSecondary,
             headerIconColor: colors.textSecondary,
-            onChangeText: (event) => {
-              dispatch(setSearchQuery(event.nativeEvent.text))
-            },
+            onChangeText: handleSearchChange,
           },
         }}
       />

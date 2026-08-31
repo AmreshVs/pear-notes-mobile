@@ -8,6 +8,7 @@ const entries = [
   'backend',
   'spec',
   'store',
+  'activity.js',
   'constant.js',
   'index.js',
   'rpc.js',

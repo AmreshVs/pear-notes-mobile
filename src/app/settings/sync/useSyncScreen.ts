@@ -23,7 +23,9 @@ import {
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, getInviteRemainingMs, isValidInvite } from '@pear-notes/core/utils.js'
 
+import { useQrImageAttach } from '@/components/sync/useQrImageAttach'
 import {
+  hapticError,
   hapticLight,
   hapticMedium,
   hapticSelection,
@@ -31,8 +33,12 @@ import {
   hapticWarning,
 } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
+import { shareQrImage } from '@/lib/qrShare'
 
 const INVITE_COUNTDOWN_TICK_MS = 1000
+const INVITE_EXPIRY_WARNING_MS = 60 * 1000
+
+type QrCodeRef = { toDataURL: (callback: (data: string) => void) => void }
 
 function useSyncScreen() {
   const dispatch = useDispatch()
@@ -54,8 +60,11 @@ function useSyncScreen() {
   const [deviceToDeleteKey, setDeviceToDeleteKey] = useState<string | null>(null)
   const [countdownTick, setCountdownTick] = useState(0)
 
+  const [isSharingQr, setIsSharingQr] = useState(false)
+
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const scrollRef = useRef<ScrollView>(null)
+  const qrRef = useRef<QrCodeRef | null>(null)
 
   const inviterStatus = useSelector(getInviterStatus)
   const receiverStatus = useSelector(getReceiverStatus)
@@ -145,10 +154,18 @@ function useSyncScreen() {
     setScannerVisible(true)
   }, [cameraPermission?.granted, handleRequestCameraPermission])
 
+  const handleInviteFromImage = useCallback((invite: string) => {
+    setPasteCode(invite)
+    setScannerVisible(false)
+  }, [])
+
+  const { scanError, clearScanError, attachQrImage } = useQrImageAttach(handleInviteFromImage)
+
   const handleCloseScanner = useCallback(() => {
     setScannerVisible(false)
     setHasScanned(false)
-  }, [])
+    clearScanError()
+  }, [clearScanError])
 
   const handleBarcodeScanned = useCallback(
     ({ data }: { data: string }) => {
@@ -161,6 +178,31 @@ function useSyncScreen() {
     },
     [hasScanned],
   )
+
+  const handleQrRef = useCallback((instance: QrCodeRef | null) => {
+    qrRef.current = instance
+  }, [])
+
+  const handleShareQr = useCallback(async () => {
+    if (!qrRef.current || isSharingQr) return
+    hapticLight()
+    setIsSharingQr(true)
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('QR_RENDER_TIMEOUT')), 4000)
+        qrRef.current?.toDataURL((data) => {
+          clearTimeout(timer)
+          resolve(data)
+        })
+      })
+      await shareQrImage(base64, '')
+    } catch (error) {
+      console.error('handleShareQr', error)
+      hapticError()
+    } finally {
+      setIsSharingQr(false)
+    }
+  }, [isSharingQr])
 
   const handleGenerateInvite = useCallback(() => {
     hapticLight()
@@ -183,6 +225,8 @@ function useSyncScreen() {
     [expiresAt, countdownTick],
   )
   const inviteExpired = !!inviteCode && !!expiresAt && inviteRemainingMs <= 0
+  const inviteExpiringSoon =
+    !inviteExpired && inviteRemainingMs > 0 && inviteRemainingMs <= INVITE_EXPIRY_WARNING_MS
 
   const handleConfirmDelete = useCallback(() => {
     setDeleteSheetVisible(false)
@@ -211,6 +255,7 @@ function useSyncScreen() {
     expiresAt,
     inviteRemainingMs,
     inviteExpired,
+    inviteExpiringSoon,
     isLoading,
     syncedDevices,
     isSynced,
@@ -220,6 +265,11 @@ function useSyncScreen() {
     handleCloseScanner,
     handleBarcodeScanned,
     handleGenerateInvite,
+    handleShareQr,
+    handleAttachQrImage: attachQrImage,
+    isSharingQr,
+    scanError,
+    handleQrRef,
     handleScrollToEnd,
     handleDeleteDevice,
     handleConfirmDelete,

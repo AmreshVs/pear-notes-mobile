@@ -6,6 +6,8 @@ import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
+import { SEARCH_QUERY_MAX_LENGTH } from '@pear-notes/core/constant.js'
+
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
@@ -35,6 +37,7 @@ type AndroidFolderAppBarProps = {
   searchVisible: boolean
   searchQuery: string
   showFolderOptions: boolean
+  canMultiSelect: boolean
   searchInputRef: RefObject<TextInput | null>
   searchBarStyle: AnimatedStyle<ViewStyle>
   onBack: () => void
@@ -49,6 +52,7 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   searchVisible,
   searchQuery,
   showFolderOptions,
+  canMultiSelect,
   searchInputRef,
   searchBarStyle,
   onBack,
@@ -64,6 +68,7 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   const c = md3.colors as ExtendedColors
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const selectAccessibilityState = useMemo(() => ({ disabled: !canMultiSelect }), [canMultiSelect])
 
   return (
     <>
@@ -84,10 +89,12 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
         <View style={styles.appBarRight}>
           <Pressable
             onPress={onStartSelecting}
-            android_ripple={ripple}
-            style={styles.iconBtn}
+            disabled={!canMultiSelect}
+            android_ripple={canMultiSelect ? ripple : undefined}
+            style={[styles.iconBtn, !canMultiSelect && commonStyles.disabled]}
             hitSlop={UI_SIZE_8}
             accessibilityRole="button"
+            accessibilityState={selectAccessibilityState}
             accessibilityLabel={t('folderView.selection.select')}
           >
             <MaterialCommunityIcons
@@ -145,6 +152,7 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
             accessibilityLabel={t('folderView.searchPlaceholder')}
             value={searchQuery}
             onChangeText={onChangeSearch}
+            maxLength={SEARCH_QUERY_MAX_LENGTH}
             returnKeyType="search"
           />
           {searchQuery.length > 0 && (

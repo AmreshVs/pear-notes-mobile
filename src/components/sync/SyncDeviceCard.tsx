@@ -4,6 +4,7 @@ import { Animated, Pressable, StyleSheet, TextInput, View as RNView } from 'reac
 import Reanimated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 
+import { DEVICE_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
 import {
   deleteSyncedDevice,
   updateSyncedDevice,
@@ -96,6 +97,17 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
   )
 
   const platformNames = getPlatformNames(t)
+  const presenceLabelKey = !device.presenceKnown
+    ? 'sync.devices.presenceUnknown'
+    : device.isOnline
+      ? 'sync.devices.online'
+      : 'sync.devices.offline'
+
+  const presenceDotStyle = !device.presenceKnown
+    ? styles.presenceDotUnknown
+    : device.isOnline
+      ? styles.presenceDotOnline
+      : styles.presenceDotOffline
 
   return (
     <>
@@ -106,7 +118,11 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
         <RNView style={styles.deviceRow}>
           <RNView style={styles.deviceIcon}>
             <SymbolIcon name={iconName} size={UI_ICON_SIZE_18} color={colors.primary} />
-            {device.isLocal && <RNView style={styles.onlineDot} />}
+            <RNView
+              accessible
+              accessibilityLabel={t(presenceLabelKey)}
+              style={[styles.presenceDot, presenceDotStyle]}
+            />
           </RNView>
 
           <RNView style={styles.deviceContent}>
@@ -117,6 +133,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
                 onChangeText={setEditedTitle}
                 onBlur={commitEdit}
                 onSubmitEditing={commitEdit}
+                maxLength={DEVICE_NAME_MAX_LENGTH}
                 style={styles.renameInput}
                 returnKeyType="done"
                 autoCapitalize="words"
@@ -124,12 +141,12 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
               />
             ) : (
               <Pressable onPress={!isOther ? startEditing : undefined}>
-                <Text numberOfLines={1} style={styles.deviceName} ellipsizeMode="middle">
+                <Text numberOfLines={1} style={styles.deviceName} ellipsizeMode="tail">
                   {getDeviceDisplayName(device) || t('sync.platforms.unknown')}
                 </Text>
               </Pressable>
             )}
-            <Text style={styles.deviceSub}>
+            <Text style={styles.deviceSub} numberOfLines={1}>
               {platformNames[device.platform || ''] || device.platform || '—'}
               {!isOther && !isEditing && (
                 <Text style={styles.tapToRename}>{t('sync.platforms.renameHint')}</Text>
@@ -188,16 +205,24 @@ const useStyles = createThemedStylesheet((theme) => {
       position: 'relative',
       backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.15 : 0.08),
     },
-    onlineDot: {
+    presenceDot: {
       position: 'absolute',
       bottom: -2,
       right: -2,
       width: 11,
       height: 11,
       borderRadius: 6,
-      backgroundColor: theme.colors.success,
       borderWidth: 2,
       borderColor: cardBg,
+    },
+    presenceDotOnline: {
+      backgroundColor: theme.colors.success,
+    },
+    presenceDotOffline: {
+      backgroundColor: theme.colors.error,
+    },
+    presenceDotUnknown: {
+      backgroundColor: theme.colors.textMuted,
     },
     deviceName: {
       fontSize: FontSize.subtitle,

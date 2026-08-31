@@ -14,6 +14,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 
+import { PASSWORD_MAX_LENGTH } from '@pear-notes/core/constant.js'
+
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -163,6 +165,7 @@ export default function AndroidNoteLockPasswordScreen() {
               placeholder={t('noteLockPassword.placeholder')}
               placeholderTextColor={c.onSurfaceVariant}
               secureTextEntry={secure}
+              maxLength={PASSWORD_MAX_LENGTH}
               autoCapitalize="none"
               autoCorrect={false}
               style={styles.input}
@@ -191,6 +194,7 @@ export default function AndroidNoteLockPasswordScreen() {
                   placeholder={t('noteLockPassword.confirmPlaceholder')}
                   placeholderTextColor={c.onSurfaceVariant}
                   secureTextEntry={secure}
+                  maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
                   style={styles.input}

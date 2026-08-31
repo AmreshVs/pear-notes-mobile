@@ -74,7 +74,13 @@ export const FolderRow = memo(function FolderRow({
       <Pressable onPress={() => onPress(id)} style={containerStyle} accessibilityRole="button">
         <RNView style={styles.leftContent}>
           <SymbolIcon name={iconName} size={UI_ICON_SIZE_20} color={styles.icon.color} />
-          <Text style={[styles.name, selected && styles.nameSelected]}>{name}</Text>
+          <Text
+            style={[styles.name, selected && styles.nameSelected]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {name}
+          </Text>
         </RNView>
 
         <RNView style={styles.rightContent}>
@@ -142,6 +148,8 @@ const createStyles = (theme: Theme) =>
     leftContent: {
       ...commonStyles.row,
       gap: 14,
+      flex: 1,
+      minWidth: 0,
       backgroundColor: theme.colors.transparent,
     },
     icon: {
@@ -153,6 +161,7 @@ const createStyles = (theme: Theme) =>
       letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,
       opacity: 0.9,
+      flex: 1,
       paddingRight: UI_SIZE_4,
     },
     nameSelected: {
@@ -161,6 +170,7 @@ const createStyles = (theme: Theme) =>
     rightContent: {
       ...commonStyles.row,
       gap: Space.sm,
+      flexShrink: 0,
       backgroundColor: theme.colors.transparent,
     },
     count: {

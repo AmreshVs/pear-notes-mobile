@@ -13,6 +13,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Stack, useLocalSearchParams } from 'expo-router'
 
+import { PASSWORD_MAX_LENGTH } from '@pear-notes/core/constant.js'
+
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -140,6 +142,7 @@ export default function BackupPasswordScreen() {
               placeholder={t('backup.password.placeholder')}
               placeholderTextColor={colors.textMuted}
               secureTextEntry={secure}
+              maxLength={PASSWORD_MAX_LENGTH}
               autoCapitalize="none"
               autoCorrect={false}
               onFocus={handleRevealRequirements}
@@ -163,6 +166,7 @@ export default function BackupPasswordScreen() {
                   placeholder={t('backup.password.confirmPlaceholder')}
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry={secure}
+                  maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
                   style={styles.input}

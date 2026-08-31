@@ -21,6 +21,8 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 
 import {
   ALL_NOTES_KEY,
+  FOLDER_ERROR,
+  FOLDER_NAME_MAX_LENGTH,
   RECENTLY_DELETED_KEY,
   TRASH_RETENTION_DAYS,
 } from '@pear-notes/core/constant.js'
@@ -48,6 +50,7 @@ import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import { validateFolderName } from '@pear-notes/core/utils.js'
 
 import { AndroidEmptyState, AndroidNoteRow, useMD3Theme } from '@/components/android'
 import { AndroidFolderAppBar } from '@/components/android/AndroidFolderAppBar'
@@ -61,6 +64,7 @@ import {
   FontSize,
   FontWeight,
   UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -88,6 +92,8 @@ function noteKey(note: any): string {
   return note.key
 }
 
+const MIN_NOTES_FOR_MULTI_SELECT = 2
+
 export default function AndroidFolderNotesScreen() {
   const { t } = useTranslation()
   const { id } = useLocalSearchParams<{ id: string }>()
@@ -113,6 +119,7 @@ export default function AndroidFolderNotesScreen() {
   const [folderOptionsSheet, setFolderOptionsSheet] = useState(false)
   const [renameDialog, setRenameDialog] = useState<{ id: string; name: string } | null>(null)
   const [renameText, setRenameText] = useState('')
+  const [renameError, setRenameError] = useState<string | null>(null)
   const [deleteConfirmNote, setDeleteConfirmNote] = useState<string | null>(null)
   const [showFolderDeleteConfirm, setShowFolderDeleteConfirm] = useState(false)
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
@@ -198,6 +205,8 @@ export default function AndroidFolderNotesScreen() {
     clearSelection,
     exitSelection,
   } = useNoteSelection(id as string, orderedKeys)
+
+  const canMultiSelect = orderedKeys.length >= MIN_NOTES_FOR_MULTI_SELECT
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -418,15 +427,29 @@ export default function AndroidFolderNotesScreen() {
     router.back()
   }, [dispatch, id])
 
+  const handleChangeRenameText = useCallback((value: string) => {
+    setRenameText(value)
+    setRenameError(null)
+  }, [])
+
   const confirmRename = useCallback(() => {
     if (!renameDialog) return
-    const trimmed = renameText.trim()
-    if (trimmed && trimmed !== renameDialog.name) {
+    const result = validateFolderName(allFolders, renameText, renameDialog.id)
+    if (!result.valid) {
+      hapticWarning()
+      setRenameError(
+        result.error === FOLDER_ERROR.DUPLICATE_NAME
+          ? t('folders.errors.duplicateName', { name: result.name })
+          : t('folders.errors.emptyName'),
+      )
+      return
+    }
+    if (result.name !== renameDialog.name) {
       hapticSuccess()
-      dispatch(updateFolder({ id: renameDialog.id, name: trimmed } as any))
+      dispatch(updateFolder({ id: renameDialog.id, name: result.name } as any))
     }
     setRenameDialog(null)
-  }, [dispatch, renameDialog, renameText])
+  }, [allFolders, dispatch, renameDialog, renameText, t])
 
   const handleLinkDevice = useCallback(() => {
     hapticLight()
@@ -462,7 +485,9 @@ export default function AndroidFolderNotesScreen() {
   const listHeader = useMemo(
     () => (
       <View>
-        <Text style={styles.pageTitle}>{folder?.name || t('folders.untitled')}</Text>
+        <Text style={styles.pageTitle} numberOfLines={2}>
+          {folder?.name || t('folders.untitled')}
+        </Text>
         <Text style={styles.pageCount} accessibilityLiveRegion="polite">
           {isSelecting
             ? t('folderView.selection.selectedCount', { count: selectedCount })
@@ -608,6 +633,7 @@ export default function AndroidFolderNotesScreen() {
 
   const handleCloseRenameDialog = useCallback(() => {
     setRenameDialog(null)
+    setRenameError(null)
   }, [])
 
   const handleCloseFolderPicker = useCallback(() => {
@@ -676,6 +702,7 @@ export default function AndroidFolderNotesScreen() {
           searchVisible={searchVisible}
           searchQuery={searchQuery}
           showFolderOptions={!folder?.isSystem}
+          canMultiSelect={canMultiSelect}
           searchInputRef={searchInputRef}
           searchBarStyle={searchBarAnimStyle}
           onBack={handleBack}
@@ -727,11 +754,15 @@ export default function AndroidFolderNotesScreen() {
             <Text style={styles.dialogTitle}>{t('folders.renameTitle')}</Text>
             <PaperTextInput
               value={renameText}
-              onChangeText={setRenameText}
+              onChangeText={handleChangeRenameText}
+              onSubmitEditing={confirmRename}
               autoFocus
               mode="outlined"
+              error={!!renameError}
+              maxLength={FOLDER_NAME_MAX_LENGTH}
               label={t('folders.renameLabel')}
             />
+            {!!renameError && <Text style={styles.dialogError}>{renameError}</Text>}
             <View style={styles.dialogActions}>
               <Pressable
                 onPress={handleCloseRenameDialog}
@@ -854,6 +885,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       marginTop: UI_SIZE_10,
       letterSpacing: -0.5,
       color: c.onSurface,
+      paddingRight: UI_SIZE_16,
     },
     pageCount: {
       fontSize: FontSize.caption,
@@ -909,6 +941,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       fontFamily: FontFamily.bold,
       marginBottom: UI_SIZE_16,
       color: c.onSurface,
+    },
+    dialogError: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      marginTop: UI_SIZE_8,
+      color: c.error,
     },
     dialogActions: {
       ...commonStyles.row,

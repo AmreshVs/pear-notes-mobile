@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSelector } from 'react-redux'
 import { router, Stack } from 'expo-router'
+
+import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
 import { MotionView } from '@/components/MotionView'
 import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
@@ -33,6 +36,7 @@ export default function SettingsScreen() {
   const { colors } = theme
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
+  const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
 
   const handleClose = useCallback(() => {
     router.back()
@@ -58,6 +62,16 @@ export default function SettingsScreen() {
         label: t('settings.sync.linkAndSync'),
         onPress: () => router.push('/settings/sync'),
       },
+      ...(hasLinkedDevices
+        ? [
+            {
+              key: 'activity',
+              icon: 'clock.arrow.circlepath' as IconName,
+              label: t('layouts.activity'),
+              onPress: () => router.push('/settings/activity' as any),
+            },
+          ]
+        : []),
       {
         key: 'backup',
         icon: 'square.and.arrow.down' as IconName,
@@ -71,7 +85,7 @@ export default function SettingsScreen() {
         onPress: () => router.push('/settings/storage' as any),
       },
     ],
-    [t],
+    [t, hasLinkedDevices],
   )
 
   return (

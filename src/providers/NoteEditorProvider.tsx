@@ -18,10 +18,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import * as FileSystem from 'expo-file-system'
 import { SymbolView } from 'expo-symbols'
 
-import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 
+import { NoteHistoryModal } from '@/components/activity/NoteHistoryModal'
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
@@ -51,9 +51,9 @@ import {
   shareMessage,
 } from '@/lib/noteAttachmentManager'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
+import { buildNoteSharePayload } from '@/lib/noteShare'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
-import { parseNoteAttachmentsAndText, resolveAttachmentFilename } from '@/utils/noteParser'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
@@ -86,6 +86,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     selectedAttachmentFileName,
     setSelectedAttachmentFileName,
     isRecorderVisible,
+    historyVisible,
+    setHistoryVisible,
     setIsRecorderVisible,
     imageActionRect,
     setImageActionRect,
@@ -215,43 +217,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     hapticMedium()
     setIsSharing(true)
     const title = titleRef.current || t('noteCard.untitled')
-    const html = noteContentRef.current || ''
-    const urls: string[] = []
-
-    const processLink = async (link: string, defaultExt: string, tagContent: string) => {
-      let cleanLink = link.replace(/&amp;/g, '&')
-      if (resolveHyperdriveUrl) {
-        cleanLink = resolveHyperdriveUrl(cleanLink)
-      }
-      try {
-        const filename = resolveAttachmentFilename(cleanLink, defaultExt, tagContent)
-        const localUri = await downloadToCache(cleanLink, filename)
-        urls.push(localUri)
-      } catch {}
-    }
-
-    const { attachments, plainText: rawPlainText } = parseNoteAttachmentsAndText(html)
-    for (const att of attachments) {
-      await processLink(att.url, att.defaultExt, att.tag)
-    }
-
-    let plainText = rawPlainText
-    if (resolveHyperdriveUrl) {
-      const serverBase = resolveHyperdriveUrl(HYPERDRIVE_URL_PREFIX)
-      const serverRegex = new RegExp(
-        `${serverBase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[^\\s]*`,
-        'gi',
-      )
-      plainText = plainText.replace(serverRegex, '')
-    }
-    plainText = plainText.replace(new RegExp(`${HYPERDRIVE_URL_PREFIX}[^\\s]*`, 'gi'), '')
-    plainText = plainText.replace(/\n{3,}/g, '\n\n').trim()
-
-    const message = title ? `${title}\n\n${plainText}` : plainText
     try {
-      await shareMessage(message, urls)
-    } catch {
-      await Share.share({ title, message })
+      const { message, urls } = await buildNoteSharePayload({
+        title,
+        html: noteContentRef.current || '',
+        resolveHyperdriveUrl,
+      })
+      try {
+        await shareMessage(message, urls)
+      } catch {
+        await Share.share({ title, message })
+      }
     } finally {
       setIsSharing(false)
     }
@@ -274,29 +250,34 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     )
   }, [moveFolders, handleMoveNote, t])
 
+  const handleOpenNoteHistory = useCallback(() => {
+    if (!noteId) return
+    setHistoryVisible(true)
+  }, [noteId])
+
+  const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [])
+
   const handleMoreOptions = useCallback(() => {
     if (!noteId) return
     hapticMedium()
     if (Platform.OS === 'ios') {
       const lockLabel = noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')
       const pinLabel = noteData?.pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin')
+      const entries = [
+        { label: pinLabel, run: handleTogglePin },
+        { label: t('noteCard.actions.moveTo'), run: showMoveToSheet },
+        { label: lockLabel, run: handleToggleLock },
+        { label: t('noteEditor.menu.noteHistory'), run: handleOpenNoteHistory },
+        { label: t('noteCard.actions.delete'), run: handleDeleteNote },
+      ]
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: [
-            t('common.cancel'),
-            pinLabel,
-            t('noteCard.actions.moveTo'),
-            lockLabel,
-            t('noteCard.actions.delete'),
-          ],
+          options: [t('common.cancel'), ...entries.map((entry) => entry.label)],
           cancelButtonIndex: 0,
-          destructiveButtonIndex: 4,
+          destructiveButtonIndex: entries.length,
         },
         (index: number) => {
-          if (index === 1) handleTogglePin()
-          else if (index === 2) showMoveToSheet()
-          else if (index === 3) handleToggleLock()
-          else if (index === 4) handleDeleteNote()
+          if (index > 0) entries[index - 1]?.run()
         },
       )
     } else {
@@ -306,6 +287,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteId,
     noteData?.locked,
     noteData?.pinned,
+    handleOpenNoteHistory,
     showMoveToSheet,
     handleTogglePin,
     handleToggleLock,
@@ -699,6 +681,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                           onPress={handleToggleLock}
                         />
                         <ExpoUI.Button
+                          label={t('noteEditor.menu.noteHistory')}
+                          systemImage="clock.arrow.circlepath"
+                          onPress={handleOpenNoteHistory}
+                        />
+                        <ExpoUI.Button
                           label={t('noteCard.actions.delete')}
                           systemImage="trash"
                           role="destructive"
@@ -773,6 +760,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           )}
 
           <LockedContentShield active={protectLockedNote} />
+
+          {!!noteId && (
+            <NoteHistoryModal
+              visible={historyVisible}
+              noteId={noteId}
+              onClose={handleCloseNoteHistory}
+            />
+          )}
 
           <AudioRecorderModal
             visible={isRecorderVisible}

@@ -109,7 +109,9 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
                       color={colors.primary}
                     />
                   </View>
-                  <Text style={styles.folderName}>{folder.name}</Text>
+                  <Text style={styles.folderName} numberOfLines={1}>
+                    {folder.name}
+                  </Text>
                   <MaterialCommunityIcons
                     name="chevron-right"
                     size={UI_ICON_SIZE_18}

@@ -53,6 +53,7 @@ export function useNoteEditor() {
   const [imageSheetVisible, setImageSheetVisible] = useState(false)
   const [attachmentSheetVisible2, setAttachmentSheetVisible2] = useState(false)
   const [isRecorderVisible, setIsRecorderVisible] = useState(false)
+  const [historyVisible, setHistoryVisible] = useState(false)
   const [recorderEverOpened, setRecorderEverOpened] = useState(false)
   const [dialogInfo, setDialogInfo] = useState<{
     title: string
@@ -399,6 +400,8 @@ export function useNoteEditor() {
     attachmentSheetVisible2,
     setAttachmentSheetVisible2,
     isRecorderVisible,
+    historyVisible,
+    setHistoryVisible,
     setIsRecorderVisible,
     recorderEverOpened,
     setRecorderEverOpened,

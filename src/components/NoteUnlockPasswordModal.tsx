@@ -12,6 +12,7 @@ import {
 import { BlurView } from 'expo-blur'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import { PASSWORD_MAX_LENGTH } from '@pear-notes/core/constant.js'
 
 import { GlassView } from '@/components/GlassView'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -124,6 +125,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
                   placeholder={t('noteLockPassword.placeholder')}
                   placeholderTextColor={colors.textMuted}
                   secureTextEntry={secure}
+                  maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
                   autoFocus

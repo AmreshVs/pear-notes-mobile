@@ -35,6 +35,7 @@ import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/u
 
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
+import { useQrImageAttach } from '@/components/sync/useQrImageAttach'
 import {
   commonStyles,
   Durations,
@@ -57,11 +58,13 @@ import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticError, hapticMedium, hapticSuccess } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
+import { getRelativeTime } from '@/utils/relativeTime'
 
 import { GlassView } from './GlassView'
 import { createThemedStylesheetWithHooks, Text, useColors, useTheme, View } from './Themed'
 
 const isAndroid = process.env.EXPO_OS === 'android'
+const REQUESTED_AGE_TICK_MS = 30000
 
 export const PairingOverlay = memo(function PairingOverlay() {
   const { t } = useTranslation()
@@ -73,6 +76,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const [pendingInvite, setPendingInvite] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
+  const [presenceNow, setPresenceNow] = useState(() => Date.now())
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
 
   useEffect(() => {
@@ -93,13 +97,19 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   const activeStatus = isInviterActive ? inviterStatus : receiverStatus
   const isInviter = isInviterActive
-  const { step, progress, userData, localKey, data } = activeStatus
+  const { step, progress, userData, localKey, data, requestedAt } = activeStatus
 
   useEffect(() => {
     if (deviceRemoved) {
       router.dismissAll()
     }
   }, [])
+
+  useEffect(() => {
+    if (step !== 'confirmation') return
+    const timer = setInterval(() => setPresenceNow(Date.now()), REQUESTED_AGE_TICK_MS)
+    return () => clearInterval(timer)
+  }, [step])
 
   useEffect(() => {
     if (step === 'done') hapticSuccess()
@@ -160,6 +170,18 @@ export const PairingOverlay = memo(function PairingOverlay() {
     setHasScanned(false)
     setIsScanning(true)
   }, [cameraPermission?.granted, requestCameraPermission])
+
+  const handleInviteFromImage = useCallback((invite: string) => {
+    setPasteCode(invite)
+    setIsScanning(false)
+  }, [])
+
+  const { scanError, clearScanError, attachQrImage } = useQrImageAttach(handleInviteFromImage)
+
+  const handleCloseScanner = useCallback(() => {
+    setIsScanning(false)
+    clearScanError()
+  }, [clearScanError])
 
   const handleBarcodeScanned = useCallback(
     ({ data }: { data: string }) => {
@@ -227,6 +249,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const peerFp = useMemo(() => getFingerprint(userData), [userData])
   const myFp = useMemo(() => getFingerprint(localKey), [localKey])
   const isConfirm = step === 'confirmation'
+  const requestedTime = useMemo(
+    () =>
+      isConfirm ? getRelativeTime(requestedAt, Math.max(presenceNow, requestedAt || 0)) : null,
+    [isConfirm, requestedAt, presenceNow],
+  )
   const mainFp = isConfirm ? peerFp : myFp
   const mainLabel = isConfirm ? t('pairing.overlay.remoteId') : t('pairing.overlay.myId')
   const subLabel = isConfirm
@@ -477,6 +504,17 @@ export const PairingOverlay = memo(function PairingOverlay() {
           </View>
         ) : null}
 
+        {isConfirm && requestedTime ? (
+          <Text style={styles.requestedAtText}>
+            {t('sync.confirm.requestedAt', {
+              time:
+                requestedTime.count === 0
+                  ? t(requestedTime.key)
+                  : t(requestedTime.key, { count: requestedTime.count }),
+            })}
+          </Text>
+        ) : null}
+
         {isConfirm ? (
           <View style={styles.row}>
             <Pressable onPress={handleReject} style={styles.rejectPressable}>
@@ -525,6 +563,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
     mainLabel,
     subFp,
     subLabel,
+    requestedTime,
+    t,
     showPairingInput,
     styles,
     deviceRemoved,
@@ -579,7 +619,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
         visible={isScanning}
         animationType="slide"
         presentationStyle="fullScreen"
-        onRequestClose={() => setIsScanning(false)}
+        onRequestClose={handleCloseScanner}
       >
         <View style={styles.scannerScreen}>
           {cameraPermission?.granted ? (
@@ -594,7 +634,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
                 <View style={styles.scannerFrame} />
               </View>
               <View style={styles.scannerHeader}>
-                <Pressable onPress={() => setIsScanning(false)} style={styles.scannerCloseBtn}>
+                <Pressable onPress={handleCloseScanner} style={styles.scannerCloseBtn}>
                   <SymbolIcon
                     name="xmark"
                     size={UI_ICON_SIZE_20}
@@ -606,6 +646,19 @@ export const PairingOverlay = memo(function PairingOverlay() {
               <View style={styles.scannerFooter}>
                 <Text style={styles.scannerTitle}>{t('sync.scanner.title')}</Text>
                 <Text style={styles.scannerDescription}>{t('sync.scanner.description')}</Text>
+                {!!scanError && <Text style={styles.scannerError}>{t(scanError)}</Text>}
+                <Pressable
+                  onPress={attachQrImage}
+                  style={({ pressed }) => [styles.attachBtn, pressed && commonStyles.pressed]}
+                >
+                  <SymbolIcon
+                    name="photo.on.rectangle"
+                    size={UI_ICON_SIZE_20}
+                    color={theme.colors.white}
+                    weight="semibold"
+                  />
+                  <Text style={styles.attachBtnText}>{t('sync.scanner.attachBtn')}</Text>
+                </Pressable>
               </View>
             </>
           ) : (
@@ -620,7 +673,20 @@ export const PairingOverlay = memo(function PairingOverlay() {
               >
                 <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
               </Pressable>
-              <Pressable onPress={() => setIsScanning(false)} style={styles.permissionCancelBtn}>
+              <Pressable
+                onPress={attachQrImage}
+                style={({ pressed }) => [styles.attachBtn, pressed && commonStyles.pressed]}
+              >
+                <SymbolIcon
+                  name="photo.on.rectangle"
+                  size={UI_ICON_SIZE_20}
+                  color={theme.colors.white}
+                  weight="semibold"
+                />
+                <Text style={styles.attachBtnText}>{t('sync.scanner.attachBtn')}</Text>
+              </Pressable>
+              {!!scanError && <Text style={styles.scannerError}>{t(scanError)}</Text>}
+              <Pressable onPress={handleCloseScanner} style={styles.permissionCancelBtn}>
                 <Text style={styles.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
               </Pressable>
             </View>
@@ -819,6 +885,27 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       gap: Space.sm,
       zIndex: 1,
     },
+    scannerError: {
+      fontSize: FontSize.caption,
+      textAlign: 'center',
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.error,
+    },
+    attachBtn: {
+      ...commonStyles.row,
+      alignSelf: 'center',
+      gap: Space.sm,
+      marginTop: Space.xs,
+      paddingVertical: Space.md,
+      paddingHorizontal: Space.lg,
+      borderRadius: Radii.pill,
+      backgroundColor: hexWithAlpha(theme.colors.white, 0.16),
+    },
+    attachBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.white,
+    },
     scannerTitle: {
       fontSize: FontSize.heading,
       fontWeight: FontWeight.bold,
@@ -993,6 +1080,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
           ? hexWithAlpha(theme.colors.white, 0.04)
           : hexWithAlpha(theme.colors.black, 0.03)
         : theme.colors.cardPressed,
+    },
+    requestedAtText: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
+      textAlign: 'center',
+      marginBottom: Space.sm,
+      color: theme.colors.textSecondary,
     },
     subFpWrapper: {
       opacity: 0.4,

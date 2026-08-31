@@ -5,6 +5,7 @@ import { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
+import { DEVICE_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
 import { updateSyncedDevice } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
@@ -89,6 +90,17 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
       ? 'cellphone'
       : 'monitor'
   const displayName = getDeviceDisplayName(device)
+  const presenceLabelKey = !device.presenceKnown
+    ? 'sync.devices.presenceUnknown'
+    : device.isOnline
+      ? 'sync.devices.online'
+      : 'sync.devices.offline'
+
+  const presenceDotStyle = !device.presenceKnown
+    ? styles.presenceDotUnknown
+    : device.isOnline
+      ? styles.presenceDotOnline
+      : styles.presenceDotOffline
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(device.title || '')
   const inputRef = useRef<TextInput>(null)
@@ -134,7 +146,11 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
       >
         <View style={styles.deviceIconCircle}>
           <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_20} color={c.primary} />
-          {device.isLocal && <View style={styles.deviceOnlineDot} />}
+          <View
+            accessible
+            accessibilityLabel={t(presenceLabelKey)}
+            style={[styles.presenceDot, presenceDotStyle]}
+          />
         </View>
 
         <View style={styles.deviceInfo}>
@@ -145,17 +161,18 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
               onChangeText={setEditedTitle}
               onBlur={commitEdit}
               onSubmitEditing={commitEdit}
+              maxLength={DEVICE_NAME_MAX_LENGTH}
               style={styles.deviceRenameInput}
               returnKeyType="done"
               autoCapitalize="words"
               onKeyPress={handleKeyPress}
             />
           ) : (
-            <Text style={styles.deviceName} numberOfLines={1} ellipsizeMode="middle">
+            <Text style={styles.deviceName} numberOfLines={1} ellipsizeMode="tail">
               {displayName}
             </Text>
           )}
-          <Text style={styles.devicePlatform}>
+          <Text style={styles.devicePlatform} numberOfLines={1}>
             {platformLabel}
             {isLocal && !isEditing && (
               <Text style={styles.deviceTapToRename}>{t('sync.platforms.renameHint')}</Text>
@@ -206,16 +223,24 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       position: 'relative',
       backgroundColor: hexWithAlpha(c.primary, 0.12),
     },
-    deviceOnlineDot: {
+    presenceDot: {
       position: 'absolute',
       bottom: -1,
       right: -1,
       width: UI_SIZE_12,
       height: UI_SIZE_12,
       borderRadius: UI_SIZE_9999,
-      backgroundColor: theme.colors.success,
       borderWidth: 2,
       borderColor: theme.colors.background,
+    },
+    presenceDotOnline: {
+      backgroundColor: theme.colors.success,
+    },
+    presenceDotOffline: {
+      backgroundColor: c.error,
+    },
+    presenceDotUnknown: {
+      backgroundColor: c.onSurfaceVariant,
     },
     deviceInfo: {
       ...commonStyles.flex1,

@@ -17,18 +17,22 @@ type Props = {
   visible: boolean
   hasScanned: boolean
   cameraGranted: boolean
+  scanError: string | null
   onClose: () => void
   onBarcodeScanned: (result: { data: string }) => void
   onRequestPermission: () => void
+  onAttachImage: () => void
 }
 
 export function SyncScannerModal({
   visible,
   hasScanned,
   cameraGranted,
+  scanError,
   onClose,
   onBarcodeScanned,
   onRequestPermission,
+  onAttachImage,
 }: Props) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -68,6 +72,19 @@ export function SyncScannerModal({
             <RNView style={styles.scannerFooter}>
               <Text style={styles.scannerTitle}>{t('sync.scanner.title')}</Text>
               <Text style={styles.scannerDescription}>{t('sync.scanner.description')}</Text>
+              {!!scanError && <Text style={styles.scannerError}>{t(scanError)}</Text>}
+              <Pressable
+                onPress={onAttachImage}
+                style={({ pressed }) => [styles.attachBtn, pressed && commonStyles.pressed]}
+              >
+                <SymbolIcon
+                  name="photo.on.rectangle"
+                  size={UI_ICON_SIZE_20}
+                  color={styles.scannerTitle.color}
+                  weight="semibold"
+                />
+                <Text style={styles.attachBtnText}>{t('sync.scanner.attachBtn')}</Text>
+              </Pressable>
             </RNView>
           </>
         ) : (
@@ -80,6 +97,19 @@ export function SyncScannerModal({
             >
               <Text style={styles.permissionBtnText}>{t('sync.permissions.allowBtn')}</Text>
             </Pressable>
+            <Pressable
+              onPress={onAttachImage}
+              style={({ pressed }) => [styles.attachBtn, pressed && commonStyles.pressed]}
+            >
+              <SymbolIcon
+                name="photo.on.rectangle"
+                size={UI_ICON_SIZE_20}
+                color={styles.scannerTitle.color}
+                weight="semibold"
+              />
+              <Text style={styles.attachBtnText}>{t('sync.scanner.attachBtn')}</Text>
+            </Pressable>
+            {!!scanError && <Text style={styles.scannerError}>{t(scanError)}</Text>}
             <Pressable onPress={onClose} style={styles.permissionCancelBtn}>
               <Text style={styles.permissionCancelText}>{t('sync.permissions.cancelBtn')}</Text>
             </Pressable>
@@ -142,6 +172,28 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Radii.card,
       backgroundColor: theme.colors.scannerOverlay,
       gap: Space.sm,
+    },
+    scannerError: {
+      fontSize: FontSize.caption,
+      textAlign: 'center',
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.error,
+    },
+    attachBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'center',
+      gap: Space.sm,
+      marginTop: Space.xs,
+      paddingVertical: Space.md,
+      paddingHorizontal: Space.lg,
+      borderRadius: Radii.pill,
+      backgroundColor: theme.colors.scannerOverlay,
+    },
+    attachBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.white,
     },
     scannerPermissionCard: {
       flex: 1,

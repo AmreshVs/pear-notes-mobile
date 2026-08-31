@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { router, Stack } from 'expo-router'
 
-import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
+import { ALL_NOTES_KEY, FOLDER_ERROR } from '@pear-notes/core/constant.js'
 import {
   createFolder,
   deleteFolder,
@@ -17,6 +17,7 @@ import {
   getNoteCountsPerFolder,
   getSelectedNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { validateFolderName } from '@pear-notes/core/utils.js'
 
 import { FolderRow } from '@/components/FolderRow'
 import { GlassView } from '@/components/GlassView'
@@ -54,8 +55,22 @@ export default function FoldersScreen() {
   const lastSelectedNoteRef = useRef<string | null>(selectedNote || null)
   const isInitialMount = useRef(true)
 
-  const topFolders = useMemo(() => folders.filter((f: any) => !f.isTrash), [folders])
-  const archiveFolders = useMemo(() => folders.filter((f: any) => f.isTrash), [folders])
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const matchesSearch = useCallback(
+    (folder: any) =>
+      !searchQuery || (folder.name || '').toLowerCase().includes(searchQuery.trim().toLowerCase()),
+    [searchQuery],
+  )
+
+  const topFolders = useMemo(
+    () => folders.filter((f: any) => !f.isTrash).filter(matchesSearch),
+    [folders, matchesSearch],
+  )
+  const archiveFolders = useMemo(
+    () => folders.filter((f: any) => f.isTrash).filter(matchesSearch),
+    [folders, matchesSearch],
+  )
 
   const handleCreateNote = useCallback(() => {
     hapticLight()
@@ -92,6 +107,19 @@ export default function FoldersScreen() {
     [dispatch],
   )
 
+  const showFolderNameError = useCallback(
+    (error: string, name: string) => {
+      hapticWarning()
+      Alert.alert(
+        t('folders.newFolderTitle'),
+        error === FOLDER_ERROR.DUPLICATE_NAME
+          ? t('folders.errors.duplicateName', { name })
+          : t('folders.errors.emptyName'),
+      )
+    },
+    [t],
+  )
+
   const handleCreateFolder = useCallback(() => {
     hapticLight()
     Alert.prompt(
@@ -102,17 +130,20 @@ export default function FoldersScreen() {
         {
           text: t('folders.buttons.create'),
           onPress: (name?: string) => {
-            const trimmed = name?.trim()
-            if (!trimmed) return
+            const result = validateFolderName(folders, name)
+            if (!result.valid) {
+              showFolderNameError(result.error, result.name)
+              return
+            }
             hapticSuccess()
-            dispatch(createFolder({ name: trimmed } as any))
+            dispatch(createFolder({ name: result.name } as any))
           },
         },
       ],
       'plain-text',
       '',
     )
-  }, [dispatch, t])
+  }, [dispatch, folders, showFolderNameError, t])
 
   const handleRenameFolder = useCallback(
     (folderId: string, currentName: string) => {
@@ -120,17 +151,20 @@ export default function FoldersScreen() {
         t('folders.renameTitle'),
         undefined,
         (newName) => {
-          const trimmed = newName?.trim()
-          if (trimmed && trimmed !== currentName) {
-            hapticSuccess()
-            dispatch(updateFolder({ id: folderId, name: trimmed } as any))
+          const result = validateFolderName(folders, newName, folderId)
+          if (!result.valid) {
+            showFolderNameError(result.error, result.name)
+            return
           }
+          if (result.name === currentName) return
+          hapticSuccess()
+          dispatch(updateFolder({ id: folderId, name: result.name } as any))
         },
         'plain-text',
         currentName,
       )
     },
-    [dispatch, t],
+    [dispatch, folders, showFolderNameError, t],
   )
 
   const handleDeleteFolder = useCallback(
@@ -237,6 +271,11 @@ export default function FoldersScreen() {
     [noteCounts, getFolderIcon, handleSelectFolder, handleRenameFolder, handleDeleteFolder],
   )
 
+  const handleSearchChange = useCallback(
+    (event: { nativeEvent: { text: string } }) => setSearchQuery(event.nativeEvent.text),
+    [],
+  )
+
   const screenOptions = useMemo(
     () => ({
       headerTitle: '',
@@ -244,8 +283,16 @@ export default function FoldersScreen() {
       headerLargeTitle: false,
       headerLeft,
       headerRight,
+      headerSearchBarOptions: {
+        placeholder: t('folders.searchPlaceholder'),
+        hideWhenScrolling: false,
+        textColor: colors.text,
+        hintTextColor: colors.textSecondary,
+        headerIconColor: colors.textSecondary,
+        onChangeText: handleSearchChange,
+      },
     }),
-    [headerLeft, headerRight],
+    [headerLeft, headerRight, handleSearchChange, t, colors.text, colors.textSecondary],
   )
 
   return (
@@ -258,6 +305,10 @@ export default function FoldersScreen() {
       >
         <Text style={styles.pageTitle}>{t('folders.title')}</Text>
         <View style={styles.section}>{renderFolders(topFolders)}</View>
+
+        {topFolders.length === 0 && archiveFolders.length === 0 && (
+          <Text style={styles.emptyText}>{t('folders.noFoldersFound')}</Text>
+        )}
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
@@ -306,6 +357,12 @@ const useStyles = createThemedStylesheet((theme) => {
     sectionHeaderMargin: {
       marginBottom: Space.sm,
       marginLeft: Space.base,
+    },
+    emptyText: {
+      fontSize: FontSize.body,
+      textAlign: 'center',
+      marginTop: Space.xl,
+      color: theme.colors.textMuted,
     },
     iconBtn: {
       ...commonStyles.centered,

@@ -7,7 +7,9 @@ import { router, Stack, useLocalSearchParams } from 'expo-router'
 
 import {
   ALL_NOTES_KEY,
+  FOLDER_ERROR,
   RECENTLY_DELETED_KEY,
+  SEARCH_QUERY_MAX_LENGTH,
   TRASH_RETENTION_DAYS,
 } from '@pear-notes/core/constant.js'
 import {
@@ -34,7 +36,7 @@ import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
-import { formatDate } from '@pear-notes/core/utils.js'
+import { formatDate, validateFolderName } from '@pear-notes/core/utils.js'
 
 import { FolderEmptyState } from '@/components/FolderEmptyState'
 import { NoteCard } from '@/components/NoteCard'
@@ -63,6 +65,8 @@ import { buildNoteSections } from '@/utils/noteSections'
 import { getPreview } from '@/utils/noteUtils'
 
 import { useNoteSelection } from './useNoteSelection'
+
+const MIN_NOTES_FOR_MULTI_SELECT = 2
 
 const SUPPORTS_TOOLBAR_SEARCH =
   Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26
@@ -129,6 +133,8 @@ export default function FolderNotesScreen() {
     clearSelection,
     exitSelection,
   } = useNoteSelection(id as string, orderedKeys)
+
+  const canMultiSelect = orderedKeys.length >= MIN_NOTES_FOR_MULTI_SELECT
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -292,16 +298,25 @@ export default function FolderNotesScreen() {
       t('folders.renameTitle'),
       undefined,
       (newName) => {
-        const trimmed = newName?.trim()
-        if (trimmed && trimmed !== folder.name) {
-          hapticSuccess()
-          dispatch(updateFolder({ id, name: trimmed } as any))
+        const result = validateFolderName(allFolders, newName, id)
+        if (!result.valid) {
+          hapticWarning()
+          Alert.alert(
+            t('folders.renameTitle'),
+            result.error === FOLDER_ERROR.DUPLICATE_NAME
+              ? t('folders.errors.duplicateName', { name: result.name })
+              : t('folders.errors.emptyName'),
+          )
+          return
         }
+        if (result.name === folder.name) return
+        hapticSuccess()
+        dispatch(updateFolder({ id, name: result.name } as any))
       },
       'plain-text',
       folder.name,
     )
-  }, [dispatch, folder, id, t])
+  }, [allFolders, dispatch, folder, id, t])
 
   const handleDeleteFolder = useCallback(() => {
     Alert.alert(t('folders.deleteTitle'), t('folders.deleteDescription'), [
@@ -430,7 +445,9 @@ export default function FolderNotesScreen() {
   const listHeader = useMemo(
     () => (
       <>
-        <Text style={styles.pageTitle}>{folder?.name || t('folders.title')}</Text>
+        <Text style={styles.pageTitle} numberOfLines={2}>
+          {folder?.name || t('folders.title')}
+        </Text>
         <View style={styles.headerInfo}>
           <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
             {isSelecting
@@ -483,6 +500,12 @@ export default function FolderNotesScreen() {
     ],
   )
 
+  const handleSearchChange = useCallback(
+    (event: { nativeEvent: { text: string } }) =>
+      dispatch(setSearchQuery(event.nativeEvent.text.slice(0, SEARCH_QUERY_MAX_LENGTH) as any)),
+    [dispatch],
+  )
+
   const screenOptions = useMemo(
     () => ({
       headerTitle: '',
@@ -492,17 +515,15 @@ export default function FolderNotesScreen() {
       headerSearchBarOptions: {
         placeholder: t('folderView.searchPlaceholder'),
         hideWhenScrolling: false,
-        placement: 'automatic',
+        placement: 'automatic' as const,
         allowToolbarIntegration: true,
         textColor: colors.text,
         hintTextColor: colors.textSecondary,
         headerIconColor: colors.textSecondary,
-        onChangeText: (event: { nativeEvent: { text: string } }) => {
-          dispatch(setSearchQuery(event.nativeEvent.text as any))
-        },
+        onChangeText: handleSearchChange,
       },
     }),
-    [isDark, t, colors.text, colors.textSecondary, dispatch],
+    [isDark, t, colors.text, colors.textSecondary, handleSearchChange],
   )
 
   return (
@@ -537,6 +558,7 @@ export default function FolderNotesScreen() {
             <Stack.Toolbar.Button
               icon="checkmark.circle"
               accessibilityLabel={t('folderView.selection.select')}
+              disabled={!canMultiSelect}
               onPress={handleStartSelecting}
             />
           </Stack.Toolbar>
@@ -596,6 +618,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
       marginLeft: Space.base,
       marginBottom: Space.xs,
+      paddingRight: Space.base,
     },
     headerInfo: {
       marginLeft: Space.base,

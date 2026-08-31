@@ -3,8 +3,11 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
+
+import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
@@ -43,6 +46,7 @@ export default function AndroidSettingsScreen() {
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
 
   const sections = useMemo<{ key: string; icon: IconName; label: string; onPress: () => void }[]>(
     () => [
@@ -64,6 +68,16 @@ export default function AndroidSettingsScreen() {
         label: t('settings.sync.linkAndSync'),
         onPress: () => router.push('/settings/sync'),
       },
+      ...(hasLinkedDevices
+        ? [
+            {
+              key: 'activity',
+              icon: 'history' as IconName,
+              label: t('layouts.activity'),
+              onPress: () => router.push('/settings/activity' as any),
+            },
+          ]
+        : []),
       {
         key: 'backup',
         icon: 'cloud-download-outline',
@@ -77,7 +91,7 @@ export default function AndroidSettingsScreen() {
         onPress: () => router.push('/settings/storage' as any),
       },
     ],
-    [t],
+    [t, hasLinkedDevices],
   )
 
   return (

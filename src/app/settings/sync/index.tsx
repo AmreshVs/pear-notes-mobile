@@ -71,6 +71,12 @@ export default function SyncScreen() {
     handleCloseScanner,
     handleBarcodeScanned,
     handleGenerateInvite,
+    handleShareQr,
+    handleAttachQrImage,
+    isSharingQr,
+    scanError,
+    handleQrRef,
+    inviteExpiringSoon,
     handleScrollToEnd,
   } = useSyncScreen()
 
@@ -215,11 +221,26 @@ export default function SyncScreen() {
                   </RNView>
 
                   <Text style={styles.heroTitle}>{t('sync.invite.header')}</Text>
-                  <Text style={styles.heroDesc}>
-                    {t('sync.invite.expiresIn', {
-                      countdown: formatInviteCountdown(inviteRemainingMs),
-                    })}
-                  </Text>
+                  <RNView
+                    style={[styles.countdownPill, inviteExpiringSoon && styles.countdownPillUrgent]}
+                  >
+                    <SymbolIcon
+                      name="timer"
+                      size={UI_ICON_SIZE_13}
+                      color={inviteExpiringSoon ? colors.error : colors.primary}
+                      weight="semibold"
+                    />
+                    <Text
+                      style={[
+                        styles.countdownText,
+                        inviteExpiringSoon && styles.countdownTextUrgent,
+                      ]}
+                    >
+                      {t('sync.invite.expiresIn', {
+                        countdown: formatInviteCountdown(inviteRemainingMs),
+                      })}
+                    </Text>
+                  </RNView>
 
                   <Reanimated.View
                     entering={FadeIn.duration(220).delay(70)}
@@ -227,6 +248,7 @@ export default function SyncScreen() {
                   >
                     <RNView style={styles.qrImageWrap}>
                       <QRCode
+                        getRef={handleQrRef}
                         value={inviteCode}
                         size={UI_SIZE_180}
                         backgroundColor={colors.white}
@@ -235,6 +257,23 @@ export default function SyncScreen() {
                     </RNView>
                     <Text style={styles.qrTitle}>{t('sync.invite.qrTitle')}</Text>
                     <Text style={styles.qrDescription}>{t('sync.invite.qrDescription')}</Text>
+                    <Pressable
+                      onPress={handleShareQr}
+                      disabled={isSharingQr}
+                      style={({ pressed }) => [
+                        styles.shareQrBtn,
+                        isSharingQr && styles.linkBtnDisabled,
+                        pressed && commonStyles.pressed,
+                      ]}
+                    >
+                      <SymbolIcon
+                        name="square.and.arrow.up"
+                        size={UI_ICON_SIZE_13}
+                        color={colors.primary}
+                        weight="semibold"
+                      />
+                      <Text style={styles.shareQrBtnText}>{t('sync.invite.shareQrBtn')}</Text>
+                    </Pressable>
                   </Reanimated.View>
 
                   <Text style={styles.codeLabel}>{t('sync.invite.codeLabel')}</Text>
@@ -299,14 +338,34 @@ export default function SyncScreen() {
                     <Text style={styles.plusIcon}>+</Text>
                     <Text style={styles.invitePasteText}>{t('sync.paste.header')}</Text>
                   </RNView>
-                  <Pressable onPress={handleOpenScanner} style={styles.scanPillBtn}>
-                    <SymbolIcon
-                      name="qrcode.viewfinder"
-                      size={UI_ICON_SIZE_14}
-                      color={colors.primary}
-                    />
-                    <Text style={styles.scanPillBtnText}>{t('sync.paste.scanBtn')}</Text>
-                  </Pressable>
+                  <RNView style={styles.pastePillRow}>
+                    <Pressable
+                      onPress={handleAttachQrImage}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('sync.paste.attachBtn')}
+                      style={({ pressed }) => [styles.scanPillBtn, pressed && commonStyles.pressed]}
+                    >
+                      <SymbolIcon
+                        name="photo.on.rectangle"
+                        size={UI_ICON_SIZE_14}
+                        color={colors.primary}
+                      />
+                      <Text style={styles.scanPillBtnText}>{t('sync.paste.attachBtn')}</Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={handleOpenScanner}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('sync.paste.scanBtn')}
+                      style={({ pressed }) => [styles.scanPillBtn, pressed && commonStyles.pressed]}
+                    >
+                      <SymbolIcon
+                        name="qrcode.viewfinder"
+                        size={UI_ICON_SIZE_14}
+                        color={colors.primary}
+                      />
+                      <Text style={styles.scanPillBtnText}>{t('sync.paste.scanBtn')}</Text>
+                    </Pressable>
+                  </RNView>
                 </RNView>
 
                 <RNView style={styles.inputRow}>
@@ -339,6 +398,10 @@ export default function SyncScreen() {
                     )}
                   </Pressable>
                 </RNView>
+
+                {!scannerVisible && !!scanError && (
+                  <Text style={styles.pasteError}>{t(scanError)}</Text>
+                )}
               </Reanimated.View>
             )}
 
@@ -415,6 +478,8 @@ export default function SyncScreen() {
 
       <SyncScannerModal
         visible={scannerVisible}
+        onAttachImage={handleAttachQrImage}
+        scanError={scanError}
         hasScanned={hasScanned}
         cameraGranted={cameraPermission?.granted ?? false}
         onClose={handleCloseScanner}
@@ -601,6 +666,41 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
       paddingHorizontal: Space.sm,
     },
+    shareQrBtn: {
+      ...commonStyles.row,
+      gap: Space.xs,
+      marginTop: Space.md,
+      paddingVertical: Space.sm,
+      paddingHorizontal: Space.base,
+      borderRadius: Radii.pill,
+      backgroundColor: hexWithAlpha(theme.colors.primary, 0.1),
+    },
+    shareQrBtnText: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.primary,
+    },
+    countdownPill: {
+      ...commonStyles.row,
+      alignSelf: 'center',
+      gap: Space.xs,
+      paddingVertical: Space.xs,
+      paddingHorizontal: Space.md,
+      borderRadius: Radii.pill,
+      marginBottom: Space.lg,
+      backgroundColor: hexWithAlpha(theme.colors.primary, 0.12),
+    },
+    countdownPillUrgent: {
+      backgroundColor: hexWithAlpha(theme.colors.error, 0.14),
+    },
+    countdownText: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.primary,
+    },
+    countdownTextUrgent: {
+      color: theme.colors.error,
+    },
     copyBtn: {
       borderRadius: 14,
       width: '100%',
@@ -640,6 +740,17 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: 14,
       gap: 6,
       justifyContent: 'space-between',
+    },
+    pastePillRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    pasteError: {
+      marginTop: Space.sm,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.error,
     },
     invitePasteLeft: {
       flexDirection: 'row',

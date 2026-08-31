@@ -17,7 +17,12 @@ import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Href, router, Stack } from 'expo-router'
 
-import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
+import {
+  ALL_NOTES_KEY,
+  FOLDER_ERROR,
+  FOLDER_NAME_MAX_LENGTH,
+  SEARCH_QUERY_MAX_LENGTH,
+} from '@pear-notes/core/constant.js'
 import {
   createFolder,
   deleteFolder,
@@ -29,6 +34,7 @@ import {
   getNoteCountsPerFolder,
   getSelectedNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { validateFolderName } from '@pear-notes/core/utils.js'
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -99,6 +105,7 @@ export default function AndroidFoldersScreen() {
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
   const [folderDialog, setFolderDialog] = useState<{ id: string; name: string } | null>(null)
   const [renameText, setRenameText] = useState('')
+  const [folderError, setFolderError] = useState<string | null>(null)
 
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote)
@@ -150,30 +157,42 @@ export default function AndroidFoldersScreen() {
   const handleCreateFolder = useCallback(() => {
     hapticLight()
     setRenameText('')
+    setFolderError(null)
     setFolderDialog({ id: '', name: '' })
   }, [])
 
   const openRenameDialog = useCallback((id: string, name: string) => {
     setRenameText(name)
+    setFolderError(null)
     setFolderDialog({ id, name })
+  }, [])
+
+  const handleChangeFolderName = useCallback((value: string) => {
+    setRenameText(value)
+    setFolderError(null)
   }, [])
 
   const confirmFolderDialog = useCallback(() => {
     if (!folderDialog) return
-    const trimmed = renameText.trim()
-    if (!trimmed) {
-      setFolderDialog(null)
+    const result = validateFolderName(folders, renameText, folderDialog.id || null)
+    if (!result.valid) {
+      hapticWarning()
+      setFolderError(
+        result.error === FOLDER_ERROR.DUPLICATE_NAME
+          ? t('folders.errors.duplicateName', { name: result.name })
+          : t('folders.errors.emptyName'),
+      )
       return
     }
     if (!folderDialog.id) {
       hapticSuccess()
-      dispatch(createFolder({ name: trimmed } as any))
-    } else if (trimmed !== folderDialog.name) {
+      dispatch(createFolder({ name: result.name } as any))
+    } else if (result.name !== folderDialog.name) {
       hapticSuccess()
-      dispatch(updateFolder({ id: folderDialog.id, name: trimmed } as any))
+      dispatch(updateFolder({ id: folderDialog.id, name: result.name } as any))
     }
     setFolderDialog(null)
-  }, [dispatch, folderDialog, renameText])
+  }, [dispatch, folderDialog, folders, renameText, t])
 
   const handleFolderLongPress = useCallback(
     (folderId: string) => {
@@ -217,6 +236,7 @@ export default function AndroidFoldersScreen() {
 
   const handleCloseFolderDialog = useCallback(() => {
     setFolderDialog(null)
+    setFolderError(null)
   }, [])
 
   const handleCloseFolderSheet = useCallback(() => {
@@ -305,6 +325,7 @@ export default function AndroidFoldersScreen() {
               accessibilityLabel={t('folders.searchPlaceholder')}
               value={searchQuery}
               onChangeText={setSearchQuery}
+              maxLength={SEARCH_QUERY_MAX_LENGTH}
               returnKeyType="search"
             />
           </View>
@@ -388,12 +409,15 @@ export default function AndroidFoldersScreen() {
             </Text>
             <PaperTextInput
               value={renameText}
-              onChangeText={setRenameText}
+              onChangeText={handleChangeFolderName}
               onSubmitEditing={confirmFolderDialog}
               autoFocus
               mode="outlined"
+              error={!!folderError}
+              maxLength={FOLDER_NAME_MAX_LENGTH}
               label={isCreatingFolder ? t('folders.newFolderLabel') : t('folders.renameLabel')}
             />
+            {!!folderError && <Text style={styles.dialogError}>{folderError}</Text>}
             <View style={styles.dialogActions}>
               <Pressable
                 onPress={handleCloseFolderDialog}
@@ -458,7 +482,6 @@ const VaultFolderRow = memo(function VaultFolderRow({
   onPress,
   onLongPress,
 }: VaultFolderRowProps) {
-  const { t } = useTranslation()
   const styles = useStyles()
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
@@ -467,10 +490,6 @@ const VaultFolderRow = memo(function VaultFolderRow({
 
   const iconName = isAll ? 'folder-account' : isTrash ? 'delete-outline' : 'folder-outline'
   const iconColor = isTrash ? c.error : c.primary
-  const countLabel =
-    count > 0
-      ? t(count === 1 ? 'folderView.noteCount_one' : 'folderView.noteCount_other', { count })
-      : null
 
   const rowStyle = useMemo(
     () => [styles.row, !isLast && styles.rowDivider],
@@ -489,12 +508,14 @@ const VaultFolderRow = memo(function VaultFolderRow({
           <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
             <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_22} color={iconColor} />
           </View>
-          <Text style={styles.rowNameText}>{name}</Text>
+          <Text style={styles.rowNameText} numberOfLines={1} ellipsizeMode="tail">
+            {name}
+          </Text>
         </View>
         <View style={styles.rowRight}>
-          {countLabel && (
+          {count > 0 && (
             <View style={styles.countBadge}>
-              <Text style={styles.countText}>{countLabel}</Text>
+              <Text style={styles.countText}>{count}</Text>
             </View>
           )}
           <MaterialCommunityIcons
@@ -629,6 +650,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       marginBottom: UI_SIZE_16,
       color: c.onSurface,
     },
+    dialogError: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      marginTop: UI_SIZE_6,
+      color: c.error,
+    },
     dialogActions: {
       ...commonStyles.row,
       justifyContent: 'flex-end',
@@ -664,6 +691,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       ...commonStyles.row,
       gap: UI_SIZE_14,
       flex: 1,
+      minWidth: 0,
     },
     iconWrap: {
       width: UI_SIZE_48,
@@ -683,12 +711,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
       flex: 1,
+      paddingRight: UI_SIZE_4,
     },
     rowRight: {
       ...commonStyles.row,
       gap: UI_SIZE_10,
+      flexShrink: 0,
     },
     countBadge: {
+      flexShrink: 0,
       paddingHorizontal: UI_SIZE_10,
       paddingVertical: UI_SIZE_4,
       borderRadius: UI_SIZE_9999,
