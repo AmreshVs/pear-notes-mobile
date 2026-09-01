@@ -117,9 +117,6 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const hasChecklist = !masked && metadata.isChecklist
   const timestamp = note.value?.updatedAt || note.value?.createdAt
   const relativeLabel = (formatDate(timestamp) || '').toUpperCase()
-  // The section header already carries the date. When the card would only
-  // repeat it, show the time of day instead so the two lines say different
-  // things - the header dates the group, the card times the note.
   const dateLabel =
     sectionTitle && relativeLabel && relativeLabel === sectionTitle.toUpperCase()
       ? formatTimeOfDay(timestamp)

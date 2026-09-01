@@ -94,9 +94,6 @@ export const Layout = {
   closeBtnSize: 30,
   segCtrlPadding: 3,
   segPillPaddingVertical: 7,
-  // Carried by every segmented pill, transparent until selected, so the
-  // selected state reads at 3:1 non-text contrast on pale accent tokens
-  // (Light + Material You, Light + Default yellow) without shifting layout.
   segPillBorderWidth: 1.5,
   rowPaddingHorizontal: 18,
   settingsRowMinHeight: 52,

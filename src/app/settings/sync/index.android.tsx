@@ -119,8 +119,6 @@ export default function AndroidSyncScreen() {
 
   const canLink = isValidInvite(pasteCode)
   const linkDisabled = isLoading || !canLink
-  // Say why Link can't be tapped instead of leaving a dimmed button that does
-  // nothing. An in-flight link or a scan error already speaks for itself.
   const linkHint =
     isLoading || canLink || scanError
       ? null

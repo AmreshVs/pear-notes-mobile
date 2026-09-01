@@ -44,10 +44,6 @@ function useStorageScreen() {
     return map
   }, [notesStorageInfo])
 
-  // Storage is a management screen - two rows reading "Untitled" with the same
-  // size leave no way to tell which one you are about to open or delete. The
-  // storage payload carries no body or date, so pull a second identifier from
-  // the notes the app already holds.
   const notesStorageRows = useMemo(
     () =>
       notesStorageInfo.map((note) => {
