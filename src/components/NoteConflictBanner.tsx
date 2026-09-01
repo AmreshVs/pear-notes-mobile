@@ -87,7 +87,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { insets }) => {
       backgroundColor: theme.colors.surface,
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
-      borderRadius: Radii.lg,
+      borderRadius: Radii.card,
       paddingVertical: Space.sm,
       paddingHorizontal: Space.md,
     },

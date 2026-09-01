@@ -37,6 +37,7 @@ export type SheetAction = {
   onPress: () => void
   destructive?: boolean
   selected?: boolean
+  noRightIcon?: boolean
 }
 
 type Props = {
@@ -127,7 +128,7 @@ export function BottomActionSheet({
                 >
                   {action.label}
                 </Text>
-                {action.selected ? (
+                {action.noRightIcon ? null : action.selected ? (
                   <MaterialCommunityIcons
                     name="check"
                     size={UI_ICON_SIZE_20}

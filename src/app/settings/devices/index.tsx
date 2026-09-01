@@ -492,10 +492,6 @@ export default function SyncScreen() {
 
 const useStyles = createThemedStylesheet((theme) => {
   const isDark = theme.isDark
-  const cardBg = isDark
-    ? hexWithAlpha(theme.colors.white, 0.05)
-    : hexWithAlpha(theme.colors.white, 0.9)
-  const cardBorder = theme.colors.borderSecondary
 
   const styles = StyleSheet.create({
     container: {
@@ -541,14 +537,14 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.lg,
     },
     heroCard: {
-      borderRadius: 22,
+      borderRadius: Radii.card,
       borderWidth: 1,
       paddingHorizontal: Space.lg,
       paddingTop: Space.xl,
       paddingBottom: Space.xl,
       marginBottom: Space.xl,
-      backgroundColor: cardBg,
-      borderColor: cardBorder,
+      backgroundColor: theme.colors.cardSurface,
+      borderColor: theme.colors.borderSecondary,
     },
     heroSection: {
       alignItems: 'center',
@@ -722,7 +718,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'flex-start',
       gap: Space.sm,
       borderWidth: 1,
-      borderRadius: Radii.md,
+      borderRadius: Radii.card,
       padding: 14,
       marginTop: Space.md,
       backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.07 : 0.08),
@@ -832,13 +828,13 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Radii.card,
       borderWidth: 1,
       overflow: 'hidden',
-      backgroundColor: cardBg,
-      borderColor: cardBorder,
+      backgroundColor: theme.colors.cardSurface,
+      borderColor: theme.colors.borderSecondary,
     },
     emptyCard: {
       borderWidth: 1,
       borderStyle: 'dashed',
-      borderRadius: Space.base,
+      borderRadius: Radii.card,
       paddingVertical: 36,
       alignItems: 'center',
       justifyContent: 'center',

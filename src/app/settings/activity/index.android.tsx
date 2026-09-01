@@ -20,6 +20,7 @@ import {
   FontSize,
   FontWeight,
   Space,
+  UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_36,
@@ -95,6 +96,7 @@ export default function ActivityScreenAndroid() {
       getActivityRetentionOptions(t).map((option) => ({
         icon: 'clock-outline',
         label: option.label,
+        noRightIcon: option.value !== String(retentionDays),
         selected: option.value === String(retentionDays),
         onPress: () => {
           selectRetention(Number(option.value))
@@ -214,6 +216,11 @@ export default function ActivityScreenAndroid() {
               <Text style={styles.rowDesc}>{t('activity.settings.retentionDesc')}</Text>
             </View>
             <Text style={styles.rowValue}>{retentionLabel}</Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={UI_ICON_SIZE_18}
+              color={c.onSurfaceVariant}
+            />
           </Pressable>
         </MotionView>
 

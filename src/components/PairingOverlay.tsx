@@ -808,7 +808,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       width: '100%',
       paddingHorizontal: Space.md,
       paddingVertical: isAndroid ? Space.base : Space.lg,
-      borderRadius: isAndroid ? 16 : Space.base,
+      borderRadius: isAndroid ? 16 : Radii.card,
       borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
       marginBottom: Space.lg,

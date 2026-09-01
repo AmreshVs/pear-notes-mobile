@@ -108,7 +108,8 @@ const useStyles = createThemedStylesheet((theme) => {
   const cardBase = {
     backgroundColor: theme.colors.cardSurface,
     borderRadius: Radii.card,
-    borderWidth: StyleSheet.hairlineWidth,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSecondary,
     overflow: 'hidden' as const,
   }
 

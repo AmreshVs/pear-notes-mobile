@@ -107,7 +107,7 @@ export const Radii = {
   sm: 8,
   md: 12,
   lg: 16,
-  card: 18,
+  card: 16,
   xl: 24,
   sheet: 34,
   btn: 27,

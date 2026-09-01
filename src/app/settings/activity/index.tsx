@@ -178,9 +178,14 @@ export default function ActivityScreen() {
                 />
               </RNView>
             </Pressable>
+          </RNView>
+        </MotionView>
 
-            <RNView style={styles.divider} />
-
+        <MotionView
+          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+        >
+          <RNView style={commonThemedStyles.card}>
             <RNView style={styles.noticeRow}>
               <SymbolIcon name="info.circle" size={UI_ICON_SIZE_15} color={colors.primary} />
               <Text style={styles.noticeText}>{t('activity.settings.syncNotice')}</Text>

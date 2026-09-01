@@ -351,7 +351,7 @@ const useStyles = createThemedStylesheet((theme) => {
       ...commonStyles.centered,
     },
     progressCard: {
-      borderRadius: Radii.xl,
+      borderRadius: Radii.card,
       backgroundColor: theme.colors.cardSurface,
       marginHorizontal: Space.xl,
     },

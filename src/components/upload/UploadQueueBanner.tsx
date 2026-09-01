@@ -9,6 +9,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Radii,
   Space,
   TRANSFER_LIST_MAX_HEIGHT,
   UI_ICON_SIZE_16,
@@ -98,7 +99,7 @@ export function UploadQueueBanner({ noteId, bottom }: UploadQueueBannerProps) {
 
   return (
     <RNView style={[styles.container, { bottom }]}>
-      <GlassView intensity={12} borderRadius={16} style={styles.toast} isInteractive>
+      <GlassView intensity={12} borderRadius={Radii.card} style={styles.toast} isInteractive>
         <RNView style={styles.headerRow}>
           <Pressable
             onPress={canExpand ? toggleExpanded : undefined}

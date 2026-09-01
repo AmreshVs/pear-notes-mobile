@@ -58,7 +58,7 @@ const useStyles = createThemedStylesheet((theme) => {
       maxWidth: 420,
       alignItems: 'center',
       padding: Space.xxl,
-      borderRadius: Radii.xl,
+      borderRadius: Radii.card,
       backgroundColor: theme.colors.surface,
     },
     iconBadge: {

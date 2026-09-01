@@ -84,7 +84,7 @@ const useStyles = createThemedStylesheetWithHooks(
       banner: {
         backgroundColor: theme.colors.surface,
         padding: Space.md,
-        borderRadius: Radii.lg,
+        borderRadius: Radii.card,
         boxShadow: theme.colors.cardShadow,
         borderWidth: 1,
         borderColor: theme.colors.borderSecondary,
