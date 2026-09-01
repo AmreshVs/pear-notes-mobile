@@ -18,6 +18,7 @@ import {
   UI_SIZE_48,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
+import { MAX_FONT_SCALE_CHROME } from '@/utils/dynamicType'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -53,7 +54,7 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const hasSelection = selectedCount > 0
-  const actionColor = hasSelection ? c.onSurface : c.onSurfaceVariant
+  const actionColor = hasSelection ? c.primary : c.onSurfaceVariant
 
   return (
     <View style={styles.appBar}>
@@ -65,18 +66,23 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
         accessibilityRole="button"
         accessibilityLabel={t('common.close')}
       >
-        <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_24} color={c.onSurface} />
+        <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_24} color={c.primary} />
       </Pressable>
 
-      <Text style={styles.title} accessibilityLiveRegion="polite">
-        {t('folderView.selection.selectedCount', { count: selectedCount })}
+      <Text
+        style={styles.title}
+        numberOfLines={1}
+        maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
+        accessibilityLiveRegion="polite"
+      >
+        {t('folderView.selection.selectedTitle', { count: selectedCount })}
       </Text>
 
       <View style={styles.actions}>
         <Pressable
           onPress={onToggleSelectAll}
           android_ripple={ripple}
-          style={styles.iconBtn}
+          style={styles.textBtn}
           hitSlop={UI_SIZE_8}
           accessibilityRole="button"
           accessibilityLabel={
@@ -85,11 +91,15 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
               : t('folderView.selection.selectAll')
           }
         >
-          <MaterialCommunityIcons
-            name={isAllSelected ? 'checkbox-multiple-marked' : 'checkbox-multiple-marked-outline'}
-            size={UI_ICON_SIZE_24}
-            color={c.onSurface}
-          />
+          <Text
+            style={styles.textBtnLabel}
+            numberOfLines={1}
+            maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
+          >
+            {isAllSelected
+              ? t('folderView.selection.deselectAll')
+              : t('folderView.selection.selectAll')}
+          </Text>
         </Pressable>
 
         {isTrash ? (
@@ -166,14 +176,14 @@ const useStyles = createThemedStylesheetWithHooks(
         paddingHorizontal: UI_SIZE_8,
         paddingTop: insets.top + UI_SIZE_4,
         paddingBottom: UI_SIZE_4,
-        backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+        backgroundColor: c.background,
       },
       title: {
         ...commonStyles.flex1,
         marginLeft: UI_SIZE_12,
-        fontSize: FontSize.title,
-        fontFamily: FontFamily.bold,
-        fontWeight: FontWeight.bold,
+        fontSize: FontSize.subtitle,
+        fontFamily: FontFamily.medium,
+        fontWeight: FontWeight.medium,
         color: c.onSurface,
       },
       actions: {
@@ -185,6 +195,18 @@ const useStyles = createThemedStylesheetWithHooks(
         height: UI_SIZE_48,
         alignItems: 'center',
         justifyContent: 'center',
+      },
+      textBtn: {
+        height: UI_SIZE_48,
+        paddingHorizontal: UI_SIZE_8,
+        alignItems: 'center',
+        justifyContent: 'center',
+      },
+      textBtnLabel: {
+        fontSize: FontSize.body,
+        fontFamily: FontFamily.medium,
+        fontWeight: FontWeight.medium,
+        color: c.primary,
       },
     })
     return styles

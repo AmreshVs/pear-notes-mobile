@@ -22,8 +22,6 @@ import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
-import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection.android'
-import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -342,10 +340,6 @@ export default function AndroidGeneralSettingsScreen() {
             </View>
           </View>
         </MotionView>
-
-        <BackgroundSyncSection />
-
-        <MediaSyncSection />
       </ScrollView>
 
       <BottomActionSheet

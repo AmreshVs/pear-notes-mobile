@@ -57,10 +57,16 @@ export default function SettingsScreen() {
         onPress: () => router.push('/settings/privacy' as any),
       },
       {
+        key: 'devices',
+        icon: 'laptopcomputer.and.iphone' as IconName,
+        label: t('settings.devices.rowTitle'),
+        onPress: () => router.push('/settings/devices' as any),
+      },
+      {
         key: 'sync',
         icon: 'arrow.clockwise' as IconName,
-        label: t('settings.sync.linkAndSync'),
-        onPress: () => router.push('/settings/sync'),
+        label: t('settings.sync.rowTitle'),
+        onPress: () => router.push('/settings/sync' as any),
       },
       ...(hasLinkedDevices
         ? [

@@ -25,7 +25,8 @@ export default function SettingsLayout() {
       <Stack.Screen name="index" options={{ title: t('layouts.settings') }} />
       <Stack.Screen name="general" options={{ title: t('layouts.general') }} />
       <Stack.Screen name="privacy" options={{ title: t('layouts.privacyAndSecurity') }} />
-      <Stack.Screen name="sync" options={{ title: t('layouts.linkAndSync') }} />
+      <Stack.Screen name="devices" options={{ title: t('layouts.linkDevices') }} />
+      <Stack.Screen name="sync" options={{ title: t('layouts.sync') }} />
       <Stack.Screen name="backup" options={{ title: t('layouts.backupRestore') }} />
       <Stack.Screen name="backup-password" options={{ title: t('layouts.backupPassword') }} />
       <Stack.Screen name="note-lock-password" options={{ title: t('layouts.noteLockPassword') }} />

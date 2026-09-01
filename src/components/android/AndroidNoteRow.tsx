@@ -184,7 +184,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
           <MaterialCommunityIcons
             name={checked ? 'checkbox-marked-circle' : 'checkbox-blank-circle-outline'}
             size={UI_ICON_SIZE_24}
-            color={checked ? c.primary : c.onSurfaceVariant}
+            color={checked ? c.primary : c.outline}
             style={styles.selectionIcon}
           />
         )}

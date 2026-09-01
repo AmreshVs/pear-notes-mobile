@@ -2,6 +2,10 @@ import { AppState, AppStateStatus, Platform } from 'react-native'
 import * as ExpoBackgroundService from 'expo-background-service'
 
 import HRPC from '@pear-notes/core/spec/hrpc/index.js'
+import {
+  clearBackgroundServiceFailure,
+  recordBackgroundServiceFailure,
+} from '@pear-notes/core/utils.js'
 
 import { getCachedBackgroundSyncMode } from '@/lib/backgroundSync'
 
@@ -55,10 +59,15 @@ function handleBackground(worklet: any) {
         0,
       )
       _foregroundServiceActive = true
+      clearBackgroundServiceFailure()
       worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
       startKeepAlive(worklet)
       return
-    } catch {}
+    } catch (err) {
+      _foregroundServiceActive = false
+      console.error('Failed to start the background sync service', err)
+      recordBackgroundServiceFailure()
+    }
   }
 
   try {
@@ -66,6 +75,10 @@ function handleBackground(worklet: any) {
   } catch {
     console.error('Failed to wake up the worklet')
   }
+}
+
+export function isForegroundServiceActive(): boolean {
+  return _foregroundServiceActive
 }
 
 export function wakeActiveWorklet(deadlineMs: number): boolean {

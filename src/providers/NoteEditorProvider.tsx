@@ -30,6 +30,7 @@ import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
+import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { createThemedStylesheet, useReduceMotion, useTheme } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
@@ -745,6 +746,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onYjsMessage={handleYjsMessage}
             />
           )}
+
+          <NoteConflictBanner noteKey={noteId} />
 
           {isOpen && !isNoteLocked && (
             <EditorToolbar

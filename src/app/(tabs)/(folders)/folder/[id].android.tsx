@@ -490,11 +490,7 @@ export default function AndroidFolderNotesScreen() {
         <Text style={styles.pageTitle} numberOfLines={2}>
           {folder?.name || t('folders.untitled')}
         </Text>
-        <Text style={styles.pageCount} accessibilityLiveRegion="polite">
-          {isSelecting
-            ? t('folderView.selection.selectedCount', { count: selectedCount })
-            : t('folderView.noteCount', { count: notes.length })}
-        </Text>
+        <Text style={styles.pageCount}>{t('folderView.noteCount', { count: notes.length })}</Text>
         {isTrashFolder && notes.length > 0 && (
           <Text style={styles.retentionNotice}>
             {t('folderView.trashRetentionNotice', { days: TRASH_RETENTION_DAYS })}
@@ -505,9 +501,7 @@ export default function AndroidFolderNotesScreen() {
     [
       folder?.name,
       notes.length,
-      isSelecting,
       isTrashFolder,
-      selectedCount,
       t,
       styles.pageTitle,
       styles.pageCount,

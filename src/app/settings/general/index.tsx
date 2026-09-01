@@ -16,8 +16,6 @@ import {
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { MotionView } from '@/components/MotionView'
-import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
-import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -239,10 +237,6 @@ export default function GeneralSettingsScreen() {
             </RNView>
           </RNView>
         </MotionView>
-
-        <BackgroundSyncSection />
-
-        <MediaSyncSection />
       </ScrollView>
     </RNView>
   )

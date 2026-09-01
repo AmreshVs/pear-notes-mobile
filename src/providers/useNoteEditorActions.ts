@@ -5,6 +5,7 @@ import type { DocumentPickerAsset } from 'expo-document-picker'
 import type { ImagePickerAsset } from 'expo-image-picker'
 
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
+import { setEditorContent, setEditorTitle } from '@pear-notes/core/store/slices/editorSlice.js'
 import { updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { hapticLight, hapticMedium, hapticSuccess } from '@/lib/haptics'
@@ -121,7 +122,15 @@ export function useNoteEditorActions({
       }
       if (finalHtml === noteContentRef.current) return
       noteContentRef.current = finalHtml
-      dispatch(updateNote({ key: noteId, title: titleRef.current, note: finalHtml } as any))
+      dispatch(setEditorContent({ html: finalHtml, text: '' } as any))
+      dispatch(
+        updateNote({
+          key: noteId,
+          title: titleRef.current,
+          note: finalHtml,
+          fromEditor: true,
+        } as any),
+      )
     },
     [dispatch, noteId, resolveHyperdriveUrl, noteContentRef, titleRef],
   )
@@ -131,7 +140,15 @@ export function useNoteEditorActions({
       if (titleRef.current === newTitle) return
       titleRef.current = newTitle
       if (!noteId || noteId === 'new') return
-      dispatch(updateNote({ key: noteId, title: newTitle, note: noteContentRef.current } as any))
+      dispatch(setEditorTitle(newTitle as any))
+      dispatch(
+        updateNote({
+          key: noteId,
+          title: newTitle,
+          note: noteContentRef.current,
+          fromEditor: true,
+        } as any),
+      )
     },
     [dispatch, noteId, titleRef, noteContentRef],
   )

@@ -51,8 +51,9 @@
       "meteredConnectionDesc": "Also holds media transfers. Desktop cannot detect metered networks automatically, so set this yourself."
     },
     "sync": {
-      "header": "SYNC & DEVICES",
-      "linkAndSync": "Link and Sync"
+      "rowTitle": "Sync",
+      "screenTitle": "Sync",
+      "screenDesc": "How this device keeps up to date, and what it costs in battery and data."
     },
     "backup": {
       "header": "BACKUP",
@@ -120,6 +121,28 @@
       "sync": "Manage your secure peer-to-peer network and linked devices with end-to-end encryption.",
       "backup": "Create encrypted backups of your notes and media, or restore from a previous backup file.",
       "storage": "Monitor your notes data size, on-disk footprint, and reclaim storage by clearing unreachable media."
+    },
+    "devices": {
+      "rowTitle": "Link Devices"
+    },
+    "syncStatus": {
+      "title": "SYNC STATUS",
+      "lastSynced": "Last synced",
+      "never": "Never",
+      "received": "Received",
+      "receivedCount_one": "{{count}} update",
+      "receivedCount_other": "{{count}} updates",
+      "nothingNew": "Nothing new",
+      "devicesOnline": "Devices online",
+      "noneReachable": "None reachable",
+      "verdict": {
+        "ok": "Up to date.",
+        "noDevices": "Link a device to start syncing. Background and media settings apply once a device is linked.",
+        "neverSynced": "Waiting for {{device}}. Both devices need to be online and on a network at the same time.",
+        "waiting": "Waiting for {{device}} to come online. Notes will sync as soon as both devices are reachable.",
+        "serviceStopped": "Android stopped the sync service, so notes only sync while the app is open. Allow unrestricted battery use for Pear Notes to fix this.",
+        "backgroundStale": "Background sync has not run recently. iOS decides when this happens, and force-quitting the app stops it entirely."
+      }
     }
   },
   "sync": {
@@ -294,6 +317,8 @@
     "selection": {
       "select": "Select Notes",
       "selectAll": "Select All",
+      "selectedTitle_one": "{{count}} selected",
+      "selectedTitle_other": "{{count}} selected",
       "deselectAll": "Deselect All",
       "selectedCount_one": "{{count}} SELECTED",
       "selectedCount_other": "{{count}} SELECTED",
@@ -457,7 +482,12 @@
       "authProtected": "This note is protected. Use Touch ID or your login password to authenticate and view it.",
       "unavailable": "This note is locked and can't be opened on this device. Set up device authentication (Touch ID or a login password) in System Settings to view it."
     },
-    "untitled": "Untitled Note"
+    "untitled": "Untitled Note",
+    "conflict": {
+      "title": "Also edited on another device",
+      "keepMine": "Keep mine",
+      "useTheirs": "Use theirs"
+    }
   },
   "pairing": {
     "status": {
@@ -524,13 +554,14 @@
   "layouts": {
     "settings": "Settings",
     "general": "General",
-    "linkAndSync": "Link and Sync",
     "backupRestore": "Backup / Restore",
     "backupPassword": "Backup Password",
     "noteLockPassword": "Note Lock Password",
     "privacyAndSecurity": "Privacy & Security",
     "storage": "Storage",
-    "activity": "Activity"
+    "activity": "Activity",
+    "linkDevices": "Link Devices",
+    "sync": "Sync"
   },
   "noteLockPassword": {
     "createTitle": "Set Note Lock Password",

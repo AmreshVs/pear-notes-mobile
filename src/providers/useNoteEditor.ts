@@ -18,6 +18,11 @@ import {
   HYPERDRIVE_URL_PREFIX,
   RECENTLY_DELETED_KEY,
 } from '@pear-notes/core/constant.js'
+import {
+  getEditorContent,
+  getEditorSyncToken,
+  getEditorTitle,
+} from '@pear-notes/core/store/slices/editorSlice.js'
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -88,12 +93,16 @@ export function useNoteEditor() {
   const loadedNoteRef = useRef<string | null>(null)
   const isLoadingNoteRef = useRef(false)
   const isEditorFocusedRef = useRef(false)
+  const lastSyncTokenRef = useRef(-1)
   const shouldFocusTitleRef = useRef(false)
 
   const noteSelector = useMemo(() => getNoteData(noteId ?? ''), [noteId])
   const rawNoteData = useSelector(noteSelector)
   const noteData = useMemo(() => (rawNoteData || {}) as any, [rawNoteData])
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
+  const editorContent = useSelector(getEditorContent) as string
+  const editorTitle = useSelector(getEditorTitle) as string
+  const syncToken = useSelector(getEditorSyncToken) as number
   const allFolders = useSelector(getFolders) as any[]
   const moveFolders = useMemo(
     () =>
@@ -217,21 +226,21 @@ export function useNoteEditor() {
 
   useEffect(() => {
     if (!noteId || noteId === 'new' || noteId !== loadedNoteRef.current) return
-    if (isEditorFocusedRef.current || isEditing) return
-    const remote = noteData?.note || ''
-    if (remote === noteContentRef.current) return
-    noteContentRef.current = remote
-    titleRef.current = noteData?.title || ''
-    let content = remote
+    if (syncToken === lastSyncTokenRef.current) return
+    lastSyncTokenRef.current = syncToken
+    if (editorContent === noteContentRef.current && editorTitle === titleRef.current) return
+    noteContentRef.current = editorContent
+    titleRef.current = editorTitle
+    let content = editorContent
     if (hyperdriveServerAddress && content.includes(HYPERDRIVE_URL_PREFIX)) {
       content = content.replaceAll(
         HYPERDRIVE_URL_PREFIX,
         hyperdriveServerAddress.replace(/\/$/, ''),
       )
     }
-    editorRef.current?.setTitle(noteData?.title || '')
+    editorRef.current?.setTitle(editorTitle)
     editorRef.current?.setHTML(content)
-  }, [noteId, noteData, hyperdriveServerAddress, isEditing])
+  }, [noteId, syncToken, editorContent, editorTitle, hyperdriveServerAddress])
 
   const resetEditorState = useCallback(() => {
     setIsOpen(false)

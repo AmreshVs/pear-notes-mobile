@@ -29,6 +29,7 @@ import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
+import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
@@ -609,6 +610,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onAttachmentLongPress={handleAttachmentLongPress}
           />
         )}
+
+        <NoteConflictBanner noteKey={noteId} />
 
         {isNoteLocked && (
           <View style={styles.lockOverlay}>
