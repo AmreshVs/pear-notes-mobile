@@ -43,7 +43,6 @@ import {
 } from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
-import { useLocalDeviceName } from '@/hooks/useLocalDeviceName'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
@@ -120,7 +119,6 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
 
   useMediaSyncAutoDetect()
   useAttachmentCachePrune()
-  useLocalDeviceName()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
   const savedEncryptionKeyRef = useRef<string | null>(null)
