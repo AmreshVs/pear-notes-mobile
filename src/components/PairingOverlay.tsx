@@ -736,7 +736,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       padding: isAndroid ? 28 : Space.xl,
       alignItems: 'center',
       width: '100%',
-      backgroundColor: theme.colors.transparent,
+      backgroundColor: theme.colors.cardSurface,
     },
     icon: {
       width: 80,
@@ -812,13 +812,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
       marginBottom: Space.lg,
-      ...(isAndroid
-        ? {
-            backgroundColor: theme.isDark
-              ? hexWithAlpha(theme.colors.white, 0.06)
-              : hexWithAlpha(theme.colors.black, 0.04),
-          }
-        : {}),
+      backgroundColor: theme.colors.cardSurface,
     },
     idLabel: {
       fontSize: FontSize.caption,

@@ -22,7 +22,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-naviga
 import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 
-import { backendApi } from '@pear-notes/core/backend/api.js'
+import { backendApi, setLocalDeviceName } from '@pear-notes/core/backend/api.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -56,6 +56,7 @@ import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { SheetProvider } from '@/providers/SheetProvider'
 import { ToastProvider } from '@/providers/ToastProvider'
+import { getLocalDeviceName } from '@/utils/deviceName'
 import { startWorklet } from '@/utils/worklet'
 
 export { AppErrorBoundary as ErrorBoundary } from '@/components/AppErrorBoundary'
@@ -164,6 +165,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       getBackgroundSyncMode().then(applyBackgroundSyncMode)
       dispatch(appReady())
       dispatch(initApp())
+      setLocalDeviceName(getLocalDeviceName())
     } catch (e) {
       console.error('Error in initWorklet', e)
       setFatalError(e instanceof Error ? e.message : t('error.backendFailed'))
