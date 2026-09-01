@@ -12,6 +12,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Layout,
   UI_SIZE_4,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -156,10 +157,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       ...commonStyles.flex1,
       paddingVertical: UI_SIZE_12,
       borderRadius: UI_SIZE_9999,
+      borderWidth: Layout.segPillBorderWidth,
+      borderColor: 'transparent',
       ...commonStyles.centered,
     },
     segItemActive: {
       backgroundColor: c.primaryContainer,
+      borderColor: c.primary,
     },
     segText: {
       fontSize: FontSize.body,

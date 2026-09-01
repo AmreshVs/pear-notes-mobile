@@ -487,7 +487,11 @@ const VaultFolderRow = memo(function VaultFolderRow({
   const handlePress = useCallback(() => onPress(id), [id, onPress])
   const handleLongPress = useCallback(() => onLongPress(id), [id, onLongPress])
 
-  const iconName = isAll ? 'folder-account' : isTrash ? 'delete-outline' : 'folder-outline'
+  const iconName = isAll
+    ? 'text-box-multiple-outline'
+    : isTrash
+      ? 'delete-outline'
+      : 'folder-outline'
   const iconColor = isTrash ? c.error : c.primary
 
   const rowStyle = useMemo(

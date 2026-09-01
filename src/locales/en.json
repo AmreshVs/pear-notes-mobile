@@ -41,6 +41,7 @@
       "sortNotesByDesc": "Choose your preferred sorting order.",
       "fontFamilyDesc": "Primary typeface for notes.",
       "textSizeDesc": "Adjust the editor's base font size.",
+      "textSizeValue": "{{size}} pt",
       "startupAndBackground": "Startup & Background",
       "keepRunning": "Keep Running in Background",
       "keepRunningDesc": "Closing the window keeps Pear Notes running in the tray so your notes stay in sync.",
@@ -164,9 +165,11 @@
       "scanBtn": "Scan QR",
       "attachBtn": "Attach QR",
       "placeholder": "Paste invite code here...",
-      "linkBtn": "Link"
+      "linkBtn": "Link",
+      "hintEmpty": "Paste an invite code to enable Link.",
+      "hintInvalid": "That isn't a complete invite code yet."
     },
-    "footer": "Your data moves directly between devices using encrypted Hypercore logs. No central server involved.",
+    "footer": "Your data moves directly between your devices over an end-to-end encrypted connection. Nothing is stored on our servers.",
     "devices": {
       "thisDevice": "THIS DEVICE",
       "otherDevices": "OTHER DEVICES",
@@ -200,7 +203,7 @@
     "backgroundSync": {
       "header": "BACKGROUND SYNC",
       "modeLabel": "Sync Mode",
-      "off": "Off",
+      "off": "Foreground",
       "periodic": "Periodic",
       "alwaysOn": "Always On",
       "offDesc": "Sync only while the app is open.",
@@ -728,7 +731,7 @@
     "clearStorage": "Clear Storage",
     "liveMediaOnDisk": "Live media on disk",
     "notesDataTooltip": "Total size of media currently referenced by your notes.",
-    "diskFootprintTooltip": "Physical bytes hypercore has allocated on disk. Deleting media compacts this automatically; use Reclaim below if it looks stale.",
+    "diskFootprintTooltip": "Space Pear Notes has reserved on this device. Deleting media frees it automatically; use Reclaim below if it looks stale.",
     "perNoteBreakdown": "Per-Note Breakdown",
     "transferFailed": "Transfer failed — retry to try again",
     "paused": "Paused",

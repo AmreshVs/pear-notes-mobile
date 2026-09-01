@@ -41,3 +41,16 @@ export function buildNoteSections(
 
   return sections
 }
+
+// A note shown under its matching date section carries the time instead of
+// repeating that date. Returns an empty string when there is no timestamp.
+export function formatTimeOfDay(timestamp?: number): string {
+  if (!timestamp) return ''
+  try {
+    return new Date(timestamp)
+      .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      .toUpperCase()
+  } catch {
+    return ''
+  }
+}

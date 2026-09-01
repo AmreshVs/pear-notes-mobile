@@ -66,7 +66,7 @@ export default function AndroidStorageScreen() {
     activeDownloads,
     activeUploads,
     noteTitleByKey,
-    notesStorageInfo,
+    notesStorageRows,
     buckets,
     resetSheetVisible,
     handleDeleteMedia,
@@ -171,7 +171,7 @@ export default function AndroidStorageScreen() {
         <AndroidBackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
 
         <AndroidBackupNotesListSection
-          notesStorageInfo={notesStorageInfo}
+          notesStorageInfo={notesStorageRows}
           formatBytes={formatBytes}
           handleDeleteMedia={handleDeleteMedia}
           mediaKind={mediaKind}

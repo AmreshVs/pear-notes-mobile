@@ -31,6 +31,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Layout,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
@@ -312,7 +313,9 @@ export default function AndroidGeneralSettingsScreen() {
           <View style={styles.groupContentRow}>
             <View style={styles.sliderTitleContainer}>
               <Text style={styles.rowTitle}>{t('settings.general.textSize')}</Text>
-              <Text style={styles.sliderValueText}>{editorFontSize}</Text>
+              <Text style={styles.sliderValueText}>
+                {t('settings.general.textSizeValue', { size: editorFontSize })}
+              </Text>
             </View>
             <View style={styles.sliderRow}>
               <MaterialCommunityIcons
@@ -445,10 +448,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.flex1,
       paddingVertical: UI_SIZE_12,
       borderRadius: UI_SIZE_9999,
+      borderWidth: Layout.segPillBorderWidth,
+      borderColor: 'transparent',
       ...commonStyles.centered,
     },
     segItemActive: {
       backgroundColor: c.primaryContainer,
+      borderColor: c.primary,
     },
     segText: {
       fontSize: FontSize.body,

@@ -45,6 +45,7 @@ import {
 } from '@/utils/dynamicType'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import { getNoteMetadata } from '@/utils/noteMetadata'
+import { formatTimeOfDay } from '@/utils/noteSections'
 import { type AttachmentKind } from '@/utils/noteUtils'
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name']
@@ -64,6 +65,7 @@ type NoteRowProps = {
   index: number
   isLast: boolean
   folderName?: string
+  sectionTitle?: string
   selecting?: boolean
   checked?: boolean
   onPress: (noteKey: string) => void
@@ -75,6 +77,7 @@ function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
     prev.note.key === next.note.key &&
     prev.note.value === next.note.value &&
     prev.folderName === next.folderName &&
+    prev.sectionTitle === next.sectionTitle &&
     prev.selecting === next.selecting &&
     prev.checked === next.checked &&
     prev.onPress === next.onPress &&
@@ -86,6 +89,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   note,
   index,
   folderName,
+  sectionTitle,
   selecting,
   checked,
   onPress,
@@ -111,7 +115,15 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const displayPreview = previewText || t('noteCard.noAdditionalText')
   const rawImageUrl = metadata.imageUrl
   const hasChecklist = !masked && metadata.isChecklist
-  const dateLabel = (formatDate(note.value?.updatedAt || note.value?.createdAt) || '').toUpperCase()
+  const timestamp = note.value?.updatedAt || note.value?.createdAt
+  const relativeLabel = (formatDate(timestamp) || '').toUpperCase()
+  // The section header already carries the date. When the card would only
+  // repeat it, show the time of day instead so the two lines say different
+  // things - the header dates the group, the card times the note.
+  const dateLabel =
+    sectionTitle && relativeLabel && relativeLabel === sectionTitle.toUpperCase()
+      ? formatTimeOfDay(timestamp)
+      : relativeLabel
   const accessibilityLabel = useMemo(() => {
     const parts = [title]
     if (pinned) parts.push(t('noteCard.a11y.pinned'))

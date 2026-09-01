@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteNoteMedia,
   getActiveDownloads,
@@ -17,10 +18,12 @@ import {
   subscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
+import { formatDate } from '@pear-notes/core/utils.js'
 
 import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
+import { getNoteMetadata } from '@/utils/noteMetadata'
 
 function useStorageScreen() {
   const dispatch = useDispatch()
@@ -33,12 +36,30 @@ function useStorageScreen() {
   const activeUploads = useSelector(getActiveUploads) as any[]
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
+  const notesData = useSelector(getNotesData) as Record<string, any>
 
   const noteTitleByKey = useMemo(() => {
     const map: Record<string, string> = {}
     for (const note of notesStorageInfo) map[note.key] = note.title
     return map
   }, [notesStorageInfo])
+
+  // Storage is a management screen - two rows reading "Untitled" with the same
+  // size leave no way to tell which one you are about to open or delete. The
+  // storage payload carries no body or date, so pull a second identifier from
+  // the notes the app already holds.
+  const notesStorageRows = useMemo(
+    () =>
+      notesStorageInfo.map((note) => {
+        if (note.title) return note
+        const value = notesData[note.key]
+        const preview = value ? getNoteMetadata(value).preview.trim() : ''
+        const timestamp = value?.updatedAt || value?.createdAt
+        const parts = [preview, timestamp ? formatDate(timestamp) : ''].filter(Boolean)
+        return { ...note, subtitle: parts.join(' · ') }
+      }),
+    [notesStorageInfo, notesData],
+  )
 
   const [resetSheetVisible, setResetSheetVisible] = useState(false)
 
@@ -101,6 +122,7 @@ function useStorageScreen() {
     activeUploads,
     noteTitleByKey,
     notesStorageInfo,
+    notesStorageRows,
     buckets,
     resetSheetVisible,
     handleDeleteMedia,

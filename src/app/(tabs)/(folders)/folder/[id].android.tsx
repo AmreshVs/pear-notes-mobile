@@ -207,6 +207,10 @@ export default function AndroidFolderNotesScreen() {
   } = useNoteSelection(id as string, orderedKeys)
 
   const canMultiSelect = orderedKeys.length >= MIN_NOTES_FOR_MULTI_SELECT
+  // Nothing to search in an empty folder - but the note list is already
+  // search-filtered, so keep the control live while the bar is open or a query
+  // that matches nothing would strand the user with no way to close it.
+  const canSearch = searchVisible || orderedKeys.length > 0
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -473,6 +477,7 @@ export default function AndroidFolderNotesScreen() {
         index={index}
         isLast={index === section.data.length - 1}
         folderName={isAllNotes ? folderNameMap[note.value?.folderKey] : undefined}
+        sectionTitle={section.title}
         selecting={isSelecting}
         checked={selectedKeys.includes(note.key)}
         onPress={handleSelectNote}
@@ -703,6 +708,7 @@ export default function AndroidFolderNotesScreen() {
           searchQuery={searchQuery}
           showFolderOptions={!folder?.isSystem}
           canMultiSelect={canMultiSelect}
+          canSearch={canSearch}
           searchInputRef={searchInputRef}
           searchBarStyle={searchBarAnimStyle}
           onBack={handleBack}
