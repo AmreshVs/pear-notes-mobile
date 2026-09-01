@@ -547,6 +547,7 @@ export default function AndroidSyncScreen() {
         onDismiss={() => setDeleteSheetVisible(false)}
         title={t('sync.delete.title')}
         subtitle={t('sync.delete.description')}
+        showHeader
         actions={deleteActions}
       />
     </View>

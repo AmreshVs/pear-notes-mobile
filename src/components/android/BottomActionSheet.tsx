@@ -12,6 +12,7 @@ import {
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
   UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
@@ -43,10 +44,19 @@ type Props = {
   onDismiss: () => void
   title: string
   subtitle?: string
+  /** Render the title/subtitle header above the actions (matches the iOS and desktop dialogs). */
+  showHeader?: boolean
   actions: SheetAction[]
 }
 
-export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions }: Props) {
+export function BottomActionSheet({
+  visible,
+  onDismiss,
+  title,
+  subtitle,
+  showHeader,
+  actions,
+}: Props) {
   const ref = useRef<BottomSheetModal>(null)
   const styles = useStyles()
   const { colors } = useMD3Theme()
@@ -73,10 +83,12 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
       onDismiss={onDismiss}
     >
       <BottomSheetView style={styles.container}>
-        {/* <View style={styles.header}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-        </View> */}
+        {showHeader ? (
+          <View style={styles.header}>
+            <Text style={styles.title}>{title}</Text>
+            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          </View>
+        ) : null}
 
         <View style={styles.actionsCard}>
           {actions.map((action, index) => (
@@ -116,7 +128,11 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
                   {action.label}
                 </Text>
                 {action.selected ? (
-                  <MaterialCommunityIcons name="check" size={UI_ICON_SIZE_20} color={colors.primary} />
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={UI_ICON_SIZE_20}
+                    color={colors.primary}
+                  />
                 ) : (
                   !action.destructive && (
                     <MaterialCommunityIcons
@@ -138,97 +154,111 @@ export function BottomActionSheet({ visible, onDismiss, title, subtitle, actions
   )
 }
 
-const useStyles = createThemedStylesheetWithHooks(
-  (theme, md3Theme) => {
-    const c = md3Theme.colors as ExtendedColors
-    const sheetBg = c.surfaceContainerLow ?? c.surface
+const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
+  const c = md3Theme.colors as ExtendedColors
+  const sheetBg = c.surfaceContainerLow ?? c.surface
 
-    const styles = StyleSheet.create({
-      sheetBackground: {
-        backgroundColor: sheetBg,
-        borderTopLeftRadius: UI_SIZE_28,
-        borderTopRightRadius: UI_SIZE_28,
-      },
-      handleIndicator: {
-        width: UI_SIZE_36,
-        height: UI_SIZE_4,
-        borderRadius: 9999,
-        alignSelf: 'center',
-        backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
-      },
-      container: {
-        paddingHorizontal: UI_SIZE_20,
-        paddingTop: UI_SIZE_4,
-      },
-      actionsCard: {
-        borderRadius: UI_SIZE_20,
-        overflow: 'hidden',
-        backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      },
-      actionRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: UI_SIZE_16,
-        paddingVertical: UI_SIZE_14,
-        gap: UI_SIZE_16,
-        minHeight: 62,
-      },
-      iconCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 9999,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: hexWithAlpha(c.primaryContainer, 0.1),
-      },
-      iconCircleDestructive: {
-        width: 44,
-        height: 44,
-        borderRadius: 9999,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.22),
-      },
-      iconCircleSelected: {
-        width: 44,
-        height: 44,
-        borderRadius: 9999,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: hexWithAlpha(c.primary, 0.18),
-      },
-      actionLabel: {
-        flex: 1,
-        fontSize: FontSize.subtitle,
-        fontWeight: FontWeight.semibold,
-        fontFamily: FontFamily.semiBold,
-        color: c.onSurface,
-      },
-      actionLabelSelected: {
-        flex: 1,
-        fontSize: FontSize.subtitle,
-        fontWeight: FontWeight.bold,
-        fontFamily: FontFamily.bold,
-        color: c.primary,
-      },
-      actionLabelDestructive: {
-        flex: 1,
-        fontSize: FontSize.subtitle,
-        fontWeight: FontWeight.semibold,
-        fontFamily: FontFamily.semiBold,
-        color: c.error,
-      },
-      separator: {
-        height: StyleSheet.hairlineWidth,
-        marginLeft: 76,
-        marginRight: UI_SIZE_16,
-        backgroundColor: hexWithAlpha(c.outlineVariant, 0.14),
-      },
-      bottomPad: {
-        height: UI_SIZE_24,
-      },
-    })
-    return styles
-  },
-  useMD3Theme,
-)
+  const styles = StyleSheet.create({
+    sheetBackground: {
+      backgroundColor: sheetBg,
+      borderTopLeftRadius: UI_SIZE_28,
+      borderTopRightRadius: UI_SIZE_28,
+    },
+    handleIndicator: {
+      width: UI_SIZE_36,
+      height: UI_SIZE_4,
+      borderRadius: 9999,
+      alignSelf: 'center',
+      backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
+    },
+    container: {
+      paddingHorizontal: UI_SIZE_20,
+      paddingTop: UI_SIZE_4,
+    },
+    header: {
+      paddingHorizontal: UI_SIZE_4,
+      paddingBottom: UI_SIZE_20,
+    },
+    title: {
+      fontSize: FontSize.title,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.onSurface,
+    },
+    subtitle: {
+      marginTop: UI_SIZE_8,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      lineHeight: UI_SIZE_20,
+      color: c.onSurfaceVariant,
+    },
+    actionsCard: {
+      borderRadius: UI_SIZE_20,
+      overflow: 'hidden',
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
+    actionRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_14,
+      gap: UI_SIZE_16,
+      minHeight: 62,
+    },
+    iconCircle: {
+      width: 44,
+      height: 44,
+      borderRadius: 9999,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: hexWithAlpha(c.primaryContainer, 0.1),
+    },
+    iconCircleDestructive: {
+      width: 44,
+      height: 44,
+      borderRadius: 9999,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.22),
+    },
+    iconCircleSelected: {
+      width: 44,
+      height: 44,
+      borderRadius: 9999,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: hexWithAlpha(c.primary, 0.18),
+    },
+    actionLabel: {
+      flex: 1,
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurface,
+    },
+    actionLabelSelected: {
+      flex: 1,
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: c.primary,
+    },
+    actionLabelDestructive: {
+      flex: 1,
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.error,
+    },
+    separator: {
+      height: StyleSheet.hairlineWidth,
+      marginLeft: 76,
+      marginRight: UI_SIZE_16,
+      backgroundColor: hexWithAlpha(c.outlineVariant, 0.14),
+    },
+    bottomPad: {
+      height: UI_SIZE_24,
+    },
+  })
+  return styles
+}, useMD3Theme)
