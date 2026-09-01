@@ -41,3 +41,14 @@ export function buildNoteSections(
 
   return sections
 }
+
+export function formatTimeOfDay(timestamp?: number): string {
+  if (!timestamp) return ''
+  try {
+    return new Date(timestamp)
+      .toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      .toUpperCase()
+  } catch {
+    return ''
+  }
+}

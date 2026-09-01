@@ -81,9 +81,16 @@ export function AndroidBackupNotesListSection({
           android_ripple={ripple}
           style={styles.noteRow}
         >
-          <Text style={styles.noteTitle} numberOfLines={1}>
-            {note.title || t('noteCard.untitled')}
-          </Text>
+          <View style={styles.noteTitleGroup}>
+            <Text style={styles.noteTitle} numberOfLines={1}>
+              {note.title || t('noteCard.untitled')}
+            </Text>
+            {!note.title && !!note.subtitle && (
+              <Text style={styles.noteSubtitle} numberOfLines={1}>
+                {note.subtitle}
+              </Text>
+            )}
+          </View>
           <View style={styles.noteHeaderActions}>
             <Text style={styles.noteSize}>{formatBytes(note.totalSize)}</Text>
             <MaterialCommunityIcons
@@ -159,13 +166,21 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.rowBetween,
       padding: UI_SIZE_16,
     },
-    noteTitle: {
+    noteTitleGroup: {
       flex: 1,
+      marginRight: UI_SIZE_8,
+    },
+    noteTitle: {
       fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
-      marginRight: UI_SIZE_8,
+    },
+    noteSubtitle: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.medium,
+      color: c.onSurfaceVariant,
     },
     noteHeaderActions: {
       ...commonStyles.row,

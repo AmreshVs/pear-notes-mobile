@@ -38,6 +38,7 @@ type AndroidFolderAppBarProps = {
   searchQuery: string
   showFolderOptions: boolean
   canMultiSelect: boolean
+  canSearch: boolean
   searchInputRef: RefObject<TextInput | null>
   searchBarStyle: AnimatedStyle<ViewStyle>
   onBack: () => void
@@ -53,6 +54,7 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   searchQuery,
   showFolderOptions,
   canMultiSelect,
+  canSearch,
   searchInputRef,
   searchBarStyle,
   onBack,
@@ -69,6 +71,7 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const selectAccessibilityState = useMemo(() => ({ disabled: !canMultiSelect }), [canMultiSelect])
+  const searchAccessibilityState = useMemo(() => ({ disabled: !canSearch }), [canSearch])
 
   return (
     <>
@@ -105,10 +108,12 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
           </Pressable>
           <Pressable
             onPress={onToggleSearch}
-            android_ripple={ripple}
-            style={styles.iconBtn}
+            disabled={!canSearch}
+            android_ripple={canSearch ? ripple : undefined}
+            style={[styles.iconBtn, !canSearch && commonStyles.disabled]}
             hitSlop={UI_SIZE_8}
             accessibilityRole="button"
+            accessibilityState={searchAccessibilityState}
             accessibilityLabel={searchVisible ? t('common.close') : t('search.title')}
           >
             <MaterialCommunityIcons

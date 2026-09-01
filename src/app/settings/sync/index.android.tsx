@@ -117,6 +117,13 @@ export default function AndroidSyncScreen() {
     handleConfirmDelete,
   } = useSyncScreen()
 
+  const canLink = isValidInvite(pasteCode)
+  const linkDisabled = isLoading || !canLink
+  const linkHint =
+    isLoading || canLink || scanError
+      ? null
+      : t(pasteCode.trim().length === 0 ? 'sync.paste.hintEmpty' : 'sync.paste.hintInvalid')
+
   const deviceColors = useMemo(
     () => ({
       surfaceContainerHigh: c.surfaceContainerHigh,
@@ -438,12 +445,9 @@ export default function AndroidSyncScreen() {
                     />
                     <Pressable
                       onPress={handleConnect}
-                      disabled={isLoading || !isValidInvite(pasteCode)}
+                      disabled={linkDisabled}
                       android_ripple={ripplePrimary}
-                      style={[
-                        styles.linkPillBtn,
-                        (isLoading || !isValidInvite(pasteCode)) && styles.linkPillBtnDisabled,
-                      ]}
+                      style={[styles.linkPillBtn, linkDisabled && styles.linkPillBtnDisabled]}
                     >
                       {isLoading ? (
                         <ActivityIndicator size="small" color={loaderColor} />
@@ -455,6 +459,10 @@ export default function AndroidSyncScreen() {
 
                   {!scannerVisible && !!scanError && (
                     <Text style={styles.pasteError}>{t(scanError)}</Text>
+                  )}
+
+                  {!scannerVisible && !!linkHint && (
+                    <Text style={styles.pasteHint}>{linkHint}</Text>
                   )}
                 </MotionView>
               )}
@@ -825,6 +833,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
       color: c.error,
+    },
+    pasteHint: {
+      marginTop: UI_SIZE_8,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
+      color: c.onSurfaceVariant,
     },
     invitePasteLeft: {
       ...commonStyles.row,
