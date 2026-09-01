@@ -78,7 +78,7 @@ export default {
     controlBackground: 'rgba(255, 255, 255, 0.08)',
     textMuted: 'rgba(255,255,255,0.45)',
     backgroundElevated: '#111112',
-    cardSurface: '#222224',
+    cardSurface: '#191919',
     glassBackground: 'rgba(255, 255, 255, 0.05)',
     glassBorder: 'rgba(255, 255, 255, 0.1)',
     glassShadow: 'rgba(0, 0, 0, 0.3)',

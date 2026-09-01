@@ -555,7 +555,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     header: {
       ...commonStyles.row,
       justifyContent: 'space-between',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       marginBottom: UI_SIZE_4,
     },
     pageTitle: {

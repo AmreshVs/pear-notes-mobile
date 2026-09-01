@@ -348,7 +348,9 @@ export const NoteCard = memo(function NoteCard({
           )}
           <RNView style={styles.content}>
             <RNView style={styles.titleRow}>
-              {pinned && <SymbolIcon name="pin" size={UI_ICON_SIZE_12} color={lockIconColor} />}
+              {pinned && (
+                <SymbolIcon name="pin.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />
+              )}
               {locked &&
                 (masked ? (
                   <SymbolIcon name="lock" size={UI_ICON_SIZE_12} color={lockIconColor} />
