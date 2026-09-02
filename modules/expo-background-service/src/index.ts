@@ -20,3 +20,19 @@ export function updateService(
 export function stopService(completionTitle?: string, completionMessage?: string): void {
   ExpoBackgroundService.stop(completionTitle ?? null, completionMessage ?? null)
 }
+
+export function isIgnoringBatteryOptimizations(): boolean {
+  if (Platform.OS !== 'android') return true
+  try {
+    return ExpoBackgroundService.isIgnoringBatteryOptimizations() !== false
+  } catch {
+    return true
+  }
+}
+
+export function openBatteryOptimizationSettings(): void {
+  if (Platform.OS !== 'android') return
+  try {
+    ExpoBackgroundService.openBatteryOptimizationSettings()
+  } catch {}
+}

@@ -2,7 +2,10 @@ package expo.modules.backgroundservice
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import android.util.Log
 import androidx.core.content.ContextCompat
 import expo.modules.kotlin.modules.Module
@@ -23,6 +26,40 @@ class ExpoBackgroundServiceModule : Module() {
 
   override fun definition() = ModuleDefinition {
     Name("ExpoBackgroundService")
+
+    Function("isIgnoringBatteryOptimizations") {
+      val context = appContext.reactContext ?: return@Function true
+      val power = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        ?: return@Function true
+      power.isIgnoringBatteryOptimizations(context.packageName)
+    }
+
+    Function("openBatteryOptimizationSettings") {
+      val context = appContext.reactContext
+      var opened = false
+      if (context != null) {
+        val list = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+          addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+          context.startActivity(list)
+          opened = true
+        } catch (e: Exception) {
+          Log.e(TAG, "battery optimisation settings unavailable", e)
+          val appSpecific = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", context.packageName, null)
+          ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
+          try {
+            context.startActivity(appSpecific)
+            opened = true
+          } catch (inner: Exception) {
+            Log.e(TAG, "app details settings unavailable", inner)
+          }
+        }
+      }
+      opened
+    }
 
     Function("start") { title: String, message: String, maxProgress: Int ->
       appContext.reactContext?.let { context ->

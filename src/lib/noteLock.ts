@@ -51,3 +51,7 @@ export async function unlockNote(key: string, reason: string): Promise<boolean> 
 export function useIsNoteUnlocked(key: string | null): boolean {
   return useSyncExternalStore(subscribe, () => (key ? unlockedKeys.has(key) : false))
 }
+
+export function useHasUnlockedNotes(): boolean {
+  return useSyncExternalStore(subscribe, () => unlockedKeys.size > 0)
+}

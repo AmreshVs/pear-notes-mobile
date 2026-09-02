@@ -3,6 +3,8 @@ import { StyleSheet, View as RNView } from 'react-native'
 import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
+import { SYNC_WAKE_RESULT } from '@pear-notes/core/constant.js'
+
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -44,11 +46,34 @@ export function SyncStatusSection() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
-  const { hasLinkedDevices, lastSyncedRelative, lastReceived, onlineNames, peerName, verdict } =
-    useSyncStatus()
+  const {
+    hasLinkedDevices,
+    mode,
+    lastSyncedRelative,
+    lastReceived,
+    lastWakeRelative,
+    lastWakeResult,
+    serviceFailedRelative,
+    onlineNames,
+    peerName,
+    verdict,
+  } = useSyncStatus()
 
   const tone = VERDICT_TONE[verdict]
   const verdictText = t(`settings.syncStatus.verdict.${verdict}`, { device: peerName })
+
+  const wakeResultKey =
+    lastWakeResult === SYNC_WAKE_RESULT.OK
+      ? 'settings.syncStatus.wakeResultOk'
+      : lastWakeResult === SYNC_WAKE_RESULT.NO_WORKLET
+        ? 'settings.syncStatus.wakeResultNoWorklet'
+        : lastWakeResult === SYNC_WAKE_RESULT.ERROR
+          ? 'settings.syncStatus.wakeResultError'
+          : ''
+
+  const lastWakeLabel = lastWakeRelative
+    ? t(lastWakeRelative.key, { count: lastWakeRelative.count })
+    : t('settings.syncStatus.backgroundNever')
 
   const lastSyncedLabel = lastSyncedRelative
     ? t(lastSyncedRelative.key, { count: lastSyncedRelative.count })
@@ -86,6 +111,41 @@ export function SyncStatusSection() {
                   {receivedLabel}
                 </Text>
               </RNView>
+
+              {mode !== 'off' && (
+                <>
+                  <RNView style={styles.row}>
+                    <Text style={styles.rowKey}>{t('settings.syncStatus.backgroundWake')}</Text>
+                    <Text style={lastWakeRelative ? styles.rowValue : styles.rowValueMuted}>
+                      {lastWakeLabel}
+                    </Text>
+                  </RNView>
+
+                  {!!wakeResultKey && (
+                    <RNView style={styles.row}>
+                      <Text style={styles.rowKey}>{t('settings.syncStatus.wakeResult')}</Text>
+                      <Text
+                        style={
+                          lastWakeResult === SYNC_WAKE_RESULT.OK
+                            ? styles.rowValue
+                            : styles.rowValueMuted
+                        }
+                      >
+                        {t(wakeResultKey)}
+                      </Text>
+                    </RNView>
+                  )}
+
+                  {!!serviceFailedRelative && (
+                    <RNView style={styles.row}>
+                      <Text style={styles.rowKey}>{t('settings.syncStatus.serviceStoppedAt')}</Text>
+                      <Text style={styles.rowValueMuted}>
+                        {t(serviceFailedRelative.key, { count: serviceFailedRelative.count })}
+                      </Text>
+                    </RNView>
+                  )}
+                </>
+              )}
 
               <RNView style={styles.rowLast}>
                 <Text style={styles.rowKey}>{t('settings.syncStatus.devicesOnline')}</Text>

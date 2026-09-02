@@ -391,11 +391,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Text style={styles.title}>{t('pairing.overlay.syncingTitle')}</Text>
           <Text style={styles.sub}>{t('pairing.overlay.syncingDesc')}</Text>
           <View style={styles.progressWrap}>
-            <View style={styles.progressLabel}>
-              <Text style={styles.labelText}>
-                {getMessage()} • {t('pairing.overlay.complete', { progress: progress ?? 0 })}
-              </Text>
-            </View>
             <View style={styles.trackContainer}>
               <View
                 style={[
@@ -404,6 +399,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
                   { width: `${progress ?? 0}%` as DimensionValue },
                 ]}
               />
+            </View>
+            <View style={styles.progressLabel}>
+              <Text style={styles.labelText}>
+                {getMessage()} • {t('pairing.overlay.complete', { progress: progress ?? 0 })}
+              </Text>
             </View>
           </View>
         </View>
@@ -804,9 +804,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       paddingHorizontal: Space.md,
       paddingVertical: isAndroid ? Space.base : Space.lg,
       borderRadius: isAndroid ? 16 : Radii.card,
-      borderColor: theme.colors.borderSecondary,
       marginBottom: Space.lg,
-      backgroundColor: theme.colors.cardSurface,
+      backgroundColor: theme.colors.surfaceSecondary,
     },
     idLabel: {
       fontSize: FontSize.caption,

@@ -57,6 +57,7 @@ import { AndroidFolderAppBar } from '@/components/android/AndroidFolderAppBar'
 import { AndroidSelectionAppBar } from '@/components/android/AndroidSelectionAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
+import { LockNowButton } from '@/components/LockNowButton'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -491,7 +492,10 @@ export default function AndroidFolderNotesScreen() {
         <Text style={styles.pageTitle} numberOfLines={2}>
           {folder?.name || t('folders.untitled')}
         </Text>
-        <Text style={styles.pageCount}>{t('folderView.noteCount', { count: notes.length })}</Text>
+        <View style={styles.pageCountRow}>
+          <Text style={styles.pageCount}>{t('folderView.noteCount', { count: notes.length })}</Text>
+          <LockNowButton />
+        </View>
         {isTrashFolder && notes.length > 0 && (
           <Text style={styles.retentionNotice}>
             {t('folderView.trashRetentionNotice', { days: TRASH_RETENTION_DAYS })}
@@ -885,13 +889,18 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       color: c.onSurface,
       paddingRight: UI_SIZE_16,
     },
+    pageCountRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_12,
+      marginBottom: UI_SIZE_4,
+    },
     pageCount: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       letterSpacing: 1.2,
       color: c.onSurfaceVariant,
-      marginBottom: UI_SIZE_4,
     },
     retentionNotice: {
       fontSize: FontSize.caption,

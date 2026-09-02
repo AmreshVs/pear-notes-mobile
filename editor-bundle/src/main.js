@@ -1536,6 +1536,7 @@ window.editorBridge = {
       case 'focusTitle': {
         const titleEl = document.getElementById('note-title')
         if (titleEl) {
+          titleEl.dispatchEvent(new MouseEvent('click', { bubbles: true }))
           titleEl.focus()
           const end = titleEl.value.length
           titleEl.setSelectionRange(end, end)

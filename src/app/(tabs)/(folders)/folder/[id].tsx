@@ -39,6 +39,7 @@ import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/ui
 import { formatDate, validateFolderName } from '@pear-notes/core/utils.js'
 
 import { FolderEmptyState } from '@/components/FolderEmptyState'
+import { LockNowButton } from '@/components/LockNowButton'
 import { NoteCard } from '@/components/NoteCard'
 import { NoteSelectionToolbar } from '@/components/NoteSelectionToolbar'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
@@ -457,6 +458,7 @@ export default function FolderNotesScreen() {
               ? t('folderView.selection.selectedCount', { count: selectedCount })
               : t('folderView.noteCount', { count: notes.length })}
           </Text>
+          <LockNowButton />
         </View>
         {isTrashFolder && notes.length > 0 && (
           <Text style={styles.retentionNotice}>
@@ -623,7 +625,11 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingRight: Space.base,
     },
     headerInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.md,
       marginLeft: Space.base,
+      marginRight: Space.base,
       marginBottom: Space.sm,
     },
     retentionNotice: {

@@ -132,6 +132,13 @@
       "received": "Received",
       "receivedCount_one": "{{count}} update",
       "receivedCount_other": "{{count}} updates",
+      "backgroundWake": "Last background check",
+      "backgroundNever": "Never run",
+      "wakeResult": "Result",
+      "wakeResultOk": "Synced in background",
+      "wakeResultNoWorklet": "App was not running",
+      "wakeResultError": "Failed",
+      "serviceStoppedAt": "Service stopped",
       "nothingNew": "Nothing new",
       "devicesOnline": "Devices online",
       "noneReachable": "None reachable",
@@ -237,6 +244,9 @@
       "permissionTitle": "Notification access needed",
       "permissionDescription": "Allow notifications so Pear Notes can show a persistent sync status while running in the background.",
       "unlinkedTitle": "No linked devices",
+      "batteryTitle": "Battery optimisation is on",
+      "batteryDesc": "Android may stop background syncing to save power. Allow unrestricted battery use for Pear Notes to keep it running.",
+      "batteryAction": "Open battery settings",
       "unlinkedDesc": "Background sync needs at least one other device. Link a device to turn this on."
     },
     "confirm": {
@@ -334,7 +344,9 @@
     "trashRetentionNotice": "Notes in Recently Deleted are permanently removed after {{days}} days.",
     "restoreTitle": "Restore Note",
     "restoredToast": "Restored to {{folder}}",
-    "restoredToDefaultToast": "Original folder is gone. Restored to {{folder}}."
+    "restoredToDefaultToast": "Original folder is gone. Restored to {{folder}}.",
+    "lockNow": "Lock now",
+    "lockNowA11y": "Lock all unlocked notes now"
   },
   "noteCard": {
     "untitled": "Untitled",

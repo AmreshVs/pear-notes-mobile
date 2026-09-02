@@ -296,6 +296,11 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       )
     }, [])
 
+    const requestNativeWebViewFocus = useCallback(() => {
+      if (Platform.OS !== 'android') return
+      webViewRef.current?.requestFocus?.()
+    }, [])
+
     const injectBackgroundColor = useCallback((color: string) => {
       const c = JSON.stringify(color)
       webViewRef.current?.injectJavaScript(
@@ -530,8 +535,14 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         insertAudioAttachment: (url, fileName, duration) =>
           sendCommand({ type: 'insertAudioAttachment', url, fileName, duration }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
-        focus: () => sendCommand({ type: 'focus' }),
-        focusTitle: () => sendCommand({ type: 'focusTitle' }),
+        focus: () => {
+          requestNativeWebViewFocus()
+          sendCommand({ type: 'focus' })
+        },
+        focusTitle: () => {
+          requestNativeWebViewFocus()
+          sendCommand({ type: 'focusTitle' })
+        },
         blur: () => {
           sendCommand({ type: 'blur' })
           webViewRef.current?.injectJavaScript(

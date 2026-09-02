@@ -1,6 +1,6 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
+import { AppState, PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
@@ -22,6 +22,11 @@ import {
 import { BackgroundSyncMode } from '@/lib/backgroundSync'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
+import {
+  isIgnoringBatteryOptimizations,
+  openBatteryOptimizationSettings,
+} from '../../../modules/expo-background-service/src'
+
 import { BACKGROUND_SYNC_MODE_LOCALE_KEY, useBackgroundSync } from './useBackgroundSync'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -38,6 +43,18 @@ export function BackgroundSyncSection() {
   const styles = useStyles()
   const md3Styles = useMD3CommonStyles()
   const { mode, hasLinkedDevices, commitMode } = useBackgroundSync()
+  const [batteryUnrestricted, setBatteryUnrestricted] = useState(true)
+
+  useEffect(() => {
+    const check = () => setBatteryUnrestricted(isIgnoringBatteryOptimizations())
+    check()
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') check()
+    })
+    return () => subscription.remove()
+  }, [])
+
+  const handleOpenBatterySettings = useCallback(() => openBatteryOptimizationSettings(), [])
 
   const handleSelect = useCallback(
     async (next: BackgroundSyncMode) => {
@@ -112,6 +129,16 @@ export function BackgroundSyncSection() {
             ? t(`sync.backgroundSync.${BACKGROUND_SYNC_MODE_LOCALE_KEY[mode]}Desc`)
             : t('sync.backgroundSync.unlinkedDesc')}
         </Text>
+
+        {hasLinkedDevices && mode !== 'off' && !batteryUnrestricted && (
+          <View style={styles.batteryNotice}>
+            <Text style={styles.batteryTitle}>{t('sync.backgroundSync.batteryTitle')}</Text>
+            <Text style={styles.batteryDesc}>{t('sync.backgroundSync.batteryDesc')}</Text>
+            <Pressable onPress={handleOpenBatterySettings} style={styles.batteryBtn}>
+              <Text style={styles.batteryBtnText}>{t('sync.backgroundSync.batteryAction')}</Text>
+            </Pressable>
+          </View>
+        )}
       </MotionView>
     </>
   )
@@ -151,6 +178,36 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       backgroundColor: hexWithAlpha(c.onSurface, 0.04),
       borderRadius: UI_SIZE_9999,
       padding: UI_SIZE_4,
+    },
+    batteryNotice: {
+      marginTop: UI_SIZE_16,
+      padding: UI_SIZE_16,
+      borderRadius: UI_SIZE_20,
+      gap: UI_SIZE_4,
+      backgroundColor: hexWithAlpha(c.primary, 0.12),
+    },
+    batteryTitle: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSurface,
+    },
+    batteryDesc: {
+      fontSize: FontSize.caption,
+      color: c.onSurfaceVariant ?? c.onSurface,
+      lineHeight: FontSize.caption * 1.45,
+    },
+    batteryBtn: {
+      marginTop: UI_SIZE_4,
+      alignSelf: 'flex-start',
+      paddingVertical: UI_SIZE_4,
+      paddingHorizontal: UI_SIZE_12,
+      borderRadius: UI_SIZE_20,
+      backgroundColor: c.primaryContainer ?? c.primary,
+    },
+    batteryBtnText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.bold,
+      color: c.onPrimaryContainer ?? c.onSurface,
     },
     segItem: {
       ...commonStyles.flex1,
