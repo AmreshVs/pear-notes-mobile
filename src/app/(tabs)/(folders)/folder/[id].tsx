@@ -613,7 +613,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: 0,
       paddingTop: Space.lg,
     },
-
     pageTitle: {
       fontSize: FontSize.hero,
       lineHeight: UI_SIZE_42,
@@ -621,7 +620,6 @@ const useStyles = createThemedStylesheet((theme) => {
       letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,
       marginLeft: Space.base,
-      marginBottom: Space.xs,
       paddingRight: Space.base,
     },
     headerInfo: {
