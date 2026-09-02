@@ -609,6 +609,55 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
 
 let _attachmentIdCounter = 0
 
+const PDF_MIME_TYPE = 'application/pdf'
+const PDF_PREVIEW_MAX_HEIGHT = 220
+
+function isPdfAttachment(fileName, fileType) {
+  if (fileType === PDF_MIME_TYPE) return true
+  return typeof fileName === 'string' && fileName.toLowerCase().endsWith('.pdf')
+}
+
+function createPdfPreviewDOM() {
+  const wrapper = document.createElement('div')
+  wrapper.className = 'pdf-preview'
+  wrapper.style.cssText =
+    'display: none; align-items: center; justify-content: center; padding: 12px 12px 0 12px; background: var(--c-bg);'
+
+  const image = document.createElement('img')
+  image.className = 'pdf-preview-image'
+  image.draggable = false
+  image.style.cssText =
+    'display: block; max-width: 100%; max-height: ' +
+    PDF_PREVIEW_MAX_HEIGHT +
+    'px; width: auto; height: auto; border-radius: 8px; border: 1px solid var(--c-border);'
+  wrapper.appendChild(image)
+
+  return wrapper
+}
+
+function applyPdfThumbnail(el, thumbnail, pageCount, pageCountLabel) {
+  const wrapper = el.querySelector('.pdf-preview')
+  if (!wrapper) return
+  const image = wrapper.querySelector('.pdf-preview-image')
+  if (image && thumbnail) {
+    image.src = thumbnail
+    wrapper.style.display = 'flex'
+  }
+  if (!pageCount || !pageCountLabel) return
+  const meta = el.querySelector('.attachment-meta')
+  if (!meta || meta.querySelector('.attachment-pages')) return
+  const dot = document.createElement('span')
+  dot.className = 'attachment-pages-dot'
+  dot.style.cssText = 'font-size: 12px; color: var(--c-text-secondary);'
+  dot.textContent = '\u2022'
+  const pages = document.createElement('span')
+  pages.className = 'attachment-pages'
+  pages.style.cssText = 'font-size: 12px; color: var(--c-text-secondary);'
+  pages.textContent = pageCountLabel
+  meta.appendChild(dot)
+  meta.appendChild(pages)
+}
+
 const FileAttachment = Node.create({
   name: 'fileAttachment',
   group: 'block',
@@ -632,6 +681,7 @@ const FileAttachment = Node.create({
     return ({ node, view, getPos }) => {
       const isVideo = node.attrs.fileType?.startsWith('video/')
       const isAudio = node.attrs.fileType?.startsWith('audio/')
+      const isPdf = isPdfAttachment(node.attrs.fileName, node.attrs.fileType)
 
       if (isAudio) {
         const parts = (node.attrs.fileName || '').split('.')
@@ -727,6 +777,12 @@ const FileAttachment = Node.create({
         }
       })
 
+      const preview = isPdf ? createPdfPreviewDOM() : null
+      if (preview) {
+        dom.dataset.pdfPreview = ''
+        dom.appendChild(preview)
+      }
+
       const content = document.createElement('div')
       content.style.cssText =
         'position: relative; display: flex; align-items: center; gap: 16px; padding: 16px;'
@@ -767,6 +823,7 @@ const FileAttachment = Node.create({
       info.appendChild(label)
 
       const meta = document.createElement('div')
+      meta.className = 'attachment-meta'
       meta.style.cssText = 'display: flex; align-items: center; gap: 8px;'
 
       const extSpan = document.createElement('span')
@@ -855,6 +912,14 @@ const FileAttachment = Node.create({
       content.appendChild(actions)
       dom.appendChild(content)
       dom.appendChild(loadingOverlay)
+
+      if (preview) {
+        window.editorBridge.requestPdfThumbnail(
+          node.attrs.url,
+          node.attrs.fileName,
+          dom.dataset.attachmentId,
+        )
+      }
 
       return {
         dom,
@@ -1167,6 +1232,9 @@ window.editorBridge = {
   attachmentLongPress(url, fileName, rect, attachmentId) {
     if (url) sendToRN({ type: 'attachmentLongPress', url, fileName, rect, attachmentId })
   },
+  requestPdfThumbnail(url, fileName, attachmentId) {
+    if (url) sendToRN({ type: 'requestPdfThumbnail', url, fileName, attachmentId })
+  },
   handleMessage(raw) {
     let msg
     try {
@@ -1422,6 +1490,19 @@ window.editorBridge = {
             }),
           )
         }
+        break
+      }
+
+      case 'setAttachmentThumbnail': {
+        const els = document.querySelectorAll('[data-file-attachment][data-pdf-preview]')
+        els.forEach((el) => {
+          const matches = msg.attachmentId
+            ? el.dataset.attachmentId === msg.attachmentId
+            : el.dataset.url === msg.url
+          if (matches) {
+            applyPdfThumbnail(el, msg.thumbnail, msg.pageCount, msg.pageCountLabel)
+          }
+        })
         break
       }
 

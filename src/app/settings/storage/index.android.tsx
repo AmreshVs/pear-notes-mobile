@@ -379,7 +379,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_10,
       borderRadius: UI_SIZE_12,
-      borderWidth: 1,
       borderColor: c.error,
       backgroundColor: hexWithAlpha(c.error, 0.08),
       width: '100%',

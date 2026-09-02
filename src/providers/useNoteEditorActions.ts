@@ -23,6 +23,7 @@ import {
 } from '@/lib/noteAttachmentManager'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { runNoteUpload } from '@/lib/noteUploadManager'
+import { createScanPdf, getPdfThumbnail, PDF_MIME_TYPE } from '@/lib/pdfTools'
 import {
   clearNoteUploadQueue,
   enqueueNoteUploads,
@@ -50,8 +51,10 @@ export type NoteEditorActionLabels = {
   audio: string
   scannedDoc: string
   uploadFailedVideo: string
+  uploadFailedScan: string
   unlockReason: string
-  pageLabel: (page: number, total: number) => string
+  lockReason: string
+  pageCountLabel: (count: number) => string
 }
 
 export type NoteEditorActionOptions = {
@@ -365,64 +368,64 @@ export function useNoteEditorActions({
       const scannedImages = await scanDocument()
       if (!scannedImages) return
 
-      const scanIds = scannedImages.map(() => nextUploadItemId())
-      enqueueNoteUploads(
-        targetNoteId,
-        scannedImages.map((_, i) => ({
-          id: scanIds[i],
-          fileName:
-            scannedImages.length > 1
-              ? labels.pageLabel(i + 1, scannedImages.length)
-              : labels.scannedDoc,
-        })),
-      )
+      const itemId = nextUploadItemId()
+      enqueueNoteUploads(targetNoteId, [{ id: itemId, fileName: labels.scannedDoc }])
 
-      for (let i = 0; i < scannedImages.length; i++) {
-        const itemId = scanIds[i]
-        if (isNoteUploadItemCancelled(itemId)) continue
-        const uri = scannedImages[i]
-        const displayName =
-          scannedImages.length > 1
-            ? labels.pageLabel(i + 1, scannedImages.length)
-            : labels.scannedDoc
-        const fileName = `scan-${Date.now()}-page${i + 1}.jpg`
+      let pdf
+      try {
+        pdf = await createScanPdf(scannedImages, labels.scannedDoc)
+      } finally {
+        for (const uri of scannedImages) await deleteCachedAsset(uri)
+      }
 
-        let finalWidth = screenWidth - IMAGE_WIDTH_INSET
-        let finalHeight = IMAGE_MAX_HEIGHT
-        try {
-          const { width: imgW, height: imgH } = await new Promise<{
-            width: number
-            height: number
-          }>((resolve, reject) => {
-            Image.getSize(uri, (w, h) => resolve({ width: w, height: h }), reject)
-          })
-          const fitted = fitImage(imgW, imgH)
-          finalWidth = fitted.finalWidth
-          finalHeight = fitted.finalHeight
-        } catch {}
+      if (isNoteUploadItemCancelled(itemId)) {
+        await deleteCachedAsset(pdf.uri)
+        clearNoteUploadQueue(targetNoteId)
+        return
+      }
 
-        try {
-          await runNoteUpload({
-            noteId: targetNoteId,
-            itemId,
-            path: toBackendPath(uri),
-            fileName,
-            displayName,
-            attachment: { type: 'image', width: finalWidth, height: finalHeight },
-            insertLive: (link) => {
-              editorRef.current?.insertImage(link, finalWidth, finalHeight)
-              setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
-            },
-            resolveLink: resolveHyperdriveUrl,
-            isNoteOpen: () => loadedNoteRef.current === targetNoteId,
-          })
-        } finally {
-          await deleteCachedAsset(uri)
-        }
+      try {
+        await runNoteUpload({
+          noteId: targetNoteId,
+          itemId,
+          path: pdf.path,
+          fileName: pdf.fileName,
+          displayName: labels.scannedDoc,
+          attachment: { type: 'file', fileSize: pdf.fileSize, fileType: PDF_MIME_TYPE },
+          insertLive: (link) => {
+            editorRef.current?.insertFileAttachment(link, pdf.fileName, pdf.fileSize, PDF_MIME_TYPE)
+            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+          },
+          resolveLink: resolveHyperdriveUrl,
+          isNoteOpen: () => loadedNoteRef.current === targetNoteId,
+          onError: () => onUploadError(labels.uploadFailedScan),
+        })
+      } finally {
+        await deleteCachedAsset(pdf.uri)
       }
       clearNoteUploadQueue(targetNoteId)
-    } catch {}
-  }, [noteId, resolveHyperdriveUrl, editorRef, loadedNoteRef, labels, screenWidth, fitImage])
+    } catch {
+      clearNoteUploadQueue(targetNoteId)
+      onUploadError(labels.uploadFailedScan)
+    }
+  }, [noteId, resolveHyperdriveUrl, editorRef, loadedNoteRef, labels, onUploadError])
+
+  const handleRequestPdfThumbnail = useCallback(
+    async (url: string, fileName: string, attachmentId: string) => {
+      try {
+        const thumbnail = await getPdfThumbnail(resolveHyperdriveUrl(url), fileName)
+        if (!thumbnail) return
+        editorRef.current?.setAttachmentThumbnail(
+          url,
+          thumbnail.dataUri,
+          thumbnail.pageCount,
+          labels.pageCountLabel(thumbnail.pageCount),
+          attachmentId,
+        )
+      } catch {}
+    },
+    [editorRef, labels, resolveHyperdriveUrl],
+  )
 
   const handleRecordingDone = useCallback(
     async (uri: string, _durationMs: number) => {
@@ -502,6 +505,7 @@ export function useNoteEditorActions({
       key: noteId,
       currentlyLocked: !!noteData?.locked,
       reason: labels.unlockReason,
+      lockReason: labels.lockReason,
       dispatch,
       lockMethod,
     })
@@ -515,6 +519,7 @@ export function useNoteEditorActions({
     handleTakeVideo,
     handlePickFile,
     handleScanDocument,
+    handleRequestPdfThumbnail,
     handleRecordingDone,
     handleMoveNote,
     handleTogglePin,

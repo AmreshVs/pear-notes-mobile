@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ExpoPdfToolsModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.pdftools.ExpoPdfToolsModule"]
+  }
+}

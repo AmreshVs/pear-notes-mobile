@@ -1,9 +1,12 @@
 import { useSyncExternalStore } from 'react'
 import { router } from 'expo-router'
 
+export type NoteLockPasswordPurpose = 'lock' | 'unlock'
+
 let visible = false
 let resolver: ((ok: boolean) => void) | null = null
 let currentReason: string | undefined
+let currentPurpose: NoteLockPasswordPurpose = 'unlock'
 const listeners = new Set<() => void>()
 
 function emit() {
@@ -21,11 +24,15 @@ function getSnapshot() {
   return visible
 }
 
-export function requestNoteLockPassword(reason?: string): Promise<boolean> {
+export function requestNoteLockPassword(
+  reason?: string,
+  purpose: NoteLockPasswordPurpose = 'unlock',
+): Promise<boolean> {
   return new Promise((resolve) => {
     if (resolver) resolver(false)
     resolver = resolve
     currentReason = reason
+    currentPurpose = purpose
     visible = true
     emit()
   })
@@ -33,6 +40,10 @@ export function requestNoteLockPassword(reason?: string): Promise<boolean> {
 
 export function getNoteUnlockReason(): string | undefined {
   return currentReason
+}
+
+export function getNoteLockPasswordPurpose(): NoteLockPasswordPurpose {
+  return currentPurpose
 }
 
 export function requestNoteLockPasswordScreen(): Promise<boolean> {
@@ -49,6 +60,7 @@ export function resolveNoteLockPassword(ok: boolean): void {
     emit()
   }
   currentReason = undefined
+  currentPurpose = 'unlock'
   const current = resolver
   resolver = null
   if (current) current(ok)

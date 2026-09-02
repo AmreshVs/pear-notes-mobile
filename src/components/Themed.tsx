@@ -229,7 +229,6 @@ const useStyles = createThemedStylesheet((theme) => {
       padding: theme.spacing.md,
       borderRadius: theme.layout.borderRadius.md,
       backgroundColor: theme.colors.cardSurface,
-      borderWidth: 1,
       borderColor: theme.colors.border,
     },
   })

@@ -8,6 +8,7 @@ import { createThemedStylesheet, Text } from '@/components/Themed'
 import {
   commonStyles,
   Durations,
+  FontFamily,
   FontSize,
   FontWeight,
   Space,
@@ -100,7 +101,7 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     rowLabel: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.medium,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
     },
     descRow: {
@@ -142,8 +143,9 @@ const useStyles = createThemedStylesheet((theme) => {
       borderBottomRightRadius: UI_SIZE_12,
     },
     segText: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.medium,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: theme.colors.textMuted,
     },
     segTextActive: {

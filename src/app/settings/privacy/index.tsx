@@ -69,7 +69,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     heroTitle: {
       fontSize: FontSize.title,
-      fontFamily: FontFamily.semiBold,
+      fontFamily: FontFamily.bold,
       color: theme.colors.text,
       textAlign: 'center',
       marginBottom: Space.xs,

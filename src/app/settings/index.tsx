@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { Fragment, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
@@ -8,6 +8,7 @@ import { router, Stack } from 'expo-router'
 
 import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
+import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
 import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -125,26 +126,32 @@ export default function SettingsScreen() {
           >
             <RNView style={commonThemedStyles.card}>
               {sections.map(({ key, icon, label, onPress }, i) => (
-                <Pressable
-                  key={key}
-                  onPress={onPress}
-                  style={({ pressed }) => [
-                    i < sections.length - 1 ? styles.rowUnderline : commonStyles.settingsRow,
-                    pressed && commonStyles.pressed,
-                  ]}
-                >
-                  <RNView style={commonStyles.settingsRowLeft}>
-                    <RNView style={commonThemedStyles.iconBox34}>
-                      <SymbolIcon name={icon} size={UI_ICON_SIZE_17} color={colors.primary} />
+                <Fragment key={key}>
+                  <Pressable
+                    onPress={onPress}
+                    style={({ pressed }) => [
+                      commonStyles.settingsRow,
+                      pressed && commonStyles.pressed,
+                    ]}
+                  >
+                    <RNView style={commonStyles.settingsRowLeft}>
+                      <RNView style={commonThemedStyles.iconBox34}>
+                        <SymbolIcon name={icon} size={UI_ICON_SIZE_17} color={colors.primary} />
+                      </RNView>
+                      <Text style={styles.rowLabel}>{label}</Text>
                     </RNView>
-                    <Text style={styles.rowLabel}>{label}</Text>
-                  </RNView>
-                  <SymbolIcon
-                    name="chevron.forward"
-                    size={UI_ICON_SIZE_16}
-                    color={colors.textMuted}
-                  />
-                </Pressable>
+                    <SymbolIcon
+                      name="chevron.forward"
+                      size={UI_ICON_SIZE_16}
+                      color={colors.textMuted}
+                    />
+                  </Pressable>
+                  {i < sections.length - 1 && (
+                    <RNView style={styles.dividerWrap}>
+                      <Divider />
+                    </RNView>
+                  )}
+                </Fragment>
               ))}
             </RNView>
           </MotionView>
@@ -175,14 +182,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       paddingBottom: UI_SIZE_60,
       paddingTop: UI_SIZE_12,
     },
-    rowUnderline: {
-      ...commonStyles.settingsRow,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.borderSecondary,
+    dividerWrap: {
+      marginHorizontal: 18,
     },
     rowLabel: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
     },
     footer: {

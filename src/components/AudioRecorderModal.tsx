@@ -500,10 +500,8 @@ const useStyles = createThemedStylesheet((theme) => {
       boxShadow: theme.colors.sheetBoxShadow,
     },
     sheetLight: {
-      backgroundColor: theme.colors.background,
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderLeftWidth: StyleSheet.hairlineWidth,
-      borderRightWidth: StyleSheet.hairlineWidth,
+      backgroundColor: theme.colors.background,
       borderColor: theme.colors.separator,
     },
     grabber: {
@@ -529,7 +527,6 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.colors.controlBackground,
-      borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
     },
     heroBlock: {
@@ -707,7 +704,6 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.colors.controlBackground,
-      borderWidth: theme.isDark ? 0 : StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
     },
     primaryTransport: {
@@ -732,7 +728,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingVertical: UI_SIZE_12,
       borderRadius: 999,
       borderCurve: 'continuous',
-      borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.rerecordBorder,
       backgroundColor: theme.isDark
         ? theme.colors.surfaceSecondary
@@ -762,7 +757,6 @@ const useStyles = createThemedStylesheet((theme) => {
       width: UI_SIZE_88,
       height: UI_SIZE_88,
       borderRadius: 999,
-      borderWidth: 3,
       alignItems: 'center',
       justifyContent: 'center',
       borderCurve: 'continuous',

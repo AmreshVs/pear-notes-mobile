@@ -131,7 +131,6 @@ const useStyles = createThemedStylesheet((theme) => {
     h3: { fontSize: FontSize.subtitle, bold: true },
     blockquote: {
       borderColor: theme.colors.primary,
-      borderWidth: 3,
       gapWidth: UI_SIZE_12,
       color: theme.colors.textSecondary,
     },

@@ -184,11 +184,11 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
     },
     mediaRow: {
-      ...commonStyles.rowBetween,
-      paddingHorizontal: Space.base,
-      paddingVertical: Space.sm,
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.borderSecondary,
+      ...commonStyles.rowBetween,
+      marginHorizontal: Space.base,
+      paddingVertical: Space.sm,
+      borderTopColor: theme.colors.border,
     },
     mediaHeaderActions: {
       ...commonStyles.row,

@@ -60,7 +60,6 @@ const useStyles = createThemedStylesheet((theme) => {
     container: {
       overflow: 'hidden',
       backgroundColor: theme.colors.glassBackground,
-      borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.glassBorder,
     },
     opaque: {

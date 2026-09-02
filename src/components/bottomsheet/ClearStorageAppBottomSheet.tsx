@@ -236,10 +236,8 @@ const useStyles = createThemedStylesheet((theme) => {
         : `0 -${UI_SIZE_12}px ${UI_SIZE_40}px ${theme.colors.sheetShadow}`,
     },
     sheetLight: {
-      backgroundColor: theme.colors.background,
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderLeftWidth: StyleSheet.hairlineWidth,
-      borderRightWidth: StyleSheet.hairlineWidth,
+      backgroundColor: theme.colors.background,
       borderColor: theme.colors.sheetBorder,
     },
     grabber: {
@@ -288,7 +286,6 @@ const useStyles = createThemedStylesheet((theme) => {
       minHeight: UI_SIZE_54,
       borderRadius: UI_SIZE_27,
       backgroundColor: theme.colors.sheetCancelBackground,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
     },
     cancelBtnText: {

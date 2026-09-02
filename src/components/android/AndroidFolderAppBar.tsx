@@ -213,7 +213,6 @@ const useStyles = createThemedStylesheetWithHooks(
         borderRadius: UI_SIZE_9999,
         paddingHorizontal: UI_SIZE_20,
         paddingVertical: UI_SIZE_14,
-        borderWidth: StyleSheet.hairlineWidth,
         backgroundColor: c.surfaceContainer,
         borderColor: hexWithAlpha(c.outlineVariant, 0.15),
       },

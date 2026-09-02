@@ -4,12 +4,13 @@ import { authenticate, isDeviceAuthSupported } from '@/lib/deviceAuth'
 import { hapticSuccess } from '@/lib/haptics'
 import { showLockUnavailable } from '@/lib/lockInfoModal'
 import { relockNote } from '@/lib/noteLock'
-import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
+import { type NoteLockPasswordPurpose, requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 
 type ToggleArgs = {
   key: string
   currentlyLocked: boolean
   reason: string
+  lockReason: string
   dispatch: (action: any) => void
   lockMethod?: string
 }
@@ -17,6 +18,7 @@ type ToggleArgs = {
 export async function authenticateWithLockMethod(
   reason: string,
   lockMethod: string = 'biometric',
+  purpose: NoteLockPasswordPurpose = 'unlock',
 ): Promise<boolean> {
   const usePassword = lockMethod === 'password'
   if (!usePassword) {
@@ -27,34 +29,25 @@ export async function authenticateWithLockMethod(
     }
     return authenticate(reason)
   }
-  return requestNoteLockPassword(reason)
+  return requestNoteLockPassword(reason, purpose)
 }
 
 export async function toggleNoteLock({
   key,
   currentlyLocked,
   reason,
+  lockReason,
   dispatch,
   lockMethod = 'biometric',
 }: ToggleArgs): Promise<void> {
   if (!key) return
-  const usePassword = lockMethod === 'password'
-  if (currentlyLocked) {
-    const ok = await authenticateWithLockMethod(reason, lockMethod)
-    if (!ok) return
-    dispatch(updateNote({ key, locked: false } as any))
-    relockNote(key)
-    hapticSuccess()
-    return
-  }
-  if (!usePassword) {
-    const supported = await isDeviceAuthSupported()
-    if (!supported) {
-      showLockUnavailable()
-      return
-    }
-  }
-  dispatch(updateNote({ key, locked: true } as any))
+  const ok = await authenticateWithLockMethod(
+    currentlyLocked ? reason : lockReason,
+    lockMethod,
+    currentlyLocked ? 'unlock' : 'lock',
+  )
+  if (!ok) return
+  dispatch(updateNote({ key, locked: !currentlyLocked } as any))
   relockNote(key)
   hapticSuccess()
 }

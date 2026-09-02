@@ -15,6 +15,7 @@ import {
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 
+import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -113,7 +114,7 @@ export default function GeneralSettingsScreen() {
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         >
           <RNView style={commonThemedStyles.card}>
-            <RNView style={styles.stackedRowUnderline}>
+            <RNView style={styles.stackedRow}>
               <Text style={styles.rowLabel}>{t('settings.general.appTheme')}</Text>
               <RNView style={styles.segCtrl}>
                 {(['system', 'light', 'dark'] as const).map((themeKey, i) => {
@@ -136,6 +137,9 @@ export default function GeneralSettingsScreen() {
                   )
                 })}
               </RNView>
+            </RNView>
+            <RNView style={styles.dividerWrap}>
+              <Divider />
             </RNView>
 
             <RNView style={styles.toggleRow}>
@@ -197,7 +201,7 @@ export default function GeneralSettingsScreen() {
           <RNView style={commonThemedStyles.card}>
             <Pressable
               onPress={handleFontFamilyPress}
-              style={({ pressed }) => [styles.rowUnderline, pressed && commonStyles.pressed]}
+              style={({ pressed }) => [commonStyles.settingsRow, pressed && commonStyles.pressed]}
             >
               <Text style={styles.rowLabel}>{t('settings.general.fontFamily')}</Text>
               <RNView style={commonStyles.settingsRowRight}>
@@ -211,6 +215,9 @@ export default function GeneralSettingsScreen() {
                 />
               </RNView>
             </Pressable>
+            <RNView style={styles.dividerWrap}>
+              <Divider />
+            </RNView>
 
             <RNView style={styles.sliderRow}>
               <RNView style={styles.sliderHeader}>
@@ -249,26 +256,22 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingBottom: UI_SIZE_60,
       paddingTop: UI_SIZE_12,
     },
-    rowUnderline: {
-      ...commonStyles.settingsRow,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.borderSecondary,
-    },
     rowLabel: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.medium,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
     },
     rowVal: {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
-    stackedRowUnderline: {
+    stackedRow: {
       paddingHorizontal: UI_SIZE_18,
       paddingVertical: Space.base,
       gap: Space.md,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.borderSecondary,
+    },
+    dividerWrap: {
+      marginHorizontal: UI_SIZE_18,
     },
     toggleRow: {
       ...commonStyles.rowBetween,

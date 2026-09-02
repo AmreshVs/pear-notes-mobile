@@ -234,7 +234,6 @@ export const commonStyles = StyleSheet.create({
     borderRadius: Radii.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
     marginBottom: Space.sm,
   },
 

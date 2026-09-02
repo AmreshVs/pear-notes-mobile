@@ -106,14 +106,15 @@ export function SyncStatusSection() {
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     row: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: Space.md,
       paddingVertical: Space.md,
-      paddingHorizontal: Space.lg,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.borderSecondary,
+      marginHorizontal: Space.base,
+      paddingHorizontal: Space.xs,
+      borderBottomColor: theme.colors.border,
     },
     rowLast: {
       flexDirection: 'row',
@@ -125,22 +126,22 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowKey: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
-      color: theme.colors.textSecondary,
+      fontFamily: FontFamily.bold,
+      color: theme.colors.textMuted,
     },
     rowValue: {
       flexShrink: 1,
       fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
       textAlign: 'right',
     },
     rowValueMuted: {
       flexShrink: 1,
       fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
-      color: theme.colors.textMuted,
+      fontFamily: FontFamily.bold,
+      color: theme.colors.text,
       textAlign: 'right',
     },
     verdict: {
@@ -150,12 +151,12 @@ const useStyles = createThemedStylesheet((theme) => {
       padding: Space.lg,
     },
     verdictDivided: {
+      borderTopWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: Space.sm,
       padding: Space.lg,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.borderSecondary,
+      borderTopColor: theme.colors.border,
     },
     glyph: {
       width: 20,
@@ -177,7 +178,7 @@ const useStyles = createThemedStylesheet((theme) => {
     verdictText: {
       flex: 1,
       fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
+      fontFamily: FontFamily.bold,
       color: theme.colors.textSecondary,
       lineHeight: FontSize.body * 1.45,
     },

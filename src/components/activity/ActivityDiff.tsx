@@ -109,19 +109,18 @@ const useStyles = createThemedStylesheet((theme) => {
     container: {
       marginTop: Space.md,
       borderRadius: Radii.md,
-      borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
       backgroundColor: theme.colors.background,
       overflow: 'hidden',
     },
     header: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
       alignItems: 'center',
       gap: Space.md,
       paddingHorizontal: Space.md,
       paddingVertical: Space.sm,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.borderSecondary,
+      borderBottomColor: theme.colors.border,
     },
     added: {
       fontFamily: FontFamily.semiBold,
@@ -188,10 +187,10 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
     },
     footer: {
+      borderTopWidth: StyleSheet.hairlineWidth,
       paddingHorizontal: Space.md,
       paddingVertical: Space.sm,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.borderSecondary,
+      borderTopColor: theme.colors.border,
     },
     notice: {
       marginTop: Space.md,

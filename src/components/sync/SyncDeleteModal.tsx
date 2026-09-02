@@ -114,7 +114,6 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Space.xl,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
       marginBottom: Space.sm,
       backgroundColor: hexWithAlpha(theme.colors.error, 0.15),
       borderColor: hexWithAlpha(theme.colors.error, 0.3),

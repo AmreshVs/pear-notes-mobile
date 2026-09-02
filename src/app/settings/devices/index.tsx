@@ -21,6 +21,7 @@ import { SyncScannerModal } from '@/components/sync/SyncScannerModal'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
+  FontFamily,
   FontSize,
   FontWeight,
   MonoFontFamily,
@@ -523,8 +524,9 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.primary,
     },
     segLabel: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.medium,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
     },
     segLabelActive: {
       color: theme.colors.onPrimary,
@@ -538,7 +540,6 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     heroCard: {
       borderRadius: Radii.card,
-      borderWidth: 1,
       paddingHorizontal: Space.lg,
       paddingTop: Space.xl,
       paddingBottom: Space.xl,
@@ -616,7 +617,6 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
     },
     codeBox: {
-      borderWidth: 1,
       borderStyle: 'dashed',
       borderRadius: Radii.md,
       paddingVertical: 15,
@@ -717,7 +717,6 @@ const useStyles = createThemedStylesheet((theme) => {
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: Space.sm,
-      borderWidth: 1,
       borderRadius: Radii.card,
       padding: 14,
       marginTop: Space.md,
@@ -767,7 +766,6 @@ const useStyles = createThemedStylesheet((theme) => {
     inputRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      borderWidth: 1,
       borderRadius: Space.base,
       paddingLeft: Space.base,
       paddingRight: Space.sm,
@@ -826,13 +824,11 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     deviceGroup: {
       borderRadius: Radii.card,
-      borderWidth: 1,
       overflow: 'hidden',
       backgroundColor: theme.colors.cardSurface,
       borderColor: theme.colors.borderSecondary,
     },
     emptyCard: {
-      borderWidth: 1,
       borderStyle: 'dashed',
       borderRadius: Radii.card,
       paddingVertical: 36,

@@ -278,7 +278,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: theme.colors.textMuted,
-      lineHeight: FontSize.caption * 1.4,
     },
     heroContainer: {
       alignItems: 'center',
@@ -293,7 +292,6 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: Space.xl,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
     },
     heroTitle: {
@@ -325,15 +323,14 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     primaryBtnText: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: theme.colors.onPrimary,
     },
     secondaryBtn: {
       minHeight: UI_SIZE_54,
       borderRadius: Radii.lg,
       backgroundColor: theme.colors.controlBackground,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       ...commonStyles.row,
       justifyContent: 'center',
@@ -422,7 +419,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.xxl,
       backgroundColor: theme.colors.controlBackground,
       borderRadius: Radii.md,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       alignItems: 'center',
     },

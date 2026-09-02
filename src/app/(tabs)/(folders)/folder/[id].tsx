@@ -285,6 +285,7 @@ export default function FolderNotesScreen() {
         key: noteId,
         currentlyLocked,
         reason: t('noteCard.unlockReason'),
+        lockReason: t('noteCard.lockReason'),
         dispatch,
         lockMethod,
       })
@@ -591,7 +592,6 @@ export default function FolderNotesScreen() {
         contentContainerStyle={scrollContentStyle}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
-        removeClippedSubviews
         initialNumToRender={LIST_INITIAL_RENDER_COUNT}
         maxToRenderPerBatch={LIST_BATCH_RENDER_COUNT}
         windowSize={LIST_WINDOW_SIZE}

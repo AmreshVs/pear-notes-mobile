@@ -2,7 +2,9 @@ const { execSync, spawn, spawnSync } = require('child_process')
 const fs = require('fs')
 const path = require('path')
 
+const asc = require('./ascCredentials')
 const play = require('./playCredentials')
+const playUpload = require('./playUpload')
 const { formatDuration, startHeartbeat } = require('./progress')
 
 const ROOT = path.resolve(__dirname, '..')
@@ -12,6 +14,7 @@ const PLATFORMS = ['ios', 'android']
 const PROFILE = 'production'
 
 const cleanups = []
+let viaEas = false
 
 function parseArgs(argv) {
   const args = {
@@ -20,6 +23,7 @@ function parseArgs(argv) {
     skipSubmit: false,
     skipPreflight: false,
     submitOnly: false,
+    viaEas: false,
     bump: true,
     commit: true,
     version: null,
@@ -35,6 +39,7 @@ function parseArgs(argv) {
     else if (arg === '--no-commit') args.commit = false
     else if (arg === '--skip-preflight') args.skipPreflight = true
     else if (arg === '--submit-only') args.submitOnly = true
+    else if (arg === '--via-eas') args.viaEas = true
   }
 
   return args
@@ -207,8 +212,104 @@ function resolvePlayKey() {
   }
 }
 
-async function submit(platform, profile, artifact) {
-  const env = platform === 'ios' ? appleEnv(profile) : {}
+async function submitIos(artifact) {
+  let config
+  try {
+    config = asc.resolve()
+    asc.requirePrivateKey(config.ASC_KEY_ID)
+  } catch (error) {
+    console.error(`\n\x1b[31m  ${error.message}\x1b[0m`)
+    if (error.hint) console.error(`  hint: ${error.hint}`)
+    return { skipped: false, failure: error.message }
+  }
+
+  console.log(`\n  App Store Connect key: ${config.ASC_KEY_ID} (${config.source})`)
+
+  const { failure } = await sh(
+    `xcrun altool --upload-app -f "${artifact}" -t ios --apiKey ${config.ASC_KEY_ID} --apiIssuer ${config.ASC_ISSUER_ID}`,
+    'Uploading ios build to App Store Connect',
+    { heartbeat: 'still uploading ios', allowFailure: true },
+  )
+
+  if (!failure) {
+    console.log('\n  Processing takes about 5-10 minutes before the build appears in TestFlight.')
+  }
+
+  return { skipped: false, failure }
+}
+
+function androidSubmitConfig(profile) {
+  const easJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'eas.json'), 'utf8'))
+  const android = easJson.submit?.[profile]?.android ?? {}
+  return {
+    track: android.track ?? 'internal',
+    releaseStatus: android.releaseStatus ?? 'completed',
+    changesNotSentForReview: android.changesNotSentForReview ?? false,
+  }
+}
+
+async function submitAndroidDirect(artifact, profile, version, buildNumber) {
+  const config = androidSubmitConfig(profile)
+  heading('Uploading android build to Google Play')
+  console.log(`  ${config.track} track, release status ${config.releaseStatus}`)
+
+  const started = Date.now()
+  const sizeMb = fs.statSync(artifact).size / 1e6
+  let lastPercent = -1
+
+  const onProgress = (sent, total) => {
+    const percent = Math.floor((sent / total) * 100)
+    if (percent === lastPercent || percent % 10 !== 0) return
+    lastPercent = percent
+    console.log(
+      `\x1b[2m    ${String(percent).padStart(3)}%  ${(sent / 1e6).toFixed(0)}/${sizeMb.toFixed(0)} MB\x1b[0m`,
+    )
+  }
+
+  try {
+    const result = await playUpload.submit({
+      packageName: readAndroidPackage(),
+      aabPath: artifact,
+      ...config,
+      releaseName: `${version} (${buildNumber})`,
+      onProgress,
+      onStep: (step) => console.log(`\x1b[2m    ${step}\x1b[0m`),
+    })
+
+    console.log(
+      `\x1b[2m    took ${formatDuration(Date.now() - started)}\x1b[0m\n` +
+        `  versionCode ${result.versionCode} is now ${result.releaseStatus} on the ${result.track} track`,
+    )
+    return { skipped: false, failure: null }
+  } catch (error) {
+    console.error(`\n\x1b[31m  ${error.message}\x1b[0m`)
+    if (error.hint) console.error(`  hint: ${error.hint}`)
+    console.error(`  Retry through EAS instead: npm run release:android -- --submit-only --via-eas`)
+    return { skipped: false, failure: error.message }
+  }
+}
+
+function readAndroidPackage() {
+  const appJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'app.json'), 'utf8'))
+  return appJson.expo.android.package
+}
+
+async function submit(platform, profile, artifact, version, buildNumber) {
+  if (platform === 'ios') return submitIos(artifact)
+
+  const hasKey = (() => {
+    try {
+      return Boolean(play.describe())
+    } catch {
+      return false
+    }
+  })()
+
+  if (hasKey && !viaEas) {
+    return submitAndroidDirect(artifact, profile, version, buildNumber)
+  }
+
+  const env = {}
 
   if (platform === 'android') {
     const key = resolvePlayKey()
@@ -285,6 +386,8 @@ async function main() {
   const platforms = resolvePlatforms(args.platform)
   const started = Date.now()
 
+  viaEas = args.viaEas
+
   if (platforms.includes('ios') && process.platform !== 'darwin') {
     abort('local iOS builds require macOS')
   }
@@ -305,7 +408,7 @@ async function main() {
         continue
       }
 
-      const result = await submit(platform, args.profile, file)
+      const result = await submit(platform, args.profile, file, version, buildNumber)
       outcomes.push({
         platform,
         status: result.skipped ? 'skipped' : result.failure ? 'failed' : 'ok',
@@ -355,7 +458,7 @@ async function main() {
       continue
     }
 
-    const result = await submit(platform, args.profile, file)
+    const result = await submit(platform, args.profile, file, version, buildNumber)
 
     if (result.skipped) {
       outcomes.push({ platform, status: 'skipped', detail: 'built, no upload key' })

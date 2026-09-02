@@ -192,10 +192,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.regular,
     },
     mediaRow: {
+      borderTopWidth: StyleSheet.hairlineWidth,
       ...commonStyles.rowBetween,
       paddingHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_10,
-      borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: hexWithAlpha(c.outlineVariant ?? theme.colors.border ?? '#38383a', 0.5),
     },
     mediaHeaderActions: {

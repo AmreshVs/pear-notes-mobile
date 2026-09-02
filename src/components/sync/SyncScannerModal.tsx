@@ -140,7 +140,6 @@ const useStyles = createThemedStylesheet((theme) => {
       maxHeight: 280,
       aspectRatio: 1,
       borderRadius: Radii.card,
-      borderWidth: 2,
       borderColor: theme.colors.white,
       backgroundColor: theme.colors.transparent,
     },

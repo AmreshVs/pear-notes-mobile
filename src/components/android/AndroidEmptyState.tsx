@@ -211,7 +211,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingHorizontal: UI_SIZE_24,
       paddingVertical: UI_SIZE_12,
       borderRadius: UI_SIZE_12,
-      borderWidth: 1,
       borderColor: c.outline,
     },
     tertiaryBtn: {

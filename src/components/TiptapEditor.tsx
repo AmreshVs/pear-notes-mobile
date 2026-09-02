@@ -19,14 +19,7 @@ import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSli
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { getCollaboratorIdentity } from '@pear-notes/core/utils.js'
 
-import {
-  FontSize,
-  FontWeight,
-  UI_SIZE_8,
-  UI_SIZE_12,
-  UI_SIZE_20,
-  UI_STROKE_WIDTH_1_5,
-} from '@/constants/commonStyles'
+import { FontSize, FontWeight, UI_SIZE_8, UI_SIZE_12, UI_SIZE_20 } from '@/constants/commonStyles'
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
@@ -95,6 +88,13 @@ export interface TiptapEditorHandle {
     attachmentId?: string,
     progress?: number,
   ) => void
+  setAttachmentThumbnail: (
+    url: string,
+    thumbnail: string,
+    pageCount?: number,
+    pageCountLabel?: string,
+    attachmentId?: string,
+  ) => void
   deleteImage: (src: string) => void
   deleteAttachment: (url: string) => void
   applyYjsMessage: (dataBase64: string) => void
@@ -115,6 +115,7 @@ export interface TiptapEditorProps {
   onEditorBlur?: () => void
   onOpenAttachment?: (url: string, fileName: string) => void
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
+  onRequestPdfThumbnail?: (url: string, fileName: string, attachmentId: string) => void
   onDeleteAttachment?: (url: string) => void
   onImageLongPress?: (
     src: string,
@@ -141,6 +142,7 @@ type WebViewMsg =
   | { type: 'blur' }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
+  | { type: 'requestPdfThumbnail'; url: string; fileName: string; attachmentId: string }
   | { type: 'deleteAttachment'; url: string }
   | {
       type: 'imageLongPress'
@@ -190,6 +192,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onEditorBlur,
       onOpenAttachment,
       onPreviewAttachment,
+      onRequestPdfThumbnail,
       onDeleteAttachment,
       onImageLongPress,
       onAttachmentLongPress,
@@ -225,6 +228,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onEditorBlurRef = useRef(onEditorBlur)
     const onOpenAttachmentRef = useRef(onOpenAttachment)
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
+    const onRequestPdfThumbnailRef = useRef(onRequestPdfThumbnail)
     const onDeleteAttachmentRef = useRef(onDeleteAttachment)
     const onImageLongPressRef = useRef(onImageLongPress)
     const onAttachmentLongPressRef = useRef(onAttachmentLongPress)
@@ -237,6 +241,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onEditorBlurRef.current = onEditorBlur
     onOpenAttachmentRef.current = onOpenAttachment
     onPreviewAttachmentRef.current = onPreviewAttachment
+    onRequestPdfThumbnailRef.current = onRequestPdfThumbnail
     onDeleteAttachmentRef.current = onDeleteAttachment
     onImageLongPressRef.current = onImageLongPress
     onAttachmentLongPressRef.current = onAttachmentLongPress
@@ -408,6 +413,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onPreviewAttachmentRef.current?.(msg.url, msg.fileName, msg.attachmentId)
             break
 
+          case 'requestPdfThumbnail':
+            onRequestPdfThumbnailRef.current?.(msg.url, msg.fileName, msg.attachmentId)
+            break
+
           case 'deleteAttachment':
             onDeleteAttachmentRef.current?.(msg.url)
             break
@@ -560,6 +569,15 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'setBottomInset', keyboardHeight, toolbarHeight }),
         setAttachmentLoading: (url, loading, attachmentId, progress) =>
           sendCommand({ type: 'setAttachmentLoading', url, loading, attachmentId, progress }),
+        setAttachmentThumbnail: (url, thumbnail, pageCount, pageCountLabel, attachmentId) =>
+          sendCommand({
+            type: 'setAttachmentThumbnail',
+            url,
+            thumbnail,
+            pageCount,
+            pageCountLabel,
+            attachmentId,
+          }),
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),
         deleteAttachment: (url) => sendCommand({ type: 'deleteAttachment', url }),
         applyYjsMessage: (data) => sendCommand({ type: 'yjsMessage', data }),
@@ -648,7 +666,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_8,
       borderRadius: UI_SIZE_20,
-      borderWidth: UI_STROKE_WIDTH_1_5,
       borderColor: theme.colors.primary,
     },
     retryText: {

@@ -373,7 +373,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       paddingVertical: UI_SIZE_8,
       paddingLeft: UI_SIZE_8,
       paddingRight: UI_SIZE_8,
-      borderWidth: StyleSheet.hairlineWidth,
       zIndex: 10,
       backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surface, 0.98),
       borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),

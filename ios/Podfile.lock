@@ -80,6 +80,8 @@ PODS:
     - ZXingObjC/PDF417
   - ExpoClipboard (56.0.4):
     - ExpoModulesCore
+  - ExpoContextMenu (1.0.0):
+    - ExpoModulesCore
   - ExpoCrypto (56.0.4):
     - ExpoModulesCore
   - ExpoDevice (56.0.4):
@@ -162,6 +164,8 @@ PODS:
   - ExpoNativeShare (1.0.0):
     - ExpoModulesCore
   - ExpoNetwork (56.0.5):
+    - ExpoModulesCore
+  - ExpoPdfTools (1.0.0):
     - ExpoModulesCore
   - ExpoRouter (56.2.18):
     - ExpoModulesCore
@@ -2099,7 +2103,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - "react-native-bare-kit (0.12.3+f778b7)":
+  - "react-native-bare-kit (0.12.3+6b3920)":
     - boost
     - DoubleConversion
     - fast_float
@@ -3272,6 +3276,7 @@ DEPENDENCIES:
   - ExpoCamera (from `../node_modules/expo-camera/ios`)
   - ExpoCameraBarcodeScanning (from `../node_modules/expo-camera/ios`)
   - ExpoClipboard (from `../node_modules/expo-clipboard/ios`)
+  - ExpoContextMenu (from `../modules/expo-context-menu/ios`)
   - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - ExpoDevice (from `../node_modules/expo-device/ios`)
   - ExpoDocumentPicker (from `../node_modules/expo-document-picker/ios`)
@@ -3294,6 +3299,7 @@ DEPENDENCIES:
   - ExpoModulesWorkletsAdapter (from `../node_modules/expo-modules-core`)
   - ExpoNativeShare (from `../modules/expo-native-share/ios`)
   - ExpoNetwork (from `../node_modules/expo-network/ios`)
+  - ExpoPdfTools (from `../modules/expo-pdf-tools/ios`)
   - ExpoRouter (from `../node_modules/expo-router/ios`)
   - ExpoScreenCapture (from `../node_modules/expo-screen-capture/ios`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
@@ -3432,6 +3438,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-camera/ios"
   ExpoClipboard:
     :path: "../node_modules/expo-clipboard/ios"
+  ExpoContextMenu:
+    :path: "../modules/expo-context-menu/ios"
   ExpoCrypto:
     :path: "../node_modules/expo-crypto/ios"
   ExpoDevice:
@@ -3476,6 +3484,8 @@ EXTERNAL SOURCES:
     :path: "../modules/expo-native-share/ios"
   ExpoNetwork:
     :path: "../node_modules/expo-network/ios"
+  ExpoPdfTools:
+    :path: "../modules/expo-pdf-tools/ios"
   ExpoRouter:
     :path: "../node_modules/expo-router/ios"
   ExpoScreenCapture:
@@ -3687,6 +3697,7 @@ SPEC CHECKSUMS:
   ExpoCamera: 68008452cc12ad5ad5d46cc7c835073228c008da
   ExpoCameraBarcodeScanning: 2acb6385fe6aa7563da5241c775092aac40195ce
   ExpoClipboard: 342ae52697ff1cf89b8849bee624a9a320e77d3c
+  ExpoContextMenu: e671ddb7fedfddd0ada00eb693fedfc01b206149
   ExpoCrypto: b54a97c4357d46d7f8de079e69fa89029572244b
   ExpoDevice: f527f8bbefa6efa12f8ef63e9038dd1d5d903697
   ExpoDocumentPicker: caa9c7c1071dc31262d86a8fe48f51929d291a43
@@ -3709,6 +3720,7 @@ SPEC CHECKSUMS:
   ExpoModulesWorkletsAdapter: 036c0be70f07d6fff89023f33da6e28556a85838
   ExpoNativeShare: 499f82374398683e7bfe0c61ee734cea56dd5895
   ExpoNetwork: 06f00de1f1d3b33327d392232b1e5dd866b05444
+  ExpoPdfTools: dd0d5820874eb59f587921efd80d6203edd1b03d
   ExpoRouter: fc7a05eee579d54869806f9f95c799020c7800fc
   ExpoScreenCapture: c388565b6244aec9d96c18941efbee8655b2fec2
   ExpoSecureStore: f1bd083c1b7b8d4142013ffcc0082d377d9f49f4
@@ -3763,7 +3775,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 3cf4ae68a4d69ca69de94385d423d57785907eb7
   React-microtasksnativemodule: 663a8165cfe10e4eb749796a53b3b8c68631b00c
   React-mutationobservernativemodule: 4f7e4c18735cfbb0f81eada4f34aa527697e8704
-  react-native-bare-kit: b16414377940cb3b6bb1d4f8b13b4bd2b326b869
+  react-native-bare-kit: fd9c67d568afb1d99490ee6ecdf2df5512f60d45
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
   react-native-slider: 4faf1b2266c73f1afb7b30cc6ebb3df238a37c0b
   react-native-vector-icons-material-design-icons: a4b6ec02814573c09203a725ee3767a7e8d5eb77

@@ -156,7 +156,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.lg,
       paddingVertical: Space.md,
       borderRadius: Space.sm,
-      borderWidth: 1,
       borderColor: theme.colors.separator,
     },
     primaryBtnText: {

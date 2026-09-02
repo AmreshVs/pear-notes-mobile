@@ -86,7 +86,6 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Space.xl,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
       marginBottom: Space.sm,
       backgroundColor: hexWithAlpha(theme.colors.primary, 0.15),
       borderColor: hexWithAlpha(theme.colors.primary, 0.3),

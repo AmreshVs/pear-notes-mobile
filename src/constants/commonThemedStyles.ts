@@ -23,6 +23,10 @@ export const createThemedStyles = (theme: Theme) => {
       flex: 1,
       backgroundColor: theme.colors.backgroundElevated,
     },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: theme.colors.border,
+    },
     sectionCap: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
@@ -76,11 +80,10 @@ export const createThemedStyles = (theme: Theme) => {
     },
     hairline: {
       height: StyleSheet.hairlineWidth,
-      backgroundColor: theme.colors.borderSecondary,
+      backgroundColor: theme.colors.border,
     },
     card: {
       borderRadius: Radii.card,
-      borderWidth: 1,
       overflow: 'hidden',
       borderColor: theme.colors.borderSecondary,
       backgroundColor: theme.colors.cardSurface,
@@ -100,7 +103,6 @@ export const createThemedStyles = (theme: Theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
-      borderWidth: 1,
       borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
     },
     inputLabel: {

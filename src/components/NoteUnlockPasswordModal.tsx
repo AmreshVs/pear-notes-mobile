@@ -34,7 +34,9 @@ import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticError } from '@/lib/haptics'
 import {
+  getNoteLockPasswordPurpose,
   getNoteUnlockReason,
+  type NoteLockPasswordPurpose,
   resolveNoteLockPassword,
   useNoteUnlockVisible,
 } from '@/lib/noteLockPasswordFlow'
@@ -51,6 +53,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [reason, setReason] = useState<string | undefined>()
+  const [purpose, setPurpose] = useState<NoteLockPasswordPurpose>('unlock')
 
   useEffect(() => {
     if (visible) {
@@ -59,6 +62,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
       setError('')
       setSubmitting(false)
       setReason(getNoteUnlockReason())
+      setPurpose(getNoteLockPasswordPurpose())
     }
   }, [visible])
 
@@ -165,7 +169,11 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
                     pressed && commonStyles.pressed,
                   ]}
                 >
-                  <Text style={styles.confirmText}>{t('noteLockPassword.unlockButton')}</Text>
+                  <Text style={styles.confirmText}>
+                    {purpose === 'lock'
+                      ? t('noteLockPassword.lockButton')
+                      : t('noteLockPassword.unlockButton')}
+                  </Text>
                 </Pressable>
               </RNView>
             </RNView>
@@ -196,7 +204,6 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Space.xl,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
       marginBottom: Space.sm,
       backgroundColor: hexWithAlpha(theme.colors.primary, 0.15),
       borderColor: hexWithAlpha(theme.colors.primary, 0.3),
@@ -224,7 +231,6 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       backgroundColor: theme.colors.controlBackground,
       borderRadius: Radii.md,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       paddingHorizontal: Space.md,
       minHeight: UI_SIZE_54,

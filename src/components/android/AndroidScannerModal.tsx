@@ -180,7 +180,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       maxHeight: UI_SIZE_280,
       aspectRatio: 1,
       borderRadius: UI_SIZE_20,
-      borderWidth: 2,
       borderColor: 'rgba(255,255,255,0.92)',
     },
     scannerHeader: {

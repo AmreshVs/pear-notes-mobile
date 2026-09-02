@@ -58,3 +58,6 @@ credentials/
 *.aab
 *.apk
 *.ipa
+
+# release credentials
+.release.ios.env

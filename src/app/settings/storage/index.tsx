@@ -188,7 +188,6 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       justifyContent: 'center',
       marginBottom: Space.xl,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
     },
     heroTitle: {
@@ -208,12 +207,12 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     usageRow: {
       ...commonStyles.rowBetween,
-      paddingHorizontal: Space.base,
+      marginHorizontal: Space.base,
       paddingVertical: Space.md,
     },
     usageRowBorder: {
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.borderSecondary,
+      borderTopColor: theme.colors.border,
     },
     usageLabel: {
       fontSize: FontSize.body,
@@ -281,7 +280,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.base,
       paddingVertical: Space.sm,
       borderRadius: Radii.md,
-      borderWidth: 1,
       borderColor: theme.colors.error,
       backgroundColor: `${theme.colors.error}10`,
       marginTop: Space.md,

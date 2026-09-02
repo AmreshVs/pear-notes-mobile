@@ -74,10 +74,11 @@ const useStyles = createThemedStylesheet((theme) => {
       flex: 1,
       padding: Space.base,
       alignItems: 'flex-start',
+      height: '100%',
     },
     statLabel: {
       fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
       marginTop: Space.sm,
       marginBottom: UI_SIZE_2,

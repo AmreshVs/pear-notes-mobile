@@ -581,7 +581,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       borderRadius: UI_SIZE_9999,
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: 14,
-      borderWidth: StyleSheet.hairlineWidth,
       borderColor: hexWithAlpha(c.outlineVariant, 0.3),
     },
     searchIcon: {

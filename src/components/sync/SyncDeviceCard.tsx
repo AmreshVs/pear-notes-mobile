@@ -183,7 +183,6 @@ const useStyles = createThemedStylesheet((theme) => {
   const cardBg = isDark
     ? hexWithAlpha(theme.colors.white, 0.05)
     : hexWithAlpha(theme.colors.white, 0.9)
-  const cardBorder = theme.colors.borderSecondary
 
   const styles = StyleSheet.create({
     deviceRow: {
@@ -212,7 +211,6 @@ const useStyles = createThemedStylesheet((theme) => {
       width: 11,
       height: 11,
       borderRadius: 6,
-      borderWidth: 2,
       borderColor: cardBg,
     },
     presenceDotOnline: {
@@ -248,7 +246,6 @@ const useStyles = createThemedStylesheet((theme) => {
     renameInput: {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
-      borderWidth: 1,
       borderRadius: Radii.sm,
       paddingHorizontal: Space.md,
       paddingVertical: 6,
@@ -258,9 +255,9 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.inputBackground,
     },
     deviceSep: {
-      height: 1,
-      backgroundColor: cardBorder,
-      marginLeft: 70,
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: Space.base,
     },
     deleteBtn: {
       padding: Space.xs,

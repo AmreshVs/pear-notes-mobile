@@ -193,9 +193,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       audio: t('noteEditor.upload.audio'),
       scannedDoc: t('noteEditor.upload.scannedDoc'),
       uploadFailedVideo: t('noteEditor.upload.failedVideo'),
+      uploadFailedScan: t('noteEditor.upload.failedScan'),
       unlockReason: t('noteCard.unlockReason'),
-      pageLabel: (count: number, total: number) =>
-        t('noteEditor.upload.pageCount', { count, total }),
+      lockReason: t('noteCard.lockReason'),
+      pageCountLabel: (count: number) => t('noteEditor.upload.pageCount', { count }),
     }),
     [t],
   )
@@ -225,6 +226,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleTakeVideo,
     handlePickFile,
     handleScanDocument,
+    handleRequestPdfThumbnail,
     handleRecordingDone,
     handleMoveNote,
     handleTogglePin,
@@ -605,6 +607,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onEditorBlur={handleEditorBlur}
             onOpenAttachment={handleOpenAttachment}
             onPreviewAttachment={handlePreviewAttachment}
+            onRequestPdfThumbnail={handleRequestPdfThumbnail}
             onDeleteAttachment={handleDeleteAttachment}
             onImageLongPress={handleImageLongPress}
             onAttachmentLongPress={handleAttachmentLongPress}
@@ -918,7 +921,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
         c.surfaceContainerHighest ?? c.surfaceVariant,
         md3.dark ? 0.82 : 0.92,
       ),
-      borderWidth: md3.dark ? 0 : 1,
       borderColor: md3.dark ? c.transparent : hexWithAlpha(c.outline, 0.5),
     },
     saveBtn: {

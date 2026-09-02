@@ -1,9 +1,11 @@
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
+import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -62,80 +64,87 @@ export function DownloadsSection({
       download.status === 'error' || (download.status === 'downloading' && download.stalled)
     const statusKey = getDownloadStatusKey(download)
     return (
-      <RNView key={download.url} style={[styles.row, index > 0 && styles.rowBorder]}>
-        <RNView style={styles.rowHeader}>
-          <RNView style={styles.rowMeta}>
-            <SymbolIcon
-              name="icloud.and.arrow.down"
-              size={UI_ICON_SIZE_16}
-              color={colors.primary}
-              weight="medium"
-            />
-            <Text style={styles.fileName} numberOfLines={1}>
-              {download.fileName || t('storage.attachment')}
-            </Text>
-            {!download.sourceOnline && (
+      <Fragment key={download.url}>
+        {index > 0 && (
+          <RNView style={styles.dividerWrap}>
+            <Divider />
+          </RNView>
+        )}
+        <RNView style={styles.row}>
+          <RNView style={styles.rowHeader}>
+            <RNView style={styles.rowMeta}>
               <SymbolIcon
-                name="wifi.slash"
+                name="icloud.and.arrow.down"
                 size={UI_ICON_SIZE_16}
-                color={colors.textMuted}
+                color={colors.primary}
                 weight="medium"
               />
-            )}
+              <Text style={styles.fileName} numberOfLines={1}>
+                {download.fileName || t('storage.attachment')}
+              </Text>
+              {!download.sourceOnline && (
+                <SymbolIcon
+                  name="wifi.slash"
+                  size={UI_ICON_SIZE_16}
+                  color={colors.textMuted}
+                  weight="medium"
+                />
+              )}
+            </RNView>
+            <RNView style={styles.rowActions}>
+              <Text style={styles.sizeLabel}>
+                {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
+              </Text>
+              {download.status === 'downloading' && !download.stalled && (
+                <Pressable
+                  onPress={() => onPause(download.url)}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+                >
+                  <SymbolIcon
+                    name="pause.fill"
+                    size={UI_ICON_SIZE_16}
+                    color={colors.primary}
+                    weight="medium"
+                  />
+                </Pressable>
+              )}
+              {download.status === 'paused' && (
+                <Pressable
+                  onPress={() => onRetry(download.url)}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+                >
+                  <SymbolIcon
+                    name="play.fill"
+                    size={UI_ICON_SIZE_16}
+                    color={colors.primary}
+                    weight="medium"
+                  />
+                </Pressable>
+              )}
+              {isStuck && (
+                <Pressable
+                  onPress={() => onRetry(download.url)}
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
+                >
+                  <SymbolIcon
+                    name="arrow.clockwise"
+                    size={UI_ICON_SIZE_16}
+                    color={colors.primary}
+                    weight="medium"
+                  />
+                </Pressable>
+              )}
+            </RNView>
           </RNView>
-          <RNView style={styles.rowActions}>
-            <Text style={styles.sizeLabel}>
-              {formatBytes(download.downloadedBytes)} / {formatBytes(download.totalBytes)}
-            </Text>
-            {download.status === 'downloading' && !download.stalled && (
-              <Pressable
-                onPress={() => onPause(download.url)}
-                hitSlop={8}
-                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
-              >
-                <SymbolIcon
-                  name="pause.fill"
-                  size={UI_ICON_SIZE_16}
-                  color={colors.primary}
-                  weight="medium"
-                />
-              </Pressable>
-            )}
-            {download.status === 'paused' && (
-              <Pressable
-                onPress={() => onRetry(download.url)}
-                hitSlop={8}
-                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
-              >
-                <SymbolIcon
-                  name="play.fill"
-                  size={UI_ICON_SIZE_16}
-                  color={colors.primary}
-                  weight="medium"
-                />
-              </Pressable>
-            )}
-            {isStuck && (
-              <Pressable
-                onPress={() => onRetry(download.url)}
-                hitSlop={8}
-                style={({ pressed }) => [styles.retryBtn, pressed && commonStyles.pressed]}
-              >
-                <SymbolIcon
-                  name="arrow.clockwise"
-                  size={UI_ICON_SIZE_16}
-                  color={colors.primary}
-                  weight="medium"
-                />
-              </Pressable>
-            )}
+          <RNView style={styles.progressTrack}>
+            <RNView style={[styles.progressFill, { width: `${pct}%` }]} />
           </RNView>
+          {statusKey && <Text style={styles.statusCaption}>{t(statusKey)}</Text>}
         </RNView>
-        <RNView style={styles.progressTrack}>
-          <RNView style={[styles.progressFill, { width: `${pct}%` }]} />
-        </RNView>
-        {statusKey && <Text style={styles.statusCaption}>{t(statusKey)}</Text>}
-      </RNView>
+      </Fragment>
     )
   }
 
@@ -192,9 +201,8 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingVertical: Space.md,
       gap: Space.sm,
     },
-    rowBorder: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.borderSecondary,
+    dividerWrap: {
+      marginHorizontal: Space.lg,
     },
     rowHeader: {
       ...commonStyles.rowBetween,

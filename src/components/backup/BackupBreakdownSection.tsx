@@ -134,11 +134,12 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.sm,
     },
     breakdownRow: {
-      ...commonStyles.rowBetween,
-      paddingHorizontal: Space.lg,
-      paddingVertical: Space.md,
       borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.borderSecondary,
+      ...commonStyles.rowBetween,
+      marginHorizontal: Space.base,
+      paddingHorizontal: Space.xs,
+      paddingVertical: Space.md,
+      borderBottomColor: theme.colors.border,
     },
     breakdownRowMeta: {
       ...commonStyles.row,

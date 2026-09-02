@@ -379,6 +379,7 @@ export default function AndroidFolderNotesScreen() {
       key: targetId,
       currentlyLocked: activeNoteLocked,
       reason: t('noteCard.unlockReason'),
+      lockReason: t('noteCard.lockReason'),
       dispatch,
       lockMethod,
     })

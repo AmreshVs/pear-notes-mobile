@@ -766,7 +766,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurfaceVariant,
     },
     codeBox: {
-      borderWidth: 1,
       borderStyle: 'dashed',
       borderRadius: UI_SIZE_12,
       paddingVertical: UI_SIZE_14,
@@ -798,7 +797,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.row,
       alignItems: 'flex-start',
       gap: UI_SIZE_8,
-      borderWidth: 1,
       borderRadius: UI_SIZE_12,
       padding: UI_SIZE_14,
       marginTop: UI_SIZE_12,
@@ -879,7 +877,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingLeft: UI_SIZE_20,
       paddingRight: UI_SIZE_6,
       paddingVertical: UI_SIZE_6,
-      borderWidth: StyleSheet.hairlineWidth,
       backgroundColor: c.surfaceContainer,
       borderColor: hexWithAlpha(c.outlineVariant, 0.15),
     },
@@ -923,7 +920,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_10,
     },
     emptyCard: {
-      borderWidth: 1,
       borderStyle: 'dashed',
       borderRadius: UI_SIZE_24,
       paddingVertical: UI_SIZE_40,

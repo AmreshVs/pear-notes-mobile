@@ -311,8 +311,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     divider: {
       height: StyleSheet.hairlineWidth,
-      backgroundColor: theme.colors.borderSecondary,
-      marginLeft: Space.lg,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: Space.base,
     },
     rowTitle: {
       fontSize: FontSize.subtitle,
@@ -369,7 +369,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.base,
       paddingVertical: Space.sm,
       borderRadius: Radii.sm,
-      borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.error,
     },
     dangerBtnText: {

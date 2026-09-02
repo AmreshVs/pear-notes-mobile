@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { Fragment, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
@@ -6,6 +6,7 @@ import { router } from 'expo-router'
 
 import { getFontFamily, updateSetting } from '@pear-notes/core/store/slices/settingsSlice.js'
 
+import { Divider } from '@/components/Divider'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
 import {
@@ -48,24 +49,27 @@ export default function FontFamilyScreen() {
     (option: { label: string; value: string }, index: number) => {
       const selected = option.value === fontFamily
       return (
-        <Pressable
-          key={option.value}
-          onPress={() => handleSelect(option.value)}
-          accessibilityRole="button"
-          accessibilityState={{ selected }}
-          accessibilityLabel={option.label}
-          style={({ pressed }) => [
-            index < options.length - 1 ? styles.rowUnderline : styles.row,
-            pressed && commonStyles.pressed,
-          ]}
-        >
-          <Text style={[styles.rowLabel, previewStyles[getFontPreviewVariant(option.value)]]}>
-            {option.label}
-          </Text>
-          {selected && (
-            <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+        <Fragment key={option.value}>
+          <Pressable
+            onPress={() => handleSelect(option.value)}
+            accessibilityRole="button"
+            accessibilityState={{ selected }}
+            accessibilityLabel={option.label}
+            style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+          >
+            <Text style={[styles.rowLabel, previewStyles[getFontPreviewVariant(option.value)]]}>
+              {option.label}
+            </Text>
+            {selected && (
+              <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+            )}
+          </Pressable>
+          {index < options.length - 1 && (
+            <RNView style={styles.dividerWrap}>
+              <Divider />
+            </RNView>
           )}
-        </Pressable>
+        </Fragment>
       )
     },
     [fontFamily, handleSelect, options.length, styles, colors.primary, previewStyles],
@@ -95,14 +99,8 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.base,
       paddingVertical: Space.md,
     },
-    rowUnderline: {
-      ...commonStyles.row,
-      justifyContent: 'space-between',
-      minHeight: UI_SIZE_44,
-      paddingHorizontal: Space.base,
-      paddingVertical: Space.md,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.borderSecondary,
+    dividerWrap: {
+      marginHorizontal: Space.base,
     },
     rowLabel: {
       fontSize: FontSize.subtitle,

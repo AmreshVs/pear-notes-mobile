@@ -132,13 +132,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       overflow: 'hidden',
     },
     row: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: Space.md,
       paddingVertical: Space.md,
       paddingHorizontal: Space.lg,
-      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
     rowLast: {
@@ -176,11 +176,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       padding: Space.lg,
     },
     verdictDivided: {
+      borderTopWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: Space.sm,
       padding: Space.lg,
-      borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: hexWithAlpha(c.onSurface, 0.12),
     },
     glyph: {

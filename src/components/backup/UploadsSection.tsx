@@ -1,9 +1,11 @@
+import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
 
 import { groupTransfersByNote } from '@pear-notes/core/utils.js'
 
+import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -48,27 +50,34 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
         ? Math.min(100, Math.round((upload.uploadedBytes / upload.totalBytes) * 100))
         : 0
     return (
-      <RNView key={upload.url} style={[styles.row, index > 0 && styles.rowBorder]}>
-        <RNView style={styles.rowHeader}>
-          <RNView style={styles.rowMeta}>
-            <SymbolIcon
-              name="icloud.and.arrow.up"
-              size={UI_ICON_SIZE_16}
-              color={colors.primary}
-              weight="medium"
-            />
-            <Text style={styles.fileName} numberOfLines={1}>
-              {upload.fileName || t('storage.attachment')}
+      <Fragment key={upload.url}>
+        {index > 0 && (
+          <RNView style={styles.dividerWrap}>
+            <Divider />
+          </RNView>
+        )}
+        <RNView style={styles.row}>
+          <RNView style={styles.rowHeader}>
+            <RNView style={styles.rowMeta}>
+              <SymbolIcon
+                name="icloud.and.arrow.up"
+                size={UI_ICON_SIZE_16}
+                color={colors.primary}
+                weight="medium"
+              />
+              <Text style={styles.fileName} numberOfLines={1}>
+                {upload.fileName || t('storage.attachment')}
+              </Text>
+            </RNView>
+            <Text style={styles.sizeLabel}>
+              {formatBytes(upload.uploadedBytes)} / {formatBytes(upload.totalBytes)}
             </Text>
           </RNView>
-          <Text style={styles.sizeLabel}>
-            {formatBytes(upload.uploadedBytes)} / {formatBytes(upload.totalBytes)}
-          </Text>
+          <RNView style={styles.progressTrack}>
+            <RNView style={[styles.progressFill, { width: `${pct}%` }]} />
+          </RNView>
         </RNView>
-        <RNView style={styles.progressTrack}>
-          <RNView style={[styles.progressFill, { width: `${pct}%` }]} />
-        </RNView>
-      </RNView>
+      </Fragment>
     )
   }
 
@@ -125,9 +134,8 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingVertical: Space.md,
       gap: Space.sm,
     },
-    rowBorder: {
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.borderSecondary,
+    dividerWrap: {
+      marginHorizontal: Space.lg,
     },
     rowHeader: {
       ...commonStyles.rowBetween,

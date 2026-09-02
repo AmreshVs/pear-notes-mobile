@@ -124,12 +124,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       overflow: 'hidden',
     },
     header: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
       flexDirection: 'row',
       alignItems: 'center',
       gap: Space.md,
       paddingHorizontal: Space.md,
       paddingVertical: Space.sm,
-      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
     added: {
@@ -197,9 +197,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       color: c.onSurfaceVariant,
     },
     footer: {
+      borderTopWidth: StyleSheet.hairlineWidth,
       paddingHorizontal: Space.md,
       paddingVertical: Space.sm,
-      borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: hexWithAlpha(c.onSurface, 0.12),
     },
     notice: {

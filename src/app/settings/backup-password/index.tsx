@@ -243,7 +243,6 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'center',
       backgroundColor: theme.colors.controlBackground,
       borderRadius: Radii.md,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       paddingHorizontal: Space.md,
       minHeight: UI_SIZE_54,
@@ -321,10 +320,10 @@ const useStyles = createThemedStylesheet((theme) => {
       marginLeft: UI_SIZE_4,
     },
     footer: {
+      borderTopWidth: StyleSheet.hairlineWidth,
       paddingHorizontal: Space.xl,
       paddingTop: Space.md,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.borderSecondary,
+      borderTopColor: theme.colors.border,
       backgroundColor: theme.colors.backgroundElevated,
     },
     confirmBtn: {

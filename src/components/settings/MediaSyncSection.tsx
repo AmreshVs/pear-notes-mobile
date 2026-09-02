@@ -96,20 +96,20 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowTitle: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
     },
     rowDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
     divider: {
       height: StyleSheet.hairlineWidth,
-      marginLeft: Space.lg,
-      backgroundColor: theme.colors.borderSecondary,
+      marginHorizontal: Space.base,
+      backgroundColor: theme.colors.border,
     },
     heldNotice: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       color: theme.colors.textMuted,
       marginTop: Space.sm,
       marginHorizontal: Space.sm,

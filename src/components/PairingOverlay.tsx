@@ -725,7 +725,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     androidCard: {
       borderRadius: 28,
       backgroundColor: theme.colors.surface,
-      borderWidth: 1,
       borderColor: theme.isDark
         ? hexWithAlpha(theme.colors.white, 0.08)
         : hexWithAlpha(theme.colors.black, 0.05),
@@ -743,7 +742,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       height: 80,
       borderRadius: Space.xl,
       ...commonStyles.centered,
-      borderWidth: 1,
       marginBottom: Space.sm,
     },
     iconDone: {
@@ -751,7 +749,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       height: isAndroid ? 72 : 80,
       borderRadius: isAndroid ? 36 : Space.xl,
       ...commonStyles.centered,
-      borderWidth: isAndroid ? 0 : 1,
       marginBottom: isAndroid ? Space.md : Space.sm,
       backgroundColor: isAndroid ? `${theme.colors.success}1A` : `${theme.colors.success}26`,
       borderColor: `${theme.colors.success}4D`,
@@ -761,7 +758,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       height: isAndroid ? 72 : 80,
       borderRadius: isAndroid ? 36 : Space.xl,
       ...commonStyles.centered,
-      borderWidth: isAndroid ? 0 : 1,
       marginBottom: isAndroid ? Space.md : Space.sm,
       backgroundColor: isAndroid ? `${theme.colors.primary}1A` : `${theme.colors.primary}26`,
       borderColor: `${theme.colors.primary}4D`,
@@ -771,7 +767,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       height: 80,
       borderRadius: Space.xl,
       ...commonStyles.centered,
-      borderWidth: 1,
       marginBottom: Space.sm,
       backgroundColor: `${theme.colors.primary}0D`,
       borderColor: `${theme.colors.primary}1A`,
@@ -809,7 +804,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       paddingHorizontal: Space.md,
       paddingVertical: isAndroid ? Space.base : Space.lg,
       borderRadius: isAndroid ? 16 : Radii.card,
-      borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
       marginBottom: Space.lg,
       backgroundColor: theme.colors.cardSurface,
@@ -949,7 +943,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       maxHeight: 280,
       aspectRatio: 1,
       borderRadius: Radii.card,
-      borderWidth: 2,
       borderColor: hexWithAlpha(theme.colors.white, 0.92),
       backgroundColor: theme.colors.transparent,
     },
@@ -991,7 +984,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
           ? hexWithAlpha(theme.colors.white, 0.08)
           : hexWithAlpha(theme.colors.black, 0.05)
         : theme.colors.cardPressed,
-      borderWidth: isAndroid ? 0 : 1,
       borderColor: theme.colors.borderSecondary,
     },
     cancelBtnText: {
@@ -1006,7 +998,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       height: isAndroid ? 48 : 50,
       borderRadius: isAndroid ? 9999 : Radii.md,
       backgroundColor: `${theme.colors.error}1A`,
-      borderWidth: isAndroid ? 0 : 1,
       borderColor: `${theme.colors.error}4D`,
     },
     rejectBtnText: {
@@ -1057,7 +1048,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       width: '100%',
       height: isAndroid ? 52 : 44,
       borderRadius: isAndroid ? 12 : Radii.md,
-      borderWidth: isAndroid ? StyleSheet.hairlineWidth : 1,
       paddingHorizontal: Space.base,
       fontSize: FontSize.caption,
       textAlign: 'center',
@@ -1102,7 +1092,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       width: '100%',
       height: isAndroid ? 48 : 50,
       borderRadius: isAndroid ? 9999 : Radii.md,
-      borderWidth: isAndroid ? 0 : 1,
       backgroundColor: isAndroid ? `${theme.colors.success}1A` : `${theme.colors.success}1A`,
       borderColor: `${theme.colors.success}33`,
       flex: 0,
@@ -1112,7 +1101,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       height: isAndroid ? 4 : 6,
       borderRadius: isAndroid ? 2 : 3,
       overflow: 'hidden',
-      borderWidth: isAndroid ? 0 : 1,
       backgroundColor: isAndroid
         ? theme.isDark
           ? hexWithAlpha(theme.colors.white, 0.08)

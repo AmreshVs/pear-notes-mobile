@@ -2,7 +2,6 @@ import { memo, useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
-  Platform,
   Pressable,
   StyleSheet,
   View as RNView,
@@ -26,9 +25,10 @@ import {
   Space,
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_22,
+  UI_SIZE_4,
   UI_SIZE_6,
   UI_SIZE_8,
-  UI_SIZE_16,
+  UI_SIZE_22,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { NOTE_ACTION } from '@/constants/noteActions'
@@ -41,13 +41,16 @@ import {
   scaledLineCount,
 } from '@/utils/dynamicType'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
+import { buildNoteCardMenu } from '@/utils/noteCardMenu'
 import type { AttachmentInfo } from '@/utils/noteUtils'
+
+import { ContextMenuView } from '../../modules/expo-context-menu'
 
 import { createThemedStylesheet, Text, useFontScale, useTheme } from './Themed'
 
-const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
-
 const ENTER_ANIMATION_MAX_INDEX = 8
+
+const PREVIEW_SCALE = 0.92
 
 const ATTACHMENT_ICONS: Record<string, IconName> = {
   image: 'photo',
@@ -89,61 +92,6 @@ interface NoteCardProps {
   onMoveTo?: (id: string, folderId: string) => void
   onToggleSelect?: (id: string) => void
 }
-
-const MoveFolderButton = memo(function MoveFolderButton({
-  noteId,
-  folderId,
-  folderName,
-  onMoveTo,
-}: {
-  noteId: string
-  folderId: string
-  folderName: string
-  onMoveTo: (id: string, folderId: string) => void
-}) {
-  const handlePress = useCallback(() => onMoveTo(noteId, folderId), [onMoveTo, noteId, folderId])
-  return <ExpoUI.Button label={folderName} systemImage="folder" onPress={handlePress} />
-})
-
-const MoveToMenu = memo(function MoveToMenu({
-  noteId,
-  moveFolders,
-  onMoveTo,
-}: {
-  noteId: string
-  moveFolders?: MoveFolder[]
-  onMoveTo: (id: string, folderId: string) => void
-}) {
-  const { t } = useTranslation()
-  const renderFolder = useCallback(
-    (folder: MoveFolder) => (
-      <MoveFolderButton
-        key={folder.id}
-        noteId={noteId}
-        folderId={folder.id}
-        folderName={folder.name}
-        onMoveTo={onMoveTo}
-      />
-    ),
-    [noteId, onMoveTo],
-  )
-
-  return (
-    <ExpoUI.Menu label={t('noteCard.actions.moveTo')} systemImage="folder.badge.plus">
-      {moveFolders && moveFolders.length > 0 ? (
-        moveFolders.map(renderFolder)
-      ) : (
-        <ExpoUI.Button
-          label={t('noteCard.actions.noFolders')}
-          systemImage="folder.badge.minus"
-          onPress={noop}
-        />
-      )}
-    </ExpoUI.Menu>
-  )
-})
-
-function noop() {}
 
 function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
   return (
@@ -188,9 +136,9 @@ export const NoteCard = memo(function NoteCard({
   isFirst,
   isLast,
   grouped,
-  animationIndex = 0,
   locked,
   pinned,
+  animationIndex = 0,
   onPress,
   onDelete,
   onRestore,
@@ -238,6 +186,8 @@ export const NoteCard = memo(function NoteCard({
     [onTogglePin, id, pinned],
   )
 
+  const fontScale = useFontScale()
+
   const getPressableStyle = useCallback(
     ({ pressed }: { pressed: boolean }): ViewStyle[] => {
       const base: ViewStyle[] = [
@@ -245,7 +195,6 @@ export const NoteCard = memo(function NoteCard({
         grouped ? styles.containerGrouped : {},
         grouped && isFirst ? styles.containerGroupedFirst : {},
         grouped && isLast ? styles.containerGroupedLast : {},
-        !grouped && !isLast ? styles.borderBottom : {},
       ]
       if (selected || checked) return [...base, styles.containerSelected]
       if (pressed)
@@ -255,17 +204,11 @@ export const NoteCard = memo(function NoteCard({
     [selected, checked, styles, grouped, isFirst, isLast],
   )
 
-  const rowStyle = useMemo(
-    () => (grouped && !isLast ? [styles.row, styles.rowSeparator] : styles.row),
-    [grouped, isLast, styles.row, styles.rowSeparator],
-  )
-
   const titleStyle = useMemo(
     () => [styles.title, selected ? styles.titleSelected : styles.titleNormal],
     [selected, styles.title, styles.titleSelected, styles.titleNormal],
   )
 
-  const fontScale = useFontScale()
   const titleLines = scaledLineCount(1, fontScale)
   const summaryLines = scaledLineCount(2, fontScale)
   const showThumbnail = !!imageUrl && !thumbError && !masked && !isAccessibilityTextSize(fontScale)
@@ -285,14 +228,6 @@ export const NoteCard = memo(function NoteCard({
   const displaySummary = masked
     ? t('noteCard.lockedSummary')
     : summary || t('noteCard.noAdditionalText')
-
-  const entering = useMemo(
-    () =>
-      animationIndex <= ENTER_ANIMATION_MAX_INDEX
-        ? FadeIn.duration(220).delay(animationIndex * 35)
-        : undefined,
-    [animationIndex],
-  )
 
   const accessibilityActions = useMemo(() => {
     const actions: { name: string; label: string }[] = []
@@ -326,6 +261,166 @@ export const NoteCard = memo(function NoteCard({
     [handleTogglePin, handleToggleLock, handleCopy, handleRestore, handleDelete],
   )
 
+  const entering = useMemo(
+    () =>
+      animationIndex <= ENTER_ANIMATION_MAX_INDEX
+        ? FadeIn.duration(220).delay(animationIndex * 35)
+        : undefined,
+    [animationIndex],
+  )
+
+  const hasActions =
+    !selecting && (onDelete || onRestore || onCopy || onMoveTo || onToggleLock || onTogglePin)
+
+  const menuItems = useMemo(
+    () =>
+      buildNoteCardMenu({
+        labels: {
+          restore: t('noteCard.actions.restore'),
+          moveTo: t('noteCard.actions.moveTo'),
+          noFolders: t('noteCard.actions.noFolders'),
+          copy: t('noteCard.actions.copyNote'),
+          pin: t('noteCard.actions.pin'),
+          unpin: t('noteCard.actions.unpin'),
+          lock: t('noteCard.actions.lock'),
+          unlock: t('noteCard.actions.unlock'),
+          delete: deleteLabel,
+        },
+        locked,
+        pinned,
+        canRestore: !!onRestore,
+        canMove: !!onMoveTo,
+        canCopy: !!onCopy,
+        canToggleLock: !!onToggleLock,
+        canTogglePin: !!onTogglePin,
+        canDelete: !!onDelete,
+        moveFolders,
+      }),
+    [
+      t,
+      deleteLabel,
+      locked,
+      pinned,
+      onRestore,
+      onMoveTo,
+      onCopy,
+      onToggleLock,
+      onTogglePin,
+      onDelete,
+      moveFolders,
+    ],
+  )
+
+  const handleMenuSelect = useCallback(
+    (actionId: string) => {
+      if (actionId.startsWith(`${NOTE_ACTION.moveTo}:`)) {
+        const folderId = actionId.slice(NOTE_ACTION.moveTo.length + 1)
+        if (folderId !== 'none') onMoveTo?.(id, folderId)
+        return
+      }
+      const runner = {
+        [NOTE_ACTION.togglePin]: handleTogglePin,
+        [NOTE_ACTION.toggleLock]: handleToggleLock,
+        [NOTE_ACTION.copy]: handleCopy,
+        [NOTE_ACTION.restore]: handleRestore,
+        [NOTE_ACTION.delete]: handleDelete,
+      }[actionId]
+      runner?.()
+    },
+    [id, onMoveTo, handleTogglePin, handleToggleLock, handleCopy, handleRestore, handleDelete],
+  )
+
+  const rowContent = (
+    <RNView style={styles.row}>
+      {selecting && (
+        <RNView style={styles.selectionIndicator}>
+          <SymbolIcon
+            name={checked ? 'checkmark.circle.fill' : 'circle'}
+            size={UI_ICON_SIZE_22}
+            color={checked ? colors.primary : colors.textMuted}
+          />
+        </RNView>
+      )}
+      <RNView style={styles.content}>
+        <RNView style={styles.titleRow}>
+          {pinned && <SymbolIcon name="pin.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />}
+          {locked &&
+            (masked ? (
+              <SymbolIcon name="lock.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />
+            ) : (
+              <SymbolIcon name="lock.open.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />
+            ))}
+          <Text variant="bodyBold" numberOfLines={titleLines} style={titleStyle}>
+            {displayTitle}
+          </Text>
+        </RNView>
+
+        {showAttachment && attachmentIcon ? (
+          <RNView style={styles.attachmentRow}>
+            <SymbolIcon name={attachmentIcon} size={UI_ICON_SIZE_12} color={colors.textSecondary} />
+            <Text variant="caption" numberOfLines={1} style={styles.attachmentLabel}>
+              {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
+            </Text>
+          </RNView>
+        ) : (
+          <Text variant="caption" numberOfLines={summaryLines} style={styles.summary}>
+            {displaySummary}
+          </Text>
+        )}
+
+        {upload && (
+          <RNView style={styles.uploadRow}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text variant="caption" numberOfLines={1} style={styles.uploadLabel}>
+              {t('noteCard.uploading', { progress: upload.progress })}
+            </Text>
+          </RNView>
+        )}
+
+        <RNView style={styles.metadata}>
+          {folderName && (
+            <>
+              <RNView style={styles.folderTag}>
+                <SymbolIcon
+                  name="folder"
+                  size={UI_ICON_SIZE_12}
+                  style={styles.folderIcon}
+                  color={colors.textSecondary}
+                />
+                <Text
+                  variant="caption"
+                  maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
+                  style={[styles.metadataText, isPearTheme && styles.metadataTextPearTheme]}
+                >
+                  {folderName}
+                </Text>
+              </RNView>
+            </>
+          )}
+          <Text
+            variant="caption"
+            maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
+            style={styles.metadataText}
+          >
+            {date}
+          </Text>
+        </RNView>
+      </RNView>
+
+      {showThumbnail && (
+        <Image
+          source={imageUrl}
+          style={styles.thumbnail}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={id}
+          transition={0}
+          onError={handleThumbError}
+        />
+      )}
+    </RNView>
+  )
+
   const card = (
     <MotionView entering={entering} exiting={FadeOutUp.duration(180)}>
       <Pressable
@@ -336,164 +431,25 @@ export const NoteCard = memo(function NoteCard({
         accessibilityActions={accessibilityActions}
         onAccessibilityAction={handleAccessibilityAction}
       >
-        <RNView style={rowStyle}>
-          {selecting && (
-            <RNView style={styles.selectionIndicator}>
-              <SymbolIcon
-                name={checked ? 'checkmark.circle.fill' : 'circle'}
-                size={UI_ICON_SIZE_22}
-                color={checked ? colors.primary : colors.textMuted}
-              />
-            </RNView>
-          )}
-          <RNView style={styles.content}>
-            <RNView style={styles.titleRow}>
-              {pinned && (
-                <SymbolIcon name="pin.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />
-              )}
-              {locked &&
-                (masked ? (
-                  <SymbolIcon name="lock" size={UI_ICON_SIZE_12} color={lockIconColor} />
-                ) : (
-                  <SymbolIcon name="lock.open" size={UI_ICON_SIZE_12} color={lockIconColor} />
-                ))}
-              <Text variant="bodyBold" numberOfLines={titleLines} style={titleStyle}>
-                {displayTitle}
-              </Text>
-            </RNView>
-
-            {showAttachment && attachmentIcon ? (
-              <RNView style={styles.attachmentRow}>
-                <SymbolIcon
-                  name={attachmentIcon}
-                  size={UI_ICON_SIZE_12}
-                  color={colors.textSecondary}
-                />
-                <Text variant="caption" numberOfLines={1} style={styles.attachmentLabel}>
-                  {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
-                </Text>
-              </RNView>
-            ) : (
-              <Text variant="caption" numberOfLines={summaryLines} style={styles.summary}>
-                {displaySummary}
-              </Text>
-            )}
-
-            {upload && (
-              <RNView style={styles.uploadRow}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Text variant="caption" numberOfLines={1} style={styles.uploadLabel}>
-                  {t('noteCard.uploading', { progress: upload.progress })}
-                </Text>
-              </RNView>
-            )}
-
-            <RNView style={styles.metadata}>
-              {folderName && (
-                <>
-                  <RNView style={styles.folderTag}>
-                    <SymbolIcon
-                      name="folder"
-                      size={UI_ICON_SIZE_12}
-                      style={styles.folderIcon}
-                      color={colors.textSecondary}
-                    />
-                    <Text
-                      variant="caption"
-                      maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
-                      style={[styles.metadataText, isPearTheme && styles.metadataTextPearTheme]}
-                    >
-                      {folderName}
-                    </Text>
-                  </RNView>
-                </>
-              )}
-              <Text
-                variant="caption"
-                maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
-                style={styles.metadataText}
-              >
-                {date}
-              </Text>
-            </RNView>
-          </RNView>
-
-          {showThumbnail && (
-            <Image
-              source={imageUrl}
-              style={styles.thumbnail}
-              contentFit="cover"
-              cachePolicy="memory-disk"
-              recyclingKey={id}
-              transition={0}
-              onError={handleThumbError}
-            />
-          )}
-        </RNView>
+        {hasActions ? (
+          <ContextMenuView
+            items={menuItems}
+            previewCornerRadius={Radii.md}
+            previewScale={PREVIEW_SCALE}
+            onSelect={handleMenuSelect}
+            style={styles.menuHost}
+          >
+            {rowContent}
+          </ContextMenuView>
+        ) : (
+          rowContent
+        )}
+        {grouped && !isLast && <RNView style={styles.rowDivider} />}
       </Pressable>
     </MotionView>
   )
 
-  const hasActions =
-    !selecting && (onDelete || onRestore || onCopy || onMoveTo || onToggleLock || onTogglePin)
-
-  if (!ExpoUI || !hasActions) {
-    return card
-  }
-
-  const { Host, ContextMenu, Button } = ExpoUI
-
-  return (
-    <Host>
-      <ContextMenu>
-        <ContextMenu.Items>
-          {onRestore && (
-            <Button
-              label={t('noteCard.actions.restore')}
-              systemImage="arrow.uturn.backward"
-              onPress={handleRestore}
-            />
-          )}
-
-          {onMoveTo && <MoveToMenu noteId={id} moveFolders={moveFolders} onMoveTo={onMoveTo} />}
-
-          {onCopy && (
-            <Button
-              label={t('noteCard.actions.copyNote')}
-              systemImage="doc.on.doc"
-              onPress={handleCopy}
-            />
-          )}
-
-          {onTogglePin && (
-            <Button
-              label={pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin')}
-              systemImage={pinned ? 'pin.slash' : 'pin'}
-              onPress={handleTogglePin}
-            />
-          )}
-
-          {onToggleLock && (
-            <Button
-              label={locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')}
-              systemImage={locked ? 'lock.slash' : 'lock'}
-              onPress={handleToggleLock}
-            />
-          )}
-
-          {onDelete && (
-            <Button
-              label={deleteLabel}
-              systemImage="trash"
-              role="destructive"
-              onPress={handleDelete}
-            />
-          )}
-        </ContextMenu.Items>
-        <ContextMenu.Trigger>{card}</ContextMenu.Trigger>
-      </ContextMenu>
-    </Host>
-  )
+  return card
 }, areNoteCardPropsEqual)
 
 const useStyles = createThemedStylesheet((theme) => {
@@ -501,7 +457,7 @@ const useStyles = createThemedStylesheet((theme) => {
     container: {
       paddingHorizontal: Space.base,
       borderRadius: Radii.md,
-      marginVertical: 1,
+      paddingVertical: UI_SIZE_4,
     },
     containerNormal: {
       backgroundColor: theme.colors.transparent,
@@ -510,20 +466,14 @@ const useStyles = createThemedStylesheet((theme) => {
       marginHorizontal: Space.base,
       marginVertical: 0,
       borderRadius: 0,
-      borderLeftWidth: 1,
-      borderRightWidth: 1,
-      borderColor: theme.colors.borderSecondary,
     },
     containerGroupedFirst: {
-      borderTopWidth: 1,
       borderTopLeftRadius: Radii.card,
       borderTopRightRadius: Radii.card,
     },
     containerGroupedLast: {
-      borderBottomWidth: 1,
       borderBottomLeftRadius: Radii.card,
       borderBottomRightRadius: Radii.card,
-      paddingVertical: UI_SIZE_16,
     },
     containerGroupedNormal: {
       backgroundColor: theme.colors.cardSurface,
@@ -531,10 +481,9 @@ const useStyles = createThemedStylesheet((theme) => {
     containerGroupedPressed: {
       backgroundColor: theme.colors.surfaceSecondary,
     },
-    rowSeparator: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.border,
-      paddingVertical: UI_SIZE_16,
+    rowDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: theme.colors.border,
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,
@@ -542,17 +491,16 @@ const useStyles = createThemedStylesheet((theme) => {
     containerPressed: {
       backgroundColor: theme.colors.cardPressed,
     },
-    borderBottom: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: theme.colors.borderSecondary,
-    },
     row: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingVertical: Space.sm,
+      paddingVertical: Space.md,
       gap: Space.md,
     },
     content: {
+      ...commonStyles.flex1,
+    },
+    menuHost: {
       ...commonStyles.flex1,
     },
     selectionIndicator: {
@@ -579,10 +527,9 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     summary: {
       fontSize: FontSize.body,
-      lineHeight: 19,
-      opacity: 0.8,
       marginBottom: UI_SIZE_6,
       color: theme.colors.textSecondary,
+      lineHeight: UI_SIZE_22,
     },
     attachmentRow: {
       flexDirection: 'row',

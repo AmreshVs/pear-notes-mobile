@@ -230,7 +230,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       width: UI_SIZE_12,
       height: UI_SIZE_12,
       borderRadius: UI_SIZE_9999,
-      borderWidth: 2,
       borderColor: theme.colors.background,
     },
     presenceDotOnline: {
@@ -272,7 +271,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
-      borderWidth: 1,
       borderRadius: UI_SIZE_10,
       paddingHorizontal: UI_SIZE_12,
       paddingVertical: UI_SIZE_6,

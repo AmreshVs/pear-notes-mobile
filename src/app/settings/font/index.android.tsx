@@ -158,12 +158,12 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       paddingVertical: UI_SIZE_16,
     },
     rowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
       ...commonStyles.row,
       justifyContent: 'space-between',
       minHeight: UI_SIZE_56,
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_16,
-      borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
     rowLabel: {

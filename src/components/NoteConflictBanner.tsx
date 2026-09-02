@@ -85,7 +85,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { insets }) => {
       alignItems: 'center',
       gap: Space.sm,
       backgroundColor: theme.colors.surface,
-      borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
       borderRadius: Radii.card,
       paddingVertical: Space.sm,
@@ -129,7 +128,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { insets }) => {
       borderRadius: Radii.sm,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.borderSecondary,
     },
     secondaryBtnText: {

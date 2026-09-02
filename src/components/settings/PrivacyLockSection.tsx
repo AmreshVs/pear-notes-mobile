@@ -159,7 +159,6 @@ const useStyles = createThemedStylesheet((theme) => {
     card: {
       backgroundColor: theme.colors.cardSurface,
       borderRadius: Radii.card,
-      borderWidth: 1,
       borderColor: theme.colors.borderSecondary,
       overflow: 'hidden',
     },
@@ -178,8 +177,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     divider: {
       height: StyleSheet.hairlineWidth,
-      backgroundColor: theme.colors.borderSecondary,
-      marginLeft: Space.lg,
+      backgroundColor: theme.colors.border,
+      marginHorizontal: Space.base,
     },
     methodRow: {
       padding: Space.lg,
@@ -231,8 +230,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowTitle: {
       fontSize: FontSize.subtitle,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
     },
     rowDesc: {

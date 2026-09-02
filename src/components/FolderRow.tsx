@@ -1,8 +1,9 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { Pressable, StyleSheet, View as RNView } from 'react-native'
 import { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
 
+import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
 import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import {
@@ -16,10 +17,11 @@ import {
   UI_ICON_SIZE_20,
   UI_SIZE_4,
 } from '@/constants/commonStyles'
+import { FOLDER_ACTION } from '@/constants/folderActions'
+
+import { ContextMenuView } from '../../modules/expo-context-menu'
 
 import { Text, Theme, useThemedStyles } from './Themed'
-
-const ExpoUI = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 const ICON_MAP: Record<string, IconName> = {
   Folder: 'folder',
@@ -96,38 +98,50 @@ export const FolderRow = memo(function FolderRow({
           </RNView>
         </RNView>
       </Pressable>
+      {!isLast && (
+        <RNView style={styles.dividerWrap}>
+          <Divider />
+        </RNView>
+      )}
     </MotionView>
   )
 
-  if (isSystem || !ExpoUI || (!onRename && !onDelete)) {
+  const menuItems = useMemo(() => {
+    const items = []
+    if (onRename) {
+      items.push({
+        id: FOLDER_ACTION.rename,
+        title: t('folders.buttons.rename'),
+        systemImage: 'pencil',
+      })
+    }
+    if (onDelete) {
+      items.push({
+        id: FOLDER_ACTION.delete,
+        title: t('folders.buttons.delete'),
+        systemImage: 'trash',
+        destructive: true,
+      })
+    }
+    return items
+  }, [onRename, onDelete, t])
+
+  const handleMenuSelect = useCallback(
+    (actionId: string) => {
+      if (actionId === FOLDER_ACTION.rename) onRename?.(id, name)
+      if (actionId === FOLDER_ACTION.delete) onDelete?.(id)
+    },
+    [id, name, onRename, onDelete],
+  )
+
+  if (isSystem || (!onRename && !onDelete)) {
     return row
   }
 
-  const { Host, ContextMenu, Button } = ExpoUI
-
   return (
-    <Host>
-      <ContextMenu>
-        <ContextMenu.Items>
-          {onRename && (
-            <Button
-              label={t('folders.buttons.rename')}
-              systemImage="pencil"
-              onPress={() => onRename(id, name)}
-            />
-          )}
-          {onDelete && (
-            <Button
-              label={t('folders.buttons.delete')}
-              systemImage="trash"
-              role="destructive"
-              onPress={() => onDelete(id)}
-            />
-          )}
-        </ContextMenu.Items>
-        <ContextMenu.Trigger>{row}</ContextMenu.Trigger>
-      </ContextMenu>
-    </Host>
+    <ContextMenuView items={menuItems} onSelect={handleMenuSelect} previewCornerRadius={Radii.card}>
+      {row}
+    </ContextMenuView>
   )
 })
 
@@ -141,15 +155,15 @@ const createStyles = (theme: Theme) =>
       marginVertical: 1,
       minHeight: 52,
       backgroundColor: theme.colors.transparent,
-      borderBottomWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.border,
     },
     containerGrouped: {
       borderRadius: 0,
       marginVertical: 0,
     },
-    containerLast: {
-      borderBottomWidth: 0,
+    containerLast: {},
+    dividerWrap: {
+      marginHorizontal: Space.base,
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,
@@ -170,10 +184,8 @@ const createStyles = (theme: Theme) =>
     },
     name: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.medium,
-      letterSpacing: LetterSpacing.tight,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
-      opacity: 0.9,
       flex: 1,
       paddingRight: UI_SIZE_4,
     },
