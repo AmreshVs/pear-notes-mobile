@@ -36,7 +36,7 @@
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~56.0.25",
     "@pchmn/expo-material3-theme": "^1.4.0",
-    "@pear-notes/core": "github:AmreshVs/pear-notes-core#efbb48e70a1d5df6e4514b9187e149f3d940efee",
+    "@pear-notes/core": "github:AmreshVs/pear-notes-core#7fdc9184408ea49958a1207402e811274e66c8c7",
     "@react-native-community/slider": "^5.1.2",
     "@react-native-vector-icons/material-design-icons": "^13.1.2",
     "@reduxjs/toolkit": "2.12.0",
