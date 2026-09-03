@@ -1,6 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
+import {
+  Alert,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Platform,
+  SectionList,
+  StyleSheet,
+  useWindowDimensions,
+} from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
@@ -38,6 +47,7 @@ import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate, validateFolderName } from '@pear-notes/core/utils.js'
 
+import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderEmptyState } from '@/components/FolderEmptyState'
 import { LockNowButton } from '@/components/LockNowButton'
 import { NoteCard } from '@/components/NoteCard'
@@ -50,6 +60,8 @@ import {
   LetterSpacing,
   Space,
   UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_6,
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -57,6 +69,7 @@ import {
   LIST_BATCH_RENDER_COUNT,
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
+  MIN_TITLE_COLLAPSE_DISTANCE,
 } from '@/constants/constants'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
@@ -68,6 +81,7 @@ import { getPreview } from '@/utils/noteUtils'
 import { useNoteSelection } from './useNoteSelection'
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
+const SCROLL_EVENT_THROTTLE = 16
 
 const SUPPORTS_TOOLBAR_SEARCH =
   Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26
@@ -375,10 +389,11 @@ export default function FolderNotesScreen() {
       const isPinned = note.value?.pinned === true
       const metadata = getNoteMetadata(note.value)
 
-      const folderName =
+      const noteFolder =
         folder?.id === ALL_NOTES_KEY
-          ? allFolders.find((f: any) => f.id === note.value?.folderKey)?.name
+          ? allFolders.find((f: any) => f.id === note.value?.folderKey)
           : undefined
+      const folderName = noteFolder?.name
 
       return (
         <NoteCard
@@ -390,6 +405,7 @@ export default function FolderNotesScreen() {
           attachment={metadata.attachment}
           rawImageUrl={metadata.imageUrl}
           folderName={folderName}
+          folderIconToken={noteFolder?.icon}
           selected={false}
           selecting={isSelecting}
           checked={selectedKeys.includes(note.key)}
@@ -438,27 +454,56 @@ export default function FolderNotesScreen() {
   const renderSectionHeader = useCallback(
     ({ section }: any) => (
       <View style={section.sectionIndex === 0 ? styles.sectionHeader : styles.sectionHeaderSpaced}>
-        <Text style={commonThemedStyles.sectionCap}>{section.title}</Text>
+        <Text style={commonThemedStyles.sectionCamelCase}>{section.title}</Text>
       </View>
     ),
-    [styles.sectionHeader, styles.sectionHeaderSpaced, commonThemedStyles.sectionCap],
+    [styles.sectionHeader, styles.sectionHeaderSpaced, commonThemedStyles.sectionCamelCase],
   )
 
   const noteKey = useCallback((item: any) => item.key, [])
 
+  const titleBlockHeightRef = useRef(0)
+  const scrollBaselineRef = useRef<number | null>(null)
+  const isTitleCollapsedRef = useRef(false)
+  const [isTitleCollapsed, setIsTitleCollapsed] = useState(false)
+
+  const handleTitleBlockLayout = useCallback((event: LayoutChangeEvent) => {
+    titleBlockHeightRef.current = event.nativeEvent.layout.height
+  }, [])
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentInset } = event.nativeEvent
+    const restingOffset = -(contentInset?.top ?? 0)
+    if (
+      !isTitleCollapsedRef.current &&
+      (scrollBaselineRef.current === null ||
+        Math.min(contentOffset.y, restingOffset) < scrollBaselineRef.current)
+    ) {
+      scrollBaselineRef.current = Math.min(contentOffset.y, restingOffset)
+    }
+    const scrolled = contentOffset.y - (scrollBaselineRef.current ?? 0)
+    const threshold = Math.max(titleBlockHeightRef.current, MIN_TITLE_COLLAPSE_DISTANCE)
+    const next = titleBlockHeightRef.current > 0 && scrolled >= threshold
+    if (next === isTitleCollapsedRef.current) return
+    isTitleCollapsedRef.current = next
+    setIsTitleCollapsed(next)
+  }, [])
+
   const listHeader = useMemo(
     () => (
       <>
-        <Text style={styles.pageTitle} numberOfLines={2}>
-          {folder?.name || t('folders.title')}
-        </Text>
-        <View style={styles.headerInfo}>
-          <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
-            {isSelecting
-              ? t('folderView.selection.selectedCount', { count: selectedCount })
-              : t('folderView.noteCount', { count: notes.length })}
+        <View onLayout={handleTitleBlockLayout}>
+          <Text style={styles.pageTitle} numberOfLines={2}>
+            {folder?.name || t('folders.title')}
           </Text>
-          <LockNowButton />
+          <View style={styles.headerInfo}>
+            <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
+              {isSelecting
+                ? t('folderView.selection.selectedCount', { count: selectedCount })
+                : t('folderView.noteCount', { count: notes.length })}
+            </Text>
+            <LockNowButton />
+          </View>
         </View>
         {isTrashFolder && notes.length > 0 && (
           <Text style={styles.retentionNotice}>
@@ -511,9 +556,19 @@ export default function FolderNotesScreen() {
     [dispatch],
   )
 
+  const headerTitle = useCallback(
+    () => (
+      <CollapsedNavTitle
+        title={folder?.name || t('folders.title')}
+        subtitle={t('folderView.noteCount', { count: notes.length })}
+      />
+    ),
+    [folder?.name, notes.length, t],
+  )
+
   const screenOptions = useMemo(
     () => ({
-      headerTitle: '',
+      headerTitle: isTitleCollapsed ? headerTitle : '',
       headerLargeTitle: false,
       headerTransparent: true,
       headerBlurEffect: isDark ? ('dark' as const) : ('light' as const),
@@ -528,7 +583,15 @@ export default function FolderNotesScreen() {
         onChangeText: handleSearchChange,
       },
     }),
-    [isDark, t, colors.text, colors.textSecondary, handleSearchChange],
+    [
+      isDark,
+      t,
+      colors.text,
+      colors.textSecondary,
+      handleSearchChange,
+      isTitleCollapsed,
+      headerTitle,
+    ],
   )
 
   return (
@@ -592,6 +655,8 @@ export default function FolderNotesScreen() {
         ListEmptyComponent={listEmpty}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={scrollContentStyle}
+        onScroll={handleScroll}
+        scrollEventThrottle={SCROLL_EVENT_THROTTLE}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         initialNumToRender={LIST_INITIAL_RENDER_COUNT}
@@ -639,14 +704,10 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     sectionHeader: {
       marginLeft: Space.base,
-      paddingVertical: Space.xs,
-      marginBottom: UI_SIZE_2,
     },
     sectionHeaderSpaced: {
       marginLeft: Space.base,
-      paddingVertical: Space.xs,
-      marginBottom: UI_SIZE_2,
-      marginTop: Space.sm,
+      marginTop: Space.base,
     },
     emptyStateWrapper: {
       alignItems: 'center',

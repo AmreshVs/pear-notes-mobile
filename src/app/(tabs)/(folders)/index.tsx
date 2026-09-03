@@ -1,10 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
+import {
+  Alert,
+  type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+} from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { router, Stack } from 'expo-router'
 
-import { ALL_NOTES_KEY, FOLDER_ERROR } from '@pear-notes/core/constant.js'
+import { ALL_NOTES_KEY, DEFAULT_FOLDER_ICON, FOLDER_ERROR } from '@pear-notes/core/constant.js'
 import {
   createFolder,
   deleteFolder,
@@ -19,8 +27,9 @@ import {
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import { validateFolderName } from '@pear-notes/core/utils.js'
 
+import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
+import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderRow } from '@/components/FolderRow'
-import { GlassView } from '@/components/GlassView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
@@ -29,15 +38,17 @@ import {
   FontWeight,
   LetterSpacing,
   Space,
-  UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_SIZE_8,
   UI_SIZE_42,
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { MIN_TITLE_COLLAPSE_DISTANCE } from '@/constants/constants'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+
+const SCROLL_EVENT_THROTTLE = 16
 
 export default function FoldersScreen() {
   const { t } = useTranslation()
@@ -56,6 +67,7 @@ export default function FoldersScreen() {
   const isInitialMount = useRef(true)
 
   const [searchQuery, setSearchQuery] = useState('')
+  const [iconPickerFolderId, setIconPickerFolderId] = useState<string | null>(null)
 
   const matchesSearch = useCallback(
     (folder: any) =>
@@ -184,11 +196,27 @@ export default function FoldersScreen() {
     [dispatch, t],
   )
 
-  const getFolderIcon = useCallback((folder: any) => {
-    if (folder.isAll) return 'All'
-    if (folder.isTrash) return 'Trash'
-    return 'Folder'
+  const iconPickerFolder = useMemo(
+    () => folders.find((folder: any) => (folder.id || folder.key) === iconPickerFolderId),
+    [folders, iconPickerFolderId],
+  )
+
+  const handleChangeFolderIcon = useCallback((folderId: string) => {
+    setIconPickerFolderId(folderId)
   }, [])
+
+  const handleCloseIconPicker = useCallback(() => setIconPickerFolderId(null), [])
+
+  const handleSelectFolderIcon = useCallback(
+    (icon: string) => {
+      if (iconPickerFolderId) {
+        hapticSuccess()
+        dispatch(updateFolder({ id: iconPickerFolderId, icon } as any))
+      }
+      setIconPickerFolderId(null)
+    },
+    [dispatch, iconPickerFolderId],
+  )
 
   const iconBtnStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [styles.iconBtn, pressed && commonStyles.pressed],
@@ -215,43 +243,6 @@ export default function FoldersScreen() {
     [iconBtnStyle, handleOpenSettings, colors.text, t],
   )
 
-  const headerRight = useCallback(
-    () => (
-      <GlassView intensity={20} borderRadius={24} style={styles.headerPill}>
-        <Pressable
-          onPress={handleCreateFolder}
-          style={iconBtnStyle}
-          hitSlop={UI_SIZE_8}
-          accessible
-          accessibilityRole="button"
-          accessibilityLabel={t('folders.a11y.newFolder')}
-        >
-          <SymbolIcon name="folder.badge.plus" size={UI_ICON_SIZE_20} color={colors.text} />
-        </Pressable>
-        <View style={commonThemedStyles.pillDivider} />
-        <Pressable
-          onPress={handleCreateNote}
-          style={iconBtnStyle}
-          hitSlop={UI_SIZE_8}
-          accessible
-          accessibilityRole="button"
-          accessibilityLabel={t('folders.a11y.newNote')}
-        >
-          <SymbolIcon name="square.and.pencil" size={UI_ICON_SIZE_20} color={colors.text} />
-        </Pressable>
-      </GlassView>
-    ),
-    [
-      handleCreateFolder,
-      handleCreateNote,
-      iconBtnStyle,
-      colors.text,
-      commonThemedStyles,
-      styles.headerPill,
-      t,
-    ],
-  )
-
   const renderFolders = useCallback(
     (foldersToRender: any[], startIndex = 0) =>
       foldersToRender.map((folder: any, index: number) => (
@@ -260,17 +251,24 @@ export default function FoldersScreen() {
           id={folder.id || folder.key}
           name={folder.name}
           count={noteCounts[folder.id || folder.key] ?? 0}
-          icon={getFolderIcon(folder)}
+          icon={folder.icon}
           isSystem={folder.isSystem}
           animationIndex={startIndex + index}
           grouped
           isLast={index === foldersToRender.length - 1}
           onPress={handleSelectFolder}
           onRename={folder.isSystem ? undefined : handleRenameFolder}
+          onChangeIcon={folder.isSystem ? undefined : handleChangeFolderIcon}
           onDelete={folder.isSystem ? undefined : handleDeleteFolder}
         />
       )),
-    [noteCounts, getFolderIcon, handleSelectFolder, handleRenameFolder, handleDeleteFolder],
+    [
+      noteCounts,
+      handleSelectFolder,
+      handleRenameFolder,
+      handleChangeFolderIcon,
+      handleDeleteFolder,
+    ],
   )
 
   const handleSearchChange = useCallback(
@@ -278,34 +276,92 @@ export default function FoldersScreen() {
     [],
   )
 
+  const titleBlockHeightRef = useRef(0)
+  const scrollBaselineRef = useRef<number | null>(null)
+  const isTitleCollapsedRef = useRef(false)
+  const [isTitleCollapsed, setIsTitleCollapsed] = useState(false)
+
+  const handleTitleBlockLayout = useCallback((event: LayoutChangeEvent) => {
+    titleBlockHeightRef.current = event.nativeEvent.layout.height
+  }, [])
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { contentOffset, contentInset } = event.nativeEvent
+    const restingOffset = -(contentInset?.top ?? 0)
+    if (
+      !isTitleCollapsedRef.current &&
+      (scrollBaselineRef.current === null ||
+        Math.min(contentOffset.y, restingOffset) < scrollBaselineRef.current)
+    ) {
+      scrollBaselineRef.current = Math.min(contentOffset.y, restingOffset)
+    }
+    const scrolled = contentOffset.y - (scrollBaselineRef.current ?? 0)
+    const threshold = Math.max(titleBlockHeightRef.current, MIN_TITLE_COLLAPSE_DISTANCE)
+    const next = titleBlockHeightRef.current > 0 && scrolled >= threshold
+    if (next === isTitleCollapsedRef.current) return
+    isTitleCollapsedRef.current = next
+    setIsTitleCollapsed(next)
+  }, [])
+
+  const headerTitle = useCallback(() => <CollapsedNavTitle title={t('folders.title')} />, [t])
+
   const screenOptions = useMemo(
     () => ({
-      headerTitle: '',
+      headerTitle: isTitleCollapsed ? headerTitle : '',
       headerTransparent: true,
       headerLargeTitle: false,
       headerLeft,
-      headerRight,
       headerSearchBarOptions: {
         placeholder: t('folders.searchPlaceholder'),
         hideWhenScrolling: false,
+        placement: 'automatic' as const,
+        allowToolbarIntegration: true,
         textColor: colors.text,
         hintTextColor: colors.textSecondary,
         headerIconColor: colors.textSecondary,
         onChangeText: handleSearchChange,
       },
     }),
-    [headerLeft, headerRight, handleSearchChange, t, colors.text, colors.textSecondary],
+    [
+      headerLeft,
+      handleSearchChange,
+      t,
+      colors.text,
+      colors.textSecondary,
+      isTitleCollapsed,
+      headerTitle,
+    ],
   )
 
   return (
     <View style={styles.container}>
       <Stack.Screen options={screenOptions} />
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          icon="square.and.pencil"
+          accessibilityLabel={t('folders.a11y.newNote')}
+          onPress={handleCreateNote}
+        />
+      </Stack.Toolbar>
+      <Stack.Toolbar placement="bottom">
+        <Stack.Toolbar.SearchBarSlot />
+        <Stack.Toolbar.Spacer />
+        <Stack.Toolbar.Button
+          icon="folder.badge.plus"
+          accessibilityLabel={t('folders.a11y.newFolder')}
+          onPress={handleCreateFolder}
+        />
+      </Stack.Toolbar>
 
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
+        onScroll={handleScroll}
+        scrollEventThrottle={SCROLL_EVENT_THROTTLE}
       >
-        <Text style={styles.pageTitle}>{t('folders.title')}</Text>
+        <View onLayout={handleTitleBlockLayout}>
+          <Text style={styles.pageTitle}>{t('folders.title')}</Text>
+        </View>
         {topFolders.length > 0 && (
           <View style={[commonThemedStyles.card, styles.group]}>{renderFolders(topFolders)}</View>
         )}
@@ -316,7 +372,7 @@ export default function FoldersScreen() {
 
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text style={[commonThemedStyles.sectionCap, styles.sectionHeaderMargin]}>
+            <Text style={[commonThemedStyles.sectionCamelCase, styles.sectionHeaderMargin]}>
               {t('folders.archiveHeader')}
             </Text>
             <View style={[commonThemedStyles.card, styles.group]}>
@@ -325,6 +381,14 @@ export default function FoldersScreen() {
           </View>
         )}
       </ScrollView>
+
+      <FolderIconBottomSheet
+        visible={!!iconPickerFolder}
+        folderName={iconPickerFolder?.name ?? ''}
+        selectedIcon={iconPickerFolder?.icon ?? DEFAULT_FOLDER_ICON}
+        onSelect={handleSelectFolderIcon}
+        onCancel={handleCloseIconPicker}
+      />
     </View>
   )
 }
@@ -338,7 +402,7 @@ const useStyles = createThemedStylesheet((theme) => {
     scrollContent: {
       paddingBottom: Space.scrollBottom,
       paddingHorizontal: 0,
-      paddingTop: Space.lg,
+      paddingTop: Space.sm,
     },
     pageTitle: {
       fontSize: FontSize.hero,
@@ -348,11 +412,6 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
       marginLeft: Space.base,
       marginBottom: Space.lg,
-    },
-    headerPill: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: Space.sm,
     },
     group: {
       marginHorizontal: Space.base,

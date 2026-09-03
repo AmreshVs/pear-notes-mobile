@@ -156,8 +156,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       color: c.onSurfaceVariant,
     },
     device: {
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
       color: c.onSurface,
     },
     metaRow: {

@@ -246,7 +246,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       minWidth: 0,
     },
     deviceName: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       marginBottom: 3,
@@ -257,7 +257,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       letterSpacing: 0.5,
-      textTransform: 'uppercase',
       color: c.onSurfaceVariant,
     },
     deviceTapToRename: {

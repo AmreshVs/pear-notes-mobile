@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  type LayoutChangeEvent,
   Modal,
   Pressable,
   SectionList,
@@ -57,6 +58,7 @@ import { AndroidFolderAppBar } from '@/components/android/AndroidFolderAppBar'
 import { AndroidSelectionAppBar } from '@/components/android/AndroidSelectionAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
+import { EdgeFade } from '@/components/EdgeFade'
 import { LockNowButton } from '@/components/LockNowButton'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -152,6 +154,14 @@ export default function AndroidFolderNotesScreen() {
     const map: Record<string, string> = {}
     allFolders.forEach((f: any) => {
       if (f.id) map[f.id] = f.name
+    })
+    return map
+  }, [allFolders])
+
+  const folderIconMap = useMemo(() => {
+    const map: Record<string, string> = {}
+    allFolders.forEach((f: any) => {
+      if (f.id) map[f.id] = f.icon
     })
     return map
   }, [allFolders])
@@ -476,6 +486,7 @@ export default function AndroidFolderNotesScreen() {
         index={index}
         isLast={index === section.data.length - 1}
         folderName={isAllNotes ? folderNameMap[note.value?.folderKey] : undefined}
+        folderIconToken={isAllNotes ? folderIconMap[note.value?.folderKey] : undefined}
         sectionTitle={section.title}
         selecting={isSelecting}
         checked={selectedKeys.includes(note.key)}
@@ -483,7 +494,27 @@ export default function AndroidFolderNotesScreen() {
         onLongPress={handleNoteLongPress}
       />
     ),
-    [isAllNotes, folderNameMap, isSelecting, selectedKeys, handleSelectNote, handleNoteLongPress],
+    [
+      isAllNotes,
+      folderNameMap,
+      folderIconMap,
+      isSelecting,
+      selectedKeys,
+      handleSelectNote,
+      handleNoteLongPress,
+    ],
+  )
+
+  const [headerHeight, setHeaderHeight] = useState(0)
+
+  const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
+    const next = event.nativeEvent.layout.height
+    setHeaderHeight((prev) => (prev === 0 ? next : Math.min(prev, next)))
+  }, [])
+
+  const listContentStyle = useMemo(
+    () => [styles.listContent, { paddingTop: headerHeight + UI_SIZE_10 }],
+    [styles.listContent, headerHeight],
   )
 
   const listHeader = useMemo(
@@ -686,35 +717,38 @@ export default function AndroidFolderNotesScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      {isSelecting ? (
-        <AndroidSelectionAppBar
-          selectedCount={selectedCount}
-          isAllSelected={isAllSelected}
-          isTrash={isTrashFolder}
-          canMove={moveFolders.length > 0}
-          onClose={exitSelection}
-          onToggleSelectAll={handleToggleSelectAll}
-          onMove={handleOpenBulkMove}
-          onRestore={handleBulkRestore}
-          onDelete={handleOpenBulkDelete}
-        />
-      ) : (
-        <AndroidFolderAppBar
-          searchVisible={searchVisible}
-          searchQuery={searchQuery}
-          showFolderOptions={!folder?.isSystem}
-          canMultiSelect={canMultiSelect}
-          canSearch={canSearch}
-          searchInputRef={searchInputRef}
-          searchBarStyle={searchBarAnimStyle}
-          onBack={handleBack}
-          onStartSelecting={handleStartSelecting}
-          onToggleSearch={toggleSearch}
-          onOpenFolderOptions={handleOpenFolderOptions}
-          onChangeSearch={handleChangeSearch}
-          onClearSearch={handleClearSearch}
-        />
-      )}
+      <View style={styles.headerOverlay} onLayout={handleHeaderLayout} pointerEvents="box-none">
+        <EdgeFade color={c.background} />
+        {isSelecting ? (
+          <AndroidSelectionAppBar
+            selectedCount={selectedCount}
+            isAllSelected={isAllSelected}
+            isTrash={isTrashFolder}
+            canMove={moveFolders.length > 0}
+            onClose={exitSelection}
+            onToggleSelectAll={handleToggleSelectAll}
+            onMove={handleOpenBulkMove}
+            onRestore={handleBulkRestore}
+            onDelete={handleOpenBulkDelete}
+          />
+        ) : (
+          <AndroidFolderAppBar
+            searchVisible={searchVisible}
+            searchQuery={searchQuery}
+            showFolderOptions={!folder?.isSystem}
+            canMultiSelect={canMultiSelect}
+            canSearch={canSearch}
+            searchInputRef={searchInputRef}
+            searchBarStyle={searchBarAnimStyle}
+            onBack={handleBack}
+            onStartSelecting={handleStartSelecting}
+            onToggleSearch={toggleSearch}
+            onOpenFolderOptions={handleOpenFolderOptions}
+            onChangeSearch={handleChangeSearch}
+            onClearSearch={handleClearSearch}
+          />
+        )}
+      </View>
 
       <SectionList
         sections={sections}
@@ -722,7 +756,7 @@ export default function AndroidFolderNotesScreen() {
         renderItem={renderNote}
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled={false}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={listContentStyle}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         removeClippedSubviews
@@ -733,6 +767,10 @@ export default function AndroidFolderNotesScreen() {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
       />
+
+      <View style={styles.bottomFade} pointerEvents="none">
+        <EdgeFade color={c.background} placement="bottom" />
+      </View>
 
       {!isTrashFolder && !isSelecting && (
         <FAB
@@ -814,14 +852,14 @@ export default function AndroidFolderNotesScreen() {
       <FolderPickerSheet
         visible={folderPickerVisible}
         onDismiss={handleCloseFolderPicker}
-        folders={moveFolders.map((f: any) => ({ id: f.id, name: f.name }))}
+        folders={moveFolders.map((f: any) => ({ id: f.id, name: f.name, icon: f.icon }))}
         onSelect={handleConfirmMove}
       />
 
       <FolderPickerSheet
         visible={bulkFolderPickerVisible}
         onDismiss={handleCloseBulkMove}
-        folders={moveFolders.map((f: any) => ({ id: f.id, name: f.name }))}
+        folders={moveFolders.map((f: any) => ({ id: f.id, name: f.name, icon: f.icon }))}
         onSelect={handleConfirmBulkMove}
       />
 
@@ -876,8 +914,22 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
     },
     listContent: {
       paddingHorizontal: UI_SIZE_20,
-      paddingTop: UI_SIZE_10,
       paddingBottom: insets.bottom + 100,
+    },
+    headerOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 10,
+    },
+    bottomFade: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: insets.bottom + UI_SIZE_20,
+      zIndex: 5,
     },
     pageTitle: {
       fontSize: FontSize.heading,
@@ -909,13 +961,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       marginBottom: UI_SIZE_12,
     },
     sectionCap: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
-      textTransform: 'uppercase',
-      letterSpacing: 1.2,
-      color: c.onSurfaceVariant,
-      marginBottom: UI_SIZE_12,
+      color: c.onSurface,
+      marginBottom: UI_SIZE_8,
       marginTop: UI_SIZE_4,
     },
     fab: {

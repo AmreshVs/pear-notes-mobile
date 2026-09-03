@@ -290,4 +290,8 @@ export const commonStyles = StyleSheet.create({
     alignItems: 'center',
     gap: Space.sm,
   },
+
+  sectionHeader: {
+    marginTop: UI_SIZE_14,
+  },
 })

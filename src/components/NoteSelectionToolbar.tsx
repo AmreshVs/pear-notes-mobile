@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Stack } from 'expo-router'
 
 import { useTheme } from '@/components/Themed'
+import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 
 type MoveFolder = {
   id: string
   name: string
+  icon?: string
 }
 
 type NoteSelectionToolbarProps = {
@@ -50,7 +52,11 @@ export const NoteSelectionToolbar = memo(function NoteSelectionToolbar({
   const moveActions = useMemo(
     () =>
       moveFolders.map((folder) => (
-        <Stack.Toolbar.MenuAction key={folder.id} icon="folder" onPress={() => onMoveTo(folder.id)}>
+        <Stack.Toolbar.MenuAction
+          key={folder.id}
+          icon={FOLDER_ICON_SF[folder.icon ?? ''] ?? FALLBACK_FOLDER_SF}
+          onPress={() => onMoveTo(folder.id)}
+        >
           {folder.name}
         </Stack.Toolbar.MenuAction>
       )),

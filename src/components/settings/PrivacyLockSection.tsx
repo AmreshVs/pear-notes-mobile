@@ -55,7 +55,7 @@ export function PrivacyLockSection() {
   return (
     <>
       <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
-        <Text style={commonThemedStyles.settingsSectionCap}>{t('settings.privacy.header')}</Text>
+        <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.privacy.header')}</Text>
       </MotionView>
 
       <MotionView
@@ -229,8 +229,8 @@ const useStyles = createThemedStylesheet((theme) => {
       flex: 1,
     },
     rowTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
     rowDesc: {

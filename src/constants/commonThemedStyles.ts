@@ -9,6 +9,7 @@ import {
   Radii,
   Space,
   UI_SIZE_4,
+  UI_SIZE_12,
   UI_SIZE_50,
 } from './commonStyles'
 
@@ -27,18 +28,22 @@ export const createThemedStyles = (theme: Theme) => {
       height: StyleSheet.hairlineWidth,
       backgroundColor: theme.colors.border,
     },
+    sectionCamelCase: {
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.heavy,
+      color: theme.colors.text,
+      marginBottom: UI_SIZE_12,
+    },
     sectionCap: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.caps,
-      textTransform: 'uppercase',
       color: theme.colors.textSecondary,
     },
     settingsSectionCap: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.caps,
-      textTransform: 'uppercase',
       color: theme.colors.textSecondary,
       marginBottom: Space.sm,
     },
@@ -46,7 +51,6 @@ export const createThemedStyles = (theme: Theme) => {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.caps,
-      textTransform: 'uppercase',
       color: theme.colors.textSecondary,
       marginBottom: Space.sm,
       marginTop: Space.xl,
@@ -109,7 +113,6 @@ export const createThemedStyles = (theme: Theme) => {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.bold,
       letterSpacing: LetterSpacing.caps,
-      textTransform: 'uppercase',
       color: theme.colors.textMuted,
     },
   })

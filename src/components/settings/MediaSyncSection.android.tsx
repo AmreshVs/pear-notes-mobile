@@ -6,7 +6,7 @@ import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { useMediaSyncPolicy } from '@/components/settings/useMediaSyncPolicy'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { FontFamily, FontSize, Space, UI_SIZE_28 } from '@/constants/commonStyles'
+import { FontFamily, FontSize, Space, UI_SIZE_4, UI_SIZE_28 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -39,8 +39,8 @@ export function MediaSyncSection() {
           : t('settings.mediaSync.connectionUnknown')
 
   return (
-    <View style={styles.section}>
-      <Text style={md3Styles.settingsSectionCap}>{t('settings.mediaSync.title')}</Text>
+    <View>
+      <Text style={md3Styles.settingsSectionCamelCase}>{t('settings.mediaSync.title')}</Text>
       <View style={styles.card}>
         <View style={styles.toggleRow}>
           <View style={styles.toggleInfo}>
@@ -68,13 +68,11 @@ export function MediaSyncSection() {
 const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
-    section: {
-      marginTop: Space.lg,
-    },
     card: {
       borderRadius: UI_SIZE_28,
       overflow: 'hidden',
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      marginTop: UI_SIZE_4,
     },
     toggleRow: {
       flexDirection: 'row',
@@ -89,7 +87,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
       gap: Space.xs,
     },
     rowTitle: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.medium,
       color: c.onSurface,
     },
@@ -97,6 +95,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
       fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
+      lineHeight: 20,
     },
     divider: {
       height: StyleSheet.hairlineWidth,

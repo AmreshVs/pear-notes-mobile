@@ -211,14 +211,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     },
     rowKey: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
+      fontFamily: FontFamily.medium,
       color: c.onSurfaceVariant,
     },
     rowValue: {
       flexShrink: 1,
       fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
       color: c.onSurface,
       textAlign: 'right',
     },

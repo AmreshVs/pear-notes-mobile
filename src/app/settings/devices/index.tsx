@@ -424,7 +424,7 @@ export default function SyncScreen() {
             style={styles.pad}
           >
             <Reanimated.View entering={FadeIn.duration(200)}>
-              <Text style={commonThemedStyles.settingsSectionCap}>
+              <Text style={commonThemedStyles.sectionCamelCase}>
                 {t('sync.devices.thisDevice')}
               </Text>
             </Reanimated.View>
@@ -441,7 +441,7 @@ export default function SyncScreen() {
               entering={FadeIn.duration(200).delay(70)}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             >
-              <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+              <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
                 {t('sync.devices.otherDevices')}
               </Text>
             </Reanimated.View>
@@ -608,13 +608,11 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.white,
     },
     codeLabel: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
-      letterSpacing: 1.4,
-      textTransform: 'uppercase',
       paddingBottom: Space.md,
       width: '100%',
-      color: theme.colors.textMuted,
+      color: theme.colors.text,
     },
     codeBox: {
       borderStyle: 'dashed',
@@ -622,6 +620,7 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingVertical: 15,
       paddingHorizontal: Space.md,
       width: '100%',
+      backgroundColor: theme.colors.codeBg,
       borderColor: isDark
         ? hexWithAlpha(theme.colors.white, 0.18)
         : hexWithAlpha(theme.colors.black, 0.12),
@@ -819,7 +818,7 @@ const useStyles = createThemedStylesheet((theme) => {
     footNote: {
       fontSize: FontSize.body,
       flex: 1,
-      lineHeight: 17,
+      lineHeight: 20,
       color: theme.colors.textMuted,
     },
     deviceGroup: {

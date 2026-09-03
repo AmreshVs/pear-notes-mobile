@@ -344,9 +344,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_8,
     },
     primaryBtnText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: c.onPrimary,
     },
     secondaryBtn: {
@@ -359,9 +359,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_8,
     },
     secondaryBtnText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: c.onSurface,
     },
     btnDisabled: { opacity: 0.4 },
@@ -473,7 +473,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginBottom: UI_SIZE_4,
     },
     recoveryTitle: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,

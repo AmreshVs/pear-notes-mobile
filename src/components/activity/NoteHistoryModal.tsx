@@ -172,7 +172,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { insets }) => {
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
       color: theme.colors.textMuted,
-      textTransform: 'uppercase',
       letterSpacing: 1,
     },
     groupRows: {

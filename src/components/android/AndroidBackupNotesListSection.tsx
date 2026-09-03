@@ -12,6 +12,8 @@ import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_14, UI_ICO
 import { androidRipple } from '@/lib/androidRipple'
 import { getMediaDisplayName,hexWithAlpha  } from '@/lib/backupUtils'
 
+import { useMD3CommonStyles } from './useMD3CommonStyles'
+
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
   surfaceContainerHighest?: string
@@ -36,6 +38,7 @@ export function AndroidBackupNotesListSection({
   const { t } = useTranslation()
   const styles = useStyles()
   const md3 = useMD3Theme()
+  const md3CommonStyles = useMD3CommonStyles()
   const c = md3.colors as ExtendedColors
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
@@ -127,7 +130,7 @@ export function AndroidBackupNotesListSection({
 
   return (
     <MotionView entering={FadeInDown.duration(240).delay(170)} style={styles.perNoteSection}>
-      <Text style={styles.sectionTitle}>
+      <Text style={md3CommonStyles.settingsSectionCamelCase}>
         {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
       </Text>
       {notesStorageInfo.map(renderNoteItem)}
@@ -147,15 +150,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     perNoteSection: {
       marginTop: UI_SIZE_12,
     },
-    sectionTitle: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurfaceVariant,
-      marginBottom: UI_SIZE_8,
-      marginLeft: UI_SIZE_8,
-      letterSpacing: 0.5,
-    },
     noteCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_20,
@@ -172,8 +166,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     noteTitle: {
       fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.medium,
       color: c.onSurface,
     },
     noteSubtitle: {

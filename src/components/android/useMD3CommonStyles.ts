@@ -12,12 +12,19 @@ export function useMD3CommonStyles() {
   return useMemo(
     () =>
       StyleSheet.create({
+        settingsSectionCamelCase: {
+          fontSize: FontSize.body,
+          fontWeight: FontWeight.heavy,
+          fontFamily: FontFamily.bold,
+          letterSpacing: 0.5,
+          color: c.onSurface,
+          marginBottom: Space.sm,
+        },
         settingsSectionCap: {
           fontSize: FontSize.caption,
           fontWeight: FontWeight.heavy,
           fontFamily: FontFamily.bold,
           letterSpacing: LetterSpacing.wide,
-          textTransform: 'uppercase',
           color: c.onSurfaceVariant,
           marginBottom: Space.sm,
         },
@@ -26,7 +33,6 @@ export function useMD3CommonStyles() {
           fontWeight: FontWeight.heavy,
           fontFamily: FontFamily.bold,
           letterSpacing: LetterSpacing.wide,
-          textTransform: 'uppercase',
           color: c.onSurfaceVariant,
           marginBottom: Space.sm,
           marginTop: Space.xl,

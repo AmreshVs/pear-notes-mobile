@@ -8,6 +8,8 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_20, UI_SIZE_8,UI_SIZE_12, UI_SIZE_20, UI_SIZE_24, UI_SIZE_28 } from '@/constants/commonStyles'
 
+import { useMD3CommonStyles } from './useMD3CommonStyles'
+
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
   surfaceContainerHighest?: string
@@ -38,6 +40,7 @@ export function AndroidBackupBreakdownSection({
   const { t } = useTranslation()
   const styles = useStyles()
   const md3 = useMD3Theme()
+  const md3CommonStyles = useMD3CommonStyles()
   const c = md3.colors as ExtendedColors
 
   if (!buckets) return null
@@ -52,7 +55,7 @@ export function AndroidBackupBreakdownSection({
 
   return (
     <MotionView entering={FadeInDown.duration(240).delay(160)} style={styles.breakdownSection}>
-      <Text style={styles.sectionTitle}>{t('backup.breakdownByType')}</Text>
+      <Text style={md3CommonStyles.settingsSectionCamelCase}>{t('backup.breakdownByType')}</Text>
       <View style={styles.breakdownCard}>
         {buckets.image.count > 0 && (
           <View style={styles.breakdownRow}>
@@ -126,15 +129,6 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
     breakdownSection: {
       marginTop: UI_SIZE_24,
       marginBottom: UI_SIZE_8,
-    },
-    sectionTitle: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurfaceVariant,
-      marginBottom: UI_SIZE_8,
-      marginLeft: UI_SIZE_8,
-      letterSpacing: 0.5,
     },
     breakdownCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,

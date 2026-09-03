@@ -52,7 +52,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
       entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}
       style={styles.breakdownSection}
     >
-      <Text style={commonThemedStyles.settingsSectionCapSpaced}>{t('backup.breakdownByType')}</Text>
+      <Text style={commonThemedStyles.sectionCamelCase}>{t('backup.breakdownByType')}</Text>
       <RNView style={commonThemedStyles.card}>
         {buckets.image.count > 0 && (
           <RNView style={styles.breakdownRow}>

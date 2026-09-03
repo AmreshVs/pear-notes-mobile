@@ -415,9 +415,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       opacity: 0.4,
     },
     rowTitle: {
-      fontSize: FontSize.subtitle,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
       color: c.onSurface,
     },
     rowDesc: {
@@ -508,10 +508,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     groupTitle: {
       fontSize: FontSize.caption,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
-      color: c.onSurfaceVariant,
-      textTransform: 'uppercase',
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      color: c.onSurface,
       letterSpacing: 1,
       paddingHorizontal: UI_SIZE_2,
     },

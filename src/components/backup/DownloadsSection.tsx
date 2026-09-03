@@ -163,7 +163,7 @@ export function DownloadsSection({
 
   return (
     <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
-      <Text style={commonThemedStyles.settingsSectionCap}>
+      <Text style={commonThemedStyles.sectionCamelCase}>
         {t('storage.syncingFromDevices')} ({downloads.length})
       </Text>
       <ScrollView

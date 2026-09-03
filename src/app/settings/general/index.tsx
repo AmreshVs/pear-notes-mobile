@@ -104,9 +104,7 @@ export default function GeneralSettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <MotionView entering={FadeIn.duration(Durations.fade)}>
-          <Text style={commonThemedStyles.settingsSectionCap}>
-            {t('settings.general.interface')}
-          </Text>
+          <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.general.interface')}</Text>
         </MotionView>
 
         <MotionView
@@ -158,7 +156,7 @@ export default function GeneralSettingsScreen() {
         </MotionView>
 
         <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayMedium)}>
-          <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+          <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
             {t('settings.general.notesList')}
           </Text>
         </MotionView>
@@ -189,7 +187,7 @@ export default function GeneralSettingsScreen() {
         </MotionView>
 
         <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
-          <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+          <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
             {t('settings.general.editor')}
           </Text>
         </MotionView>
@@ -230,7 +228,7 @@ export default function GeneralSettingsScreen() {
                 <Text style={styles.sizeSm}>A</Text>
                 <Slider
                   style={styles.slider}
-                  minimumValue={FontSize.caption}
+                  minimumValue={FontSize.body}
                   maximumValue={FontSize.heading}
                   step={1}
                   value={editorFontSize}
@@ -257,8 +255,8 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingTop: UI_SIZE_12,
     },
     rowLabel: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
     rowVal: {
@@ -284,7 +282,7 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: UI_SIZE_4,
     },
     rowDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
     segCtrl: {
@@ -312,7 +310,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderBottomRightRadius: UI_SIZE_12,
     },
     segText: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.medium,
       color: theme.colors.textMuted,
     },

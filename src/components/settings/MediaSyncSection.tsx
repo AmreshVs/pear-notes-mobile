@@ -42,7 +42,7 @@ export function MediaSyncSection() {
 
   return (
     <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
-      <Text style={commonThemedStyles.settingsSectionCap}>{t('settings.mediaSync.title')}</Text>
+      <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.mediaSync.title')}</Text>
       <RNView style={commonThemedStyles.card}>
         <RNView style={styles.toggleRow}>
           <RNView style={styles.toggleInfo}>
@@ -95,8 +95,8 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: Space.xs,
     },
     rowTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
     rowDesc: {

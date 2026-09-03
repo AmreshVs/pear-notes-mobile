@@ -81,7 +81,7 @@ export function SyncStatusSection() {
   return (
     <>
       <MotionView entering={FadeIn.duration(Durations.fade)}>
-        <Text style={commonThemedStyles.settingsSectionCap}>{t('settings.syncStatus.title')}</Text>
+        <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.syncStatus.title')}</Text>
       </MotionView>
 
       <MotionView entering={FadeInDown.duration(Durations.slide)}>
@@ -186,14 +186,14 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowKey: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.bold,
+      fontFamily: FontFamily.medium,
       color: theme.colors.textMuted,
     },
     rowValue: {
       flexShrink: 1,
       fontSize: FontSize.body,
-      fontFamily: FontFamily.bold,
-      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
       textAlign: 'right',
     },

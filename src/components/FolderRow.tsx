@@ -5,12 +5,11 @@ import { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimat
 
 import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
-import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
   FontSize,
   FontWeight,
-  LetterSpacing,
   Radii,
   Space,
   UI_ICON_SIZE_14,
@@ -18,16 +17,11 @@ import {
   UI_SIZE_4,
 } from '@/constants/commonStyles'
 import { FOLDER_ACTION } from '@/constants/folderActions'
+import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 
 import { ContextMenuView } from '../../modules/expo-context-menu'
 
 import { Text, Theme, useThemedStyles } from './Themed'
-
-const ICON_MAP: Record<string, IconName> = {
-  Folder: 'folder',
-  Trash: 'trash',
-  All: 'doc.text',
-}
 
 interface FolderRowProps {
   id: string
@@ -41,6 +35,7 @@ interface FolderRowProps {
   animationIndex?: number
   onPress: (id: string) => void
   onRename?: (id: string, currentName: string) => void
+  onChangeIcon?: (id: string) => void
   onDelete?: (id: string) => void
 }
 
@@ -56,11 +51,12 @@ export const FolderRow = memo(function FolderRow({
   animationIndex = 0,
   onPress,
   onRename,
+  onChangeIcon,
   onDelete,
 }: FolderRowProps) {
   const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
-  const iconName = ICON_MAP[icon || 'Folder'] ?? 'folder'
+  const iconName = FOLDER_ICON_SF[icon ?? ''] ?? FALLBACK_FOLDER_SF
 
   const containerStyle = useCallback(
     ({ pressed }: { pressed: boolean }) => [
@@ -115,6 +111,13 @@ export const FolderRow = memo(function FolderRow({
         systemImage: 'pencil',
       })
     }
+    if (onChangeIcon) {
+      items.push({
+        id: FOLDER_ACTION.changeIcon,
+        title: t('folders.buttons.changeIcon'),
+        systemImage: 'square.grid.2x2',
+      })
+    }
     if (onDelete) {
       items.push({
         id: FOLDER_ACTION.delete,
@@ -124,17 +127,18 @@ export const FolderRow = memo(function FolderRow({
       })
     }
     return items
-  }, [onRename, onDelete, t])
+  }, [onRename, onChangeIcon, onDelete, t])
 
   const handleMenuSelect = useCallback(
     (actionId: string) => {
       if (actionId === FOLDER_ACTION.rename) onRename?.(id, name)
+      if (actionId === FOLDER_ACTION.changeIcon) onChangeIcon?.(id)
       if (actionId === FOLDER_ACTION.delete) onDelete?.(id)
     },
-    [id, name, onRename, onDelete],
+    [id, name, onRename, onChangeIcon, onDelete],
   )
 
-  if (isSystem || (!onRename && !onDelete)) {
+  if (isSystem || (!onRename && !onChangeIcon && !onDelete)) {
     return row
   }
 
@@ -200,8 +204,8 @@ const createStyles = (theme: Theme) =>
     },
     count: {
       fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.bold,
       color: theme.colors.textSecondary,
-      opacity: 0.6,
     },
     chevronWrap: {
       opacity: 0.55,

@@ -19,6 +19,7 @@ import { Href, router, Stack } from 'expo-router'
 
 import {
   ALL_NOTES_KEY,
+  DEFAULT_FOLDER_ICON,
   FOLDER_ERROR,
   FOLDER_NAME_MAX_LENGTH,
   SEARCH_QUERY_MAX_LENGTH,
@@ -38,6 +39,7 @@ import { validateFolderName } from '@pear-notes/core/utils.js'
 
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -61,6 +63,7 @@ import {
   UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { FALLBACK_FOLDER_MATERIAL, FOLDER_ICON_MATERIAL } from '@/constants/folderIcons'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -70,6 +73,7 @@ type Folder = {
   id: string
   key?: string
   name: string
+  icon?: string
   isAll?: boolean
   isTrash?: boolean
   isSystem?: boolean
@@ -102,6 +106,7 @@ export default function AndroidFoldersScreen() {
   const [searchQuery, setSearchQuery] = useState('')
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
+  const [iconPickerFolderId, setIconPickerFolderId] = useState<string | null>(null)
   const [folderDialog, setFolderDialog] = useState<{ id: string; name: string } | null>(null)
   const [renameText, setRenameText] = useState('')
   const [folderError, setFolderError] = useState<string | null>(null)
@@ -211,6 +216,29 @@ export default function AndroidFoldersScreen() {
     openRenameDialog(folderSheet, folder.name)
   }, [folderSheet, folders, openRenameDialog])
 
+  const iconPickerFolder = useMemo(
+    () => folders.find((f) => f.id === iconPickerFolderId || f.key === iconPickerFolderId),
+    [folders, iconPickerFolderId],
+  )
+
+  const handleSheetChangeIcon = useCallback(() => {
+    if (!folderSheet) return
+    setIconPickerFolderId(folderSheet)
+    setFolderSheet(null)
+  }, [folderSheet])
+
+  const handleCloseIconPicker = useCallback(() => setIconPickerFolderId(null), [])
+
+  const handleSelectFolderIcon = useCallback(
+    (icon: string) => {
+      if (iconPickerFolderId) {
+        dispatch(updateFolder({ id: iconPickerFolderId, icon } as any))
+      }
+      setIconPickerFolderId(null)
+    },
+    [dispatch, iconPickerFolderId],
+  )
+
   const handleSheetDelete = useCallback(() => {
     if (!folderSheet) return
     const folderId = folderSheet
@@ -260,13 +288,18 @@ export default function AndroidFoldersScreen() {
         onPress: handleSheetRename,
       },
       {
+        icon: 'view-grid-outline',
+        label: t('folders.buttons.changeIcon'),
+        onPress: handleSheetChangeIcon,
+      },
+      {
         icon: 'delete-outline',
         label: t('folders.buttons.delete'),
         onPress: handleSheetDelete,
         destructive: true,
       },
     ],
-    [handleSheetRename, handleSheetDelete, t],
+    [handleSheetRename, handleSheetChangeIcon, handleSheetDelete, t],
   )
 
   const deleteConfirmActions = useMemo(
@@ -340,6 +373,7 @@ export default function AndroidFoldersScreen() {
               key={folder.id || folder.key}
               id={folder.id || folder.key!}
               name={folder.name}
+              icon={folder.icon}
               isAll={folder.isAll}
               isTrash={folder.isTrash}
               count={noteCounts[folder.id || folder.key!] ?? 0}
@@ -371,6 +405,7 @@ export default function AndroidFoldersScreen() {
                   key={folder.id || folder.key}
                   id={folder.id || folder.key!}
                   name={folder.name}
+                  icon={folder.icon}
                   isAll={folder.isAll}
                   isTrash={folder.isTrash}
                   count={noteCounts[folder.id || folder.key!] ?? 0}
@@ -454,6 +489,14 @@ export default function AndroidFoldersScreen() {
         subtitle={t('folders.deleteDescription')}
         actions={deleteConfirmActions}
       />
+
+      <FolderIconBottomSheet
+        visible={!!iconPickerFolder}
+        folderName={iconPickerFolder?.name ?? ''}
+        selectedIcon={iconPickerFolder?.icon ?? DEFAULT_FOLDER_ICON}
+        onSelect={handleSelectFolderIcon}
+        onCancel={handleCloseIconPicker}
+      />
     </View>
   )
 }
@@ -461,6 +504,7 @@ export default function AndroidFoldersScreen() {
 type VaultFolderRowProps = {
   id: string
   name: string
+  icon?: string
   isAll?: boolean
   isTrash?: boolean
   count: number
@@ -473,6 +517,7 @@ type VaultFolderRowProps = {
 const VaultFolderRow = memo(function VaultFolderRow({
   id,
   name,
+  icon,
   isAll,
   isTrash,
   count,
@@ -487,11 +532,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
   const handlePress = useCallback(() => onPress(id), [id, onPress])
   const handleLongPress = useCallback(() => onLongPress(id), [id, onLongPress])
 
-  const iconName = isAll
-    ? 'text-box-multiple-outline'
-    : isTrash
-      ? 'delete-outline'
-      : 'folder-outline'
+  const iconName = FOLDER_ICON_MATERIAL[icon ?? ''] ?? FALLBACK_FOLDER_MATERIAL
   const iconColor = isTrash ? c.error : c.primary
 
   const rowStyle = useMemo(
@@ -509,7 +550,11 @@ const VaultFolderRow = memo(function VaultFolderRow({
       >
         <View style={styles.rowLeft}>
           <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
-            <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_22} color={iconColor} />
+            <MaterialCommunityIcons
+              name={iconName as never}
+              size={UI_ICON_SIZE_22}
+              color={iconColor}
+            />
           </View>
           <Text style={styles.rowNameText} numberOfLines={1} ellipsizeMode="tail">
             {name}
@@ -620,7 +665,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      color: c.secondary,
+      color: c.onSurface,
     },
     fab: {
       position: 'absolute',

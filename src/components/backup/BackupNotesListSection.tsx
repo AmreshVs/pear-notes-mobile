@@ -138,7 +138,7 @@ export function BackupNotesListSection({
       entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset + 20)}
       style={styles.perNoteSection}
     >
-      <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+      <Text style={commonThemedStyles.sectionCamelCase}>
         {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
       </Text>
       {notesStorageInfo.map(renderNoteItem)}
@@ -171,7 +171,7 @@ const useStyles = createThemedStylesheet((theme) => {
     noteTitle: {
       flex: 1,
       fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
       marginRight: Space.md,
     },

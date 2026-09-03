@@ -89,7 +89,7 @@ export default function StorageScreen() {
         />
 
         <MotionView entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}>
-          <Text style={commonThemedStyles.settingsSectionCap}>{t('storage.usage')}</Text>
+          <Text style={commonThemedStyles.sectionCamelCase}>{t('storage.usage')}</Text>
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.usageRow}>
               <Text style={styles.usageLabel}>{t('storage.notesData')}</Text>
@@ -131,7 +131,9 @@ export default function StorageScreen() {
         />
 
         <MotionView entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}>
-          <Text style={commonThemedStyles.settingsSectionCapSpaced}>{t('storage.dangerZone')}</Text>
+          <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
+            {t('storage.dangerZone')}
+          </Text>
           <RNView style={[commonThemedStyles.card, styles.dangerCard]}>
             <RNView style={styles.dangerContent}>
               <RNView style={styles.dangerTextContent}>
@@ -261,7 +263,7 @@ const useStyles = createThemedStylesheet((theme) => {
       flex: 1,
     },
     dangerTitle: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: theme.colors.text,

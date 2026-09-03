@@ -113,7 +113,7 @@ export default function ActivityScreen() {
   const renderGroup = useCallback(
     (group: ActivityGroup) => (
       <RNView key={group.key} style={styles.group}>
-        <Text style={commonThemedStyles.settingsSectionCap}>{formatActivityDay(group.at, t)}</Text>
+        <Text style={commonThemedStyles.sectionCamelCase}>{formatActivityDay(group.at, t)}</Text>
         <RNView style={styles.groupRows}>{group.entries.map(renderEntry)}</RNView>
       </RNView>
     ),
@@ -315,9 +315,9 @@ const useStyles = createThemedStylesheet((theme) => {
       marginHorizontal: Space.base,
     },
     rowTitle: {
-      fontSize: FontSize.subtitle,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
     rowDesc: {
@@ -439,8 +439,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     loadMoreText: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
   })

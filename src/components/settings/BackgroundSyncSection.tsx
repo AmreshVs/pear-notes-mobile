@@ -64,7 +64,7 @@ export function BackgroundSyncSection() {
   return (
     <>
       <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
-        <Text style={commonThemedStyles.settingsSectionCapSpaced}>
+        <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
           {t('sync.backgroundSync.header')}
         </Text>
       </MotionView>
@@ -100,8 +100,8 @@ export function BackgroundSyncSection() {
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     rowLabel: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
       color: theme.colors.text,
     },
     descRow: {

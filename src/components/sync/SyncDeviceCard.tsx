@@ -223,15 +223,14 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.textMuted,
     },
     deviceName: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
       letterSpacing: -0.3,
       marginBottom: 3,
       color: theme.colors.text,
     },
     deviceSub: {
       fontSize: FontSize.caption,
-      textTransform: 'uppercase',
       letterSpacing: 0.7,
       fontWeight: FontWeight.medium,
       color: theme.colors.textMuted,

@@ -185,7 +185,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
       color: c.onSurfaceVariant,
-      textTransform: 'uppercase',
       letterSpacing: 1,
       paddingHorizontal: UI_SIZE_2,
     },

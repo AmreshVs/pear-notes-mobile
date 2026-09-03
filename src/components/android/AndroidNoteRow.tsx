@@ -19,7 +19,6 @@ import {
   FontWeight,
   Radii,
   Space,
-  UI_ICON_SIZE_12,
   UI_ICON_SIZE_13,
   UI_ICON_SIZE_24,
   UI_SIZE_4,
@@ -31,7 +30,9 @@ import {
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_60,
+  UI_ICON_SIZE_14,
 } from '@/constants/commonStyles'
+import { FALLBACK_FOLDER_MATERIAL, FOLDER_ICON_MATERIAL } from '@/constants/folderIcons'
 import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { androidRipple } from '@/lib/androidRipple'
@@ -65,6 +66,7 @@ type NoteRowProps = {
   index: number
   isLast: boolean
   folderName?: string
+  folderIconToken?: string
   sectionTitle?: string
   selecting?: boolean
   checked?: boolean
@@ -77,6 +79,7 @@ function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
     prev.note.key === next.note.key &&
     prev.note.value === next.note.value &&
     prev.folderName === next.folderName &&
+    prev.folderIconToken === next.folderIconToken &&
     prev.sectionTitle === next.sectionTitle &&
     prev.selecting === next.selecting &&
     prev.checked === next.checked &&
@@ -89,6 +92,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   note,
   index,
   folderName,
+  folderIconToken,
   sectionTitle,
   selecting,
   checked,
@@ -116,9 +120,9 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const rawImageUrl = metadata.imageUrl
   const hasChecklist = !masked && metadata.isChecklist
   const timestamp = note.value?.updatedAt || note.value?.createdAt
-  const relativeLabel = (formatDate(timestamp) || '').toUpperCase()
+  const relativeLabel = formatDate(timestamp) || ''
   const dateLabel =
-    sectionTitle && relativeLabel && relativeLabel === sectionTitle.toUpperCase()
+    sectionTitle && relativeLabel && relativeLabel.toLowerCase() === sectionTitle.toLowerCase()
       ? formatTimeOfDay(timestamp)
       : relativeLabel
   const accessibilityLabel = useMemo(() => {
@@ -254,8 +258,11 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
             {folderName && (
               <>
                 <MaterialCommunityIcons
-                  name="folder-outline"
-                  size={UI_ICON_SIZE_12}
+                  name={
+                    (FOLDER_ICON_MATERIAL[folderIconToken ?? ''] ??
+                      FALLBACK_FOLDER_MATERIAL) as never
+                  }
+                  size={UI_ICON_SIZE_14}
                   color={c.onSurfaceVariant}
                   style={styles.folderIcon}
                 />
@@ -263,7 +270,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                   maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME}
                   style={[styles.metaTag, isPearTheme && styles.metaTagPear]}
                 >
-                  {folderName.toUpperCase()}
+                  {folderName}
                 </Text>
               </>
             )}
@@ -369,7 +376,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
       ...commonStyles.row,
     },
     metaDate: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       letterSpacing: 0.5,
@@ -382,7 +389,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
       color: c.onSurfaceVariant,
     },
     metaTag: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       letterSpacing: 0.5,

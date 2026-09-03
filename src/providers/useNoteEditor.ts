@@ -34,6 +34,8 @@ import { snapTo } from '@/lib/motion'
 const FOCUS_TITLE_DELAY = 250
 const IOS_TOOLBAR_INSET_TYPING = 76
 const IOS_TOOLBAR_INSET_IDLE = 96
+const ANDROID_TOOLBAR_INSET_TYPING = 72
+const ANDROID_TOOLBAR_INSET_IDLE = 96
 
 export function useNoteEditor() {
   const reduceMotion = useReduceMotion()
@@ -124,9 +126,7 @@ export function useNoteEditor() {
       if (isIos) {
         editorRef.current?.setBottomInset(e.endCoordinates.height, IOS_TOOLBAR_INSET_TYPING)
       } else {
-        setTimeout(() => {
-          editorRef.current?.setKeyboardInset(50, true)
-        }, 50)
+        editorRef.current?.setBottomInset(0, ANDROID_TOOLBAR_INSET_TYPING)
       }
     })
     const hide = Keyboard.addListener(hideEvent, () => {
@@ -135,6 +135,7 @@ export function useNoteEditor() {
       if (isIos) {
         editorRef.current?.setBottomInset(0, IOS_TOOLBAR_INSET_IDLE)
       } else {
+        editorRef.current?.setBottomInset(0, ANDROID_TOOLBAR_INSET_IDLE)
         editorRef.current?.blur()
         setIsEditing(false)
       }
@@ -156,7 +157,7 @@ export function useNoteEditor() {
       isEditorFocusedRef.current = false
       editorRef.current?.blur()
       if (isIos) editorRef.current?.setBottomInset(0, IOS_TOOLBAR_INSET_IDLE)
-      else editorRef.current?.setKeyboardInset(0)
+      else editorRef.current?.setBottomInset(0, ANDROID_TOOLBAR_INSET_IDLE)
     }
 
     const subscription = AppState.addEventListener('change', (next: AppStateStatus) => {

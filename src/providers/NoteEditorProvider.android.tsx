@@ -27,6 +27,7 @@ import { EditorToolbar } from '@/components/android/EditorToolbar'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { EdgeFade } from '@/components/EdgeFade'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
@@ -103,6 +104,8 @@ function applyDownloadedExtension(fileName: string, localPath: string): string {
   if (!hasFileExtension(localName)) return fileName
   return `${fileName}.${localName.split('.').pop()}`
 }
+
+const EDITOR_HEADER_HEIGHT = 52
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
   const reduceMotion = useReduceMotion()
@@ -594,10 +597,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             noteId={noteId ?? 'new'}
             initialContent=""
             initialTitle=""
-            safeAreaTop={insets.top + 52}
-            safeAreaBottom={
-              keyboardHeight > 0 ? 42 + 24 + UI_SIZE_72 : insets.bottom + 12 + UI_SIZE_72
-            }
+            safeAreaTop={insets.top + EDITOR_HEADER_HEIGHT}
+            safeAreaBottom={0}
             backgroundColor={c.background}
             onContentChange={handleUpdate}
             onYjsMessage={handleYjsMessage}
@@ -621,6 +622,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             <LockedNoteView noteId={noteId ?? ''} />
           </View>
         )}
+
+        <View style={styles.headerFade} pointerEvents="none">
+          <EdgeFade color={c.background} />
+        </View>
 
         <View style={styles.floatingLeft} pointerEvents="box-none">
           <Pressable
@@ -698,6 +703,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         )}
 
         <LockedContentShield active={protectLockedNote} />
+
+        <View style={styles.bottomFade} pointerEvents="none">
+          <EdgeFade color={c.background} placement="bottom" />
+        </View>
 
         {!isNoteLocked && (
           <EditorToolbar
@@ -894,6 +903,22 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       bottom: 0,
       zIndex: 15,
       backgroundColor: c.background,
+    },
+    headerFade: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: insets.top + EDITOR_HEADER_HEIGHT,
+      zIndex: 18,
+    },
+    bottomFade: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: insets.bottom + UI_SIZE_20,
+      zIndex: 5,
     },
     floatingLeft: {
       position: 'absolute',

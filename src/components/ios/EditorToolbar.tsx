@@ -204,7 +204,7 @@ export const EditorToolbar = memo(function EditorToolbar({
 
   return (
     <View style={[styles.floatingToolbar, { bottom: toolbarBottom }]}>
-      <GlassView intensity={40} borderRadius={28} style={styles.glassBar} isInteractive>
+      <GlassView intensity={0} borderRadius={28} style={styles.glassBar} isInteractive>
         {isEditing ? (
           <>
             <ScrollView

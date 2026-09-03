@@ -37,7 +37,6 @@ export const Typography = {
     fontSize: FontSize.caption,
     lineHeight: 16,
     fontWeight: '500' as TextStyle['fontWeight'],
-    textTransform: 'uppercase' as TextStyle['textTransform'],
     letterSpacing: 0.5,
   },
 }

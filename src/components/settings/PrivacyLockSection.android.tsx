@@ -74,7 +74,7 @@ export function PrivacyLockSection() {
   return (
     <>
       <MotionView entering={FadeIn.duration(220).delay(20)}>
-        <Text style={md3Styles.settingsSectionCap}>{t('settings.privacy.header')}</Text>
+        <Text style={md3Styles.settingsSectionCamelCase}>{t('settings.privacy.header')}</Text>
       </MotionView>
 
       <MotionView
@@ -96,7 +96,7 @@ export function PrivacyLockSection() {
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.card}
       >
-        <Text style={styles.cardTitle}>{t('settings.privacy.unlockMethod')}</Text>
+        <Text style={styles.rowTitle}>{t('settings.privacy.unlockMethod')}</Text>
         <View style={styles.segContainer}>
           <Pressable
             onPress={selectBiometric}
@@ -219,13 +219,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingVertical: UI_SIZE_16,
       marginBottom: UI_SIZE_12,
     },
-    cardTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: c.onSurface,
-      marginBottom: UI_SIZE_20,
-    },
     segContainer: {
       ...commonStyles.row,
       backgroundColor: hexWithAlpha(c.onSurface, 0.04),
@@ -281,17 +274,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       marginLeft: UI_SIZE_20,
     },
     rowTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.medium,
       color: c.onSurface,
       marginBottom: UI_SIZE_4,
     },
     rowSubtitle: {
       fontSize: FontSize.body,
       color: c.onSurfaceVariant,
-      fontFamily: FontFamily.medium,
-      fontWeight: FontWeight.medium,
       lineHeight: UI_SIZE_20,
     },
   })

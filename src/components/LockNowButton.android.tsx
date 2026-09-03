@@ -73,7 +73,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
-      textTransform: 'uppercase',
       color: c.primary,
     },
   })

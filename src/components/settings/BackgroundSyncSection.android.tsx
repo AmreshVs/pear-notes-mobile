@@ -108,7 +108,9 @@ export function BackgroundSyncSection() {
   return (
     <>
       <MotionView entering={FadeIn.duration(220).delay(120)}>
-        <Text style={md3Styles.settingsSectionCapSpaced}>{t('sync.backgroundSync.header')}</Text>
+        <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
+          {t('sync.backgroundSync.header')}
+        </Text>
       </MotionView>
 
       <MotionView
@@ -160,9 +162,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       marginBottom: UI_SIZE_12,
     },
     cardTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.medium,
       color: c.onSurface,
       marginBottom: UI_SIZE_20,
     },

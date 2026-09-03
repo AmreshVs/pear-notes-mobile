@@ -65,7 +65,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.caps,
-      textTransform: 'uppercase',
       color: theme.colors.primary,
     },
   })

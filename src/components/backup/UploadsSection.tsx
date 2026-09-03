@@ -96,7 +96,7 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
 
   return (
     <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
-      <Text style={commonThemedStyles.settingsSectionCap}>
+      <Text style={commonThemedStyles.sectionCamelCase}>
         {t('storage.syncingToDevices')} ({uploads.length})
       </Text>
       <ScrollView
@@ -123,7 +123,7 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: Space.md,
     },
     groupTitle: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       color: theme.colors.textMuted,
       paddingHorizontal: Space.lg,
@@ -156,7 +156,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     sizeLabel: {
       fontSize: FontSize.caption,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.medium,
       color: theme.colors.textMuted,
     },
     progressTrack: {

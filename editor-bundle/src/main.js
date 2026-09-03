@@ -95,9 +95,9 @@ function applyTheme(colors, isDark) {
   document.body.style.background = colors.background
 
   r.setProperty('--c-placeholder', isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)')
-  r.setProperty('--c-code-bg', isDark ? '#1C1C1E' : '#F0F0F2')
+  r.setProperty('--c-code-bg', isDark ? '#1C1C1E' : '#E4E4EA')
   r.setProperty('--c-code', isDark ? '#A8FF78' : '#2D5016')
-  r.setProperty('--c-codeblock-bg', isDark ? '#141414' : '#F4F4F5')
+  r.setProperty('--c-codeblock-bg', isDark ? '#141414' : '#E4E4EA')
   r.setProperty('--hl-keyword', isDark ? '#FF79C6' : '#D73A49')
   r.setProperty('--hl-string', isDark ? '#F1FA8C' : '#032F62')
   r.setProperty('--hl-comment', isDark ? '#6272A4' : '#6A737D')

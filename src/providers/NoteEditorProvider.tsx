@@ -26,6 +26,7 @@ import {
 
 import { NoteHistoryModal } from '@/components/activity/NoteHistoryModal'
 import { AudioRecorderModal } from '@/components/AudioRecorderModal'
+import { EdgeFade } from '@/components/EdgeFade'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
 import { LockedContentShield } from '@/components/LockedContentShield'
@@ -44,6 +45,7 @@ import {
   UI_SIZE_32,
   UI_SIZE_48,
 } from '@/constants/commonStyles'
+import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { hapticError, hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -550,6 +552,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [styles.lockOverlay, insets.top],
   )
 
+  const bottomFadeStyle = useMemo(
+    () => [styles.bottomFade, { height: insets.bottom }],
+    [styles.bottomFade, insets.bottom],
+  )
+
   return (
     <NoteEditorContext.Provider value={contextValue}>
       {children}
@@ -567,8 +574,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           ) : null}
 
           <View style={[styles.header, { paddingTop: insets.top - 5 }]}>
+            <EdgeFade color={colors.background} />
             <View style={styles.headerRow}>
-              <GlassView intensity={40} borderRadius={24} style={styles.headerBtn}>
+              <GlassView intensity={0} borderRadius={24} style={styles.headerBtn} isInteractive>
                 <Pressable
                   onPress={closeNote}
                   accessibilityRole="button"
@@ -605,7 +613,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                   </Pressable>
                 </View>
               ) : (
-                <GlassView intensity={40} borderRadius={24} style={styles.headerPill} isInteractive>
+                <GlassView intensity={0} borderRadius={24} style={styles.headerPill} isInteractive>
                   <Pressable
                     onPress={handleShare}
                     disabled={isSharing}
@@ -669,7 +677,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                               <ExpoUI.Button
                                 key={f.id}
                                 label={f.name}
-                                systemImage="folder"
+                                systemImage={FOLDER_ICON_SF[f.icon ?? ''] ?? FALLBACK_FOLDER_SF}
                                 onPress={() => handleMoveNote(f.id)}
                               />
                             ))
@@ -751,6 +759,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           )}
 
           <NoteConflictBanner noteKey={noteId} />
+
+          <View style={bottomFadeStyle} pointerEvents="none">
+            <EdgeFade color={colors.background} placement="bottom" />
+          </View>
 
           {isOpen && !isNoteLocked && (
             <EditorToolbar
@@ -932,6 +944,13 @@ const useStyles = createThemedStylesheet((theme) => {
       left: 0,
       right: 0,
       zIndex: 10,
+    },
+    bottomFade: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 5,
     },
     edgeSwipeZone: {
       ...StyleSheet.absoluteFill,

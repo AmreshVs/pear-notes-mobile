@@ -489,15 +489,18 @@ export default function AndroidSyncScreen() {
             >
               {localDevices.length > 0 && (
                 <>
-                  <Text style={md3Styles.settingsSectionCap}>{t('sync.devices.thisDevice')}</Text>
+                  <Text style={md3Styles.settingsSectionCamelCase}>
+                    {t('sync.devices.thisDevice')}
+                  </Text>
                   <View style={styles.deviceList}>{localDevices.map(renderLocalDeviceCard)}</View>
                 </>
               )}
 
               <Text
                 style={[
-                  md3Styles.settingsSectionCap,
-                  localDevices.length > 0 && md3Styles.settingsSectionCapSpaced,
+                  commonStyles.sectionHeader,
+                  md3Styles.settingsSectionCamelCase,
+                  localDevices.length > 0 && md3Styles.settingsSectionCamelCase,
                 ]}
               >
                 {t('sync.devices.otherDevices')}
@@ -775,7 +778,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     codeText: {
       fontFamily: 'monospace',
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       letterSpacing: 1,
       color: c.onSurface,
     },

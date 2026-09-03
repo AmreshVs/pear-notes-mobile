@@ -141,8 +141,9 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textSecondary,
     },
     device: {
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
       color: theme.colors.text,
     },
     metaRow: {

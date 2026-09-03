@@ -286,10 +286,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       letterSpacing: 0.5,
     },
     sectionTitleDanger: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      color: c.onSurfaceVariant,
+      color: c.onSurface,
       marginBottom: UI_SIZE_8,
       marginLeft: UI_SIZE_8,
       marginTop: UI_SIZE_24,
@@ -359,7 +359,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       flex: 1,
     },
     dangerCardTitle: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.onSurface,

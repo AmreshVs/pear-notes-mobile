@@ -31,6 +31,7 @@ import {
   UI_SIZE_22,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
+import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
@@ -73,6 +74,7 @@ interface NoteCardProps {
   attachment?: AttachmentInfo | null
   rawImageUrl?: string | null
   folderName?: string
+  folderIconToken?: string
   selected?: boolean
   selecting?: boolean
   checked?: boolean
@@ -102,6 +104,7 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.attachment === next.attachment &&
     prev.rawImageUrl === next.rawImageUrl &&
     prev.folderName === next.folderName &&
+    prev.folderIconToken === next.folderIconToken &&
     prev.selected === next.selected &&
     prev.selecting === next.selecting &&
     prev.checked === next.checked &&
@@ -130,6 +133,7 @@ export const NoteCard = memo(function NoteCard({
   attachment,
   rawImageUrl,
   folderName,
+  folderIconToken,
   selected,
   selecting,
   checked,
@@ -195,6 +199,7 @@ export const NoteCard = memo(function NoteCard({
         grouped ? styles.containerGrouped : {},
         grouped && isFirst ? styles.containerGroupedFirst : {},
         grouped && isLast ? styles.containerGroupedLast : {},
+        grouped && !isFirst ? styles.noTopPadding : {},
       ]
       if (selected || checked) return [...base, styles.containerSelected]
       if (pressed)
@@ -382,7 +387,7 @@ export const NoteCard = memo(function NoteCard({
             <>
               <RNView style={styles.folderTag}>
                 <SymbolIcon
-                  name="folder"
+                  name={FOLDER_ICON_SF[folderIconToken ?? ''] ?? FALLBACK_FOLDER_SF}
                   size={UI_ICON_SIZE_12}
                   style={styles.folderIcon}
                   color={colors.textSecondary}
@@ -454,6 +459,9 @@ export const NoteCard = memo(function NoteCard({
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
+    noTopPadding: {
+      paddingTop: 0,
+    },
     container: {
       paddingHorizontal: Space.base,
       borderRadius: Radii.md,
@@ -555,7 +563,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     uploadLabel: {
       ...commonStyles.flex1,
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.primary,
     },
@@ -567,22 +575,16 @@ const useStyles = createThemedStylesheet((theme) => {
       marginRight: Space.xs,
     },
     metadataText: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.extraBold,
-      textTransform: 'uppercase',
-      letterSpacing: 0.8,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      letterSpacing: 0.5,
       color: theme.colors.textSecondary,
       marginRight: UI_SIZE_8,
     },
     metadataTextPearTheme: {
       color: theme.colors.textSecondary,
       opacity: 1,
-    },
-    separator: {
-      opacity: 0.3,
-      fontSize: FontSize.caption,
-      color: theme.colors.textSecondary,
     },
     thumbnail: {
       width: UI_SIZE_56,

@@ -190,7 +190,7 @@ const useStyles = createThemedStylesheetWithHooks(
         justifyContent: 'space-between',
         paddingHorizontal: UI_SIZE_8,
         paddingTop: insets.top + UI_SIZE_4,
-        backgroundColor: c.background,
+        backgroundColor: theme.colors.transparent,
       },
       appBarLeft: {
         ...commonStyles.row,

@@ -269,7 +269,7 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: Space.xs,
     },
     recoveryTitle: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: theme.colors.text,
@@ -322,7 +322,7 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: Space.sm,
     },
     primaryBtnText: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: theme.colors.onPrimary,
@@ -337,9 +337,9 @@ const useStyles = createThemedStylesheet((theme) => {
       gap: Space.sm,
     },
     secondaryBtnText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
       color: theme.colors.text,
     },
     btnPressed: { opacity: 0.7 },

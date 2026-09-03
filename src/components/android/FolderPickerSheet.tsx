@@ -23,6 +23,10 @@ import {
   UI_SIZE_28,
   UI_SIZE_32,
 } from '@/constants/commonStyles'
+import {
+  FALLBACK_FOLDER_MATERIAL,
+  FOLDER_ICON_MATERIAL,
+} from '@/constants/folderIcons'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
@@ -36,6 +40,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 type FolderItem = {
   id: string
   name: string
+  icon?: string
 }
 
 type Props = {
@@ -104,7 +109,10 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
                 >
                   <View style={styles.iconCircle}>
                     <MaterialCommunityIcons
-                      name="folder-outline"
+                      name={
+                        (FOLDER_ICON_MATERIAL[folder.icon ?? ''] ??
+                          FALLBACK_FOLDER_MATERIAL) as never
+                      }
                       size={UI_ICON_SIZE_20}
                       color={colors.primary}
                     />

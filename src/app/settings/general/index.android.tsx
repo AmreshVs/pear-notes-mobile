@@ -211,7 +211,7 @@ export default function AndroidGeneralSettingsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <MotionView entering={FadeIn.duration(220).delay(20)}>
-          <Text style={md3Styles.settingsSectionCap}>{t('settings.general.interface')}</Text>
+          <Text style={md3Styles.settingsSectionCamelCase}>{t('settings.general.interface')}</Text>
         </MotionView>
 
         <MotionView
@@ -250,7 +250,9 @@ export default function AndroidGeneralSettingsScreen() {
         </MotionView>
 
         <MotionView entering={FadeIn.duration(220).delay(80)}>
-          <Text style={md3Styles.settingsSectionCapSpaced}>{t('settings.general.notesList')}</Text>
+          <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
+            {t('settings.general.notesList')}
+          </Text>
         </MotionView>
 
         <MotionView
@@ -279,7 +281,9 @@ export default function AndroidGeneralSettingsScreen() {
         </MotionView>
 
         <MotionView entering={FadeIn.duration(220).delay(120)}>
-          <Text style={md3Styles.settingsSectionCapSpaced}>{t('settings.general.editor')}</Text>
+          <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
+            {t('settings.general.editor')}
+          </Text>
         </MotionView>
 
         <MotionView
@@ -424,11 +428,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginLeft: UI_SIZE_20,
     },
     cardTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.medium,
       color: c.onSurface,
-      marginBottom: UI_SIZE_20,
+      marginBottom: UI_SIZE_8,
     },
     segContainer: {
       ...commonStyles.row,
@@ -460,9 +464,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.bold,
     },
     rowTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.medium,
       color: c.onSurface,
       marginBottom: UI_SIZE_4,
     },
