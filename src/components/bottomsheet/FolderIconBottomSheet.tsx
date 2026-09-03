@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Modal,
@@ -60,7 +60,7 @@ export function FolderIconBottomSheet({
   onCancel,
 }: FolderIconBottomSheetProps) {
   const { t } = useTranslation()
-  const { isDark } = useTheme()
+  const { isDark, colors } = useTheme()
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
   const styles = useStyles()
@@ -139,13 +139,15 @@ export function FolderIconBottomSheet({
               key={icon}
               icon={icon}
               selected={icon === selectedIcon}
+              label={t(`folders.icons.${icon}`)}
+              color={icon === selectedIcon ? colors.primary : colors.text}
               onSelect={handleSelect}
             />
           ),
         )}
       </RNView>
     ),
-    [selectedIcon, handleSelect, styles.gridRow, styles.cellSpacer],
+    [selectedIcon, handleSelect, styles.gridRow, styles.cellSpacer, t, colors.primary, colors.text],
   )
 
   const gridScrollStyle = useMemo(
@@ -190,7 +192,7 @@ export function FolderIconBottomSheet({
       visible={isPresented}
       transparent
       allowSwipeDismissal
-      animationType="fade"
+      animationType="none"
       onShow={handleSheetShow}
       onRequestClose={handleCancel}
     >
@@ -226,35 +228,47 @@ export function FolderIconBottomSheet({
 interface FolderIconCellProps {
   icon: string
   selected: boolean
+  label: string
+  color: string
   onSelect: (icon: string) => void
 }
 
-function FolderIconCell({ icon, selected, onSelect }: FolderIconCellProps) {
-  const { t } = useTranslation()
-  const { colors } = useTheme()
+const FolderIconCell = memo(function FolderIconCell({
+  icon,
+  selected,
+  label,
+  color,
+  onSelect,
+}: FolderIconCellProps) {
   const styles = useStyles()
   const handlePress = useCallback(() => onSelect(icon), [icon, onSelect])
+  const accessibilityState = useMemo(() => ({ selected }), [selected])
+
+  const cellStyle = useCallback(
+    ({ pressed }: { pressed: boolean }) => [
+      styles.cell,
+      selected && styles.cellSelected,
+      pressed && commonStyles.pressed,
+    ],
+    [styles.cell, styles.cellSelected, selected],
+  )
 
   return (
     <Pressable
       onPress={handlePress}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
-      accessibilityLabel={t(`folders.icons.${icon}`)}
-      style={({ pressed }) => [
-        styles.cell,
-        selected && styles.cellSelected,
-        pressed && commonStyles.pressed,
-      ]}
+      accessibilityState={accessibilityState}
+      accessibilityLabel={label}
+      style={cellStyle}
     >
       <SymbolIcon
         name={FOLDER_ICON_SF[icon] ?? FALLBACK_FOLDER_SF}
         size={UI_ICON_SIZE_22}
-        color={selected ? colors.primary : colors.text}
+        color={color}
       />
     </Pressable>
   )
-}
+})
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({

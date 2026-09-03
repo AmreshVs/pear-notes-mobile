@@ -20,6 +20,7 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_13,
+  UI_ICON_SIZE_14,
   UI_ICON_SIZE_24,
   UI_SIZE_4,
   UI_SIZE_6,
@@ -30,7 +31,6 @@ import {
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_60,
-  UI_ICON_SIZE_14,
 } from '@/constants/commonStyles'
 import { FALLBACK_FOLDER_MATERIAL, FOLDER_ICON_MATERIAL } from '@/constants/folderIcons'
 import { NOTE_ACTION } from '@/constants/noteActions'
