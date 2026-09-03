@@ -4,14 +4,7 @@ import { FadeIn } from 'react-native-reanimated'
 
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text } from '@/components/Themed'
-import {
-  Durations,
-  FontSize,
-  FontWeight,
-  LetterSpacing,
-  UI_SIZE_14,
-  UI_SIZE_20,
-} from '@/constants/commonStyles'
+import { Durations, FontSize, FontWeight, UI_SIZE_14, UI_SIZE_20 } from '@/constants/commonStyles'
 
 type CollapsedNavTitleProps = {
   title: string
@@ -48,14 +41,13 @@ const useStyles = createThemedStylesheet((theme) => {
     title: {
       fontSize: FontSize.subtitle,
       lineHeight: UI_SIZE_20,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.heavy,
       color: theme.colors.text,
     },
     subtitle: {
-      fontSize: FontSize.body,
+      fontSize: FontSize.caption,
       lineHeight: UI_SIZE_14,
       fontWeight: FontWeight.semibold,
-      letterSpacing: LetterSpacing.caps,
       color: theme.colors.textSecondary,
     },
   })

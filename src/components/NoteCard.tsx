@@ -24,6 +24,7 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_12,
+  UI_ICON_SIZE_14,
   UI_ICON_SIZE_22,
   UI_SIZE_4,
   UI_SIZE_6,
@@ -348,21 +349,22 @@ export const NoteCard = memo(function NoteCard({
       )}
       <RNView style={styles.content}>
         <RNView style={styles.titleRow}>
-          {pinned && <SymbolIcon name="pin.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />}
-          {locked &&
-            (masked ? (
-              <SymbolIcon name="lock.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />
-            ) : (
-              <SymbolIcon name="lock.open.fill" size={UI_ICON_SIZE_12} color={lockIconColor} />
-            ))}
           <Text variant="bodyBold" numberOfLines={titleLines} style={titleStyle}>
             {displayTitle}
+            {'  '}
+            {pinned && <SymbolIcon name="pin.fill" size={UI_ICON_SIZE_14} color={lockIconColor} />}
+            {locked &&
+              (masked ? (
+                <SymbolIcon name="lock.fill" size={UI_ICON_SIZE_14} color={lockIconColor} />
+              ) : (
+                <SymbolIcon name="lock.open.fill" size={UI_ICON_SIZE_14} color={lockIconColor} />
+              ))}
           </Text>
         </RNView>
 
         {showAttachment && attachmentIcon ? (
           <RNView style={styles.attachmentRow}>
-            <SymbolIcon name={attachmentIcon} size={UI_ICON_SIZE_12} color={colors.textSecondary} />
+            <SymbolIcon name={attachmentIcon} size={UI_ICON_SIZE_14} color={colors.textSecondary} />
             <Text variant="caption" numberOfLines={1} style={styles.attachmentLabel}>
               {t(`noteCard.attachment.${attachment.kind}`, { count: attachment.count })}
             </Text>
@@ -388,7 +390,7 @@ export const NoteCard = memo(function NoteCard({
               <RNView style={styles.folderTag}>
                 <SymbolIcon
                   name={FOLDER_ICON_SF[folderIconToken ?? ''] ?? FALLBACK_FOLDER_SF}
-                  size={UI_ICON_SIZE_12}
+                  size={UI_ICON_SIZE_14}
                   style={styles.folderIcon}
                   color={colors.textSecondary}
                 />

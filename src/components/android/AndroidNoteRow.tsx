@@ -19,7 +19,6 @@ import {
   FontWeight,
   Radii,
   Space,
-  UI_ICON_SIZE_13,
   UI_ICON_SIZE_14,
   UI_ICON_SIZE_24,
   UI_SIZE_4,
@@ -194,24 +193,24 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
         )}
         <View style={styles.content}>
           <View style={styles.titleRow}>
-            {pinned && (
-              <MaterialCommunityIcons
-                name="pin"
-                size={UI_ICON_SIZE_13}
-                color={c.primary}
-                style={styles.lockIcon}
-              />
-            )}
-            {locked && (
-              <MaterialCommunityIcons
-                name={masked ? 'lock-outline' : 'lock-open-variant-outline'}
-                size={UI_ICON_SIZE_13}
-                color={c.primary}
-                style={styles.lockIcon}
-              />
-            )}
             <Text style={styles.title} numberOfLines={titleLines}>
-              {title}
+              {title}{' '}
+              {pinned && (
+                <MaterialCommunityIcons
+                  name="pin"
+                  size={UI_ICON_SIZE_14}
+                  color={c.primary}
+                  style={styles.lockIcon}
+                />
+              )}
+              {locked && (
+                <MaterialCommunityIcons
+                  name={masked ? 'lock' : 'lock-open-variant'}
+                  size={UI_ICON_SIZE_14}
+                  color={c.primary}
+                  style={styles.lockIcon}
+                />
+              )}
             </Text>
           </View>
 
@@ -219,7 +218,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
             <View style={styles.checklistRow}>
               <MaterialCommunityIcons
                 name={ATTACHMENT_ICONS[attachment.kind]}
-                size={UI_ICON_SIZE_13}
+                size={UI_ICON_SIZE_14}
                 color={c.onSurfaceVariant}
                 style={styles.checkboxIcon}
               />
@@ -231,7 +230,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
             <View style={styles.checklistRow}>
               <MaterialCommunityIcons
                 name="checkbox-blank-outline"
-                size={UI_ICON_SIZE_13}
+                size={UI_ICON_SIZE_14}
                 color={c.onSurfaceVariant}
                 style={styles.checkboxIcon}
               />
