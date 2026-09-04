@@ -78,6 +78,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import {
+  ANDROID_APP_BAR_HEIGHT,
   LIST_BATCH_RENDER_COUNT,
   LIST_BATCHING_PERIOD_MS,
   LIST_INITIAL_RENDER_COUNT,
@@ -505,6 +506,7 @@ export default function AndroidFolderNotesScreen() {
     ],
   )
 
+  const insets = useSafeAreaInsets()
   const [headerHeight, setHeaderHeight] = useState(0)
 
   const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
@@ -513,8 +515,11 @@ export default function AndroidFolderNotesScreen() {
   }, [])
 
   const listContentStyle = useMemo(
-    () => [styles.listContent, { paddingTop: headerHeight + UI_SIZE_10 }],
-    [styles.listContent, headerHeight],
+    () => [
+      styles.listContent,
+      { paddingTop: (headerHeight || insets.top + ANDROID_APP_BAR_HEIGHT) + UI_SIZE_10 },
+    ],
+    [styles.listContent, headerHeight, insets.top],
   )
 
   const listHeader = useMemo(
@@ -715,7 +720,6 @@ export default function AndroidFolderNotesScreen() {
   return (
     <View style={styles.root}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
-      <Stack.Screen options={{ headerShown: false }} />
 
       <View style={styles.headerOverlay} onLayout={handleHeaderLayout} pointerEvents="box-none">
         <EdgeFade color={c.background} />
@@ -953,11 +957,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       color: c.onSurfaceVariant,
     },
     retentionNotice: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.medium,
       fontWeight: FontWeight.medium,
       color: c.onSurfaceVariant,
-      lineHeight: FontSize.caption * 1.4,
       marginBottom: UI_SIZE_12,
     },
     sectionCap: {

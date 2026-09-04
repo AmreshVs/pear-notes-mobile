@@ -20,7 +20,6 @@ import {
   FontWeight,
   Space,
   UI_ICON_SIZE_16,
-  UI_ICON_SIZE_17,
   UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_20,
@@ -136,7 +135,7 @@ export default function SettingsScreen() {
                   >
                     <RNView style={commonStyles.settingsRowLeft}>
                       <RNView style={commonThemedStyles.iconBox34}>
-                        <SymbolIcon name={icon} size={UI_ICON_SIZE_17} color={colors.primary} />
+                        <SymbolIcon name={icon} size={UI_SIZE_20} color={colors.primary} />
                       </RNView>
                       <Text style={styles.rowLabel}>{label}</Text>
                     </RNView>

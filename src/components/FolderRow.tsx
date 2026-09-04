@@ -13,8 +13,8 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_14,
-  UI_ICON_SIZE_17,
   UI_SIZE_4,
+  UI_SIZE_20,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { FOLDER_ACTION } from '@/constants/folderActions'
@@ -80,7 +80,7 @@ export const FolderRow = memo(function FolderRow({
       <Pressable onPress={() => onPress(id)} style={containerStyle} accessibilityRole="button">
         <RNView style={styles.leftContent}>
           <RNView style={commonThemedStyles.iconBox34}>
-            <SymbolIcon name={iconName} size={UI_ICON_SIZE_17} color={styles.icon.color} />
+            <SymbolIcon name={iconName} size={UI_SIZE_20} color={styles.icon.color} />
           </RNView>
           <Text
             style={[styles.name, selected && styles.nameSelected]}

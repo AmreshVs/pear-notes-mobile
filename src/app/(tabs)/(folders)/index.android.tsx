@@ -40,6 +40,7 @@ import { validateFolderName } from '@pear-notes/core/utils.js'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
+import { EdgeFade } from '@/components/EdgeFade'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -421,6 +422,14 @@ export default function AndroidFoldersScreen() {
         )}
       </ScrollView>
 
+      <View style={styles.topFade} pointerEvents="none">
+        <EdgeFade color={c.background} />
+      </View>
+
+      <View style={styles.bottomFade} pointerEvents="none">
+        <EdgeFade color={c.background} placement="bottom" />
+      </View>
+
       <FAB
         icon="plus"
         onPress={handleCreateFolder}
@@ -594,6 +603,22 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
+    },
+    topFade: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: insets.top + UI_SIZE_20,
+      zIndex: 10,
+    },
+    bottomFade: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: insets.bottom + UI_SIZE_20,
+      zIndex: 5,
     },
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,

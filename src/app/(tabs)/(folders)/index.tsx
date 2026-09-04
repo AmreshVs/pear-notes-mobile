@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Alert,
-  type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-} from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { router, Stack } from 'expo-router'
 
@@ -44,7 +36,7 @@ import {
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { MIN_TITLE_COLLAPSE_DISTANCE } from '@/constants/constants'
+import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
@@ -276,32 +268,7 @@ export default function FoldersScreen() {
     [],
   )
 
-  const titleBlockHeightRef = useRef(0)
-  const scrollBaselineRef = useRef<number | null>(null)
-  const isTitleCollapsedRef = useRef(false)
-  const [isTitleCollapsed, setIsTitleCollapsed] = useState(false)
-
-  const handleTitleBlockLayout = useCallback((event: LayoutChangeEvent) => {
-    titleBlockHeightRef.current = event.nativeEvent.layout.height
-  }, [])
-
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentInset } = event.nativeEvent
-    const restingOffset = -(contentInset?.top ?? 0)
-    if (
-      !isTitleCollapsedRef.current &&
-      (scrollBaselineRef.current === null ||
-        Math.min(contentOffset.y, restingOffset) < scrollBaselineRef.current)
-    ) {
-      scrollBaselineRef.current = Math.min(contentOffset.y, restingOffset)
-    }
-    const scrolled = contentOffset.y - (scrollBaselineRef.current ?? 0)
-    const threshold = Math.max(titleBlockHeightRef.current, MIN_TITLE_COLLAPSE_DISTANCE)
-    const next = titleBlockHeightRef.current > 0 && scrolled >= threshold
-    if (next === isTitleCollapsedRef.current) return
-    isTitleCollapsedRef.current = next
-    setIsTitleCollapsed(next)
-  }, [])
+  const { isTitleCollapsed, handleTitleBlockLayout, handleScroll } = useTitleCollapse()
 
   const headerTitle = useCallback(() => <CollapsedNavTitle title={t('folders.title')} />, [t])
 

@@ -1,7 +1,7 @@
 import { type ComponentProps, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
-import { Easing, FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated'
+import { FadeIn, FadeOutUp } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
@@ -17,6 +17,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  ListMotion,
   Radii,
   Space,
   UI_ICON_SIZE_14,
@@ -49,8 +50,6 @@ import { formatTimeOfDay } from '@/utils/noteSections'
 import { type AttachmentKind } from '@/utils/noteUtils'
 
 type MaterialIconName = ComponentProps<typeof MaterialCommunityIcons>['name']
-
-const ENTER_ANIMATION_MAX_INDEX = 10
 
 const ATTACHMENT_ICONS: Record<AttachmentKind, MaterialIconName> = {
   image: 'image-outline',
@@ -153,10 +152,8 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
 
   const entering = useMemo(
     () =>
-      index <= ENTER_ANIMATION_MAX_INDEX
-        ? FadeInDown.duration(200)
-            .delay(index * 30)
-            .easing(Easing.out(Easing.cubic))
+      index <= ListMotion.enterMaxIndex
+        ? FadeIn.duration(ListMotion.enterDuration).delay(index * ListMotion.enterStagger)
         : undefined,
     [index],
   )
@@ -172,11 +169,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   )
 
   return (
-    <MotionView
-      entering={entering}
-      exiting={FadeOutUp.duration(160)}
-      layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-    >
+    <MotionView entering={entering} exiting={FadeOutUp.duration(ListMotion.exitDuration)}>
       <Pressable
         onPress={handlePress}
         onLongPress={handleLongPress}

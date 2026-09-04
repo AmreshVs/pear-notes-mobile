@@ -21,9 +21,9 @@ import {
   FontSize,
   FontWeight,
   LetterSpacing,
+  ListMotion,
   Radii,
   Space,
-  UI_ICON_SIZE_12,
   UI_ICON_SIZE_14,
   UI_ICON_SIZE_22,
   UI_SIZE_4,
@@ -49,8 +49,6 @@ import type { AttachmentInfo } from '@/utils/noteUtils'
 import { ContextMenuView } from '../../modules/expo-context-menu'
 
 import { createThemedStylesheet, Text, useFontScale, useTheme } from './Themed'
-
-const ENTER_ANIMATION_MAX_INDEX = 8
 
 const PREVIEW_SCALE = 0.92
 
@@ -273,8 +271,8 @@ export const NoteCard = memo(function NoteCard({
 
   const entering = useMemo(
     () =>
-      animationIndex <= ENTER_ANIMATION_MAX_INDEX
-        ? FadeIn.duration(220).delay(animationIndex * 35)
+      animationIndex <= ListMotion.enterMaxIndex
+        ? FadeIn.duration(ListMotion.enterDuration).delay(animationIndex * ListMotion.enterStagger)
         : undefined,
     [animationIndex],
   )
@@ -433,7 +431,7 @@ export const NoteCard = memo(function NoteCard({
   )
 
   const card = (
-    <MotionView entering={entering} exiting={FadeOutUp.duration(180)}>
+    <MotionView entering={entering} exiting={FadeOutUp.duration(ListMotion.exitDuration)}>
       <Pressable
         onPress={handlePress}
         style={getPressableStyle}
@@ -498,6 +496,7 @@ const useStyles = createThemedStylesheet((theme) => {
     rowDivider: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: theme.colors.border,
+      marginTop: UI_SIZE_4,
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,

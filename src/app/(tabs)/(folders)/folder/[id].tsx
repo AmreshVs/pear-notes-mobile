@@ -1,15 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Alert,
-  type LayoutChangeEvent,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
-  Platform,
-  SectionList,
-  StyleSheet,
-  useWindowDimensions,
-} from 'react-native'
+import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
@@ -59,9 +50,6 @@ import {
   FontWeight,
   LetterSpacing,
   Space,
-  UI_SIZE_2,
-  UI_SIZE_4,
-  UI_SIZE_6,
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -69,8 +57,8 @@ import {
   LIST_BATCH_RENDER_COUNT,
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
-  MIN_TITLE_COLLAPSE_DISTANCE,
 } from '@/constants/constants'
+import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
@@ -462,32 +450,7 @@ export default function FolderNotesScreen() {
 
   const noteKey = useCallback((item: any) => item.key, [])
 
-  const titleBlockHeightRef = useRef(0)
-  const scrollBaselineRef = useRef<number | null>(null)
-  const isTitleCollapsedRef = useRef(false)
-  const [isTitleCollapsed, setIsTitleCollapsed] = useState(false)
-
-  const handleTitleBlockLayout = useCallback((event: LayoutChangeEvent) => {
-    titleBlockHeightRef.current = event.nativeEvent.layout.height
-  }, [])
-
-  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const { contentOffset, contentInset } = event.nativeEvent
-    const restingOffset = -(contentInset?.top ?? 0)
-    if (
-      !isTitleCollapsedRef.current &&
-      (scrollBaselineRef.current === null ||
-        Math.min(contentOffset.y, restingOffset) < scrollBaselineRef.current)
-    ) {
-      scrollBaselineRef.current = Math.min(contentOffset.y, restingOffset)
-    }
-    const scrolled = contentOffset.y - (scrollBaselineRef.current ?? 0)
-    const threshold = Math.max(titleBlockHeightRef.current, MIN_TITLE_COLLAPSE_DISTANCE)
-    const next = titleBlockHeightRef.current > 0 && scrolled >= threshold
-    if (next === isTitleCollapsedRef.current) return
-    isTitleCollapsedRef.current = next
-    setIsTitleCollapsed(next)
-  }, [])
+  const { isTitleCollapsed, handleTitleBlockLayout, handleScroll } = useTitleCollapse()
 
   const listHeader = useMemo(
     () => (
@@ -676,7 +639,7 @@ const useStyles = createThemedStylesheet((theme) => {
     scrollContent: {
       flexGrow: 1,
       paddingHorizontal: 0,
-      paddingTop: Space.lg,
+      paddingTop: Space.sm,
     },
     pageTitle: {
       fontSize: FontSize.hero,
@@ -698,9 +661,8 @@ const useStyles = createThemedStylesheet((theme) => {
     retentionNotice: {
       marginHorizontal: Space.base,
       marginBottom: Space.base,
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       color: theme.colors.textMuted,
-      lineHeight: FontSize.caption * 1.4,
     },
     sectionHeader: {
       marginLeft: Space.base,

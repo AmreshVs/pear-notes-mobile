@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { Platform, StyleSheet } from 'react-native'
 import { Stack } from 'expo-router'
 
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
@@ -27,7 +27,11 @@ export default function FoldersLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ title: t('folders.title') }} />
-      <Stack.Screen name="folder/[id]" options={{ headerLargeTitle: true }} />
+      {Platform.OS === 'ios' ? (
+        <Stack.Screen name="folder/[id]" options={{ headerLargeTitle: true }} />
+      ) : (
+        <Stack.Screen name="folder/[id]" options={{ headerShown: false }} />
+      )}
     </Stack>
   )
 }

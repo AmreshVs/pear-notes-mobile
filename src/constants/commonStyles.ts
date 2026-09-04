@@ -128,6 +128,13 @@ export const Space = {
   scrollBottom: 120,
 } as const
 
+export const ListMotion = {
+  enterDuration: 220,
+  enterStagger: 35,
+  enterMaxIndex: 8,
+  exitDuration: 180,
+} as const
+
 export const Durations = {
   overlayFade: 300,
   overlayFadeOut: 200,

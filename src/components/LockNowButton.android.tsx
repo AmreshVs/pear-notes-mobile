@@ -11,12 +11,9 @@ import {
   FontWeight,
   UI_ICON_SIZE_14,
   UI_SIZE_4,
-  UI_SIZE_6,
-  UI_SIZE_12,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
-import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticSuccess } from '@/lib/haptics'
 import { clearUnlockedNotes, useHasUnlockedNotes } from '@/lib/noteLock'
 
