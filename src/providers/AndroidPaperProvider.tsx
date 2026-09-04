@@ -13,7 +13,12 @@ import { useFonts } from 'expo-font'
 
 import { useResolvedColorScheme } from '@/components/Themed'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
-import { AndroidDarkTheme, AndroidLightTheme, pearGold } from '@/theme/androidTheme'
+import {
+  AndroidDarkTheme,
+  AndroidLightTheme,
+  materialYouLightOverrides,
+  pearGold,
+} from '@/theme/androidTheme'
 
 interface AndroidPaperProviderProps {
   children: React.ReactNode
@@ -42,6 +47,7 @@ export function AndroidPaperProvider({ children }: AndroidPaperProviderProps) {
         colors: {
           ...(isDark ? MD3DarkTheme.colors : MD3LightTheme.colors),
           ...scheme,
+          ...(isDark ? {} : materialYouLightOverrides),
         },
       }
     }

@@ -13,7 +13,7 @@ const { setRPC } = require('@pear-notes/core/rpc.js')
 const FramedStream = require('framed-stream')
 const { Worklet } = require('react-native-bare-kit')
 
-const BACKGROUND_LINGER_MS = 25_000
+const BACKGROUND_LINGER_MS = 20_000
 export const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
 const KEEP_ALIVE_RENEWAL_MS = 60 * 1000
 
@@ -28,6 +28,24 @@ let _appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
 let _foregroundServiceActive = false
 let _keepAliveTimer: ReturnType<typeof setInterval> | null = null
 let _notificationStrings = { title: '', message: '' }
+
+function logLifecycle(message: string, detail?: Record<string, unknown>) {
+  const suffix = detail
+    ? ' ' +
+      Object.entries(detail)
+        .map(([key, value]) => key + '=' + String(value))
+        .join(' ')
+    : ''
+  console.log('[lifecycle] app ' + message + suffix)
+}
+
+function workletState(worklet: any) {
+  return {
+    started: worklet?.started,
+    suspended: worklet?.suspended,
+    terminated: worklet?.terminated,
+  }
+}
 
 function stopKeepAlive() {
   if (!_keepAliveTimer) return
@@ -70,10 +88,13 @@ function handleBackground(worklet: any) {
     }
   }
 
+  logLifecycle('background -> suspend', workletState(worklet))
+
   try {
     worklet.suspend(BACKGROUND_LINGER_MS)
+    logLifecycle('background -> suspend returned', workletState(worklet))
   } catch (err) {
-    console.error('Failed to suspend the worklet', err)
+    console.error('[lifecycle] app failed to suspend the worklet', err)
   }
 }
 
@@ -91,6 +112,24 @@ export function wakeActiveWorklet(deadlineMs: number): boolean {
   }
 }
 
+export function isActiveWorkletSuspended(): boolean {
+  return !!_activeWorklet && !_activeWorklet.terminated && _activeWorklet.suspended === true
+}
+
+export function suspendActiveWorklet(): boolean {
+  if (!_activeWorklet || _activeWorklet.terminated) return false
+
+  logLifecycle('background task -> re-suspend', workletState(_activeWorklet))
+
+  try {
+    _activeWorklet.suspend(0)
+    return true
+  } catch (err) {
+    console.error('[lifecycle] app failed to re-suspend after the background task', err)
+    return false
+  }
+}
+
 function handleActive(worklet: any, onWorkletDied?: () => void) {
   stopKeepAlive()
 
@@ -100,14 +139,18 @@ function handleActive(worklet: any, onWorkletDied?: () => void) {
   }
 
   if (!worklet || worklet.terminated) {
+    logLifecycle('active -> worklet is dead, restarting', workletState(worklet))
     onWorkletDied?.()
     return
   }
 
+  logLifecycle('active -> resume', workletState(worklet))
+
   try {
     worklet.resume()
+    logLifecycle('active -> resume returned', workletState(worklet))
   } catch (err) {
-    console.error('Failed to resume the worklet', err)
+    console.error('[lifecycle] app failed to resume the worklet', err)
   }
 }
 
@@ -115,6 +158,8 @@ function attachAppStateHandler(worklet: any, onWorkletDied?: () => void) {
   _appStateSubscription?.remove()
 
   _appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
+    logLifecycle('AppState ' + state, workletState(worklet))
+
     if (state === 'active') {
       handleActive(worklet, onWorkletDied)
       return
@@ -134,9 +179,12 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
   _appStateSubscription = null
 
   if (_activeWorklet) {
+    logLifecycle('startWorklet -> terminating the previous worklet', workletState(_activeWorklet))
     try {
       _activeWorklet.terminate()
-    } catch {}
+    } catch (err) {
+      console.error('[lifecycle] app failed to terminate the previous worklet', err)
+    }
     _activeWorklet = null
   }
 
@@ -152,6 +200,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
 
   const worklet = new Worklet()
   _activeWorklet = worklet
+  logLifecycle('startWorklet -> booting a new worklet')
   worklet.start('app:/main.bundle', require('../backend/backend.bundle'), [storagePath])
 
   attachAppStateHandler(worklet, options?.onWorkletDied)

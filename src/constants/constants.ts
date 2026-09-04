@@ -17,3 +17,11 @@ export const TITLE_COLLAPSE_BUFFER = 64
 export const TITLE_COLLAPSE_HYSTERESIS = 32
 
 export const ANDROID_APP_BAR_HEIGHT = 44
+
+export const APP_THEME_SETTINGS = {
+  system: 'system',
+  light: 'light',
+  dark: 'dark',
+} as const
+
+export type AppThemeSetting = (typeof APP_THEME_SETTINGS)[keyof typeof APP_THEME_SETTINGS]

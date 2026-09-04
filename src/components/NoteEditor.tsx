@@ -135,7 +135,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textSecondary,
     },
     codeblock: {
-      color: theme.colors.codeText,
+      color: theme.colors.codeBlockText,
       backgroundColor: theme.colors.codeBlockBg,
       borderRadius: UI_SIZE_10,
     },

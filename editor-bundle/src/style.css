@@ -1,4 +1,5 @@
 :root {
+  color-scheme: light;
   --c-text: #000000;
   --c-text-secondary: #48484a;
   --c-bg: #f2f2f7;
@@ -8,18 +9,20 @@
   --c-placeholder: rgba(0, 0, 0, 0.28);
   --c-code-bg: #e4e4ea;
   --c-code: #2d5016;
-  --c-codeblock-bg: #e4e4ea;
+  --c-codeblock-bg: #141414;
+  --c-codeblock-text: #a8ff78;
   --c-highlight: #fef08a;
-  --hl-keyword: #d73a49;
-  --hl-string: #032f62;
-  --hl-comment: #6a737d;
-  --hl-number: #005cc5;
-  --hl-fn: #6f42c1;
-  --hl-var: #e36209;
-  --hl-builtin: #005cc5;
+  --hl-keyword: #ff79c6;
+  --hl-string: #f1fa8c;
+  --hl-comment: #6272a4;
+  --hl-number: #bd93f9;
+  --hl-fn: #50fa7b;
+  --hl-var: #ffb86c;
+  --hl-builtin: #8be9fd;
 }
 @media (prefers-color-scheme: dark) {
   :root {
+    color-scheme: dark;
     --c-text: #ffffff;
     --c-text-secondary: #b0b0b5;
     --c-bg: #202020;
@@ -30,6 +33,7 @@
     --c-code-bg: #1c1c1e;
     --c-code: #a8ff78;
     --c-codeblock-bg: #141414;
+    --c-codeblock-text: #a8ff78;
     --c-highlight: #854d0e;
     --hl-keyword: #ff79c6;
     --hl-string: #f1fa8c;
@@ -224,7 +228,7 @@ body {
 }
 .tiptap pre code {
   background: none;
-  color: var(--c-code);
+  color: var(--c-codeblock-text);
   padding: 0;
   border-radius: 0;
   font-size: 0.76em;

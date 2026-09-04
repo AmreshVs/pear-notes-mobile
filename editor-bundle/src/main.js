@@ -84,6 +84,9 @@ function applyFontSettings(fontSize, fontFamily) {
   }
 }
 
+const CODE_BLOCK_BACKGROUND = '#141414'
+const CODE_BLOCK_TEXT = '#A8FF78'
+
 function applyTheme(colors, isDark) {
   const r = document.documentElement.style
   r.setProperty('--c-text', colors.text)
@@ -94,17 +97,20 @@ function applyTheme(colors, isDark) {
   r.setProperty('--c-border', colors.border)
   document.body.style.background = colors.background
 
+  r.setProperty('color-scheme', isDark ? 'dark' : 'light')
+  r.setProperty('--c-highlight', isDark ? '#854D0E' : '#FEF08A')
   r.setProperty('--c-placeholder', isDark ? 'rgba(255,255,255,0.28)' : 'rgba(0,0,0,0.28)')
   r.setProperty('--c-code-bg', isDark ? '#1C1C1E' : '#E4E4EA')
   r.setProperty('--c-code', isDark ? '#A8FF78' : '#2D5016')
-  r.setProperty('--c-codeblock-bg', isDark ? '#141414' : '#E4E4EA')
-  r.setProperty('--hl-keyword', isDark ? '#FF79C6' : '#D73A49')
-  r.setProperty('--hl-string', isDark ? '#F1FA8C' : '#032F62')
-  r.setProperty('--hl-comment', isDark ? '#6272A4' : '#6A737D')
-  r.setProperty('--hl-number', isDark ? '#BD93F9' : '#005CC5')
-  r.setProperty('--hl-fn', isDark ? '#50FA7B' : '#6F42C1')
-  r.setProperty('--hl-var', isDark ? '#FFB86C' : '#E36209')
-  r.setProperty('--hl-builtin', isDark ? '#8BE9FD' : '#005CC5')
+  r.setProperty('--c-codeblock-bg', CODE_BLOCK_BACKGROUND)
+  r.setProperty('--c-codeblock-text', CODE_BLOCK_TEXT)
+  r.setProperty('--hl-keyword', '#FF79C6')
+  r.setProperty('--hl-string', '#F1FA8C')
+  r.setProperty('--hl-comment', '#6272A4')
+  r.setProperty('--hl-number', '#BD93F9')
+  r.setProperty('--hl-fn', '#50FA7B')
+  r.setProperty('--hl-var', '#FFB86C')
+  r.setProperty('--hl-builtin', '#8BE9FD')
 }
 
 const lowlight = createLowlight()

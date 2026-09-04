@@ -14,8 +14,10 @@ import { getTheme } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import Colors from '@/constants/Colors'
 import { commonStyles, FontFamily } from '@/constants/commonStyles'
+import { APP_THEME_SETTINGS, type AppThemeSetting } from '@/constants/constants'
 import { Layout, Spacing } from '@/constants/Spacing'
 import { Typography } from '@/constants/Typography'
+import { useNativeAppearance } from '@/hooks/useNativeAppearance'
 import { useSystemReduceMotion } from '@/hooks/useReduceMotion'
 
 const WEIGHT_TO_FONT_FAMILY: Record<string, string> = {
@@ -43,11 +45,13 @@ export function ColorSchemeProvider({ children }: { children: React.ReactNode })
   const deviceColorScheme = useDeviceColorScheme()
   const { fontScale } = useWindowDimensions()
   const reduceMotion = useSystemReduceMotion()
-  const themeSetting: string = useSelector(getTheme) ?? 'system'
+  const themeSetting: AppThemeSetting = useSelector(getTheme) ?? APP_THEME_SETTINGS.system
+
+  useNativeAppearance(themeSetting)
 
   const colorScheme = useMemo<'light' | 'dark'>(() => {
-    if (themeSetting === 'dark') return 'dark'
-    if (themeSetting === 'light') return 'light'
+    if (themeSetting === APP_THEME_SETTINGS.dark) return 'dark'
+    if (themeSetting === APP_THEME_SETTINGS.light) return 'light'
     return deviceColorScheme === 'dark' ? 'dark' : 'light'
   }, [themeSetting, deviceColorScheme])
 

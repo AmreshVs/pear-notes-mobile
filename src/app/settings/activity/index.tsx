@@ -338,7 +338,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'flex-start',
       gap: Space.sm,
       padding: Space.lg,
-      backgroundColor: theme.colors.cardSelected,
+      backgroundColor: theme.colorScheme === 'light' ? '' : theme.colors.cardSelected,
     },
     noticeText: {
       flex: 1,

@@ -1,3 +1,4 @@
+import '@/devtools/reactotron'
 import '@/locales/i18n'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -174,7 +175,11 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     }
   }, [dispatch, t])
 
+  const workletStartedRef = useRef(false)
+
   useEffect(() => {
+    if (workletStartedRef.current) return
+    workletStartedRef.current = true
     initWorklet()
   }, [initWorklet])
 

@@ -1,6 +1,6 @@
 const pearGold = '#DCA323'
 const pearGoldForeground = '#1a1300'
-const pearGoldText = '#a56f00'
+const pearGoldText = '#eba503'
 
 export default {
   light: {
@@ -17,7 +17,7 @@ export default {
     tabIconSelected: pearGoldText,
     separator: 'rgba(0, 0, 0, 0.1)',
     borderSecondary: 'rgba(0, 0, 0, 0.06)',
-    cardSelected: 'rgba(165, 111, 0, 0.16)',
+    cardSelected: 'rgba(192, 128, 1, 0.1)',
     cardSelectedBorder: 'rgba(165, 111, 0, 0.5)',
     cardPressed: 'rgba(0, 0, 0, 0.03)',
     controlBackground: 'rgba(0, 0, 0, 0.07)',
@@ -49,7 +49,8 @@ export default {
     overlayTextMuted: 'rgba(255,255,255,0.5)',
     codeText: '#333333',
     codeBg: '#e4e4ea',
-    codeBlockBg: '#e4e4ea',
+    codeBlockBg: '#1c1c1e',
+    codeBlockText: '#a8ff78',
     timelineTrack: 'rgba(0,0,0,0.12)',
     sheetBoxShadow: '0 -12px 40px rgba(0,0,0,0.22)',
     transportShadow: '0 10px 24px rgba(15,23,42,0.16)',
@@ -105,6 +106,7 @@ export default {
     codeText: '#a8ff78',
     codeBg: '#2c2c2e',
     codeBlockBg: '#1c1c1e',
+    codeBlockText: '#a8ff78',
     timelineTrack: 'rgba(255,255,255,0.16)',
     sheetBoxShadow: '0 -10px 32px rgba(0,0,0,0.45)',
     transportShadow: '0 10px 24px rgba(0,0,0,0.3)',
