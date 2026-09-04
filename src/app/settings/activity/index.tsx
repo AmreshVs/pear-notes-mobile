@@ -15,6 +15,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Layout,
   Radii,
   Space,
   UI_ICON_SIZE_15,
@@ -369,6 +370,7 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.base,
       paddingVertical: Space.sm,
       borderRadius: Radii.sm,
+      borderWidth: Layout.buttonBorderWidth,
       borderColor: theme.colors.error,
     },
     dangerBtnText: {

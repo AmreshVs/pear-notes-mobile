@@ -13,7 +13,7 @@ const { setRPC } = require('@pear-notes/core/rpc.js')
 const FramedStream = require('framed-stream')
 const { Worklet } = require('react-native-bare-kit')
 
-const BACKGROUND_WAKEUP_DEADLINE_MS = 25_000
+const BACKGROUND_LINGER_MS = 25_000
 export const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
 const KEEP_ALIVE_RENEWAL_MS = 60 * 1000
 
@@ -71,9 +71,9 @@ function handleBackground(worklet: any) {
   }
 
   try {
-    worklet.wakeup(BACKGROUND_WAKEUP_DEADLINE_MS)
-  } catch {
-    console.error('Failed to wake up the worklet')
+    worklet.suspend(BACKGROUND_LINGER_MS)
+  } catch (err) {
+    console.error('Failed to suspend the worklet', err)
   }
 }
 
@@ -101,6 +101,13 @@ function handleActive(worklet: any, onWorkletDied?: () => void) {
 
   if (!worklet || worklet.terminated) {
     onWorkletDied?.()
+    return
+  }
+
+  try {
+    worklet.resume()
+  } catch (err) {
+    console.error('Failed to resume the worklet', err)
   }
 }
 

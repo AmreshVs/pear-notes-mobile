@@ -8,8 +8,6 @@ import {
   commonStyles,
   FontSize,
   FontWeight,
-  LetterSpacing,
-  Radii,
   Space,
   UI_ICON_SIZE_12,
 } from '@/constants/commonStyles'
@@ -64,7 +62,6 @@ const useStyles = createThemedStylesheet((theme) => {
     label: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
-      letterSpacing: LetterSpacing.caps,
       color: theme.colors.primary,
     },
   })

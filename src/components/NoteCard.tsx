@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -170,6 +170,10 @@ export const NoteCard = memo(function NoteCard({
     [rawImageUrl, hyperdriveServerAddress],
   )
   const isPearTheme = useAndroidColorTheme() === 'pear'
+
+  useEffect(() => {
+    setThumbError(false)
+  }, [imageUrl])
 
   const handlePress = useCallback(() => {
     if (selecting) {

@@ -97,6 +97,7 @@ export function useNoteEditor() {
   const isEditorFocusedRef = useRef(false)
   const lastSyncTokenRef = useRef(-1)
   const shouldFocusTitleRef = useRef(false)
+  const appliedHyperdriveAddressRef = useRef<string>('')
 
   const noteSelector = useMemo(() => getNoteData(noteId ?? ''), [noteId])
   const rawNoteData = useSelector(noteSelector)
@@ -242,6 +243,21 @@ export function useNoteEditor() {
     editorRef.current?.setTitle(editorTitle)
     editorRef.current?.setHTML(content)
   }, [noteId, syncToken, editorContent, editorTitle, hyperdriveServerAddress])
+
+  useEffect(() => {
+    const previous = appliedHyperdriveAddressRef.current
+    appliedHyperdriveAddressRef.current = hyperdriveServerAddress
+    if (!previous || !hyperdriveServerAddress || previous === hyperdriveServerAddress) return
+    if (!noteId || noteId !== loadedNoteRef.current) return
+
+    const previousHost = previous.replace(/\/$/, '')
+    const nextHost = hyperdriveServerAddress.replace(/\/$/, '')
+
+    editorRef.current?.getHTML().then((html) => {
+      if (!html || !html.includes(previousHost)) return
+      editorRef.current?.setHTML(html.replaceAll(previousHost, nextHost))
+    })
+  }, [noteId, hyperdriveServerAddress])
 
   const resetEditorState = useCallback(() => {
     setIsOpen(false)

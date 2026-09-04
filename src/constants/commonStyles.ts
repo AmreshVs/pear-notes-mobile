@@ -95,6 +95,7 @@ export const Layout = {
   segCtrlPadding: 3,
   segPillPaddingVertical: 7,
   segPillBorderWidth: 1.5,
+  buttonBorderWidth: 1,
   rowPaddingHorizontal: 18,
   settingsRowMinHeight: 52,
   scrollPaddingBottom: 60,

@@ -68,6 +68,7 @@ import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+import { MAX_FONT_SCALE_CHROME } from '@/utils/dynamicType'
 
 type Folder = {
   id: string
@@ -535,18 +536,13 @@ const VaultFolderRow = memo(function VaultFolderRow({
   const iconName = FOLDER_ICON_MATERIAL[icon ?? ''] ?? FALLBACK_FOLDER_MATERIAL
   const iconColor = isTrash ? c.error : c.primary
 
-  const rowStyle = useMemo(
-    () => [styles.row, !isLast && styles.rowDivider],
-    [isLast, styles.row, styles.rowDivider],
-  )
-
   return (
     <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
       <Pressable
         onPress={handlePress}
         onLongPress={handleLongPress}
         android_ripple={ripple}
-        style={rowStyle}
+        style={styles.row}
       >
         <View style={styles.rowLeft}>
           <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
@@ -563,7 +559,9 @@ const VaultFolderRow = memo(function VaultFolderRow({
         <View style={styles.rowRight}>
           {count > 0 && (
             <View style={styles.countBadge}>
-              <Text style={styles.countText}>{count}</Text>
+              <Text maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME} style={styles.countText}>
+                {count}
+              </Text>
             </View>
           )}
           <MaterialCommunityIcons
@@ -573,6 +571,11 @@ const VaultFolderRow = memo(function VaultFolderRow({
           />
         </View>
       </Pressable>
+      {!isLast && (
+        <View style={styles.dividerWrap}>
+          <View style={styles.rowDivider} />
+        </View>
+      )}
     </MotionView>
   )
 })
@@ -730,9 +733,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       paddingVertical: 13,
       paddingHorizontal: UI_SIZE_16,
     },
+    dividerWrap: {
+      marginHorizontal: UI_SIZE_16,
+    },
     rowDivider: {
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: hexWithAlpha(c.outlineVariant, 0.2),
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: hexWithAlpha(c.outlineVariant, 0.2),
     },
     rowLeft: {
       ...commonStyles.row,
@@ -767,9 +773,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     },
     countBadge: {
       flexShrink: 0,
-      paddingHorizontal: UI_SIZE_10,
+      minWidth: UI_SIZE_24,
+      minHeight: UI_SIZE_24,
+      paddingHorizontal: UI_SIZE_6,
       paddingVertical: UI_SIZE_4,
       borderRadius: UI_SIZE_9999,
+      ...commonStyles.centered,
       backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.8),
     },
     countText: {

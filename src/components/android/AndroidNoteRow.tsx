@@ -1,4 +1,4 @@
-import { type ComponentProps, memo, useCallback, useMemo, useState } from 'react'
+import { type ComponentProps, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { Easing, FadeInDown, FadeOutUp, LinearTransition } from 'react-native-reanimated'
@@ -140,6 +140,11 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const isPearTheme = useAndroidColorTheme() === 'pear'
   const [thumbError, setThumbError] = useState(false)
   const fontScale = useFontScale()
+
+  useEffect(() => {
+    setThumbError(false)
+  }, [resolvedImageUrl])
+
   const titleLines = scaledLineCount(1, fontScale)
   const previewLines = scaledLineCount(1, fontScale)
 

@@ -13,9 +13,10 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_14,
-  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_17,
   UI_SIZE_4,
 } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { FOLDER_ACTION } from '@/constants/folderActions'
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 
@@ -56,6 +57,7 @@ export const FolderRow = memo(function FolderRow({
 }: FolderRowProps) {
   const { t } = useTranslation()
   const styles = useThemedStyles(createStyles)
+  const commonThemedStyles = useCommonThemedStyles()
   const iconName = FOLDER_ICON_SF[icon ?? ''] ?? FALLBACK_FOLDER_SF
 
   const containerStyle = useCallback(
@@ -77,7 +79,9 @@ export const FolderRow = memo(function FolderRow({
     >
       <Pressable onPress={() => onPress(id)} style={containerStyle} accessibilityRole="button">
         <RNView style={styles.leftContent}>
-          <SymbolIcon name={iconName} size={UI_ICON_SIZE_20} color={styles.icon.color} />
+          <RNView style={commonThemedStyles.iconBox34}>
+            <SymbolIcon name={iconName} size={UI_ICON_SIZE_17} color={styles.icon.color} />
+          </RNView>
           <Text
             style={[styles.name, selected && styles.nameSelected]}
             numberOfLines={1}
@@ -153,7 +157,7 @@ const createStyles = (theme: Theme) =>
   StyleSheet.create({
     container: {
       ...commonStyles.rowBetween,
-      paddingVertical: Space.lg,
+      paddingVertical: Space.base,
       paddingHorizontal: Space.base,
       borderRadius: Radii.md,
       marginVertical: 1,
