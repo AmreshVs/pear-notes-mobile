@@ -1,6 +1,9 @@
 import {
   getAttachmentInfo as coreGetAttachmentInfo,
   getFirstImageUrl as coreGetFirstImageUrl,
+  getFirstPdfAttachment as coreGetFirstPdfAttachment,
+  getImageAttachments as coreGetImageAttachments,
+  getPdfAttachments as coreGetPdfAttachments,
   getPreview as coreGetPreview,
 } from '@pear-notes/core/utils.js'
 
@@ -17,6 +20,23 @@ export function getAttachmentInfo(contentHtml?: string): AttachmentInfo | null {
 
 export function getFirstImageUrl(contentHtml?: string): string | null {
   return coreGetFirstImageUrl(contentHtml) as string | null
+}
+
+export interface PdfAttachmentRef {
+  url: string
+  fileName: string
+}
+
+export function getFirstPdfAttachment(contentHtml?: string): PdfAttachmentRef | null {
+  return coreGetFirstPdfAttachment(contentHtml) as PdfAttachmentRef | null
+}
+
+export function getPdfAttachments(contentHtml?: string): PdfAttachmentRef[] {
+  return coreGetPdfAttachments(contentHtml) as PdfAttachmentRef[]
+}
+
+export function getImageAttachments(contentHtml?: string): string[] {
+  return coreGetImageAttachments(contentHtml) as string[]
 }
 
 export function getPreview(content?: string, contentHtml?: string): string {

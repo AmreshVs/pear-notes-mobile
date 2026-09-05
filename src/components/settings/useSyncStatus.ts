@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { AppState } from 'react-native'
 import { useSelector } from 'react-redux'
 
@@ -9,7 +9,12 @@ import {
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { getSyncStatusSnapshot } from '@pear-notes/core/utils.js'
 
-import { BackgroundSyncMode, getBackgroundSyncMode } from '@/lib/backgroundSync'
+import {
+  BackgroundSyncMode,
+  getBackgroundSyncMode,
+  getCachedBackgroundSyncMode,
+  subscribeBackgroundSyncMode,
+} from '@/lib/backgroundSync'
 import { getRelativeTime } from '@/utils/relativeTime'
 
 const WAKE_RESULT_LABEL_KEYS: Record<string, string> = {
@@ -69,11 +74,11 @@ export function useSyncStatus() {
   const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
   const remoteDevices = useSelector(getRemoteSyncedDevices) as any[]
   const [snapshot, setSnapshot] = useState<SyncSnapshot>(EMPTY_SNAPSHOT)
-  const [mode, setMode] = useState<BackgroundSyncMode>('off')
+  const mode = useSyncExternalStore(subscribeBackgroundSyncMode, getCachedBackgroundSyncMode)
 
   const refresh = useCallback(() => {
     getSyncStatusSnapshot().then((next) => setSnapshot(next as SyncSnapshot))
-    getBackgroundSyncMode().then(setMode)
+    getBackgroundSyncMode()
   }, [])
 
   useEffect(() => {

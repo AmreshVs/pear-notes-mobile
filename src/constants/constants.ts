@@ -5,8 +5,7 @@ export const LIST_BATCHING_PERIOD_MS = 60
 
 export const ANDROID_RIPPLE_ENABLED = true
 
-export const PDF_THUMBNAIL_CACHE_DIR = 'pdf-thumb'
-export const PDF_THUMBNAIL_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
+export const ATTACHMENT_THUMBNAIL_CACHE_DIR = 'attachment-thumb'
 
 export const MIN_TITLE_COLLAPSE_DISTANCE = 140
 

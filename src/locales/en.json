@@ -812,6 +812,10 @@
     "syncingToDevices": "Syncing to other devices",
     "attachment": "Attachment",
     "waitingForDevice": "Waiting for the other device to come online",
+    "cache": "Cache",
+    "cacheDesc": "Temporary files. Note thumbnails are kept.",
+    "clearCache": "Clear",
+    "clearingCache": "Clearing\u2026",
     "dangerZone": "Danger zone",
     "clearAllData": "Clear all data",
     "clearAllDataDesc": "Permanently deletes all notes, folders, settings, and media.",
@@ -1027,7 +1031,8 @@
       "unchangedLines_other": "{{count}} unchanged lines",
       "loading": "Loading changes…",
       "unavailable": "The changes for this entry are no longer available.",
-      "truncated": "This note is too large to diff line by line."
+      "truncated": "This note is too large to diff line by line.",
+      "copyRemoved": "Copy removed lines"
     },
     "events": {
       "note.created": "created {{target}}",

@@ -1,20 +1,26 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 
 import { diffActivityText } from '@pear-notes/core/activity.js'
 
-import { createThemedStylesheet, Text } from '@/components/Themed'
+import { SymbolIcon } from '@/components/SymbolIcon'
+import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
+  commonStyles,
   FontFamily,
   FontSize,
   FontWeight,
   Radii,
   Space,
+  UI_ICON_SIZE_14,
   UI_SIZE_4,
+  UI_SIZE_8,
   UI_SIZE_18,
   UI_SIZE_32,
 } from '@/constants/commonStyles'
+
+import { useCopyRemovedLines } from './useCopyRemovedLines'
 
 type DiffRow = {
   type: string
@@ -32,8 +38,10 @@ type Props = {
 export function ActivityDiff({ before, after }: Props) {
   const { t } = useTranslation()
   const styles = useStyles()
+  const { colors } = useTheme()
 
   const diff = useMemo(() => diffActivityText(before || '', after || ''), [before, after])
+  const { canCopy, copied, copyRemoved } = useCopyRemovedLines(diff.rows)
 
   const renderRow = useCallback(
     (row: DiffRow, index: number) => {
@@ -78,6 +86,21 @@ export function ActivityDiff({ before, after }: Props) {
         <Text style={styles.added}>+{diff.added}</Text>
         <Text style={styles.removed}>&minus;{diff.removed}</Text>
         <Text style={styles.headerLabel}>{t('activity.diff.plainText')}</Text>
+        {canCopy ? (
+          <Pressable
+            onPress={copyRemoved}
+            hitSlop={UI_SIZE_8}
+            accessibilityRole="button"
+            accessibilityLabel={t('activity.diff.copyRemoved')}
+            style={({ pressed }) => [styles.copyBtn, pressed && commonStyles.pressed]}
+          >
+            <SymbolIcon
+              name={copied ? 'checkmark' : 'doc.on.doc'}
+              size={UI_ICON_SIZE_14}
+              color={copied ? colors.success : colors.textMuted}
+            />
+          </Pressable>
+        ) : null}
       </RNView>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -139,6 +162,11 @@ const useStyles = createThemedStylesheet((theme) => {
       fontFamily: FontFamily.medium,
       fontSize: FontSize.caption,
       color: theme.colors.textMuted,
+    },
+    copyBtn: {
+      ...commonStyles.centered,
+      width: UI_SIZE_18,
+      height: UI_SIZE_18,
     },
     rows: {
       paddingVertical: UI_SIZE_4,

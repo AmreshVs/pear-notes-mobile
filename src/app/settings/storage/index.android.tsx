@@ -64,6 +64,9 @@ export default function AndroidStorageScreen() {
     totalBlobBytes,
     totalOnDiskBytes,
     isReclaiming,
+    cacheBytes,
+    isClearingCache,
+    handleClearCache,
     activeDownloads,
     activeUploads,
     noteTitleByKey,
@@ -163,6 +166,24 @@ export default function AndroidStorageScreen() {
               >
                 <Text style={styles.reclaimBtnText}>
                   {isReclaiming ? t('storage.compacting') : t('storage.compactNow')}
+                </Text>
+              </Pressable>
+            </View>
+            <View style={[styles.usageRow, styles.usageRowBorder]}>
+              <View style={styles.reclaimLabelWrap}>
+                <Text style={styles.usageLabel}>
+                  {t('storage.cache')} · {formatBytes(cacheBytes)}
+                </Text>
+                <Text style={styles.reclaimDesc}>{t('storage.cacheDesc')}</Text>
+              </View>
+              <Pressable
+                onPress={handleClearCache}
+                disabled={isClearingCache}
+                android_ripple={ripple}
+                style={[styles.reclaimBtn, isClearingCache && styles.reclaimBtnDisabled]}
+              >
+                <Text style={styles.reclaimBtnText}>
+                  {isClearingCache ? t('storage.clearingCache') : t('storage.clearCache')}
                 </Text>
               </Pressable>
             </View>

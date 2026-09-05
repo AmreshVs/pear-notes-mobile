@@ -14,11 +14,14 @@ import {
   Space,
   UI_ICON_SIZE_14,
   UI_SIZE_4,
+  UI_SIZE_6,
   UI_SIZE_20,
+  UI_SIZE_24,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { FOLDER_ACTION } from '@/constants/folderActions'
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
+import { MAX_FONT_SCALE_CHROME } from '@/utils/dynamicType'
 
 import { ContextMenuView } from '../../modules/expo-context-menu'
 
@@ -92,7 +95,13 @@ export const FolderRow = memo(function FolderRow({
         </RNView>
 
         <RNView style={styles.rightContent}>
-          {count !== undefined && count > 0 && <Text style={styles.count}>{count}</Text>}
+          {count !== undefined && count > 0 && (
+            <RNView style={styles.countBadge}>
+              <Text maxFontSizeMultiplier={MAX_FONT_SCALE_CHROME} style={styles.count}>
+                {count}
+              </Text>
+            </RNView>
+          )}
           <RNView style={styles.chevronWrap}>
             <SymbolIcon name="chevron.forward" size={UI_ICON_SIZE_14} color={styles.count.color} />
           </RNView>
@@ -206,8 +215,17 @@ const createStyles = (theme: Theme) =>
       flexShrink: 0,
       backgroundColor: theme.colors.transparent,
     },
+    countBadge: {
+      ...commonStyles.centered,
+      flexShrink: 0,
+      minWidth: UI_SIZE_24,
+      height: UI_SIZE_24,
+      paddingHorizontal: UI_SIZE_6,
+      borderRadius: Radii.pill,
+      backgroundColor: theme.colors.controlBackground,
+    },
     count: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
       color: theme.colors.textSecondary,
     },

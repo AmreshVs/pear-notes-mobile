@@ -39,6 +39,8 @@ import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
+import { useCachedImageThumbnail } from '@/lib/useCachedImageThumbnail'
+import { useCachedPdfThumbnail } from '@/lib/useCachedPdfThumbnail'
 import {
   isAccessibilityTextSize,
   MAX_FONT_SCALE_CHROME,
@@ -147,8 +149,15 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const titleLines = scaledLineCount(1, fontScale)
   const previewLines = scaledLineCount(1, fontScale)
 
-  const showThumb =
-    !!resolvedImageUrl && !thumbError && !masked && !isAccessibilityTextSize(fontScale)
+  const canShowThumb = !masked && !isAccessibilityTextSize(fontScale)
+  const showThumb = !!resolvedImageUrl && !thumbError && canShowThumb
+  // Prefer our own downscaled copy; the original is only ever a fallback, and never disk-cached.
+  const imageThumbUri = useCachedImageThumbnail(resolvedImageUrl, showThumb)
+  // A PDF only fills the slot when there is no image to show there.
+  const pdfThumbUri = useCachedPdfThumbnail(
+    metadata.pdf,
+    canShowThumb && (!resolvedImageUrl || thumbError),
+  )
 
   const entering = useMemo(
     () =>
@@ -279,13 +288,25 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
 
         {showThumb && (
           <Image
-            source={resolvedImageUrl}
+            source={imageThumbUri || resolvedImageUrl}
             style={styles.thumbnail}
             contentFit="cover"
-            cachePolicy="memory-disk"
+            cachePolicy="memory"
             recyclingKey={note.key}
             transition={0}
             onError={handleThumbError}
+          />
+        )}
+
+        {!showThumb && !!pdfThumbUri && (
+          <Image
+            source={pdfThumbUri}
+            style={styles.thumbnail}
+            contentFit="cover"
+            contentPosition="top"
+            cachePolicy="memory"
+            recyclingKey={note.key}
+            transition={0}
           />
         )}
       </Pressable>

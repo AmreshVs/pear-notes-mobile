@@ -44,6 +44,9 @@ export default function StorageScreen() {
     totalBlobBytes,
     totalOnDiskBytes,
     isReclaiming,
+    cacheBytes,
+    isClearingCache,
+    handleClearCache,
     activeDownloads,
     activeUploads,
     noteTitleByKey,
@@ -115,6 +118,27 @@ export default function StorageScreen() {
               >
                 <Text style={styles.reclaimBtnText}>
                   {isReclaiming ? t('storage.compacting') : t('storage.compactNow')}
+                </Text>
+              </Pressable>
+            </RNView>
+            <RNView style={[styles.usageRow, styles.usageRowBorder]}>
+              <RNView style={styles.reclaimLabelWrap}>
+                <Text style={styles.usageLabel}>
+                  {t('storage.cache')} · {formatBytes(cacheBytes)}
+                </Text>
+                <Text style={styles.reclaimDesc}>{t('storage.cacheDesc')}</Text>
+              </RNView>
+              <Pressable
+                onPress={handleClearCache}
+                disabled={isClearingCache}
+                style={({ pressed }) => [
+                  styles.reclaimBtn,
+                  isClearingCache && styles.reclaimBtnDisabled,
+                  pressed && commonStyles.pressed,
+                ]}
+              >
+                <Text style={styles.reclaimBtnText}>
+                  {isClearingCache ? t('storage.clearingCache') : t('storage.clearCache')}
                 </Text>
               </Pressable>
             </RNView>

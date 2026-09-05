@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import { useSelector } from 'react-redux'
 
 import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
@@ -6,7 +6,9 @@ import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevices
 import {
   BackgroundSyncMode,
   getBackgroundSyncMode,
+  getCachedBackgroundSyncMode,
   setBackgroundSyncMode,
+  subscribeBackgroundSyncMode,
 } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { hapticSelection } from '@/lib/haptics'
@@ -19,28 +21,20 @@ export const BACKGROUND_SYNC_MODE_LOCALE_KEY: Record<BackgroundSyncMode, string>
 
 export function useBackgroundSync() {
   const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
-  const [mode, setMode] = useState<BackgroundSyncMode>('off')
+  const mode = useSyncExternalStore(subscribeBackgroundSyncMode, getCachedBackgroundSyncMode)
 
   useEffect(() => {
-    let active = true
-    getBackgroundSyncMode().then((value) => {
-      if (active) setMode(value)
-    })
-    return () => {
-      active = false
-    }
+    getBackgroundSyncMode()
   }, [])
 
   useEffect(() => {
     if (hasLinkedDevices || mode === 'off') return
-    setMode('off')
     setBackgroundSyncMode('off')
     applyBackgroundSyncMode('off')
   }, [hasLinkedDevices, mode])
 
   const commitMode = useCallback((next: BackgroundSyncMode) => {
     hapticSelection()
-    setMode(next)
     setBackgroundSyncMode(next)
     applyBackgroundSyncMode(next)
   }, [])

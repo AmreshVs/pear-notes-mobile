@@ -20,6 +20,7 @@ import {
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
+import { clearCaches, measureCacheBytes } from '@/lib/cacheCleanup'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
 import { deleteDbEncryptionKey } from '@/lib/secureStore'
@@ -58,10 +59,33 @@ function useStorageScreen() {
   )
 
   const [resetSheetVisible, setResetSheetVisible] = useState(false)
+  const [cacheBytes, setCacheBytes] = useState(0)
+  const [isClearingCache, setIsClearingCache] = useState(false)
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
   }, [dispatch])
+
+  useEffect(() => {
+    let active = true
+    measureCacheBytes().then((bytes) => {
+      if (active) setCacheBytes(bytes)
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
+  const handleClearCache = useCallback(async () => {
+    hapticLight()
+    setIsClearingCache(true)
+    try {
+      await clearCaches()
+      setCacheBytes(await measureCacheBytes())
+    } finally {
+      setIsClearingCache(false)
+    }
+  }, [])
 
   const handleDeleteMedia = useCallback(
     (noteKey: string, mediaPath: string) => {
@@ -121,6 +145,9 @@ function useStorageScreen() {
     notesStorageRows,
     buckets,
     resetSheetVisible,
+    cacheBytes,
+    isClearingCache,
+    handleClearCache,
     handleDeleteMedia,
     handleReclaim,
     handleRetryDownload,

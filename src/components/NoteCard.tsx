@@ -37,6 +37,8 @@ import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
+import { useCachedImageThumbnail } from '@/lib/useCachedImageThumbnail'
+import { useCachedPdfThumbnail } from '@/lib/useCachedPdfThumbnail'
 import {
   isAccessibilityTextSize,
   MAX_FONT_SCALE_CHROME,
@@ -44,7 +46,7 @@ import {
 } from '@/utils/dynamicType'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 import { buildNoteCardMenu } from '@/utils/noteCardMenu'
-import type { AttachmentInfo } from '@/utils/noteUtils'
+import type { AttachmentInfo, PdfAttachmentRef } from '@/utils/noteUtils'
 
 import { ContextMenuView } from '../../modules/expo-context-menu'
 
@@ -72,6 +74,7 @@ interface NoteCardProps {
   summary: string
   attachment?: AttachmentInfo | null
   rawImageUrl?: string | null
+  pdfAttachment?: PdfAttachmentRef | null
   folderName?: string
   folderIconToken?: string
   selected?: boolean
@@ -102,6 +105,7 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.summary === next.summary &&
     prev.attachment === next.attachment &&
     prev.rawImageUrl === next.rawImageUrl &&
+    prev.pdfAttachment === next.pdfAttachment &&
     prev.folderName === next.folderName &&
     prev.folderIconToken === next.folderIconToken &&
     prev.selected === next.selected &&
@@ -131,6 +135,7 @@ export const NoteCard = memo(function NoteCard({
   summary,
   attachment,
   rawImageUrl,
+  pdfAttachment,
   folderName,
   folderIconToken,
   selected,
@@ -219,7 +224,15 @@ export const NoteCard = memo(function NoteCard({
 
   const titleLines = scaledLineCount(1, fontScale)
   const summaryLines = scaledLineCount(2, fontScale)
-  const showThumbnail = !!imageUrl && !thumbError && !masked && !isAccessibilityTextSize(fontScale)
+  const canShowThumbnail = !masked && !isAccessibilityTextSize(fontScale)
+  const showThumbnail = !!imageUrl && !thumbError && canShowThumbnail
+  // Prefer our own downscaled copy; the original is only ever a fallback, and never disk-cached.
+  const imageThumbnailUri = useCachedImageThumbnail(imageUrl, showThumbnail)
+  // A PDF only fills the slot when there is no image to show there.
+  const pdfThumbnailUri = useCachedPdfThumbnail(
+    pdfAttachment ?? null,
+    canShowThumbnail && (!imageUrl || thumbError),
+  )
   const displayTitle = title || t('noteCard.untitled')
   const accessibilityLabel = useMemo(() => {
     const parts = [displayTitle]
@@ -418,13 +431,25 @@ export const NoteCard = memo(function NoteCard({
 
       {showThumbnail && (
         <Image
-          source={imageUrl}
+          source={imageThumbnailUri || imageUrl}
           style={styles.thumbnail}
           contentFit="cover"
-          cachePolicy="memory-disk"
+          cachePolicy="memory"
           recyclingKey={id}
           transition={0}
           onError={handleThumbError}
+        />
+      )}
+
+      {!showThumbnail && !!pdfThumbnailUri && (
+        <Image
+          source={pdfThumbnailUri}
+          style={styles.thumbnail}
+          contentFit="cover"
+          contentPosition="top"
+          cachePolicy="memory"
+          recyclingKey={id}
+          transition={0}
         />
       )}
     </RNView>

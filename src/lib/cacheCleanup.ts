@@ -1,9 +1,16 @@
 import * as FileSystem from 'expo-file-system/legacy'
+import { Image } from 'expo-image'
 
-import { PDF_THUMBNAIL_CACHE_DIR, PDF_THUMBNAIL_MAX_AGE_MS } from '@/constants/constants'
+import { ATTACHMENT_THUMBNAIL_CACHE_DIR } from '@/constants/constants'
 import { ATTACHMENT_CACHE_PREFIX } from '@/lib/noteAttachmentManager'
+import { thumbnailCacheKey, thumbnailFileNames } from '@/lib/thumbnailCache'
+import { getImageAttachments, getPdfAttachments } from '@/utils/noteUtils'
 
 export const IN_SESSION_CACHE_MAX_AGE_MS = 30 * 60 * 1000
+
+// A thumbnail written moments ago may belong to an attachment whose note has not reached the store
+// yet, so young files are never swept.
+const THUMBNAIL_SWEEP_GRACE_MS = 5 * 60 * 1000
 
 const TRANSIENT_CACHE_DIRS = ['ImagePicker', 'Audio', 'AV', 'mlkit_docscan_ui_client']
 const UPLOAD_CACHE_PREFIX = 'upload-'
@@ -61,10 +68,21 @@ export async function pruneAttachmentCache(maxAgeMs = 0): Promise<number> {
   return reclaimed
 }
 
-export async function prunePdfThumbnailCache(maxAgeMs = PDF_THUMBNAIL_MAX_AGE_MS): Promise<void> {
+type SweepNote = { value?: { note?: string } | null } | null
+
+/**
+ * Drops every PDF thumbnail no note refers to any more.
+ *
+ * The notes list draws these, so they cannot expire on a timer — a thumbnail lives exactly as long
+ * as its attachment does. That also means the sweep is the only thing reclaiming space when a PDF
+ * disappears because a *linked device* removed it; deletions made here reclaim immediately via
+ * deletePdfThumbnail. `notes` must be every note held on this device, trashed ones included: a note
+ * in Recently Deleted can be restored, so its thumbnail has to survive until it is purged.
+ */
+export async function sweepThumbnailCache(notes: SweepNote[]): Promise<void> {
   const directory = FileSystem.cacheDirectory
   if (!directory) return
-  const dir = `${directory}${PDF_THUMBNAIL_CACHE_DIR}/`
+  const dir = `${directory}${ATTACHMENT_THUMBNAIL_CACHE_DIR}/`
 
   let names: string[] = []
   try {
@@ -72,9 +90,31 @@ export async function prunePdfThumbnailCache(maxAgeMs = PDF_THUMBNAIL_MAX_AGE_MS
   } catch {
     return
   }
+  if (names.length === 0) return
 
-  const cutoff = Date.now() - maxAgeMs
+  const urls = new Set<string>()
+  for (const note of notes) {
+    const html = note?.value?.note
+    if (!html) continue
+    for (const pdf of getPdfAttachments(html)) urls.add(pdf.url)
+    for (const image of getImageAttachments(html)) urls.add(image)
+  }
+
+  const liveFiles = new Set<string>()
+  for (const url of urls) {
+    try {
+      const key = await thumbnailCacheKey(url)
+      for (const name of thumbnailFileNames(key)) liveFiles.add(name)
+    } catch {
+      // A url we cannot hash is a url we cannot match, so keep everything rather than risk
+      // deleting a live thumbnail.
+      return
+    }
+  }
+
+  const cutoff = Date.now() - THUMBNAIL_SWEEP_GRACE_MS
   for (const name of names) {
+    if (liveFiles.has(name)) continue
     const uri = `${dir}${name}`
     try {
       const info = await FileSystem.getInfoAsync(uri)
@@ -85,4 +125,73 @@ export async function prunePdfThumbnailCache(maxAgeMs = PDF_THUMBNAIL_MAX_AGE_MS
       continue
     }
   }
+}
+
+async function directoryBytes(uri: string): Promise<number> {
+  let names: string[] = []
+  try {
+    names = await FileSystem.readDirectoryAsync(uri)
+  } catch {
+    // Not a directory — fall through to a plain stat.
+    const info = await FileSystem.getInfoAsync(uri).catch(() => null)
+    return info?.exists ? ((info as { size?: number }).size ?? 0) : 0
+  }
+
+  let total = 0
+  for (const name of names) total += await directoryBytes(`${uri}${name}`)
+  return total
+}
+
+/**
+ * Bytes held by throwaway caches — everything under the cache directory except the attachment
+ * thumbnails the notes list draws, which `clearCaches` deliberately keeps. The Storage screen's
+ * other figures come from the vault (`corePath`), so without this the app reports less space than
+ * the OS does and the gap has no explanation.
+ */
+export async function measureCacheBytes(): Promise<number> {
+  const directory = FileSystem.cacheDirectory
+  if (!directory) return 0
+
+  let names: string[] = []
+  try {
+    names = await FileSystem.readDirectoryAsync(directory)
+  } catch {
+    return 0
+  }
+
+  let total = 0
+  for (const name of names) {
+    if (name === ATTACHMENT_THUMBNAIL_CACHE_DIR) continue
+    total += await directoryBytes(`${directory}${name}`)
+  }
+  return total
+}
+
+/**
+ * Clears the throwaway caches. Attachment thumbnails are kept on purpose: they are what the notes
+ * list draws, and dropping them would blank every row until each note was opened again.
+ */
+export async function clearCaches(): Promise<void> {
+  const directory = FileSystem.cacheDirectory
+  if (!directory) return
+
+  sweepTransientUploadCache()
+  await pruneAttachmentCache().catch(() => {})
+
+  let names: string[] = []
+  try {
+    names = await FileSystem.readDirectoryAsync(directory)
+  } catch {
+    return
+  }
+
+  for (const name of names) {
+    if (name === ATTACHMENT_THUMBNAIL_CACHE_DIR) continue
+    await FileSystem.deleteAsync(`${directory}${name}`, { idempotent: true }).catch(() => {})
+  }
+
+  // expo-image keeps its own store outside the paths above, and on iOS SDWebImage applies no size
+  // limit to it by default.
+  await Image.clearDiskCache().catch(() => {})
+  await Image.clearMemoryCache().catch(() => {})
 }

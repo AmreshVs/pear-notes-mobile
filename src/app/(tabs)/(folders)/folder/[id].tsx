@@ -391,6 +391,7 @@ export default function FolderNotesScreen() {
           summary={metadata.preview}
           attachment={metadata.attachment}
           rawImageUrl={metadata.imageUrl}
+          pdfAttachment={metadata.pdf}
           folderName={folderName}
           folderIconToken={noteFolder?.icon}
           selected={false}

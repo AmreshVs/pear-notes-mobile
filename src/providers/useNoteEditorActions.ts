@@ -9,6 +9,7 @@ import { setEditorContent, setEditorTitle } from '@pear-notes/core/store/slices/
 import { updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { hapticLight, hapticMedium, hapticSuccess } from '@/lib/haptics'
+import { warmImageThumbnail } from '@/lib/imageThumbnails'
 import {
   CameraPermissionDeniedError,
   copyVideoToUploadCache,
@@ -23,7 +24,14 @@ import {
 } from '@/lib/noteAttachmentManager'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { runNoteUpload } from '@/lib/noteUploadManager'
-import { createScanPdf, getPdfThumbnail, PDF_MIME_TYPE } from '@/lib/pdfTools'
+import {
+  createScanPdf,
+  getPdfThumbnail,
+  isPdfAttachment,
+  PDF_MIME_TYPE,
+  warmPdfThumbnail,
+} from '@/lib/pdfTools'
+import { deleteThumbnail } from '@/lib/thumbnailCache'
 import {
   clearNoteUploadQueue,
   enqueueNoteUploads,
@@ -35,7 +43,7 @@ import type { useNoteEditor } from './useNoteEditor'
 
 const IMAGE_MAX_HEIGHT = 400
 const IMAGE_WIDTH_INSET = 40
-const SCROLL_TO_END_DELAY = 300
+const REVEAL_INSERT_DELAY = 300
 
 let uploadItemSequence = 0
 const nextUploadItemId = () => `upload-${Date.now()}-${(uploadItemSequence += 1)}`
@@ -181,7 +189,7 @@ export function useNoteEditorActions({
             attachment: { type: 'file', fileSize: prepared.size, fileType: mimeType },
             insertLive: (link) => {
               editorRef.current?.insertFileAttachment(link, displayName, prepared.size, mimeType)
-              setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+              setTimeout(() => editorRef.current?.revealLastInsert(link), REVEAL_INSERT_DELAY)
             },
             resolveLink: resolveHyperdriveUrl,
             isNoteOpen: () => loadedNoteRef.current === targetNoteId,
@@ -198,6 +206,7 @@ export function useNoteEditorActions({
       const displayName = fileName || labels.photo
       const { finalWidth, finalHeight } = fitImage(assetWidth, assetHeight)
 
+      let imageLink = ''
       try {
         await runNoteUpload({
           noteId: targetNoteId,
@@ -207,12 +216,16 @@ export function useNoteEditorActions({
           displayName,
           attachment: { type: 'image', width: finalWidth, height: finalHeight },
           insertLive: (link) => {
+            imageLink = link
             editorRef.current?.insertImage(link, finalWidth, finalHeight)
-            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+            setTimeout(() => editorRef.current?.revealLastInsert(link), REVEAL_INSERT_DELAY)
           },
           resolveLink: resolveHyperdriveUrl,
           isNoteOpen: () => loadedNoteRef.current === targetNoteId,
         })
+        // The picked file is still on disk here, so the list thumbnail costs one downscale and no
+        // fetch. Without it the row would pull the full image the first time it appears.
+        if (imageLink) await warmImageThumbnail(imageLink, uri)
       } finally {
         await deleteCachedAsset(uri)
       }
@@ -261,6 +274,7 @@ export function useNoteEditorActions({
 
       const isAudio = mimeType?.startsWith('audio/')
       const displayName = name || labels.file
+      let insertedLink = ''
       try {
         await runNoteUpload({
           noteId: targetNoteId,
@@ -272,6 +286,7 @@ export function useNoteEditorActions({
             ? { type: 'audio' }
             : { type: 'file', fileSize: size || 0, fileType: mimeType || '' },
           insertLive: (link) => {
+            insertedLink = link
             if (isAudio) {
               editorRef.current?.insertAudioAttachment(link, name || labels.audio)
             } else {
@@ -282,11 +297,16 @@ export function useNoteEditorActions({
                 mimeType || '',
               )
             }
-            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+            setTimeout(() => editorRef.current?.revealLastInsert(link), REVEAL_INSERT_DELAY)
           },
           resolveLink: resolveHyperdriveUrl,
           isNoteOpen: () => loadedNoteRef.current === targetNoteId,
         })
+        // The PDF is still in the upload cache here, so the notes-list thumbnail costs a render
+        // and nothing else. Waiting until the note is opened would leave the row blank.
+        if (insertedLink && isPdfAttachment(name, mimeType)) {
+          await warmPdfThumbnail(insertedLink, uri, name || labels.file)
+        }
       } finally {
         await deleteCachedAsset(uri)
       }
@@ -384,6 +404,7 @@ export function useNoteEditorActions({
         return
       }
 
+      let scanLink = ''
       try {
         await runNoteUpload({
           noteId: targetNoteId,
@@ -393,13 +414,15 @@ export function useNoteEditorActions({
           displayName: labels.scannedDoc,
           attachment: { type: 'file', fileSize: pdf.fileSize, fileType: PDF_MIME_TYPE },
           insertLive: (link) => {
+            scanLink = link
             editorRef.current?.insertFileAttachment(link, pdf.fileName, pdf.fileSize, PDF_MIME_TYPE)
-            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+            setTimeout(() => editorRef.current?.revealLastInsert(link), REVEAL_INSERT_DELAY)
           },
           resolveLink: resolveHyperdriveUrl,
           isNoteOpen: () => loadedNoteRef.current === targetNoteId,
           onError: () => onUploadError(labels.uploadFailedScan),
         })
+        if (scanLink) await warmPdfThumbnail(scanLink, pdf.uri, pdf.fileName)
       } finally {
         await deleteCachedAsset(pdf.uri)
       }
@@ -445,7 +468,7 @@ export function useNoteEditorActions({
           attachment: { type: 'audio' },
           insertLive: (link) => {
             editorRef.current?.insertAudioAttachment(link, fileName)
-            setTimeout(() => editorRef.current?.scrollToEnd(), SCROLL_TO_END_DELAY)
+            setTimeout(() => editorRef.current?.revealLastInsert(link), REVEAL_INSERT_DELAY)
           },
           resolveLink: resolveHyperdriveUrl,
           isNoteOpen: () => loadedNoteRef.current === targetNoteId,
@@ -486,6 +509,8 @@ export function useNoteEditorActions({
       try {
         await deleteAttachment(noteId, url)
       } catch {}
+      // Reclaim the thumbnail now rather than leaving it for the next sweep.
+      await deleteThumbnail(url)
     },
     [noteId],
   )

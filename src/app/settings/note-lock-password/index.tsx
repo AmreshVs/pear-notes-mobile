@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
@@ -42,6 +42,7 @@ export default function NoteLockPasswordScreen() {
   const { colors } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
+  const confirmRef = useRef<TextInput>(null)
 
   const {
     isCreate,
@@ -85,6 +86,11 @@ export default function NoteLockPasswordScreen() {
       )
     }
   }, [submit, setError, t])
+
+  const handleNext = useCallback(() => {
+    if (isCreate) confirmRef.current?.focus()
+    else handleSubmit()
+  }, [isCreate, handleSubmit])
 
   const renderRule = useCallback(
     (rule: (typeof PASSWORD_RULE_KEYS)[number]) => {
@@ -160,6 +166,11 @@ export default function NoteLockPasswordScreen() {
               maxLength={PASSWORD_MAX_LENGTH}
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="off"
+              textContentType="none"
+              returnKeyType={isCreate ? 'next' : 'done'}
+              submitBehavior={isCreate ? 'submit' : 'blurAndSubmit'}
+              onSubmitEditing={handleNext}
               style={styles.input}
               autoFocus={!isCreate}
             />
@@ -176,6 +187,7 @@ export default function NoteLockPasswordScreen() {
             <>
               <RNView style={styles.inputRow}>
                 <TextInput
+                  ref={confirmRef}
                   value={confirm}
                   onChangeText={setConfirm}
                   placeholder={t('noteLockPassword.confirmPlaceholder')}
@@ -184,6 +196,10 @@ export default function NoteLockPasswordScreen() {
                   maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  autoComplete="off"
+                  textContentType="none"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
                   style={styles.input}
                 />
               </RNView>

@@ -43,6 +43,7 @@ export default function BackupPasswordScreen() {
   const styles = useStyles()
   const insets = useSafeAreaInsets()
   const scrollRef = useRef<ScrollView>(null)
+  const confirmRef = useRef<TextInput>(null)
 
   const handleRevealRequirements = useCallback(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250)
@@ -81,6 +82,11 @@ export default function BackupPasswordScreen() {
   const handleSubmit = useCallback(() => {
     submit(t('backup.progress.restoringDesc'))
   }, [submit, t])
+
+  const handleNext = useCallback(() => {
+    if (isCreate) confirmRef.current?.focus()
+    else handleSubmit()
+  }, [isCreate, handleSubmit])
 
   const renderRule = useCallback(
     (rule: (typeof PASSWORD_RULE_KEYS)[number]) => {
@@ -145,6 +151,11 @@ export default function BackupPasswordScreen() {
               maxLength={PASSWORD_MAX_LENGTH}
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="off"
+              textContentType="none"
+              returnKeyType={isCreate ? 'next' : 'done'}
+              submitBehavior={isCreate ? 'submit' : 'blurAndSubmit'}
+              onSubmitEditing={handleNext}
               onFocus={handleRevealRequirements}
               style={styles.input}
             />
@@ -161,6 +172,7 @@ export default function BackupPasswordScreen() {
             <>
               <RNView style={styles.inputRow}>
                 <TextInput
+                  ref={confirmRef}
                   value={confirm}
                   onChangeText={setConfirm}
                   placeholder={t('backup.password.confirmPlaceholder')}
@@ -169,6 +181,10 @@ export default function BackupPasswordScreen() {
                   maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  autoComplete="off"
+                  textContentType="none"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
                   style={styles.input}
                 />
               </RNView>

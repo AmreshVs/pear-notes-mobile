@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
@@ -58,6 +58,7 @@ export default function AndroidBackupPasswordScreen() {
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const styles = useStyles()
+  const confirmRef = useRef<TextInput>(null)
 
   const {
     isCreate,
@@ -87,6 +88,11 @@ export default function AndroidBackupPasswordScreen() {
   const handleSubmit = useCallback(() => {
     submit(t('backup.progress.restoringDesc'))
   }, [submit, t])
+
+  const handleNext = useCallback(() => {
+    if (isCreate) confirmRef.current?.focus()
+    else handleSubmit()
+  }, [isCreate, handleSubmit])
 
   const renderRule = useCallback(
     (rule: (typeof PASSWORD_RULE_KEYS)[number]) => {
@@ -124,7 +130,7 @@ export default function AndroidBackupPasswordScreen() {
         </Text>
       </View>
 
-      <KeyboardAvoidingView style={commonStyles.flex1} behavior={undefined}>
+      <KeyboardAvoidingView style={commonStyles.flex1} behavior="height">
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
@@ -148,6 +154,11 @@ export default function AndroidBackupPasswordScreen() {
               maxLength={PASSWORD_MAX_LENGTH}
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="off"
+              importantForAutofill="no"
+              returnKeyType={isCreate ? 'next' : 'done'}
+              submitBehavior={isCreate ? 'submit' : 'blurAndSubmit'}
+              onSubmitEditing={handleNext}
               style={styles.input}
             />
             <Pressable
@@ -168,6 +179,7 @@ export default function AndroidBackupPasswordScreen() {
             <>
               <View style={styles.inputRow}>
                 <TextInput
+                  ref={confirmRef}
                   value={confirm}
                   onChangeText={setConfirm}
                   placeholder={t('backup.password.confirmPlaceholder')}
@@ -176,6 +188,10 @@ export default function AndroidBackupPasswordScreen() {
                   maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  autoComplete="off"
+                  importantForAutofill="no"
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
                   style={styles.input}
                 />
               </View>

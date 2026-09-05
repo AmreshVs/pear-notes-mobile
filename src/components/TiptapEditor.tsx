@@ -79,7 +79,7 @@ export interface TiptapEditorHandle {
   loadNote: (noteId: string, html: string) => void
   setTitle: (title: string) => void
   scrollToTop: () => void
-  scrollToEnd: () => void
+  revealLastInsert: (url?: string) => void
   setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
   setBottomInset: (keyboardHeight: number, toolbarHeight: number) => void
   setAttachmentLoading: (
@@ -159,6 +159,50 @@ type WebViewMsg =
   | { type: 'yjsMessage'; data: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
+
+// Brings a freshly inserted image/attachment into view, but only when it actually landed
+// off-screen. Unconditionally scrolling to the end of the document made short notes jump to
+// the bottom for no reason, and the jump then fought WebKit's own scroll back to the focused
+// title. Measuring is deferred until the image has decoded, otherwise the node is still
+// zero-height and reads as visible.
+const revealLastInsertJs = (url?: string) => `(function () {
+  var pm = document.querySelector('.ProseMirror')
+  if (!pm) return
+  var url = ${JSON.stringify(url || '')}
+  var nodes = pm.querySelectorAll('img, [data-file-attachment], [data-audio-attachment]')
+  var target = null
+  for (var i = nodes.length - 1; url && i >= 0; i--) {
+    if (nodes[i].getAttribute('src') === url || nodes[i].getAttribute('data-url') === url) {
+      target = nodes[i]
+      break
+    }
+  }
+  if (!target) target = nodes.length ? nodes[nodes.length - 1] : pm.lastElementChild
+  if (!target) return
+  while (target.parentElement && target.parentElement !== pm) target = target.parentElement
+  var done = false
+  function reveal() {
+    if (done) return
+    done = true
+    var inset = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--bottom-inset')
+    ) || 0
+    var rect = target.getBoundingClientRect()
+    // The start of the insert is already on screen, so the user can see it landed. Anything
+    // more is an unrequested jump.
+    if (rect.top >= 0 && rect.top < window.innerHeight - inset) return
+    target.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }
+  var img = target.tagName === 'IMG' ? target : target.querySelector('img')
+  if (img && !img.complete) {
+    img.addEventListener('load', reveal, { once: true })
+    img.addEventListener('error', reveal, { once: true })
+    setTimeout(reveal, 800)
+  } else {
+    reveal()
+  }
+})();
+true;`
 
 const iosWebViewProps =
   Platform.OS === 'ios'
@@ -592,10 +636,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),
         deleteAttachment: (url) => sendCommand({ type: 'deleteAttachment', url }),
         applyYjsMessage: (data) => sendCommand({ type: 'yjsMessage', data }),
-        scrollToEnd: () =>
-          webViewRef.current?.injectJavaScript(
-            `(function(){var pm=document.querySelector('.ProseMirror');if(pm&&pm.lastElementChild){pm.lastElementChild.scrollIntoView({block:'end',behavior:'smooth'})}else{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'})}})();true;`,
-          ),
+        revealLastInsert: (url?: string) =>
+          webViewRef.current?.injectJavaScript(revealLastInsertJs(url)),
         setKeyboardInset: (height: number, scrollToCursor?: boolean) =>
           webViewRef.current?.injectJavaScript(
             scrollToCursor

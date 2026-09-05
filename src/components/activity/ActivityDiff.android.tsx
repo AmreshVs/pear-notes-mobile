@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { diffActivityText } from '@pear-notes/core/activity.js'
 
@@ -12,12 +13,18 @@ import {
   FontSize,
   FontWeight,
   Space,
+  UI_ICON_SIZE_16,
   UI_SIZE_4,
+  UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_18,
+  UI_SIZE_20,
   UI_SIZE_32,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+
+import { useCopyRemovedLines } from './useCopyRemovedLines'
 
 type DiffRow = {
   type: string
@@ -35,8 +42,11 @@ type Props = {
 export function ActivityDiff({ before, after }: Props) {
   const { t } = useTranslation()
   const styles = useStyles()
+  const md3 = useMD3Theme()
+  const ripple = useMemo(() => androidRipple(md3.colors.onSurface), [md3.colors.onSurface])
 
   const diff = useMemo(() => diffActivityText(before || '', after || ''), [before, after])
+  const { canCopy, copied, copyRemoved } = useCopyRemovedLines(diff.rows)
 
   const renderRow = useCallback(
     (row: DiffRow, index: number) => {
@@ -81,6 +91,22 @@ export function ActivityDiff({ before, after }: Props) {
         <Text style={styles.added}>+{diff.added}</Text>
         <Text style={styles.removed}>&minus;{diff.removed}</Text>
         <Text style={styles.headerLabel}>{t('activity.diff.plainText')}</Text>
+        {canCopy ? (
+          <Pressable
+            onPress={copyRemoved}
+            android_ripple={ripple}
+            hitSlop={UI_SIZE_12}
+            accessibilityRole="button"
+            accessibilityLabel={t('activity.diff.copyRemoved')}
+            style={styles.copyBtn}
+          >
+            <MaterialCommunityIcons
+              name={copied ? 'check' : 'content-copy'}
+              size={UI_ICON_SIZE_16}
+              color={copied ? md3.colors.primary : md3.colors.onSurfaceVariant}
+            />
+          </Pressable>
+        ) : null}
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -149,6 +175,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontFamily: FontFamily.medium,
       fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
+    },
+    copyBtn: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: UI_SIZE_20,
+      height: UI_SIZE_20,
     },
     rows: {
       paddingVertical: UI_SIZE_4,

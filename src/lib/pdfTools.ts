@@ -1,14 +1,17 @@
-import * as Crypto from 'expo-crypto'
 import * as FileSystem from 'expo-file-system/legacy'
 
-import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
-
-import { PDF_THUMBNAIL_CACHE_DIR } from '@/constants/constants'
 import {
   cleanupCachedAttachment,
   downloadToCache,
   toBackendPath,
 } from '@/lib/noteAttachmentManager'
+import {
+  notifyThumbnailWritten,
+  requestThumbnail,
+  type ThumbnailFile,
+  thumbnailPath,
+  writePageCount,
+} from '@/lib/thumbnailCache'
 
 export const PDF_MIME_TYPE = 'application/pdf'
 
@@ -26,10 +29,7 @@ async function loadPdfTools() {
 }
 
 const PDF_THUMBNAIL_MAX_WIDTH = 360
-const PDF_THUMBNAIL_MEMORY_LIMIT = 12
 const SCAN_PDF_PREFIX = 'scan-'
-const PAGE_COUNT_EXTENSION = '.pages'
-const THUMBNAIL_EXTENSION = '.jpg'
 
 export type ScanPdfResult = {
   uri: string
@@ -44,51 +44,9 @@ export type PdfThumbnail = {
   pageCount: number
 }
 
-const memoryCache = new Map<string, PdfThumbnail>()
-const pending = new Map<string, Promise<PdfThumbnail | null>>()
-
-function rememberThumbnail(url: string, thumbnail: PdfThumbnail) {
-  memoryCache.set(url, thumbnail)
-  if (memoryCache.size > PDF_THUMBNAIL_MEMORY_LIMIT) {
-    const oldest = memoryCache.keys().next().value
-    if (oldest) memoryCache.delete(oldest)
-  }
-}
-
 export function isPdfAttachment(fileName?: string | null, fileType?: string | null): boolean {
   if (fileType === PDF_MIME_TYPE) return true
   return typeof fileName === 'string' && fileName.toLowerCase().endsWith('.pdf')
-}
-
-async function thumbnailCacheDir(): Promise<string | null> {
-  const cacheDirectory = FileSystem.cacheDirectory
-  if (!cacheDirectory) return null
-  const dir = `${cacheDirectory}${PDF_THUMBNAIL_CACHE_DIR}/`
-  await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => {})
-  return dir
-}
-
-function attachmentIdentity(url: string): string {
-  const queryIndex = url.indexOf('?')
-  if (queryIndex !== -1 && url.slice(queryIndex).includes('blob=')) {
-    return `${HYPERDRIVE_URL_PREFIX}/${url.slice(queryIndex)}`
-  }
-  return url
-}
-
-async function cacheKeyFor(url: string): Promise<string> {
-  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, attachmentIdentity(url))
-}
-
-async function readCachedThumbnail(dir: string, key: string): Promise<PdfThumbnail | null> {
-  const imageUri = `${dir}${key}${THUMBNAIL_EXTENSION}`
-  const info = await FileSystem.getInfoAsync(imageUri)
-  if (!info.exists) return null
-  const base64 = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' })
-  const pageCount = await FileSystem.readAsStringAsync(`${dir}${key}${PAGE_COUNT_EXTENSION}`).catch(
-    () => '0',
-  )
-  return { dataUri: `data:image/jpeg;base64,${base64}`, pageCount: Number(pageCount) || 0 }
 }
 
 export async function createScanPdf(imageUris: string[], baseName: string): Promise<ScanPdfResult> {
@@ -115,49 +73,65 @@ export async function createScanPdf(imageUris: string[], baseName: string): Prom
   }
 }
 
-async function buildPdfThumbnail(url: string, fileName: string): Promise<PdfThumbnail | null> {
-  const dir = await thumbnailCacheDir()
-  if (!dir) return null
-
-  const key = await cacheKeyFor(url)
-  const cached = await readCachedThumbnail(dir, key).catch(() => null)
-  if (cached) return cached
-
+async function renderThumbnail(
+  identity: string,
+  localPdfUri: string,
+  dir: string,
+  key: string,
+): Promise<ThumbnailFile | null> {
   const pdfTools = await loadPdfTools()
   if (!pdfTools) return null
 
-  const localPdfUri = await downloadToCache(url, fileName)
-  try {
-    const imageUri = `${dir}${key}${THUMBNAIL_EXTENSION}`
-    const { pageCount } = await pdfTools.getPdfThumbnail({
-      url: toBackendPath(localPdfUri),
-      outputPath: toBackendPath(imageUri),
-      maxWidth: PDF_THUMBNAIL_MAX_WIDTH,
-    })
-    await FileSystem.writeAsStringAsync(`${dir}${key}${PAGE_COUNT_EXTENSION}`, String(pageCount))
-    const base64 = await FileSystem.readAsStringAsync(imageUri, { encoding: 'base64' })
-    return { dataUri: `data:image/jpeg;base64,${base64}`, pageCount }
-  } finally {
-    await cleanupCachedAttachment(localPdfUri)
-  }
+  const fileUri = thumbnailPath(dir, key)
+  const { pageCount } = await pdfTools.getPdfThumbnail({
+    url: toBackendPath(localPdfUri),
+    outputPath: toBackendPath(fileUri),
+    maxWidth: PDF_THUMBNAIL_MAX_WIDTH,
+  })
+  await writePageCount(dir, key, pageCount)
+  notifyThumbnailWritten(identity)
+  return { fileUri, pageCount }
 }
 
+/**
+ * Cache-only lookup, for the notes list. Never loads the native module and never pulls the PDF
+ * through the blob server, so scrolling a list of PDF notes costs nothing and is unaffected by the
+ * media-transfer hold settings.
+ */
+export async function getCachedPdfThumbnail(url: string): Promise<ThumbnailFile | null> {
+  if (!url) return null
+  return requestThumbnail(url, false, async () => null).catch(() => null)
+}
+
+/**
+ * Renders a thumbnail from a PDF that is already on disk (freshly attached or scanned), so the
+ * notes list has one to show without ever fetching. No-op when the entry already exists.
+ */
+export async function warmPdfThumbnail(
+  url: string,
+  localPdfUri: string,
+  fileName: string,
+): Promise<void> {
+  if (!url || !localPdfUri || !fileName) return
+  await requestThumbnail(url, true, ({ dir, key, identity }) =>
+    renderThumbnail(identity, localPdfUri, dir, key),
+  ).catch(() => null)
+}
+
+/** Editor path: renders on demand (fetching the PDF if needed) and returns an inlineable image. */
 export async function getPdfThumbnail(url: string, fileName: string): Promise<PdfThumbnail | null> {
-  const identity = attachmentIdentity(url)
-  const remembered = memoryCache.get(identity)
-  if (remembered) return remembered
-
-  const inFlight = pending.get(identity)
-  if (inFlight) return inFlight
-
-  const request = buildPdfThumbnail(url, fileName)
-    .then((thumbnail) => {
-      if (thumbnail) rememberThumbnail(identity, thumbnail)
-      return thumbnail
-    })
-    .finally(() => {
-      pending.delete(identity)
-    })
-  pending.set(identity, request)
-  return request
+  const file = await requestThumbnail(url, true, async ({ dir, key, identity }) => {
+    const localPdfUri = await downloadToCache(url, fileName)
+    try {
+      return await renderThumbnail(identity, localPdfUri, dir, key)
+    } finally {
+      await cleanupCachedAttachment(localPdfUri)
+    }
+  })
+  if (!file) return null
+  const base64 = await FileSystem.readAsStringAsync(file.fileUri, { encoding: 'base64' }).catch(
+    () => null,
+  )
+  if (!base64) return null
+  return { dataUri: `data:image/jpeg;base64,${base64}`, pageCount: file.pageCount }
 }
