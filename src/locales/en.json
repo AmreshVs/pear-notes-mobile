@@ -136,6 +136,7 @@
       "backgroundNever": "Never run",
       "wakeResult": "Result",
       "wakeResultOk": "Synced in background",
+      "wakeResultNoChanges": "Checked, nothing new",
       "wakeResultNoWorklet": "App was not running",
       "wakeResultError": "Failed",
       "serviceStoppedAt": "Service stopped",

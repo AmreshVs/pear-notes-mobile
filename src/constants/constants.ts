@@ -8,13 +8,11 @@ export const ANDROID_RIPPLE_ENABLED = true
 export const PDF_THUMBNAIL_CACHE_DIR = 'pdf-thumb'
 export const PDF_THUMBNAIL_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000
 
-// Minimum scroll distance before the large title collapses into the iOS nav bar.
-// The title block is often shorter than this, so without a floor the centre
-// title snaps in almost immediately.
-export const MIN_TITLE_COLLAPSE_DISTANCE = 120
+export const MIN_TITLE_COLLAPSE_DISTANCE = 140
 
 export const TITLE_COLLAPSE_BUFFER = 64
 export const TITLE_COLLAPSE_HYSTERESIS = 32
+export const SCROLL_EVENT_THROTTLE = 16
 
 export const ANDROID_APP_BAR_HEIGHT = 44
 

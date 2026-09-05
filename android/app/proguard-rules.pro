@@ -26,6 +26,15 @@
 # R8 can drop it; this suppresses the dangling references it leaves behind.
 -dontwarn com.google.firebase.messaging.**
 
+# expo-task-manager boots the app headlessly (background tasks with a dead
+# process) through AppLoaderProvider, which reads the loader's class name from
+# the AndroidManifest meta-data string
+# "org.unimodules.core.AppLoader#react-native-headless" and resolves it with
+# Class.forName. Nothing references the class statically, so R8 deletes it
+# outright and the lookup throws ClassNotFoundException at runtime. Expo's own
+# rules only keep its @DoNotStrip constructor, which does not keep the class.
+-keep class * implements expo.modules.apploader.HeadlessAppLoader { *; }
+
 -keepclasseswithmembernames,includedescriptorclasses class * {
     native <methods>;
 }

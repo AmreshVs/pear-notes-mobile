@@ -28,6 +28,8 @@ let _appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
 let _foregroundServiceActive = false
 let _keepAliveTimer: ReturnType<typeof setInterval> | null = null
 let _notificationStrings = { title: '', message: '' }
+let _backgroundSyncWindowActive = false
+let _suspendDeferredForBackgroundSync = false
 
 function logLifecycle(message: string, detail?: Record<string, unknown>) {
   const suffix = detail
@@ -88,6 +90,17 @@ function handleBackground(worklet: any) {
     }
   }
 
+  if (_backgroundSyncWindowActive) {
+    _suspendDeferredForBackgroundSync = true
+    logLifecycle('background -> background sync in flight, staying awake', workletState(worklet))
+    try {
+      worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+    } catch (err) {
+      console.error('[lifecycle] app failed to keep the worklet awake for background sync', err)
+    }
+    return
+  }
+
   logLifecycle('background -> suspend', workletState(worklet))
 
   try {
@@ -114,6 +127,47 @@ export function wakeActiveWorklet(deadlineMs: number): boolean {
 
 export function isActiveWorkletSuspended(): boolean {
   return !!_activeWorklet && !_activeWorklet.terminated && _activeWorklet.suspended === true
+}
+
+export function setBackgroundSyncWindowActive(active: boolean): void {
+  _backgroundSyncWindowActive = active
+  if (active) _suspendDeferredForBackgroundSync = false
+}
+
+export function suspendIfDeferredForBackgroundSync(): boolean {
+  if (!_suspendDeferredForBackgroundSync) return false
+  _suspendDeferredForBackgroundSync = false
+
+  logLifecycle('background task -> applying the suspend it deferred', workletState(_activeWorklet))
+  return suspendActiveWorklet()
+}
+
+export function terminateWorkletIfActive(worklet: any): boolean {
+  if (!worklet) return false
+
+  if (worklet !== _activeWorklet) {
+    logLifecycle('background task -> another worklet is active, leaving it alone', {
+      ...workletState(_activeWorklet),
+      hasActive: !!_activeWorklet,
+    })
+    return false
+  }
+
+  logLifecycle('background task -> terminating the worklet it started', workletState(worklet))
+
+  stopKeepAlive()
+  _appStateSubscription?.remove()
+  _appStateSubscription = null
+  _activeWorklet = null
+
+  try {
+    worklet.terminate()
+    logLifecycle('background task -> terminate returned', workletState(worklet))
+    return true
+  } catch (err) {
+    console.error('[lifecycle] app failed to terminate the background-task worklet', err)
+    return false
+  }
 }
 
 export function suspendActiveWorklet(): boolean {

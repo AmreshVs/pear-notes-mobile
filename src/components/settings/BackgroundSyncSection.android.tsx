@@ -12,6 +12,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Space,
   UI_SIZE_4,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -157,8 +158,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_16,
+      padding: Space.base,
       marginBottom: UI_SIZE_12,
     },
     cardTitle: {

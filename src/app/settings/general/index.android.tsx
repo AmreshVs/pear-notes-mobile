@@ -34,7 +34,6 @@ import {
   UI_ICON_SIZE_24,
   UI_SIZE_4,
   UI_SIZE_8,
-  UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_18,
@@ -101,18 +100,21 @@ export default function AndroidGeneralSettingsScreen() {
         label: t('settings.general.sortOptions.updatedAt'),
         selected: sortBy === 'updatedAt',
         onPress: () => handleSortSelect('updatedAt'),
+        noRightIcon: sortBy !== 'updatedAt',
       },
       {
         icon: 'calendar-plus',
         label: t('settings.general.sortOptions.createdAt'),
         selected: sortBy === 'createdAt',
         onPress: () => handleSortSelect('createdAt'),
+        noRightIcon: sortBy !== 'createdAt',
       },
       {
         icon: 'sort-alphabetical-variant',
         label: t('settings.general.sortOptions.title'),
         selected: sortBy === 'title',
         onPress: () => handleSortSelect('title'),
+        noRightIcon: sortBy !== 'title',
       },
     ],
     [handleSortSelect, t, sortBy],
@@ -371,7 +373,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     header: {
       ...commonStyles.row,
       paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: UI_SIZE_16,
     },
     iconBtn: {
@@ -389,13 +391,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: insets.bottom + UI_SIZE_40,
-      paddingTop: UI_SIZE_10,
     },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_16,
+      padding: UI_SIZE_16,
       marginBottom: UI_SIZE_12,
     },
     groupCard: {
@@ -406,8 +406,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     groupPressRow: {
       ...commonStyles.row,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_18,
+      padding: UI_SIZE_16,
     },
     groupContentRow: {
       paddingHorizontal: UI_SIZE_20,
@@ -425,7 +424,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     groupDivider: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: hexWithAlpha(c.outlineVariant, 0.5),
-      marginLeft: UI_SIZE_20,
+      marginHorizontal: UI_SIZE_20,
     },
     cardTitle: {
       fontSize: FontSize.body,

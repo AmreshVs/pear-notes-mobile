@@ -25,8 +25,6 @@ import {
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_18,
-  UI_SIZE_20,
   UI_SIZE_24,
   UI_SIZE_48,
   UI_SIZE_9999,
@@ -204,11 +202,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
     deviceCard: {
-      overflow: 'hidden',
       ...commonStyles.row,
+      overflow: 'hidden',
       borderRadius: UI_SIZE_24,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_18,
+      padding: UI_SIZE_16,
       gap: UI_SIZE_16,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
     },

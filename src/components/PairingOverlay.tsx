@@ -732,7 +732,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       elevation: 6,
     },
     cardInner: {
-      padding: isAndroid ? 28 : Space.xl,
+      padding: Space.xl,
       alignItems: 'center',
       width: '100%',
       backgroundColor: theme.colors.cardSurface,

@@ -7,7 +7,19 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_22, UI_SIZE_4, UI_SIZE_8, UI_SIZE_12, UI_SIZE_16, UI_SIZE_28, UI_SIZE_9999 } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  Space,
+  UI_ICON_SIZE_22,
+  UI_SIZE_4,
+  UI_SIZE_8,
+  UI_SIZE_12,
+  UI_SIZE_28,
+  UI_SIZE_9999,
+} from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -81,7 +93,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       flex: 1,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      padding: UI_SIZE_16,
+      padding: Space.base,
       alignItems: 'flex-start',
     },
     statIconWrap: {

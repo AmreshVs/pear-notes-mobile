@@ -26,13 +26,13 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Space,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_48,
   UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_8,
-  UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
@@ -281,7 +281,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     header: {
       ...commonStyles.row,
       paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: UI_SIZE_16,
     },
     iconBtn: {
@@ -297,9 +297,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginLeft: UI_SIZE_8,
     },
     scrollContent: {
-      paddingHorizontal: UI_SIZE_20,
+      padding: Space.base,
       paddingBottom: insets.bottom + UI_SIZE_40,
-      paddingTop: UI_SIZE_10,
     },
     heroContainer: {
       alignItems: 'center',
@@ -332,7 +331,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     buttonsContainer: {
       gap: UI_SIZE_12,
-      marginBottom: UI_SIZE_24,
+      marginBottom: Space.xl,
     },
     primaryBtn: {
       overflow: 'hidden',
@@ -462,9 +461,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     recoveryCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      padding: UI_SIZE_20,
-      marginTop: UI_SIZE_12,
-      marginBottom: UI_SIZE_12,
+      padding: Space.base,
+      marginBottom: Space.md,
     },
     recoveryHeader: {
       flexDirection: 'row',

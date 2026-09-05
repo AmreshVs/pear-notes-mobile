@@ -22,6 +22,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Space,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_48,
@@ -227,7 +228,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     header: {
       ...commonStyles.row,
       paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: UI_SIZE_16,
     },
     iconBtn: {
@@ -245,11 +246,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: insets.bottom + UI_SIZE_40,
-      paddingTop: UI_SIZE_10,
     },
     heroContainer: {
       alignItems: 'center',
-      paddingVertical: UI_SIZE_28,
+      paddingVertical: Space.base,
       marginBottom: UI_SIZE_8,
     },
     heroIcon: {
@@ -298,12 +298,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     usageCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      paddingVertical: UI_SIZE_8,
     },
     usageRow: {
       ...commonStyles.rowBetween,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_12,
+      padding: Space.base,
     },
     usageRowBorder: {
       borderTopWidth: StyleSheet.hairlineWidth,

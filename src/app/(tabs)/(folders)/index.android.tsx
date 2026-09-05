@@ -51,16 +51,17 @@ import {
   Radii,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
-  UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
   UI_SIZE_4,
   UI_SIZE_6,
   UI_SIZE_8,
   UI_SIZE_10,
+  UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
+  UI_SIZE_36,
   UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
@@ -557,7 +558,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
           <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
             <MaterialCommunityIcons
               name={iconName as never}
-              size={UI_ICON_SIZE_22}
+              size={UI_ICON_SIZE_20}
               color={iconColor}
             />
           </View>
@@ -629,7 +630,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       ...commonStyles.row,
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: UI_SIZE_4,
+      marginBottom: UI_SIZE_12,
     },
     pageTitle: {
       fontSize: FontSize.hero,
@@ -755,8 +756,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     },
     row: {
       ...commonStyles.rowBetween,
-      paddingVertical: 13,
-      paddingHorizontal: UI_SIZE_16,
+      padding: UI_SIZE_16,
     },
     dividerWrap: {
       marginHorizontal: UI_SIZE_16,
@@ -772,8 +772,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       minWidth: 0,
     },
     iconWrap: {
-      width: UI_SIZE_48,
-      height: UI_SIZE_48,
+      width: UI_SIZE_36,
+      height: UI_SIZE_36,
       borderRadius: UI_SIZE_9999,
       ...commonStyles.centered,
     },
@@ -798,10 +798,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     },
     countBadge: {
       flexShrink: 0,
-      minWidth: UI_SIZE_24,
-      minHeight: UI_SIZE_24,
-      paddingHorizontal: UI_SIZE_6,
-      paddingVertical: UI_SIZE_4,
+      width: UI_SIZE_24,
+      height: UI_SIZE_24,
       borderRadius: UI_SIZE_9999,
       ...commonStyles.centered,
       backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.8),

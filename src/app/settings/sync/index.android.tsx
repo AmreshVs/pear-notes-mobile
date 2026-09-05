@@ -20,10 +20,8 @@ import {
   UI_ICON_SIZE_24,
   UI_ICON_SIZE_48,
   UI_SIZE_8,
-  UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_20,
   UI_SIZE_22,
   UI_SIZE_24,
   UI_SIZE_28,
@@ -97,7 +95,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     header: {
       ...commonStyles.row,
       paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: UI_SIZE_16,
     },
     iconBtn: {
@@ -113,9 +111,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       textAlign: 'left',
     },
     scrollContent: {
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: insets.bottom + UI_SIZE_40,
-      paddingTop: UI_SIZE_10,
     },
     heroContainer: {
       alignItems: 'center',

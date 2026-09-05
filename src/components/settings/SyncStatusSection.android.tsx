@@ -3,8 +3,6 @@ import { StyleSheet, View as RNView } from 'react-native'
 import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
-import { SYNC_WAKE_RESULT } from '@pear-notes/core/constant.js'
-
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -52,7 +50,8 @@ export function SyncStatusSection() {
     lastSyncedRelative,
     lastReceived,
     lastWakeRelative,
-    lastWakeResult,
+    wakeResultKey,
+    wakeSucceeded,
     serviceFailedRelative,
     onlineNames,
     peerName,
@@ -61,15 +60,6 @@ export function SyncStatusSection() {
 
   const tone = VERDICT_TONE[verdict]
   const verdictText = t(`settings.syncStatus.verdict.${verdict}`, { device: peerName })
-
-  const wakeResultKey =
-    lastWakeResult === SYNC_WAKE_RESULT.OK
-      ? 'settings.syncStatus.wakeResultOk'
-      : lastWakeResult === SYNC_WAKE_RESULT.NO_WORKLET
-        ? 'settings.syncStatus.wakeResultNoWorklet'
-        : lastWakeResult === SYNC_WAKE_RESULT.ERROR
-          ? 'settings.syncStatus.wakeResultError'
-          : ''
 
   const lastWakeLabel = lastWakeRelative
     ? t(lastWakeRelative.key, { count: lastWakeRelative.count })
@@ -124,13 +114,7 @@ export function SyncStatusSection() {
                   {!!wakeResultKey && (
                     <RNView style={styles.row}>
                       <Text style={styles.rowKey}>{t('settings.syncStatus.wakeResult')}</Text>
-                      <Text
-                        style={
-                          lastWakeResult === SYNC_WAKE_RESULT.OK
-                            ? styles.rowValue
-                            : styles.rowValueMuted
-                        }
-                      >
+                      <Text style={wakeSucceeded ? styles.rowValue : styles.rowValueMuted}>
                         {t(wakeResultKey)}
                       </Text>
                     </RNView>
@@ -197,8 +181,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: Space.md,
-      paddingVertical: Space.md,
-      paddingHorizontal: Space.lg,
+      paddingVertical: Space.base,
+      marginHorizontal: Space.base,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
     rowLast: {

@@ -2,8 +2,6 @@ import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
 import { FadeIn, FadeInDown } from 'react-native-reanimated'
 
-import { SYNC_WAKE_RESULT } from '@pear-notes/core/constant.js'
-
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -40,7 +38,8 @@ export function SyncStatusSection() {
     lastSyncedRelative,
     lastReceived,
     lastWakeRelative,
-    lastWakeResult,
+    wakeResultKey,
+    wakeSucceeded,
     serviceFailedRelative,
     onlineNames,
     peerName,
@@ -49,15 +48,6 @@ export function SyncStatusSection() {
 
   const tone = VERDICT_TONE[verdict]
   const verdictText = t(`settings.syncStatus.verdict.${verdict}`, { device: peerName })
-
-  const wakeResultKey =
-    lastWakeResult === SYNC_WAKE_RESULT.OK
-      ? 'settings.syncStatus.wakeResultOk'
-      : lastWakeResult === SYNC_WAKE_RESULT.NO_WORKLET
-        ? 'settings.syncStatus.wakeResultNoWorklet'
-        : lastWakeResult === SYNC_WAKE_RESULT.ERROR
-          ? 'settings.syncStatus.wakeResultError'
-          : ''
 
   const lastWakeLabel = lastWakeRelative
     ? t(lastWakeRelative.key, { count: lastWakeRelative.count })
@@ -112,13 +102,7 @@ export function SyncStatusSection() {
                   {!!wakeResultKey && (
                     <RNView style={styles.row}>
                       <Text style={styles.rowKey}>{t('settings.syncStatus.wakeResult')}</Text>
-                      <Text
-                        style={
-                          lastWakeResult === SYNC_WAKE_RESULT.OK
-                            ? styles.rowValue
-                            : styles.rowValueMuted
-                        }
-                      >
+                      <Text style={wakeSucceeded ? styles.rowValue : styles.rowValueMuted}>
                         {t(wakeResultKey)}
                       </Text>
                     </RNView>

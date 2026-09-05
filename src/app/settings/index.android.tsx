@@ -18,17 +18,14 @@ import {
   FontSize,
   FontWeight,
   UI_ICON_SIZE_20,
-  UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
   UI_SIZE_8,
-  UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_18,
   UI_SIZE_20,
   UI_SIZE_28,
+  UI_SIZE_36,
   UI_SIZE_40,
-  UI_SIZE_44,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
@@ -130,7 +127,7 @@ export default function AndroidSettingsScreen() {
             >
               <Pressable onPress={onPress} android_ripple={ripple} style={styles.cardRow}>
                 <View style={styles.iconWrap}>
-                  <MaterialCommunityIcons name={icon} size={UI_ICON_SIZE_22} color={c.primary} />
+                  <MaterialCommunityIcons name={icon} size={UI_ICON_SIZE_20} color={c.primary} />
                 </View>
                 <View style={styles.rowContent}>
                   <Text style={styles.rowTitle}>{label}</Text>
@@ -173,7 +170,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     header: {
       ...commonStyles.row,
       paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: UI_SIZE_16,
     },
     iconBtn: {
@@ -194,20 +191,18 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: insets.bottom + UI_SIZE_40,
-      paddingTop: UI_SIZE_10,
     },
     cardRow: {
       overflow: 'hidden',
       ...commonStyles.row,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_18,
+      padding: UI_SIZE_16,
       marginBottom: UI_SIZE_12,
     },
     iconWrap: {
-      width: UI_SIZE_44,
-      height: UI_SIZE_44,
+      width: UI_SIZE_36,
+      height: UI_SIZE_36,
       borderRadius: UI_SIZE_9999,
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
       ...commonStyles.centered,

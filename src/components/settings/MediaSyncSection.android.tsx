@@ -79,8 +79,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
       alignItems: 'center',
       justifyContent: 'space-between',
       gap: Space.base,
-      paddingHorizontal: Space.lg,
-      paddingVertical: Space.base,
+      padding: Space.base,
     },
     toggleInfo: {
       flex: 1,
@@ -99,7 +98,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
     },
     divider: {
       height: StyleSheet.hairlineWidth,
-      marginLeft: Space.lg,
+      marginHorizontal: Space.base,
       backgroundColor: hexWithAlpha(c.onSurface, 0.12),
     },
     heldNotice: {

@@ -69,7 +69,6 @@ import { getPreview } from '@/utils/noteUtils'
 import { useNoteSelection } from './useNoteSelection'
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
-const SCROLL_EVENT_THROTTLE = 16
 
 const SUPPORTS_TOOLBAR_SEARCH =
   Platform.OS === 'ios' && parseInt(String(Platform.Version), 10) >= 26
@@ -450,7 +449,7 @@ export default function FolderNotesScreen() {
 
   const noteKey = useCallback((item: any) => item.key, [])
 
-  const { isTitleCollapsed, handleTitleBlockLayout, handleScroll } = useTitleCollapse()
+  const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
   const listHeader = useMemo(
     () => (
@@ -618,8 +617,7 @@ export default function FolderNotesScreen() {
         ListEmptyComponent={listEmpty}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={scrollContentStyle}
-        onScroll={handleScroll}
-        scrollEventThrottle={SCROLL_EVENT_THROTTLE}
+        {...scrollProps}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         initialNumToRender={LIST_INITIAL_RENDER_COUNT}

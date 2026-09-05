@@ -41,7 +41,7 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     headerTitle: {
       color: theme.colors.text,
-      fontWeight: FontWeight.semibold,
+      fontWeight: FontWeight.bold,
       fontSize: FontSize.subtitle,
     },
     header: {

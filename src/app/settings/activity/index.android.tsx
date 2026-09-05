@@ -201,7 +201,7 @@ export default function ActivityScreenAndroid() {
             </View>
             <Switch value={enabled} onValueChange={toggleEnabled} color={c.primary} />
           </View>
-
+          <View style={styles.divider} />
           <Pressable
             onPress={openRetentionSheet}
             disabled={!enabled}
@@ -369,21 +369,25 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: Space.md,
-    paddingHorizontal: UI_SIZE_20,
-    paddingVertical: UI_SIZE_16,
+    padding: Space.base,
   }
 
   const styles = StyleSheet.create({
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
+      paddingBottom: Space.lg,
     },
     header: {
       ...commonStyles.row,
       paddingTop: insets.top + UI_SIZE_16,
       paddingHorizontal: UI_SIZE_20,
-      paddingBottom: UI_SIZE_16,
       gap: UI_SIZE_16,
+    },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      marginHorizontal: Space.base,
+      backgroundColor: theme.colors.border,
     },
     iconBtn: {
       width: UI_SIZE_44,
@@ -397,9 +401,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurface,
     },
     scrollContent: {
-      paddingHorizontal: UI_SIZE_20,
-      paddingBottom: Space.scrollBottom,
-      gap: UI_SIZE_16,
+      padding: Space.base,
+      gap: Space.md,
     },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
@@ -436,7 +439,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       flexDirection: 'row',
       alignItems: 'flex-start',
       gap: Space.md,
-      padding: UI_SIZE_16,
+      padding: Space.base,
       borderRadius: UI_SIZE_28,
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
     },
@@ -451,11 +454,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       gap: Space.sm,
-      paddingHorizontal: UI_SIZE_20,
-      paddingBottom: UI_SIZE_16,
+      padding: Space.base,
     },
     secondaryBtn: {
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: Space.base,
       height: UI_SIZE_44,
       borderRadius: UI_SIZE_9999,
       backgroundColor: hexWithAlpha(c.onSurface, 0.08),

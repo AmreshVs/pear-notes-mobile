@@ -28,7 +28,7 @@ export default {
     glassBorder: 'rgba(0, 0, 0, 0.08)',
     glassShadow: 'rgba(0, 0, 0, 0.1)',
     success: '#34C759',
-    error: '#FF3B30',
+    error: '#b3271f',
     diffAddBackground: 'rgba(52, 199, 89, 0.14)',
     diffAddText: '#1f7a3d',
     diffRemoveBackground: 'rgba(255, 59, 48, 0.12)',

@@ -18,7 +18,7 @@ import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reani
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
-import { router, Stack, useLocalSearchParams } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 
 import {
   ALL_NOTES_KEY,

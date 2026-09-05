@@ -8,9 +8,21 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_14, UI_ICON_SIZE_20, UI_SIZE_8, UI_SIZE_10, UI_SIZE_12, UI_SIZE_14, UI_SIZE_16, UI_SIZE_20 } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  Space,
+  UI_ICON_SIZE_14,
+  UI_ICON_SIZE_20,
+  UI_SIZE_8,
+  UI_SIZE_12,
+  UI_SIZE_14,
+  UI_SIZE_20,
+} from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
-import { getMediaDisplayName,hexWithAlpha  } from '@/lib/backupUtils'
+import { getMediaDisplayName, hexWithAlpha } from '@/lib/backupUtils'
 
 import { useMD3CommonStyles } from './useMD3CommonStyles'
 
@@ -55,7 +67,11 @@ export function AndroidBackupNotesListSection({
     return (
       <View key={m.path} style={styles.mediaRow}>
         <View style={styles.mediaHeaderActions}>
-          <MaterialCommunityIcons name={iconName as any} size={UI_ICON_SIZE_14} color={c.onSurfaceVariant} />
+          <MaterialCommunityIcons
+            name={iconName as any}
+            size={UI_ICON_SIZE_14}
+            color={c.onSurfaceVariant}
+          />
           <Text style={styles.mediaName} numberOfLines={1}>
             {getMediaDisplayName(m.name, t('backup.syncedMedia'))}
           </Text>
@@ -66,9 +82,12 @@ export function AndroidBackupNotesListSection({
             onPress={() => handleDeleteMedia(noteKey, m.path)}
             android_ripple={rippleBorderless}
             hitSlop={UI_SIZE_8}
-            
           >
-            <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_14} color={c.onSurfaceVariant} />
+            <MaterialCommunityIcons
+              name="close"
+              size={UI_ICON_SIZE_14}
+              color={c.onSurfaceVariant}
+            />
           </Pressable>
         </View>
       </View>
@@ -158,7 +177,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     noteRow: {
       ...commonStyles.rowBetween,
-      padding: UI_SIZE_16,
+      padding: Space.base,
     },
     noteTitleGroup: {
       flex: 1,
@@ -188,8 +207,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     mediaRow: {
       borderTopWidth: StyleSheet.hairlineWidth,
       ...commonStyles.rowBetween,
-      paddingHorizontal: UI_SIZE_16,
-      paddingVertical: UI_SIZE_10,
+      padding: Space.base,
       borderTopColor: hexWithAlpha(c.outlineVariant ?? theme.colors.border ?? '#38383a', 0.5),
     },
     mediaHeaderActions: {

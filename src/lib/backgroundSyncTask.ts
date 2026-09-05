@@ -1,4 +1,4 @@
-import { AppState } from 'react-native'
+import { AppState, Platform } from 'react-native'
 import {
   BackgroundTaskResult,
   registerTaskAsync,
@@ -10,10 +10,15 @@ import * as TaskManager from 'expo-task-manager'
 import { SYNC_WAKE_RESULT } from '@pear-notes/core/constant.js'
 import { getSyncStatusSnapshot, recordBackgroundWake } from '@pear-notes/core/utils.js'
 
+import { startBackendWorkletForBackgroundTask } from '@/lib/backendWorklet'
+import { withTimeout } from '@/utils/withTimeout'
 import {
   EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS,
   isActiveWorkletSuspended,
+  setBackgroundSyncWindowActive,
   suspendActiveWorklet,
+  suspendIfDeferredForBackgroundSync,
+  terminateWorkletIfActive,
   wakeActiveWorklet,
 } from '@/utils/worklet'
 
@@ -23,8 +28,14 @@ export const BACKGROUND_SYNC_TASK_NAME = 'pear-notes-background-sync'
 
 const BACKGROUND_SYNC_LOG_PREFIX = '[bg-sync]'
 const BACKGROUND_SYNC_WINDOW_MS = 10_000
+const COLD_START_SYNC_WINDOW_MS = 45_000
+const SUPPORTS_COLD_START = Platform.OS === 'android'
+const WORKLET_WAIT_TIMEOUT_MS = 15_000
+const WORKLET_WAIT_POLL_MS = 500
 const BACKGROUND_SYNC_POLL_MS = 1_000
 const BACKGROUND_SUSPEND_SETTLE_MS = 2_000
+const BACKGROUND_SYNC_MINIMUM_INTERVAL_MINUTES = 30
+const BACKEND_RPC_TIMEOUT_MS = 10_000
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -32,13 +43,27 @@ type SyncCounters = { lastSyncAt: number; lastReceived: number }
 
 async function readSyncCounters(): Promise<SyncCounters> {
   try {
-    const snapshot = await getSyncStatusSnapshot()
+    const snapshot = await withTimeout(
+      getSyncStatusSnapshot(),
+      BACKEND_RPC_TIMEOUT_MS,
+      'getSyncStatusSnapshot',
+    )
     return {
       lastSyncAt: snapshot?.lastSyncAt ?? 0,
       lastReceived: snapshot?.lastReceived ?? 0,
     }
-  } catch {
+  } catch (err) {
+    console.log(BACKGROUND_SYNC_LOG_PREFIX + ' could not read sync counters', err)
     return { lastSyncAt: 0, lastReceived: 0 }
+  }
+}
+
+async function recordWake(result: string): Promise<void> {
+  try {
+    await withTimeout(recordBackgroundWake(result), BACKEND_RPC_TIMEOUT_MS, 'recordBackgroundWake')
+    console.log(BACKGROUND_SYNC_LOG_PREFIX + ' wake recorded, result=' + result)
+  } catch (err) {
+    console.log(BACKGROUND_SYNC_LOG_PREFIX + ' could not record wake result=' + result, err)
   }
 }
 
@@ -59,11 +84,12 @@ async function resuspendIfTaskWokeIt(wokeFromSuspended: boolean): Promise<void> 
   console.log(BACKGROUND_SYNC_LOG_PREFIX + ' re-suspended, settled')
 }
 
-async function waitForSyncWindow(): Promise<boolean> {
+async function waitForSyncWindow(windowMs: number): Promise<boolean> {
   const startedAt = Date.now()
   const before = await readSyncCounters()
+  console.log(BACKGROUND_SYNC_LOG_PREFIX + ' watching for sync for up to ' + windowMs + 'ms')
 
-  while (Date.now() - startedAt < BACKGROUND_SYNC_WINDOW_MS) {
+  while (Date.now() - startedAt < windowMs) {
     await delay(BACKGROUND_SYNC_POLL_MS)
     const current = await readSyncCounters()
     if (current.lastSyncAt > before.lastSyncAt) {
@@ -85,43 +111,142 @@ async function waitForSyncWindow(): Promise<boolean> {
   return false
 }
 
-TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
-  console.log(BACKGROUND_SYNC_LOG_PREFIX + ' task fired at ' + new Date().toISOString())
-  try {
+type WorkletHandover = { woke: boolean; wokeFromSuspended: boolean }
+
+async function waitForActiveWorklet(): Promise<WorkletHandover> {
+  const startedAt = Date.now()
+  const giveUpAt = startedAt + WORKLET_WAIT_TIMEOUT_MS
+  console.log(
+    BACKGROUND_SYNC_LOG_PREFIX +
+      ' waiting for a worklet, timeout=' +
+      WORKLET_WAIT_TIMEOUT_MS +
+      'ms',
+  )
+
+  for (;;) {
     const wokeFromSuspended = isActiveWorkletSuspended()
-    const woke = wakeActiveWorklet(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+    if (wakeActiveWorklet(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)) {
+      console.log(
+        BACKGROUND_SYNC_LOG_PREFIX +
+          ' worklet ready after ' +
+          (Date.now() - startedAt) +
+          'ms, wokeFromSuspended=' +
+          wokeFromSuspended,
+      )
+      return { woke: true, wokeFromSuspended }
+    }
+    if (Date.now() >= giveUpAt) {
+      console.log(
+        BACKGROUND_SYNC_LOG_PREFIX + ' no worklet after ' + (Date.now() - startedAt) + 'ms',
+      )
+      return { woke: false, wokeFromSuspended: false }
+    }
+    await delay(WORKLET_WAIT_POLL_MS)
+  }
+}
+
+async function coldStartWorklet(): Promise<any | null> {
+  if (!SUPPORTS_COLD_START) {
+    console.log(
+      BACKGROUND_SYNC_LOG_PREFIX + ' cold start unsupported on ' + Platform.OS + ', giving up',
+    )
+    return null
+  }
+
+  const startedAt = Date.now()
+  console.log(BACKGROUND_SYNC_LOG_PREFIX + ' cold start requested')
+  try {
+    const worklet = await startBackendWorkletForBackgroundTask()
     console.log(
       BACKGROUND_SYNC_LOG_PREFIX +
-        ' wakeActiveWorklet=' +
-        woke +
-        ' wokeFromSuspended=' +
-        wokeFromSuspended,
+        ' cold start finished in ' +
+        (Date.now() - startedAt) +
+        'ms, worklet=' +
+        !!worklet,
     )
+    return worklet
+  } catch (err) {
+    console.log(
+      BACKGROUND_SYNC_LOG_PREFIX + ' cold start failed after ' + (Date.now() - startedAt) + 'ms',
+      err,
+    )
+    return null
+  }
+}
+
+async function tearDownColdStartedWorklet(worklet: any): Promise<void> {
+  if (AppState.currentState === 'active') {
+    console.log(BACKGROUND_SYNC_LOG_PREFIX + ' app is in the foreground, keeping the worklet')
+    return
+  }
+  const terminated = terminateWorkletIfActive(worklet)
+  console.log(BACKGROUND_SYNC_LOG_PREFIX + ' cold started worklet terminated=' + terminated)
+}
+
+console.log(
+  BACKGROUND_SYNC_LOG_PREFIX + ' task module loaded, registering ' + BACKGROUND_SYNC_TASK_NAME,
+)
+
+TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
+  console.log(BACKGROUND_SYNC_LOG_PREFIX + ' task fired at ' + new Date().toISOString())
+  let coldStartedWorklet: any = null
+  try {
+    const { woke, wokeFromSuspended } = await waitForActiveWorklet()
 
     if (!woke) {
-      await recordBackgroundWake(SYNC_WAKE_RESULT.NO_WORKLET)
-      return BackgroundTaskResult.Failed
+      coldStartedWorklet = await coldStartWorklet()
+      if (!coldStartedWorklet) {
+        await recordWake(SYNC_WAKE_RESULT.NO_WORKLET)
+        return BackgroundTaskResult.Failed
+      }
     }
 
-    await waitForSyncWindow()
-    await recordBackgroundWake(SYNC_WAKE_RESULT.OK)
-    await resuspendIfTaskWokeIt(wokeFromSuspended)
+    setBackgroundSyncWindowActive(true)
+    const synced = await waitForSyncWindow(
+      coldStartedWorklet ? COLD_START_SYNC_WINDOW_MS : BACKGROUND_SYNC_WINDOW_MS,
+    )
+    const result = synced ? SYNC_WAKE_RESULT.OK : SYNC_WAKE_RESULT.NO_CHANGES
+    await recordWake(result)
+    console.log(BACKGROUND_SYNC_LOG_PREFIX + ' coldStarted=' + !!coldStartedWorklet)
+    if (!coldStartedWorklet) await resuspendIfTaskWokeIt(wokeFromSuspended)
     return BackgroundTaskResult.Success
   } catch (err) {
     console.log(BACKGROUND_SYNC_LOG_PREFIX + ' task error', err)
-    await recordBackgroundWake(SYNC_WAKE_RESULT.ERROR)
+    await recordWake(SYNC_WAKE_RESULT.ERROR)
     return BackgroundTaskResult.Failed
+  } finally {
+    setBackgroundSyncWindowActive(false)
+    if (coldStartedWorklet) await tearDownColdStartedWorklet(coldStartedWorklet)
+    suspendIfDeferredForBackgroundSync()
   }
 })
 
+const ALWAYS_ON_NEEDS_PERIODIC_FALLBACK = Platform.OS === 'android'
+
+function shouldRegisterPeriodicTask(mode: BackgroundSyncMode): boolean {
+  if (mode === 'periodic') return true
+  return mode === 'always-on' && ALWAYS_ON_NEEDS_PERIODIC_FALLBACK
+}
+
 export async function applyBackgroundSyncMode(mode: BackgroundSyncMode): Promise<void> {
   try {
-    if (mode === 'periodic') {
-      await registerTaskAsync(BACKGROUND_SYNC_TASK_NAME, { minimumInterval: 30 })
+    if (shouldRegisterPeriodicTask(mode)) {
+      await registerTaskAsync(BACKGROUND_SYNC_TASK_NAME, {
+        minimumInterval: BACKGROUND_SYNC_MINIMUM_INTERVAL_MINUTES,
+      })
+      console.log(
+        BACKGROUND_SYNC_LOG_PREFIX +
+          ' mode applied: ' +
+          mode +
+          ', periodic task registered every ' +
+          BACKGROUND_SYNC_MINIMUM_INTERVAL_MINUTES +
+          'min' +
+          (mode === 'always-on' ? ' as the foreground-service fallback' : ''),
+      )
     } else {
       await unregisterTaskAsync(BACKGROUND_SYNC_TASK_NAME)
+      console.log(BACKGROUND_SYNC_LOG_PREFIX + ' mode applied: ' + mode + ', periodic task removed')
     }
-    console.log(BACKGROUND_SYNC_LOG_PREFIX + ' mode applied: ' + mode)
   } catch (err) {
     console.error('Failed to apply background sync mode', err)
   }

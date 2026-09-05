@@ -304,7 +304,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
     row: {
       overflow: 'hidden',
       borderRadius: Radii.xl,
-      padding: UI_SIZE_20,
+      padding: UI_SIZE_16,
       marginBottom: UI_SIZE_12,
       ...commonStyles.row,
       gap: UI_SIZE_16,

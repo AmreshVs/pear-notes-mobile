@@ -17,7 +17,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 import * as Crypto from 'expo-crypto'
-import { Directory, Paths } from 'expo-file-system'
 import { router, Stack, usePathname } from 'expo-router'
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation'
 import * as SplashScreen from 'expo-splash-screen'
@@ -45,7 +44,9 @@ import {
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { useHyperdriveAddressRefresh } from '@/hooks/useHyperdriveAddressRefresh'
+import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
+import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
@@ -73,8 +74,7 @@ SystemUI.setBackgroundColorAsync(
 SplashScreen.setOptions({ duration: 200, fade: true })
 SplashScreen.preventAutoHideAsync()
 
-const documentDir = new Directory(Paths.document)
-const storage = documentDir.uri.replace(/^file:\/+/, '/')
+const storage = WORKLET_STORAGE_PATH
 const MAX_WORKLET_RESTART_ATTEMPTS = 5
 
 export default function RootLayout() {
@@ -123,6 +123,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useMediaSyncAutoDetect()
   useAttachmentCachePrune()
   useHyperdriveAddressRefresh()
+  useNoteAutoRelock()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
   const savedEncryptionKeyRef = useRef<string | null>(null)

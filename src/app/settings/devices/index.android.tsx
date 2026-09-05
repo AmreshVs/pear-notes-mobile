@@ -592,8 +592,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurface,
     },
     scrollContent: {
-      paddingHorizontal: UI_SIZE_24,
-      paddingTop: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: insets.bottom + UI_SIZE_40,
     },
     segRow: {
@@ -631,9 +630,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     heroCard: {
       borderRadius: UI_SIZE_28,
-      paddingHorizontal: UI_SIZE_20,
-      paddingTop: UI_SIZE_28,
-      paddingBottom: UI_SIZE_24,
+      padding: UI_SIZE_16,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
     },
     heroSection: {
@@ -920,7 +917,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       color: c.onSurfaceVariant,
     },
     deviceList: {
-      gap: UI_SIZE_10,
+      gap: UI_SIZE_12,
     },
     emptyCard: {
       borderStyle: 'dashed',

@@ -13,7 +13,6 @@ import {
   UI_ICON_SIZE_20,
   UI_SIZE_4,
   UI_SIZE_8,
-  UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_24,
@@ -83,7 +82,7 @@ export function BottomActionSheet({
       handleIndicatorStyle={styles.handleIndicator}
       onDismiss={onDismiss}
     >
-      <BottomSheetView style={styles.container}>
+      <BottomSheetView>
         {showHeader ? (
           <View style={styles.header}>
             <Text style={styles.title}>{title}</Text>
@@ -172,10 +171,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       alignSelf: 'center',
       backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
     },
-    container: {
-      paddingHorizontal: UI_SIZE_20,
-      paddingTop: UI_SIZE_4,
-    },
     header: {
       paddingHorizontal: UI_SIZE_4,
       paddingBottom: UI_SIZE_20,
@@ -201,8 +196,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
     actionRow: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: UI_SIZE_16,
-      paddingVertical: UI_SIZE_14,
+      padding: UI_SIZE_16,
       gap: UI_SIZE_16,
       minHeight: 62,
     },

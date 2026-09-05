@@ -96,8 +96,7 @@ const useStyles = createThemedStylesheet((theme) => {
       ...commonStyles.row,
       justifyContent: 'space-between',
       minHeight: UI_SIZE_44,
-      paddingHorizontal: Space.base,
-      paddingVertical: Space.md,
+      padding: Space.base,
     },
     dividerWrap: {
       marginHorizontal: Space.base,

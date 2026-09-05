@@ -6,7 +6,18 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import { commonStyles, FontFamily, FontSize, FontWeight, UI_ICON_SIZE_20, UI_SIZE_8,UI_SIZE_12, UI_SIZE_20, UI_SIZE_24, UI_SIZE_28 } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  Space,
+  UI_ICON_SIZE_20,
+  UI_SIZE_8,
+  UI_SIZE_12,
+  UI_SIZE_24,
+  UI_SIZE_28,
+} from '@/constants/commonStyles'
 
 import { useMD3CommonStyles } from './useMD3CommonStyles'
 
@@ -60,7 +71,11 @@ export function AndroidBackupBreakdownSection({
         {buckets.image.count > 0 && (
           <View style={styles.breakdownRow}>
             <View style={styles.breakdownRowMeta}>
-              <MaterialCommunityIcons name="image-outline" size={UI_ICON_SIZE_20} color={c.onSurfaceVariant} />
+              <MaterialCommunityIcons
+                name="image-outline"
+                size={UI_ICON_SIZE_20}
+                color={c.onSurfaceVariant}
+              />
               <Text style={styles.breakdownTitle}>{t('backup.images')}</Text>
               <Text style={styles.breakdownCount}>
                 {t('backup.items', { count: buckets.image.count })}
@@ -72,7 +87,11 @@ export function AndroidBackupBreakdownSection({
         {buckets.video.count > 0 && (
           <View style={styles.breakdownRow}>
             <View style={styles.breakdownRowMeta}>
-              <MaterialCommunityIcons name="video-outline" size={UI_ICON_SIZE_20} color={c.onSurfaceVariant} />
+              <MaterialCommunityIcons
+                name="video-outline"
+                size={UI_ICON_SIZE_20}
+                color={c.onSurfaceVariant}
+              />
               <Text style={styles.breakdownTitle}>{t('backup.videos')}</Text>
               <Text style={styles.breakdownCount}>
                 {t('backup.items', { count: buckets.video.count })}
@@ -133,12 +152,10 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
     breakdownCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      paddingVertical: UI_SIZE_8,
     },
     breakdownRow: {
       ...commonStyles.rowBetween,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_12,
+      padding: Space.base,
     },
     breakdownRowMeta: {
       ...commonStyles.row,

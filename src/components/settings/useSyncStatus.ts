@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { AppState } from 'react-native'
 import { useSelector } from 'react-redux'
 
+import { SYNC_WAKE_RESULT } from '@pear-notes/core/constant.js'
 import {
   getHasLinkedDevices,
   getRemoteSyncedDevices,
@@ -10,6 +11,13 @@ import { getSyncStatusSnapshot } from '@pear-notes/core/utils.js'
 
 import { BackgroundSyncMode, getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { getRelativeTime } from '@/utils/relativeTime'
+
+const WAKE_RESULT_LABEL_KEYS: Record<string, string> = {
+  [SYNC_WAKE_RESULT.OK]: 'settings.syncStatus.wakeResultOk',
+  [SYNC_WAKE_RESULT.NO_CHANGES]: 'settings.syncStatus.wakeResultNoChanges',
+  [SYNC_WAKE_RESULT.NO_WORKLET]: 'settings.syncStatus.wakeResultNoWorklet',
+  [SYNC_WAKE_RESULT.ERROR]: 'settings.syncStatus.wakeResultError',
+}
 
 const REFRESH_INTERVAL_MS = 30000
 const BACKGROUND_STALE_MS = 24 * 60 * 60 * 1000
@@ -69,13 +77,33 @@ export function useSyncStatus() {
   }, [])
 
   useEffect(() => {
-    refresh()
-    const timer = setInterval(refresh, REFRESH_INTERVAL_MS)
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') refresh()
-    })
-    return () => {
+    let timer: ReturnType<typeof setInterval> | null = null
+
+    const stopPolling = () => {
+      if (!timer) return
       clearInterval(timer)
+      timer = null
+    }
+
+    const startPolling = () => {
+      if (timer) return
+      timer = setInterval(refresh, REFRESH_INTERVAL_MS)
+    }
+
+    refresh()
+    startPolling()
+
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state !== 'active') {
+        stopPolling()
+        return
+      }
+      refresh()
+      startPolling()
+    })
+
+    return () => {
+      stopPolling()
       subscription.remove()
     }
   }, [refresh])
@@ -91,6 +119,8 @@ export function useSyncStatus() {
     lastReceived: snapshot.lastReceived,
     lastWakeRelative: getRelativeTime(snapshot.lastWakeAt),
     lastWakeResult: snapshot.lastWakeResult,
+    wakeResultKey: WAKE_RESULT_LABEL_KEYS[snapshot.lastWakeResult] ?? '',
+    wakeSucceeded: snapshot.lastWakeResult === SYNC_WAKE_RESULT.OK,
     serviceFailedRelative: getRelativeTime(snapshot.serviceFailedAt),
     onlineNames,
     peerName: peerNames[0] || '',

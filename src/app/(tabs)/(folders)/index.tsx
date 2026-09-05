@@ -40,8 +40,6 @@ import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
-const SCROLL_EVENT_THROTTLE = 16
-
 export default function FoldersScreen() {
   const { t } = useTranslation()
   const theme = useTheme()
@@ -268,7 +266,7 @@ export default function FoldersScreen() {
     [],
   )
 
-  const { isTitleCollapsed, handleTitleBlockLayout, handleScroll } = useTitleCollapse()
+  const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
   const headerTitle = useCallback(() => <CollapsedNavTitle title={t('folders.title')} />, [t])
 
@@ -323,8 +321,7 @@ export default function FoldersScreen() {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
-        onScroll={handleScroll}
-        scrollEventThrottle={SCROLL_EVENT_THROTTLE}
+        {...scrollProps}
       >
         <View onLayout={handleTitleBlockLayout}>
           <Text style={styles.pageTitle}>{t('folders.title')}</Text>

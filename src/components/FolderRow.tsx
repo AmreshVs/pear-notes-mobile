@@ -208,7 +208,7 @@ const createStyles = (theme: Theme) =>
     },
     count: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.semibold,
       color: theme.colors.textSecondary,
     },
     chevronWrap: {

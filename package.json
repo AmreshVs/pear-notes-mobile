@@ -1,6 +1,6 @@
 {
   "name": "pear-notes",
-  "main": "expo-router/entry",
+  "main": "index.js",
   "version": "1.0.0",
   "standard": {
     "globals": [
@@ -11,8 +11,9 @@
   "scripts": {
     "start:clean": "watchman watch-del $PWD; watchman watch-project $PWD && expo start --dev-client --port 8099 --clear",
     "android": "RCT_METRO_PORT=8099 expo run:android --port 8099",
-    "android:release": "cd android && ./gradlew assembleRelease",
-    "android:bundle": "cd android && ./gradlew bundleRelease",
+    "android:release": "cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew assembleRelease",
+    "android:release-dev": "cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew assembleReleaseDev",
+    "android:bundle": "cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew bundleRelease",
     "ios": "RCT_METRO_PORT=8099 expo run:ios --port 8099",
     "ios:release": "expo run:ios --device --configuration Release",
     "schema": "node ./src/spec/schema.js",

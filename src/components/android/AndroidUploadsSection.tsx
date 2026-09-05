@@ -14,6 +14,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Space,
   UI_ICON_SIZE_18,
   UI_SIZE_2,
   UI_SIZE_4,
@@ -131,11 +132,9 @@ const useStyles = createThemedStylesheetWithHooks((_, { md3 }) => {
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      paddingVertical: UI_SIZE_8,
     },
     row: {
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_12,
+      padding: Space.base,
       gap: UI_SIZE_8,
     },
     rowBorder: {

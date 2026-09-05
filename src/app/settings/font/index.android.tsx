@@ -126,7 +126,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     header: {
       ...commonStyles.row,
       paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: UI_SIZE_16,
     },
     iconBtn: {
@@ -143,7 +143,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: insets.bottom + UI_SIZE_40,
-      paddingTop: UI_SIZE_12,
     },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
@@ -162,7 +161,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       ...commonStyles.row,
       justifyContent: 'space-between',
       minHeight: UI_SIZE_56,
-      paddingHorizontal: UI_SIZE_20,
+      marginHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_16,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
