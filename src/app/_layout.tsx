@@ -23,6 +23,7 @@ import * as SplashScreen from 'expo-splash-screen'
 import * as SystemUI from 'expo-system-ui'
 
 import { backendApi, setLocalDeviceName } from '@pear-notes/core/backend/api.js'
+import { appBoot } from '@pear-notes/core/bootTimeline.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -128,6 +129,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const [fatalError, setFatalError] = useState<string | null>(null)
   const savedEncryptionKeyRef = useRef<string | null>(null)
   const workletRestartAttemptsRef = useRef(0)
+  const hasInitializedRef = useRef(false)
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
@@ -141,6 +143,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const initWorklet = useCallback(async () => {
     try {
       setFatalError(null)
+      appBoot.mark('app js reached initWorklet')
       await startWorklet(storage, {
         onWorkletDied: () => {
           workletRestartAttemptsRef.current += 1
@@ -153,6 +156,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         notificationTitle: t('sync.backgroundSync.notificationTitle'),
         notificationMessage: t('sync.backgroundSync.notificationMessage'),
       })
+      appBoot.mark('worklet started')
       let key = await getDbEncryptionKey()
       if (!key) {
         const bytes = new Uint8Array(32)
@@ -163,12 +167,14 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         await setDbEncryptionKey(key)
       }
       await backendApi.ready({ storage, encryption: key })
+      appBoot.mark('backendApi.ready resolved')
       workletRestartAttemptsRef.current = 0
       loadHapticsPreference()
       loadAndroidColorTheme()
       getBackgroundSyncMode().then(applyBackgroundSyncMode)
       dispatch(appReady())
-      dispatch(initApp())
+      if (hasInitializedRef.current) dispatch(initApp())
+      hasInitializedRef.current = true
       setLocalDeviceName(getLocalDeviceName())
     } catch (e) {
       console.error('Error in initWorklet', e)
@@ -257,6 +263,7 @@ function SplashGate() {
   const hide = useCallback(() => {
     if (!hiddenRef.current) {
       hiddenRef.current = true
+      appBoot.mark('splash hidden')
       setTimeout(() => {
         SplashScreen.hideAsync()
       })

@@ -9,6 +9,7 @@ const entries = [
   'spec',
   'store',
   'activity.js',
+  'bootTimeline.js',
   'constant.js',
   'index.js',
   'rpc.js',

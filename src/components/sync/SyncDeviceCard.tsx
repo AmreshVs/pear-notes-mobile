@@ -1,6 +1,13 @@
-import { memo, useCallback, useRef, useState } from 'react'
+import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Animated, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
+import {
+  ActivityIndicator,
+  Animated,
+  Pressable,
+  StyleSheet,
+  TextInput,
+  View as RNView,
+} from 'react-native'
 import Reanimated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 
@@ -13,18 +20,23 @@ import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import { SyncDeleteModal } from '@/components/sync/SyncDeleteModal'
+import { SyncIndexerModal } from '@/components/sync/SyncIndexerModal'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
-  commonStyles,
   FontSize,
   FontWeight,
   Radii,
   Space,
-  UI_ICON_SIZE_17,
+  UI_ICON_SIZE_16,
   UI_ICON_SIZE_18,
 } from '@/constants/commonStyles'
+import { DEVICE_ACTION } from '@/constants/deviceActions'
+import { useDeviceIndexer } from '@/hooks/useDeviceIndexer'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { buildDeviceCardMenu, getDeviceActionFlags } from '@/utils/deviceCardMenu'
 import { getPlatformNames } from '@/utils/settingsUtils'
+
+import { ContextMenuView } from '../../../modules/expo-context-menu'
 
 type Props = {
   device: any
@@ -52,6 +64,18 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
+
+  const {
+    isTransferring,
+    stepKey,
+    errorKey,
+    isLocalTarget,
+    outgoingName,
+    confirmVisible,
+    openConfirm,
+    closeConfirm,
+    confirmTransfer,
+  } = useDeviceIndexer(device)
 
   const openDeleteModal = useCallback(() => {
     setShowDeleteModal(true)
@@ -96,6 +120,26 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
     [cancelEdit],
   )
 
+  const actionFlags = getDeviceActionFlags(device)
+  const menuItems = useMemo(
+    () =>
+      buildDeviceCardMenu(actionFlags, {
+        rename: t('sync.devices.rename'),
+        makeIndexer: t('sync.devices.makeIndexer'),
+        remove: t('sync.delete.remove'),
+      }),
+    [actionFlags, t],
+  )
+
+  const handleMenuSelect = useCallback(
+    (actionId: string) => {
+      if (actionId === DEVICE_ACTION.rename) startEditing()
+      if (actionId === DEVICE_ACTION.makeIndexer) openConfirm()
+      if (actionId === DEVICE_ACTION.remove) openDeleteModal()
+    },
+    [startEditing, openConfirm, openDeleteModal],
+  )
+
   const platformNames = getPlatformNames(t)
   const presenceLabelKey = !device.presenceKnown
     ? 'sync.devices.presenceUnknown'
@@ -109,64 +153,91 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
       ? styles.presenceDotOnline
       : styles.presenceDotOffline
 
+  const row = (
+    <RNView style={styles.deviceRow}>
+      <RNView style={styles.deviceIcon}>
+        <SymbolIcon name={iconName} size={UI_ICON_SIZE_18} color={colors.primary} />
+        <RNView
+          accessible
+          accessibilityLabel={t(presenceLabelKey)}
+          style={[styles.presenceDot, presenceDotStyle]}
+        />
+      </RNView>
+
+      <RNView style={styles.deviceContent}>
+        {isEditing ? (
+          <TextInput
+            ref={inputRef}
+            value={editedTitle}
+            onChangeText={setEditedTitle}
+            onBlur={commitEdit}
+            onSubmitEditing={commitEdit}
+            maxLength={DEVICE_NAME_MAX_LENGTH}
+            style={styles.renameInput}
+            returnKeyType="done"
+            autoCapitalize="words"
+            onKeyPress={handleEscapeKey}
+          />
+        ) : (
+          <Pressable onPress={!isOther ? startEditing : undefined}>
+            <Text numberOfLines={1} style={styles.deviceName} ellipsizeMode="tail">
+              {getDeviceDisplayName(device) || t('sync.platforms.unknown')}
+            </Text>
+          </Pressable>
+        )}
+        <Text style={styles.deviceSub} numberOfLines={1}>
+          {platformNames[device.platform || ''] || device.platform || '—'}
+          {!isOther && !isEditing && (
+            <Text style={styles.tapToRename}>{t('sync.platforms.renameHint')}</Text>
+          )}
+        </Text>
+        {device.isIndexer && (
+          <RNView style={styles.leaderBadge}>
+            <SymbolIcon name="crown" size={UI_ICON_SIZE_16} color={colors.primary} />
+            <Text style={styles.leaderBadgeText}>{t('sync.devices.indexerBadge')}</Text>
+          </RNView>
+        )}
+        {!!errorKey && <Text style={styles.leaderError}>{t(errorKey)}</Text>}
+      </RNView>
+
+      {isTransferring && (
+        <RNView style={styles.transferRow}>
+          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={styles.transferring}>{t(stepKey)}</Text>
+        </RNView>
+      )}
+    </RNView>
+  )
+
   return (
     <>
       <Reanimated.View
         entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
       >
-        <RNView style={styles.deviceRow}>
-          <RNView style={styles.deviceIcon}>
-            <SymbolIcon name={iconName} size={UI_ICON_SIZE_18} color={colors.primary} />
-            <RNView
-              accessible
-              accessibilityLabel={t(presenceLabelKey)}
-              style={[styles.presenceDot, presenceDotStyle]}
-            />
-          </RNView>
-
-          <RNView style={styles.deviceContent}>
-            {isEditing ? (
-              <TextInput
-                ref={inputRef}
-                value={editedTitle}
-                onChangeText={setEditedTitle}
-                onBlur={commitEdit}
-                onSubmitEditing={commitEdit}
-                maxLength={DEVICE_NAME_MAX_LENGTH}
-                style={styles.renameInput}
-                returnKeyType="done"
-                autoCapitalize="words"
-                onKeyPress={handleEscapeKey}
-              />
-            ) : (
-              <Pressable onPress={!isOther ? startEditing : undefined}>
-                <Text numberOfLines={1} style={styles.deviceName} ellipsizeMode="tail">
-                  {getDeviceDisplayName(device) || t('sync.platforms.unknown')}
-                </Text>
-              </Pressable>
-            )}
-            <Text style={styles.deviceSub} numberOfLines={1}>
-              {platformNames[device.platform || ''] || device.platform || '—'}
-              {!isOther && !isEditing && (
-                <Text style={styles.tapToRename}>{t('sync.platforms.renameHint')}</Text>
-              )}
-            </Text>
-          </RNView>
-
-          {isOther && (
-            <Pressable
-              onPress={openDeleteModal}
-              hitSlop={12}
-              style={({ pressed }) => [styles.deleteBtn, pressed && commonStyles.pressed]}
-            >
-              <SymbolIcon name="trash" size={UI_ICON_SIZE_17} color={colors.error} />
-            </Pressable>
-          )}
-        </RNView>
+        {menuItems.length > 0 ? (
+          <ContextMenuView
+            items={menuItems}
+            onSelect={handleMenuSelect}
+            previewCornerRadius={Radii.card}
+          >
+            {row}
+          </ContextMenuView>
+        ) : (
+          row
+        )}
 
         {showSep && <RNView style={styles.deviceSep} />}
       </Reanimated.View>
+
+      <SyncIndexerModal
+        visible={confirmVisible}
+        deviceName={getDeviceDisplayName(device) || t('sync.platforms.unknown')}
+        outgoingName={outgoingName}
+        isLocalTarget={isLocalTarget}
+        onCancel={closeConfirm}
+        onConfirm={confirmTransfer}
+      />
 
       <SyncDeleteModal
         visible={showDeleteModal}
@@ -258,8 +329,39 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.border,
       marginHorizontal: Space.base,
     },
-    deleteBtn: {
-      padding: Space.xs,
+    transferRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+      maxWidth: 150,
+    },
+    transferring: {
+      flex: 1,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
+      color: theme.colors.textMuted,
+    },
+    leaderBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.xs,
+      alignSelf: 'flex-start',
+      marginTop: 6,
+      paddingHorizontal: Space.sm,
+      paddingVertical: 2,
+      borderRadius: Radii.sm,
+      backgroundColor: hexWithAlpha(theme.colors.primary, isDark ? 0.22 : 0.12),
+    },
+    leaderBadgeText: {
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.4,
+      color: theme.colors.primary,
+    },
+    leaderError: {
+      fontSize: FontSize.caption,
+      marginTop: 4,
+      color: theme.colors.error,
     },
   })
   return styles

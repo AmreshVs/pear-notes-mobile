@@ -524,6 +524,19 @@ export default function AndroidSyncScreen() {
                 style={styles.footNoteRow}
               >
                 <MaterialCommunityIcons
+                  name="crown-outline"
+                  size={UI_ICON_SIZE_12}
+                  color={c.primary}
+                  style={styles.warningIconMargin}
+                />
+                <Text style={styles.footNoteText}>{t('sync.devices.indexerExplain')}</Text>
+              </MotionView>
+
+              <MotionView
+                entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
+                style={styles.footNoteRow}
+              >
+                <MaterialCommunityIcons
                   name="shield-check"
                   size={UI_ICON_SIZE_12}
                   color={c.primary}

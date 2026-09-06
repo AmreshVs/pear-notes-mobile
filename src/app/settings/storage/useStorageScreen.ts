@@ -16,6 +16,7 @@ import {
   retryDownload,
   selectStorageByKind,
   subscribeStorageInfo,
+  unsubscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
@@ -64,6 +65,9 @@ function useStorageScreen() {
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
+    return () => {
+      dispatch(unsubscribeStorageInfo())
+    }
   }, [dispatch])
 
   useEffect(() => {

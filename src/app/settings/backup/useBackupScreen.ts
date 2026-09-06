@@ -18,6 +18,7 @@ import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import {
   getTotalBlobBytes,
   subscribeStorageInfo,
+  unsubscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 
 import { finishRestore } from '@/lib/backupActions'
@@ -79,6 +80,9 @@ function useBackupScreen() {
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
+    return () => {
+      dispatch(unsubscribeStorageInfo())
+    }
   }, [dispatch])
 
   useEffect(() => {

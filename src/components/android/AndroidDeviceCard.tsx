@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, TextInput, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native'
 import { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -9,6 +9,8 @@ import { DEVICE_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
 import { updateSyncedDevice } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
+import { AndroidIndexerDialog } from '@/components/android/AndroidIndexerDialog'
+import { BottomActionSheet, type SheetAction } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -18,19 +20,23 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_18,
+  UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_SIZE_2,
+  UI_SIZE_4,
   UI_SIZE_6,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_24,
   UI_SIZE_48,
+  UI_SIZE_150,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useDeviceIndexer } from '@/hooks/useDeviceIndexer'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getDeviceActionFlags } from '@/utils/deviceCardMenu'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainer: string
@@ -66,7 +72,6 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   const dispatch = useDispatch()
   const styles = useStyles()
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const rippleDanger = useMemo(() => androidRipple(c.error), [c.error])
 
   const platformKey =
     device.platform === 'darwin'
@@ -103,6 +108,18 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   const [editedTitle, setEditedTitle] = useState(device.title || '')
   const inputRef = useRef<TextInput>(null)
 
+  const {
+    isTransferring,
+    stepKey,
+    errorKey,
+    isLocalTarget,
+    outgoingName,
+    confirmVisible,
+    openConfirm,
+    closeConfirm,
+    confirmTransfer,
+  } = useDeviceIndexer(device)
+
   const startEditing = useCallback(() => {
     if (!isLocal) return
     setEditedTitle(device.title || '')
@@ -130,6 +147,54 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
     [cancelEdit],
   )
 
+  const [actionSheetVisible, setActionSheetVisible] = useState(false)
+  const actionFlags = getDeviceActionFlags(device)
+
+  const openActionSheet = useCallback(() => setActionSheetVisible(true), [])
+  const closeActionSheet = useCallback(() => setActionSheetVisible(false), [])
+
+  const handleSheetRename = useCallback(() => {
+    setActionSheetVisible(false)
+    startEditing()
+  }, [startEditing])
+
+  const handleSheetMakeIndexer = useCallback(() => {
+    setActionSheetVisible(false)
+    openConfirm()
+  }, [openConfirm])
+
+  const handleSheetRemove = useCallback(() => {
+    setActionSheetVisible(false)
+    onDelete(device.key)
+  }, [onDelete, device.key])
+
+  const sheetActions = useMemo<SheetAction[]>(() => {
+    const actions: SheetAction[] = []
+    if (actionFlags.canRename) {
+      actions.push({
+        icon: 'pencil-outline',
+        label: t('sync.devices.rename'),
+        onPress: handleSheetRename,
+      })
+    }
+    if (actionFlags.canMakeIndexer) {
+      actions.push({
+        icon: 'crown-outline',
+        label: t('sync.devices.makeIndexer'),
+        onPress: handleSheetMakeIndexer,
+      })
+    }
+    if (actionFlags.canRemove) {
+      actions.push({
+        icon: 'delete-outline',
+        label: t('sync.delete.remove'),
+        onPress: handleSheetRemove,
+        destructive: true,
+      })
+    }
+    return actions
+  }, [actionFlags, handleSheetRename, handleSheetMakeIndexer, handleSheetRemove, t])
+
   return (
     <MotionView
       entering={FadeInDown.duration(Durations.fade).delay(
@@ -138,7 +203,8 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable
-        onPress={!isLocal ? undefined : startEditing}
+        onPress={isLocal ? startEditing : undefined}
+        onLongPress={actionFlags.hasAny ? openActionSheet : undefined}
         android_ripple={ripple}
         style={styles.deviceCard}
       >
@@ -176,19 +242,44 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
               <Text style={styles.deviceTapToRename}>{t('sync.platforms.renameHint')}</Text>
             )}
           </Text>
+          {device.isIndexer && (
+            <View style={styles.leaderBadge}>
+              <MaterialCommunityIcons
+                name="crown-outline"
+                size={UI_ICON_SIZE_16}
+                color={c.onSurface}
+              />
+              <Text style={styles.leaderBadgeText}>{t('sync.devices.indexerBadge')}</Text>
+            </View>
+          )}
+          {!!errorKey && <Text style={styles.leaderError}>{t(errorKey)}</Text>}
         </View>
 
-        {!isLocal && (
-          <Pressable
-            onPress={() => onDelete(device.key)}
-            android_ripple={rippleDanger}
-            hitSlop={UI_SIZE_12}
-            style={styles.deviceDeleteBtn}
-          >
-            <MaterialCommunityIcons name="delete-outline" size={UI_ICON_SIZE_18} color={c.error} />
-          </Pressable>
+        {isTransferring && (
+          <View style={styles.transferRow}>
+            <ActivityIndicator size="small" color={c.primary} />
+            <Text style={styles.transferring}>{t(stepKey)}</Text>
+          </View>
         )}
+
       </Pressable>
+
+      <BottomActionSheet
+        visible={actionSheetVisible}
+        onDismiss={closeActionSheet}
+        title={displayName}
+        subtitle={platformLabel}
+        actions={sheetActions}
+      />
+
+      <AndroidIndexerDialog
+        visible={confirmVisible}
+        deviceName={displayName}
+        outgoingName={outgoingName}
+        isLocalTarget={isLocalTarget}
+        onCancel={closeConfirm}
+        onConfirm={confirmTransfer}
+      />
     </MotionView>
   )
 })
@@ -275,8 +366,38 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       borderColor: c.primary,
       backgroundColor: hexWithAlpha(c.surfaceContainerHighest ?? c.surfaceVariant, 0.5),
     },
-    deviceDeleteBtn: {
-      padding: UI_SIZE_6,
+    transferRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_6,
+      maxWidth: UI_SIZE_150,
+    },
+    transferring: {
+      flex: 1,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.medium,
+      color: c.onSurfaceVariant,
+    },
+    leaderBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_4,
+      alignSelf: 'flex-start',
+      marginTop: UI_SIZE_6,
+      paddingHorizontal: UI_SIZE_10,
+      paddingVertical: UI_SIZE_2,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.35),
+    },
+    leaderBadgeText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.bold,
+      color: c.onSurface,
+    },
+    leaderError: {
+      fontSize: FontSize.caption,
+      marginTop: UI_SIZE_2,
+      color: c.error,
     },
   })
 

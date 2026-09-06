@@ -406,6 +406,16 @@ export default function SyncScreen() {
               </Reanimated.View>
             )}
 
+            <Reanimated.View entering={FadeIn.duration(220).delay(130)} style={styles.footNoteRow}>
+              <SymbolIcon
+                name="crown"
+                size={UI_ICON_SIZE_13}
+                color={colors.primary}
+                style={styles.iconTopFix}
+              />
+              <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
+            </Reanimated.View>
+
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
               <SymbolIcon
                 name="checkmark.shield"
@@ -463,6 +473,16 @@ export default function SyncScreen() {
                 <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
               </Reanimated.View>
             )}
+
+            <Reanimated.View entering={FadeIn.duration(220).delay(130)} style={styles.footNoteRow}>
+              <SymbolIcon
+                name="crown"
+                size={UI_ICON_SIZE_13}
+                color={colors.primary}
+                style={styles.iconTopFix}
+              />
+              <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
+            </Reanimated.View>
 
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
               <SymbolIcon
