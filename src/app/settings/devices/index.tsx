@@ -50,6 +50,8 @@ export default function SyncScreen() {
   const commonThemedStyles = useCommonThemedStyles()
 
   const {
+    indexerOffline,
+    indexerName,
     tab,
     handleSelectTab,
     copied,
@@ -416,6 +418,23 @@ export default function SyncScreen() {
               <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
             </Reanimated.View>
 
+            {indexerOffline && (
+              <Reanimated.View
+                entering={FadeIn.duration(220).delay(135)}
+                style={styles.footNoteRow}
+              >
+                <SymbolIcon
+                  name="exclamationmark.triangle"
+                  size={UI_ICON_SIZE_13}
+                  color={colors.error}
+                  style={styles.iconTopFix}
+                />
+                <Text style={styles.footNoteWarning}>
+                  {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
+                </Text>
+              </Reanimated.View>
+            )}
+
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
               <SymbolIcon
                 name="checkmark.shield"
@@ -483,6 +502,23 @@ export default function SyncScreen() {
               />
               <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
             </Reanimated.View>
+
+            {indexerOffline && (
+              <Reanimated.View
+                entering={FadeIn.duration(220).delay(135)}
+                style={styles.footNoteRow}
+              >
+                <SymbolIcon
+                  name="exclamationmark.triangle"
+                  size={UI_ICON_SIZE_13}
+                  color={colors.error}
+                  style={styles.iconTopFix}
+                />
+                <Text style={styles.footNoteWarning}>
+                  {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
+                </Text>
+              </Reanimated.View>
+            )}
 
             <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
               <SymbolIcon
@@ -840,6 +876,12 @@ const useStyles = createThemedStylesheet((theme) => {
       flex: 1,
       lineHeight: 20,
       color: theme.colors.textMuted,
+    },
+    footNoteWarning: {
+      fontSize: FontSize.body,
+      flex: 1,
+      lineHeight: 20,
+      color: theme.colors.error,
     },
     deviceGroup: {
       borderRadius: Radii.card,

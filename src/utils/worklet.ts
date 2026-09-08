@@ -14,11 +14,13 @@ const FramedStream = require('framed-stream')
 const { Worklet } = require('react-native-bare-kit')
 
 const BACKGROUND_LINGER_MS = 20_000
+const RESYNC_AFTER_AWAY_MS = 20_000
 export const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
 const KEEP_ALIVE_RENEWAL_MS = 60 * 1000
 
 interface StartWorkletOptions {
   onWorkletDied?: () => void
+  onResumed?: () => void
   notificationTitle?: string
   notificationMessage?: string
 }
@@ -30,6 +32,7 @@ let _keepAliveTimer: ReturnType<typeof setInterval> | null = null
 let _notificationStrings = { title: '', message: '' }
 let _backgroundSyncWindowActive = false
 let _suspendDeferredForBackgroundSync = false
+let _awaySince: number | null = null
 
 function logLifecycle(message: string, detail?: Record<string, unknown>) {
   const suffix = detail
@@ -184,7 +187,12 @@ export function suspendActiveWorklet(): boolean {
   }
 }
 
-function handleActive(worklet: any, onWorkletDied?: () => void) {
+function handleActive(worklet: any, onWorkletDied?: () => void, onResumed?: () => void) {
+  const awaySince = _awaySince
+  _awaySince = null
+  const wasSuspended = worklet?.suspended === true
+  const wasAwayLong = awaySince !== null && Date.now() - awaySince >= RESYNC_AFTER_AWAY_MS
+
   stopKeepAlive()
 
   if (_foregroundServiceActive) {
@@ -206,18 +214,25 @@ function handleActive(worklet: any, onWorkletDied?: () => void) {
   } catch (err) {
     console.error('[lifecycle] app failed to resume the worklet', err)
   }
+
+  if (wasSuspended || wasAwayLong) {
+    logLifecycle('active -> resync', { wasSuspended, wasAwayLong })
+    onResumed?.()
+  }
 }
 
-function attachAppStateHandler(worklet: any, onWorkletDied?: () => void) {
+function attachAppStateHandler(worklet: any, options?: StartWorkletOptions) {
   _appStateSubscription?.remove()
 
   _appStateSubscription = AppState.addEventListener('change', (state: AppStateStatus) => {
     logLifecycle('AppState ' + state, workletState(worklet))
 
     if (state === 'active') {
-      handleActive(worklet, onWorkletDied)
+      handleActive(worklet, options?.onWorkletDied, options?.onResumed)
       return
     }
+
+    if (_awaySince === null) _awaySince = Date.now()
 
     if (!worklet || worklet.terminated) return
 
@@ -231,6 +246,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
   stopKeepAlive()
   _appStateSubscription?.remove()
   _appStateSubscription = null
+  _awaySince = null
 
   if (_activeWorklet) {
     logLifecycle('startWorklet -> terminating the previous worklet', workletState(_activeWorklet))
@@ -257,7 +273,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
   logLifecycle('startWorklet -> booting a new worklet')
   worklet.start('app:/main.bundle', require('../backend/backend.bundle'), [storagePath])
 
-  attachAppStateHandler(worklet, options?.onWorkletDied)
+  attachAppStateHandler(worklet, options)
 
   const rpc = new HRPC(new FramedStream(worklet.IPC))
   setRPC(rpc)

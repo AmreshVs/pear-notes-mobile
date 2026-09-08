@@ -3,7 +3,7 @@ import { useSyncExternalStore } from 'react'
 import { authenticate } from '@/lib/deviceAuth'
 import { hapticSuccess } from '@/lib/haptics'
 
-const unlockedKeys = new Set<string>()
+let sessionUnlocked = false
 const listeners = new Set<() => void>()
 
 function emit() {
@@ -17,31 +17,24 @@ function subscribe(listener: () => void) {
   }
 }
 
-export function relockNote(key: string) {
-  if (unlockedKeys.delete(key)) emit()
-}
-
 export function markNoteUnlocked(key: string) {
-  if (!key) return
-  if (!unlockedKeys.has(key)) {
-    unlockedKeys.add(key)
-    emit()
-  }
+  if (!key || sessionUnlocked) return
+  sessionUnlocked = true
+  emit()
 }
 
 export function clearUnlockedNotes() {
-  if (unlockedKeys.size > 0) {
-    unlockedKeys.clear()
-    emit()
-  }
+  if (!sessionUnlocked) return
+  sessionUnlocked = false
+  emit()
 }
 
 export async function unlockNote(key: string, reason: string): Promise<boolean> {
   if (!key) return false
-  if (unlockedKeys.has(key)) return true
+  if (sessionUnlocked) return true
   const ok = await authenticate(reason)
   if (ok) {
-    unlockedKeys.add(key)
+    sessionUnlocked = true
     emit()
     hapticSuccess()
   }
@@ -49,9 +42,9 @@ export async function unlockNote(key: string, reason: string): Promise<boolean> 
 }
 
 export function useIsNoteUnlocked(key: string | null): boolean {
-  return useSyncExternalStore(subscribe, () => (key ? unlockedKeys.has(key) : false))
+  return useSyncExternalStore(subscribe, () => (key ? sessionUnlocked : false))
 }
 
 export function useHasUnlockedNotes(): boolean {
-  return useSyncExternalStore(subscribe, () => unlockedKeys.size > 0)
+  return useSyncExternalStore(subscribe, () => sessionUnlocked)
 }

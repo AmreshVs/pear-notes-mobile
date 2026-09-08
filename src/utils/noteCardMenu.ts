@@ -6,7 +6,6 @@ export type NoteCardMenuLabels = {
   restore: string
   moveTo: string
   noFolders: string
-  copy: string
   pin: string
   unpin: string
   lock: string
@@ -20,7 +19,6 @@ export type NoteCardMenuOptions = {
   pinned?: boolean
   canRestore: boolean
   canMove: boolean
-  canCopy: boolean
   canToggleLock: boolean
   canTogglePin: boolean
   canDelete: boolean
@@ -33,7 +31,6 @@ export function buildNoteCardMenu({
   pinned,
   canRestore,
   canMove,
-  canCopy,
   canToggleLock,
   canTogglePin,
   canDelete,
@@ -69,10 +66,6 @@ export function buildNoteCardMenu({
               },
             ],
     })
-  }
-
-  if (canCopy) {
-    items.push({ id: NOTE_ACTION.copy, title: labels.copy, systemImage: 'doc.on.doc' })
   }
 
   if (canTogglePin) {

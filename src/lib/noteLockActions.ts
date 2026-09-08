@@ -3,7 +3,6 @@ import { updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import { authenticate, isDeviceAuthSupported } from '@/lib/deviceAuth'
 import { hapticSuccess } from '@/lib/haptics'
 import { showLockUnavailable } from '@/lib/lockInfoModal'
-import { relockNote } from '@/lib/noteLock'
 import { type NoteLockPasswordPurpose, requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 
 type ToggleArgs = {
@@ -48,6 +47,5 @@ export async function toggleNoteLock({
   )
   if (!ok) return
   dispatch(updateNote({ key, locked: !currentlyLocked } as any))
-  relockNote(key)
   hapticSuccess()
 }

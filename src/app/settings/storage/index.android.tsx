@@ -227,6 +227,7 @@ export default function AndroidStorageScreen() {
         onDismiss={handleResetCancel}
         title={t('settings.reset.confirmTitle')}
         subtitle={t('settings.reset.confirmMessage')}
+        showHeader
         actions={resetActions}
       />
     </View>

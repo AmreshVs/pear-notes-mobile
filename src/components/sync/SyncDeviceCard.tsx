@@ -66,6 +66,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   const {
+    currentIndexer,
     isTransferring,
     stepKey,
     errorKey,
@@ -120,7 +121,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
     [cancelEdit],
   )
 
-  const actionFlags = getDeviceActionFlags(device)
+  const actionFlags = getDeviceActionFlags(device, currentIndexer)
   const menuItems = useMemo(
     () =>
       buildDeviceCardMenu(actionFlags, {

@@ -13,7 +13,12 @@ import {
 import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { hapticSuccess, hapticWarning } from '@/lib/haptics'
-import { canPromoteDevice, getIndexerErrorKey, getIndexerStepKey } from '@/utils/indexerUtils'
+import {
+  canPromoteDevice,
+  getIndexerErrorKey,
+  getIndexerStepKey,
+  isIndexerTransferBlocked,
+} from '@/utils/indexerUtils'
 
 export function useDeviceIndexer(device: any) {
   const dispatch = useDispatch()
@@ -25,7 +30,8 @@ export function useDeviceIndexer(device: any) {
 
   const [confirmVisible, setConfirmVisible] = useState(false)
 
-  const canPromote = canPromoteDevice(device)
+  const canPromote = canPromoteDevice(device, currentIndexer)
+  const transferBlocked = isIndexerTransferBlocked(currentIndexer)
   const isTransferring = !!device?.key && pendingKey === device.key
   const stepKey = getIndexerStepKey(pendingStep)
   const errorKey = errorDeviceKey === device?.key ? getIndexerErrorKey(indexerError) : ''
@@ -53,6 +59,8 @@ export function useDeviceIndexer(device: any) {
 
   return {
     canPromote,
+    transferBlocked,
+    currentIndexer,
     isTransferring,
     stepKey,
     errorKey,

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
-import * as Clipboard from 'expo-clipboard'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 
 import {
@@ -64,7 +63,6 @@ import { toggleNoteLock } from '@/lib/noteLockActions'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 import { buildNoteSections } from '@/utils/noteSections'
-import { getPreview } from '@/utils/noteUtils'
 
 import { useNoteSelection } from './useNoteSelection'
 
@@ -259,28 +257,6 @@ export default function FolderNotesScreen() {
     [dispatch],
   )
 
-  const handleCopyNote = useCallback(
-    async (title: string, html: string) => {
-      const plain = [title, getPreview(html, t('folderView.noAdditionalText'))]
-        .filter(Boolean)
-        .join('\n\n')
-      await Clipboard.setStringAsync(plain)
-      hapticSuccess()
-    },
-    [t],
-  )
-
-  const notesRef = useRef(notes)
-  notesRef.current = notes
-
-  const handleCopyNoteById = useCallback(
-    (noteId: string) => {
-      const target = (notesRef.current as any[]).find((n) => n.key === noteId)
-      if (target) handleCopyNote(target.value?.title, target.value?.note)
-    },
-    [handleCopyNote],
-  )
-
   const handleToggleLockNote = useCallback(
     (noteId: string, currentlyLocked: boolean) => {
       toggleNoteLock({
@@ -407,7 +383,6 @@ export default function FolderNotesScreen() {
           onToggleSelect={handleToggleSelect}
           onDelete={handleDeleteNote}
           onRestore={isTrashFolder ? handleRestoreNote : undefined}
-          onCopy={isTrashFolder ? undefined : handleCopyNoteById}
           onToggleLock={isTrashFolder ? undefined : handleToggleLockNote}
           onTogglePin={isTrashFolder ? undefined : handleTogglePinNote}
           moveFolders={isTrashFolder ? undefined : moveFolders}
@@ -424,7 +399,6 @@ export default function FolderNotesScreen() {
       handleSelectNote,
       handleDeleteNote,
       handleRestoreNote,
-      handleCopyNoteById,
       handleTogglePinNote,
       handleToggleLockNote,
       isTrashFolder,

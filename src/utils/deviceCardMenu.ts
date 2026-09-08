@@ -10,9 +10,9 @@ export type DeviceActionFlags = {
   hasAny: boolean
 }
 
-export function getDeviceActionFlags(device: any): DeviceActionFlags {
+export function getDeviceActionFlags(device: any, indexerDevice?: any): DeviceActionFlags {
   const canRename = device?.isLocal === true
-  const canMakeIndexer = canPromoteDevice(device)
+  const canMakeIndexer = canPromoteDevice(device, indexerDevice)
   const canRemove = device?.isLocal !== true && device?.isIndexer !== true
   return {
     canRename,

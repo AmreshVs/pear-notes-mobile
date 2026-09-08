@@ -26,7 +26,12 @@ import { backendApi, setLocalDeviceName } from '@pear-notes/core/backend/api.js'
 import { appBoot } from '@pear-notes/core/bootTimeline.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
-import { appReady, initApp } from '@pear-notes/core/store/slices/uiSlice.js'
+import {
+  appReady,
+  initApp,
+  refreshHyperdriveAddress,
+  resyncApp,
+} from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
 import { AppUpdateBanner } from '@/components/AppUpdateBanner'
@@ -44,7 +49,6 @@ import {
 } from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
-import { useHyperdriveAddressRefresh } from '@/hooks/useHyperdriveAddressRefresh'
 import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
 import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
@@ -123,7 +127,6 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
 
   useMediaSyncAutoDetect()
   useAttachmentCachePrune()
-  useHyperdriveAddressRefresh()
   useNoteAutoRelock()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
@@ -152,6 +155,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
             return
           }
           initWorklet()
+        },
+        onResumed: () => {
+          dispatch(refreshHyperdriveAddress())
+          dispatch(resyncApp())
         },
         notificationTitle: t('sync.backgroundSync.notificationTitle'),
         notificationMessage: t('sync.backgroundSync.notificationMessage'),

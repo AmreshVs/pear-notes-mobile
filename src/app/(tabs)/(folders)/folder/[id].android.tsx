@@ -17,7 +17,6 @@ import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
 import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
-import * as Clipboard from 'expo-clipboard'
 import { router, useLocalSearchParams } from 'expo-router'
 
 import {
@@ -88,7 +87,6 @@ import { androidRipple } from '@/lib/androidRipple'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { buildNoteSections } from '@/utils/noteSections'
-import { getPreview } from '@/utils/noteUtils'
 
 import { useNoteSelection } from './useNoteSelection'
 
@@ -303,22 +301,6 @@ export default function AndroidFolderNotesScreen() {
     [dispatch],
   )
 
-  const handleCopyNote = useCallback(
-    async (noteId: string) => {
-      const note = notes.find((n: any) => n.key === noteId)
-      if (!note) return
-      const plain = [
-        note.value?.title,
-        getPreview(note.value?.note, t('noteCard.noAdditionalText')),
-      ]
-        .filter(Boolean)
-        .join('\n\n')
-      await Clipboard.setStringAsync(plain)
-      hapticSuccess()
-    },
-    [notes, t],
-  )
-
   const handleNoteLongPress = useCallback(
     (noteId: string) => {
       const note = notes.find((n: any) => n.key === noteId)
@@ -353,12 +335,6 @@ export default function AndroidFolderNotesScreen() {
     hapticLight()
     startSelecting(targetId)
   }, [activeNoteId, startSelecting])
-
-  const handleNoteSheetCopy = useCallback(async () => {
-    if (!activeNoteId) return
-    await handleCopyNote(activeNoteId)
-    setNoteSheetVisible(false)
-  }, [activeNoteId, handleCopyNote])
 
   const handleNoteSheetMove = useCallback(() => {
     setNoteSheetVisible(false)
@@ -611,7 +587,6 @@ export default function AndroidFolderNotesScreen() {
         label: activeNotePinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin'),
         onPress: handleNoteSheetTogglePin,
       },
-      { icon: 'content-copy', label: t('noteCard.actions.copyNote'), onPress: handleNoteSheetCopy },
       ...(moveFolders.length > 0
         ? [
             {
@@ -635,7 +610,6 @@ export default function AndroidFolderNotesScreen() {
     ],
     [
       handleNoteSheetSelect,
-      handleNoteSheetCopy,
       handleNoteSheetMove,
       handleNoteSheetDelete,
       handleNoteSheetToggleLock,
@@ -880,6 +854,7 @@ export default function AndroidFolderNotesScreen() {
             ? t('folderView.selection.confirmPermanentDeleteBody')
             : t('folderView.selection.confirmDeleteBody', { days: TRASH_RETENTION_DAYS })
         }
+        showHeader
         actions={bulkDeleteConfirmActions}
       />
 
@@ -888,6 +863,7 @@ export default function AndroidFolderNotesScreen() {
         onDismiss={() => setDeleteConfirmNote(null)}
         title={t('folderView.permanentlyDeleteTitle')}
         subtitle={t('folderView.permanentlyDeleteSubtitle')}
+        showHeader
         actions={deleteNoteConfirmActions}
       />
 
@@ -896,6 +872,7 @@ export default function AndroidFolderNotesScreen() {
         onDismiss={() => setShowFolderDeleteConfirm(false)}
         title={t('folders.deleteTitle')}
         subtitle={t('folders.deleteDescription')}
+        showHeader
         actions={deleteFolderConfirmActions}
       />
     </View>

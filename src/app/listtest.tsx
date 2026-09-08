@@ -116,7 +116,6 @@ export default function ListTestScreen() {
         animationIndex={index}
         onPress={noop}
         onDelete={noop}
-        onCopy={noop}
         onToggleLock={noop}
         onTogglePin={noop}
         moveFolders={MOVE_FOLDERS}

@@ -89,7 +89,6 @@ interface NoteCardProps {
   onPress: (id: string) => void
   onDelete?: (id: string) => void
   onRestore?: (id: string) => void
-  onCopy?: (id: string) => void
   onToggleLock?: (id: string, currentlyLocked: boolean) => void
   onTogglePin?: (id: string, currentlyPinned: boolean) => void
   moveFolders?: MoveFolder[]
@@ -120,7 +119,6 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.onPress === next.onPress &&
     prev.onDelete === next.onDelete &&
     prev.onRestore === next.onRestore &&
-    prev.onCopy === next.onCopy &&
     prev.onToggleLock === next.onToggleLock &&
     prev.onTogglePin === next.onTogglePin &&
     prev.onMoveTo === next.onMoveTo &&
@@ -150,7 +148,6 @@ export const NoteCard = memo(function NoteCard({
   onPress,
   onDelete,
   onRestore,
-  onCopy,
   onToggleLock,
   onTogglePin,
   moveFolders,
@@ -188,7 +185,6 @@ export const NoteCard = memo(function NoteCard({
   const handleThumbError = useCallback(() => setThumbError(true), [])
   const handleDelete = useCallback(() => onDelete?.(id), [onDelete, id])
   const handleRestore = useCallback(() => onRestore?.(id), [onRestore, id])
-  const handleCopy = useCallback(() => onCopy?.(id), [onCopy, id])
   const handleToggleLock = useCallback(
     () => onToggleLock?.(id, locked === true),
     [onToggleLock, id, locked],
@@ -262,24 +258,22 @@ export const NoteCard = memo(function NoteCard({
         name: NOTE_ACTION.toggleLock,
         label: locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
       })
-    if (onCopy) actions.push({ name: NOTE_ACTION.copy, label: t('noteCard.actions.copyNote') })
     if (onRestore) actions.push({ name: NOTE_ACTION.restore, label: t('noteCard.actions.restore') })
     if (onDelete) actions.push({ name: NOTE_ACTION.delete, label: deleteLabel })
     return actions
-  }, [onTogglePin, onToggleLock, onCopy, onRestore, onDelete, pinned, locked, deleteLabel, t])
+  }, [onTogglePin, onToggleLock, onRestore, onDelete, pinned, locked, deleteLabel, t])
 
   const handleAccessibilityAction = useCallback(
     (event: { nativeEvent: { actionName: string } }) => {
       const runner = {
         [NOTE_ACTION.togglePin]: handleTogglePin,
         [NOTE_ACTION.toggleLock]: handleToggleLock,
-        [NOTE_ACTION.copy]: handleCopy,
         [NOTE_ACTION.restore]: handleRestore,
         [NOTE_ACTION.delete]: handleDelete,
       }[event.nativeEvent.actionName]
       runner?.()
     },
-    [handleTogglePin, handleToggleLock, handleCopy, handleRestore, handleDelete],
+    [handleTogglePin, handleToggleLock, handleRestore, handleDelete],
   )
 
   const entering = useMemo(
@@ -291,7 +285,7 @@ export const NoteCard = memo(function NoteCard({
   )
 
   const hasActions =
-    !selecting && (onDelete || onRestore || onCopy || onMoveTo || onToggleLock || onTogglePin)
+    !selecting && (onDelete || onRestore || onMoveTo || onToggleLock || onTogglePin)
 
   const menuItems = useMemo(
     () =>
@@ -300,7 +294,6 @@ export const NoteCard = memo(function NoteCard({
           restore: t('noteCard.actions.restore'),
           moveTo: t('noteCard.actions.moveTo'),
           noFolders: t('noteCard.actions.noFolders'),
-          copy: t('noteCard.actions.copyNote'),
           pin: t('noteCard.actions.pin'),
           unpin: t('noteCard.actions.unpin'),
           lock: t('noteCard.actions.lock'),
@@ -311,7 +304,6 @@ export const NoteCard = memo(function NoteCard({
         pinned,
         canRestore: !!onRestore,
         canMove: !!onMoveTo,
-        canCopy: !!onCopy,
         canToggleLock: !!onToggleLock,
         canTogglePin: !!onTogglePin,
         canDelete: !!onDelete,
@@ -324,7 +316,6 @@ export const NoteCard = memo(function NoteCard({
       pinned,
       onRestore,
       onMoveTo,
-      onCopy,
       onToggleLock,
       onTogglePin,
       onDelete,
@@ -342,13 +333,12 @@ export const NoteCard = memo(function NoteCard({
       const runner = {
         [NOTE_ACTION.togglePin]: handleTogglePin,
         [NOTE_ACTION.toggleLock]: handleToggleLock,
-        [NOTE_ACTION.copy]: handleCopy,
         [NOTE_ACTION.restore]: handleRestore,
         [NOTE_ACTION.delete]: handleDelete,
       }[actionId]
       runner?.()
     },
-    [id, onMoveTo, handleTogglePin, handleToggleLock, handleCopy, handleRestore, handleDelete],
+    [id, onMoveTo, handleTogglePin, handleToggleLock, handleRestore, handleDelete],
   )
 
   const rowContent = (

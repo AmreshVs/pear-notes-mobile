@@ -498,6 +498,7 @@ export default function AndroidFoldersScreen() {
         onDismiss={handleCloseDeleteConfirm}
         title={t('folders.deleteTitle')}
         subtitle={t('folders.deleteDescription')}
+        showHeader
         actions={deleteConfirmActions}
       />
 

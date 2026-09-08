@@ -84,6 +84,8 @@ export default function AndroidSyncScreen() {
   const md3Styles = useMD3CommonStyles()
 
   const {
+    indexerOffline,
+    indexerName,
     tab,
     handleSelectTab,
     copied,
@@ -532,6 +534,23 @@ export default function AndroidSyncScreen() {
                 <Text style={styles.footNoteText}>{t('sync.devices.indexerExplain')}</Text>
               </MotionView>
 
+              {indexerOffline && (
+                <MotionView
+                  entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
+                  style={styles.footNoteRow}
+                >
+                  <MaterialCommunityIcons
+                    name="alert-outline"
+                    size={UI_ICON_SIZE_12}
+                    color={c.error}
+                    style={styles.warningIconMargin}
+                  />
+                  <Text style={styles.footNoteWarningText}>
+                    {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
+                  </Text>
+                </MotionView>
+              )}
+
               <MotionView
                 entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
                 style={styles.footNoteRow}
@@ -928,6 +947,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       lineHeight: UI_SIZE_17,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
+    },
+    footNoteWarningText: {
+      fontSize: FontSize.caption,
+      ...commonStyles.flex1,
+      lineHeight: UI_SIZE_17,
+      fontFamily: FontFamily.regular,
+      color: c.error,
     },
     deviceList: {
       gap: UI_SIZE_12,

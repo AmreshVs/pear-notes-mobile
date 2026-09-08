@@ -109,6 +109,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   const inputRef = useRef<TextInput>(null)
 
   const {
+    currentIndexer,
     isTransferring,
     stepKey,
     errorKey,
@@ -148,7 +149,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   )
 
   const [actionSheetVisible, setActionSheetVisible] = useState(false)
-  const actionFlags = getDeviceActionFlags(device)
+  const actionFlags = getDeviceActionFlags(device, currentIndexer)
 
   const openActionSheet = useCallback(() => setActionSheetVisible(true), [])
   const closeActionSheet = useCallback(() => setActionSheetVisible(false), [])
@@ -261,7 +262,6 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
             <Text style={styles.transferring}>{t(stepKey)}</Text>
           </View>
         )}
-
       </Pressable>
 
       <BottomActionSheet
