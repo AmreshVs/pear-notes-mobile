@@ -42,6 +42,10 @@ export default function SettingsScreen() {
     router.back()
   }, [])
 
+  const handleOpenDebug = useCallback(() => {
+    router.push('/settings/debug' as never)
+  }, [])
+
   const sections = useMemo(
     () => [
       {
@@ -161,7 +165,9 @@ export default function SettingsScreen() {
           entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
         >
           <Text style={styles.footer}>{t('settings.footer')}</Text>
-          <Text style={styles.version}>{getAppVersionLabel()}</Text>
+          <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>
+            <Text style={styles.version}>{getAppVersionLabel()}</Text>
+          </Pressable>
         </MotionView>
       </ScrollView>
     </RNView>

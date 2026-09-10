@@ -33,6 +33,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="storage" options={{ title: t('layouts.storage') }} />
       <Stack.Screen name="activity" options={{ title: t('layouts.activity') }} />
       <Stack.Screen name="font" options={{ title: t('settings.general.fontFamily') }} />
+      <Stack.Screen name="debug" options={{ title: t('layouts.debug') }} />
     </Stack>
   )
 }

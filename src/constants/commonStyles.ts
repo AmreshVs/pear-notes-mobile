@@ -149,6 +149,7 @@ export const Durations = {
   delayReset: 180,
   delayFooter: 220,
   toast: 3000,
+  debugHold: 5000,
 } as const
 
 export const GlassIntensity = {

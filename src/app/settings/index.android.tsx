@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
@@ -14,6 +14,7 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
+  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -44,6 +45,10 @@ export default function AndroidSettingsScreen() {
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
+
+  const handleOpenDebug = useCallback(() => {
+    router.push('/settings/debug' as never)
+  }, [])
 
   const sections = useMemo<{ key: string; icon: IconName; label: string; onPress: () => void }[]>(
     () => [
@@ -144,7 +149,9 @@ export default function AndroidSettingsScreen() {
         <View style={commonStyles.flex1} />
         <MotionView style={styles.footerContainer} entering={FadeIn.duration(220).delay(280)}>
           <Text style={styles.footerText}>{t('settings.footer')}</Text>
-          <Text style={styles.versionText}>{getAppVersionLabel()}</Text>
+          <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>
+            <Text style={styles.versionText}>{getAppVersionLabel()}</Text>
+          </Pressable>
         </MotionView>
       </ScrollView>
     </View>

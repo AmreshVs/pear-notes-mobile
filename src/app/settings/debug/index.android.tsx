@@ -1,0 +1,352 @@
+import { useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
+import { FadeInDown } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { router, Stack } from 'expo-router'
+
+import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
+import { createThemedStylesheetWithHooks } from '@/components/Themed'
+import {
+  commonStyles,
+  Durations,
+  FontFamily,
+  FontSize,
+  FontWeight,
+  Space,
+  UI_ICON_SIZE_18,
+  UI_ICON_SIZE_24,
+  UI_SIZE_2,
+  UI_SIZE_4,
+  UI_SIZE_6,
+  UI_SIZE_28,
+  UI_SIZE_9999,
+} from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
+import {
+  buildDebugRows,
+  buildTimelineRows,
+  type DebugRow,
+  describeDevice,
+  shortenHex,
+} from '@/utils/debugRows'
+
+import { useDebugScreen } from './useDebugScreen'
+
+export default function DebugScreenAndroid() {
+  const { t } = useTranslation()
+  const styles = useStyles()
+  const { colors } = useMD3Theme()
+  const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
+  const { snapshot, error, copied, refreshing, handleRefresh, handleCopy, handleShare } =
+    useDebugScreen()
+
+  const handleBack = useCallback(() => router.back(), [])
+
+  const renderRow = useCallback(
+    (row: DebugRow) => (
+      <View key={row.key} style={styles.row}>
+        <Text style={styles.rowLabel}>{row.label}</Text>
+        <Text style={row.emphasis ? styles.rowValueEmphasis : styles.rowValue}>{row.value}</Text>
+      </View>
+    ),
+    [styles],
+  )
+
+  const renderSection = useCallback(
+    (title: string, data: unknown) => {
+      const rows = buildDebugRows(data)
+      if (rows.length === 0) return null
+      return (
+        <View key={title} style={styles.section}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <View style={styles.card}>{rows.map(renderRow)}</View>
+        </View>
+      )
+    },
+    [renderRow, styles],
+  )
+
+  const renderTimeline = useCallback(
+    (title: string, timeline: unknown) => {
+      const rows = buildTimelineRows(timeline as never)
+      if (rows.length === 0) return null
+      return (
+        <View key={title} style={styles.section}>
+          <Text style={styles.sectionTitle}>{title}</Text>
+          <View style={styles.card}>{rows.map(renderRow)}</View>
+        </View>
+      )
+    },
+    [renderRow, styles],
+  )
+
+  const renderDevice = useCallback(
+    (device: Record<string, unknown>, index: number) => (
+      <View key={String(device.localKey || index)} style={styles.deviceRow}>
+        <Text style={styles.deviceTitle}>{String(device.title || t('debug.untitledDevice'))}</Text>
+        <Text style={styles.deviceMeta}>
+          {describeDevice(device, {
+            local: t('debug.deviceLocal'),
+            leader: t('debug.deviceLeader'),
+            online: t('debug.deviceOnline'),
+            offline: t('debug.deviceOffline'),
+          })}
+        </Text>
+        <Text style={styles.deviceKey}>{shortenHex(String(device.localKey || ''))}</Text>
+      </View>
+    ),
+    [styles, t],
+  )
+
+  const devices = (snapshot?.devices as Record<string, unknown>[]) || []
+
+  return (
+    <View style={styles.screen}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <StatusBar barStyle="default" backgroundColor={colors.surface} />
+      <View style={styles.header}>
+        <Pressable onPress={handleBack} android_ripple={ripple} style={styles.backButton}>
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={UI_ICON_SIZE_24}
+            color={colors.onSurface}
+          />
+        </Pressable>
+        <Text style={styles.headerTitle}>{t('layouts.debug')}</Text>
+      </View>
+
+      <ScrollView
+        style={commonStyles.flex1}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <MotionView entering={FadeInDown.duration(Durations.fade)} style={styles.actions}>
+          <Pressable onPress={handleCopy} android_ripple={ripple} style={styles.primaryButton}>
+            <MaterialCommunityIcons
+              name={copied ? 'check' : 'content-copy'}
+              size={UI_ICON_SIZE_18}
+              color={colors.onPrimary}
+            />
+            <Text style={styles.primaryButtonText}>
+              {copied ? t('debug.copied') : t('debug.copy')}
+            </Text>
+          </Pressable>
+          <Pressable onPress={handleShare} android_ripple={ripple} style={styles.secondaryButton}>
+            <MaterialCommunityIcons
+              name="share-variant"
+              size={UI_ICON_SIZE_18}
+              color={colors.primary}
+            />
+            <Text style={styles.secondaryButtonText}>{t('debug.share')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={handleRefresh}
+            disabled={refreshing}
+            android_ripple={ripple}
+            style={styles.secondaryButton}
+          >
+            <MaterialCommunityIcons name="refresh" size={UI_ICON_SIZE_18} color={colors.primary} />
+            <Text style={styles.secondaryButtonText}>{t('debug.refresh')}</Text>
+          </Pressable>
+        </MotionView>
+
+        {error ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : null}
+
+        {!snapshot ? (
+          <Text style={styles.loading}>{t('debug.loading')}</Text>
+        ) : (
+          <>
+            {renderSection(t('debug.sections.autobase'), snapshot.autobase)}
+            {renderSection(t('debug.sections.swarm'), snapshot.swarm)}
+            {devices.length > 0 ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{t('debug.sections.devices')}</Text>
+                <View style={styles.card}>{devices.map(renderDevice)}</View>
+              </View>
+            ) : null}
+            {renderSection(t('debug.sections.sync'), snapshot.sync)}
+            {renderSection(t('debug.sections.storage'), snapshot.storage)}
+            {renderSection(t('debug.sections.app'), snapshot.app)}
+            {renderSection(t('debug.sections.runtime'), snapshot.runtime)}
+            {renderTimeline(t('debug.sections.backendBoot'), snapshot.backendBoot)}
+            {renderTimeline(t('debug.sections.appBoot'), snapshot.appBoot)}
+          </>
+        )}
+      </ScrollView>
+    </View>
+  )
+}
+
+type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
+  surfaceContainerHigh?: string
+}
+
+const useAndroidDebugHooks = () => {
+  const md3 = useMD3Theme()
+  const insets = useSafeAreaInsets()
+  return { md3, insets }
+}
+
+const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
+  const c = md3.colors as ExtendedColors
+
+  const styles = StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: c.surface,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.sm,
+      paddingTop: insets.top + Space.sm,
+      paddingHorizontal: Space.sm,
+      paddingBottom: Space.sm,
+    },
+    backButton: {
+      padding: Space.sm,
+      borderRadius: UI_SIZE_9999,
+    },
+    headerTitle: {
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.title,
+      fontWeight: FontWeight.bold,
+      color: c.onSurface,
+    },
+    content: {
+      paddingHorizontal: Space.base,
+      paddingBottom: Space.scrollBottom,
+    },
+    actions: {
+      flexDirection: 'row',
+      gap: Space.sm,
+      marginBottom: Space.base,
+      flexWrap: 'wrap',
+    },
+    primaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_6,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.md,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: c.primary,
+      overflow: 'hidden',
+    },
+    primaryButtonText: {
+      color: c.onPrimary,
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+    },
+    secondaryButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_6,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.md,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
+      overflow: 'hidden',
+    },
+    secondaryButtonText: {
+      color: c.primary,
+      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+    },
+    section: {
+      marginBottom: Space.lg,
+    },
+    sectionTitle: {
+      fontFamily: FontFamily.bold,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      color: c.onSurfaceVariant,
+      marginBottom: Space.sm,
+      marginLeft: UI_SIZE_4,
+      textTransform: 'uppercase',
+    },
+    card: {
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: UI_SIZE_28,
+      paddingVertical: Space.sm,
+      overflow: 'hidden',
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: Space.md,
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.sm,
+    },
+    rowLabel: {
+      fontFamily: FontFamily.mono,
+      fontSize: FontSize.caption,
+      color: c.onSurfaceVariant,
+      flexShrink: 0,
+    },
+    rowValue: {
+      fontFamily: FontFamily.mono,
+      fontSize: FontSize.caption,
+      color: c.onSurface,
+      flexShrink: 1,
+      textAlign: 'right',
+    },
+    rowValueEmphasis: {
+      fontFamily: FontFamily.mono,
+      fontSize: FontSize.caption,
+      color: c.primary,
+      fontWeight: FontWeight.bold,
+      flexShrink: 1,
+      textAlign: 'right',
+    },
+    deviceRow: {
+      paddingHorizontal: Space.lg,
+      paddingVertical: Space.sm,
+      gap: UI_SIZE_2,
+    },
+    deviceTitle: {
+      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurface,
+    },
+    deviceMeta: {
+      fontFamily: FontFamily.mono,
+      fontSize: FontSize.caption,
+      color: c.onSurfaceVariant,
+    },
+    deviceKey: {
+      fontFamily: FontFamily.mono,
+      fontSize: FontSize.caption,
+      color: c.onSurfaceVariant,
+    },
+    errorBox: {
+      padding: Space.base,
+      borderRadius: UI_SIZE_28,
+      backgroundColor: hexWithAlpha(c.error || c.primary, 0.12),
+      marginBottom: Space.base,
+    },
+    errorText: {
+      fontFamily: FontFamily.mono,
+      fontSize: FontSize.caption,
+      color: c.onSurface,
+    },
+    loading: {
+      fontFamily: FontFamily.regular,
+      fontSize: FontSize.body,
+      color: c.onSurfaceVariant,
+    },
+  })
+  return styles
+}, useAndroidDebugHooks)
