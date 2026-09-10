@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
-import { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
 
 import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
@@ -86,7 +86,6 @@ export const FolderRow = memo(function FolderRow({
   const row = (
     <MotionView
       entering={entering}
-      exiting={FadeOut.duration(ListMotion.exitDuration)}
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable onPress={() => onPress(id)} style={containerStyle} accessibilityRole="button">
@@ -116,11 +115,9 @@ export const FolderRow = memo(function FolderRow({
           </RNView>
         </RNView>
       </Pressable>
-      {!isLast && (
-        <RNView style={styles.dividerWrap}>
-          <Divider />
-        </RNView>
-      )}
+      <RNView style={isLast ? styles.dividerWrapHidden : styles.dividerWrap}>
+        <Divider />
+      </RNView>
     </MotionView>
   )
 
@@ -190,6 +187,10 @@ const createStyles = (theme: Theme) =>
     containerLast: {},
     dividerWrap: {
       marginHorizontal: Space.base,
+    },
+    dividerWrapHidden: {
+      height: 0,
+      overflow: 'hidden',
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,

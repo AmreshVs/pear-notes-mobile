@@ -7,7 +7,7 @@ import {
   View as RNView,
   type ViewStyle,
 } from 'react-native'
-import { FadeIn, FadeOutUp } from 'react-native-reanimated'
+import { FadeIn } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import { Image } from 'expo-image'
 
@@ -446,7 +446,7 @@ export const NoteCard = memo(function NoteCard({
   )
 
   const card = (
-    <MotionView entering={entering} exiting={FadeOutUp.duration(ListMotion.exitDuration)}>
+    <MotionView entering={entering}>
       <Pressable
         onPress={handlePress}
         style={getPressableStyle}
@@ -468,7 +468,7 @@ export const NoteCard = memo(function NoteCard({
         ) : (
           rowContent
         )}
-        {grouped && !isLast && <RNView style={styles.rowDivider} />}
+        <RNView style={grouped && !isLast ? styles.rowDivider : styles.rowDividerHidden} />
       </Pressable>
     </MotionView>
   )
@@ -512,6 +512,9 @@ const useStyles = createThemedStylesheet((theme) => {
       height: StyleSheet.hairlineWidth,
       backgroundColor: theme.colors.border,
       marginTop: UI_SIZE_4,
+    },
+    rowDividerHidden: {
+      height: 0,
     },
     containerSelected: {
       backgroundColor: theme.colors.cardSelected,

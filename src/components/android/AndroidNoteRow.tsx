@@ -1,7 +1,7 @@
 import { type ComponentProps, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
-import { FadeIn, FadeOutUp } from 'react-native-reanimated'
+import { FadeIn } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
@@ -178,7 +178,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   )
 
   return (
-    <MotionView entering={entering} exiting={FadeOutUp.duration(ListMotion.exitDuration)}>
+    <MotionView entering={entering}>
       <Pressable
         onPress={handlePress}
         onLongPress={handleLongPress}
