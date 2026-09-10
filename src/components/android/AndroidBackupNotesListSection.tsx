@@ -10,6 +10,7 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
+  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -148,7 +149,7 @@ export function AndroidBackupNotesListSection({
   if (notesStorageInfo.length === 0) return null
 
   return (
-    <MotionView entering={FadeInDown.duration(240).delay(170)} style={styles.perNoteSection}>
+    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.perNoteSection}>
       <Text style={md3CommonStyles.settingsSectionCamelCase}>
         {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
       </Text>

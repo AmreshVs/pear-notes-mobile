@@ -8,6 +8,7 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
+  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -65,7 +66,7 @@ export function AndroidBackupBreakdownSection({
   if (!hasItems) return null
 
   return (
-    <MotionView entering={FadeInDown.duration(240).delay(160)} style={styles.breakdownSection}>
+    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.breakdownSection}>
       <Text style={md3CommonStyles.settingsSectionCamelCase}>{t('backup.breakdownByType')}</Text>
       <View style={styles.breakdownCard}>
         {buckets.image.count > 0 && (

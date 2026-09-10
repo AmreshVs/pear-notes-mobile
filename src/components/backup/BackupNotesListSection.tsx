@@ -134,10 +134,7 @@ export function BackupNotesListSection({
   if (notesStorageInfo.length === 0) return null
 
   return (
-    <MotionView
-      entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset + 20)}
-      style={styles.perNoteSection}
-    >
+    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.perNoteSection}>
       <Text style={commonThemedStyles.sectionCamelCase}>
         {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
       </Text>

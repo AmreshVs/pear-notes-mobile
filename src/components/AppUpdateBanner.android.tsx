@@ -9,6 +9,7 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
+  Durations,
   FontSize,
   FontWeight,
   Space,
@@ -41,8 +42,8 @@ export function AppUpdateBanner() {
   return (
     <MotionView
       style={styles.container}
-      entering={FadeInDown.duration(300)}
-      exiting={FadeOutDown.duration(200)}
+      entering={FadeInDown.duration(Durations.overlayFade)}
+      exiting={FadeOutDown.duration(Durations.overlayFadeOut)}
     >
       <RNView style={styles.banner}>
         <RNView style={styles.infoRow}>

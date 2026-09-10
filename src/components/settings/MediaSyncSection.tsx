@@ -1,12 +1,10 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Switch, View as RNView } from 'react-native'
-import { FadeInDown } from 'react-native-reanimated'
 
-import { MotionView } from '@/components/MotionView'
 import { useMediaSyncPolicy } from '@/components/settings/useMediaSyncPolicy'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
-import { Durations, FontSize, FontWeight, Space } from '@/constants/commonStyles'
+import { FontSize, FontWeight, Space } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
 export function MediaSyncSection() {
@@ -41,7 +39,7 @@ export function MediaSyncSection() {
   )
 
   return (
-    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
+    <RNView style={styles.section}>
       <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.mediaSync.title')}</Text>
       <RNView style={commonThemedStyles.card}>
         <RNView style={styles.toggleRow}>
@@ -73,7 +71,7 @@ export function MediaSyncSection() {
         </RNView>
       </RNView>
       {isHeld && <Text style={styles.heldNotice}>{t('settings.mediaSync.heldNotice')}</Text>}
-    </MotionView>
+    </RNView>
   )
 }
 

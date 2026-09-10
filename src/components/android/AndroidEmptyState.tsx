@@ -10,6 +10,7 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
+  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -53,7 +54,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
 
   return (
     <MotionView
-      entering={FadeIn.duration(300)}
+      entering={FadeIn.duration(Durations.fade)}
       style={[styles.wrapper, { marginTop: height * 0.2 }]}
     >
       {hasSearch ? (

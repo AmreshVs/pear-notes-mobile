@@ -25,6 +25,7 @@ import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   FontSize,
   FontWeight,
+  ListMotion,
   Radii,
   Space,
   UI_ICON_SIZE_16,
@@ -210,10 +211,18 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
     </RNView>
   )
 
+  const entering = useMemo(
+    () =>
+      animationIndex <= ListMotion.enterMaxIndex
+        ? FadeIn.duration(ListMotion.enterDuration).delay(animationIndex * ListMotion.enterStagger)
+        : undefined,
+    [animationIndex],
+  )
+
   return (
     <>
       <Reanimated.View
-        entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
+        entering={entering}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
       >
         {menuItems.length > 0 ? (

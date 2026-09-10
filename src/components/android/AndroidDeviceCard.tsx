@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native'
-import { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
 import { useDispatch } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
@@ -16,10 +16,10 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
+  ListMotion,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_SIZE_2,
@@ -196,11 +196,17 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
     return actions
   }, [actionFlags, handleSheetRename, handleSheetMakeIndexer, handleSheetRemove, t])
 
+  const entering = useMemo(
+    () =>
+      index <= ListMotion.enterMaxIndex
+        ? FadeIn.duration(ListMotion.enterDuration).delay(index * ListMotion.enterStagger)
+        : undefined,
+    [index],
+  )
+
   return (
     <MotionView
-      entering={FadeInDown.duration(Durations.fade).delay(
-        Math.min(index, 6) * Durations.delayShort,
-      )}
+      entering={entering}
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable

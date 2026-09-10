@@ -1,12 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
-import { FadeIn, FadeInDown } from 'react-native-reanimated'
 
-import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -70,11 +67,11 @@ export function SyncStatusSection() {
 
   return (
     <>
-      <MotionView entering={FadeIn.duration(Durations.fade)}>
+      <RNView>
         <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.syncStatus.title')}</Text>
-      </MotionView>
+      </RNView>
 
-      <MotionView entering={FadeInDown.duration(Durations.slide)}>
+      <RNView>
         <RNView style={commonThemedStyles.card}>
           {hasLinkedDevices && (
             <>
@@ -142,7 +139,7 @@ export function SyncStatusSection() {
             <Text style={styles.verdictText}>{verdictText}</Text>
           </RNView>
         </RNView>
-      </MotionView>
+      </RNView>
     </>
   )
 }

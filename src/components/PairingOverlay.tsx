@@ -599,10 +599,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
       >
         <Reanimated.View
           key={`${step}-${pendingInvite ? 'merge' : showPairingInput ? 'input' : 'flow'}`}
-          entering={FadeInDown.duration(240)}
+          entering={FadeInDown.duration(Durations.slide)}
         >
           <Reanimated.View
-            entering={FadeInDown.duration(240).easing(Easing.out(Easing.cubic))}
+            entering={FadeInDown.duration(Durations.slide).easing(Easing.out(Easing.cubic))}
             style={styles.card}
           >
             {isAndroid ? (

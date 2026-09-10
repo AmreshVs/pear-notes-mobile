@@ -11,6 +11,7 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
+  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -89,7 +90,7 @@ export function AndroidUploadsSection({
   const groups = groupTransfersByNote(uploads, noteTitles, t('noteCard.untitled'))
 
   return (
-    <MotionView entering={FadeInDown.duration(240)} style={styles.section}>
+    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.section}>
       <Text style={styles.sectionTitle}>
         {t('storage.syncingToDevices')} ({uploads.length})
       </Text>

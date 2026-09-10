@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native'
 import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -328,7 +328,7 @@ export default function AndroidFoldersScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <MotionView entering={FadeIn.duration(200)} style={styles.header}>
+        <View style={styles.header}>
           <View>
             <Text style={styles.pageTitle}>{t('folders.title')}</Text>
           </View>
@@ -340,12 +340,9 @@ export default function AndroidFoldersScreen() {
           >
             <MaterialCommunityIcons name="cog-outline" size={UI_ICON_SIZE_24} color={c.onSurface} />
           </Pressable>
-        </MotionView>
+        </View>
 
-        <MotionView
-          entering={FadeInDown.duration(220).delay(40).easing(Easing.out(Easing.cubic))}
-          style={styles.searchWrap}
-        >
+        <View style={styles.searchWrap}>
           <View style={styles.searchBar}>
             <MaterialCommunityIcons
               name="magnify"
@@ -364,10 +361,9 @@ export default function AndroidFoldersScreen() {
               returnKeyType="search"
             />
           </View>
-        </MotionView>
+        </View>
 
         <MotionView
-          entering={FadeInDown.duration(240).delay(80).easing(Easing.out(Easing.cubic))}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.listCard}
         >
@@ -395,10 +391,7 @@ export default function AndroidFoldersScreen() {
         </MotionView>
 
         {archiveFolders.length > 0 && (
-          <MotionView
-            entering={FadeInDown.duration(240).delay(120).easing(Easing.out(Easing.cubic))}
-            style={styles.archiveSection}
-          >
+          <View style={styles.archiveSection}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>{t('folders.archiveHeader')}</Text>
             </View>
@@ -419,7 +412,7 @@ export default function AndroidFoldersScreen() {
                 />
               ))}
             </View>
-          </MotionView>
+          </View>
         )}
       </ScrollView>
 

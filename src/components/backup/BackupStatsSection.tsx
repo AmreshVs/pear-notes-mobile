@@ -1,14 +1,11 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
-import { FadeInDown } from 'react-native-reanimated'
 
-import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontSize,
   FontWeight,
   Space,
@@ -37,10 +34,7 @@ export function BackupStatsSection({
   const commonThemedStyles = useCommonThemedStyles()
 
   return (
-    <MotionView
-      entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}
-      style={styles.statsRow}
-    >
+    <RNView style={styles.statsRow}>
       <RNView style={[commonThemedStyles.card, styles.statCard]}>
         <RNView style={[commonThemedStyles.iconBox34, styles.goldIconBox]}>
           <SymbolIcon name="arrow.counterclockwise" size={UI_ICON_SIZE_16} color={colors.primary} />
@@ -57,7 +51,7 @@ export function BackupStatsSection({
         <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
         <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
       </RNView>
-    </MotionView>
+    </RNView>
   )
 }
 

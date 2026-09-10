@@ -10,6 +10,7 @@ import {
   commonStyles,
   FontSize,
   FontWeight,
+  ListMotion,
   Radii,
   Space,
   UI_ICON_SIZE_14,
@@ -74,10 +75,18 @@ export const FolderRow = memo(function FolderRow({
     [styles, selected, grouped, isLast],
   )
 
+  const entering = useMemo(
+    () =>
+      animationIndex <= ListMotion.enterMaxIndex
+        ? FadeIn.duration(ListMotion.enterDuration).delay(animationIndex * ListMotion.enterStagger)
+        : undefined,
+    [animationIndex],
+  )
+
   const row = (
     <MotionView
-      entering={FadeIn.duration(220).delay(Math.min(animationIndex, 8) * 35)}
-      exiting={FadeOut.duration(160)}
+      entering={entering}
+      exiting={FadeOut.duration(ListMotion.exitDuration)}
       layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
     >
       <Pressable onPress={() => onPress(id)} style={containerStyle} accessibilityRole="button">

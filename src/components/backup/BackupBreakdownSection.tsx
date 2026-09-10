@@ -48,10 +48,7 @@ export function BackupBreakdownSection({ buckets, formatBytes }: BackupBreakdown
   if (!hasItems) return null
 
   return (
-    <MotionView
-      entering={FadeInDown.duration(Durations.slide).delay(Durations.delayReset)}
-      style={styles.breakdownSection}
-    >
+    <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.breakdownSection}>
       <Text style={commonThemedStyles.sectionCamelCase}>{t('backup.breakdownByType')}</Text>
       <RNView style={commonThemedStyles.card}>
         {buckets.image.count > 0 && (

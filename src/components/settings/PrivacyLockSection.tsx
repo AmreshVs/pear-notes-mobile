@@ -1,14 +1,13 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Switch, View as RNView } from 'react-native'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -54,14 +53,11 @@ export function PrivacyLockSection() {
 
   return (
     <>
-      <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayFooter)}>
+      <RNView>
         <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.privacy.header')}</Text>
-      </MotionView>
+      </RNView>
 
-      <MotionView
-        entering={FadeInDown.duration(Durations.slide).delay(Durations.delayFooter)}
-        layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-      >
+      <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
         <RNView style={styles.card}>
           <RNView style={styles.infoRow}>
             <RNView style={styles.iconBox}>

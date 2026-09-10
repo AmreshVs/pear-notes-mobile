@@ -1,11 +1,9 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, Text, View } from 'react-native'
-import { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -51,7 +49,7 @@ export function AndroidBackupStatsSection({
   const c = md3.colors as ExtendedColors
 
   return (
-    <MotionView entering={FadeInDown.duration(240).delay(100)} style={styles.statsRow}>
+    <View style={styles.statsRow}>
       <View style={styles.statCard}>
         <View style={styles.statIconWrap}>
           <MaterialCommunityIcons name="history" size={UI_ICON_SIZE_22} color={c.primary} />
@@ -72,7 +70,7 @@ export function AndroidBackupStatsSection({
         <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
         <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
       </View>
-    </MotionView>
+    </View>
   )
 }
 

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AppState, PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -108,14 +108,13 @@ export function BackgroundSyncSection() {
 
   return (
     <>
-      <MotionView entering={FadeIn.duration(220).delay(120)}>
+      <View>
         <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
           {t('sync.backgroundSync.header')}
         </Text>
-      </MotionView>
+      </View>
 
       <MotionView
-        entering={FadeInDown.duration(240).delay(140)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.card}
       >

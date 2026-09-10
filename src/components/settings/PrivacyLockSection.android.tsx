@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { Switch } from 'react-native-paper'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
@@ -73,12 +73,11 @@ export function PrivacyLockSection() {
 
   return (
     <>
-      <MotionView entering={FadeIn.duration(220).delay(20)}>
+      <View>
         <Text style={md3Styles.settingsSectionCamelCase}>{t('settings.privacy.header')}</Text>
-      </MotionView>
+      </View>
 
       <MotionView
-        entering={FadeInDown.duration(240).delay(40)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.infoCard}
       >
@@ -92,7 +91,6 @@ export function PrivacyLockSection() {
       </MotionView>
 
       <MotionView
-        entering={FadeInDown.duration(240).delay(80)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.card}
       >
@@ -162,7 +160,6 @@ export function PrivacyLockSection() {
       </MotionView>
 
       <MotionView
-        entering={FadeInDown.duration(240).delay(120)}
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
         style={styles.groupCard}
       >

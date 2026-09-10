@@ -1,13 +1,10 @@
 import { useTranslation } from 'react-i18next'
 import { StyleSheet, View as RNView } from 'react-native'
-import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -82,11 +79,11 @@ export function SyncStatusSection() {
 
   return (
     <>
-      <MotionView entering={FadeIn.duration(Durations.fade)}>
+      <RNView>
         <Text style={styles.sectionCap}>{t('settings.syncStatus.title')}</Text>
-      </MotionView>
+      </RNView>
 
-      <MotionView entering={FadeInDown.duration(Durations.slide)}>
+      <RNView>
         <RNView style={styles.card}>
           {hasLinkedDevices && (
             <>
@@ -154,7 +151,7 @@ export function SyncStatusSection() {
             <Text style={styles.verdictText}>{verdictText}</Text>
           </RNView>
         </RNView>
-      </MotionView>
+      </RNView>
     </>
   )
 }

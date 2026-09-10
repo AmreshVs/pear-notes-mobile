@@ -1,13 +1,12 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheet, Text } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -63,16 +62,13 @@ export function BackgroundSyncSection() {
 
   return (
     <>
-      <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
+      <RNView>
         <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
           {t('sync.backgroundSync.header')}
         </Text>
-      </MotionView>
+      </RNView>
 
-      <MotionView
-        entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
-        layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-      >
+      <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
         <RNView style={commonThemedStyles.card}>
           <RNView style={styles.stackedRow}>
             <Text style={[styles.rowLabel, !hasLinkedDevices && commonStyles.disabled]}>
