@@ -1,14 +1,11 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
-import { FadeInDown } from 'react-native-reanimated'
 
-import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -102,7 +99,7 @@ export default function DebugScreen() {
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
-      <MotionView entering={FadeInDown.duration(Durations.fade)} style={styles.actions}>
+      <RNView style={styles.actions}>
         <Pressable onPress={handleCopy} style={styles.primaryButton}>
           <SymbolIcon
             name={copied ? 'checkmark' : 'doc.on.doc'}
@@ -121,7 +118,7 @@ export default function DebugScreen() {
           <SymbolIcon name="arrow.clockwise" size={UI_ICON_SIZE_15} color={colors.primary} />
           <Text style={styles.secondaryButtonText}>{t('debug.refresh')}</Text>
         </Pressable>
-      </MotionView>
+      </RNView>
 
       {error ? (
         <RNView style={styles.errorBox}>

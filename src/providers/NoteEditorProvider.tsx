@@ -67,6 +67,7 @@ import { useNoteEditor } from './useNoteEditor'
 import { useNoteEditorActions } from './useNoteEditorActions'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
+const EDITOR_HEADER_HEIGHT = 52
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
   const reduceMotion = useReduceMotion()
@@ -547,10 +548,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [keyboardHeight],
   )
 
-  const lockOverlayStyle = useMemo(
-    () => [styles.lockOverlay, { top: insets.top + 52 }],
-    [styles.lockOverlay, insets.top],
-  )
+  const contentTop = useMemo(() => insets.top + EDITOR_HEADER_HEIGHT, [insets.top])
 
   const bottomFadeStyle = useMemo(
     () => [styles.bottomFade, { height: insets.bottom }],
@@ -740,7 +738,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               noteId={noteId ?? 'new'}
               initialContent=""
               initialTitle=""
-              safeAreaTop={insets.top + 52}
+              safeAreaTop={contentTop}
               safeAreaBottom={0}
               scrollEnabled={!isEdgeSwipeActive}
               onContentChange={handleUpdate}
@@ -781,8 +779,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           )}
 
           {isNoteLocked && (
-            <View style={lockOverlayStyle}>
-              <LockedNoteView noteId={noteId ?? ''} />
+            <View style={styles.lockOverlay}>
+              <LockedNoteView noteId={noteId ?? ''} topInset={contentTop} />
             </View>
           )}
 
@@ -932,10 +930,7 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.background,
     },
     lockOverlay: {
-      position: 'absolute',
-      left: 0,
-      right: 0,
-      bottom: 0,
+      ...StyleSheet.absoluteFill,
       zIndex: 9,
       backgroundColor: theme.colors.background,
     },

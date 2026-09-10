@@ -4,6 +4,7 @@ import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-she
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { SHEET_ICON_CHIP_ALPHA, useSheetStyles } from '@/components/android/useSheetStyles'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   FontFamily,
@@ -11,23 +12,14 @@ import {
   FontWeight,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
-  UI_SIZE_4,
-  UI_SIZE_8,
-  UI_SIZE_16,
-  UI_SIZE_20,
-  UI_SIZE_24,
-  UI_SIZE_28,
-  UI_SIZE_36,
+  UI_SIZE_44,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
-  surfaceContainerLow: string
-  surfaceContainer: string
-  surfaceContainerHigh: string
-  surfaceContainerHighest: string
-  surfaceContainerLowest: string
+  errorContainer: string
 }
 
 export type SheetAction = {
@@ -44,7 +36,6 @@ type Props = {
   onDismiss: () => void
   title: string
   subtitle?: string
-  /** Render the title/subtitle header above the actions (matches the iOS and desktop dialogs). */
   showHeader?: boolean
   actions: SheetAction[]
 }
@@ -58,6 +49,7 @@ export function BottomActionSheet({
   actions,
 }: Props) {
   const ref = useRef<BottomSheetModal>(null)
+  const sheet = useSheetStyles()
   const styles = useStyles()
   const { colors } = useMD3Theme()
 
@@ -69,7 +61,7 @@ export function BottomActionSheet({
     }
   }, [visible])
 
-  const backgroundStyle = useMemo(() => styles.sheetBackground, [styles.sheetBackground])
+  const backgroundStyle = useMemo(() => sheet.sheetBackground, [sheet.sheetBackground])
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
   const rippleDestructive = useMemo(() => androidRipple(colors.error), [colors.error])
 
@@ -79,18 +71,18 @@ export function BottomActionSheet({
       enableDynamicSizing
       enablePanDownToClose
       backgroundStyle={backgroundStyle}
-      handleIndicatorStyle={styles.handleIndicator}
+      handleIndicatorStyle={sheet.handleIndicator}
       onDismiss={onDismiss}
     >
-      <BottomSheetView>
+      <BottomSheetView style={sheet.content}>
         {showHeader ? (
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <View style={sheet.header}>
+            <Text style={sheet.title}>{title}</Text>
+            {subtitle ? <Text style={sheet.subtitle}>{subtitle}</Text> : null}
           </View>
         ) : null}
 
-        <View style={styles.actionsCard}>
+        <View style={sheet.card}>
           {actions.map((action, index) => (
             <React.Fragment key={action.label}>
               <Pressable
@@ -99,7 +91,7 @@ export function BottomActionSheet({
                 accessibilityRole="button"
                 accessibilityLabel={action.label}
                 accessibilityState={{ selected: !!action.selected }}
-                style={styles.actionRow}
+                style={sheet.row}
               >
                 <View
                   style={
@@ -107,7 +99,7 @@ export function BottomActionSheet({
                       ? styles.iconCircleDestructive
                       : action.selected
                         ? styles.iconCircleSelected
-                        : styles.iconCircle
+                        : sheet.iconCircle
                   }
                 >
                   <MaterialCommunityIcons
@@ -119,10 +111,10 @@ export function BottomActionSheet({
                 <Text
                   style={
                     action.destructive
-                      ? styles.actionLabelDestructive
+                      ? styles.rowLabelDestructive
                       : action.selected
-                        ? styles.actionLabelSelected
-                        : styles.actionLabel
+                        ? styles.rowLabelSelected
+                        : sheet.rowLabel
                   }
                 >
                   {action.label}
@@ -143,12 +135,12 @@ export function BottomActionSheet({
                   )
                 )}
               </Pressable>
-              {index < actions.length - 1 && <View style={styles.separator} />}
+              {index < actions.length - 1 && <View style={sheet.separator} />}
             </React.Fragment>
           ))}
         </View>
 
-        <View style={styles.bottomPad} />
+        <View style={sheet.bottomPad} />
       </BottomSheetView>
     </BottomSheetModal>
   )
@@ -156,103 +148,37 @@ export function BottomActionSheet({
 
 const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
   const c = md3Theme.colors as ExtendedColors
-  const sheetBg = c.surfaceContainerLow ?? c.surface
+
+  const chip = {
+    width: UI_SIZE_44,
+    height: UI_SIZE_44,
+    borderRadius: UI_SIZE_9999,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  }
 
   const styles = StyleSheet.create({
-    sheetBackground: {
-      backgroundColor: sheetBg,
-      borderTopLeftRadius: UI_SIZE_28,
-      borderTopRightRadius: UI_SIZE_28,
-    },
-    handleIndicator: {
-      width: UI_SIZE_36,
-      height: UI_SIZE_4,
-      borderRadius: 9999,
-      alignSelf: 'center',
-      backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
-    },
-    header: {
-      paddingHorizontal: UI_SIZE_4,
-      paddingBottom: UI_SIZE_20,
-    },
-    title: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-    },
-    subtitle: {
-      marginTop: UI_SIZE_8,
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
-      lineHeight: UI_SIZE_20,
-      color: c.onSurfaceVariant,
-    },
-    actionsCard: {
-      borderRadius: UI_SIZE_20,
-      overflow: 'hidden',
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-    },
-    actionRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: UI_SIZE_16,
-      gap: UI_SIZE_16,
-      minHeight: 62,
-    },
-    iconCircle: {
-      width: 44,
-      height: 44,
-      borderRadius: 9999,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: hexWithAlpha(c.primaryContainer, 0.1),
-    },
     iconCircleDestructive: {
-      width: 44,
-      height: 44,
-      borderRadius: 9999,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: hexWithAlpha((c as any).errorContainer ?? '#4e0d19', 0.22),
+      ...chip,
+      backgroundColor: hexWithAlpha(c.errorContainer ?? c.error, SHEET_ICON_CHIP_ALPHA),
     },
     iconCircleSelected: {
-      width: 44,
-      height: 44,
-      borderRadius: 9999,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: hexWithAlpha(c.primary, 0.18),
+      ...chip,
+      backgroundColor: hexWithAlpha(c.primary, SHEET_ICON_CHIP_ALPHA),
     },
-    actionLabel: {
-      flex: 1,
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: c.onSurface,
-    },
-    actionLabelSelected: {
+    rowLabelSelected: {
       flex: 1,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
       color: c.primary,
     },
-    actionLabelDestructive: {
+    rowLabelDestructive: {
       flex: 1,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.error,
-    },
-    separator: {
-      height: StyleSheet.hairlineWidth,
-      marginLeft: 76,
-      marginRight: UI_SIZE_16,
-      backgroundColor: hexWithAlpha(c.outlineVariant, 0.14),
-    },
-    bottomPad: {
-      height: UI_SIZE_24,
     },
   })
   return styles

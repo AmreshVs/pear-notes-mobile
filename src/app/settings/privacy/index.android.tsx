@@ -1,13 +1,11 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
-import { FadeIn } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { PrivacyLockSection } from '@/components/settings/PrivacyLockSection'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -62,7 +60,7 @@ export default function AndroidPrivacyScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <View style={styles.heroContainer}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
               name="shield-check-outline"
@@ -72,7 +70,7 @@ export default function AndroidPrivacyScreen() {
           </View>
           <Text style={styles.heroTitle}>{t('settings.privacy.screenTitle')}</Text>
           <Text style={styles.heroDesc}>{t('settings.privacy.screenDesc')}</Text>
-        </MotionView>
+        </View>
 
         <PrivacyLockSection />
       </ScrollView>

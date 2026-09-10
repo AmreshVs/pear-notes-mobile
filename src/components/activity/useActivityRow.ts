@@ -2,7 +2,12 @@ import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { fetchActivityDiff, getActivityDiffs } from '@pear-notes/core/store/slices/activitySlice.js'
+import {
+  fetchActivityDiff,
+  getActivityDiffs,
+  getIsRecoveringWrite,
+  recoverDiscardedWrite,
+} from '@pear-notes/core/store/slices/activitySlice.js'
 import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
 import { useIsNoteUnlocked } from '@/lib/noteLock'
@@ -10,9 +15,11 @@ import {
   type ActivityEntry,
   buildActivityMessage,
   canExpandActivity,
+  canRecoverActivity,
   formatActivityTime,
   getActivityDeviceName,
   isActivityHidden,
+  isDiscardedActivity,
   isMobileActivityDevice,
 } from '@/utils/activityUtils'
 
@@ -32,6 +39,9 @@ export function useActivityRow(entry: ActivityEntry, showTarget: boolean) {
   const hidden = isActivityHidden(entry, unlocked)
   const canExpand = canExpandActivity(entry, hidden)
   const diff = diffs[entry.id] || null
+  const isDiscarded = isDiscardedActivity(entry)
+  const canRecover = canRecoverActivity(entry, hidden)
+  const isRecovering = useSelector(getIsRecoveringWrite(entry.id)) as boolean
 
   const deviceName = useMemo(
     () => getActivityDeviceName(entry.device, devices, t),
@@ -54,9 +64,18 @@ export function useActivityRow(entry: ActivityEntry, showTarget: boolean) {
     if (!diff) dispatch(fetchActivityDiff({ id: entry.id } as any))
   }, [diff, dispatch, entry.id])
 
+  const recover = useCallback(() => {
+    if (!canRecover || isRecovering) return
+    dispatch(recoverDiscardedWrite({ id: entry.id } as any))
+  }, [canRecover, isRecovering, dispatch, entry.id])
+
   return {
     hidden,
     canExpand,
+    isDiscarded,
+    canRecover,
+    isRecovering,
+    recover,
     diff,
     deviceName,
     isMobileDevice,

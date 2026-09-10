@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, Switch, View as RNView } from 'react-native'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useDispatch, useSelector } from 'react-redux'
 import Slider from '@react-native-community/slider'
 import { router, Stack } from 'expo-router'
@@ -22,7 +22,6 @@ import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontSize,
   FontWeight,
   Space,
@@ -103,14 +102,11 @@ export default function GeneralSettingsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <MotionView entering={FadeIn.duration(Durations.fade)}>
+        <RNView>
           <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.general.interface')}</Text>
-        </MotionView>
+        </RNView>
 
-        <MotionView
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
+        <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.stackedRow}>
               <Text style={styles.rowLabel}>{t('settings.general.appTheme')}</Text>
@@ -155,16 +151,13 @@ export default function GeneralSettingsScreen() {
           </RNView>
         </MotionView>
 
-        <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayMedium)}>
+        <RNView>
           <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
             {t('settings.general.notesList')}
           </Text>
-        </MotionView>
+        </RNView>
 
-        <MotionView
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
+        <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
           <RNView style={commonThemedStyles.card}>
             <Pressable
               onPress={handleSortNotesPress}
@@ -186,16 +179,13 @@ export default function GeneralSettingsScreen() {
           </RNView>
         </MotionView>
 
-        <MotionView entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}>
+        <RNView>
           <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
             {t('settings.general.editor')}
           </Text>
-        </MotionView>
+        </RNView>
 
-        <MotionView
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayLong)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
+        <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
           <RNView style={commonThemedStyles.card}>
             <Pressable
               onPress={handleFontFamilyPress}

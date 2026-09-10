@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { FadeIn, FadeInDown } from 'react-native-reanimated'
@@ -22,7 +22,12 @@ import {
   UI_SIZE_200,
 } from '@/constants/commonStyles'
 
-export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId: string }) {
+type Props = {
+  noteId: string
+  topInset?: number
+}
+
+export const LockedNoteView = memo(function LockedNoteView({ noteId, topInset = 0 }: Props) {
   const { t } = useTranslation()
   const styles = useStyles()
   const { colors } = useTheme()
@@ -32,6 +37,11 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   const onUnlock = useCallback(() => {
     handleUnlock(t('noteCard.unlockReason'))
   }, [handleUnlock, t])
+
+  const containerStyle = useMemo(
+    () => [styles.container, { paddingTop: topInset }],
+    [styles.container, topInset],
+  )
 
   const iconColor = unavailable ? colors.error : colors.primary
   const btnTextColor = colors.onPrimary
@@ -104,7 +114,7 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   )
 
   return (
-    <MotionView entering={FadeIn.duration(220)} style={styles.container}>
+    <MotionView entering={FadeIn.duration(220)} style={containerStyle}>
       <MotionView entering={FadeInDown.duration(260)} style={styles.card}>
         <GlassView intensity={50} style={styles.glass}>
           <RNView style={styles.inner}>{content}</RNView>

@@ -152,16 +152,6 @@ export const EditorToolbar = memo(function EditorToolbar({
           scrollEventThrottle={16}
         >
         <ToolbarBtn
-          icon="checkbox-marked-outline"
-          a11yLabel={t('formatting.checklist')}
-          active={isActive('checkboxList')}
-          onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
-          ripple={ripple}
-          c={c}
-          styles={styles}
-        />
-        <View style={styles.divider} />
-        <ToolbarBtn
           icon="format-header-1"
           a11yLabel={t('formatting.types.title')}
           active={isActive('h1')}
@@ -265,6 +255,15 @@ export const EditorToolbar = memo(function EditorToolbar({
           a11yLabel={t('formatting.types.numberedList')}
           active={isActive('orderedList')}
           onPress={() => run(() => editorRef.current?.toggleOrderedList())}
+          ripple={ripple}
+          c={c}
+          styles={styles}
+        />
+        <ToolbarBtn
+          icon="checkbox-marked-outline"
+          a11yLabel={t('formatting.checklist')}
+          active={isActive('checkboxList')}
+          onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
           ripple={ripple}
           c={c}
           styles={styles}

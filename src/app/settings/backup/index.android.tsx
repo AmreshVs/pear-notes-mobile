@@ -10,7 +10,6 @@ import {
   Text,
   View,
 } from 'react-native'
-import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -19,7 +18,6 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -117,7 +115,7 @@ export default function AndroidBackupScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <View style={styles.heroContainer}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
               name="cloud-upload-outline"
@@ -127,9 +125,9 @@ export default function AndroidBackupScreen() {
           </View>
           <Text style={styles.heroTitle}>{t('backup.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('backup.hero.description')}</Text>
-        </MotionView>
+        </View>
 
-        <MotionView entering={FadeInDown.duration(240).delay(60)} style={styles.buttonsContainer}>
+        <View style={styles.buttonsContainer}>
           <Pressable
             onPress={handleCreateBackup}
             disabled={isActive}
@@ -153,15 +151,15 @@ export default function AndroidBackupScreen() {
             <MaterialCommunityIcons name="restore" size={UI_ICON_SIZE_20} color={c.onSurface} />
             <Text style={styles.secondaryBtnText}>{t('backup.restoreData')}</Text>
           </Pressable>
-        </MotionView>
+        </View>
 
-        <MotionView entering={FadeInDown.duration(240).delay(120)} style={styles.recoveryCard}>
+        <View style={styles.recoveryCard}>
           <View style={styles.recoveryHeader}>
             <MaterialCommunityIcons name="lock-outline" size={UI_ICON_SIZE_20} color={c.primary} />
             <Text style={styles.recoveryTitle}>{t('backup.protectedTitle')}</Text>
           </View>
           <Text style={styles.recoveryDesc}>{t('backup.protectedDesc')}</Text>
-        </MotionView>
+        </View>
 
         <AndroidBackupStatsSection
           lastBackupDate={lastBackupDate}

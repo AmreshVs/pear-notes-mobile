@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import { Switch } from 'react-native-paper'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -190,7 +190,6 @@ export default function ActivityScreenAndroid() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <MotionView
-          entering={FadeInDown.duration(240).delay(40)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.card}
         >
@@ -224,17 +223,16 @@ export default function ActivityScreenAndroid() {
           </Pressable>
         </MotionView>
 
-        <MotionView entering={FadeIn.duration(220).delay(60)} style={styles.notice}>
+        <View style={styles.notice}>
           <MaterialCommunityIcons
             name="information-outline"
             size={UI_ICON_SIZE_20}
             color={c.primary}
           />
           <Text style={styles.noticeText}>{t('activity.settings.syncNotice')}</Text>
-        </MotionView>
+        </View>
 
         <MotionView
-          entering={FadeInDown.duration(240).delay(80)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.card}
         >

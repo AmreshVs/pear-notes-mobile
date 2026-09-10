@@ -32,8 +32,20 @@ export function ActivityRow({ entry, expanded, showTarget = true, onToggle }: Pr
   const { t } = useTranslation()
   const styles = useStyles()
   const { colors } = useTheme()
-  const { hidden, canExpand, diff, deviceName, isMobileDevice, message, timeLabel, requestDiff } =
-    useActivityRow(entry, showTarget)
+  const {
+    hidden,
+    canExpand,
+    isDiscarded,
+    canRecover,
+    isRecovering,
+    recover,
+    diff,
+    deviceName,
+    isMobileDevice,
+    message,
+    timeLabel,
+    requestDiff,
+  } = useActivityRow(entry, showTarget)
 
   const handlePress = useCallback(() => {
     if (!canExpand) return
@@ -89,6 +101,9 @@ export function ActivityRow({ entry, expanded, showTarget = true, onToggle }: Pr
 
       {expanded ? (
         <RNView style={styles.diffWrap}>
+          {isDiscarded ? (
+            <Text style={styles.explanation}>{t('activity.discarded.explanation')}</Text>
+          ) : null}
           {diff?.available ? (
             <ActivityDiff before={diff.before} after={diff.after} />
           ) : (
@@ -98,6 +113,29 @@ export function ActivityRow({ entry, expanded, showTarget = true, onToggle }: Pr
               </Text>
             </RNView>
           )}
+          {isDiscarded && canRecover ? (
+            <Pressable
+              onPress={recover}
+              disabled={isRecovering}
+              accessibilityRole="button"
+              accessibilityLabel={t('activity.discarded.recover')}
+              style={({ pressed }) => [styles.recoverBtn, pressed && commonStyles.pressed]}
+            >
+              <SymbolIcon
+                name="arrow.uturn.backward"
+                size={UI_ICON_SIZE_14}
+                color={colors.primary}
+              />
+              <Text style={styles.recoverLabel}>
+                {isRecovering
+                  ? t('activity.discarded.recovering')
+                  : t('activity.discarded.recover')}
+              </Text>
+            </Pressable>
+          ) : null}
+          {isDiscarded && !canRecover ? (
+            <Text style={styles.meta}>{t('activity.discarded.recovered')}</Text>
+          ) : null}
         </RNView>
       ) : null}
     </RNView>
@@ -166,6 +204,30 @@ const useStyles = createThemedStylesheet((theme) => {
     diffWrap: {
       paddingHorizontal: Space.md,
       paddingBottom: Space.md,
+    },
+    explanation: {
+      fontFamily: FontFamily.regular,
+      fontSize: FontSize.caption,
+      lineHeight: FontSize.caption * 1.4,
+      color: theme.colors.textMuted,
+      marginBottom: Space.sm,
+    },
+    recoverBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: Space.xs,
+      marginTop: Space.md,
+      paddingVertical: Space.sm,
+      paddingHorizontal: Space.md,
+      borderRadius: Radii.pill,
+      backgroundColor: theme.colors.controlBackground,
+    },
+    recoverLabel: {
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      fontSize: FontSize.caption,
+      color: theme.colors.primary,
     },
     placeholder: {
       marginTop: Space.md,

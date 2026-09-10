@@ -1,17 +1,14 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
-import { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -124,7 +121,7 @@ export default function DebugScreenAndroid() {
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
-        <MotionView entering={FadeInDown.duration(Durations.fade)} style={styles.actions}>
+        <View style={styles.actions}>
           <Pressable onPress={handleCopy} android_ripple={ripple} style={styles.primaryButton}>
             <MaterialCommunityIcons
               name={copied ? 'check' : 'content-copy'}
@@ -152,7 +149,7 @@ export default function DebugScreenAndroid() {
             <MaterialCommunityIcons name="refresh" size={UI_ICON_SIZE_18} color={colors.primary} />
             <Text style={styles.secondaryButtonText}>{t('debug.refresh')}</Text>
           </Pressable>
-        </MotionView>
+        </View>
 
         {error ? (
           <View style={styles.errorBox}>

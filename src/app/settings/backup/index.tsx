@@ -8,12 +8,10 @@ import {
   Text as RNText,
   View as RNView,
 } from 'react-native'
-import { FadeIn, FadeInDown } from 'react-native-reanimated'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { BackupStatsSection } from '@/components/backup/BackupStatsSection'
-import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -86,15 +84,15 @@ export default function BackupScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <RNView style={styles.heroContainer}>
           <RNView style={styles.heroIcon}>
             <SymbolIcon name="icloud.and.arrow.up" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
           <Text style={styles.heroTitle}>{t('backup.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('backup.hero.description')}</Text>
-        </MotionView>
+        </RNView>
 
-        <MotionView entering={FadeInDown.duration(240).delay(60)} style={styles.buttonsContainer}>
+        <RNView style={styles.buttonsContainer}>
           <Pressable
             onPress={handleCreateBackup}
             disabled={isActive}
@@ -130,18 +128,15 @@ export default function BackupScreen() {
             />
             <Text style={styles.secondaryBtnText}>{t('backup.restoreData')}</Text>
           </Pressable>
-        </MotionView>
+        </RNView>
 
-        <MotionView
-          entering={FadeInDown.duration(240).delay(120)}
-          style={[commonThemedStyles.card, styles.recoveryCard]}
-        >
+        <RNView style={[commonThemedStyles.card, styles.recoveryCard]}>
           <RNView style={styles.recoveryHeader}>
             <SymbolIcon name="lock" size={UI_ICON_SIZE_18} color={colors.primary} weight="medium" />
             <Text style={styles.recoveryTitle}>{t('backup.protectedTitle')}</Text>
           </RNView>
           <Text style={styles.recoveryDesc}>{t('backup.protectedDesc')}</Text>
-        </MotionView>
+        </RNView>
 
         <BackupStatsSection
           lastBackupDate={lastBackupDate}

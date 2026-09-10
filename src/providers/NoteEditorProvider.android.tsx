@@ -672,14 +672,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               />
             </Pressable>
 
-            <BottomActionSheet
-              visible={moreSheetVisible}
-              onDismiss={() => setMoreSheetVisible(false)}
-              title={titleRef.current || t('noteCard.untitled')}
-              subtitle={t('noteCard.actions.options')}
-              actions={moreSheetActions}
-            />
-
             <Pressable
               onPress={() => {
                 if (isEditing) {
@@ -813,6 +805,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           </Pressable>
         </Modal>
       </Animated.View>
+
+      <BottomActionSheet
+        visible={moreSheetVisible}
+        onDismiss={() => setMoreSheetVisible(false)}
+        title={titleRef.current || t('noteCard.untitled')}
+        subtitle={t('noteCard.actions.options')}
+        actions={moreSheetActions}
+      />
 
       <BottomActionSheet
         visible={imageSheetVisible}

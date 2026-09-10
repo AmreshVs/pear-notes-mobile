@@ -5,6 +5,7 @@ import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-she
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { SHEET_ICON_CHIP_ALPHA, useSheetStyles } from '@/components/android/useSheetStyles'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   FontFamily,
@@ -14,11 +15,9 @@ import {
   UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_12,
-  UI_SIZE_14,
-  UI_SIZE_20,
-  UI_SIZE_28,
-  UI_SIZE_36,
+  UI_SIZE_16,
   UI_SIZE_64,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -59,6 +58,7 @@ export function AttachmentSheet({
 }: Props) {
   const { t } = useTranslation()
   const ref = useRef<BottomSheetModal>(null)
+  const sheet = useSheetStyles()
   const styles = useStyles()
   const { colors } = useMD3Theme()
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
@@ -112,7 +112,7 @@ export function AttachmentSheet({
     [dismiss, onPickImage, onTakePhoto, onTakeVideo, onPickFile, onScanDocument, onRecordAudio, t],
   )
 
-  const backgroundStyle = useMemo(() => styles.sheetBackground, [styles.sheetBackground])
+  const backgroundStyle = useMemo(() => sheet.sheetBackground, [sheet.sheetBackground])
 
   return (
     <BottomSheetModal
@@ -120,11 +120,13 @@ export function AttachmentSheet({
       enableDynamicSizing
       enablePanDownToClose
       backgroundStyle={backgroundStyle}
-      handleIndicatorStyle={styles.handleIndicator}
+      handleIndicatorStyle={sheet.handleIndicator}
       onDismiss={handleSheetDismiss}
     >
-      <BottomSheetView style={styles.container}>
-        <Text style={styles.title}>{t('attachments.addAttachment')}</Text>
+      <BottomSheetView style={sheet.content}>
+        <View style={sheet.header}>
+          <Text style={sheet.title}>{t('attachments.addAttachment')}</Text>
+        </View>
 
         <View style={styles.grid}>
           {items.map((item) => (
@@ -148,7 +150,7 @@ export function AttachmentSheet({
           ))}
         </View>
 
-        <View style={styles.bottomPad} />
+        <View style={sheet.bottomPad} />
       </BottomSheetView>
     </BottomSheetModal>
   )
@@ -157,34 +159,7 @@ export function AttachmentSheet({
 const useStyles = createThemedStylesheetWithHooks(
   (theme, md3Theme) => {
     const c = md3Theme.colors as ExtendedColors
-    const sheetBg = c.surfaceContainerLow ?? c.surface
-
     const styles = StyleSheet.create({
-      sheetBackground: {
-        backgroundColor: sheetBg,
-        borderTopLeftRadius: UI_SIZE_28,
-        borderTopRightRadius: UI_SIZE_28,
-      },
-      handleIndicator: {
-        width: UI_SIZE_36,
-        height: UI_SIZE_4,
-        borderRadius: 9999,
-        alignSelf: 'center',
-        backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
-      },
-      container: {
-        paddingHorizontal: UI_SIZE_20,
-      },
-      title: {
-        fontSize: FontSize.title,
-        fontWeight: FontWeight.bold,
-        fontFamily: FontFamily.bold,
-        letterSpacing: -0.3,
-        paddingVertical: UI_SIZE_14,
-        paddingHorizontal: UI_SIZE_4,
-        paddingTop: 0,
-        color: c.onSurface,
-      },
       grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
@@ -199,21 +174,18 @@ const useStyles = createThemedStylesheetWithHooks(
       iconCircle: {
         width: UI_SIZE_64,
         height: UI_SIZE_64,
-        borderRadius: 9999,
+        borderRadius: UI_SIZE_9999,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
+        backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, SHEET_ICON_CHIP_ALPHA),
       },
       itemLabel: {
         fontSize: FontSize.caption,
         fontFamily: FontFamily.medium,
         fontWeight: FontWeight.medium,
         textAlign: 'center',
-        lineHeight: 16,
+        lineHeight: UI_SIZE_16,
         color: c.onSurfaceVariant,
-      },
-      bottomPad: {
-        height: UI_SIZE_28,
       },
     })
     return styles

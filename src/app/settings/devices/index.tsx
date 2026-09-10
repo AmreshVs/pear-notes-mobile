@@ -10,11 +10,12 @@ import {
   View as RNView,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import Reanimated, { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 
 import { INVITE_EXPIRY_MINUTES } from '@pear-notes/core/constant.js'
 import { formatInviteCountdown, isValidInvite } from '@pear-notes/core/utils.js'
 
+import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
 import { SyncScannerModal } from '@/components/sync/SyncScannerModal'
@@ -145,18 +146,15 @@ export default function SyncScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <Reanimated.View entering={FadeIn.duration(220)} style={styles.segRow}>
-          {(['link', 'devices'] as const).map(renderTabPill)}
-        </Reanimated.View>
+        <RNView style={styles.segRow}>{(['link', 'devices'] as const).map(renderTabPill)}</RNView>
 
         {tab === 'link' ? (
-          <Reanimated.View
+          <MotionView
             key="link-tab"
-            entering={FadeIn.duration(220)}
             layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             style={styles.pad}
           >
-            <Reanimated.View entering={FadeInDown.duration(240).delay(40)} style={styles.heroCard}>
+            <RNView style={styles.heroCard}>
               {!inviteCode || inviteExpired ? (
                 <>
                   <RNView style={styles.heroSection}>
@@ -245,10 +243,7 @@ export default function SyncScreen() {
                     </Text>
                   </RNView>
 
-                  <Reanimated.View
-                    entering={FadeIn.duration(220).delay(70)}
-                    style={styles.qrSection}
-                  >
+                  <RNView style={styles.qrSection}>
                     <RNView style={styles.qrImageWrap}>
                       <QRCode
                         getRef={handleQrRef}
@@ -277,7 +272,7 @@ export default function SyncScreen() {
                       />
                       <Text style={styles.shareQrBtnText}>{t('sync.invite.shareQrBtn')}</Text>
                     </Pressable>
-                  </Reanimated.View>
+                  </RNView>
 
                   <Text style={styles.codeLabel}>{t('sync.invite.codeLabel')}</Text>
 
@@ -332,10 +327,10 @@ export default function SyncScreen() {
                   </RNView>
                 </>
               )}
-            </Reanimated.View>
+            </RNView>
 
             {!isSynced && (
-              <Reanimated.View entering={FadeInDown.duration(220).delay(110)}>
+              <RNView>
                 <RNView style={styles.invitePasteHeader}>
                   <RNView style={styles.invitePasteLeft}>
                     <Text style={styles.plusIcon}>+</Text>
@@ -405,10 +400,10 @@ export default function SyncScreen() {
                 {!scannerVisible && !!scanError && (
                   <Text style={styles.pasteError}>{t(scanError)}</Text>
                 )}
-              </Reanimated.View>
+              </RNView>
             )}
 
-            <Reanimated.View entering={FadeIn.duration(220).delay(130)} style={styles.footNoteRow}>
+            <RNView style={styles.footNoteRow}>
               <SymbolIcon
                 name="crown"
                 size={UI_ICON_SIZE_13}
@@ -416,13 +411,10 @@ export default function SyncScreen() {
                 style={styles.iconTopFix}
               />
               <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
-            </Reanimated.View>
+            </RNView>
 
             {indexerOffline && (
-              <Reanimated.View
-                entering={FadeIn.duration(220).delay(135)}
-                style={styles.footNoteRow}
-              >
+              <RNView style={styles.footNoteRow}>
                 <SymbolIcon
                   name="exclamationmark.triangle"
                   size={UI_ICON_SIZE_13}
@@ -432,10 +424,10 @@ export default function SyncScreen() {
                 <Text style={styles.footNoteWarning}>
                   {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
                 </Text>
-              </Reanimated.View>
+              </RNView>
             )}
 
-            <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
+            <RNView style={styles.footNoteRow}>
               <SymbolIcon
                 name="checkmark.shield"
                 size={UI_ICON_SIZE_13}
@@ -443,57 +435,48 @@ export default function SyncScreen() {
                 style={styles.iconTopFix}
               />
               <Text style={styles.footNote}>{t('sync.footer')}</Text>
-            </Reanimated.View>
-          </Reanimated.View>
+            </RNView>
+          </MotionView>
         ) : (
-          <Reanimated.View
+          <MotionView
             key="devices-tab"
-            entering={FadeIn.duration(220)}
             layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             style={styles.pad}
           >
-            <Reanimated.View entering={FadeIn.duration(200)}>
+            <RNView>
               <Text style={commonThemedStyles.sectionCamelCase}>
                 {t('sync.devices.thisDevice')}
               </Text>
-            </Reanimated.View>
+            </RNView>
 
-            <Reanimated.View
-              entering={FadeInDown.duration(220).delay(30)}
+            <MotionView
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.deviceGroup}
             >
               {renderLocalDevices()}
-            </Reanimated.View>
+            </MotionView>
 
-            <Reanimated.View
-              entering={FadeIn.duration(200).delay(70)}
-              layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-            >
+            <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
               <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
                 {t('sync.devices.otherDevices')}
               </Text>
-            </Reanimated.View>
+            </MotionView>
 
             {otherDevices.length > 0 ? (
-              <Reanimated.View
-                entering={FadeInDown.duration(220).delay(100)}
+              <MotionView
                 layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
                 style={styles.deviceGroup}
               >
                 {renderOtherDevices()}
-              </Reanimated.View>
+              </MotionView>
             ) : (
-              <Reanimated.View
-                entering={FadeInDown.duration(220).delay(100)}
-                style={styles.emptyCard}
-              >
+              <RNView style={styles.emptyCard}>
                 <SymbolIcon name="iphone" size={UI_ICON_SIZE_22} color={colors.textMuted} />
                 <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
-              </Reanimated.View>
+              </RNView>
             )}
 
-            <Reanimated.View entering={FadeIn.duration(220).delay(130)} style={styles.footNoteRow}>
+            <RNView style={styles.footNoteRow}>
               <SymbolIcon
                 name="crown"
                 size={UI_ICON_SIZE_13}
@@ -501,13 +484,10 @@ export default function SyncScreen() {
                 style={styles.iconTopFix}
               />
               <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
-            </Reanimated.View>
+            </RNView>
 
             {indexerOffline && (
-              <Reanimated.View
-                entering={FadeIn.duration(220).delay(135)}
-                style={styles.footNoteRow}
-              >
+              <RNView style={styles.footNoteRow}>
                 <SymbolIcon
                   name="exclamationmark.triangle"
                   size={UI_ICON_SIZE_13}
@@ -517,10 +497,10 @@ export default function SyncScreen() {
                 <Text style={styles.footNoteWarning}>
                   {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
                 </Text>
-              </Reanimated.View>
+              </RNView>
             )}
 
-            <Reanimated.View entering={FadeIn.duration(220).delay(140)} style={styles.footNoteRow}>
+            <RNView style={styles.footNoteRow}>
               <SymbolIcon
                 name="checkmark.shield"
                 size={UI_ICON_SIZE_13}
@@ -528,8 +508,8 @@ export default function SyncScreen() {
                 style={styles.iconTopFix}
               />
               <Text style={styles.footNote}>{t('sync.footer')}</Text>
-            </Reanimated.View>
-          </Reanimated.View>
+            </RNView>
+          </MotionView>
         )}
       </ScrollView>
 

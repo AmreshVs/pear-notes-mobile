@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, Switch, View as RNView } from 'react-native'
-import { Easing, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
 
@@ -11,7 +11,6 @@ import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -137,10 +136,7 @@ export default function ActivityScreen() {
       showsVerticalScrollIndicator={false}
     >
       <RNView style={styles.screen}>
-        <MotionView
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
+        <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.toggleRow}>
               <RNView style={commonStyles.flex1}>
@@ -182,10 +178,7 @@ export default function ActivityScreen() {
           </RNView>
         </MotionView>
 
-        <MotionView
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
+        <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.noticeRow}>
               <SymbolIcon name="info.circle" size={UI_ICON_SIZE_15} color={colors.primary} />
@@ -194,10 +187,7 @@ export default function ActivityScreen() {
           </RNView>
         </MotionView>
 
-        <MotionView
-          entering={FadeInDown.duration(Durations.slide).delay(Durations.delayMedium)}
-          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        >
+        <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.clearRow}>
               <RNView style={commonStyles.flex1}>

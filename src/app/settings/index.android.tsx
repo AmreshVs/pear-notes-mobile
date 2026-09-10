@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -127,7 +127,6 @@ export default function AndroidSettingsScreen() {
           {sections.map(({ key, icon, label, onPress }, i) => (
             <MotionView
               key={key}
-              entering={FadeInDown.duration(240).delay(40 + i * 40)}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             >
               <Pressable onPress={onPress} android_ripple={ripple} style={styles.cardRow}>
@@ -147,12 +146,12 @@ export default function AndroidSettingsScreen() {
           ))}
         </View>
         <View style={commonStyles.flex1} />
-        <MotionView style={styles.footerContainer} entering={FadeIn.duration(220).delay(280)}>
+        <View style={styles.footerContainer}>
           <Text style={styles.footerText}>{t('settings.footer')}</Text>
           <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>
             <Text style={styles.versionText}>{getAppVersionLabel()}</Text>
           </Pressable>
-        </MotionView>
+        </View>
       </ScrollView>
     </View>
   )

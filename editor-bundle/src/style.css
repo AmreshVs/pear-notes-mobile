@@ -179,6 +179,7 @@ body {
 /* Match the height of the first text line so the box centres against it,
    whatever the reader's font size is. */
 .tiptap ul[data-type='taskList'] li > label {
+  position: relative;
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -186,6 +187,16 @@ body {
   margin: 0;
   user-select: none;
   -webkit-user-select: none;
+}
+.tiptap ul[data-type='taskList'] li > label::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: calc(var(--editor-font-size) * var(--editor-line-height) + 10px);
+  margin-left: -4px;
+  transform: translate(-50%, -50%);
 }
 .tiptap ul[data-type='taskList'] li > label input[type='checkbox'] {
   width: 18px;

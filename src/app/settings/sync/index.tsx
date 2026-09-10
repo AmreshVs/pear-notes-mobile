@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { ScrollView, StyleSheet, View as RNView } from 'react-native'
-import { FadeIn } from 'react-native-reanimated'
 
-import { MotionView } from '@/components/MotionView'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { SyncStatusSection } from '@/components/settings/SyncStatusSection'
@@ -10,7 +8,6 @@ import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   Radii,
@@ -32,13 +29,13 @@ export default function SyncScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <MotionView entering={FadeIn.duration(Durations.fade)} style={styles.hero}>
+        <RNView style={styles.hero}>
           <RNView style={styles.heroIcon}>
             <SymbolIcon name="arrow.clockwise" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
           <Text style={styles.heroTitle}>{t('settings.sync.screenTitle')}</Text>
           <Text style={styles.heroDesc}>{t('settings.sync.screenDesc')}</Text>
-        </MotionView>
+        </RNView>
 
         <SyncStatusSection />
         <BackgroundSyncSection />

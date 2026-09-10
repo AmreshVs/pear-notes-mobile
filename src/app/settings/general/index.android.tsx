@@ -2,7 +2,7 @@ import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Switch } from 'react-native-paper'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import Slider from '@react-native-community/slider'
@@ -212,12 +212,11 @@ export default function AndroidGeneralSettingsScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <MotionView entering={FadeIn.duration(220).delay(20)}>
+        <View>
           <Text style={md3Styles.settingsSectionCamelCase}>{t('settings.general.interface')}</Text>
-        </MotionView>
+        </View>
 
         <MotionView
-          entering={FadeInDown.duration(240).delay(40)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.card}
         >
@@ -228,7 +227,6 @@ export default function AndroidGeneralSettingsScreen() {
         </MotionView>
         {supportsDynamicColor && (
           <MotionView
-            entering={FadeInDown.duration(240).delay(60)}
             layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             style={styles.card}
           >
@@ -238,7 +236,6 @@ export default function AndroidGeneralSettingsScreen() {
         )}
 
         <MotionView
-          entering={FadeInDown.duration(240).delay(70)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.groupCard}
         >
@@ -251,14 +248,13 @@ export default function AndroidGeneralSettingsScreen() {
           </View>
         </MotionView>
 
-        <MotionView entering={FadeIn.duration(220).delay(80)}>
+        <View>
           <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
             {t('settings.general.notesList')}
           </Text>
-        </MotionView>
+        </View>
 
         <MotionView
-          entering={FadeInDown.duration(240).delay(100)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.groupCard}
         >
@@ -282,14 +278,13 @@ export default function AndroidGeneralSettingsScreen() {
           </Pressable>
         </MotionView>
 
-        <MotionView entering={FadeIn.duration(220).delay(120)}>
+        <View>
           <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
             {t('settings.general.editor')}
           </Text>
-        </MotionView>
+        </View>
 
         <MotionView
-          entering={FadeInDown.duration(240).delay(140)}
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
           style={styles.groupCard}
         >

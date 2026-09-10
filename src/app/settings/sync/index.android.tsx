@@ -1,13 +1,11 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
-import { FadeIn } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection.android'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
 import { SyncStatusSection } from '@/components/settings/SyncStatusSection'
@@ -63,13 +61,13 @@ export default function AndroidSyncScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <View style={styles.heroContainer}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons name="sync" size={UI_ICON_SIZE_48} color={c.primary} />
           </View>
           <Text style={styles.heroTitle}>{t('settings.sync.screenTitle')}</Text>
           <Text style={styles.heroDesc}>{t('settings.sync.screenDesc')}</Text>
-        </MotionView>
+        </View>
 
         <SyncStatusSection />
         <BackgroundSyncSection />

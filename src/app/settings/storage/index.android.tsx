@@ -1,7 +1,6 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
-import { FadeIn, FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -15,7 +14,6 @@ import { AndroidDownloadsSection } from '@/components/android/AndroidDownloadsSe
 import { AndroidUploadsSection } from '@/components/android/AndroidUploadsSection'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -116,7 +114,7 @@ export default function AndroidStorageScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <MotionView entering={FadeIn.duration(220)} style={styles.heroContainer}>
+        <View style={styles.heroContainer}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
               name="database-outline"
@@ -126,7 +124,7 @@ export default function AndroidStorageScreen() {
           </View>
           <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
-        </MotionView>
+        </View>
 
         <AndroidDownloadsSection
           downloads={activeDownloads}
@@ -142,7 +140,7 @@ export default function AndroidStorageScreen() {
           formatBytes={formatBytes}
         />
 
-        <MotionView entering={FadeInDown.duration(240).delay(60)}>
+        <View>
           <Text style={styles.sectionTitle}>{t('storage.usage')}</Text>
           <View style={styles.usageCard}>
             <View style={styles.usageRow}>
@@ -188,7 +186,7 @@ export default function AndroidStorageScreen() {
               </Pressable>
             </View>
           </View>
-        </MotionView>
+        </View>
 
         <AndroidBackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
 
@@ -199,7 +197,7 @@ export default function AndroidStorageScreen() {
           mediaKind={mediaKind}
         />
 
-        <MotionView entering={FadeInDown.duration(240).delay(180)}>
+        <View>
           <Text style={styles.sectionTitleDanger}>{t('storage.dangerZone')}</Text>
           <View style={styles.dangerCard}>
             <View style={styles.dangerTextContent}>
@@ -219,7 +217,7 @@ export default function AndroidStorageScreen() {
               <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
             </Pressable>
           </View>
-        </MotionView>
+        </View>
       </ScrollView>
 
       <BottomActionSheet

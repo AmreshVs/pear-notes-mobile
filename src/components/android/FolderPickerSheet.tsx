@@ -5,6 +5,7 @@ import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-she
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { useSheetStyles } from '@/components/android/useSheetStyles'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   FontFamily,
@@ -16,19 +17,15 @@ import {
   UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_12,
-  UI_SIZE_14,
   UI_SIZE_16,
-  UI_SIZE_20,
   UI_SIZE_24,
-  UI_SIZE_28,
-  UI_SIZE_32,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import {
   FALLBACK_FOLDER_MATERIAL,
   FOLDER_ICON_MATERIAL,
 } from '@/constants/folderIcons'
 import { androidRipple } from '@/lib/androidRipple'
-import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLow: string
@@ -53,6 +50,7 @@ type Props = {
 export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Props) {
   const { t } = useTranslation()
   const ref = useRef<BottomSheetModal>(null)
+  const sheet = useSheetStyles()
   const styles = useStyles()
   const { colors } = useMD3Theme()
 
@@ -64,7 +62,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
     }
   }, [visible])
 
-  const backgroundStyle = useMemo(() => styles.sheetBackground, [styles.sheetBackground])
+  const backgroundStyle = useMemo(() => sheet.sheetBackground, [sheet.sheetBackground])
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
   const rippleBorderless = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
 
@@ -73,7 +71,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
       ref={ref}
       enableDynamicSizing
       backgroundStyle={backgroundStyle}
-      handleIndicatorStyle={styles.handleIndicator}
+      handleIndicatorStyle={sheet.handleIndicator}
       onDismiss={onDismiss}
     >
       <BottomSheetView>
@@ -95,19 +93,19 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
 
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={sheet.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.listCard}>
+          <View style={sheet.card}>
             {folders.map((folder, index) => (
               <React.Fragment key={folder.id}>
                 <Pressable
                   onPress={() => onSelect(folder.id)}
                   android_ripple={ripple}
-                  style={styles.folderRow}
+                  style={sheet.row}
                 >
-                  <View style={styles.iconCircle}>
+                  <View style={sheet.iconCircle}>
                     <MaterialCommunityIcons
                       name={
                         (FOLDER_ICON_MATERIAL[folder.icon ?? ''] ??
@@ -117,7 +115,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
                       color={colors.primary}
                     />
                   </View>
-                  <Text style={styles.folderName} numberOfLines={1}>
+                  <Text style={sheet.rowLabel} numberOfLines={1}>
                     {folder.name}
                   </Text>
                   <MaterialCommunityIcons
@@ -126,7 +124,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
                     color={colors.onSurfaceVariant}
                   />
                 </Pressable>
-                {index < folders.length - 1 && <View style={styles.separator} />}
+                {index < folders.length - 1 && <View style={sheet.separator} />}
               </React.Fragment>
             ))}
             {folders.length === 0 && (
@@ -135,7 +133,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
               </View>
             )}
           </View>
-          <View style={styles.bottomPad} />
+          <View style={sheet.bottomPad} />
         </ScrollView>
       </BottomSheetView>
     </BottomSheetModal>
@@ -145,21 +143,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
 const useStyles = createThemedStylesheetWithHooks(
   (theme, { md3Theme, screenHeight }) => {
     const c = md3Theme.colors as ExtendedColors
-    const sheetBg = c.surfaceContainerLow ?? c.surface
-
     const styles = StyleSheet.create({
-      sheetBackground: {
-        backgroundColor: sheetBg,
-        borderTopLeftRadius: UI_SIZE_28,
-        borderTopRightRadius: UI_SIZE_28,
-      },
-      handleIndicator: {
-        width: 36,
-        height: 4,
-        borderRadius: 9999,
-        alignSelf: 'center',
-        backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
-      },
       headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -171,7 +155,7 @@ const useStyles = createThemedStylesheetWithHooks(
       backBtn: {
         overflow: 'hidden',
         padding: UI_SIZE_8,
-        borderRadius: 9999,
+        borderRadius: UI_SIZE_9999,
       },
       headerTitle: {
         fontSize: FontSize.title,
@@ -183,43 +167,6 @@ const useStyles = createThemedStylesheetWithHooks(
       scrollView: {
         maxHeight: screenHeight * 0.55,
       },
-      listContent: {
-        paddingHorizontal: UI_SIZE_20,
-      },
-      listCard: {
-        borderRadius: UI_SIZE_20,
-        overflow: 'hidden',
-        backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      },
-      folderRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: UI_SIZE_16,
-        paddingVertical: UI_SIZE_14,
-        gap: UI_SIZE_16,
-        minHeight: 62,
-      },
-      iconCircle: {
-        width: 44,
-        height: 44,
-        borderRadius: 9999,
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: hexWithAlpha(c.primaryContainer, 0.35),
-      },
-      folderName: {
-        flex: 1,
-        fontSize: FontSize.subtitle,
-        fontWeight: FontWeight.semibold,
-        fontFamily: FontFamily.semiBold,
-        color: c.onSurface,
-      },
-      separator: {
-        height: StyleSheet.hairlineWidth,
-        marginLeft: 76,
-        marginRight: UI_SIZE_16,
-        backgroundColor: hexWithAlpha(c.outlineVariant, 0.14),
-      },
       emptyRow: {
         paddingVertical: UI_SIZE_24,
         alignItems: 'center',
@@ -228,9 +175,6 @@ const useStyles = createThemedStylesheetWithHooks(
         fontSize: FontSize.body,
         fontFamily: FontFamily.regular,
         color: c.onSurfaceVariant,
-      },
-      bottomPad: {
-        height: UI_SIZE_32,
       },
     })
     return styles

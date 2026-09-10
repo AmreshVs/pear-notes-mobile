@@ -1055,6 +1055,7 @@
     "events": {
       "note.created": "created {{target}}",
       "note.edited": "edited {{target}}",
+      "note.edit_discarded": "made an edit to {{target}} that was superseded by another device",
       "note.renamed": "renamed {{from}} to {{to}}",
       "note.moved": "moved {{target}} to {{to}}",
       "note.trashed": "moved {{target}} to Recently Deleted",
@@ -1080,6 +1081,7 @@
     "eventsShort": {
       "note.created": "created this note",
       "note.edited": "edited this note",
+      "note.edit_discarded": "made an edit that was superseded by another device",
       "note.renamed": "renamed this note from {{from}} to {{to}}",
       "note.moved": "moved this note to {{to}}",
       "note.trashed": "moved this note to Recently Deleted",

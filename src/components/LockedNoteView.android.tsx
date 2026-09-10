@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import { FadeIn, FadeInDown } from 'react-native-reanimated'
@@ -28,7 +28,12 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   onPrimary?: string
 }
 
-export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId: string }) {
+type Props = {
+  noteId: string
+  topInset?: number
+}
+
+export const LockedNoteView = memo(function LockedNoteView({ noteId, topInset = 0 }: Props) {
   const { t } = useTranslation()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
@@ -39,6 +44,11 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
   const onUnlock = useCallback(() => {
     handleUnlock(t('noteCard.unlockReason'))
   }, [handleUnlock, t])
+
+  const containerStyle = useMemo(
+    () => [styles.container, { paddingTop: topInset }],
+    [styles.container, topInset],
+  )
 
   const iconColor = unavailable ? c.error : c.primary
   const iconName = unavailable
@@ -68,7 +78,7 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId }: { noteId:
         : t('noteCard.unlock')
 
   return (
-    <MotionView entering={FadeIn.duration(220)} style={styles.container}>
+    <MotionView entering={FadeIn.duration(220)} style={containerStyle}>
       <MotionView entering={FadeInDown.duration(260)} style={styles.card}>
         <View style={[styles.iconChip, unavailable && styles.iconChipWarn]}>
           <MaterialCommunityIcons name={iconName} size={UI_ICON_SIZE_40} color={iconColor} />

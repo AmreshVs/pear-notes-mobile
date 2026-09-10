@@ -21,6 +21,7 @@ export type ActivityEntry = {
   targetTitle: string
   locked: boolean
   hasDiff: boolean
+  recoverable?: boolean
   meta: Record<string, string | number>
 }
 
@@ -31,7 +32,7 @@ export type ActivityGroup = {
 }
 
 const DAY_MS = 86_400_000
-const DIFFABLE_EVENTS = new Set([ACTIVITY_EVENT.NOTE_EDITED])
+const DIFFABLE_EVENTS = new Set([ACTIVITY_EVENT.NOTE_EDITED, ACTIVITY_EVENT.NOTE_EDIT_DISCARDED])
 
 export function groupActivityByDay(entries: ActivityEntry[]): ActivityGroup[] {
   const groups: ActivityGroup[] = []
@@ -97,6 +98,14 @@ export function isActivityHidden(entry: ActivityEntry, unlocked: boolean): boole
 
 export function canExpandActivity(entry: ActivityEntry, hidden: boolean): boolean {
   return DIFFABLE_EVENTS.has(entry.event) && !!entry.hasDiff && !hidden
+}
+
+export function isDiscardedActivity(entry: ActivityEntry): boolean {
+  return entry.event === ACTIVITY_EVENT.NOTE_EDIT_DISCARDED
+}
+
+export function canRecoverActivity(entry: ActivityEntry, hidden: boolean): boolean {
+  return isDiscardedActivity(entry) && !!entry.recoverable && !hidden
 }
 
 export function buildActivityMessage(

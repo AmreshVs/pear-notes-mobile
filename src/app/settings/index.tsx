@@ -1,7 +1,7 @@
 import { Fragment, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSelector } from 'react-redux'
 import { router, Stack } from 'expo-router'
@@ -123,10 +123,7 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.scroll}>
-          <MotionView
-            entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-          >
+          <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
             <RNView style={commonThemedStyles.card}>
               {sections.map(({ key, icon, label, onPress }, i) => (
                 <Fragment key={key}>
@@ -160,15 +157,12 @@ export default function SettingsScreen() {
           </MotionView>
         </View>
         <View style={commonStyles.flex1} />
-        <MotionView
-          style={styles.footerContainer}
-          entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
-        >
+        <RNView style={styles.footerContainer}>
           <Text style={styles.footer}>{t('settings.footer')}</Text>
           <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>
             <Text style={styles.version}>{getAppVersionLabel()}</Text>
           </Pressable>
-        </MotionView>
+        </RNView>
       </ScrollView>
     </RNView>
   )

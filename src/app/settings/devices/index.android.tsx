@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native'
 import QRCode from 'react-native-qrcode-svg'
-import { Easing, FadeIn, FadeInDown, LinearTransition } from 'react-native-reanimated'
+import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -28,7 +28,6 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -207,7 +206,7 @@ export default function AndroidSyncScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <MotionView entering={FadeIn.duration(Durations.fade)} style={styles.segRow}>
+          <View style={styles.segRow}>
             <View style={styles.segTrack}>
               {(['link', 'devices'] as const).map((tValue) => {
                 const active = tab === tValue
@@ -225,20 +224,16 @@ export default function AndroidSyncScreen() {
                 )
               })}
             </View>
-          </MotionView>
+          </View>
 
           {tab === 'link' ? (
             <MotionView
               key="link-tab"
-              entering={FadeIn.duration(Durations.fade)}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.tabContent}
             >
               {!inviteCode || inviteExpired ? (
-                <MotionView
-                  entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-                  style={styles.heroCard}
-                >
+                <View style={styles.heroCard}>
                   <View style={styles.heroSection}>
                     <View style={styles.heroCircle}>
                       <MaterialCommunityIcons
@@ -282,12 +277,9 @@ export default function AndroidSyncScreen() {
                           : t('sync.hero.generateBtn')}
                     </Text>
                   </Pressable>
-                </MotionView>
+                </View>
               ) : (
-                <MotionView
-                  entering={FadeInDown.duration(Durations.slide).delay(Durations.delayShort)}
-                  style={styles.heroCard}
-                >
+                <View style={styles.heroCard}>
                   <View style={styles.heroSection}>
                     <View style={styles.heroCircle}>
                       <MaterialCommunityIcons
@@ -387,14 +379,11 @@ export default function AndroidSyncScreen() {
                     />
                     <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
                   </View>
-                </MotionView>
+                </View>
               )}
 
               {!isSynced && (
-                <MotionView
-                  entering={FadeInDown.duration(Durations.fade).delay(Durations.delayMedium)}
-                  style={styles.invitePasteSection}
-                >
+                <View style={styles.invitePasteSection}>
                   <View style={styles.invitePasteHeader}>
                     <View style={styles.invitePasteLeft}>
                       <Text style={styles.plusIcon}>+</Text>
@@ -466,13 +455,10 @@ export default function AndroidSyncScreen() {
                   {!scannerVisible && !!linkHint && (
                     <Text style={styles.pasteHint}>{linkHint}</Text>
                   )}
-                </MotionView>
+                </View>
               )}
 
-              <MotionView
-                entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
-                style={styles.footNoteRow}
-              >
+              <View style={styles.footNoteRow}>
                 <MaterialCommunityIcons
                   name="shield-check"
                   size={UI_ICON_SIZE_12}
@@ -480,12 +466,11 @@ export default function AndroidSyncScreen() {
                   style={styles.warningIconMargin}
                 />
                 <Text style={styles.footNoteText}>{t('sync.footer')}</Text>
-              </MotionView>
+              </View>
             </MotionView>
           ) : (
             <MotionView
               key="devices-tab"
-              entering={FadeIn.duration(Durations.fade)}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.tabContent}
             >
@@ -511,20 +496,17 @@ export default function AndroidSyncScreen() {
               {otherDevices.length > 0 ? (
                 <View style={styles.deviceList}>{otherDevices.map(renderOtherDeviceCard)}</View>
               ) : (
-                <MotionView entering={FadeInDown.duration(Durations.fade)} style={styles.emptyCard}>
+                <View style={styles.emptyCard}>
                   <MaterialCommunityIcons
                     name="cellphone-link"
                     size={UI_ICON_SIZE_30}
                     color={c.onSurfaceVariant}
                   />
                   <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
-                </MotionView>
+                </View>
               )}
 
-              <MotionView
-                entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
-                style={styles.footNoteRow}
-              >
+              <View style={styles.footNoteRow}>
                 <MaterialCommunityIcons
                   name="crown-outline"
                   size={UI_ICON_SIZE_12}
@@ -532,13 +514,10 @@ export default function AndroidSyncScreen() {
                   style={styles.warningIconMargin}
                 />
                 <Text style={styles.footNoteText}>{t('sync.devices.indexerExplain')}</Text>
-              </MotionView>
+              </View>
 
               {indexerOffline && (
-                <MotionView
-                  entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
-                  style={styles.footNoteRow}
-                >
+                <View style={styles.footNoteRow}>
                   <MaterialCommunityIcons
                     name="alert-outline"
                     size={UI_ICON_SIZE_12}
@@ -548,13 +527,10 @@ export default function AndroidSyncScreen() {
                   <Text style={styles.footNoteWarningText}>
                     {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
                   </Text>
-                </MotionView>
+                </View>
               )}
 
-              <MotionView
-                entering={FadeIn.duration(Durations.fade).delay(Durations.delayLong)}
-                style={styles.footNoteRow}
-              >
+              <View style={styles.footNoteRow}>
                 <MaterialCommunityIcons
                   name="shield-check"
                   size={UI_ICON_SIZE_12}
@@ -562,7 +538,7 @@ export default function AndroidSyncScreen() {
                   style={styles.warningIconMargin}
                 />
                 <Text style={styles.footNoteText}>{t('sync.footer')}</Text>
-              </MotionView>
+              </View>
             </MotionView>
           )}
         </ScrollView>
