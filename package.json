@@ -14,7 +14,7 @@
     "android:release": "cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew assembleRelease",
     "android:release-dev": "cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew assembleReleaseDev",
     "android:bundle": "cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew bundleRelease",
-    "ios": "RCT_METRO_PORT=8099 expo run:ios --port 8099",
+    "ios": "RCT_METRO_PORT=8099 expo run:ios --port 8099 --configuration Release",
     "ios:release": "expo run:ios --device --configuration Release",
     "schema": "node ./src/spec/schema.js",
     "bare-bundle": "node scripts/minify-core.js && npx bare-pack --host ios --host android --linked --out src/backend/backend.bundle.js .core-build/main.mjs",

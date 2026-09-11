@@ -521,7 +521,7 @@ export default function AndroidSyncScreen() {
                   <MaterialCommunityIcons
                     name="alert-outline"
                     size={UI_ICON_SIZE_12}
-                    color={c.error}
+                    color={c.onSurfaceVariant}
                     style={styles.warningIconMargin}
                   />
                   <Text style={styles.footNoteWarningText}>
@@ -929,7 +929,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       ...commonStyles.flex1,
       lineHeight: UI_SIZE_17,
       fontFamily: FontFamily.regular,
-      color: c.error,
+      color: c.onSurfaceVariant,
     },
     deviceList: {
       gap: UI_SIZE_12,

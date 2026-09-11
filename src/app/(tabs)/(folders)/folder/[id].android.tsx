@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  Keyboard,
   type LayoutChangeEvent,
   Modal,
   Pressable,
@@ -226,6 +227,8 @@ export default function AndroidFolderNotesScreen() {
         toggleSelect(noteId)
         return
       }
+      searchInputRef.current?.blur()
+      Keyboard.dismiss()
       dispatch(setSelectedNote(noteId as any))
       router.push(`/note/${noteId}`)
     },

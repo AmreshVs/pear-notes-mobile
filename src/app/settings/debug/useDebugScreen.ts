@@ -17,12 +17,18 @@ export function useDebugScreen() {
   const [refreshing, setRefreshing] = useState(false)
   const mountedRef = useRef(true)
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const heavyStorageRef = useRef<Record<string, unknown> | null>(null)
 
   const load = useCallback(async (heavy: boolean) => {
     try {
       const next = await captureDebugSnapshot({ heavy })
       if (!mountedRef.current) return
-      setSnapshot(next)
+      const storage = (next?.storage as Record<string, unknown> | undefined) || null
+      if (heavy && storage) heavyStorageRef.current = storage
+      const keepsHeavyStorage = !heavy && next && heavyStorageRef.current
+      setSnapshot(
+        keepsHeavyStorage ? { ...next, storage: { ...heavyStorageRef.current, ...storage } } : next,
+      )
       setError(next?.error ? String(next.error) : '')
     } catch (e) {
       if (!mountedRef.current) return

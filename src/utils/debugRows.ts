@@ -9,10 +9,23 @@ export type DebugTimeline = { blocks?: DebugBlock[] }
 
 export const EMPHASIS_KEYS = ['backlog', 'majority', 'indexerCount', 'writable']
 
+const TIMESTAMP_KEYS = [
+  'lastBaseErrorAt',
+  'lastSyncAt',
+  'lastWakeAt',
+  'backgroundServiceFailedAt',
+  'activityOldestAt',
+]
+
 export function shortenHex(value: string): string {
   if (value.length <= HEX_PREVIEW_LENGTH * 2) return value
   if (!HEX_PATTERN.test(value)) return value
   return `${value.slice(0, HEX_PREVIEW_LENGTH)}…`
+}
+
+function formatTimestamp(value: unknown): string {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return '—'
+  return new Date(value).toLocaleString()
 }
 
 export function formatDebugValue(value: unknown): string {
@@ -34,7 +47,7 @@ export function buildDebugRows(data: unknown): DebugRow[] {
     .map(([key, value]) => ({
       key,
       label: key,
-      value: formatDebugValue(value),
+      value: TIMESTAMP_KEYS.includes(key) ? formatTimestamp(value) : formatDebugValue(value),
       emphasis: EMPHASIS_KEYS.includes(key),
     }))
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
+import type { SearchBarCommands } from 'react-native-screens'
 import { useDispatch, useSelector } from 'react-redux'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
 
@@ -80,6 +81,7 @@ export default function FolderNotesScreen() {
   const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
+  const searchBarRef = useRef<SearchBarCommands>(null)
   const allFolders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
   const lockMethod = useSelector(getLockMethod)
@@ -138,6 +140,7 @@ export default function FolderNotesScreen() {
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
+      searchBarRef.current?.blur()
       dispatch(setSelectedNote(noteId as any))
       openNote(noteId)
     },
@@ -510,6 +513,7 @@ export default function FolderNotesScreen() {
       headerTransparent: true,
       headerBlurEffect: isDark ? ('dark' as const) : ('light' as const),
       headerSearchBarOptions: {
+        ref: searchBarRef,
         placeholder: t('folderView.searchPlaceholder'),
         hideWhenScrolling: false,
         placement: 'automatic' as const,

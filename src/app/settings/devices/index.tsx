@@ -418,7 +418,7 @@ export default function SyncScreen() {
                 <SymbolIcon
                   name="exclamationmark.triangle"
                   size={UI_ICON_SIZE_13}
-                  color={colors.error}
+                  color={colors.textMuted}
                   style={styles.iconTopFix}
                 />
                 <Text style={styles.footNoteWarning}>
@@ -491,7 +491,7 @@ export default function SyncScreen() {
                 <SymbolIcon
                   name="exclamationmark.triangle"
                   size={UI_ICON_SIZE_13}
-                  color={colors.error}
+                  color={colors.textMuted}
                   style={styles.iconTopFix}
                 />
                 <Text style={styles.footNoteWarning}>
@@ -861,7 +861,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       flex: 1,
       lineHeight: 20,
-      color: theme.colors.error,
+      color: theme.colors.textMuted,
     },
     deviceGroup: {
       borderRadius: Radii.card,
