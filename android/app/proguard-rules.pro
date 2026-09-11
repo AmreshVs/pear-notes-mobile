@@ -43,3 +43,14 @@
 -keepclassmembers class * {
     @android.webkit.JavascriptInterface <methods>;
 }
+
+# Keep line numbers so production stack traces stay usable, but rename the
+# source file attribute so it does not leak original file names. Retracing a
+# crash needs the mapping file - see -printmapping below.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
+
+# Without this the mapping is written only into the build intermediates and is
+# discarded with them, which makes every production Java/Kotlin stack trace
+# permanently unreadable.
+-printmapping build/outputs/mapping/release/mapping.txt

@@ -12,6 +12,7 @@ const entries = [
   'bootTimeline.js',
   'constant.js',
   'index.js',
+  'log.js',
   'rpc.js',
   'utils.js',
   'types',

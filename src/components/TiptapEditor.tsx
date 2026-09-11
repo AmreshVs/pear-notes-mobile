@@ -20,6 +20,7 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 import { getCollaboratorIdentity } from '@pear-notes/core/utils.js'
 
 import { FontSize, FontWeight, UI_SIZE_8, UI_SIZE_12, UI_SIZE_20 } from '@/constants/commonStyles'
+import { EDITOR_ORIGIN_WHITELIST, shouldStartEditorLoad } from '@/lib/webViewNavigation'
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
@@ -670,7 +671,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             showsVerticalScrollIndicator={false}
             showsHorizontalScrollIndicator={false}
             overScrollMode="never"
-            originWhitelist={['*']}
+            originWhitelist={EDITOR_ORIGIN_WHITELIST}
+            onShouldStartLoadWithRequest={shouldStartEditorLoad}
             javaScriptEnabled
             domStorageEnabled
             contentInsetAdjustmentBehavior="never"

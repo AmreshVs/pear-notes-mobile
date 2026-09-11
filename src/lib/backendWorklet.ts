@@ -12,7 +12,7 @@ const BACKEND_READY_TIMEOUT_MS = 60_000
 export const WORKLET_STORAGE_PATH = new Directory(Paths.document).uri.replace(/^file:\/+/, '/')
 
 export async function startBackendWorkletForBackgroundTask(): Promise<any | null> {
-  console.log(WORKLET_BOOT_LOG_PREFIX + ' storage=' + WORKLET_STORAGE_PATH)
+  console.log(WORKLET_BOOT_LOG_PREFIX + ' starting')
 
   const encryption = await getDbEncryptionKey()
   console.log(WORKLET_BOOT_LOG_PREFIX + ' db encryption key present=' + !!encryption)

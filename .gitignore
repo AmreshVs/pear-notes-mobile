@@ -61,3 +61,6 @@ credentials/
 
 # release credentials
 .release.ios.env
+
+# Staged minified copy of @pear-notes/core, produced by scripts/minify-core.js
+.core-build/

@@ -178,6 +178,100 @@ function checkBackendBundle() {
   pass('backend', `${(size / 1024 / 1024).toFixed(1)} MB, tracked`)
 }
 
+const BUNDLE_FORBIDDEN_STRINGS = [
+  'Attempting to pair:',
+  'autobase key',
+  'drive key',
+  'redux store exposed',
+]
+
+function checkBundleHygiene() {
+  const relative = 'src/backend/backend.bundle.js'
+  const bundle = path.join(ROOT, relative)
+  if (!fs.existsSync(bundle)) return
+
+  const contents = fs.readFileSync(bundle, 'utf8')
+
+  if (contents.includes('</')) {
+    return fail(
+      'bundle-hygiene',
+      `${relative} contains a bare "</" sequence, which kills the worklet at launch - rebuild with npm run bare-bundle`,
+    )
+  }
+
+  const leaked = BUNDLE_FORBIDDEN_STRINGS.filter((needle) => contents.includes(needle))
+  if (leaked.length > 0) {
+    return fail(
+      'bundle-hygiene',
+      `${relative} still contains sensitive log strings: ${leaked.join(', ')} - rebuild after removing them from core`,
+    )
+  }
+
+  const consoleLogs = (contents.match(/console\.log\(/g) ?? []).length
+  if (consoleLogs > 5) {
+    return fail(
+      'bundle-hygiene',
+      `${relative} has ${consoleLogs} console.log calls - scripts/minify-core.js should have stripped core's; rebuild with npm run bare-bundle`,
+    )
+  }
+
+  pass('bundle-hygiene', `no "</", no sensitive strings, ${consoleLogs} console.log left`)
+}
+
+const SENSITIVE_LOG_PATTERNS = [
+  {
+    file: 'node_modules/@pear-notes/core/backend/NoteBase.js',
+    pattern: /console\.log\(\s*'\[subscribePairUser\] Attempting to pair:'/,
+    detail: 'logs the full pairing invite',
+  },
+  {
+    file: 'node_modules/@pear-notes/core/store/sagas/syncSaga.js',
+    pattern: /(console|log)\.(log|error|debug)\([^)]*Received data:'\s*,\s*data\s*\)/,
+    detail: 'logs the whole pairing payload, which carries encryptionKey',
+  },
+  {
+    file: 'node_modules/@pear-notes/core/backend/NoteBase.js',
+    pattern: /console\.log\(\s*'(autobase|local|drive|blob) key'/,
+    detail: 'logs raw key material',
+  },
+]
+
+function checkNoSensitiveLogs() {
+  const offenders = []
+
+  for (const { file, pattern, detail } of SENSITIVE_LOG_PATTERNS) {
+    const full = path.join(ROOT, file)
+    if (!fs.existsSync(full)) continue
+    if (pattern.test(fs.readFileSync(full, 'utf8'))) {
+      offenders.push(`${path.basename(file)} ${detail}`)
+    }
+  }
+
+  if (offenders.length > 0) {
+    return fail('sensitive-logs', offenders.join('; '))
+  }
+  pass('sensitive-logs', 'no known key/invite/payload logs in the linked core')
+}
+
+function checkNoPlaintextKeys() {
+  const keysDir = path.resolve(ROOT, '..', 'Keys')
+  if (!fs.existsSync(keysDir)) {
+    return pass('plaintext-keys', 'no Keys/ directory at the repo root')
+  }
+
+  const risky = fs
+    .readdirSync(keysDir)
+    .filter((name) => name.endsWith('.key') || (name.endsWith('.json') && name.includes('pear')))
+
+  if (risky.length > 0) {
+    return fail(
+      'plaintext-keys',
+      `Keys/ holds what looks like live credential material (${risky.join(', ')}) - rotate and move it out of the tree`,
+    )
+  }
+  pass('plaintext-keys', 'Keys/ holds no private key or service-account files')
+}
+
 function checkEditorBundle() {
   const bundle = path.join(ROOT, 'src', 'utils', 'tiptap-editor-bundle.ts')
   if (!fs.existsSync(bundle))
@@ -196,7 +290,16 @@ function checkReleaseSigning() {
       'release build type is signed with the DEBUG keystore - Play will reject this',
     )
   }
-  pass('signing', 'release build type does not use the debug keystore')
+
+  const releaseDevSection = releaseBlock.split(/releaseDev\s*\{/)[1] ?? ''
+  if (releaseDevSection && !/applicationIdSuffix/.test(releaseDevSection)) {
+    return fail(
+      'signing',
+      'releaseDev inherits from release but does not set applicationIdSuffix - a debug-signed build could ship under the production id',
+    )
+  }
+
+  pass('signing', 'release uses a real keystore; releaseDev stays on a suffixed id')
 }
 
 function checkVersionConsistency() {
@@ -556,6 +659,9 @@ checkGitClean()
 checkLockfiles()
 checkCorePinned()
 checkBackendBundle()
+checkBundleHygiene()
+checkNoSensitiveLogs()
+checkNoPlaintextKeys()
 checkEditorBundle()
 checkReleaseSigning()
 checkVersionConsistency()
