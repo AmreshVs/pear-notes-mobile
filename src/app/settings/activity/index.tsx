@@ -307,8 +307,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowTitle: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.medium,
-      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
     rowDesc: {

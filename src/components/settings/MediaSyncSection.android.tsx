@@ -87,7 +87,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
     },
     rowTitle: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.medium,
+      fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
     rowDesc: {

@@ -94,7 +94,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowTitle: {
       fontSize: FontSize.body,
-      fontWeight: FontWeight.medium,
+      fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
     rowDesc: {

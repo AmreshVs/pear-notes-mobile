@@ -181,24 +181,25 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
             onKeyPress={handleEscapeKey}
           />
         ) : (
-          <Pressable onPress={!isOther ? startEditing : undefined}>
-            <Text numberOfLines={1} style={styles.deviceName} ellipsizeMode="tail">
-              {getDeviceDisplayName(device) || t('sync.platforms.unknown')}
-            </Text>
-          </Pressable>
+          <RNView style={styles.nameRow}>
+            <Pressable onPress={!isOther ? startEditing : undefined} style={styles.nameTouch}>
+              <Text numberOfLines={1} style={styles.deviceName} ellipsizeMode="tail">
+                {getDeviceDisplayName(device) || t('sync.platforms.unknown')}
+              </Text>
+            </Pressable>
+            {device.isIndexer && (
+              <RNView style={styles.leaderBadge}>
+                <SymbolIcon name="crown" size={UI_ICON_SIZE_16} color={colors.primary} />
+                <Text style={styles.leaderBadgeText} numberOfLines={1}>
+                  {t('sync.devices.indexerBadge')}
+                </Text>
+              </RNView>
+            )}
+          </RNView>
         )}
         <Text style={styles.deviceSub} numberOfLines={1}>
           {platformNames[device.platform || ''] || device.platform || '—'}
-          {!isOther && !isEditing && (
-            <Text style={styles.tapToRename}>{t('sync.platforms.renameHint')}</Text>
-          )}
         </Text>
-        {device.isIndexer && (
-          <RNView style={styles.leaderBadge}>
-            <SymbolIcon name="crown" size={UI_ICON_SIZE_16} color={colors.primary} />
-            <Text style={styles.leaderBadgeText}>{t('sync.devices.indexerBadge')}</Text>
-          </RNView>
-        )}
         {!!errorKey && <Text style={styles.leaderError}>{t(errorKey)}</Text>}
       </RNView>
 
@@ -307,8 +308,15 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       letterSpacing: -0.3,
-      marginBottom: 3,
       color: theme.colors.text,
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.sm,
+    },
+    nameTouch: {
+      flexShrink: 1,
     },
     deviceSub: {
       fontSize: FontSize.caption,
@@ -355,8 +363,7 @@ const useStyles = createThemedStylesheet((theme) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: Space.xs,
-      alignSelf: 'flex-start',
-      marginTop: 6,
+      flexShrink: 0,
       paddingHorizontal: Space.sm,
       paddingVertical: 2,
       borderRadius: Radii.sm,

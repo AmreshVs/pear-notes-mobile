@@ -211,7 +211,7 @@ const createStyles = (theme: Theme) =>
     },
     name: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.semibold,
       color: theme.colors.text,
       flex: 1,
       paddingRight: UI_SIZE_4,

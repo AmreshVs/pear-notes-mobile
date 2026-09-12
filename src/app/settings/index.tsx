@@ -186,7 +186,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     },
     rowLabel: {
       fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
+      fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
     footer: {

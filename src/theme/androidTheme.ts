@@ -69,7 +69,7 @@ const lightOverrides = {
   secondaryContainer: '#E8E8E8',
   onSecondaryContainer: '#1A1A1A',
   onSurface: '#111111',
-  onSurfaceVariant: '#555555',
+  onSurfaceVariant: '#777777',
   onBackground: '#111111',
   outline: '#D0D0D0',
   outlineVariant: 'rgba(0, 0, 0, 0.10)',

@@ -417,8 +417,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     rowTitle: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.medium,
-      fontWeight: FontWeight.medium,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
       color: c.onSurface,
     },
     rowDesc: {

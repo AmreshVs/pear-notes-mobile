@@ -239,26 +239,27 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
               onKeyPress={handleKeyPress}
             />
           ) : (
-            <Text style={styles.deviceName} numberOfLines={1} ellipsizeMode="tail">
-              {displayName}
-            </Text>
+            <View style={styles.nameRow}>
+              <Text style={styles.deviceName} numberOfLines={1} ellipsizeMode="tail">
+                {displayName}
+              </Text>
+              {device.isIndexer && (
+                <View style={styles.leaderBadge}>
+                  <MaterialCommunityIcons
+                    name="crown-outline"
+                    size={UI_ICON_SIZE_16}
+                    color={c.onSurface}
+                  />
+                  <Text style={styles.leaderBadgeText} numberOfLines={1}>
+                    {t('sync.devices.indexerBadge')}
+                  </Text>
+                </View>
+              )}
+            </View>
           )}
           <Text style={styles.devicePlatform} numberOfLines={1}>
             {platformLabel}
-            {isLocal && !isEditing && (
-              <Text style={styles.deviceTapToRename}>{t('sync.platforms.renameHint')}</Text>
-            )}
           </Text>
-          {device.isIndexer && (
-            <View style={styles.leaderBadge}>
-              <MaterialCommunityIcons
-                name="crown-outline"
-                size={UI_ICON_SIZE_16}
-                color={c.onSurface}
-              />
-              <Text style={styles.leaderBadgeText}>{t('sync.devices.indexerBadge')}</Text>
-            </View>
-          )}
           {!!errorKey && <Text style={styles.leaderError}>{t(errorKey)}</Text>}
         </View>
 
@@ -340,11 +341,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       minWidth: 0,
     },
     deviceName: {
+      flexShrink: 1,
       fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      marginBottom: 3,
       color: c.onSurface,
+    },
+    nameRow: {
+      ...commonStyles.row,
+      gap: UI_SIZE_6,
     },
     devicePlatform: {
       fontSize: FontSize.caption,
@@ -388,8 +393,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       flexDirection: 'row',
       alignItems: 'center',
       gap: UI_SIZE_4,
-      alignSelf: 'flex-start',
-      marginTop: UI_SIZE_6,
+      flexShrink: 0,
       paddingHorizontal: UI_SIZE_10,
       paddingVertical: UI_SIZE_2,
       borderRadius: UI_SIZE_9999,

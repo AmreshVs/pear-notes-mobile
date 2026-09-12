@@ -423,8 +423,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     cardTitle: {
       fontSize: FontSize.body,
-      fontWeight: FontWeight.medium,
-      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
       color: c.onSurface,
       marginBottom: UI_SIZE_8,
     },
@@ -459,8 +459,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     rowTitle: {
       fontSize: FontSize.body,
-      fontWeight: FontWeight.medium,
-      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
       color: c.onSurface,
       marginBottom: UI_SIZE_4,
     },

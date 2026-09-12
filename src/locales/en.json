@@ -166,8 +166,7 @@
       "Linux": "Linux",
       "Android": "Android",
       "iOS": "iOS",
-      "unknown": "Unknown device",
-      "renameHint": " · Tap to rename"
+      "unknown": "Unknown device"
     },
     "hero": {
       "title": "Link your devices",
