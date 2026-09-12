@@ -291,6 +291,7 @@ const CARET_RECHECK_DELAY_MS = 120
 const CARET_RESCROLL_DELAY_MS = 250
 const PROGRAMMATIC_SCROLL_GRACE_MS = 150
 let programmaticScrollUntil = 0
+let caretAutoscrollSuspended = false
 let lastSelectionFrom = null
 
 let caretBottomInset = CARET_BOTTOM_OBSTRUCTION
@@ -319,6 +320,8 @@ function getCaretRect() {
 }
 
 function scrollDocumentToTop() {
+  programmaticScrollUntil = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS
+  caretAutoscrollSuspended = false
   window.scrollTo(0, 0)
   if (document.scrollingElement) document.scrollingElement.scrollTop = 0
   document.body.scrollTop = 0
@@ -339,29 +342,43 @@ function scrollEditorBy(delta) {
 
 function adjustCaretScroll() {
   if (!CARET_AUTOSCROLL_ENABLED) return
+  if (caretAutoscrollSuspended) return
   if (!editor || !editor.isFocused) return
   const rect = getCaretRect()
   if (!rect) return
   // rect is layout-viewport relative, so compare against window.innerHeight. caretBottomInset
   // already covers the keyboard plus the floating toolbar above it.
   const overflow = rect.bottom - (window.innerHeight - caretBottomInset)
-  if (overflow > 0) scrollEditorBy(overflow + CARET_SCROLL_MARGIN)
+  if (overflow <= 0) return
+  // A real correction only ever nudges the caret out from behind the keyboard, so it is
+  // bounded by the obstructed height. Anything larger means the caret is off-screen entirely
+  // because the view was scrolled away from it, and scrolling back would be a jump, not a nudge.
+  if (overflow > window.innerHeight) return
+  scrollEditorBy(overflow + CARET_SCROLL_MARGIN)
 }
 
 let caretScrollFrame = null
 let caretScrollTimer = null
 
 // A correction is only ever queued in response to a real change — the document, the caret
-// position, or the keyboard. Plain scrolling triggers nothing. The one hazard left is a
-// correction queued just before the user starts dragging, so a scroll cancels anything
-// pending. It never blocks a *fresh* trigger, which is what keeps the keyboard-open and
-// Enter-at-the-bottom cases working.
+// position, or the keyboard. Plain scrolling triggers nothing, and a scroll also cancels
+// anything already pending.
+//
+// Scrolling away from the caret additionally *suspends* corrections. Without that, any later
+// trigger that is not a real edit — a visualViewport resize, the host re-sending the keyboard
+// inset — would find the caret far below the viewport and yank the reader back down. Typing,
+// moving the caret, or focusing the editor resumes it, which is what keeps the keyboard-open
+// and Enter-at-the-bottom cases working.
 function cancelPendingCaretScroll() {
   if (caretScrollFrame) {
     cancelAnimationFrame(caretScrollFrame)
     caretScrollFrame = null
   }
   clearTimeout(caretScrollTimer)
+}
+
+function resumeCaretAutoscroll() {
+  caretAutoscrollSuspended = false
 }
 
 function keepCaretVisible() {
@@ -379,6 +396,7 @@ window.addEventListener(
   'scroll',
   () => {
     if (Date.now() < programmaticScrollUntil) return
+    caretAutoscrollSuspended = true
     cancelPendingCaretScroll()
   },
   { passive: true, capture: true },
@@ -1186,6 +1204,7 @@ function createEditorSession(collaborator, html) {
     onUpdate: ({ editor }) => {
       scheduleContentChange(editor.getHTML(), editor.getText())
       broadcastStyleState(editor)
+      resumeCaretAutoscroll()
       keepCaretVisible()
     },
     onSelectionUpdate: ({ editor }) => {
@@ -1195,10 +1214,14 @@ function createEditorSession(collaborator, html) {
       const from = editor.state.selection.from
       if (from === lastSelectionFrom) return
       lastSelectionFrom = from
+      resumeCaretAutoscroll()
       keepCaretVisible()
     },
     onTransaction: ({ editor }) => broadcastStyleState(editor),
-    onFocus: () => sendToRN({ type: 'focus' }),
+    onFocus: () => {
+      resumeCaretAutoscroll()
+      sendToRN({ type: 'focus' })
+    },
     onBlur: ({ editor }) => {
       flushContentChange(editor.getHTML(), editor.getText())
       sendToRN({ type: 'blur' })
