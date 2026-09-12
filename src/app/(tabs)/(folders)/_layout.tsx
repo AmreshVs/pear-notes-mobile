@@ -5,6 +5,7 @@ import { Stack } from 'expo-router'
 
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import { FontWeight } from '@/constants/commonStyles'
+import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 
 export default function FoldersLayout() {
   const { t } = useTranslation()
@@ -22,7 +23,7 @@ export default function FoldersLayout() {
         headerLargeTitleStyle: styles.headerLargeTitle,
         headerTintColor: colors.primary,
         headerLargeTitle: true,
-        headerBlurEffect: 'none',
+        scrollEdgeEffects: HIDDEN_SCROLL_EDGE_EFFECTS,
         headerBackButtonDisplayMode: 'minimal',
       }}
     >

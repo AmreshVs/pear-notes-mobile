@@ -104,7 +104,7 @@ export default function DebugScreenAndroid() {
   return (
     <View style={styles.screen}>
       <Stack.Screen options={{ headerShown: false }} />
-      <StatusBar barStyle="default" backgroundColor={colors.surface} />
+      <StatusBar barStyle="default" backgroundColor={colors.background} />
       <View style={styles.header}>
         <Pressable onPress={handleBack} android_ripple={ripple} style={styles.backButton}>
           <MaterialCommunityIcons
@@ -198,7 +198,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
   const styles = StyleSheet.create({
     screen: {
       flex: 1,
-      backgroundColor: c.surface,
+      backgroundColor: c.background,
     },
     header: {
       flexDirection: 'row',

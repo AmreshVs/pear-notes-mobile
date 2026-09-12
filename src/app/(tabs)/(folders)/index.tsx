@@ -22,6 +22,7 @@ import { validateFolderName } from '@pear-notes/core/utils.js'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderRow } from '@/components/FolderRow'
+import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
@@ -345,6 +346,8 @@ export default function FoldersScreen() {
           </View>
         )}
       </ScrollView>
+
+      <ScreenEdgeFades />
 
       <FolderIconBottomSheet
         visible={!!iconPickerFolder}

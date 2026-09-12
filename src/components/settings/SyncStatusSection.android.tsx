@@ -16,6 +16,8 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
+import { useMD3CommonStyles } from '../android'
+
 import { useSyncStatus } from './useSyncStatus'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -41,6 +43,8 @@ export function SyncStatusSection() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
+  const md3Styles = useMD3CommonStyles()
+
   const {
     hasLinkedDevices,
     mode,
@@ -80,7 +84,7 @@ export function SyncStatusSection() {
   return (
     <>
       <RNView>
-        <Text style={styles.sectionCap}>{t('settings.syncStatus.title')}</Text>
+        <Text style={md3Styles.settingsSectionCamelCase}>{t('settings.syncStatus.title')}</Text>
       </RNView>
 
       <RNView>
@@ -159,14 +163,6 @@ export function SyncStatusSection() {
 const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
-    sectionCap: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
-      color: c.onSurfaceVariant,
-      paddingHorizontal: Space.xs,
-      marginBottom: Space.sm,
-    },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,

@@ -132,6 +132,7 @@ export default function NoteLockPasswordScreen() {
         keyboardVerticalOffset={insets.top + UI_SIZE_54}
       >
         <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

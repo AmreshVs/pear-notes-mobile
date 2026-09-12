@@ -43,6 +43,7 @@ import { FolderEmptyState } from '@/components/FolderEmptyState'
 import { LockNowButton } from '@/components/LockNowButton'
 import { NoteCard } from '@/components/NoteCard'
 import { NoteSelectionToolbar } from '@/components/NoteSelectionToolbar'
+import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
   commonStyles,
@@ -58,6 +59,7 @@ import {
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
+import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
@@ -76,7 +78,7 @@ export default function FolderNotesScreen() {
   const { height } = useWindowDimensions()
   const { id } = useLocalSearchParams<{ id: string }>()
   const { t } = useTranslation()
-  const { colors, isDark } = useTheme()
+  const { colors } = useTheme()
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const dispatch = useDispatch()
@@ -511,7 +513,7 @@ export default function FolderNotesScreen() {
       headerTitle: isTitleCollapsed ? headerTitle : '',
       headerLargeTitle: false,
       headerTransparent: true,
-      headerBlurEffect: isDark ? ('dark' as const) : ('light' as const),
+      scrollEdgeEffects: HIDDEN_SCROLL_EDGE_EFFECTS,
       headerSearchBarOptions: {
         ref: searchBarRef,
         placeholder: t('folderView.searchPlaceholder'),
@@ -524,15 +526,7 @@ export default function FolderNotesScreen() {
         onChangeText: handleSearchChange,
       },
     }),
-    [
-      isDark,
-      t,
-      colors.text,
-      colors.textSecondary,
-      handleSearchChange,
-      isTitleCollapsed,
-      headerTitle,
-    ],
+    [t, colors.text, colors.textSecondary, handleSearchChange, isTitleCollapsed, headerTitle],
   )
 
   return (
@@ -603,6 +597,7 @@ export default function FolderNotesScreen() {
         maxToRenderPerBatch={LIST_BATCH_RENDER_COUNT}
         windowSize={LIST_WINDOW_SIZE}
       />
+      <ScreenEdgeFades />
     </View>
   )
 }

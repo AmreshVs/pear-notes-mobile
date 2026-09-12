@@ -21,7 +21,6 @@ import {
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_22,
-  UI_SIZE_24,
   UI_SIZE_28,
   UI_SIZE_40,
   UI_SIZE_48,
@@ -65,7 +64,6 @@ export default function AndroidSyncScreen() {
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons name="sync" size={UI_ICON_SIZE_48} color={c.primary} />
           </View>
-          <Text style={styles.heroTitle}>{t('settings.sync.screenTitle')}</Text>
           <Text style={styles.heroDesc}>{t('settings.sync.screenDesc')}</Text>
         </View>
 
@@ -114,8 +112,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     heroContainer: {
       alignItems: 'center',
-      paddingVertical: UI_SIZE_28,
-      marginBottom: UI_SIZE_8,
+      marginBottom: UI_SIZE_28,
     },
     heroIcon: {
       width: UI_SIZE_96,
@@ -123,15 +120,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       borderRadius: UI_SIZE_48,
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
       ...commonStyles.centered,
-      marginBottom: UI_SIZE_24,
-    },
-    heroTitle: {
-      fontSize: FontSize.heading,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      textAlign: 'center',
-      marginBottom: UI_SIZE_12,
+      marginBottom: UI_SIZE_16,
     },
     heroDesc: {
       fontSize: FontSize.body,

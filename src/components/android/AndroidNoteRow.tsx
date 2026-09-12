@@ -342,6 +342,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
     },
     content: {
       ...commonStyles.flex1,
+      paddingRight: UI_SIZE_8,
     },
     titleRow: {
       ...commonStyles.row,
@@ -370,6 +371,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
       marginBottom: UI_SIZE_10,
     },
     rowPreview: {
+      flexShrink: 1,
       marginBottom: 0,
     },
     folderIcon: {

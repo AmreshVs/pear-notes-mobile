@@ -33,7 +33,6 @@ export default function SyncScreen() {
           <RNView style={styles.heroIcon}>
             <SymbolIcon name="arrow.clockwise" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
-          <Text style={styles.heroTitle}>{t('settings.sync.screenTitle')}</Text>
           <Text style={styles.heroDesc}>{t('settings.sync.screenDesc')}</Text>
         </RNView>
 
@@ -67,13 +66,6 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.cardSelected,
       ...commonStyles.centered,
       marginBottom: Space.md,
-    },
-    heroTitle: {
-      fontSize: FontSize.title,
-      fontFamily: FontFamily.semiBold,
-      color: theme.colors.text,
-      textAlign: 'center',
-      marginBottom: Space.xs,
     },
     heroDesc: {
       fontSize: FontSize.body,

@@ -118,12 +118,11 @@ export default function AndroidBackupScreen() {
         <View style={styles.heroContainer}>
           <View style={styles.heroIcon}>
             <MaterialCommunityIcons
-              name="cloud-upload-outline"
+              name="backup-restore"
               size={UI_ICON_SIZE_48}
               color={c.primary}
             />
           </View>
-          <Text style={styles.heroTitle}>{t('backup.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('backup.hero.description')}</Text>
         </View>
 
@@ -135,7 +134,7 @@ export default function AndroidBackupScreen() {
             style={[styles.primaryBtn, isActive && styles.btnDisabled]}
           >
             <MaterialCommunityIcons
-              name="cloud-upload"
+              name="export-variant"
               size={UI_ICON_SIZE_20}
               color={c.onPrimary}
             />
@@ -148,7 +147,7 @@ export default function AndroidBackupScreen() {
             android_ripple={ripple}
             style={[styles.secondaryBtn, isActive && styles.btnDisabled]}
           >
-            <MaterialCommunityIcons name="restore" size={UI_ICON_SIZE_20} color={c.onSurface} />
+            <MaterialCommunityIcons name="import" size={UI_ICON_SIZE_20} color={c.onSurface} />
             <Text style={styles.secondaryBtnText}>{t('backup.restoreData')}</Text>
           </Pressable>
         </View>
@@ -186,7 +185,7 @@ export default function AndroidBackupScreen() {
                     <MaterialCommunityIcons name="check" size={UI_ICON_SIZE_24} color={c.primary} />
                   ) : (
                     <MaterialCommunityIcons
-                      name="cloud-upload-outline"
+                      name="backup-restore"
                       size={UI_ICON_SIZE_24}
                       color={c.primary}
                     />
@@ -300,8 +299,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     heroContainer: {
       alignItems: 'center',
-      paddingVertical: UI_SIZE_28,
-      marginBottom: UI_SIZE_8,
+      marginBottom: UI_SIZE_28,
     },
     heroIcon: {
       width: UI_SIZE_96,
@@ -310,14 +308,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
       ...commonStyles.centered,
       marginBottom: UI_SIZE_24,
-    },
-    heroTitle: {
-      fontSize: FontSize.heading,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      textAlign: 'center',
-      marginBottom: UI_SIZE_12,
     },
     heroDesc: {
       fontSize: FontSize.body,

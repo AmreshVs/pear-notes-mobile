@@ -129,6 +129,7 @@ export default function BackupPasswordScreen() {
       >
         <ScrollView
           ref={scrollRef}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}

@@ -70,7 +70,6 @@ export default function StorageScreen() {
           <RNView style={styles.heroIcon}>
             <SymbolIcon name="cylinder.split.1x2" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
-          <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
         </RNView>
 
@@ -196,11 +195,9 @@ const useStyles = createThemedStylesheet((theme) => {
     scroll: {
       paddingHorizontal: Space.lg,
       paddingBottom: UI_SIZE_60,
-      paddingTop: Space.xl,
     },
     heroContainer: {
       alignItems: 'center',
-      paddingVertical: Space.xl,
       marginBottom: Space.xl,
     },
     heroIcon: {
@@ -212,14 +209,6 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'center',
       marginBottom: Space.xl,
       borderColor: theme.colors.borderSecondary,
-    },
-    heroTitle: {
-      fontSize: FontSize.heading,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: theme.colors.text,
-      textAlign: 'center',
-      marginBottom: Space.md,
     },
     heroDesc: {
       fontSize: FontSize.body,

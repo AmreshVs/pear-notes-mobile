@@ -695,7 +695,6 @@
     "title": "Backup / restore",
     "subtitle": "Export or import your data",
     "hero": {
-      "title": "Secure your vault",
       "description": "Backing up your data ensures you never lose your notes and files. All backups are encrypted with a password you choose and can be safely restored to any of your devices."
     },
     "createBackup": "Create backup",
@@ -812,7 +811,6 @@
   },
   "storage": {
     "hero": {
-      "title": "Storage",
       "description": "View and manage the space used by your notes, media, and files on this device."
     },
     "usage": "Usage",

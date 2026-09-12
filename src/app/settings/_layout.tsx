@@ -1,22 +1,36 @@
-import React from 'react'
+import React, { type ReactNode, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet } from 'react-native'
+import { Platform, StyleSheet, View } from 'react-native'
 import { Stack } from 'expo-router'
 
+import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
-import { FontSize, FontWeight } from '@/constants/commonStyles'
+import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
+import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 
 export default function SettingsLayout() {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const styles = useStyles()
 
+  const renderScreenLayout = useCallback(
+    ({ children }: { children: ReactNode }) => (
+      <View style={commonStyles.flex1}>
+        {children}
+        <ScreenEdgeFades variant="sheet" />
+      </View>
+    ),
+    [],
+  )
+
   return (
     <Stack
+      screenLayout={Platform.OS === 'ios' ? renderScreenLayout : undefined}
       screenOptions={{
         headerTintColor: colors.primary,
         headerTitleStyle: styles.headerTitle,
-        headerStyle: styles.header,
+        headerTransparent: true,
+        scrollEdgeEffects: HIDDEN_SCROLL_EDGE_EFFECTS,
         contentStyle: styles.content,
         headerShadowVisible: false,
         headerBackButtonDisplayMode: 'minimal',
@@ -44,9 +58,6 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
       fontWeight: FontWeight.bold,
       fontSize: FontSize.subtitle,
-    },
-    header: {
-      backgroundColor: theme.colors.backgroundElevated,
     },
     content: {
       backgroundColor: theme.colors.backgroundElevated,

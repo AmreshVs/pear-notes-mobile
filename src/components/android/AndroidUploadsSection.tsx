@@ -57,7 +57,7 @@ export function AndroidUploadsSection({
         <View style={styles.rowHeader}>
           <View style={styles.rowMeta}>
             <MaterialCommunityIcons
-              name="cloud-upload-outline"
+              name="arrow-up-circle-outline"
               size={UI_ICON_SIZE_18}
               color={c.primary}
             />

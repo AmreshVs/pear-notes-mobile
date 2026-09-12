@@ -67,7 +67,7 @@ export function AndroidDownloadsSection({
         <View style={styles.rowHeader}>
           <View style={styles.rowMeta}>
             <MaterialCommunityIcons
-              name="cloud-download-outline"
+              name="arrow-down-circle-outline"
               size={UI_ICON_SIZE_18}
               color={c.primary}
             />

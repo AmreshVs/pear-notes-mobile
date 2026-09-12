@@ -122,7 +122,6 @@ export default function AndroidStorageScreen() {
               color={c.primary}
             />
           </View>
-          <Text style={styles.heroTitle}>{t('storage.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('storage.hero.description')}</Text>
         </View>
 
@@ -269,7 +268,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     heroContainer: {
       alignItems: 'center',
-      paddingVertical: Space.base,
+      paddingBottom: Space.base,
       marginBottom: UI_SIZE_8,
     },
     heroIcon: {
@@ -279,14 +278,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
       ...commonStyles.centered,
       marginBottom: UI_SIZE_24,
-    },
-    heroTitle: {
-      fontSize: FontSize.heading,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      textAlign: 'center',
-      marginBottom: UI_SIZE_12,
     },
     heroDesc: {
       fontSize: FontSize.body,

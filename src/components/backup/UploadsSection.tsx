@@ -60,7 +60,7 @@ export function UploadsSection({ uploads, noteTitles, formatBytes }: UploadsSect
           <RNView style={styles.rowHeader}>
             <RNView style={styles.rowMeta}>
               <SymbolIcon
-                name="icloud.and.arrow.up"
+                name="arrow.up.circle"
                 size={UI_ICON_SIZE_16}
                 color={colors.primary}
                 weight="medium"

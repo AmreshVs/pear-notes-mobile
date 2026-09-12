@@ -74,7 +74,7 @@ export function DownloadsSection({
           <RNView style={styles.rowHeader}>
             <RNView style={styles.rowMeta}>
               <SymbolIcon
-                name="icloud.and.arrow.down"
+                name="arrow.down.circle"
                 size={UI_ICON_SIZE_16}
                 color={colors.primary}
                 weight="medium"

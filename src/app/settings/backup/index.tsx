@@ -86,9 +86,12 @@ export default function BackupScreen() {
       >
         <RNView style={styles.heroContainer}>
           <RNView style={styles.heroIcon}>
-            <SymbolIcon name="icloud.and.arrow.up" size={UI_ICON_SIZE_48} color={colors.primary} />
+            <SymbolIcon
+              name="clock.arrow.circlepath"
+              size={UI_ICON_SIZE_48}
+              color={colors.primary}
+            />
           </RNView>
-          <Text style={styles.heroTitle}>{t('backup.hero.title')}</Text>
           <Text style={styles.heroDesc}>{t('backup.hero.description')}</Text>
         </RNView>
 
@@ -103,7 +106,7 @@ export default function BackupScreen() {
             ]}
           >
             <SymbolIcon
-              name="icloud.and.arrow.up"
+              name="square.and.arrow.up"
               size={UI_ICON_SIZE_18}
               color={colors.onPrimary}
               weight="medium"
@@ -121,7 +124,7 @@ export default function BackupScreen() {
             ]}
           >
             <SymbolIcon
-              name="arrow.counterclockwise"
+              name="square.and.arrow.down"
               size={UI_ICON_SIZE_18}
               color={colors.text}
               weight="medium"
@@ -168,7 +171,7 @@ export default function BackupScreen() {
                     />
                   ) : (
                     <SymbolIcon
-                      name="icloud.and.arrow.up"
+                      name="clock.arrow.circlepath"
                       size={UI_ICON_SIZE_28}
                       color={colors.primary}
                     />
@@ -251,7 +254,6 @@ const useStyles = createThemedStylesheet((theme) => {
     scroll: {
       paddingHorizontal: Space.lg,
       paddingBottom: UI_SIZE_60,
-      paddingTop: Space.xl,
     },
     recoveryCard: {
       padding: Space.lg,
@@ -276,7 +278,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     heroContainer: {
       alignItems: 'center',
-      paddingVertical: Space.xl,
+      paddingBottom: Space.xl,
       marginBottom: Space.xl,
     },
     heroIcon: {
@@ -288,14 +290,6 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'center',
       marginBottom: Space.xl,
       borderColor: theme.colors.borderSecondary,
-    },
-    heroTitle: {
-      fontSize: FontSize.heading,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: theme.colors.text,
-      textAlign: 'center',
-      marginBottom: Space.md,
     },
     heroDesc: {
       fontSize: FontSize.body,

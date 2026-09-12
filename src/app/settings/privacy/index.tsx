@@ -31,7 +31,6 @@ export default function PrivacyScreen() {
           <RNView style={styles.heroIcon}>
             <SymbolIcon name="checkmark.shield" size={UI_ICON_SIZE_48} color={colors.primary} />
           </RNView>
-          <Text style={styles.heroTitle}>{t('settings.privacy.screenTitle')}</Text>
           <Text style={styles.heroDesc}>{t('settings.privacy.screenDesc')}</Text>
         </RNView>
 
@@ -63,13 +62,6 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.cardSelected,
       ...commonStyles.centered,
       marginBottom: Space.md,
-    },
-    heroTitle: {
-      fontSize: FontSize.title,
-      fontFamily: FontFamily.bold,
-      color: theme.colors.text,
-      textAlign: 'center',
-      marginBottom: Space.xs,
     },
     heroDesc: {
       fontSize: FontSize.body,

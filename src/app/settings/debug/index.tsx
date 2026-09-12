@@ -96,6 +96,7 @@ export default function DebugScreen() {
   return (
     <ScrollView
       style={commonStyles.flex1}
+      contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
