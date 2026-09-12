@@ -36,6 +36,9 @@ const obsidianOverrides = {
   onPrimaryContainer: pearGoldForeground,
   secondaryContainer: '#191919',
   onSecondaryContainer: '#ffffff',
+  onSurface: '#ffffff',
+  onSurfaceVariant: '#b0b0b5',
+  onBackground: '#ffffff',
   outline: '#38383a',
   outlineVariant: 'rgba(255, 255, 255, 0.1)',
 }

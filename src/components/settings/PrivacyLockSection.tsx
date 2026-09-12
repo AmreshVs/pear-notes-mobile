@@ -64,7 +64,6 @@ export function PrivacyLockSection() {
               <SymbolIcon name="lock.shield" size={UI_ICON_SIZE_20} color={colors.primary} />
             </RNView>
             <RNView style={commonStyles.flex1}>
-              <Text style={styles.rowTitle}>{t('settings.privacy.noteLock')}</Text>
               <Text style={styles.rowDesc}>{methodDesc}</Text>
             </RNView>
           </RNView>

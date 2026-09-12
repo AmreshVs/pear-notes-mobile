@@ -85,7 +85,6 @@ export function PrivacyLockSection() {
           <MaterialCommunityIcons name="lock-outline" size={UI_ICON_SIZE_22} color={c.primary} />
         </View>
         <View style={commonStyles.flex1}>
-          <Text style={styles.rowTitle}>{t('settings.privacy.noteLock')}</Text>
           <Text style={styles.rowSubtitle}>{methodDesc}</Text>
         </View>
       </MotionView>
