@@ -209,6 +209,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingBottom: Space.sm,
     },
     backButton: {
+      overflow: 'hidden',
       padding: Space.sm,
       borderRadius: UI_SIZE_9999,
     },

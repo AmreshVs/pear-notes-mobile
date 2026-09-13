@@ -280,7 +280,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       case 'syncing':
         return t('pairing.status.startingReplication')
       case 'receiving_data':
-        return t('pairing.status.receivingWithCount', { count: data || 0 })
+        return t('pairing.status.receivingWithCount')
       default:
         return t('pairing.status.establishing')
     }
@@ -296,7 +296,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     return (
       <View style={styles.fingerprintContainer}>
         <Text style={styles.idEmojis}>{emojis}</Text>
-        <Text style={styles.idHex}>{hex.toUpperCase()}</Text>
+        <Text style={styles.idHex}>({hex.toUpperCase()})</Text>
       </View>
     )
   }

@@ -15,7 +15,7 @@ import {
   View,
 } from 'react-native'
 import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
-import { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import { router, useLocalSearchParams } from 'expo-router'
@@ -179,6 +179,10 @@ export default function AndroidFolderNotesScreen() {
     height: searchBarHeight.value,
     opacity: searchBarOpacity.value,
     overflow: 'hidden',
+  }))
+
+  const searchSpacerStyle = useAnimatedStyle(() => ({
+    height: searchBarHeight.value,
   }))
 
   useEffect(() => {
@@ -504,6 +508,7 @@ export default function AndroidFolderNotesScreen() {
   const listHeader = useMemo(
     () => (
       <View>
+        {!isSelecting && <Animated.View style={searchSpacerStyle} />}
         <Text style={styles.pageTitle} numberOfLines={2}>
           {folder?.name || t('folders.untitled')}
         </Text>
@@ -522,6 +527,8 @@ export default function AndroidFolderNotesScreen() {
       folder?.name,
       notes.length,
       isTrashFolder,
+      isSelecting,
+      searchSpacerStyle,
       t,
       styles.pageTitle,
       styles.pageCount,

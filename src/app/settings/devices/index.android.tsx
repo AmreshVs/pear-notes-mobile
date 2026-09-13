@@ -589,6 +589,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingTop: insets.top + UI_SIZE_16,
     },
     iconBtn: {
+      overflow: 'hidden',
       padding: UI_SIZE_8,
       borderRadius: UI_SIZE_9999,
     },
@@ -779,6 +780,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingVertical: UI_SIZE_14,
       paddingHorizontal: UI_SIZE_14,
       marginBottom: UI_SIZE_16,
+      backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
       borderColor: hexWithAlpha(c.outlineVariant, 0.25),
     },
     codeText: {

@@ -157,6 +157,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       width: UI_SIZE_44,
       height: UI_SIZE_44,
       ...commonStyles.centered,
+      overflow: 'hidden',
+      borderRadius: UI_SIZE_9999,
     },
     headerTitle: {
       fontSize: FontSize.title,

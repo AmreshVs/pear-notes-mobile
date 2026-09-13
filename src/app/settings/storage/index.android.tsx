@@ -34,6 +34,7 @@ import {
   UI_SIZE_24,
   UI_SIZE_28,
   UI_SIZE_40,
+  UI_SIZE_9999,
   UI_SIZE_48,
   UI_SIZE_96,
   UI_SIZE_120,
@@ -254,6 +255,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       width: UI_SIZE_40,
       height: UI_SIZE_40,
       ...commonStyles.centered,
+      overflow: 'hidden',
+      borderRadius: UI_SIZE_9999,
     },
     headerTitle: {
       fontSize: FontSize.title,
