@@ -22,8 +22,8 @@ import {
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_40,
-  UI_SIZE_9999,
   UI_SIZE_56,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
