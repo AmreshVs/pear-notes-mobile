@@ -32,6 +32,7 @@ import { EditorToolbar } from '@/components/ios/EditorToolbar'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
+import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheet, useReduceMotion, useTheme } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
@@ -44,10 +45,14 @@ import {
   UI_SIZE_20,
   UI_SIZE_32,
   UI_SIZE_48,
+  UI_SIZE_56,
+  UI_SIZE_64,
+  UI_SIZE_80,
 } from '@/constants/commonStyles'
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
+import { useShareIntakeController } from '@/hooks/useShareIntakeController'
 import { hapticError, hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { snapTo } from '@/lib/motion'
 import {
@@ -59,6 +64,7 @@ import {
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { buildNoteSharePayload } from '@/lib/noteShare'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
+import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
@@ -169,6 +175,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleTakeVideo,
     handlePickFile,
     handleScanDocument,
+    handleAddSharedItems,
     handleRequestPdfThumbnail,
     handleRecordingDone,
     handleMoveNote,
@@ -548,6 +555,26 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [keyboardHeight],
   )
 
+  const hasUploadQueue = useNoteUploadQueue(noteId).items.length > 0
+  const canAddSharedItems = isOpen && !!noteId && !isNoteLocked && keyboardHeight === 0
+  const sharedTrayBottom = useMemo(() => {
+    if (!isOpen) return insets.bottom + UI_SIZE_56
+    const uploadClearance = hasUploadQueue ? UI_SIZE_80 : 0
+    return toolbarBottom + UI_SIZE_64 + uploadClearance
+  }, [isOpen, insets.bottom, toolbarBottom, hasUploadQueue])
+
+  const handleUnreadableSharedItems = useCallback(
+    (count: number) =>
+      Alert.alert(t('shareIntake.unreadableTitle'), t('shareIntake.unreadableMessage', { count })),
+    [t],
+  )
+
+  useShareIntakeController({
+    isNoteOpen: isOpen,
+    closeNote,
+    onUnreadableItems: handleUnreadableSharedItems,
+  })
+
   const contentTop = useMemo(() => insets.top + EDITOR_HEADER_HEIGHT, [insets.top])
 
   const bottomFadeStyle = useMemo(
@@ -916,6 +943,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             </View>
           )}
         </Animated.View>
+
+        <SharedItemsTray
+          isNoteOpen={isOpen}
+          canAddToNote={canAddSharedItems}
+          bottom={sharedTrayBottom}
+          onAddToNote={handleAddSharedItems}
+        />
       </>
     </NoteEditorContext.Provider>
   )

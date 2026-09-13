@@ -1119,5 +1119,30 @@
       "backendBoot": "Backend boot timeline",
       "appBoot": "App boot timeline"
     }
+  },
+  "shareIntake": {
+    "itemCount_one": "{{count}} shared item",
+    "itemCount_other": "{{count}} shared items",
+    "preparing": "Preparing shared items…",
+    "openNoteHint": "Open a note to add them",
+    "addToNote": "Add to this note",
+    "discard": "Discard shared items",
+    "unreadableTitle": "Couldn't read shared items",
+    "unreadableMessage_one": "{{count}} item couldn't be read from the other app.",
+    "unreadableMessage_other": "{{count}} items couldn't be read from the other app.",
+    "categories": {
+      "photo_one": "{{count}} photo",
+      "photo_other": "{{count}} photos",
+      "video_one": "{{count}} video",
+      "video_other": "{{count}} videos",
+      "audio_one": "{{count}} audio file",
+      "audio_other": "{{count}} audio files",
+      "file_one": "{{count}} file",
+      "file_other": "{{count}} files",
+      "link_one": "{{count}} link",
+      "link_other": "{{count}} links",
+      "text_one": "{{count}} text snippet",
+      "text_other": "{{count}} text snippets"
+    }
   }
 }

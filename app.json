@@ -95,7 +95,8 @@
         {
           "faceIDPermission": "Allow Pear Notes to use Face ID to unlock locked notes."
         }
-      ]
+      ],
+      "./modules/expo-share-intake/app.plugin.js"
     ],
     "experiments": {
       "typedRoutes": true

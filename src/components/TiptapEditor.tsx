@@ -20,6 +20,7 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 import { getCollaboratorIdentity } from '@pear-notes/core/utils.js'
 
 import { FontSize, FontWeight, UI_SIZE_8, UI_SIZE_12, UI_SIZE_20 } from '@/constants/commonStyles'
+import type { SharedParagraph } from '@/lib/shareIntake.types'
 import { EDITOR_ORIGIN_WHITELIST, shouldStartEditorLoad } from '@/lib/webViewNavigation'
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
@@ -70,6 +71,8 @@ export interface TiptapEditorHandle {
   insertImage: (url: string, width: number, height: number) => void
   insertFileAttachment: (url: string, fileName: string, fileSize: number, fileType: string) => void
   insertAudioAttachment: (url: string, fileName: string, duration?: number) => void
+  moveCursorToEnd: () => void
+  appendParagraphs: (paragraphs: SharedParagraph[]) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
   focusTitle: () => void
@@ -579,6 +582,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'insertFileAttachment', url, fileName, fileSize, fileType }),
         insertAudioAttachment: (url, fileName, duration) =>
           sendCommand({ type: 'insertAudioAttachment', url, fileName, duration }),
+        moveCursorToEnd: () => sendCommand({ type: 'moveCursorToEnd' }),
+        appendParagraphs: (paragraphs) => sendCommand({ type: 'appendParagraphs', paragraphs }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => {
           requestNativeWebViewFocus()

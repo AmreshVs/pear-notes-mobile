@@ -59,7 +59,7 @@ function createProgressUpload(
   return { promise, cancel }
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return String(value)
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
@@ -80,20 +80,24 @@ function buildAttachmentHtml(link: string, attachment: StoredAttachment, fileNam
   return `<div data-file-attachment="" url="${url}" fileName="${escapeHtml(fileName)}" fileSize="${attachment.fileSize || 0}" fileType="${escapeHtml(attachment.fileType || '')}"></div>`
 }
 
+export function appendHtmlToStoredNote(noteId: string, html: string) {
+  if (!html) return
+  const note = getNoteData(noteId)(store.getState()) as
+    | { title?: string; note?: string }
+    | undefined
+  if (!note) return
+  store.dispatch(
+    updateNote({ key: noteId, title: note.title || '', note: `${note.note || ''}${html}` } as any),
+  )
+}
+
 function appendAttachmentToStoredNote(
   noteId: string,
   link: string,
   attachment: StoredAttachment,
   fileName: string,
 ) {
-  const note = getNoteData(noteId)(store.getState()) as
-    | { title?: string; note?: string }
-    | undefined
-  if (!note) return
-  const html = buildAttachmentHtml(link, attachment, fileName)
-  store.dispatch(
-    updateNote({ key: noteId, title: note.title || '', note: `${note.note || ''}${html}` } as any),
-  )
+  appendHtmlToStoredNote(noteId, buildAttachmentHtml(link, attachment, fileName))
 }
 
 type RunNoteUploadOptions = {

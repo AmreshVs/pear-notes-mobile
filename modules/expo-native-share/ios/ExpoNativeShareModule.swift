@@ -3,6 +3,9 @@ import Photos
 import QuickLook
 import UIKit
 
+private let maxPresentAttempts = 12
+private let presentRetryDelay: TimeInterval = 0.1
+
 private class QuickLookDelegate: NSObject, QLPreviewControllerDataSource, QLPreviewControllerDelegate {
   var fileUrl: URL
   var onDismiss: () -> Void
@@ -26,6 +29,63 @@ private class QuickLookDelegate: NSObject, QLPreviewControllerDataSource, QLPrev
 public class ExpoNativeShareModule: Module {
   private var activityViewController: UIActivityViewController?
   private var quickLookDelegate: QuickLookDelegate?
+
+  private func keyWindowRootViewController() -> UIViewController? {
+    let windows = UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .filter { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }
+      .flatMap { $0.windows }
+    let keyWindow = windows.first(where: { $0.isKeyWindow }) ?? windows.first
+    return keyWindow?.rootViewController ?? appContext?.utilities?.currentViewController()
+  }
+
+  private func isPresentable(_ controller: UIViewController) -> Bool {
+    return !controller.isBeingDismissed && controller.view.window != nil
+  }
+
+  private func presentOnTop(
+    _ controller: UIViewController,
+    attempt: Int = 0,
+    onFailure: @escaping () -> Void,
+    completion: (() -> Void)? = nil
+  ) {
+    guard let root = keyWindowRootViewController() else {
+      onFailure()
+      return
+    }
+
+    var top = root
+    while let presented = top.presentedViewController, isPresentable(presented) {
+      top = presented
+    }
+
+    let blocker = top.presentedViewController
+    guard blocker == nil, isPresentable(top) else {
+      guard attempt < maxPresentAttempts else {
+        onFailure()
+        return
+      }
+      let retry = { [weak self] in
+        self?.presentOnTop(controller, attempt: attempt + 1, onFailure: onFailure, completion: completion)
+      }
+      if let coordinator = blocker?.transitionCoordinator {
+        _ = coordinator.animate(alongsideTransition: nil) { _ in
+          DispatchQueue.main.async { retry() }
+        }
+      } else {
+        DispatchQueue.main.asyncAfter(deadline: .now() + presentRetryDelay) { retry() }
+      }
+      return
+    }
+
+    if let popover = controller.popoverPresentationController {
+      popover.sourceView = top.view
+      popover.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+      popover.permittedArrowDirections = []
+    }
+
+    top.present(controller, animated: true, completion: completion)
+  }
 
   public func definition() -> ModuleDefinition {
     Name("ExpoNativeShare")
@@ -62,28 +122,8 @@ public class ExpoNativeShareModule: Module {
       }
 
       DispatchQueue.main.async {
-        guard var presentingVC = self.appContext?.utilities?.currentViewController() else {
-          promise.reject(Exception(name: "NoPresentingViewController", description: "Could not find a view controller to present from."))
-          return
-        }
-
-        while let presented = presentingVC.presentedViewController {
-          presentingVC = presented
-        }
-
         let avc = UIActivityViewController(activityItems: itemsToShare, applicationActivities: nil)
         self.activityViewController = avc
-
-        if let popover = avc.popoverPresentationController {
-          popover.sourceView = presentingVC.view
-          popover.sourceRect = CGRect(
-            x: presentingVC.view.bounds.midX,
-            y: presentingVC.view.bounds.midY,
-            width: 0,
-            height: 0
-          )
-          popover.permittedArrowDirections = []
-        }
 
         let resolveOnDismiss = options["resolveOnDismiss"] as? Bool ?? false
 
@@ -94,11 +134,18 @@ public class ExpoNativeShareModule: Module {
           }
         }
 
-        presentingVC.present(avc, animated: true) {
-          if !resolveOnDismiss {
-            promise.resolve(nil)
+        self.presentOnTop(
+          avc,
+          onFailure: { [weak self] in
+            self?.activityViewController = nil
+            promise.reject(Exception(name: "NoPresentingViewController", description: "Could not find a view controller to present from."))
+          },
+          completion: {
+            if !resolveOnDismiss {
+              promise.resolve(nil)
+            }
           }
-        }
+        )
       }
     }
 
@@ -110,16 +157,8 @@ public class ExpoNativeShareModule: Module {
       }
 
       DispatchQueue.main.async {
-        guard var presentingVC = self.appContext?.utilities?.currentViewController() else {
-          promise.reject(Exception(name: "NoPresentingViewController", description: "Could not find a view controller to present from."))
-          return
-        }
-
-        while let presented = presentingVC.presentedViewController {
-          presentingVC = presented
-        }
-
-        let delegate = QuickLookDelegate(fileUrl: fileUrl) {
+        let delegate = QuickLookDelegate(fileUrl: fileUrl) { [weak self] in
+          self?.quickLookDelegate = nil
           promise.resolve(nil)
         }
         self.quickLookDelegate = delegate
@@ -127,7 +166,11 @@ public class ExpoNativeShareModule: Module {
         let ql = QLPreviewController()
         ql.dataSource = delegate
         ql.delegate = delegate
-        presentingVC.present(ql, animated: true)
+
+        self.presentOnTop(ql, onFailure: { [weak self] in
+          self?.quickLookDelegate = nil
+          promise.reject(Exception(name: "NoPresentingViewController", description: "Could not find a view controller to present the preview from."))
+        })
       }
     }
 

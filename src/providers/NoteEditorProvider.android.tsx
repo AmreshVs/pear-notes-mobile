@@ -31,6 +31,7 @@ import { EdgeFade } from '@/components/EdgeFade'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
+import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
@@ -51,10 +52,13 @@ import {
   UI_SIZE_28,
   UI_SIZE_42,
   UI_SIZE_72,
+  UI_SIZE_80,
+  UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
+import { useShareIntakeController } from '@/hooks/useShareIntakeController'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hasFileExtension } from '@/lib/fileSignature'
@@ -189,6 +193,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
+  const canAddSharedItems = isOpen && !!noteId && !isNoteLocked && keyboardHeight === 0
+  const sharedTrayBottom = useMemo(() => {
+    if (!isOpen) return insets.bottom + UI_SIZE_96
+    return uploadBannerBottom + (hasUploadQueue ? UI_SIZE_80 : 0)
+  }, [isOpen, insets.bottom, uploadBannerBottom, hasUploadQueue])
   const editorLabels = useMemo(
     () => ({
       photo: t('noteEditor.upload.photo'),
@@ -221,6 +230,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [setMoreSheetVisible],
   )
 
+  const handleUnreadableSharedItems = useCallback(
+    (count: number) => showToast(t('shareIntake.unreadableMessage', { count })),
+    [showToast, t],
+  )
+
+  useShareIntakeController({
+    isNoteOpen: isOpen,
+    closeNote,
+    onUnreadableItems: handleUnreadableSharedItems,
+  })
+
   const {
     handleUpdate,
     handleTitleChange,
@@ -229,6 +249,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleTakeVideo,
     handlePickFile,
     handleScanDocument,
+    handleAddSharedItems,
     handleRequestPdfThumbnail,
     handleRecordingDone,
     handleMoveNote,
@@ -805,6 +826,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           </Pressable>
         </Modal>
       </Animated.View>
+
+      <SharedItemsTray
+        isNoteOpen={isOpen}
+        canAddToNote={canAddSharedItems}
+        bottom={sharedTrayBottom}
+        onAddToNote={handleAddSharedItems}
+      />
 
       <BottomActionSheet
         visible={moreSheetVisible}

@@ -458,6 +458,9 @@ export const PairingOverlay = memo(function PairingOverlay() {
               autoCapitalize="none"
               autoCorrect={false}
             />
+            {pasteCode.trim().length > 0 && !isValidInvite(pasteCode) && (
+              <Text style={styles.inputHint}>{t('sync.paste.hintInvalid')}</Text>
+            )}
           </View>
           <View style={styles.row}>
             <Pressable onPress={handleClose} style={styles.cancelPressable}>
@@ -1063,6 +1066,13 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
           ? hexWithAlpha(theme.colors.white, 0.04)
           : hexWithAlpha(theme.colors.black, 0.03)
         : theme.colors.cardPressed,
+    },
+    inputHint: {
+      marginTop: Space.sm,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
+      textAlign: 'center',
+      color: theme.colors.textSecondary,
     },
     requestedAtText: {
       fontSize: FontSize.caption,

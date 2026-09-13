@@ -31,6 +31,16 @@ import {
   PDF_MIME_TYPE,
   warmPdfThumbnail,
 } from '@/lib/pdfTools'
+import {
+  appendSharedParagraphsToStoredNote,
+  buildSharedParagraphs,
+  isSharedFileItem,
+  prepareSharedFileForUpload,
+  toSharedDocumentAsset,
+} from '@/lib/sharedContent'
+import { discardSharePayloads } from '@/lib/shareInbox'
+import type { SharedParagraph } from '@/lib/shareIntake.types'
+import { takeSharedPayloadsForNote } from '@/lib/shareIntakeState'
 import { deleteThumbnail } from '@/lib/thumbnailCache'
 import {
   clearNoteUploadQueue,
@@ -44,6 +54,12 @@ import type { useNoteEditor } from './useNoteEditor'
 const IMAGE_MAX_HEIGHT = 400
 const IMAGE_WIDTH_INSET = 40
 const REVEAL_INSERT_DELAY = 300
+const NEW_NOTE_ID = 'new'
+
+const waitForIdleFrame = () =>
+  new Promise<void>((resolve) => {
+    requestIdleCallback(() => resolve())
+  })
 
 let uploadItemSequence = 0
 const nextUploadItemId = () => `upload-${Date.now()}-${(uploadItemSequence += 1)}`
@@ -268,8 +284,8 @@ export function useNoteEditorActions({
             } as ImagePickerAsset,
             itemId,
           )
+          return
         }
-        return
       }
 
       const isAudio = mimeType?.startsWith('audio/')
@@ -433,6 +449,45 @@ export function useNoteEditorActions({
     }
   }, [noteId, resolveHyperdriveUrl, editorRef, loadedNoteRef, labels, onUploadError])
 
+  const insertSharedParagraphs = useCallback(
+    (targetNoteId: string, paragraphs: SharedParagraph[]) => {
+      if (loadedNoteRef.current !== targetNoteId) {
+        appendSharedParagraphsToStoredNote(targetNoteId, paragraphs)
+        return
+      }
+      editorRef.current?.moveCursorToEnd()
+      if (paragraphs.length > 0) editorRef.current?.appendParagraphs(paragraphs)
+    },
+    [editorRef, loadedNoteRef],
+  )
+
+  const handleAddSharedItems = useCallback(async () => {
+    if (!noteId || noteId === NEW_NOTE_ID) return
+    const targetNoteId = noteId
+    const payloads = await takeSharedPayloadsForNote()
+    if (payloads.length === 0) return
+    hapticMedium()
+
+    const items = payloads.flatMap((payload) => payload.items)
+    const queued = items
+      .filter(isSharedFileItem)
+      .map((file) => ({ id: nextUploadItemId(), fileName: file.name, file }))
+    if (queued.length > 0) enqueueNoteUploads(targetNoteId, queued)
+
+    try {
+      await waitForIdleFrame()
+      insertSharedParagraphs(targetNoteId, buildSharedParagraphs(items))
+      for (const entry of queued) {
+        if (isNoteUploadItemCancelled(entry.id)) continue
+        const prepared = await prepareSharedFileForUpload(entry.file)
+        await processDocumentAsset(toSharedDocumentAsset(prepared), entry.id)
+      }
+    } finally {
+      if (queued.length > 0) clearNoteUploadQueue(targetNoteId)
+      await discardSharePayloads(payloads)
+    }
+  }, [noteId, insertSharedParagraphs, processDocumentAsset])
+
   const handleRequestPdfThumbnail = useCallback(
     async (url: string, fileName: string, attachmentId: string) => {
       try {
@@ -544,6 +599,7 @@ export function useNoteEditorActions({
     handleTakeVideo,
     handlePickFile,
     handleScanDocument,
+    handleAddSharedItems,
     handleRequestPdfThumbnail,
     handleRecordingDone,
     handleMoveNote,

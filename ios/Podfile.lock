@@ -174,6 +174,8 @@ PODS:
     - ExpoModulesCore
   - ExpoSecureStore (56.0.4):
     - ExpoModulesCore
+  - ExpoShareIntake (1.0.0):
+    - ExpoModulesCore
   - ExpoSplashScreen (56.0.15):
     - ExpoModulesCore
   - ExpoSymbols (56.0.7):
@@ -3303,6 +3305,7 @@ DEPENDENCIES:
   - ExpoRouter (from `../node_modules/expo-router/ios`)
   - ExpoScreenCapture (from `../node_modules/expo-screen-capture/ios`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
+  - ExpoShareIntake (from `../modules/expo-share-intake/ios`)
   - ExpoSplashScreen (from `../node_modules/expo-splash-screen/ios`)
   - ExpoSymbols (from `../node_modules/expo-symbols/ios`)
   - ExpoSystemUI (from `../node_modules/expo-system-ui/ios`)
@@ -3492,6 +3495,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-screen-capture/ios"
   ExpoSecureStore:
     :path: "../node_modules/expo-secure-store/ios"
+  ExpoShareIntake:
+    :path: "../modules/expo-share-intake/ios"
   ExpoSplashScreen:
     :path: "../node_modules/expo-splash-screen/ios"
   ExpoSymbols:
@@ -3724,6 +3729,7 @@ SPEC CHECKSUMS:
   ExpoRouter: 58319874f097ad589b691813db905812b1b7d59b
   ExpoScreenCapture: 807784aab5809f28685e0349273992ac4ad8497b
   ExpoSecureStore: f1bd083c1b7b8d4142013ffcc0082d377d9f49f4
+  ExpoShareIntake: 1e536877c7473a2e9cd3420a9c742ac4e0d7601b
   ExpoSplashScreen: 06ea4c812a646bf65802fe0f87f5fcd8d68a22bf
   ExpoSymbols: 37e96a38eed3fb50af4b7c86b8a80ed3054a0a01
   ExpoSystemUI: 8f4fb641c6a6ebe2a01dda0fbd3fdd952ab5823a

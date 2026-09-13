@@ -400,6 +400,13 @@ export default function SyncScreen() {
                 {!scannerVisible && !!scanError && (
                   <Text style={styles.pasteError}>{t(scanError)}</Text>
                 )}
+
+                {!scannerVisible &&
+                  !scanError &&
+                  pasteCode.trim().length > 0 &&
+                  !isValidInvite(pasteCode) && (
+                    <Text style={styles.pasteHint}>{t('sync.paste.hintInvalid')}</Text>
+                  )}
               </RNView>
             )}
 
@@ -781,6 +788,12 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.semibold,
       color: theme.colors.error,
+    },
+    pasteHint: {
+      marginTop: Space.sm,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.medium,
+      color: theme.colors.textMuted,
     },
     invitePasteLeft: {
       flexDirection: 'row',

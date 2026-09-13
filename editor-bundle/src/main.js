@@ -18,6 +18,7 @@ import TaskList from '@tiptap/extension-task-list'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
 import { DOMParser as PMDOMParser } from '@tiptap/pm/model'
+import { Selection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import langBash from 'highlight.js/lib/languages/bash'
 import langCSS from 'highlight.js/lib/languages/css'
@@ -1466,6 +1467,30 @@ window.editorBridge = {
           editor.commands.setTextSelection(editor.state.selection.to)
         }
         break
+
+      case 'moveCursorToEnd': {
+        const lastNode = editor.state.doc.lastChild
+        if (!lastNode || lastNode.type.name !== 'paragraph' || lastNode.content.size > 0) {
+          editor.commands.insertContentAt(editor.state.doc.content.size, { type: 'paragraph' })
+        }
+        editor.view.dispatch(editor.state.tr.setSelection(Selection.atEnd(editor.state.doc)))
+        break
+      }
+
+      case 'appendParagraphs': {
+        const paragraphs = Array.isArray(msg.paragraphs) ? msg.paragraphs : []
+        const content = paragraphs.map((paragraph) => {
+          const text = typeof paragraph?.text === 'string' ? paragraph.text : ''
+          if (!text) return { type: 'paragraph' }
+          const isWebLink = typeof paragraph.link === 'string' && /^https?:\/\//i.test(paragraph.link)
+          const textNode = isWebLink
+            ? { type: 'text', text, marks: [{ type: 'link', attrs: { href: paragraph.link } }] }
+            : { type: 'text', text }
+          return { type: 'paragraph', content: [textNode] }
+        })
+        if (content.length > 0) editor.commands.insertContent(content)
+        break
+      }
 
       case 'deleteImage': {
         const { src: srcToDelete } = msg

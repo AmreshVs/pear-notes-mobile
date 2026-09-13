@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": {
+    "modules": ["ExpoShareIntakeModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.shareintake.ExpoShareIntakeModule"]
+  }
+}
