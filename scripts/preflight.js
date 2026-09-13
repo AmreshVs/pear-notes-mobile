@@ -5,6 +5,9 @@ const path = require('path')
 const play = require('./playCredentials')
 
 const ROOT = path.resolve(__dirname, '..')
+const IOS_APP_TARGET_NAME = 'pearnotes'
+const IOS_SHARE_EXTENSION_TARGET_NAME = 'PearNotesShareExtension'
+const IOS_SHARE_EXTENSION_BUNDLE_SUFFIX = '.ShareExtension'
 
 const checks = []
 let failures = 0
@@ -326,17 +329,32 @@ function checkVersionConsistency() {
   pass('version', `${appVersion} (android build ${gradleCode}, ios build ${projectVersion})`)
 }
 
-function readXcodeBundleIds() {
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function readXcodeBundleIds(targetName) {
   const pbxproj = fs.readFileSync(
     path.join(ROOT, 'ios', 'pearnotes.xcodeproj', 'project.pbxproj'),
     'utf8',
   )
 
+  const listPattern = new RegExp(
+    `Build configuration list for PBXNativeTarget "${escapeRegExp(targetName)}" \\*/ = \\{[\\s\\S]*?buildConfigurations = \\(([\\s\\S]*?)\\);`,
+  )
+  const configurationList = pbxproj.match(listPattern)?.[1]
+  if (!configurationList) return {}
+
   const ids = {}
-  for (const block of pbxproj.split('isa = XCBuildConfiguration;').slice(1)) {
-    const bundleId = block.match(/PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);/)?.[1]
-    const name = block.match(/name = (\w+);/)?.[1]
-    if (bundleId && name) ids[name] = bundleId.replace(/"/g, '')
+  for (const [, configurationId, name] of configurationList.matchAll(
+    /([0-9A-F]{24}) \/\* (\w+) \*\//g,
+  )) {
+    const blockPattern = new RegExp(
+      `${configurationId} /\\* ${name} \\*/ = \\{([\\s\\S]*?)\\n\\t\\t\\};`,
+    )
+    const block = pbxproj.match(blockPattern)?.[1]
+    const bundleId = block?.match(/PRODUCT_BUNDLE_IDENTIFIER = ([^;]+);/)?.[1]
+    if (bundleId) ids[name] = bundleId.replace(/"/g, '')
   }
   return ids
 }
@@ -362,7 +380,7 @@ function checkVariantIds() {
     return fail('variant', 'applicationIdSuffix is applied outside the debug build types')
   }
 
-  const iosIds = readXcodeBundleIds()
+  const iosIds = readXcodeBundleIds(IOS_APP_TARGET_NAME)
   if (iosIds.Release?.endsWith('.dev')) {
     return fail(
       'variant',
@@ -382,7 +400,21 @@ function checkVariantIds() {
     )
   }
 
-  pass('variant', `android ${prodId}/${prodId}.dev, ios ${iosIds.Release}/${iosIds.Debug}`)
+  const extensionIds = readXcodeBundleIds(IOS_SHARE_EXTENSION_TARGET_NAME)
+  for (const [configuration, appId] of Object.entries(iosIds)) {
+    const expectedExtensionId = `${appId}${IOS_SHARE_EXTENSION_BUNDLE_SUFFIX}`
+    if (extensionIds[configuration] !== expectedExtensionId) {
+      return fail(
+        'variant',
+        `iOS share extension ${configuration} bundle id "${extensionIds[configuration]}" must be "${expectedExtensionId}"`,
+      )
+    }
+  }
+
+  pass(
+    'variant',
+    `android ${prodId}/${prodId}.dev, ios ${iosIds.Release}/${iosIds.Debug} (+${IOS_SHARE_EXTENSION_BUNDLE_SUFFIX})`,
+  )
 }
 
 function checkAndroidManifest() {
