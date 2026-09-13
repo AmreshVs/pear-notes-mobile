@@ -25,6 +25,7 @@ import {
   UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_6,
+  UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -245,11 +246,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
               </Text>
               {device.isIndexer && (
                 <View style={styles.leaderBadge}>
-                  <MaterialCommunityIcons
-                    name="crown-outline"
-                    size={UI_ICON_SIZE_16}
-                    color={c.onSurface}
-                  />
+                  <MaterialCommunityIcons name="crown" size={UI_ICON_SIZE_16} color={c.primary} />
                   <Text style={styles.leaderBadgeText} numberOfLines={1}>
                     {t('sync.devices.indexerBadge')}
                   </Text>
@@ -394,15 +391,17 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       alignItems: 'center',
       gap: UI_SIZE_4,
       flexShrink: 0,
-      paddingHorizontal: UI_SIZE_10,
+      paddingHorizontal: UI_SIZE_8,
       paddingVertical: UI_SIZE_2,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.35),
+      borderRadius: UI_SIZE_8,
+      backgroundColor: hexWithAlpha(c.primary, theme.isDark ? 0.22 : 0.12),
     },
     leaderBadgeText: {
       fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      color: c.onSurface,
+      letterSpacing: 0.4,
+      color: c.primary,
     },
     leaderError: {
       fontSize: FontSize.caption,
