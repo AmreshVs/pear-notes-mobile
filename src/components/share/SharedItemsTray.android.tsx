@@ -163,6 +163,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingVertical: UI_SIZE_12,
       gap: UI_SIZE_12,
       backgroundColor: traySurface,
+      elevation: 6,
+      shadowColor: theme.colors.black,
     },
     headerRow: {
       flexDirection: 'row',

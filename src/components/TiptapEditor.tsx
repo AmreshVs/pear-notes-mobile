@@ -48,6 +48,8 @@ export interface TiptapStyleState {
   alignCenter: { isActive: boolean }
   alignRight: { isActive: boolean }
   alignJustify: { isActive: boolean }
+  undo: { isActive: boolean }
+  redo: { isActive: boolean }
 }
 
 export interface TiptapEditorHandle {
@@ -68,6 +70,8 @@ export interface TiptapEditorHandle {
   toggleCodeBlock: () => void
   toggleHighlight: () => void
   setTextAlign: (align: 'left' | 'center' | 'right' | 'justify') => void
+  undo: () => void
+  redo: () => void
   insertImage: (url: string, width: number, height: number) => void
   insertFileAttachment: (url: string, fileName: string, fileSize: number, fileType: string) => void
   insertAudioAttachment: (url: string, fileName: string, duration?: number) => void
@@ -576,6 +580,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         toggleCodeBlock: () => sendCommand({ type: 'toggleCodeBlock' }),
         toggleHighlight: () => sendCommand({ type: 'toggleHighlight' }),
         setTextAlign: (align) => sendCommand({ type: 'setTextAlign', align }),
+        undo: () => sendCommand({ type: 'undo' }),
+        redo: () => sendCommand({ type: 'redo' }),
         insertImage: (url, width, height) =>
           sendCommand({ type: 'insertImage', url, width, height }),
         insertFileAttachment: (url, fileName, fileSize, fileType) =>

@@ -8,6 +8,7 @@ import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
 import { createThemedStylesheet } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 import {
+  commonStyles,
   Radii,
   Space,
   UI_ICON_SIZE_22,
@@ -24,6 +25,7 @@ type ToolbarBtnProps = {
   sf: string
   onPress: () => void
   active?: boolean
+  disabled?: boolean
   tintActive: string
   tintDefault: string
   a11yLabel: string
@@ -34,6 +36,7 @@ const ToolbarBtn = memo(function ToolbarBtn({
   sf,
   onPress,
   active,
+  disabled,
   tintActive,
   tintDefault,
   a11yLabel,
@@ -44,17 +47,19 @@ const ToolbarBtn = memo(function ToolbarBtn({
       styles.toolbarBtn,
       active && styles.toolbarBtnActive,
       pressed && styles.pressed,
+      disabled && commonStyles.disabled,
     ],
-    [active, styles.toolbarBtn, styles.toolbarBtnActive, styles.pressed],
+    [active, disabled, styles.toolbarBtn, styles.toolbarBtnActive, styles.pressed],
   )
 
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       style={btnStyle}
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
-      accessibilityState={{ selected: !!active }}
+      accessibilityState={{ selected: !!active, disabled: !!disabled }}
     >
       <SymbolView
         name={sf as any}
@@ -110,15 +115,31 @@ const AttachMenu = memo(function AttachMenu({
           </ExpoUI.RNHostView>
         }
       >
-        <ExpoUI.Button label={t('attachments.recordAudio')} systemImage="mic" onPress={onRecordAudio} />
+        <ExpoUI.Button
+          label={t('attachments.recordAudio')}
+          systemImage="mic"
+          onPress={onRecordAudio}
+        />
         <ExpoUI.Button
           label={t('attachments.scanDocument')}
           systemImage="doc.viewfinder"
           onPress={onScanDocument}
         />
-        <ExpoUI.Button label={t('attachments.chooseFile')} systemImage="folder" onPress={onPickFile} />
-        <ExpoUI.Button label={t('attachments.takeVideo')} systemImage="video" onPress={onTakeVideo} />
-        <ExpoUI.Button label={t('attachments.takePhoto')} systemImage="camera" onPress={onTakePhoto} />
+        <ExpoUI.Button
+          label={t('attachments.chooseFile')}
+          systemImage="folder"
+          onPress={onPickFile}
+        />
+        <ExpoUI.Button
+          label={t('attachments.takeVideo')}
+          systemImage="video"
+          onPress={onTakeVideo}
+        />
+        <ExpoUI.Button
+          label={t('attachments.takePhoto')}
+          systemImage="camera"
+          onPress={onTakePhoto}
+        />
         <ExpoUI.Button
           label={t('attachments.photoVideo')}
           systemImage="photo.on.rectangle"
@@ -216,197 +237,216 @@ export const EditorToolbar = memo(function EditorToolbar({
               onScroll={handleScroll}
               scrollEventThrottle={16}
             >
-            <AttachMenu
-              colors={colors}
-              onPickImage={handlePickImageEdit}
-              onPickFile={handlePickFileEdit}
-              onRecordAudio={handleRecordAudioEdit}
-              onScanDocument={handleScanDocumentEdit}
-              onTakePhoto={handleTakePhotoEdit}
-              onTakeVideo={handleTakeVideoEdit}
-              styles={styles}
-            />
-            <View style={styles.divider} />
-            <ToolbarBtn
-              sf="textformat.size.larger"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.types.title')}
-              active={isActive('h1')}
-              onPress={() => run(() => editorRef.current?.toggleH1())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="textformat.size"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.types.heading')}
-              active={isActive('h2')}
-              onPress={() => run(() => editorRef.current?.toggleH2())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="textformat.size.smaller"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.types.subheading')}
-              active={isActive('h3')}
-              onPress={() => run(() => editorRef.current?.toggleH3())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="bold"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.bold')}
-              active={isActive('bold')}
-              onPress={() => run(() => editorRef.current?.toggleBold())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="italic"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.italic')}
-              active={isActive('italic')}
-              onPress={() => run(() => editorRef.current?.toggleItalic())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="underline"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.underline')}
-              active={isActive('underline')}
-              onPress={() => run(() => editorRef.current?.toggleUnderline())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="strikethrough"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.strikethrough')}
-              active={isActive('strike')}
-              onPress={() => run(() => editorRef.current?.toggleStrike())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="highlighter"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.highlight')}
-              active={isActive('highlight')}
-              onPress={() => run(() => editorRef.current?.toggleHighlight())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="textformat.subscript"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.subscript')}
-              active={isActive('subscript')}
-              onPress={() => run(() => editorRef.current?.toggleSubscript())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="textformat.superscript"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.superscript')}
-              active={isActive('superscript')}
-              onPress={() => run(() => editorRef.current?.toggleSuperscript())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="list.bullet"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.types.bulletedList')}
-              active={isActive('unorderedList')}
-              onPress={() => run(() => editorRef.current?.toggleUnorderedList())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="list.number"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.types.numberedList')}
-              active={isActive('orderedList')}
-              onPress={() => run(() => editorRef.current?.toggleOrderedList())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="checklist"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.checklist')}
-              active={isActive('checkboxList')}
-              onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="text.quote"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.types.quoteBlock')}
-              active={isActive('blockQuote')}
-              onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="chevron.left.forwardslash.chevron.right"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.codeBlock')}
-              active={isActive('codeBlock')}
-              onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="minus"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.horizontalRule')}
-              onPress={() => run(() => editorRef.current?.setHorizontalRule())}
-              styles={styles}
-            />
-            <View style={styles.divider} />
-            <ToolbarBtn
-              sf="text.alignleft"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.alignLeft')}
-              active={isActive('alignLeft')}
-              onPress={() => run(() => editorRef.current?.setTextAlign('left'))}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="text.aligncenter"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.alignCenter')}
-              active={isActive('alignCenter')}
-              onPress={() => run(() => editorRef.current?.setTextAlign('center'))}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="text.alignright"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.alignRight')}
-              active={isActive('alignRight')}
-              onPress={() => run(() => editorRef.current?.setTextAlign('right'))}
-              styles={styles}
-            />
-            <ToolbarBtn
-              sf="text.justify"
-              tintActive={colors.primary}
-              tintDefault={colors.text}
-              a11yLabel={t('formatting.alignJustify')}
-              active={isActive('alignJustify')}
-              onPress={() => run(() => editorRef.current?.setTextAlign('justify'))}
-              styles={styles}
-            />
+              <AttachMenu
+                colors={colors}
+                onPickImage={handlePickImageEdit}
+                onPickFile={handlePickFileEdit}
+                onRecordAudio={handleRecordAudioEdit}
+                onScanDocument={handleScanDocumentEdit}
+                onTakePhoto={handleTakePhotoEdit}
+                onTakeVideo={handleTakeVideoEdit}
+                styles={styles}
+              />
+              <View style={styles.divider} />
+              <ToolbarBtn
+                sf="arrow.uturn.backward"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.undo')}
+                disabled={!isActive('undo')}
+                onPress={() => run(() => editorRef.current?.undo())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="arrow.uturn.forward"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.redo')}
+                disabled={!isActive('redo')}
+                onPress={() => run(() => editorRef.current?.redo())}
+                styles={styles}
+              />
+              <View style={styles.divider} />
+              <ToolbarBtn
+                sf="textformat.size.larger"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.types.title')}
+                active={isActive('h1')}
+                onPress={() => run(() => editorRef.current?.toggleH1())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="textformat.size"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.types.heading')}
+                active={isActive('h2')}
+                onPress={() => run(() => editorRef.current?.toggleH2())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="textformat.size.smaller"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.types.subheading')}
+                active={isActive('h3')}
+                onPress={() => run(() => editorRef.current?.toggleH3())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="bold"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.bold')}
+                active={isActive('bold')}
+                onPress={() => run(() => editorRef.current?.toggleBold())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="italic"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.italic')}
+                active={isActive('italic')}
+                onPress={() => run(() => editorRef.current?.toggleItalic())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="underline"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.underline')}
+                active={isActive('underline')}
+                onPress={() => run(() => editorRef.current?.toggleUnderline())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="strikethrough"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.strikethrough')}
+                active={isActive('strike')}
+                onPress={() => run(() => editorRef.current?.toggleStrike())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="highlighter"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.highlight')}
+                active={isActive('highlight')}
+                onPress={() => run(() => editorRef.current?.toggleHighlight())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="textformat.subscript"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.subscript')}
+                active={isActive('subscript')}
+                onPress={() => run(() => editorRef.current?.toggleSubscript())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="textformat.superscript"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.superscript')}
+                active={isActive('superscript')}
+                onPress={() => run(() => editorRef.current?.toggleSuperscript())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="list.bullet"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.types.bulletedList')}
+                active={isActive('unorderedList')}
+                onPress={() => run(() => editorRef.current?.toggleUnorderedList())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="list.number"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.types.numberedList')}
+                active={isActive('orderedList')}
+                onPress={() => run(() => editorRef.current?.toggleOrderedList())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="checklist"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.checklist')}
+                active={isActive('checkboxList')}
+                onPress={() => run(() => editorRef.current?.toggleCheckboxList())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="text.quote"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.types.quoteBlock')}
+                active={isActive('blockQuote')}
+                onPress={() => run(() => editorRef.current?.toggleBlockQuote())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="chevron.left.forwardslash.chevron.right"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.codeBlock')}
+                active={isActive('codeBlock')}
+                onPress={() => run(() => editorRef.current?.toggleCodeBlock())}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="minus"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.horizontalRule')}
+                onPress={() => run(() => editorRef.current?.setHorizontalRule())}
+                styles={styles}
+              />
+              <View style={styles.divider} />
+              <ToolbarBtn
+                sf="text.alignleft"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.alignLeft')}
+                active={isActive('alignLeft')}
+                onPress={() => run(() => editorRef.current?.setTextAlign('left'))}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="text.aligncenter"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.alignCenter')}
+                active={isActive('alignCenter')}
+                onPress={() => run(() => editorRef.current?.setTextAlign('center'))}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="text.alignright"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.alignRight')}
+                active={isActive('alignRight')}
+                onPress={() => run(() => editorRef.current?.setTextAlign('right'))}
+                styles={styles}
+              />
+              <ToolbarBtn
+                sf="text.justify"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('formatting.alignJustify')}
+                active={isActive('alignJustify')}
+                onPress={() => run(() => editorRef.current?.setTextAlign('justify'))}
+                styles={styles}
+              />
             </ScrollView>
             <ScrollEdgeFade color={colors.background} visible={showEndFade} />
           </>

@@ -430,6 +430,8 @@ function broadcastStyleState(ed) {
       alignCenter: { isActive: ed.isActive({ textAlign: 'center' }) },
       alignRight: { isActive: ed.isActive({ textAlign: 'right' }) },
       alignJustify: { isActive: ed.isActive({ textAlign: 'justify' }) },
+      undo: { isActive: ed.can().undo() },
+      redo: { isActive: ed.can().redo() },
     }
     const json = JSON.stringify(state)
     if (json === lastStyleJSON) return
@@ -1430,6 +1432,12 @@ window.editorBridge = {
         break
       case 'setTextAlign':
         ch().setTextAlign(msg.align).run()
+        break
+      case 'undo':
+        ch().undo().run()
+        break
+      case 'redo':
+        ch().redo().run()
         break
 
       case 'insertImage':
