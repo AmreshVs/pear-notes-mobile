@@ -151,6 +151,151 @@
         "serviceStopped": "Android stopped the sync service, so notes only sync while the app is open. Allow unrestricted battery use for Pear Notes to fix this.",
         "backgroundStale": "Background sync has not run recently. iOS decides when this happens, and force-quitting the app stops it entirely."
       }
+    },
+    "onDeviceAi": {
+      "rowTitle": "On-device AI",
+      "screenDesc": "AI features that run on this device. Your notes are never sent anywhere. Each feature downloads its model once, then works offline.",
+      "loading": "Loading AI settings",
+      "thisDevice": "This device",
+      "status": "Status",
+      "memory": "Memory",
+      "freeSpace": "Free space",
+      "modelsOnDevice": "AI models on this device",
+      "deviceStatus": {
+        "unknown": "Checking",
+        "supported": "Ready",
+        "limited": "Limited",
+        "unsupported": "Not supported"
+      },
+      "verdict": {
+        "unknown": "Checking what this device supports.",
+        "supported": "On-device AI is ready to use on this device.",
+        "limited": "This device has less memory, so the Best quality models may be slow. Lite and Standard work normally."
+      },
+      "unsupportedReason": {
+        "simulator": "On-device AI only runs on a physical device. Everything else in Pear Notes works as usual.",
+        "os-version": "On-device AI needs {{requirement}}. Everything else in Pear Notes works as usual.",
+        "architecture": "On-device AI needs a 64-bit ARM device. Everything else in Pear Notes works as usual.",
+        "gpu": "On-device AI needs a supported graphics driver. Everything else in Pear Notes works as usual.",
+        "store-build": "On-device AI isn't available in this build. Everything else in Pear Notes works as usual."
+      },
+      "requirementIos": "iOS 17 or later",
+      "requirementAndroid": "Android 12 or later",
+      "downloads": "Downloads",
+      "wifiOnly": "Download on Wi-Fi only",
+      "wifiOnlyDesc": "Models can be large, so downloads wait for Wi-Fi.",
+      "groups": {
+        "voiceAndAudio": "Voice and audio",
+        "imagesAndScans": "Images and scans"
+      },
+      "features": {
+        "voiceTyping": {
+          "title": "Voice typing",
+          "inline": "voice typing",
+          "desc": "Speak and your words appear in the note."
+        },
+        "transcribeRecordings": {
+          "title": "Transcribe recordings",
+          "inline": "recording transcripts",
+          "desc": "Turn voice recordings into text."
+        },
+        "extractText": {
+          "title": "Extract text",
+          "inline": "text extraction",
+          "desc": "Copy text from photos, scans and PDFs."
+        }
+      },
+      "featureStatus": {
+        "off": "{{size}} download",
+        "offDownloaded": "Model already on this device",
+        "ready": "Ready · {{size}}",
+        "downloading": "Downloading · {{percent}}% · {{downloaded}} of {{total}}",
+        "paused": "Paused · {{percent}}% · {{downloaded}} of {{total}}",
+        "waitingNetwork": "Waiting for Wi-Fi · {{size}}",
+        "failed": "Download stopped at {{percent}}%"
+      },
+      "downloadNow": "Download now",
+      "tryAgain": "Try again",
+      "pauseDownload": "Pause download",
+      "resumeDownload": "Resume download",
+      "cancelDownload": "Cancel download",
+      "turnOn": {
+        "title": "Turn on {{feature}}?",
+        "message": "This downloads {{size}}. After that it works offline.",
+        "messageWaiting": "This downloads {{size}}. You're not on Wi-Fi, so the download starts when you connect.",
+        "confirm": "Download {{size}}",
+        "confirmWaiting": "Download on Wi-Fi"
+      },
+      "turnOff": {
+        "title": "Turn off {{feature}}?",
+        "message": "Keep the model to turn this back on without downloading again, or delete it to free {{size}}.",
+        "keep": "Keep model",
+        "delete": "Delete model"
+      },
+      "notEnoughSpace": {
+        "title": "Not enough space",
+        "message": "{{feature}} needs {{size}}. Pear Notes keeps some space free so your notes can always save. Free up {{short}} and try again.",
+        "messageGeneric": "A model download stopped because this device is almost full. Free up some space and try again."
+      },
+      "footer": "Models are downloaded from the QVAC model library and checked before use. These settings apply to this device only.",
+      "manageModels": "Manage models",
+      "modelsTitle": "AI models",
+      "modelsDesc": "{{size}} used on this device. Models aren't included in backups or sync.",
+      "modelsEmpty": "No models yet. Turn on a feature to download its model.",
+      "downloaded": "Downloaded",
+      "notDownloaded": "Not downloaded",
+      "usedBy": "Used by {{features}}",
+      "unused": "Not used by any feature",
+      "license": "License: {{license}}",
+      "licenses": {
+        "MIT": "MIT",
+        "CC-BY-4.0": "CC BY 4.0, attribution required",
+        "pending": "Confirmed before release"
+      },
+      "modelNames": {
+        "WHISPER_TINY_Q8_0": "Whisper tiny",
+        "WHISPER_EN_TINY_Q8_0": "Whisper tiny, English",
+        "WHISPER_BASE_Q8_0": "Whisper base",
+        "WHISPER_EN_BASE_Q8_0": "Whisper base, English",
+        "VAD_SILERO_5_1_2": "Silero voice detection",
+        "PARAKEET_TDT_0_6B_V3_Q4_0": "Parakeet",
+        "OCR_LATIN": "Latin text recognizer",
+        "OCR_CRAFT": "CRAFT text detector"
+      },
+      "language": "Language",
+      "languages": {
+        "auto": "Detect automatically",
+        "en": "English only"
+      },
+      "languageEnglishDesc": "Faster and more accurate for English.",
+      "quality": "Quality",
+      "tiers": {
+        "lite": "Lite",
+        "standard": "Standard",
+        "best": "Best"
+      },
+      "tierDescriptions": {
+        "lite": "Whisper tiny · {{size}}",
+        "standard": "Whisper base · {{size}} · recommended",
+        "best": "Parakeet · {{size}} · most languages"
+      },
+      "tierSwitchNote": "Switching downloads the new model. The current one stays on this device until you delete it.",
+      "model": "Model",
+      "deleteModel": "Delete model",
+      "deleteAllModels": "Delete all models",
+      "deleteAllModelsDesc": "Frees the space AI models use and turns off every AI feature on this device. Your notes aren't affected.",
+      "sharedModel": "Also used by {{features}}. Turn that off first to delete it.",
+      "deleteModelConfirm": {
+        "title": "Delete {{model}}?",
+        "message": "This frees {{size}}. Your notes aren't affected.",
+        "messageUsers": "This frees {{size}} and turns off {{features}}. Your notes aren't affected."
+      },
+      "deleteAllConfirm": {
+        "title": "Delete all AI models?",
+        "message": "This frees {{size}} and turns off every AI feature on this device. Your notes aren't affected."
+      },
+      "storageRow": "On-device AI models",
+      "storageRowDesc": "Not included in backups or sync."
     }
   },
   "sync": {
@@ -629,6 +774,7 @@
     "backupPassword": "Backup password",
     "noteLockPassword": "Note lock password",
     "privacyAndSecurity": "Privacy & security",
+    "onDeviceAi": "On-device AI",
     "storage": "Storage",
     "activity": "Activity",
     "linkDevices": "Link devices",
@@ -1143,6 +1289,72 @@
       "link_other": "{{count}} links",
       "text_one": "{{count}} text snippet",
       "text_other": "{{count}} text snippets"
+    }
+  },
+  "localAi": {
+    "actions": {
+      "insert": "Insert",
+      "again": "Try again",
+      "recordAgain": "Record again",
+      "start": "Start voice typing",
+      "stop": "Stop",
+      "openSettings": "Open settings"
+    },
+    "conflictBlocked": "This note changed on another device. Choose a version before inserting. You can still select and copy the text.",
+    "voiceTyping": {
+      "toolbarLabel": "Voice typing",
+      "startHint": "Tap to start speaking",
+      "stopHint": "Tap to stop and transcribe",
+      "idle": {
+        "title": "Voice typing",
+        "subtitle": "Speak naturally. Your words stay on this device."
+      },
+      "recording": {
+        "title": "Listening",
+        "subtitle": "Your words appear when you stop."
+      },
+      "transcribing": {
+        "title": "Transcribing",
+        "subtitle": "This runs on this device. The audio isn't saved."
+      },
+      "preview": {
+        "title": "Check the text",
+        "subtitle": "Insert adds it where your cursor was."
+      }
+    },
+    "transcribe": {
+      "menuLabel": "Transcribe",
+      "idle": {
+        "title": "Transcribing recording",
+        "subtitle": "This runs on this device."
+      },
+      "recording": {
+        "title": "Transcribing recording",
+        "subtitle": "This runs on this device."
+      },
+      "transcribing": {
+        "title": "Transcribing recording",
+        "subtitle": "This runs on this device and can take a moment for long recordings."
+      },
+      "preview": {
+        "title": "Transcript",
+        "subtitle": "Insert adds it at the end of the note."
+      }
+    },
+    "errors": {
+      "micDenied": {
+        "title": "Microphone access is off",
+        "subtitle": "Voice typing needs the microphone. Audio stays on this device."
+      },
+      "failed": {
+        "title": "Couldn't transcribe",
+        "subtitle": "Try again. If it keeps failing, check the model in On-device AI settings."
+      },
+      "empty": {
+        "title": "Didn't catch anything",
+        "subtitle": "Try again and speak a little closer to the microphone."
+      },
+      "download": "Couldn't open this recording. Try again once it has finished syncing."
     }
   }
 }

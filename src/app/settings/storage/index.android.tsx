@@ -66,6 +66,9 @@ export default function AndroidStorageScreen() {
     cacheBytes,
     isClearingCache,
     handleClearCache,
+    showAiModels,
+    aiModelBytes,
+    handleOpenAiModels,
     activeDownloads,
     activeUploads,
     noteTitleByKey,
@@ -185,6 +188,26 @@ export default function AndroidStorageScreen() {
                 </Text>
               </Pressable>
             </View>
+            {showAiModels && (
+              <Pressable
+                onPress={handleOpenAiModels}
+                android_ripple={ripple}
+                style={[styles.usageRow, styles.usageRowBorder]}
+              >
+                <View style={styles.reclaimLabelWrap}>
+                  <Text style={styles.usageLabel}>{t('settings.onDeviceAi.storageRow')}</Text>
+                  <Text style={styles.reclaimDesc}>{t('settings.onDeviceAi.storageRowDesc')}</Text>
+                </View>
+                <View style={styles.aiModelsValue}>
+                  <Text style={styles.usageValue}>{formatBytes(aiModelBytes)}</Text>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={UI_ICON_SIZE_20}
+                    color={c.onSurfaceVariant}
+                  />
+                </View>
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -334,6 +357,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     reclaimLabelWrap: {
       flex: 1,
+      gap: UI_SIZE_4,
+    },
+    aiModelsValue: {
+      ...commonStyles.row,
       gap: UI_SIZE_4,
     },
     reclaimDesc: {

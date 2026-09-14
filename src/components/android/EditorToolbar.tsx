@@ -88,12 +88,14 @@ type EditorToolbarProps = {
   isActive: (key: keyof TiptapStyleState) => boolean
   editorRef: React.RefObject<TiptapEditorHandle | null>
   onAttachPress: () => void
+  onVoiceTyping?: () => void
 }
 
 export const EditorToolbar = memo(function EditorToolbar({
   isActive,
   editorRef,
   onAttachPress,
+  onVoiceTyping,
 }: EditorToolbarProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -356,6 +358,17 @@ export const EditorToolbar = memo(function EditorToolbar({
       </View>
 
       <View style={styles.divider} />
+
+      {onVoiceTyping && (
+        <ToolbarBtn
+          icon="microphone-outline"
+          a11yLabel={t('localAi.voiceTyping.toolbarLabel')}
+          onPress={() => run(onVoiceTyping)}
+          ripple={ripple}
+          c={c}
+          styles={styles}
+        />
+      )}
 
       <Pressable
         onPress={() => run(onAttachPress)}

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react'
+import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   Animated,
@@ -15,6 +15,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
+import {
+  LOCAL_AI_ENABLED,
+  LOCAL_AI_FEATURE,
+} from '@pear-notes/core/store/services/localAiCatalog.js'
+import { selectIsLocalAiFeatureReady } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   getActivityLogEnabled,
@@ -35,6 +40,9 @@ import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/Themed'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
+import { useNoteConflict } from '@/components/useNoteConflict'
+import type { VoiceTypingMode } from '@/components/useVoiceTypingSheet'
+import { VoiceTypingSheet } from '@/components/VoiceTypingSheet'
 import {
   FontFamily,
   FontSize,
@@ -72,7 +80,7 @@ import { NoteEditorContext } from '@/providers/NoteEditorContext'
 
 import { NoteHistoryModal } from '../components/activity/NoteHistoryModal'
 import { AudioRecorderModal } from '../components/AudioRecorderModal'
-import { getAttachmentFileName, isImageFile } from '../utils/media'
+import { getAttachmentFileName, isAudioFile, isImageFile } from '../utils/media'
 
 import { useToast } from './ToastProvider'
 import { useNoteEditor } from './useNoteEditor'
@@ -193,6 +201,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
+  const voiceTypingReady = useSelector(
+    (state) =>
+      LOCAL_AI_ENABLED &&
+      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.VOICE_TYPING) as boolean),
+  )
+  const transcribeReady = useSelector(
+    (state) =>
+      LOCAL_AI_ENABLED &&
+      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS) as boolean),
+  )
+  const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
+  const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
+  const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
+  const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
+  const voiceSheetVisibleRef = useRef(false)
   const canAddSharedItems = isOpen && !!noteId && !isNoteLocked && keyboardHeight === 0
   const sharedTrayBottom = useMemo(() => {
     if (!isOpen) return insets.bottom + UI_SIZE_96
@@ -426,6 +449,72 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setSelectedAttachmentSrc,
     setSelectedAttachmentFileName,
   ])
+
+  const openVoiceSheet = useCallback((mode: VoiceTypingMode) => {
+    setVoiceMode(mode)
+    setVoiceSourceUri(null)
+    voiceSheetVisibleRef.current = true
+    setVoiceSheetVisible(true)
+  }, [])
+
+  const handleCloseVoiceSheet = useCallback(() => {
+    voiceSheetVisibleRef.current = false
+    setVoiceSheetVisible(false)
+  }, [])
+
+  const handleVoiceTyping = useCallback(() => {
+    Keyboard.dismiss()
+    editorRef.current?.blur()
+    openVoiceSheet('dictate')
+  }, [editorRef, openVoiceSheet])
+
+  const handleAttachmentMenuTranscribe = useCallback(async () => {
+    if (!selectedAttachmentSrc) return
+    setAttachmentSheetVisible2(false)
+    const src = selectedAttachmentSrc
+    const fileName = selectedAttachmentFileName || getAttachmentFileName(src, 'recording.m4a')
+    setSelectedAttachmentSrc(null)
+    setSelectedAttachmentFileName(null)
+    openVoiceSheet('transcribe')
+    try {
+      const localUri = await downloadToCache(resolveHyperdriveUrl(src), fileName)
+      if (voiceSheetVisibleRef.current) {
+        setVoiceSourceUri(localUri)
+      } else {
+        const FileSystem = await import('expo-file-system/legacy')
+        FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
+      }
+    } catch {
+      handleCloseVoiceSheet()
+      showToast(t('localAi.errors.download'))
+    }
+  }, [
+    handleCloseVoiceSheet,
+    openVoiceSheet,
+    resolveHyperdriveUrl,
+    selectedAttachmentFileName,
+    selectedAttachmentSrc,
+    setAttachmentSheetVisible2,
+    setSelectedAttachmentFileName,
+    setSelectedAttachmentSrc,
+    showToast,
+    t,
+  ])
+
+  const handleInsertVoiceText = useCallback(
+    (text: string) => {
+      handleCloseVoiceSheet()
+      const paragraphs = text
+        .split(/\n+/)
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => ({ text: line }))
+      if (paragraphs.length === 0) return
+      if (voiceMode === 'transcribe') editorRef.current?.moveCursorToEnd()
+      editorRef.current?.appendParagraphs(paragraphs)
+    },
+    [editorRef, handleCloseVoiceSheet, voiceMode],
+  )
 
   const handleOpenAttachment = useCallback(
     async (url: string, fileName: string) => {
@@ -725,6 +814,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <EditorToolbar
             isActive={isActive}
             editorRef={editorRef}
+            onVoiceTyping={voiceTypingReady ? handleVoiceTyping : undefined}
             onAttachPress={() => {
               Keyboard.dismiss()
               editorRef.current?.blur()
@@ -881,6 +971,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             label: t('noteCard.actions.share'),
             onPress: handleAttachmentMenuShare,
           },
+          ...(transcribeReady && isAudioFile(selectedAttachmentFileName ?? undefined)
+            ? [
+                {
+                  icon: 'text-box-outline',
+                  label: t('localAi.transcribe.menuLabel'),
+                  onPress: handleAttachmentMenuTranscribe,
+                },
+              ]
+            : []),
           {
             icon: 'delete-outline',
             label: t('noteCard.actions.delete'),
@@ -903,6 +1002,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           visible={isRecorderVisible}
           onDone={handleRecordingDone}
           onCancel={() => setIsRecorderVisible(false)}
+        />
+      )}
+
+      {LOCAL_AI_ENABLED && (
+        <VoiceTypingSheet
+          visible={voiceSheetVisible}
+          mode={voiceMode}
+          sourceUri={voiceSourceUri}
+          insertBlocked={hasNoteConflict}
+          onInsert={handleInsertVoiceText}
+          onClose={handleCloseVoiceSheet}
         />
       )}
     </NoteEditorContext.Provider>

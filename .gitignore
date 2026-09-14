@@ -64,3 +64,6 @@ credentials/
 
 # Staged minified copy of @pear-notes/core, produced by scripts/minify-core.js
 .core-build/
+
+# QVAC worker bundle and addons manifest, produced by scripts/build-qvac-bundle.mjs
+qvac/

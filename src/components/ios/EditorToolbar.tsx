@@ -171,6 +171,7 @@ type EditorToolbarProps = {
   onScanDocument: () => void
   onTakePhoto: () => void
   onTakeVideo: () => void
+  onVoiceTyping?: () => void
 }
 
 export const EditorToolbar = memo(function EditorToolbar({
@@ -185,6 +186,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   onScanDocument,
   onTakePhoto,
   onTakeVideo,
+  onVoiceTyping,
 }: EditorToolbarProps) {
   const styles = useStyles()
   const { t } = useTranslation()
@@ -247,6 +249,16 @@ export const EditorToolbar = memo(function EditorToolbar({
                 onTakeVideo={handleTakeVideoEdit}
                 styles={styles}
               />
+              {onVoiceTyping && (
+                <ToolbarBtn
+                  sf="mic"
+                  tintActive={colors.primary}
+                  tintDefault={colors.text}
+                  a11yLabel={t('localAi.voiceTyping.toolbarLabel')}
+                  onPress={() => run(onVoiceTyping)}
+                  styles={styles}
+                />
+              )}
               <View style={styles.divider} />
               <ToolbarBtn
                 sf="arrow.uturn.backward"
@@ -462,6 +474,16 @@ export const EditorToolbar = memo(function EditorToolbar({
               onTakeVideo={handleTakeVideoEdit}
               styles={styles}
             />
+            {onVoiceTyping && (
+              <ToolbarBtn
+                sf="mic"
+                tintActive={colors.primary}
+                tintDefault={colors.text}
+                a11yLabel={t('localAi.voiceTyping.toolbarLabel')}
+                onPress={() => run(onVoiceTyping)}
+                styles={styles}
+              />
+            )}
             <ToolbarBtn
               sf="square.and.pencil"
               tintActive={colors.primary}

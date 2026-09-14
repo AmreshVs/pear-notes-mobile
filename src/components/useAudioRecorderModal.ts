@@ -27,7 +27,7 @@ const RECORDING_BAR_W = 3
 const RECORDING_BAR_GAP = 3
 
 let energy = 0.4
-function sampleAmp() {
+export function sampleAmp() {
   energy = Math.max(0.14, Math.min(0.98, energy + (Math.random() - 0.48) * 0.18))
   return Math.max(0.12, Math.min(1, energy + (Math.random() - 0.5) * 0.28))
 }

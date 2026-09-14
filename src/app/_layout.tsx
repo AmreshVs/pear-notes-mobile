@@ -24,6 +24,8 @@ import * as SystemUI from 'expo-system-ui'
 
 import { backendApi, setLocalDeviceName } from '@pear-notes/core/backend/api.js'
 import { appBoot } from '@pear-notes/core/bootTimeline.js'
+import { setLocalAiAdapter } from '@pear-notes/core/store/services/localAiAdapter.js'
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
 import { setNeedsReload } from '@pear-notes/core/store/slices/syncSlice.js'
 import {
@@ -57,6 +59,8 @@ import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { loadHapticsPreference } from '@/lib/haptics'
+import { qvacAdapter } from '@/lib/localAi/qvacAdapter'
+import { useLocalAiBridge } from '@/lib/localAi/useLocalAiBridge'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { useAttachmentCachePrune } from '@/lib/useAttachmentCachePrune'
 import { useMediaSyncAutoDetect } from '@/lib/useMediaSyncAutoDetect'
@@ -70,6 +74,8 @@ import { startWorklet } from '@/utils/worklet'
 export { AppErrorBoundary as ErrorBoundary } from '@/components/AppErrorBoundary'
 
 LogBox.ignoreAllLogs()
+
+if (LOCAL_AI_ENABLED) setLocalAiAdapter(qvacAdapter)
 
 const _initialScheme = Appearance.getColorScheme()
 SystemUI.setBackgroundColorAsync(
@@ -127,6 +133,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
 
   useMediaSyncAutoDetect()
   useAttachmentCachePrune()
+  useLocalAiBridge()
   useNoteAutoRelock()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
