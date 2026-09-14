@@ -9,6 +9,7 @@ import {
   setIsAudioActiveAsync,
   useAudioRecorder,
 } from 'expo-audio'
+import * as Clipboard from 'expo-clipboard'
 import { File } from 'expo-file-system'
 
 import { LOCAL_AI_FEATURE } from '@pear-notes/core/store/services/localAiCatalog.js'
@@ -16,9 +17,22 @@ import { getLocalAiFeatureConfig } from '@pear-notes/core/store/slices/localAiSl
 
 import { RECORDING_BARS, sampleAmp } from '@/components/useAudioRecorderModal'
 import { hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
-import { cancelLocalAiTask, transcribeAudioFile } from '@/lib/localAi/qvacAdapter'
+import {
+  cancelLocalAiTask,
+  extractTextFromImage,
+  extractTextFromPdf,
+  transcribeAudioFile,
+} from '@/lib/localAi/qvacAdapter'
 
-export type VoiceTypingMode = 'dictate' | 'transcribe'
+export type VoiceTypingMode = 'dictate' | 'transcribe' | 'extract'
+
+const COPIED_RESET_MS = 2000
+
+const FEATURE_BY_MODE = {
+  dictate: LOCAL_AI_FEATURE.VOICE_TYPING,
+  transcribe: LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS,
+  extract: LOCAL_AI_FEATURE.EXTRACT_TEXT,
+}
 export type VoiceTypingPhase = 'idle' | 'recording' | 'transcribing' | 'preview' | 'error'
 export type VoiceTypingError = 'micDenied' | 'failed' | 'empty'
 
@@ -50,8 +64,8 @@ export function useVoiceTypingSheet({
   onInsert,
   onClose,
 }: VoiceTypingSheetOptions) {
-  const feature =
-    mode === 'dictate' ? LOCAL_AI_FEATURE.VOICE_TYPING : LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS
+  const feature = FEATURE_BY_MODE[mode]
+  const usesSource = mode !== 'dictate'
   const featureConfig = useSelector((state) => getLocalAiFeatureConfig(state, feature)) as
     | FeatureConfig
     | undefined
@@ -62,6 +76,11 @@ export function useVoiceTypingSheet({
   const [text, setText] = useState('')
   const [error, setError] = useState<VoiceTypingError | null>(null)
   const [isPresented, setIsPresented] = useState(visible)
+  const [pageProgress, setPageProgress] = useState<{ page: number; total: number } | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
+  const [copiedText, setCopiedText] = useState<string | null>(null)
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const copied = copiedText !== null && copiedText === text
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const sampleRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -113,10 +132,24 @@ export function useVoiceTypingSheet({
     async (uri: string, deleteAfter: boolean) => {
       runIdRef.current += 1
       const runId = runIdRef.current
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
       setError(null)
+      setPageProgress(null)
       updatePhase('transcribing')
       try {
-        const result = await transcribeAudioFile(uri, feature, featureConfig ?? {})
+        const result =
+          mode !== 'extract'
+            ? await transcribeAudioFile(uri, feature, featureConfig ?? {})
+            : uri.toLowerCase().endsWith('.pdf')
+              ? await extractTextFromPdf(uri, {
+                  signal: controller.signal,
+                  onProgress: (progress) => {
+                    if (runId === runIdRef.current) setPageProgress(progress)
+                  },
+                })
+              : await extractTextFromImage(uri)
         if (runId !== runIdRef.current) return
         if (!result) {
           hapticWarning()
@@ -136,7 +169,7 @@ export function useVoiceTypingSheet({
         if (deleteAfter) deleteLocalFile(uri)
       }
     },
-    [feature, featureConfig, updatePhase],
+    [feature, featureConfig, mode, updatePhase],
   )
 
   const handleRecord = useCallback(async () => {
@@ -194,7 +227,7 @@ export function useVoiceTypingSheet({
     setText('')
     setError(null)
     setElapsed(0)
-    if (mode === 'transcribe') {
+    if (usesSource) {
       updatePhase('transcribing')
       return
     }
@@ -203,37 +236,55 @@ export function useVoiceTypingSheet({
   }, [visible])
 
   useEffect(() => {
-    if (!visible || mode !== 'transcribe' || !sourceUri) return
+    if (!visible || !usesSource || !sourceUri) return
     transcribe(sourceUri, false)
   }, [sourceUri, visible])
 
   const handleAgain = useCallback(() => {
-    if (mode === 'transcribe') {
+    if (usesSource) {
       if (sourceUri) transcribe(sourceUri, false)
       return
     }
     handleRecord()
-  }, [handleRecord, mode, sourceUri, transcribe])
+  }, [handleRecord, sourceUri, transcribe, usesSource])
+
+  useEffect(
+    () => () => {
+      abortRef.current?.abort()
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+    },
+    [],
+  )
+
+  const handleCopy = useCallback(async () => {
+    if (!text) return
+    await Clipboard.setStringAsync(text)
+    hapticSuccess()
+    setCopiedText(text)
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+    copiedTimerRef.current = setTimeout(() => setCopiedText(null), COPIED_RESET_MS)
+  }, [text])
 
   const handleClose = useCallback(async () => {
     runIdRef.current += 1
+    abortRef.current?.abort()
     if (phaseRef.current === 'recording') {
       const uri = await stopRecorder()
       deleteLocalFile(uri)
     }
     if (phaseRef.current === 'transcribing') cancelLocalAiTask().catch(() => {})
-    if (mode === 'transcribe') deleteLocalFile(sourceUri)
+    if (usesSource) deleteLocalFile(sourceUri)
     updatePhase('idle')
     onClose()
-  }, [mode, onClose, sourceUri, stopRecorder, updatePhase])
+  }, [onClose, sourceUri, stopRecorder, updatePhase, usesSource])
 
   const handleInsert = useCallback(() => {
     if (phaseRef.current !== 'preview' || !text) return
     hapticSuccess()
-    if (mode === 'transcribe') deleteLocalFile(sourceUri)
+    if (usesSource) deleteLocalFile(sourceUri)
     updatePhase('idle')
     onInsert(text)
-  }, [mode, onInsert, sourceUri, text, updatePhase])
+  }, [onInsert, sourceUri, text, updatePhase, usesSource])
 
   const handleOpenSettings = useCallback(() => {
     Linking.openSettings().catch(() => {})
@@ -244,6 +295,9 @@ export function useVoiceTypingSheet({
     elapsed,
     text,
     error,
+    pageProgress,
+    copied,
+    handleCopy,
     isPresented,
     liveBars,
     sheetProgress,

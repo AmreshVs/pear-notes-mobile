@@ -12,6 +12,8 @@ export interface PdfThumbnailOptions {
   url: string
   outputPath: string
   maxWidth?: number
+  pageIndex?: number
+  allowUpscale?: boolean
 }
 
 export interface PdfThumbnailResult {

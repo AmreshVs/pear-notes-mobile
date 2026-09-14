@@ -506,12 +506,13 @@ export function useNoteEditorActions({
   )
 
   const handleRecordingDone = useCallback(
-    async (uri: string, _durationMs: number) => {
+    async (uri: string, _durationMs: number): Promise<string | null> => {
       setIsRecorderVisible(false)
-      if (!noteId) return
+      if (!noteId) return null
       const targetNoteId = noteId
       const fileName = `${recordingFileNamePrefix}-${Date.now()}.m4a`
       const itemId = nextUploadItemId()
+      let insertedLink: string | null = null
       enqueueNoteUploads(targetNoteId, [{ id: itemId, fileName }])
       try {
         await runNoteUpload({
@@ -522,6 +523,7 @@ export function useNoteEditorActions({
           displayName: fileName,
           attachment: { type: 'audio' },
           insertLive: (link) => {
+            insertedLink = link
             editorRef.current?.insertAudioAttachment(link, fileName)
             setTimeout(() => editorRef.current?.revealLastInsert(link), REVEAL_INSERT_DELAY)
           },
@@ -532,6 +534,7 @@ export function useNoteEditorActions({
         await deleteCachedAsset(uri)
       }
       clearNoteUploadQueue(targetNoteId)
+      return insertedLink
     },
     [
       noteId,

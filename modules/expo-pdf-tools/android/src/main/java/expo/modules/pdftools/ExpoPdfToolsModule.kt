@@ -153,15 +153,17 @@ class ExpoPdfToolsModule : Module() {
       val outputPath = options["outputPath"] as? String
         ?: throw IllegalArgumentException("outputPath is required.")
       val maxWidth = (options["maxWidth"] as? Number)?.toDouble() ?: DEFAULT_THUMBNAIL_MAX_WIDTH
+      val pageIndex = max(0, (options["pageIndex"] as? Number)?.toInt() ?: 0)
+      val allowUpscale = options["allowUpscale"] as? Boolean ?: false
 
       val source = File(normalizedPath(url))
       if (!source.isFile) throw IllegalStateException("The PDF could not be opened.")
 
       ParcelFileDescriptor.open(source, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
         PdfRenderer(descriptor).use { renderer ->
-          if (renderer.pageCount < 1) throw IllegalStateException("The PDF has no pages.")
-          renderer.openPage(0).use { page ->
-            val scale = min(maxWidth / page.width, 1.0)
+          if (renderer.pageCount <= pageIndex) throw IllegalStateException("The PDF has no such page.")
+          renderer.openPage(pageIndex).use { page ->
+            val scale = if (allowUpscale) maxWidth / page.width else min(maxWidth / page.width, 1.0)
             val width = max(1, (page.width * scale).roundToInt())
             val height = max(1, (page.height * scale).roundToInt())
             val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)

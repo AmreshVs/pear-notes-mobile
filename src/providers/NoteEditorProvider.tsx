@@ -30,7 +30,7 @@ import {
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { NoteHistoryModal } from '@/components/activity/NoteHistoryModal'
-import { AudioRecorderModal } from '@/components/AudioRecorderModal'
+import { AudioRecorderModal, type RecordingDoneOptions } from '@/components/AudioRecorderModal'
 import { EdgeFade } from '@/components/EdgeFade'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
@@ -71,6 +71,7 @@ import {
 } from '@/lib/noteAttachmentManager'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { buildNoteSharePayload } from '@/lib/noteShare'
+import { isPdfAttachment } from '@/lib/pdfTools'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
@@ -158,11 +159,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       LOCAL_AI_ENABLED &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS) as boolean),
   )
+  const extractTextReady = useSelector(
+    (state) =>
+      LOCAL_AI_ENABLED &&
+      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.EXTRACT_TEXT) as boolean),
+  )
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
   const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
   const voiceSheetVisibleRef = useRef(false)
+  const transcriptTargetRef = useRef<string | null>(null)
 
   const editorLabels = useMemo(
     () => ({
@@ -530,46 +537,109 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setTimeout(() => openVoiceSheet('dictate'), 100)
   }, [editorRef, openVoiceSheet])
 
-  const handleTranscribeAttachment = useCallback(async () => {
+  const openSourceSheet = useCallback(
+    async (mode: VoiceTypingMode, src: string, fileName: string, downloadErrorKey: string) => {
+      openVoiceSheet(mode)
+      try {
+        const localUri = await downloadToCache(resolveHyperdriveUrl(src), fileName)
+        if (voiceSheetVisibleRef.current) {
+          setVoiceSourceUri(localUri)
+        } else {
+          cleanupCachedAttachment(localUri)
+        }
+      } catch {
+        handleCloseVoiceSheet()
+        Alert.alert(t('localAi.errors.failed.title'), t(downloadErrorKey))
+      }
+    },
+    [handleCloseVoiceSheet, openVoiceSheet, resolveHyperdriveUrl, t],
+  )
+
+  const handleTranscribeAttachment = useCallback(() => {
     if (!selectedAttachmentSrc) return
     setIsAttachmentActionSheetOpen(false)
-    const src = selectedAttachmentSrc
-    const fileName = selectedAttachmentFileName || 'recording.m4a'
-    openVoiceSheet('transcribe')
-    try {
-      const localUri = await downloadToCache(resolveHyperdriveUrl(src), fileName)
-      if (voiceSheetVisibleRef.current) {
-        setVoiceSourceUri(localUri)
-      } else {
-        FileSystem.deleteAsync(localUri, { idempotent: true }).catch(() => {})
-      }
-    } catch {
-      handleCloseVoiceSheet()
-      Alert.alert(t('localAi.errors.failed.title'), t('localAi.errors.download'))
-    }
+    transcriptTargetRef.current = selectedAttachmentSrc
+    openSourceSheet(
+      'transcribe',
+      selectedAttachmentSrc,
+      selectedAttachmentFileName || 'recording.m4a',
+      'localAi.errors.download',
+    )
   }, [
-    handleCloseVoiceSheet,
-    openVoiceSheet,
-    resolveHyperdriveUrl,
+    openSourceSheet,
     selectedAttachmentFileName,
     selectedAttachmentSrc,
     setIsAttachmentActionSheetOpen,
-    t,
+  ])
+
+  const handleImageExtractText = useCallback(() => {
+    if (!selectedImageSrc) return
+    setIsImageActionSheetOpen(false)
+    const src = selectedImageSrc
+    const fileName = src.startsWith('data:')
+      ? `image_${Date.now()}.jpg`
+      : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
+    openSourceSheet('extract', src, fileName, 'localAi.errors.downloadImage')
+  }, [openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
+
+  const handleExtractTextAttachment = useCallback(() => {
+    if (!selectedAttachmentSrc) return
+    setIsAttachmentActionSheetOpen(false)
+    openSourceSheet(
+      'extract',
+      selectedAttachmentSrc,
+      selectedAttachmentFileName || 'document.pdf',
+      'localAi.errors.downloadFile',
+    )
+  }, [
+    openSourceSheet,
+    selectedAttachmentFileName,
+    selectedAttachmentSrc,
+    setIsAttachmentActionSheetOpen,
   ])
 
   const handleInsertVoiceText = useCallback(
     (text: string) => {
       handleCloseVoiceSheet()
+      const transcriptTarget = transcriptTargetRef.current
+      transcriptTargetRef.current = null
       const paragraphs = text
         .split(/\n+/)
         .map((line) => line.trim())
         .filter(Boolean)
         .map((line) => ({ text: line }))
       if (paragraphs.length === 0) return
-      if (voiceMode === 'transcribe') editorRef.current?.moveCursorToEnd()
+      if (voiceMode === 'transcribe') {
+        editorRef.current?.insertTranscript(
+          transcriptTarget,
+          t('localAi.transcriptTitle'),
+          paragraphs,
+        )
+        return
+      }
+      if (voiceMode !== 'dictate') editorRef.current?.moveCursorToEnd()
       editorRef.current?.appendParagraphs(paragraphs)
     },
-    [editorRef, handleCloseVoiceSheet, voiceMode],
+    [editorRef, handleCloseVoiceSheet, t, voiceMode],
+  )
+
+  const handleRecorderDone = useCallback(
+    async (uri: string, durationMs: number, options?: RecordingDoneOptions) => {
+      let transcriptUri: string | null = null
+      if (options?.addTranscript) {
+        try {
+          const copy = new FileSystem.File(FileSystem.Paths.cache, `transcript-${Date.now()}.m4a`)
+          new FileSystem.File(uri).copy(copy)
+          transcriptUri = copy.uri
+        } catch {}
+      }
+      const link = await handleRecordingDone(uri, durationMs)
+      if (!transcriptUri) return
+      openVoiceSheet('transcribe')
+      transcriptTargetRef.current = link
+      setVoiceSourceUri(transcriptUri)
+    },
+    [handleRecordingDone, openVoiceSheet],
   )
 
   const edgeSwipeResponder = useMemo(
@@ -910,7 +980,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
           <AudioRecorderModal
             visible={isRecorderVisible}
-            onDone={handleRecordingDone}
+            transcriptAvailable={transcribeReady}
+            onDone={handleRecorderDone}
             onCancel={() => setIsRecorderVisible(false)}
           />
 
@@ -972,6 +1043,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       systemImage="square.and.arrow.down"
                       onPress={handleImageSaveToPhotos}
                     />
+                    {extractTextReady && (
+                      <ExpoUI.Button
+                        label={t('localAi.extractText.menuLabel')}
+                        systemImage="text.viewfinder"
+                        onPress={handleImageExtractText}
+                      />
+                    )}
                     <ExpoUI.Button
                       label={t('noteCard.actions.delete')}
                       systemImage="trash"
@@ -1034,6 +1112,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                         label={t('localAi.transcribe.menuLabel')}
                         systemImage="text.quote"
                         onPress={handleTranscribeAttachment}
+                      />
+                    )}
+                    {extractTextReady && isPdfAttachment(selectedAttachmentFileName) && (
+                      <ExpoUI.Button
+                        label={t('localAi.extractText.menuLabel')}
+                        systemImage="text.viewfinder"
+                        onPress={handleExtractTextAttachment}
                       />
                     )}
                     <ExpoUI.Button

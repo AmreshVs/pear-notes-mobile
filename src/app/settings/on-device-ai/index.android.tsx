@@ -30,10 +30,10 @@ import {
   UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_18,
   UI_SIZE_20,
   UI_SIZE_22,
   UI_SIZE_28,
+  UI_SIZE_32,
   UI_SIZE_40,
   UI_SIZE_48,
   UI_SIZE_96,
@@ -456,7 +456,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       textAlign: 'left',
     },
     scrollContent: {
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: insets.bottom + UI_SIZE_40,
     },
     heroContainer: {
@@ -527,12 +527,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     toggleRow: {
       ...commonStyles.rowBetween,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_18,
-      gap: UI_SIZE_16,
+      padding: Space.base,
+      gap: Space.base,
     },
     toggleInfo: {
       ...commonStyles.flex1,
+      gap: Space.xs,
     },
     titleRow: {
       ...commonStyles.row,
@@ -540,27 +540,25 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     groupDivider: {
       height: StyleSheet.hairlineWidth,
-      backgroundColor: hexWithAlpha(c.outlineVariant ?? c.onSurface, 0.5),
-      marginHorizontal: UI_SIZE_20,
+      backgroundColor: hexWithAlpha(c.onSurface, 0.12),
+      marginHorizontal: Space.base,
     },
     rowTitle: {
       fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
-      marginBottom: UI_SIZE_4,
     },
     rowSubtitle: {
-      fontSize: FontSize.body,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
-      fontFamily: FontFamily.medium,
-      fontWeight: FontWeight.medium,
+      lineHeight: 20,
     },
     featureStatus: {
-      paddingHorizontal: UI_SIZE_20,
-      paddingBottom: UI_SIZE_18,
+      paddingHorizontal: Space.base,
+      paddingBottom: Space.base,
       marginTop: -UI_SIZE_8,
-      gap: UI_SIZE_8,
+      gap: UI_SIZE_4,
     },
     statusRow: {
       ...commonStyles.rowBetween,
@@ -580,8 +578,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       gap: UI_SIZE_4,
     },
     iconBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
       ...commonStyles.centered,
       overflow: 'hidden',
       borderRadius: UI_SIZE_9999,

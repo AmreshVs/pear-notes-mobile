@@ -26,7 +26,6 @@ import {
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_40,
-  UI_SIZE_56,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
@@ -276,7 +275,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       color: c.onSurface,
     },
     scrollContent: {
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: insets.bottom + UI_SIZE_40,
     },
     intro: {
@@ -294,17 +293,14 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       ...commonStyles.row,
       justifyContent: 'space-between',
       gap: UI_SIZE_16,
-      minHeight: UI_SIZE_56,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_16,
+      padding: UI_SIZE_16,
     },
     rowDivider: {
       borderBottomWidth: StyleSheet.hairlineWidth,
       ...commonStyles.row,
       justifyContent: 'space-between',
       gap: UI_SIZE_16,
-      minHeight: UI_SIZE_56,
-      marginHorizontal: UI_SIZE_20,
+      marginHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_16,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
@@ -313,7 +309,8 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       gap: UI_SIZE_4,
     },
     rowLabel: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
     rowDesc: {

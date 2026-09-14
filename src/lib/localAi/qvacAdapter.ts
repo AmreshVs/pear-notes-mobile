@@ -1,4 +1,4 @@
-import { AppState, AppStateStatus, NativeEventSubscription } from 'react-native'
+import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'react-native'
 import { File, Paths } from 'expo-file-system'
 
 import {
@@ -49,6 +49,9 @@ const QVAC_RUNTIME_CONFIG_FILE = 'qvac.config.json'
 const PCM_FILE_PREFIX = 'local-ai-audio-'
 const PCM_FILE_EXTENSION = '.raw'
 const OCR_LANGUAGES = ['en']
+const OCR_MAG_RATIO = 1
+const OCR_CANVAS_SIZE = 1280
+const OCR_RECOGNIZER_BATCH_SIZE = 8
 const PARAKEET_ENGINE = 'parakeet'
 const WHISPER_AUDIO_FORMAT = 's16le'
 
@@ -289,15 +292,90 @@ export async function transcribeAudioFile(
 export async function extractTextFromImage(fileUri: string): Promise<string> {
   const sdk = await loadSdk()
   const [recognizerName, detectorName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, {})
-  const modelId = await ensureModelLoaded(sdk, `${recognizerName}|${detectorName}`, () =>
+  const modelId = await ensureModelLoaded(sdk, `${recognizerName}|${detectorName}|mobile`, () =>
     loadModelWith(sdk, {
       modelSrc: registryAsset(sdk, recognizerName),
       modelType: 'ocr',
-      modelConfig: { detectorModelSrc: registryAsset(sdk, detectorName), langList: OCR_LANGUAGES },
+      modelConfig: {
+        detectorModelSrc: registryAsset(sdk, detectorName),
+        langList: OCR_LANGUAGES,
+        magRatio: OCR_MAG_RATIO,
+        canvasSize: OCR_CANVAS_SIZE,
+        defaultRotationAngles: [],
+        recognizerBatchSize: OCR_RECOGNIZER_BATCH_SIZE,
+        backendDevice: Platform.OS === 'ios' ? 'metal' : 'cpu',
+      },
     }),
   )
-  const { blocks } = sdk.ocr({ modelId, image: toFilePath(fileUri) })
-  return formatOcrBlocks(await blocks)
+  const prepared = await downscaleImageForOcr(fileUri)
+  try {
+    const { blocks } = sdk.ocr({ modelId, image: toFilePath(prepared ?? fileUri) })
+    return formatOcrBlocks(await blocks)
+  } finally {
+    if (prepared) {
+      try {
+        const file = new File(prepared)
+        if (file.exists) file.delete()
+      } catch {}
+    }
+  }
+}
+
+const OCR_IMAGE_MAX_SIDE = 1600
+const OCR_IMAGE_QUALITY = 0.9
+
+async function downscaleImageForOcr(fileUri: string): Promise<string | null> {
+  try {
+    const manipulator = await import('expo-image-manipulator')
+    const original = await manipulator.ImageManipulator.manipulate(fileUri).renderAsync()
+    const longest = Math.max(original.width, original.height)
+    if (longest <= OCR_IMAGE_MAX_SIDE) return null
+    const resize =
+      original.width >= original.height
+        ? { width: OCR_IMAGE_MAX_SIDE }
+        : { height: OCR_IMAGE_MAX_SIDE }
+    const rendered = await manipulator.ImageManipulator.manipulate(fileUri)
+      .resize(resize)
+      .renderAsync()
+    const saved = await rendered.saveAsync({
+      compress: OCR_IMAGE_QUALITY,
+      format: manipulator.SaveFormat.JPEG,
+    })
+    return saved.uri
+  } catch {
+    return null
+  }
+}
+
+const OCR_MAX_PDF_PAGES = 20
+
+export interface PdfExtractOptions {
+  signal?: AbortSignal
+  onProgress?: (progress: { page: number; total: number }) => void
+}
+
+export async function extractTextFromPdf(
+  fileUri: string,
+  { signal, onProgress }: PdfExtractOptions = {},
+): Promise<string> {
+  const { renderPdfPageForOcr } = await import('@/lib/pdfTools')
+  const FileSystem = await import('expo-file-system/legacy')
+  const texts: string[] = []
+  let pageCount = 1
+  for (let pageIndex = 0; pageIndex < Math.min(pageCount, OCR_MAX_PDF_PAGES); pageIndex += 1) {
+    if (signal?.aborted) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED)
+    const rendered = await renderPdfPageForOcr(fileUri, pageIndex)
+    if (!rendered) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED)
+    pageCount = rendered.pageCount
+    onProgress?.({ page: pageIndex + 1, total: Math.min(pageCount, OCR_MAX_PDF_PAGES) })
+    try {
+      const pageText = (await extractTextFromImage(rendered.uri)).trim()
+      if (pageText) texts.push(pageText)
+    } finally {
+      await FileSystem.deleteAsync(rendered.uri, { idempotent: true }).catch(() => {})
+    }
+  }
+  return texts.join('\n\n')
 }
 
 export async function cancelLocalAiTask() {

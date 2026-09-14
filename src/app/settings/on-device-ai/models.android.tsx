@@ -23,7 +23,6 @@ import {
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_40,
   UI_SIZE_9999,
@@ -213,7 +212,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       color: c.onSurface,
     },
     scrollContent: {
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
       paddingBottom: insets.bottom + UI_SIZE_40,
     },
     intro: {
@@ -221,7 +220,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
       marginHorizontal: UI_SIZE_8,
-      marginBottom: UI_SIZE_20,
+      marginBottom: UI_SIZE_16,
     },
     card: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
@@ -231,24 +230,23 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     loadingCard: {
       ...commonStyles.row,
       gap: UI_SIZE_12,
-      padding: UI_SIZE_20,
+      padding: UI_SIZE_16,
     },
     emptyCard: {
-      padding: UI_SIZE_20,
+      padding: UI_SIZE_16,
     },
     row: {
       ...commonStyles.row,
       justifyContent: 'space-between',
       gap: UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_16,
+      padding: UI_SIZE_16,
     },
     rowDivider: {
       borderBottomWidth: StyleSheet.hairlineWidth,
       ...commonStyles.row,
       justifyContent: 'space-between',
       gap: UI_SIZE_16,
-      marginHorizontal: UI_SIZE_20,
+      marginHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_16,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
@@ -289,7 +287,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       ...commonStyles.centered,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
-      padding: UI_SIZE_20,
+      padding: UI_SIZE_16,
       gap: UI_SIZE_16,
     },
     dangerTextContent: {

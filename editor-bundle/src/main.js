@@ -1500,6 +1500,48 @@ window.editorBridge = {
         break
       }
 
+      case 'insertTranscript': {
+        const lines = Array.isArray(msg.paragraphs)
+          ? msg.paragraphs
+              .map((paragraph) => (typeof paragraph?.text === 'string' ? paragraph.text.trim() : ''))
+              .filter(Boolean)
+          : []
+        if (lines.length === 0) break
+        const quote = {
+          type: 'blockquote',
+          content: [
+            {
+              type: 'paragraph',
+              content: [{ type: 'text', text: msg.title || 'Transcript', marks: [{ type: 'bold' }] }],
+            },
+            ...lines.map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })),
+          ],
+        }
+        let insertAt = null
+        if (msg.url) {
+          editor.state.doc.descendants((node, pos) => {
+            if (insertAt !== null) return false
+            const isAttachment =
+              node.type.name === 'audioAttachment' || node.type.name === 'fileAttachment'
+            if (isAttachment && (node.attrs.url === msg.url || node.attrs.fileData === msg.url)) {
+              insertAt = pos + node.nodeSize
+              return false
+            }
+          })
+        }
+        if (insertAt === null) {
+          const lastNode = editor.state.doc.lastChild
+          if (lastNode && lastNode.type.name === 'paragraph' && lastNode.content.size === 0) {
+            insertAt = editor.state.doc.content.size - lastNode.nodeSize
+          } else {
+            insertAt = editor.state.doc.content.size
+          }
+        }
+        editor.chain().insertContentAt(insertAt, quote).run()
+        flushContentChange(editor.getHTML(), editor.getText())
+        break
+      }
+
       case 'deleteImage': {
         const { src: srcToDelete } = msg
         let deleted = false

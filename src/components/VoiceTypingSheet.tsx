@@ -1,10 +1,11 @@
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Animated, { useAnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
+import { LocalAiProcessing } from '@/components/LocalAiProcessing'
 import { RecordingWaveBar } from '@/components/RecordingWaveBar'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -26,22 +27,22 @@ import {
   Layout,
   Radii,
   UI_ICON_SIZE_16,
+  UI_ICON_SIZE_20,
+  UI_SIZE_2,
   UI_SIZE_4,
-  UI_SIZE_6,
   UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_18,
-  UI_SIZE_28,
-  UI_SIZE_36,
+  UI_SIZE_32,
+  UI_SIZE_40,
   UI_SIZE_54,
   UI_SIZE_64,
-  UI_SIZE_80,
-  UI_SIZE_88,
 } from '@/constants/commonStyles'
 
 const RECORDING_BAR_STEP = RECORDING_BAR_W + RECORDING_BAR_GAP
+const PREVIEW_MAX_HEIGHT_RATIO = 0.42
 
 interface VoiceTypingSheetProps {
   visible: boolean
@@ -52,10 +53,32 @@ interface VoiceTypingSheetProps {
   onClose: () => void
 }
 
+const HERO_BASE_BY_MODE: Record<VoiceTypingMode, string> = {
+  dictate: 'localAi.voiceTyping',
+  transcribe: 'localAi.transcribe',
+  extract: 'localAi.extractText',
+}
+
+const ICON_BY_MODE: Record<VoiceTypingMode, string> = {
+  dictate: 'waveform',
+  transcribe: 'text.quote',
+  extract: 'text.viewfinder',
+}
+
 function heroKeys(mode: VoiceTypingMode, phase: VoiceTypingPhase, error: VoiceTypingError | null) {
-  const base = mode === 'dictate' ? 'localAi.voiceTyping' : 'localAi.transcribe'
-  if (phase === 'error')
-    return { title: `localAi.errors.${error}.title`, subtitle: `localAi.errors.${error}.subtitle` }
+  const base = HERO_BASE_BY_MODE[mode]
+  if (phase === 'error') {
+    const errorKey =
+      mode === 'extract' && error === 'empty'
+        ? 'emptyImage'
+        : mode === 'extract' && error === 'failed'
+          ? 'failedExtract'
+          : error
+    return {
+      title: `localAi.errors.${errorKey}.title`,
+      subtitle: `localAi.errors.${errorKey}.subtitle`,
+    }
+  }
   return { title: `${base}.${phase}.title`, subtitle: `${base}.${phase}.subtitle` }
 }
 
@@ -71,11 +94,15 @@ export function VoiceTypingSheet({
   const { colors, isDark } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
   const {
     phase,
     elapsed,
     text,
     error,
+    pageProgress,
+    copied,
+    handleCopy,
     isPresented,
     liveBars,
     sheetProgress,
@@ -98,19 +125,35 @@ export function VoiceTypingSheet({
   const keys = heroKeys(mode, phase, error)
   const canInsert = phase === 'preview' && !insertBlocked
   const isRecording = phase === 'recording'
+  const isError = phase === 'error'
   const showRecorder = mode === 'dictate' && (phase === 'idle' || phase === 'recording')
+  const showProcessing = phase === 'transcribing' || (phase === 'idle' && mode !== 'dictate')
+  const subtitle =
+    phase === 'preview' && insertBlocked ? t('localAi.conflictBlocked') : t(keys.subtitle)
 
   const body = (
     <>
       <View style={styles.grabber} />
 
-      <View style={styles.headerRow}>
+      <View style={styles.header}>
+        <View style={[styles.badge, isError && styles.badgeError]}>
+          <SymbolView
+            name={(isError ? 'exclamationmark.triangle' : ICON_BY_MODE[mode]) as never}
+            size={UI_ICON_SIZE_20}
+            tintColor={isError ? colors.error : colors.primary}
+            weight="semibold"
+          />
+        </View>
+        <View style={styles.headerText}>
+          <Text style={styles.title}>{t(keys.title)}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </View>
         <Pressable
           hitSlop={12}
           onPress={handleClose}
           accessibilityRole="button"
           accessibilityLabel={t('common.close')}
-          style={({ pressed }) => [styles.headerIconButton, pressed && styles.headerActionPressed]}
+          style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
         >
           <SymbolView
             name="xmark"
@@ -119,95 +162,69 @@ export function VoiceTypingSheet({
             weight="semibold"
           />
         </Pressable>
-        <Pressable
-          disabled={!canInsert}
-          hitSlop={12}
-          onPress={handleInsert}
-          accessibilityRole="button"
-          accessibilityLabel={t('localAi.actions.insert')}
-          style={({ pressed }) => [
-            styles.headerIconButton,
-            (!canInsert || pressed) && styles.headerActionPressed,
-          ]}
-        >
-          <SymbolView
-            name="checkmark"
-            size={UI_ICON_SIZE_16}
-            tintColor={canInsert ? colors.primary : colors.textMuted}
-            weight="bold"
-          />
-        </Pressable>
-      </View>
-
-      <View style={styles.heroBlock}>
-        <Text style={styles.heroTitle}>{t(keys.title)}</Text>
-        <Text style={styles.heroSubtitle}>
-          {phase === 'preview' && insertBlocked ? t('localAi.conflictBlocked') : t(keys.subtitle)}
-        </Text>
       </View>
 
       {showRecorder && (
-        <>
-          <View style={styles.recordingWave}>
-            <View style={styles.recordingBarsLane}>
-              <View style={styles.recordingBarsRow}>
-                {Array.from({ length: RECORDING_BARS }, (_, index) => (
-                  <RecordingWaveBar
-                    key={index}
-                    active={isRecording}
-                    index={index}
-                    values={liveBars}
-                    color={colors.primary}
-                  />
-                ))}
-              </View>
+        <View style={styles.recorder}>
+          <View style={styles.waveLane}>
+            <View style={styles.waveRow}>
+              {Array.from({ length: RECORDING_BARS }, (_, index) => (
+                <RecordingWaveBar
+                  key={index}
+                  active={isRecording}
+                  index={index}
+                  values={liveBars}
+                  color={colors.primary}
+                />
+              ))}
             </View>
           </View>
-
-          <Text style={[styles.timer, isRecording && styles.timerRecording]}>
-            {fmtTimer(elapsed)}
-          </Text>
-
-          <View style={styles.controlsSection}>
+          <View style={styles.recorderFooter}>
+            <Text style={[styles.timer, isRecording && styles.timerRecording]}>
+              {fmtTimer(elapsed)}
+            </Text>
             <Pressable
               onPress={isRecording ? handleStop : handleRecord}
               accessibilityRole="button"
               accessibilityLabel={
                 isRecording ? t('localAi.actions.stop') : t('localAi.actions.start')
               }
-              style={({ pressed }) => [styles.recordButton, pressed && styles.recordButtonPressed]}
+              accessibilityHint={
+                isRecording ? t('localAi.voiceTyping.stopHint') : t('localAi.voiceTyping.startHint')
+              }
+              style={({ pressed }) => [styles.recordButton, pressed && styles.pressed]}
             >
-              <View style={styles.recordOuterRing}>
-                <View style={[styles.recordInnerCore, isRecording && styles.recordStopCore]} />
-              </View>
+              <View style={[styles.recordCore, isRecording && styles.recordStopCore]} />
             </Pressable>
-            <Text style={styles.recordHint}>
-              {isRecording ? t('localAi.voiceTyping.stopHint') : t('localAi.voiceTyping.startHint')}
-            </Text>
           </View>
-        </>
-      )}
-
-      {phase === 'transcribing' && (
-        <View style={styles.statusBlock}>
-          <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}
 
+      {showProcessing && (
+        <LocalAiProcessing
+          color={colors.primary}
+          captionColor={colors.textSecondary}
+          caption={pageProgress ? t('localAi.extractText.pageProgress', pageProgress) : null}
+        />
+      )}
+
       {phase === 'preview' && (
-        <ScrollView style={styles.previewCard} contentContainerStyle={styles.previewContent}>
+        <ScrollView
+          style={[styles.previewCard, { maxHeight: windowHeight * PREVIEW_MAX_HEIGHT_RATIO }]}
+          contentContainerStyle={styles.previewContent}
+        >
           <Text style={styles.previewText} selectable>
             {text}
           </Text>
         </ScrollView>
       )}
 
-      {(phase === 'preview' || phase === 'error') && (
+      {(phase === 'preview' || isError) && (
         <View style={styles.actionsRow}>
-          {phase === 'error' && error === 'micDenied' ? (
+          {isError && error === 'micDenied' ? (
             <Pressable
               onPress={handleOpenSettings}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
             >
               <Text style={styles.primaryButtonText}>{t('localAi.actions.openSettings')}</Text>
             </Pressable>
@@ -215,7 +232,7 @@ export function VoiceTypingSheet({
             <>
               <Pressable
                 onPress={handleAgain}
-                style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
+                style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
               >
                 <SymbolView
                   name="arrow.clockwise"
@@ -233,12 +250,29 @@ export function VoiceTypingSheet({
               </Pressable>
               {phase === 'preview' && (
                 <Pressable
+                  onPress={handleCopy}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    copied ? t('localAi.actions.copied') : t('localAi.actions.copy')
+                  }
+                  style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+                >
+                  <SymbolView
+                    name={copied ? 'checkmark' : 'doc.on.doc'}
+                    size={UI_ICON_SIZE_20}
+                    tintColor={copied ? colors.primary : colors.text}
+                    weight="semibold"
+                  />
+                </Pressable>
+              )}
+              {phase === 'preview' && (
+                <Pressable
                   disabled={!canInsert}
                   onPress={handleInsert}
                   style={({ pressed }) => [
                     styles.primaryButton,
                     !canInsert && styles.buttonDisabled,
-                    pressed && styles.buttonPressed,
+                    pressed && styles.pressed,
                   ]}
                 >
                   <Text style={styles.primaryButtonText}>{t('localAi.actions.insert')}</Text>
@@ -249,7 +283,7 @@ export function VoiceTypingSheet({
         </View>
       )}
 
-      <View style={{ height: Math.max(insets.bottom, 8) }} />
+      <View style={{ height: Math.max(insets.bottom, UI_SIZE_12) }} />
     </>
   )
 
@@ -302,8 +336,7 @@ const useStyles = createThemedStylesheet((theme) => {
     sheet: {
       paddingHorizontal: UI_SIZE_18,
       paddingTop: UI_SIZE_10,
-      paddingBottom: UI_SIZE_4,
-      gap: UI_SIZE_14,
+      gap: UI_SIZE_18,
       borderCurve: 'continuous',
       borderTopLeftRadius: Radii.sheet,
       borderTopRightRadius: Radii.sheet,
@@ -321,123 +354,107 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: 999,
       backgroundColor: theme.colors.sheetGrabber,
     },
-    headerRow: {
+    header: {
       flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: UI_SIZE_12,
     },
-    headerActionPressed: {
-      opacity: 0.48,
-    },
-    headerIconButton: {
-      width: UI_SIZE_36,
-      height: UI_SIZE_36,
-      borderRadius: 999,
+    badge: {
+      width: UI_SIZE_40,
+      height: UI_SIZE_40,
+      borderRadius: UI_SIZE_12,
       borderCurve: 'continuous',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: `${theme.colors.primary}1F`,
+    },
+    badgeError: {
+      backgroundColor: `${theme.colors.error}1F`,
+    },
+    headerText: {
+      flex: 1,
+      gap: UI_SIZE_2,
+    },
+    title: {
+      fontSize: FontSize.title,
+      lineHeight: 26,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      letterSpacing: -0.4,
+      paddingRight: UI_SIZE_2,
+      color: theme.colors.text,
+    },
+    subtitle: {
+      fontSize: FontSize.body,
+      lineHeight: 20,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textSecondary,
+    },
+    closeButton: {
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
+      borderRadius: 999,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: theme.colors.controlBackground,
     },
-    heroBlock: {
+    pressed: {
+      opacity: 0.6,
+    },
+    recorder: {
+      gap: UI_SIZE_8,
+    },
+    waveLane: {
+      height: 56,
       alignItems: 'center',
-      gap: UI_SIZE_6,
-      paddingHorizontal: UI_SIZE_14,
-      minHeight: UI_SIZE_80,
-      justifyContent: 'center',
-    },
-    heroTitle: {
-      fontSize: FontSize.heading,
-      lineHeight: 34,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      textAlign: 'center',
-      letterSpacing: -0.7,
-      color: theme.colors.text,
-    },
-    heroSubtitle: {
-      fontSize: FontSize.subtitle,
-      lineHeight: 21,
-      fontFamily: FontFamily.regular,
-      textAlign: 'center',
-      maxWidth: 300,
-      color: theme.colors.textSecondary,
-    },
-    recordingWave: {
-      height: UI_SIZE_88,
       justifyContent: 'center',
       overflow: 'hidden',
     },
-    recordingBarsLane: {
-      alignItems: 'center',
-      overflow: 'hidden',
-    },
-    recordingBarsRow: {
+    waveRow: {
       flexDirection: 'row',
       alignItems: 'center',
+      justifyContent: 'flex-end',
       gap: RECORDING_BAR_GAP,
       width: RECORDING_BARS * RECORDING_BAR_STEP,
-      justifyContent: 'flex-end',
+    },
+    recorderFooter: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
     },
     timer: {
-      fontSize: 40,
-      lineHeight: 46,
-      fontWeight: '200',
+      fontSize: 30,
+      lineHeight: 36,
+      fontWeight: '300',
       fontFamily: FontFamily.mono,
-      textAlign: 'center',
       color: theme.colors.text,
     },
     timerRecording: {
       color: theme.colors.primary,
     },
-    controlsSection: {
-      alignItems: 'center',
-      gap: UI_SIZE_12,
-      minHeight: 142,
-      justifyContent: 'center',
-    },
     recordButton: {
-      padding: UI_SIZE_10,
+      width: UI_SIZE_64,
+      height: UI_SIZE_64,
       borderRadius: 999,
-    },
-    recordButtonPressed: {
-      opacity: 0.82,
-      transform: [{ scale: 0.98 }],
-    },
-    recordOuterRing: {
-      width: UI_SIZE_88,
-      height: UI_SIZE_88,
-      borderRadius: 999,
+      borderWidth: 3,
       alignItems: 'center',
       justifyContent: 'center',
       borderColor: theme.colors.primary,
-      backgroundColor: `${theme.colors.primary}14`,
     },
-    recordInnerCore: {
-      width: UI_SIZE_64,
-      height: UI_SIZE_64,
+    recordCore: {
+      width: 48,
+      height: 48,
       borderRadius: 999,
       backgroundColor: theme.colors.primary,
     },
     recordStopCore: {
-      width: UI_SIZE_28,
-      height: UI_SIZE_28,
-      borderRadius: 8,
-    },
-    recordHint: {
-      fontSize: FontSize.subtitle,
-      lineHeight: 20,
-      textAlign: 'center',
-      fontFamily: FontFamily.regular,
-      color: theme.colors.textSecondary,
-    },
-    statusBlock: {
-      minHeight: 160,
-      alignItems: 'center',
-      justifyContent: 'center',
+      width: 22,
+      height: 22,
+      borderRadius: 6,
     },
     previewCard: {
-      maxHeight: 240,
       borderRadius: Radii.card,
+      borderCurve: 'continuous',
       backgroundColor: theme.colors.cardSurface,
     },
     previewContent: {
@@ -453,6 +470,17 @@ const useStyles = createThemedStylesheet((theme) => {
       flexDirection: 'row',
       gap: UI_SIZE_12,
       paddingTop: UI_SIZE_4,
+    },
+    iconButton: {
+      width: UI_SIZE_54,
+      height: UI_SIZE_54,
+      borderRadius: 999,
+      borderCurve: 'continuous',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.isDark
+        ? theme.colors.surfaceSecondary
+        : theme.colors.sheetCancelBackground,
     },
     secondaryButton: {
       flex: 1,
@@ -490,10 +518,6 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     buttonDisabled: {
       opacity: 0.4,
-    },
-    buttonPressed: {
-      opacity: 0.78,
-      transform: [{ scale: 0.98 }],
     },
   })
   return styles

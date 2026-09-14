@@ -77,6 +77,7 @@ export interface TiptapEditorHandle {
   insertAudioAttachment: (url: string, fileName: string, duration?: number) => void
   moveCursorToEnd: () => void
   appendParagraphs: (paragraphs: SharedParagraph[]) => void
+  insertTranscript: (url: string | null, title: string, paragraphs: SharedParagraph[]) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
   focusTitle: () => void
@@ -590,6 +591,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'insertAudioAttachment', url, fileName, duration }),
         moveCursorToEnd: () => sendCommand({ type: 'moveCursorToEnd' }),
         appendParagraphs: (paragraphs) => sendCommand({ type: 'appendParagraphs', paragraphs }),
+        insertTranscript: (url, title, paragraphs) =>
+          sendCommand({ type: 'insertTranscript', url, title, paragraphs }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => {
           requestNativeWebViewFocus()

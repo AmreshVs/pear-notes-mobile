@@ -93,6 +93,26 @@ async function renderThumbnail(
   return { fileUri, pageCount }
 }
 
+const OCR_PAGE_WIDTH = 1240
+
+export async function renderPdfPageForOcr(
+  localPdfUri: string,
+  pageIndex: number,
+): Promise<{ uri: string; pageCount: number } | null> {
+  const pdfTools = await loadPdfTools()
+  const cacheDirectory = FileSystem.cacheDirectory
+  if (!pdfTools || !cacheDirectory) return null
+  const outputUri = `${cacheDirectory}ocr-page-${Date.now()}-${pageIndex}.jpg`
+  const { uri, pageCount } = await pdfTools.getPdfThumbnail({
+    url: toBackendPath(localPdfUri),
+    outputPath: toBackendPath(outputUri),
+    maxWidth: OCR_PAGE_WIDTH,
+    pageIndex,
+    allowUpscale: true,
+  })
+  return { uri, pageCount }
+}
+
 /**
  * Cache-only lookup, for the notes list. Never loads the native module and never pulls the PDF
  * through the blob server, so scrolling a list of PDF notes costs nothing and is unaffected by the

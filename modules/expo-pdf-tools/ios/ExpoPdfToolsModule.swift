@@ -112,8 +112,10 @@ public class ExpoPdfToolsModule: Module {
         return
       }
 
+      let pageIndex = max(0, options["pageIndex"] as? Int ?? 0)
+      let allowUpscale = options["allowUpscale"] as? Bool ?? false
       let pdfUrl = URL(fileURLWithPath: normalizedPath(url))
-      guard let document = PDFDocument(url: pdfUrl), let page = document.page(at: 0) else {
+      guard let document = PDFDocument(url: pdfUrl), let page = document.page(at: pageIndex) else {
         promise.reject(Exception(name: "UnreadablePdf", description: "The PDF could not be opened."))
         return
       }
@@ -125,7 +127,7 @@ public class ExpoPdfToolsModule: Module {
       }
 
       let maxWidth = CGFloat(options["maxWidth"] as? Double ?? defaultThumbnailMaxWidth)
-      let scale = min(maxWidth / bounds.width, 1)
+      let scale = allowUpscale ? maxWidth / bounds.width : min(maxWidth / bounds.width, 1)
       let size = CGSize(
         width: max(1, (bounds.width * scale).rounded()),
         height: max(1, (bounds.height * scale).rounded())
