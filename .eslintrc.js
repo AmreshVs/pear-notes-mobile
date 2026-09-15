@@ -1,7 +1,7 @@
 module.exports = {
   extends: 'universe/native',
   plugins: ['import', 'react-native', 'simple-import-sort'],
-  ignorePatterns: ['editor-bundle/**', 'src/utils/tiptap-editor-bundle.ts'],
+  ignorePatterns: ['editor-bundle/**', 'src/utils/tiptap-editor-bundle.ts', 'qvac/**'],
   parserOptions: {
     warnOnUnsupportedTypeScriptVersion: false,
   },
