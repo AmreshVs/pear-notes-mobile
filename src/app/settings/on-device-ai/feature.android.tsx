@@ -19,7 +19,6 @@ import {
   FontWeight,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
-  UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_16,
@@ -159,25 +158,26 @@ export default function AndroidOnDeviceAiFeatureScreen() {
                   <Pressable
                     key={option.tier}
                     onPress={() => selectTier(option.tier)}
+                    disabled={!option.fits}
                     android_ripple={ripple}
                     accessibilityRole="button"
-                    accessibilityState={{ selected: option.selected }}
+                    accessibilityState={{ selected: option.selected, disabled: !option.fits }}
                     style={index < tiers.length - 1 ? styles.rowDivider : styles.row}
                   >
-                    <View style={styles.rowInfo}>
+                    <View style={[styles.rowInfo, !option.fits && styles.unavailable]}>
                       <Text style={styles.rowLabel}>
                         {t(`settings.onDeviceAi.tiers.${option.tier}`)}
                       </Text>
                       <Text style={styles.rowDesc}>
-                        {t(
-                          [
-                            `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
-                            `settings.onDeviceAi.tierDescriptions.${option.tier}`,
-                          ],
-                          {
-                            size: formatBytes(option.bytes),
-                          },
-                        )}
+                        {option.fits
+                          ? t(
+                              [
+                                `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
+                                `settings.onDeviceAi.tierDescriptions.${option.tier}`,
+                              ],
+                              { size: formatBytes(option.bytes) },
+                            )
+                          : t('settings.onDeviceAi.tierNeedsMemory')}
                       </Text>
                     </View>
                     {option.selected && (
@@ -349,6 +349,9 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       fontSize: FontSize.body,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
+    },
+    unavailable: {
+      opacity: 0.45,
     },
     rowDesc: {
       fontSize: FontSize.body,

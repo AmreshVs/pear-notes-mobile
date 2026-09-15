@@ -153,6 +153,8 @@ function useOnDeviceAiScreen() {
           })
         case LOCAL_AI_FEATURE_STATUS.FAILED:
           return t('settings.onDeviceAi.featureStatus.failed', { percent: row.percent })
+        case LOCAL_AI_FEATURE_STATUS.NEEDS_MEMORY:
+          return t('settings.onDeviceAi.featureStatus.needsMemory')
         default:
           return ''
       }
