@@ -114,6 +114,8 @@ PODS:
     - ExpoModulesCore
   - ExpoLinking (56.0.17):
     - ExpoModulesCore
+  - ExpoLocalAi (1.0.0):
+    - ExpoModulesCore
   - ExpoLocalAuthentication (56.0.5):
     - ExpoModulesCore
   - ExpoLocalization (56.0.6):
@@ -2105,7 +2107,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - "react-native-bare-kit (0.12.3+080755)":
+  - "react-native-bare-kit (0.12.3+3cf155)":
     - boost
     - DoubleConversion
     - fast_float
@@ -3292,6 +3294,7 @@ DEPENDENCIES:
   - ExpoImagePicker (from `../node_modules/expo-image-picker/ios`)
   - ExpoKeepAwake (from `../node_modules/expo-keep-awake/ios`)
   - ExpoLinking (from `../node_modules/expo-linking/ios`)
+  - ExpoLocalAi (from `../modules/expo-local-ai/ios`)
   - ExpoLocalAuthentication (from `../node_modules/expo-local-authentication/ios`)
   - ExpoLocalization (from `../node_modules/expo-localization/ios`)
   - "ExpoLogBox (from `../node_modules/@expo/log-box`)"
@@ -3469,6 +3472,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-keep-awake/ios"
   ExpoLinking:
     :path: "../node_modules/expo-linking/ios"
+  ExpoLocalAi:
+    :path: "../modules/expo-local-ai/ios"
   ExpoLocalAuthentication:
     :path: "../node_modules/expo-local-authentication/ios"
   ExpoLocalization:
@@ -3716,6 +3721,7 @@ SPEC CHECKSUMS:
   ExpoImagePicker: 01521e86df3fa75ed2b1b46a000006a15c0ba89f
   ExpoKeepAwake: 359c47a1d9ccc3a3c519bca6e39562cce230c5bb
   ExpoLinking: 2e7b346a5a60e1f5de25fc207a8105832bf12214
+  ExpoLocalAi: 7a8808a390bf2e46f038ba0ec10aeba67bb10005
   ExpoLocalAuthentication: d8dc72d217facafed303ef3417c3f448edf74819
   ExpoLocalization: cf50efc436b2ec313510131c1ee0e778366d64b0
   ExpoLogBox: cdad5c9402a186574fb5924ea91df1f08ba9a98a
@@ -3740,7 +3746,7 @@ SPEC CHECKSUMS:
   FBLazyVector: 473b935415b82ae4f7f9aa9d5b3378491143ccbf
   fmt: 530618a01105dae0fa3a2f27c81ae11fa8f67eac
   glog: e56ede4028c4b7418e6b1195a36b1656bb35e225
-  hermes-engine: cc5d25822ea9d9c5ae6fd059fea121d2922a86e8
+  hermes-engine: b5f4a88d01a798fa714413b1b0bf6009ede97f51
   libavif: 5f8e715bea24debec477006f21ef9e95432e254d
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
@@ -3781,7 +3787,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 3cf4ae68a4d69ca69de94385d423d57785907eb7
   React-microtasksnativemodule: 663a8165cfe10e4eb749796a53b3b8c68631b00c
   React-mutationobservernativemodule: 4f7e4c18735cfbb0f81eada4f34aa527697e8704
-  react-native-bare-kit: 6e9b973e87a75cf73130d1e10ae3ae29080fe4a8
+  react-native-bare-kit: af18b87dd2f367370d5bdfcc779af956988f00e4
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
   react-native-slider: 4faf1b2266c73f1afb7b30cc6ebb3df238a37c0b
   react-native-vector-icons-material-design-icons: a4b6ec02814573c09203a725ee3767a7e8d5eb77

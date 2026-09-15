@@ -8,36 +8,60 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		2178FAEE118843B08BD9A0F4 /* PearNotesShareExtension.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = 1D31C5E86D6A472CB6B11282 /* PearNotesShareExtension.appex */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		4FD3A2B3210A40171004AE2F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B29E0CD3379DCBF7050756CC /* PrivacyInfo.xcprivacy */; };
 		7C5A306F4E3F38E4FCCAC7EA /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E33A24F783782156FD83335 /* ExpoModulesProvider.swift */; };
 		934EB567D3D04449AEF94D48 /* expo.icon in Resources */ = {isa = PBXBuildFile; fileRef = 937D81F116D3496D9052CA20 /* expo.icon */; };
+		A73E179D11F540A7B7348787 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF740D015218435BA34896F0 /* ShareViewController.swift */; };
 		B993BE66CC4B992F81F822A8 /* libPods-pearnotes.a in Frameworks */ = {isa = PBXBuildFile; fileRef = FFEFD137556E3ACF1B8D38E8 /* libPods-pearnotes.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		A73E179D11F540A7B7348787 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF740D015218435BA34896F0 /* ShareViewController.swift */; };
-		2178FAEE118843B08BD9A0F4 /* PearNotesShareExtension.appex in Copy Files */ = {isa = PBXBuildFile; fileRef = 1D31C5E86D6A472CB6B11282 /* PearNotesShareExtension.appex */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		48EA18553E8647DF88B92944 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 127BC97D8FC844C1B8B08B9D;
+			remoteInfo = PearNotesShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E2E51DA778A843CDA388D259 /* Copy Files */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2178FAEE118843B08BD9A0F4 /* PearNotesShareExtension.appex in Copy Files */,
+			);
+			name = "Copy Files";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0E33A24F783782156FD83335 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-pearnotes/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Pearnotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pearnotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = pearnotes/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = pearnotes/Info.plist; sourceTree = "<group>"; };
+		1D31C5E86D6A472CB6B11282 /* PearNotesShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = PearNotesShareExtension.appex; path = PearNotesShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		58E94FA66FC710E6C25923E2 /* Pods-pearnotes.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pearnotes.release.xcconfig"; path = "Target Support Files/Pods-pearnotes/Pods-pearnotes.release.xcconfig"; sourceTree = "<group>"; };
+		8BE9E0ABC19D4987BCBA9346 /* PearNotesShareExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text.plist.entitlements; name = PearNotesShareExtension.entitlements; path = PearNotesShareExtension.entitlements; sourceTree = "<group>"; };
 		937D81F116D3496D9052CA20 /* expo.icon */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = expo.icon; path = pearnotes/expo.icon; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = pearnotes/SplashScreen.storyboard; sourceTree = "<group>"; };
+		AD6883E3699B476B8DEF15C2 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = Info.plist; path = Info.plist; sourceTree = "<group>"; };
 		B29E0CD3379DCBF7050756CC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = pearnotes/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		EF740D015218435BA34896F0 /* ShareViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = ShareViewController.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = pearnotes/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* pearnotes-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "pearnotes-Bridging-Header.h"; path = "pearnotes/pearnotes-Bridging-Header.h"; sourceTree = "<group>"; };
 		F4B5F5BACA37C55C32ACF26B /* Pods-pearnotes.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pearnotes.debug.xcconfig"; path = "Target Support Files/Pods-pearnotes/Pods-pearnotes.debug.xcconfig"; sourceTree = "<group>"; };
 		FFEFD137556E3ACF1B8D38E8 /* libPods-pearnotes.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-pearnotes.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		EF740D015218435BA34896F0 /* ShareViewController.swift */ = {isa = PBXFileReference; name = "ShareViewController.swift"; path = "ShareViewController.swift"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = sourcecode.swift; includeInIndex = 0; };
-		AD6883E3699B476B8DEF15C2 /* Info.plist */ = {isa = PBXFileReference; name = "Info.plist"; path = "Info.plist"; sourceTree = "<group>"; fileEncoding = 4; lastKnownFileType = text.plist.xml; includeInIndex = 0; };
-		8BE9E0ABC19D4987BCBA9346 /* PearNotesShareExtension.entitlements */ = {isa = PBXFileReference; name = "PearNotesShareExtension.entitlements"; path = "PearNotesShareExtension.entitlements"; sourceTree = "<group>"; lastKnownFileType = text.plist.entitlements; includeInIndex = 0; };
-		1D31C5E86D6A472CB6B11282 /* PearNotesShareExtension.appex */ = {isa = PBXFileReference; name = "PearNotesShareExtension.appex"; path = "PearNotesShareExtension.appex"; sourceTree = BUILT_PRODUCTS_DIR; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -123,6 +147,17 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		88C48F803ABC49F5BF12B620 /* PearNotesShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				EF740D015218435BA34896F0 /* ShareViewController.swift */,
+				AD6883E3699B476B8DEF15C2 /* Info.plist */,
+				8BE9E0ABC19D4987BCBA9346 /* PearNotesShareExtension.entitlements */,
+			);
+			name = PearNotesShareExtension;
+			path = PearNotesShareExtension;
+			sourceTree = "<group>";
+		};
 		A3F5517DFCD6005C4089D06C /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -149,20 +184,26 @@
 			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
-		88C48F803ABC49F5BF12B620 /* PearNotesShareExtension */ = {
-			isa = PBXGroup;
-			children = (
-				EF740D015218435BA34896F0 /* ShareViewController.swift */,
-				AD6883E3699B476B8DEF15C2 /* Info.plist */,
-				8BE9E0ABC19D4987BCBA9346 /* PearNotesShareExtension.entitlements */,
-			);
-			name = PearNotesShareExtension;
-			path = PearNotesShareExtension;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		127BC97D8FC844C1B8B08B9D /* PearNotesShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0B2F2651801A4A31AE52A764 /* Build configuration list for PBXNativeTarget "PearNotesShareExtension" */;
+			buildPhases = (
+				F2BF56551788492DA13BF22C /* Sources */,
+				E802D244E3B14E6ABCBAC3DF /* Resources */,
+				A93C119A6D0B48A0A5E51B71 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PearNotesShareExtension;
+			productName = PearNotesShareExtension;
+			productReference = 1D31C5E86D6A472CB6B11282 /* PearNotesShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		13B07F861A680F5B00A75B9A /* pearnotes */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "pearnotes" */;
@@ -187,23 +228,6 @@
 			productReference = 13B07F961A680F5B00A75B9A /* Pearnotes.app */;
 			productType = "com.apple.product-type.application";
 		};
-		127BC97D8FC844C1B8B08B9D /* "PearNotesShareExtension" */ = {
-			isa = PBXNativeTarget;
-			name = "PearNotesShareExtension";
-			productName = "PearNotesShareExtension";
-			productReference = 1D31C5E86D6A472CB6B11282;
-			productType = "com.apple.product-type.app-extension";
-			buildConfigurationList = 0B2F2651801A4A31AE52A764;
-			buildPhases = (
-				F2BF56551788492DA13BF22C /* Sources */,
-				E802D244E3B14E6ABCBAC3DF /* Resources */,
-				A93C119A6D0B48A0A5E51B71 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -212,12 +236,12 @@
 			attributes = {
 				LastUpgradeCheck = 1130;
 				TargetAttributes = {
-					13B07F861A680F5B00A75B9A = {
-						LastSwiftMigration = 1250;
-					};
 					127BC97D8FC844C1B8B08B9D = {
 						DevelopmentTeam = DRQUZF86A2;
 						ProvisioningStyle = Automatic;
+					};
+					13B07F861A680F5B00A75B9A = {
+						LastSwiftMigration = 1250;
 					};
 				};
 			};
@@ -235,7 +259,7 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* pearnotes */,
-				127BC97D8FC844C1B8B08B9D /* "PearNotesShareExtension" */,
+				127BC97D8FC844C1B8B08B9D /* PearNotesShareExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -382,19 +406,40 @@
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/ExpoModulesJSI/ExpoModulesJSI.framework/ExpoModulesJSI",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermesvm.framework/hermesvm",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/BareKit.framework/BareKit",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-buffer.3.6.1.framework/bare-buffer.3.6.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-abort.2.0.13.framework/bare-abort.2.0.13",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-buffer.3.7.1.framework/bare-buffer.3.7.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-cpu-info.0.1.1.framework/bare-cpu-info.0.1.1",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-crypto.1.15.3.framework/bare-crypto.1.15.3",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-dns.2.1.4.framework/bare-dns.2.1.4",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-fs.4.6.0.framework/bare-fs.4.6.0",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-fs.4.8.1.framework/bare-fs.4.8.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-gpu-info.0.1.1.framework/bare-gpu-info.0.1.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-hrtime.2.1.2.framework/bare-hrtime.2.1.2",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-inspect.3.1.4.framework/bare-inspect.3.1.4",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-os.3.8.7.framework/bare-os.3.8.7",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-pipe.4.1.5.framework/bare-pipe.4.1.5",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-inspector.6.1.0.framework/bare-inspector.6.1.0",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-module-lexer.1.4.7.framework/bare-module-lexer.1.4.7",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-module.6.4.0.framework/bare-module.6.4.0",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-os.3.9.3.framework/bare-os.3.9.3",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-path.3.1.2.framework/bare-path.3.1.2",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-performance.2.1.1.framework/bare-performance.2.1.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-pipe.4.3.1.framework/bare-pipe.4.3.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-posix.1.0.1.framework/bare-posix.1.0.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-signals.4.2.0.framework/bare-signals.4.2.0",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-signals.5.0.0.framework/bare-signals.5.0.0",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-stdio.1.0.3.framework/bare-stdio.1.0.3",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-subprocess.5.2.3.framework/bare-subprocess.5.2.3",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-tcp.2.5.1.framework/bare-tcp.2.5.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-tls.3.1.10.framework/bare-tls.3.1.10",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-tty.5.2.1.framework/bare-tty.5.2.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-type-stripper.0.1.7.framework/bare-type-stripper.0.1.7",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-type.1.1.0.framework/bare-type.1.1.0",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-url.2.4.0.framework/bare-url.2.4.0",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-url.2.5.4.framework/bare-url.2.5.4",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/bare-zlib.1.4.1.framework/bare-zlib.1.4.1",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/fs-native-extensions.1.5.0.framework/fs-native-extensions.1.5.0",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/quickbit-native.2.4.8.framework/quickbit-native.2.4.8",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/qvac__asr-ggml.0.3.3.framework/qvac__asr-ggml.0.3.3",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/qvac__llm-llamacpp.0.49.2.framework/qvac__llm-llamacpp.0.49.2",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/qvac__ocr-ggml.0.21.1.framework/qvac__ocr-ggml.0.21.1",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/qvac__translation-nmtcpp.0.13.1.framework/qvac__translation-nmtcpp.0.13.1",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/rabin-native.2.0.0.framework/rabin-native.2.0.0",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/rocksdb-native.3.17.2.framework/rocksdb-native.3.17.2",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/react-native-bare-kit/simdle-native.1.3.9.framework/simdle-native.1.3.9",
@@ -406,19 +451,40 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ExpoModulesJSI.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermesvm.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/BareKit.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-buffer.3.6.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-abort.2.0.13.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-buffer.3.7.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-cpu-info.0.1.1.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-crypto.1.15.3.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-dns.2.1.4.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-fs.4.6.0.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-fs.4.8.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-gpu-info.0.1.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-hrtime.2.1.2.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-inspect.3.1.4.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-os.3.8.7.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-pipe.4.1.5.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-inspector.6.1.0.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-module-lexer.1.4.7.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-module.6.4.0.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-os.3.9.3.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-path.3.1.2.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-performance.2.1.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-pipe.4.3.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-posix.1.0.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-signals.4.2.0.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-signals.5.0.0.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-stdio.1.0.3.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-subprocess.5.2.3.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-tcp.2.5.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-tls.3.1.10.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-tty.5.2.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-type-stripper.0.1.7.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-type.1.1.0.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-url.2.4.0.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-url.2.5.4.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/bare-zlib.1.4.1.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/fs-native-extensions.1.5.0.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/quickbit-native.2.4.8.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/qvac__asr-ggml.0.3.3.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/qvac__llm-llamacpp.0.49.2.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/qvac__ocr-ggml.0.21.1.framework",
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/qvac__translation-nmtcpp.0.13.1.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/rabin-native.2.0.0.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/rocksdb-native.3.17.2.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/simdle-native.1.3.9.framework",
@@ -446,11 +512,19 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A73E179D11F540A7B7348787 /* "ShareViewController.swift" in Sources */,
+				A73E179D11F540A7B7348787 /* ShareViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0DEA827E62E142B7B4D8E705 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 127BC97D8FC844C1B8B08B9D /* PearNotesShareExtension */;
+			targetProxy = 48EA18553E8647DF88B92944 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
@@ -526,6 +600,33 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		838EB16CB9CD4E3D96D31F3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = PearNotesShareExtension/PearNotesShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 23;
+				DEVELOPMENT_TEAM = DRQUZF86A2;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PearNotesShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.amreshvs.pear-notes.ShareExtension";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
@@ -664,56 +765,48 @@
 			name = Release;
 		};
 		FAE0C43D3B224C58B86D1F87 /* Debug */ = {
-			name = Debug;
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = PearNotesShareExtension/PearNotesShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 23;
+				DEVELOPMENT_TEAM = DRQUZF86A2;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"DEBUG=1",
 					"$(inherited)",
 				);
-				INFOPLIST_FILE = "PearNotesShareExtension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = PearNotesShareExtension/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.amreshvs.pear-notes.dev.ShareExtension";
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "PearNotesShareExtension/PearNotesShareExtension.entitlements";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
-				DEVELOPMENT_TEAM = DRQUZF86A2;
-				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
-				MARKETING_VERSION = 1.0.0;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-		};
-		838EB16CB9CD4E3D96D31F3B /* Release */ = {
-			name = Release;
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				INFOPLIST_FILE = "PearNotesShareExtension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.amreshvs.pear-notes.ShareExtension";
-				APPLICATION_EXTENSION_API_ONLY = YES;
-				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = "PearNotesShareExtension/PearNotesShareExtension.entitlements";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 23;
-				DEVELOPMENT_TEAM = DRQUZF86A2;
-				GENERATE_INFOPLIST_FILE = NO;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.6;
-				MARKETING_VERSION = 1.0.0;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
+			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0B2F2651801A4A31AE52A764 /* Build configuration list for PBXNativeTarget "PearNotesShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAE0C43D3B224C58B86D1F87 /* Debug */,
+				838EB16CB9CD4E3D96D31F3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "pearnotes" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -732,48 +825,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		0B2F2651801A4A31AE52A764 /* Build configuration list for PBXNativeTarget "PearNotesShareExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				FAE0C43D3B224C58B86D1F87 /* Debug */,
-				838EB16CB9CD4E3D96D31F3B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		E2E51DA778A843CDA388D259 /* Copy Files */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				2178FAEE118843B08BD9A0F4 /* PearNotesShareExtension.appex in Copy Files */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			name = "Copy Files";
-			dstPath = "";
-			dstSubfolderSpec = 13;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		0DEA827E62E142B7B4D8E705 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 127BC97D8FC844C1B8B08B9D /* "PearNotesShareExtension" */;
-			targetProxy = 48EA18553E8647DF88B92944 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
-/* Begin PBXContainerItemProxy section */
-		48EA18553E8647DF88B92944 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 127BC97D8FC844C1B8B08B9D;
-			remoteInfo = "PearNotesShareExtension";
-		};
-/* End PBXContainerItemProxy section */
 	};
 	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
 }

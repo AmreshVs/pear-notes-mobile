@@ -44,6 +44,9 @@ export default function StorageScreen() {
     cacheBytes,
     isClearingCache,
     handleClearCache,
+    showAiModels,
+    aiModelBytes,
+    handleOpenAiModels,
     activeDownloads,
     activeUploads,
     noteTitleByKey,
@@ -138,6 +141,29 @@ export default function StorageScreen() {
                 </Text>
               </Pressable>
             </RNView>
+            {showAiModels && (
+              <Pressable
+                onPress={handleOpenAiModels}
+                style={({ pressed }) => [
+                  styles.usageRow,
+                  styles.usageRowBorder,
+                  pressed && commonStyles.pressed,
+                ]}
+              >
+                <RNView style={styles.reclaimLabelWrap}>
+                  <Text style={styles.usageLabel}>{t('settings.onDeviceAi.storageRow')}</Text>
+                  <Text style={styles.reclaimDesc}>{t('settings.onDeviceAi.storageRowDesc')}</Text>
+                </RNView>
+                <RNView style={commonStyles.settingsRowRight}>
+                  <Text style={styles.usageValue}>{formatBytes(aiModelBytes)}</Text>
+                  <SymbolIcon
+                    name="chevron.forward"
+                    size={UI_ICON_SIZE_16}
+                    color={colors.textMuted}
+                  />
+                </RNView>
+              </Pressable>
+            )}
           </RNView>
         </RNView>
 

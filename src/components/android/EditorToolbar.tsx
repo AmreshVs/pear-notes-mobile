@@ -8,9 +8,14 @@ import {
   type PressableAndroidRippleConfig,
   ScrollView,
   StyleSheet,
+  Text,
   View,
 } from 'react-native'
-import { useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
@@ -19,8 +24,11 @@ import { MotionView } from '@/components/MotionView'
 import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
+import { useAiEditButtonMotion } from '@/components/useAiEditButtonMotion'
 import {
   commonStyles,
+  FontFamily,
+  FontSize,
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
   UI_SIZE_2,
@@ -88,12 +96,16 @@ type EditorToolbarProps = {
   isActive: (key: keyof TiptapStyleState) => boolean
   editorRef: React.RefObject<TiptapEditorHandle | null>
   onAttachPress: () => void
+  onVoiceTyping?: () => void
+  onAiTools?: () => void
 }
 
 export const EditorToolbar = memo(function EditorToolbar({
   isActive,
   editorRef,
   onAttachPress,
+  onVoiceTyping,
+  onAiTools,
 }: EditorToolbarProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -109,6 +121,8 @@ export const EditorToolbar = memo(function EditorToolbar({
     hapticLight()
     action()
   }, [])
+  const hasSelection = !!onAiTools && isActive('hasSelection')
+  const aiMotion = useAiEditButtonMotion(hasSelection)
 
   const keyboard = useAnimatedKeyboard()
   const insets = useSafeAreaInsets()
@@ -140,7 +154,8 @@ export const EditorToolbar = memo(function EditorToolbar({
   }))
 
   return (
-    <MotionView style={[styles.container, containerStyle]}>
+    <MotionView style={[styles.row, containerStyle]}>
+      <View style={styles.container}>
       <View style={styles.scrollWrap}>
         <ScrollView
           horizontal
@@ -357,6 +372,17 @@ export const EditorToolbar = memo(function EditorToolbar({
 
       <View style={styles.divider} />
 
+      {onVoiceTyping && (
+        <ToolbarBtn
+          icon="microphone-outline"
+          a11yLabel={t('localAi.voiceTyping.toolbarLabel')}
+          onPress={() => run(onVoiceTyping)}
+          ripple={ripple}
+          c={c}
+          styles={styles}
+        />
+      )}
+
       <Pressable
         onPress={() => run(onAttachPress)}
         android_ripple={rippleAttach}
@@ -366,6 +392,32 @@ export const EditorToolbar = memo(function EditorToolbar({
       >
         <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_24} color={c.onPrimaryContainer} />
       </Pressable>
+      </View>
+
+      {onAiTools && (
+        <Pressable
+          onPress={() => run(onAiTools)}
+          android_ripple={ripple}
+          accessibilityRole="button"
+          accessibilityLabel={t(
+            hasSelection
+              ? 'localAi.writingTools.selectionToolbarLabel'
+              : 'localAi.writingTools.toolbarLabel',
+          )}
+          style={styles.aiButton}
+        >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.aiButtonHighlight, aiMotion.highlightStyle]}
+          />
+          <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_22} color={c.primary} />
+          <Animated.View style={[styles.aiButtonLabelClip, aiMotion.labelStyle]}>
+            <Text numberOfLines={1} ellipsizeMode="clip" style={styles.aiButtonLabel}>
+              {t('localAi.writingTools.editLabel')}
+            </Text>
+          </Animated.View>
+        </Pressable>
+      )}
     </MotionView>
   )
 })
@@ -379,10 +431,48 @@ const useToolbarHooks = () => {
 const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
   const c = md3.colors as any
   const styles = StyleSheet.create({
-    container: {
+    row: {
       position: 'absolute',
       left: UI_SIZE_12,
       right: UI_SIZE_12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_8,
+      zIndex: 10,
+    },
+    aiButton: {
+      minWidth: UI_SIZE_44 + UI_SIZE_8 * 2,
+      height: UI_SIZE_44 + UI_SIZE_8 * 2,
+      paddingHorizontal: UI_SIZE_8 * 2,
+      flexDirection: 'row',
+      flexShrink: 0,
+      overflow: 'hidden',
+      borderRadius: UI_SIZE_9999,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surface, 0.98),
+      borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),
+      elevation: 6,
+      shadowColor: theme.colors.black,
+    },
+    aiButtonHighlight: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: hexWithAlpha(c.primary, 0.16),
+    },
+    aiButtonLabelClip: {
+      overflow: 'hidden',
+    },
+    aiButtonLabel: {
+      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      color: c.primary,
+    },
+    container: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       borderRadius: UI_SIZE_9999,

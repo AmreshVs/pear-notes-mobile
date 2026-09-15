@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -64,6 +65,16 @@ export default function AndroidSettingsScreen() {
         label: t('settings.privacy.rowTitle'),
         onPress: () => router.push('/settings/privacy' as any),
       },
+      ...(LOCAL_AI_ENABLED
+        ? [
+            {
+              key: 'onDeviceAi',
+              icon: 'creation-outline' as IconName,
+              label: t('settings.onDeviceAi.rowTitle'),
+              onPress: () => router.push('/settings/on-device-ai' as any),
+            },
+          ]
+        : []),
       {
         key: 'devices',
         icon: 'devices',

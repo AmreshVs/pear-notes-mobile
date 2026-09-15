@@ -13,7 +13,7 @@
       "bundleIdentifier": "com.amreshvs.pear-notes",
       "appleTeamId": "DRQUZF86A2",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "Allow Pear Notes to access your microphone to record voice notes.",
+        "NSMicrophoneUsageDescription": "Allow Pear Notes to use your microphone to record voice notes and for voice typing. Audio stays on this device.",
         "NSCameraUsageDescription": "Allow Pear Notes to use the camera to take photos and videos for your notes.",
         "NSPhotoLibraryUsageDescription": "Allow Pear Notes to access your photo library so you can attach images and videos to your notes.",
         "NSPhotoLibraryAddUsageDescription": "Allow Pear Notes to save images to your photo library.",
@@ -68,7 +68,7 @@
       [
         "expo-audio",
         {
-          "microphonePermission": "Allow Pear Notes to access your microphone to record voice notes.",
+          "microphonePermission": "Allow Pear Notes to use your microphone to record voice notes and for voice typing. Audio stays on this device.",
           "enableBackgroundPlayback": false,
           "enableBackgroundRecording": false
         }
@@ -96,7 +96,8 @@
           "faceIDPermission": "Allow Pear Notes to use Face ID to unlock locked notes."
         }
       ],
-      "./modules/expo-share-intake/app.plugin.js"
+      "./modules/expo-share-intake/app.plugin.js",
+      "./modules/expo-local-ai/app.plugin.js"
     ],
     "experiments": {
       "typedRoutes": true

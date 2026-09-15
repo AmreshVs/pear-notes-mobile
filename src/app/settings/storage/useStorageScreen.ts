@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+import { router } from 'expo-router'
 
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
+import {
+  getLocalAiLoaded,
+  initLocalAi,
+  selectLocalAiBytesOnDisk,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
 import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteNoteMedia,
@@ -58,6 +65,17 @@ function useStorageScreen() {
       }),
     [notesStorageInfo, notesData],
   )
+
+  const aiModelBytes = (useSelector(selectLocalAiBytesOnDisk) as number) ?? 0
+  const localAiLoaded = useSelector(getLocalAiLoaded) as boolean
+
+  useEffect(() => {
+    if (LOCAL_AI_ENABLED && !localAiLoaded) dispatch(initLocalAi())
+  }, [dispatch, localAiLoaded])
+
+  const handleOpenAiModels = useCallback(() => {
+    router.push('/settings/on-device-ai/models' as never)
+  }, [])
 
   const [resetSheetVisible, setResetSheetVisible] = useState(false)
   const [cacheBytes, setCacheBytes] = useState(0)
@@ -152,6 +170,9 @@ function useStorageScreen() {
     cacheBytes,
     isClearingCache,
     handleClearCache,
+    showAiModels: LOCAL_AI_ENABLED,
+    aiModelBytes,
+    handleOpenAiModels,
     handleDeleteMedia,
     handleReclaim,
     handleRetryDownload,

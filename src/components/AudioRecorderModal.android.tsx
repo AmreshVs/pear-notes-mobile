@@ -1,11 +1,14 @@
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Switch } from 'react-native-paper'
 import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import Slider from '@react-native-community/slider'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import type { RecordingDoneOptions } from '@/components/AudioRecorderModal'
 import { RecordingWaveBar } from '@/components/RecordingWaveBar'
 import { createThemedStylesheetWithHooks, Text, Theme, useTheme } from '@/components/Themed'
 import {
@@ -52,13 +55,17 @@ const TIMELINE_H = 88
 
 interface AudioRecorderModalProps {
   visible: boolean
-  onDone: (uri: string, durationMs: number) => void
+  transcriptAvailable?: boolean
+  onDone: (uri: string, durationMs: number, options?: RecordingDoneOptions) => void
   onCancel: () => void
 }
 
 interface SheetBodyProps {
   colors: Theme['colors']
   md3Theme: ReturnType<typeof useMD3Theme>
+  transcriptAvailable: boolean
+  addTranscript: boolean
+  onToggleTranscript: (value: boolean) => void
   status: { title: string; subtitle: string }
   hasRecording: boolean
   showRecordingSurface: boolean
@@ -90,6 +97,9 @@ interface SheetBodyProps {
 function SheetBody({
   colors,
   md3Theme,
+  transcriptAvailable,
+  addTranscript,
+  onToggleTranscript,
   status,
   hasRecording,
   showRecordingSurface,
@@ -306,6 +316,22 @@ function SheetBody({
               />
               <Text style={styles.rerecordText}>{t('audioRecorder.actions.reRecord')}</Text>
             </Pressable>
+
+            {transcriptAvailable && (
+              <View style={styles.transcriptRow}>
+                <View style={styles.transcriptLabels}>
+                  <Text style={styles.transcriptTitle}>{t('audioRecorder.transcript.title')}</Text>
+                  <Text style={styles.transcriptSubtitle}>
+                    {t('audioRecorder.transcript.subtitle')}
+                  </Text>
+                </View>
+                <Switch
+                  value={addTranscript}
+                  onValueChange={onToggleTranscript}
+                  accessibilityLabel={t('audioRecorder.transcript.title')}
+                />
+              </View>
+            )}
           </>
         ) : (
           <>
@@ -339,11 +365,23 @@ function SheetBody({
   )
 }
 
-export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderModalProps) {
+export function AudioRecorderModal({
+  visible,
+  transcriptAvailable = false,
+  onDone,
+  onCancel,
+}: AudioRecorderModalProps) {
   const { colors } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
   const md3Theme = useMD3Theme()
+  const [addTranscript, setAddTranscript] = useState(false)
+
+  const handleRecorderDone = useCallback(
+    (uri: string, durationMs: number) =>
+      onDone(uri, durationMs, { addTranscript: transcriptAvailable && addTranscript }),
+    [addTranscript, onDone, transcriptAvailable],
+  )
 
   const {
     isRecording,
@@ -371,7 +409,7 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
     handleSeekComplete,
     handleDoneInner,
     handleCancelInner,
-  } = useAudioRecorderModal({ visible, onDone, onCancel })
+  } = useAudioRecorderModal({ visible, onDone: handleRecorderDone, onCancel })
 
   const timerColor = isRecording ? colors.error : colors.text
   const lineTrack = colors.timelineTrack
@@ -416,6 +454,9 @@ export function AudioRecorderModal({ visible, onDone, onCancel }: AudioRecorderM
             <SheetBody
               colors={colors}
               md3Theme={md3Theme}
+              transcriptAvailable={transcriptAvailable}
+              addTranscript={addTranscript}
+              onToggleTranscript={setAddTranscript}
               status={status}
               hasRecording={hasRecording}
               showRecordingSurface={showRecordingSurface}
@@ -731,6 +772,32 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
     },
     rerecordButtonPressed: {
       opacity: 0.7,
+    },
+    transcriptRow: {
+      alignSelf: 'stretch',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_12,
+      marginTop: UI_SIZE_20,
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_12,
+      borderRadius: UI_SIZE_28,
+      backgroundColor: c.surfaceContainerHigh ?? theme.colors.cardSurface,
+    },
+    transcriptLabels: {
+      flex: 1,
+      gap: UI_SIZE_2,
+    },
+    transcriptTitle: {
+      fontSize: FontSize.subtitle,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
+    },
+    transcriptSubtitle: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textSecondary,
     },
     rerecordText: {
       fontSize: FontSize.subtitle,

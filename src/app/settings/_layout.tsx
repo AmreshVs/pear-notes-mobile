@@ -39,6 +39,12 @@ export default function SettingsLayout() {
       <Stack.Screen name="index" options={{ title: t('layouts.settings') }} />
       <Stack.Screen name="general" options={{ title: t('layouts.general') }} />
       <Stack.Screen name="privacy" options={{ title: t('layouts.privacyAndSecurity') }} />
+      <Stack.Screen name="on-device-ai" options={{ title: t('layouts.onDeviceAi') }} />
+      <Stack.Screen name="on-device-ai/feature" options={{ title: t('layouts.onDeviceAi') }} />
+      <Stack.Screen
+        name="on-device-ai/models"
+        options={{ title: t('settings.onDeviceAi.modelsTitle') }}
+      />
       <Stack.Screen name="devices" options={{ title: t('layouts.linkDevices') }} />
       <Stack.Screen name="sync" options={{ title: t('layouts.sync') }} />
       <Stack.Screen name="backup" options={{ title: t('layouts.backupRestore') }} />

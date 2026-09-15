@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useSelector } from 'react-redux'
 import { router, Stack } from 'expo-router'
 
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
 import { Divider } from '@/components/Divider'
@@ -60,6 +61,16 @@ export default function SettingsScreen() {
         label: t('settings.privacy.rowTitle'),
         onPress: () => router.push('/settings/privacy' as any),
       },
+      ...(LOCAL_AI_ENABLED
+        ? [
+            {
+              key: 'onDeviceAi',
+              icon: 'sparkles' as IconName,
+              label: t('settings.onDeviceAi.rowTitle'),
+              onPress: () => router.push('/settings/on-device-ai' as any),
+            },
+          ]
+        : []),
       {
         key: 'devices',
         icon: 'laptopcomputer.and.iphone' as IconName,
