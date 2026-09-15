@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import {
+  canRunFeature,
   getFeatureLanguages,
   getFeatureRegistryNames,
   getFeatureTiers,
@@ -30,6 +31,7 @@ export interface OnDeviceAiTierOption {
   tier: string
   bytes: number
   selected: boolean
+  fits: boolean
 }
 
 export interface OnDeviceAiLanguageOption {
@@ -54,6 +56,8 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
 
   const featureId = feature && (LOCAL_AI_FEATURE_IDS as string[]).includes(feature) ? feature : null
   const featureConfig = featureId ? state.config.features[featureId] : undefined
+  const totalMemoryBytes =
+    (state as { device?: { totalMemoryBytes?: number } }).device?.totalMemoryBytes ?? 0
 
   const tiers = useMemo<OnDeviceAiTierOption[]>(() => {
     if (!featureId) return []
@@ -65,8 +69,13 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
         getFeatureRegistryNames(featureId, { tier, language: featureConfig?.language }),
       ) as number,
       selected: featureConfig?.tier === tier,
+      fits: canRunFeature(
+        featureId,
+        { tier, language: featureConfig?.language },
+        totalMemoryBytes,
+      ) as boolean,
     }))
-  }, [featureConfig?.language, featureConfig?.tier, featureId])
+  }, [featureConfig?.language, featureConfig?.tier, featureId, totalMemoryBytes])
 
   const languages = useMemo<OnDeviceAiLanguageOption[]>(() => {
     if (!featureId) return []
