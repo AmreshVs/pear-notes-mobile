@@ -18,7 +18,10 @@ const QVAC_NDK_VERSION = '29.0.14206865'
 
 function runBuildScripts(projectRoot) {
   for (const script of BUILD_SCRIPTS) {
-    execFileSync(process.execPath, [path.join(projectRoot, script)], { cwd: projectRoot, stdio: 'inherit' })
+    execFileSync(process.execPath, [path.join(projectRoot, script)], {
+      cwd: projectRoot,
+      stdio: 'inherit',
+    })
   }
 }
 
@@ -70,7 +73,10 @@ function withQvacNdkVersion(config) {
     if (/\bndkVersion\s*=/.test(contents)) {
       mod.modResults.contents = contents.replace(/\bndkVersion\s*=\s*["'][^"']*["']/, line)
     } else {
-      mod.modResults.contents = contents.replace(/buildscript\s*\{\s*ext\s*\{/, (match) => `${match}\n    ${line}`)
+      mod.modResults.contents = contents.replace(
+        /buildscript\s*\{\s*ext\s*\{/,
+        (match) => `${match}\n    ${line}`,
+      )
     }
     return mod
   })
