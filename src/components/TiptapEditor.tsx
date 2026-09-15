@@ -27,6 +27,25 @@ import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
 import { createThemedStylesheet, useFontScale, useTheme } from './Themed'
 
+export interface TranscriptSummaryBlock {
+  summaryTitle?: string
+  summary?: string
+  actionItemsTitle?: string
+  actionItems?: string[]
+  bullets?: string[]
+}
+
+export interface EditorSelection {
+  from: number
+  to: number
+  text: string
+}
+
+export interface SelectionMenuItem {
+  key: string
+  label: string
+}
+
 export interface TiptapStyleState {
   bold: { isActive: boolean }
   italic: { isActive: boolean }
@@ -77,7 +96,17 @@ export interface TiptapEditorHandle {
   insertAudioAttachment: (url: string, fileName: string, duration?: number) => void
   moveCursorToEnd: () => void
   appendParagraphs: (paragraphs: SharedParagraph[]) => void
-  insertTranscript: (url: string | null, title: string, paragraphs: SharedParagraph[]) => void
+  insertTranscript: (
+    url: string | null,
+    title: string,
+    paragraphs: SharedParagraph[],
+    summary?: TranscriptSummaryBlock,
+    afterPos?: number,
+  ) => void
+  getSelection: (allowRemembered?: boolean) => Promise<EditorSelection | null>
+  replaceRange: (from: number, to: number, expected: string, text: string) => void
+  insertParagraphsAfter: (pos: number, text: string) => void
+  insertCaption: (src: string | null, text: string) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
   focusTitle: () => void
@@ -137,6 +166,8 @@ export interface TiptapEditorProps {
     attachmentId?: string,
   ) => void
   onYjsMessage?: (dataBase64: string) => void
+  selectionMenuItems?: SelectionMenuItem[]
+  onSelectionMenu?: (key: string) => void
 }
 
 type WebViewMsg =
@@ -166,6 +197,7 @@ type WebViewMsg =
       attachmentId?: string
     }
   | { type: 'yjsMessage'; data: string }
+  | { type: 'selectionResponse'; requestId: string; from: number; to: number; text: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
 
@@ -250,6 +282,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onImageLongPress,
       onAttachmentLongPress,
       onYjsMessage,
+      selectionMenuItems,
+      onSelectionMenu,
     },
     ref,
   ) => {
@@ -286,7 +320,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onImageLongPressRef = useRef(onImageLongPress)
     const onAttachmentLongPressRef = useRef(onAttachmentLongPress)
     const onYjsMessageRef = useRef(onYjsMessage)
+    const onSelectionMenuRef = useRef(onSelectionMenu)
 
+    onSelectionMenuRef.current = onSelectionMenu
     onContentChangeRef.current = onContentChange
     onTitleChangeRef.current = onTitleChange
     onStyleStateChangeRef.current = onStyleStateChange
@@ -335,6 +371,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     }, [initialContent])
 
     const pendingRequests = useRef<Map<string, (html: string) => void>>(new Map())
+    const pendingSelectionRequests = useRef<Map<string, (selection: EditorSelection) => void>>(
+      new Map(),
+    )
 
     const [editorState, setEditorState] = useState<EditorState>('loading')
 
@@ -383,6 +422,28 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         sendCommand({ type: 'getHTML', requestId: id })
       })
     }, [sendCommand])
+
+    const getSelectionAsync = useCallback(
+      (allowRemembered = false): Promise<EditorSelection | null> => {
+        return new Promise((resolve) => {
+          const id = `sel_${Date.now()}_${Math.random().toString(36).slice(2)}`
+          const timer = setTimeout(() => {
+            pendingSelectionRequests.current.delete(id)
+            resolve(null)
+          }, 3000)
+          pendingSelectionRequests.current.set(id, (selection) => {
+            clearTimeout(timer)
+            resolve(selection)
+          })
+          sendCommand({ type: 'getSelection', requestId: id, allowRemembered })
+        })
+      },
+      [sendCommand],
+    )
+
+    const handleCustomMenuSelection = useCallback((event: { nativeEvent: { key: string } }) => {
+      onSelectionMenuRef.current?.(event.nativeEvent.key)
+    }, [])
 
     const handleMessage = useCallback(
       (event: WebViewMessageEvent) => {
@@ -490,6 +551,15 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           case 'yjsMessage':
             onYjsMessageRef.current?.(msg.data)
             break
+
+          case 'selectionResponse': {
+            const resolve = pendingSelectionRequests.current.get(msg.requestId)
+            if (resolve) {
+              pendingSelectionRequests.current.delete(msg.requestId)
+              resolve({ from: msg.from, to: msg.to, text: msg.text })
+            }
+            break
+          }
         }
       },
       [revealEditor, sendCommand, injectBackgroundColor, noteId],
@@ -591,8 +661,21 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'insertAudioAttachment', url, fileName, duration }),
         moveCursorToEnd: () => sendCommand({ type: 'moveCursorToEnd' }),
         appendParagraphs: (paragraphs) => sendCommand({ type: 'appendParagraphs', paragraphs }),
-        insertTranscript: (url, title, paragraphs) =>
-          sendCommand({ type: 'insertTranscript', url, title, paragraphs }),
+        insertTranscript: (url, title, paragraphs, summary, afterPos) =>
+          sendCommand({
+            type: 'insertTranscript',
+            url,
+            title,
+            paragraphs,
+            afterPos,
+            ...(summary ?? {}),
+          }),
+        getSelection: getSelectionAsync,
+        replaceRange: (from, to, expected, text) =>
+          sendCommand({ type: 'replaceRange', from, to, expected, text }),
+        insertParagraphsAfter: (pos, text) =>
+          sendCommand({ type: 'insertParagraphsAfter', pos, text }),
+        insertCaption: (src, text) => sendCommand({ type: 'insertCaption', src, text }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => {
           requestNativeWebViewFocus()
@@ -660,7 +743,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               : `(function(){var h='${height}px';document.body.style.paddingBottom=h;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom=h})();true;`,
           ),
       }),
-      [sendCommand, getHTMLAsync],
+      [sendCommand, getHTMLAsync, getSelectionAsync],
     )
 
     return (
@@ -695,6 +778,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             cacheEnabled
             cacheMode="LOAD_CACHE_ELSE_NETWORK"
             startInLoadingState={false}
+            menuItems={selectionMenuItems?.length ? selectionMenuItems : undefined}
+            onCustomMenuSelection={handleCustomMenuSelection}
             {...iosWebViewProps}
           />
         </View>

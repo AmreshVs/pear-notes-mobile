@@ -1,8 +1,10 @@
 import { NativeModule, requireOptionalNativeModule } from 'expo'
 
-import { LocalAiDecodedAudio, LocalAiDiskSpace } from './ExpoLocalAi.types'
+import { ExpoLocalAiEvents, LocalAiDecodedAudio, LocalAiDiskSpace } from './ExpoLocalAi.types'
 
-declare class ExpoLocalAiModule extends NativeModule {
+declare class ExpoLocalAiModule extends NativeModule<ExpoLocalAiEvents> {
+  startPcmStream(): Promise<void>
+  stopPcmStream(): Promise<void>
   prepareModelsDirectory(): Promise<string>
   deleteModelsDirectory(): Promise<boolean>
   getDiskSpace(): Promise<LocalAiDiskSpace>

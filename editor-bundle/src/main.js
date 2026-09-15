@@ -62,6 +62,41 @@ function sendToRN(msg) {
   } catch (_) {}
 }
 
+function blockEndAfter(doc, pos) {
+  const $pos = doc.resolve(Math.max(0, Math.min(Number(pos) || 0, doc.content.size)))
+  return $pos.depth > 0 ? $pos.after(1) : doc.content.size
+}
+
+function textLines(text) {
+  return String(text ?? '')
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+}
+
+function paragraphNodes(lines) {
+  return lines.map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] }))
+}
+
+const SELECTION_MEMORY_MS = 10000
+let lastSelection = null
+
+document.addEventListener('selectionchange', () => {
+  setTimeout(() => {
+    try {
+      if (!editor || editor.isDestroyed) return
+      const { from, to, empty } = editor.state.selection
+      if (empty) return
+      lastSelection = {
+        from,
+        to,
+        text: editor.state.doc.textBetween(from, to, '\n', ' '),
+        at: Date.now(),
+      }
+    } catch (_) {}
+  }, 0)
+})
+
 const FONT_FAMILY_MAP = {
   Inter: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
   Outfit: "'Outfit', -apple-system, sans-serif",
@@ -1506,15 +1541,40 @@ window.editorBridge = {
               .map((paragraph) => (typeof paragraph?.text === 'string' ? paragraph.text.trim() : ''))
               .filter(Boolean)
           : []
-        if (lines.length === 0) break
+        const heading = (text) => ({
+          type: 'paragraph',
+          content: [{ type: 'text', text, marks: [{ type: 'bold' }] }],
+        })
+        const cleanList = (items) =>
+          Array.isArray(items) ? items.map((item) => String(item ?? '').trim()).filter(Boolean) : []
+        const bulletList = (items) => ({
+          type: 'bulletList',
+          content: items.map((text) => ({
+            type: 'listItem',
+            content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+          })),
+        })
+        const summaryText = typeof msg.summary === 'string' ? msg.summary.trim() : ''
+        const actionItems = cleanList(msg.actionItems)
+        const bullets = cleanList(msg.bullets)
+        if (lines.length === 0 && bullets.length === 0 && !summaryText && actionItems.length === 0) {
+          break
+        }
         const quote = {
           type: 'blockquote',
           content: [
-            {
-              type: 'paragraph',
-              content: [{ type: 'text', text: msg.title || 'Transcript', marks: [{ type: 'bold' }] }],
-            },
+            heading(msg.title || 'Transcript'),
             ...lines.map((text) => ({ type: 'paragraph', content: [{ type: 'text', text }] })),
+            ...(bullets.length > 0 ? [bulletList(bullets)] : []),
+            ...(summaryText
+              ? [
+                  heading(msg.summaryTitle || 'Summary'),
+                  { type: 'paragraph', content: [{ type: 'text', text: summaryText }] },
+                ]
+              : []),
+            ...(actionItems.length > 0
+              ? [heading(msg.actionItemsTitle || 'Action items'), bulletList(actionItems)]
+              : []),
           ],
         }
         let insertAt = null
@@ -1529,6 +1589,9 @@ window.editorBridge = {
             }
           })
         }
+        if (insertAt === null && Number.isFinite(msg.afterPos)) {
+          insertAt = blockEndAfter(editor.state.doc, msg.afterPos)
+        }
         if (insertAt === null) {
           const lastNode = editor.state.doc.lastChild
           if (lastNode && lastNode.type.name === 'paragraph' && lastNode.content.size === 0) {
@@ -1538,6 +1601,83 @@ window.editorBridge = {
           }
         }
         editor.chain().insertContentAt(insertAt, quote).run()
+        flushContentChange(editor.getHTML(), editor.getText())
+        break
+      }
+
+      case 'getSelection': {
+        const { from, to, empty } = editor.state.selection
+        const remembered =
+          msg.allowRemembered &&
+          empty &&
+          lastSelection &&
+          Date.now() - lastSelection.at < SELECTION_MEMORY_MS
+            ? lastSelection
+            : null
+        sendToRN({
+          type: 'selectionResponse',
+          requestId: msg.requestId,
+          from: remembered ? remembered.from : from,
+          to: remembered ? remembered.to : to,
+          text: remembered
+            ? remembered.text
+            : empty
+              ? ''
+              : editor.state.doc.textBetween(from, to, '\n', ' '),
+        })
+        break
+      }
+
+      case 'replaceRange': {
+        const lines = textLines(msg.text)
+        if (lines.length === 0) break
+        const { doc } = editor.state
+        const size = doc.content.size
+        const from = Math.max(0, Math.min(Number(msg.from) || 0, size))
+        const to = Math.max(from, Math.min(Number(msg.to) || 0, size))
+        const unchanged = doc.textBetween(from, to, '\n', ' ') === msg.expected
+        if (unchanged) {
+          const content = lines.length === 1 ? { type: 'text', text: lines[0] } : paragraphNodes(lines)
+          editor.chain().insertContentAt({ from, to }, content).run()
+        } else {
+          editor.chain().insertContentAt(blockEndAfter(doc, to), paragraphNodes(lines)).run()
+        }
+        flushContentChange(editor.getHTML(), editor.getText())
+        break
+      }
+
+      case 'insertParagraphsAfter': {
+        const lines = textLines(msg.text)
+        if (lines.length === 0) break
+        editor
+          .chain()
+          .insertContentAt(blockEndAfter(editor.state.doc, msg.pos), paragraphNodes(lines))
+          .run()
+        flushContentChange(editor.getHTML(), editor.getText())
+        break
+      }
+
+      case 'insertCaption': {
+        const captionText = typeof msg.text === 'string' ? msg.text.trim() : ''
+        if (!captionText) break
+        let captionAt = null
+        if (msg.src) {
+          editor.state.doc.descendants((node, pos) => {
+            if (captionAt !== null) return false
+            if (node.type.name === 'image' && node.attrs.src === msg.src) {
+              captionAt = pos + node.nodeSize
+              return false
+            }
+          })
+        }
+        if (captionAt === null) captionAt = editor.state.doc.content.size
+        editor
+          .chain()
+          .insertContentAt(captionAt, {
+            type: 'paragraph',
+            content: [{ type: 'text', text: captionText, marks: [{ type: 'italic' }] }],
+          })
+          .run()
         flushContentChange(editor.getHTML(), editor.getText())
         break
       }

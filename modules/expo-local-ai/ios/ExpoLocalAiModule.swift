@@ -119,9 +119,93 @@ private func decodeToMonoPcm(inputPath: String, outputPath: String) throws -> [S
   ]
 }
 
+internal final class PcmStreamUnavailableException: Exception {
+  override var reason: String {
+    "The microphone could not be started"
+  }
+}
+
+private let streamTapBufferSize: AVAudioFrameCount = 4096
+private let streamLevelGain: Double = 4
+
+private final class PcmStreamer {
+  private let engine = AVAudioEngine()
+  private var converter: AVAudioConverter?
+  private let outputFormat = AVAudioFormat(
+    commonFormat: .pcmFormatInt16,
+    sampleRate: targetSampleRate,
+    channels: 1,
+    interleaved: true
+  )
+  var onChunk: ((Data, Double) -> Void)?
+
+  func start() throws {
+    guard let outputFormat else { throw PcmStreamUnavailableException() }
+    let input = engine.inputNode
+    let inputFormat = input.outputFormat(forBus: 0)
+    guard inputFormat.sampleRate > 0,
+          let converter = AVAudioConverter(from: inputFormat, to: outputFormat)
+    else {
+      throw PcmStreamUnavailableException()
+    }
+    self.converter = converter
+    input.installTap(onBus: 0, bufferSize: streamTapBufferSize, format: inputFormat) { [weak self] buffer, _ in
+      self?.convert(buffer)
+    }
+    engine.prepare()
+    do {
+      try engine.start()
+    } catch {
+      input.removeTap(onBus: 0)
+      throw PcmStreamUnavailableException()
+    }
+  }
+
+  func stop() {
+    engine.inputNode.removeTap(onBus: 0)
+    engine.stop()
+    converter = nil
+  }
+
+  private func convert(_ buffer: AVAudioPCMBuffer) {
+    guard let converter, let outputFormat else { return }
+    let capacity = AVAudioFrameCount(Double(buffer.frameLength) * targetSampleRate / buffer.format.sampleRate) + 64
+    guard let output = AVAudioPCMBuffer(pcmFormat: outputFormat, frameCapacity: capacity) else { return }
+    var supplied = false
+    var conversionError: NSError?
+    converter.convert(to: output, error: &conversionError) { _, inputStatus in
+      if supplied {
+        inputStatus.pointee = .noDataNow
+        return nil
+      }
+      supplied = true
+      inputStatus.pointee = .haveData
+      return buffer
+    }
+    guard conversionError == nil, output.frameLength > 0, let channel = output.int16ChannelData else { return }
+    let frameCount = Int(output.frameLength)
+    var sumSquares: Double = 0
+    for index in 0..<frameCount {
+      let sample = Double(channel[0][index]) / 32768
+      sumSquares += sample * sample
+    }
+    let level = min(1, (sumSquares / Double(frameCount)).squareRoot() * streamLevelGain)
+    onChunk?(Data(bytes: channel[0], count: frameCount * MemoryLayout<Int16>.size), level)
+  }
+}
+
 public class ExpoLocalAiModule: Module {
+  private var pcmStreamer: PcmStreamer?
+
   public func definition() -> ModuleDefinition {
     Name("ExpoLocalAi")
+
+    Events("onPcmChunk")
+
+    OnDestroy {
+      self.pcmStreamer?.stop()
+      self.pcmStreamer = nil
+    }
 
     AsyncFunction("prepareModelsDirectory") { () throws -> String in
       try preparedModelsDirectory().path
@@ -160,6 +244,21 @@ public class ExpoLocalAiModule: Module {
 
     Function("is64BitProcess") { () -> Bool in
       MemoryLayout<Int>.size == 8
+    }
+
+    AsyncFunction("startPcmStream") { () throws in
+      self.pcmStreamer?.stop()
+      let streamer = PcmStreamer()
+      streamer.onChunk = { [weak self] data, level in
+        self?.sendEvent("onPcmChunk", ["data": data.base64EncodedString(), "level": level])
+      }
+      try streamer.start()
+      self.pcmStreamer = streamer
+    }
+
+    AsyncFunction("stopPcmStream") { () in
+      self.pcmStreamer?.stop()
+      self.pcmStreamer = nil
     }
   }
 }

@@ -122,6 +122,20 @@ function useOnDeviceAiScreen() {
         downloaded: formatBytes(row.downloadedBytes),
         total: formatBytes(row.totalBytes),
       }
+      const onDemandRow = row as OnDeviceAiFeatureRow & {
+        onDemand?: boolean
+        onDemandBytes?: number
+      }
+      if (onDemandRow.onDemand && row.status === LOCAL_AI_FEATURE_STATUS.OFF) {
+        return t('settings.onDeviceAi.featureStatus.offOnDemand')
+      }
+      if (onDemandRow.onDemand && row.status === LOCAL_AI_FEATURE_STATUS.READY) {
+        return onDemandRow.onDemandBytes
+          ? t('settings.onDeviceAi.featureStatus.readyOnDemand', {
+              size: formatBytes(onDemandRow.onDemandBytes),
+            })
+          : t('settings.onDeviceAi.featureStatus.readyOnDemandEmpty')
+      }
       switch (row.status) {
         case LOCAL_AI_FEATURE_STATUS.OFF:
           return row.missingBytes > 0

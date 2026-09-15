@@ -510,7 +510,8 @@ export function useNoteEditorActions({
       setIsRecorderVisible(false)
       if (!noteId) return null
       const targetNoteId = noteId
-      const fileName = `${recordingFileNamePrefix}-${Date.now()}.m4a`
+      const extension = uri.split('?')[0].split('.').pop()?.toLowerCase() || 'm4a'
+      const fileName = `${recordingFileNamePrefix}-${Date.now()}.${extension}`
       const itemId = nextUploadItemId()
       let insertedLink: string | null = null
       enqueueNoteUploads(targetNoteId, [{ id: itemId, fileName }])

@@ -172,6 +172,7 @@ type EditorToolbarProps = {
   onTakePhoto: () => void
   onTakeVideo: () => void
   onVoiceTyping?: () => void
+  onAiTools?: () => void
 }
 
 export const EditorToolbar = memo(function EditorToolbar({
@@ -187,6 +188,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   onTakePhoto,
   onTakeVideo,
   onVoiceTyping,
+  onAiTools,
 }: EditorToolbarProps) {
   const styles = useStyles()
   const { t } = useTranslation()
@@ -495,6 +497,28 @@ export const EditorToolbar = memo(function EditorToolbar({
           </View>
         )}
       </GlassView>
+      {onAiTools && (
+        <GlassView
+          intensity={0}
+          borderRadius={26}
+          style={isEditing ? styles.aiButtonGlass : styles.aiButtonGlassTrailing}
+          isInteractive
+        >
+          <Pressable
+            onPress={() => run(onAiTools)}
+            accessibilityRole="button"
+            accessibilityLabel={t('localAi.writingTools.toolbarLabel')}
+            style={({ pressed }) => [styles.aiButton, pressed && styles.pressed]}
+          >
+            <SymbolView
+              name="sparkles"
+              size={UI_ICON_SIZE_22}
+              tintColor={colors.primary}
+              weight="semibold"
+            />
+          </Pressable>
+        </GlassView>
+      )}
     </View>
   )
 })
@@ -512,8 +536,28 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     glassBar: {
       minHeight: 52,
+      flexShrink: 1,
       justifyContent: 'center',
       overflow: 'hidden',
+    },
+    aiButtonGlass: {
+      width: 52,
+      height: 52,
+      flexShrink: 0,
+      overflow: 'hidden',
+    },
+    aiButtonGlassTrailing: {
+      width: 52,
+      height: 52,
+      flexShrink: 0,
+      overflow: 'hidden',
+      marginLeft: 'auto',
+    },
+    aiButton: {
+      width: 52,
+      height: 52,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     toolbarRow: {
       flexDirection: 'row',

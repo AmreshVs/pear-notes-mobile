@@ -185,6 +185,13 @@ export default function AndroidOnDeviceAiFeatureScreen() {
             {t('settings.onDeviceAi.model')}
           </Text>
           <View style={styles.card}>
+            {models.length === 0 && (
+              <View style={styles.row}>
+                <View style={styles.rowInfo}>
+                  <Text style={styles.rowDesc}>{t('settings.onDeviceAi.noLanguagesYet')}</Text>
+                </View>
+              </View>
+            )}
             {models.map((row, index) => {
               const otherUsers = row.users.filter((user) => user !== featureId)
               return (

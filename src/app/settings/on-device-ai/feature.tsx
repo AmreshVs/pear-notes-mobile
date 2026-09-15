@@ -151,6 +151,13 @@ export default function OnDeviceAiFeatureScreen() {
       <RNView style={styles.section}>
         <Text style={commonThemedStyles.sectionCamelCase}>{t('settings.onDeviceAi.model')}</Text>
         <RNView style={commonThemedStyles.card}>
+          {models.length === 0 && (
+            <RNView style={styles.row}>
+              <RNView style={styles.rowInfo}>
+                <Text style={styles.rowDesc}>{t('settings.onDeviceAi.noLanguagesYet')}</Text>
+              </RNView>
+            </RNView>
+          )}
           {models.map((row, index) => {
             const otherUsers = row.users.filter((user) => user !== featureId)
             return (

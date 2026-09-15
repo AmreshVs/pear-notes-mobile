@@ -22,6 +22,7 @@ import {
   LOCAL_AI_ENABLED,
   LOCAL_AI_FEATURE,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
+import { htmlToParagraphs } from '@pear-notes/core/store/services/localAiPrompts.js'
 import { selectIsLocalAiFeatureReady } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
@@ -30,6 +31,7 @@ import {
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { NoteHistoryModal } from '@/components/activity/NoteHistoryModal'
+import { AiToolsSheet } from '@/components/AiToolsSheet'
 import { AudioRecorderModal, type RecordingDoneOptions } from '@/components/AudioRecorderModal'
 import { EdgeFade } from '@/components/EdgeFade'
 import { GlassView } from '@/components/GlassView'
@@ -39,10 +41,16 @@ import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheet, useReduceMotion, useTheme } from '@/components/Themed'
+import type { EditorSelection, SelectionMenuItem } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import { useNoteConflict } from '@/components/useNoteConflict'
-import type { VoiceTypingMode } from '@/components/useVoiceTypingSheet'
+import type {
+  AiScope,
+  InsertMeta,
+  TranscriptSummary,
+  VoiceTypingMode,
+} from '@/components/useVoiceTypingSheet'
 import { VoiceTypingSheet } from '@/components/VoiceTypingSheet'
 import {
   Radii,
@@ -62,6 +70,7 @@ import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { useShareIntakeController } from '@/hooks/useShareIntakeController'
 import { hapticError, hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
+import { type AiTool, buildAiTools, hideKeyboard } from '@/lib/localAi/aiTools'
 import { snapTo } from '@/lib/motion'
 import {
   cleanupCachedAttachment,
@@ -152,24 +161,52 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const voiceTypingReady = useSelector(
     (state) =>
       LOCAL_AI_ENABLED &&
+      !noteData?.locked &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.VOICE_TYPING) as boolean),
   )
   const transcribeReady = useSelector(
     (state) =>
       LOCAL_AI_ENABLED &&
+      !noteData?.locked &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS) as boolean),
   )
   const extractTextReady = useSelector(
     (state) =>
       LOCAL_AI_ENABLED &&
+      !noteData?.locked &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.EXTRACT_TEXT) as boolean),
+  )
+  const describeImagesReady = useSelector(
+    (state) =>
+      LOCAL_AI_ENABLED &&
+      !noteData?.locked &&
+      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.DESCRIBE_IMAGES) as boolean),
+  )
+  const summarizeReady = useSelector(
+    (state) =>
+      LOCAL_AI_ENABLED &&
+      !noteData?.locked &&
+      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS) as boolean),
+  )
+  const translateReady = useSelector(
+    (state) =>
+      LOCAL_AI_ENABLED &&
+      !noteData?.locked &&
+      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSLATE_NOTES) as boolean),
   )
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
   const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
+  const [voiceParagraphs, setVoiceParagraphs] = useState<string[] | null>(null)
+  const [voiceScope, setVoiceScope] = useState<AiScope>('note')
+  const [aiToolsTarget, setAiToolsTarget] = useState<{ selection: EditorSelection | null } | null>(
+    null,
+  )
+  const selectionRef = useRef<EditorSelection | null>(null)
   const voiceSheetVisibleRef = useRef(false)
   const transcriptTargetRef = useRef<string | null>(null)
+  const captionTargetRef = useRef<string | null>(null)
 
   const editorLabels = useMemo(
     () => ({
@@ -520,6 +557,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const openVoiceSheet = useCallback((mode: VoiceTypingMode) => {
     setVoiceMode(mode)
+    setVoiceScope('note')
     setVoiceSourceUri(null)
     voiceSheetVisibleRef.current = true
     setVoiceSheetVisible(true)
@@ -582,6 +620,96 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     openSourceSheet('extract', src, fileName, 'localAi.errors.downloadImage')
   }, [openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
 
+  const handleImageDescribe = useCallback(() => {
+    if (!selectedImageSrc) return
+    setIsImageActionSheetOpen(false)
+    const src = selectedImageSrc
+    const fileName = src.startsWith('data:')
+      ? `image_${Date.now()}.jpg`
+      : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
+    captionTargetRef.current = src
+    openSourceSheet('describe', src, fileName, 'localAi.errors.downloadImage')
+  }, [openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
+
+  const handleNoteAi = useCallback(
+    (mode: VoiceTypingMode) => {
+      if (!noteId) return
+      hapticMedium()
+      Keyboard.dismiss()
+      editorRef.current?.blur()
+      setVoiceParagraphs(htmlToParagraphs(noteContentRef.current))
+      openVoiceSheet(mode)
+    },
+    [editorRef, noteContentRef, noteId, openVoiceSheet],
+  )
+  const aiToolsAvailable = summarizeReady || translateReady
+
+  const aiTools = useMemo(
+    () =>
+      buildAiTools({
+        summarizeReady,
+        translateReady,
+        hasSelection: !!aiToolsTarget?.selection,
+      }),
+    [aiToolsTarget?.selection, summarizeReady, translateReady],
+  )
+
+  const selectionMenuItems = useMemo<SelectionMenuItem[] | undefined>(
+    () =>
+      aiToolsAvailable
+        ? [{ key: 'aiTools', label: t('localAi.writingTools.menuLabel') }]
+        : undefined,
+    [aiToolsAvailable, t],
+  )
+
+  const runSelectionTool = useCallback(
+    (mode: VoiceTypingMode, selection: EditorSelection) => {
+      selectionRef.current = selection
+      Keyboard.dismiss()
+      setVoiceParagraphs(
+        selection.text
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean),
+      )
+      openVoiceSheet(mode)
+      setVoiceScope('selection')
+    },
+    [openVoiceSheet],
+  )
+
+  const openAiTools = useCallback(
+    async (allowRemembered: boolean) => {
+      if (!noteId || !aiToolsAvailable) return
+      const current = await editorRef.current?.getSelection(allowRemembered)
+      const selection = current && current.text.trim() ? current : null
+      if (allowRemembered && !selection) return
+      hapticMedium()
+      await hideKeyboard(() => editorRef.current?.blur())
+      setAiToolsTarget({ selection })
+    },
+    [aiToolsAvailable, editorRef, noteId],
+  )
+
+  const handleAiToolsButton = useCallback(() => openAiTools(false), [openAiTools])
+
+  const handleSelectionMenu = useCallback(() => openAiTools(true), [openAiTools])
+
+  const handleSelectAiTool = useCallback(
+    (tool: AiTool) => {
+      const selection = aiToolsTarget?.selection ?? null
+      setAiToolsTarget(null)
+      if (tool.scope === 'selection' && selection) {
+        runSelectionTool(tool.mode, selection)
+        return
+      }
+      handleNoteAi(tool.mode)
+    },
+    [aiToolsTarget, handleNoteAi, runSelectionTool],
+  )
+
+  const handleCloseAiTools = useCallback(() => setAiToolsTarget(null), [])
+
   const handleExtractTextAttachment = useCallback(() => {
     if (!selectedAttachmentSrc) return
     setIsAttachmentActionSheetOpen(false)
@@ -599,28 +727,117 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   ])
 
   const handleInsertVoiceText = useCallback(
-    (text: string) => {
+    (text: string, summary: TranscriptSummary | null, meta?: InsertMeta) => {
       handleCloseVoiceSheet()
       const transcriptTarget = transcriptTargetRef.current
       transcriptTargetRef.current = null
+      const captionTarget = captionTargetRef.current
+      captionTargetRef.current = null
+      const selection = voiceScope === 'selection' ? selectionRef.current : null
+      selectionRef.current = null
+      if (selection) {
+        if (voiceMode === 'summarizeNote') {
+          if (!summary) return
+          editorRef.current?.insertTranscript(
+            null,
+            t('localAi.summarizeNote.insertTitle'),
+            summary.summary ? [{ text: summary.summary }] : [],
+            {
+              actionItemsTitle: t('localAi.summary.actionItems'),
+              actionItems: summary.actionItems,
+            },
+            selection.to,
+          )
+          return
+        }
+        if (voiceMode === 'keyPoints') {
+          editorRef.current?.insertTranscript(
+            null,
+            t('localAi.keyPoints.insertTitle'),
+            [],
+            { bullets: meta?.bullets ?? [] },
+            selection.to,
+          )
+          return
+        }
+        if (meta?.action === 'replace') {
+          editorRef.current?.replaceRange(selection.from, selection.to, selection.text, text)
+        } else {
+          editorRef.current?.insertParagraphsAfter(selection.to, text)
+        }
+        return
+      }
+      if (voiceMode === 'describe') {
+        editorRef.current?.insertCaption(captionTarget, text.trim())
+        return
+      }
+      if (voiceMode === 'suggestTitle') {
+        const nextTitle = text.trim()
+        if (!nextTitle) return
+        editorRef.current?.setTitle(nextTitle)
+        handleTitleChange(nextTitle)
+        return
+      }
+      if (voiceMode === 'summarizeNote') {
+        if (!summary) return
+        editorRef.current?.insertTranscript(
+          null,
+          t('localAi.summarizeNote.insertTitle'),
+          summary.summary ? [{ text: summary.summary }] : [],
+          {
+            actionItemsTitle: t('localAi.summary.actionItems'),
+            actionItems: summary.actionItems,
+          },
+        )
+        return
+      }
+      if (voiceMode === 'keyPoints') {
+        editorRef.current?.insertTranscript(null, t('localAi.keyPoints.insertTitle'), [], {
+          bullets: meta?.bullets ?? [],
+        })
+        return
+      }
       const paragraphs = text
         .split(/\n+/)
         .map((line) => line.trim())
         .filter(Boolean)
         .map((line) => ({ text: line }))
       if (paragraphs.length === 0) return
+      if (voiceMode === 'translate') {
+        const languageLabel = meta?.language
+          ? t(
+              meta.language === 'en'
+                ? 'localAi.translateNote.english'
+                : `settings.onDeviceAi.languages.${meta.language}`,
+            )
+          : ''
+        editorRef.current?.insertTranscript(
+          null,
+          t('localAi.translateNote.insertTitle', { language: languageLabel }),
+          paragraphs,
+        )
+        return
+      }
       if (voiceMode === 'transcribe') {
         editorRef.current?.insertTranscript(
           transcriptTarget,
           t('localAi.transcriptTitle'),
           paragraphs,
+          summary
+            ? {
+                summaryTitle: t('localAi.summary.title'),
+                summary: summary.summary,
+                actionItemsTitle: t('localAi.summary.actionItems'),
+                actionItems: summary.actionItems,
+              }
+            : undefined,
         )
         return
       }
       if (voiceMode !== 'dictate') editorRef.current?.moveCursorToEnd()
       editorRef.current?.appendParagraphs(paragraphs)
     },
-    [editorRef, handleCloseVoiceSheet, t, voiceMode],
+    [editorRef, handleCloseVoiceSheet, handleTitleChange, t, voiceMode, voiceScope],
   )
 
   const handleRecorderDone = useCallback(
@@ -640,6 +857,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       setVoiceSourceUri(transcriptUri)
     },
     [handleRecordingDone, openVoiceSheet],
+  )
+
+  const handleAttachVoiceAudio = useCallback(
+    (uri: string, durationMs: number) => {
+      handleCloseVoiceSheet()
+      handleRecordingDone(uri, durationMs)
+    },
+    [handleCloseVoiceSheet, handleRecordingDone],
   )
 
   const edgeSwipeResponder = useMemo(
@@ -935,6 +1160,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onDeleteAttachment={handleDeleteAttachment}
               onImageLongPress={handleImageLongPress}
               onAttachmentLongPress={handleAttachmentLongPress}
+              selectionMenuItems={selectionMenuItems}
+              onSelectionMenu={handleSelectionMenu}
               onYjsMessage={handleYjsMessage}
             />
           )}
@@ -959,6 +1186,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onTakePhoto={handleTakePhoto}
               onTakeVideo={handleTakeVideo}
               onVoiceTyping={voiceTypingReady ? handleVoiceTyping : undefined}
+              onAiTools={aiToolsAvailable ? handleAiToolsButton : undefined}
             />
           )}
 
@@ -986,12 +1214,26 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           />
 
           {LOCAL_AI_ENABLED && (
+            <AiToolsSheet
+              visible={!!aiToolsTarget}
+              selectionText={aiToolsTarget?.selection?.text ?? ''}
+              tools={aiTools}
+              onSelect={handleSelectAiTool}
+              onClose={handleCloseAiTools}
+            />
+          )}
+
+          {LOCAL_AI_ENABLED && (
             <VoiceTypingSheet
               visible={voiceSheetVisible}
               mode={voiceMode}
               sourceUri={voiceSourceUri}
               insertBlocked={hasNoteConflict}
+              summaryAvailable={summarizeReady}
+              sourceParagraphs={voiceParagraphs}
+              scope={voiceScope}
               onInsert={handleInsertVoiceText}
+              onAttachAudio={handleAttachVoiceAudio}
               onClose={handleCloseVoiceSheet}
             />
           )}
@@ -1048,6 +1290,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                         label={t('localAi.extractText.menuLabel')}
                         systemImage="text.viewfinder"
                         onPress={handleImageExtractText}
+                      />
+                    )}
+                    {describeImagesReady && (
+                      <ExpoUI.Button
+                        label={t('localAi.describeImage.menuLabel')}
+                        systemImage="text.below.photo"
+                        onPress={handleImageDescribe}
                       />
                     )}
                     <ExpoUI.Button

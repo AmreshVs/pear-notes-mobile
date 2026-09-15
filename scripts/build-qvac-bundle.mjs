@@ -1,6 +1,6 @@
 import fs from 'fs'
-import path from 'path'
 import { createRequire } from 'module'
+import path from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -81,7 +81,9 @@ function findRangeViolations(packageNames) {
       if (!dependency.startsWith('bare-') || !semver.validRange(range)) continue
       const installed = findInstalledVersion(dir, dependency)
       if (installed && !semver.satisfies(installed, range)) {
-        violations.push(`${manifest.name} needs ${dependency}@${range} but ${installed} is installed`)
+        violations.push(
+          `${manifest.name} needs ${dependency}@${range} but ${installed} is installed`,
+        )
       }
     }
   }
@@ -124,7 +126,9 @@ function findDeferredStaticImports(bundlePath) {
         `(^|\\n)\\s*(import|export)[^;\\n]*from\\s*['"]${escaped}['"]|(^|\\n)\\s*import\\s*['"]${escaped}['"]`,
       )
       if (staticImport.test(text)) {
-        problems.push(`${from} statically imports ${specifier}, which is deferred, so the worker cannot load`)
+        problems.push(
+          `${from} statically imports ${specifier}, which is deferred, so the worker cannot load`,
+        )
       }
     }
   }
@@ -133,7 +137,9 @@ function findDeferredStaticImports(bundlePath) {
 
 const importCommand = (relative) => import(pathToFileURL(path.join(commandsDir, relative)).href)
 const { resolveConfigForProject } = await import(
-  pathToFileURL(path.join(sdkDir, 'dist', 'src', 'client', 'config-loader', 'resolve-config.node.js')).href
+  pathToFileURL(
+    path.join(sdkDir, 'dist', 'src', 'client', 'config-loader', 'resolve-config.node.js'),
+  ).href
 )
 const { getClientLogger } = await import(
   pathToFileURL(path.join(sdkDir, 'dist', 'src', 'logging', 'index.js')).href
@@ -207,3 +213,24 @@ if (problems.length) {
 
 fs.copyFileSync(generatedBundle, installedBundle)
 console.log(`QVAC worker bundle ready with ${addons.length} native addons: ${addons.join(', ')}`)
+
+const linkedIosAddonsDir = path.join(
+  projectRoot,
+  'node_modules',
+  'react-native-bare-kit',
+  'ios',
+  'addons',
+)
+if (fs.existsSync(linkedIosAddonsDir)) {
+  const linkedNames = fs
+    .readdirSync(linkedIosAddonsDir)
+    .map((entry) => entry.replace(/\.[\d.]+\.xcframework$/, ''))
+  const unlinked = addons.filter(
+    (addon) => !linkedNames.includes(addon.replace('/', '__').replace(/^@/, '')),
+  )
+  if (unlinked.length) {
+    console.warn(
+      `QVAC worker needs native addons the iOS app has not linked yet: ${unlinked.join(', ')}. Run \`cd ios && pod install\` and rebuild the app before loading this bundle, or it will abort at launch.`,
+    )
+  }
+}

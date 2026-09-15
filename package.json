@@ -35,7 +35,7 @@
     "creds:check": "node scripts/check-eas-credentials.js",
     "pin-core": "node scripts/pin-core.js",
     "qvac-bundle": "node scripts/build-qvac-bundle.mjs",
-    "postinstall": "node scripts/patch-bare-kit-linker.mjs && node scripts/build-qvac-bundle.mjs"
+    "postinstall": "node scripts/patch-webview-menu.mjs && node scripts/patch-bare-kit-linker.mjs && node scripts/build-qvac-bundle.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",

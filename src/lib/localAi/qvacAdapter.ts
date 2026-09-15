@@ -9,7 +9,19 @@ import {
   LOCAL_AI_NETWORK,
   LOCAL_AI_REGISTRY_MODELS,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
+import { getTranslationSteps } from '@pear-notes/core/store/services/localAiLanguage.js'
+import {
+  buildNoteTaskMessages,
+  cleanModelOutput,
+  DESCRIBE_IMAGE_PROMPT,
+  DESCRIBE_MAX_TOKENS,
+  getNoteTaskMaxTokens,
+  LLM_CONTEXT_SIZE,
+  LLM_TEMPERATURE,
+  NOTE_TASK,
+} from '@pear-notes/core/store/services/localAiPrompts.js'
 import { formatOcrBlocks } from '@pear-notes/core/store/services/localAiText.js'
+import { getTranslationModelName } from '@pear-notes/core/store/services/localAiTranslationModels.js'
 
 import { getLocalAiDeviceSupport, getLocalAiDiskSpace } from '@/lib/localAi/deviceSupport'
 import { ConnectionKind, getConnectionKind } from '@/lib/networkState'
@@ -111,14 +123,38 @@ async function unloadCurrentModel(sdk: QvacSdk) {
   } catch {}
 }
 
+const BACKGROUND_SUSPEND_DELAY_MS = 1500
+let suspendTimer: ReturnType<typeof setTimeout> | null = null
+let suspended = false
+let lifecycle: Promise<void> = Promise.resolve()
+
+function queueLifecycle(step: () => Promise<void>) {
+  lifecycle = lifecycle.then(step).catch(() => {})
+}
+
 function handleAppStateChange(sdk: QvacSdk, state: AppStateStatus) {
   if (state === 'background') {
-    unloadCurrentModel(sdk)
-      .then(() => sdk.suspend())
-      .catch(() => {})
+    if (suspendTimer) return
+    suspendTimer = setTimeout(() => {
+      suspendTimer = null
+      queueLifecycle(async () => {
+        await unloadCurrentModel(sdk)
+        await sdk.suspend()
+        suspended = true
+      })
+    }, BACKGROUND_SUSPEND_DELAY_MS)
     return
   }
-  if (state === 'active') sdk.resume().catch(() => {})
+  if (state !== 'active') return
+  if (suspendTimer) {
+    clearTimeout(suspendTimer)
+    suspendTimer = null
+  }
+  if (!suspended) return
+  queueLifecycle(async () => {
+    await sdk.resume()
+    suspended = false
+  })
 }
 
 function loadSdk(): Promise<QvacSdk> {
@@ -138,7 +174,10 @@ function loadSdk(): Promise<QvacSdk> {
       if (sdkPromise === pending) sdkPromise = null
     })
   }
-  return sdkPromise
+  return sdkPromise.then(async (sdk) => {
+    await lifecycle
+    return sdk
+  })
 }
 
 function registryAsset(sdk: QvacSdk, name: string): unknown {
@@ -307,43 +346,284 @@ export async function extractTextFromImage(fileUri: string): Promise<string> {
       },
     }),
   )
-  const prepared = await downscaleImageForOcr(fileUri)
+  const prepared = await downscaleImage(fileUri, OCR_IMAGE_MAX_SIDE)
   try {
     const { blocks } = sdk.ocr({ modelId, image: toFilePath(prepared ?? fileUri) })
     return formatOcrBlocks(await blocks)
   } finally {
-    if (prepared) {
-      try {
-        const file = new File(prepared)
-        if (file.exists) file.delete()
-      } catch {}
-    }
+    deleteLocalUri(prepared)
   }
 }
 
 const OCR_IMAGE_MAX_SIDE = 1600
-const OCR_IMAGE_QUALITY = 0.9
+const DESCRIBE_IMAGE_MAX_SIDE = 896
+const RESIZED_IMAGE_QUALITY = 0.9
 
-async function downscaleImageForOcr(fileUri: string): Promise<string | null> {
+function deleteLocalUri(uri: string | null) {
+  if (!uri) return
+  try {
+    const file = new File(uri)
+    if (file.exists) file.delete()
+  } catch {}
+}
+
+async function downscaleImage(fileUri: string, maxSide: number): Promise<string | null> {
   try {
     const manipulator = await import('expo-image-manipulator')
     const original = await manipulator.ImageManipulator.manipulate(fileUri).renderAsync()
     const longest = Math.max(original.width, original.height)
-    if (longest <= OCR_IMAGE_MAX_SIDE) return null
-    const resize =
-      original.width >= original.height
-        ? { width: OCR_IMAGE_MAX_SIDE }
-        : { height: OCR_IMAGE_MAX_SIDE }
+    if (longest <= maxSide) return null
+    const resize = original.width >= original.height ? { width: maxSide } : { height: maxSide }
     const rendered = await manipulator.ImageManipulator.manipulate(fileUri)
       .resize(resize)
       .renderAsync()
     const saved = await rendered.saveAsync({
-      compress: OCR_IMAGE_QUALITY,
+      compress: RESIZED_IMAGE_QUALITY,
       format: manipulator.SaveFormat.JPEG,
     })
     return saved.uri
   } catch {
     return null
+  }
+}
+
+type CompletionInput = Record<string, unknown>
+
+function runCompletion(sdk: QvacSdk, input: CompletionInput): Promise<string> {
+  const run = (sdk.completion as unknown as (params: CompletionInput) => { text: Promise<string> })(
+    input,
+  )
+  return run.text
+}
+
+function loadLlmFeature(sdk: QvacSdk, feature: string) {
+  const [modelName, projectionName] = getFeatureRegistryNames(feature, {})
+  return ensureModelLoaded(sdk, [modelName, projectionName].filter(Boolean).join('|'), () =>
+    loadModelWith(sdk, {
+      modelSrc: registryAsset(sdk, modelName),
+      modelType: 'llm',
+      modelConfig: {
+        ctx_size: LLM_CONTEXT_SIZE,
+        ...(projectionName ? { projectionModelSrc: registryAsset(sdk, projectionName) } : {}),
+      },
+    }),
+  )
+}
+
+export async function describeImage(fileUri: string): Promise<string> {
+  const sdk = await loadSdk()
+  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.DESCRIBE_IMAGES)
+  const prepared = await downscaleImage(fileUri, DESCRIBE_IMAGE_MAX_SIDE)
+  try {
+    const output = await runCompletion(sdk, {
+      modelId,
+      history: [
+        {
+          role: 'user',
+          content: DESCRIBE_IMAGE_PROMPT,
+          attachments: [{ path: toFilePath(prepared ?? fileUri) }],
+        },
+      ],
+      stream: false,
+      generationParams: { temp: LLM_TEMPERATURE, predict: DESCRIBE_MAX_TOKENS },
+    })
+    return cleanModelOutput(output)
+  } finally {
+    deleteLocalUri(prepared)
+  }
+}
+
+export async function runNoteTask(task: string, text: string): Promise<string> {
+  const sdk = await loadSdk()
+  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS)
+  const output = await runCompletion(sdk, {
+    modelId,
+    history: buildNoteTaskMessages(task, text),
+    stream: false,
+    generationParams: {
+      temp: LLM_TEMPERATURE,
+      predict: getNoteTaskMaxTokens(task, text) as number,
+    },
+  })
+  return cleanModelOutput(output)
+}
+
+export const summarizeTranscript = (transcript: string) =>
+  runNoteTask(NOTE_TASK.TRANSCRIPT_SUMMARY, transcript)
+
+export async function translateParagraphs(
+  paragraphs: string[],
+  from: string,
+  to: string,
+): Promise<string[]> {
+  const steps = getTranslationSteps(from, to) as [string, string][]
+  if (steps.length === 0) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED)
+  const sdk = await loadSdk()
+  let lines = paragraphs
+  for (const [stepFrom, stepTo] of steps) {
+    const modelName = getTranslationModelName(stepFrom, stepTo)
+    const modelId = await ensureModelLoaded(sdk, `${modelName}|translate`, () =>
+      loadModelWith(sdk, {
+        modelSrc: registryAsset(sdk, modelName),
+        modelConfig: { engine: 'Bergamot', from: stepFrom, to: stepTo },
+      }),
+    )
+    const run = (
+      sdk.translate as unknown as (params: Record<string, unknown>) => {
+        translations: Promise<string[]>
+      }
+    )({ modelId, text: lines, modelType: 'nmtcpp-translation', stream: false })
+    lines = (await run.translations).map((line) => String(line ?? ''))
+  }
+  return lines
+}
+
+export interface LiveTranscription {
+  stop: () => Promise<string>
+  cancel: () => void
+  saveAudio: () => string | null
+}
+
+const PCM_SAMPLE_RATE = 16000
+const PCM_BYTES_PER_SAMPLE = 2
+const WAV_HEADER_BYTES = 44
+const DICTATION_FILE_PREFIX = 'dictation-'
+
+function writeWavFile(chunks: Uint8Array[]): string | null {
+  const dataLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0)
+  if (dataLength === 0) return null
+  const bytes = new Uint8Array(WAV_HEADER_BYTES + dataLength)
+  const view = new DataView(bytes.buffer)
+  const writeAscii = (offset: number, value: string) => {
+    for (let index = 0; index < value.length; index += 1) {
+      bytes[offset + index] = value.charCodeAt(index)
+    }
+  }
+  writeAscii(0, 'RIFF')
+  view.setUint32(4, WAV_HEADER_BYTES - 8 + dataLength, true)
+  writeAscii(8, 'WAVE')
+  writeAscii(12, 'fmt ')
+  view.setUint32(16, 16, true)
+  view.setUint16(20, 1, true)
+  view.setUint16(22, 1, true)
+  view.setUint32(24, PCM_SAMPLE_RATE, true)
+  view.setUint32(28, PCM_SAMPLE_RATE * PCM_BYTES_PER_SAMPLE, true)
+  view.setUint16(32, PCM_BYTES_PER_SAMPLE, true)
+  view.setUint16(34, PCM_BYTES_PER_SAMPLE * 8, true)
+  writeAscii(36, 'data')
+  view.setUint32(40, dataLength, true)
+  let offset = WAV_HEADER_BYTES
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset)
+    offset += chunk.length
+  }
+  try {
+    const file = new File(Paths.cache, `${DICTATION_FILE_PREFIX}${Date.now()}.wav`)
+    file.write(bytes)
+    return file.uri
+  } catch {
+    return null
+  }
+}
+
+export interface LiveTranscriptionHandlers {
+  onText: (transcript: string) => void
+  onLevel?: (level: number) => void
+}
+
+interface TranscriptionStreamSession extends AsyncIterable<unknown> {
+  write: (chunk: Uint8Array) => void
+  end: () => void
+  destroy: () => void
+}
+
+function decodeBase64(data: string): Uint8Array {
+  const binary = atob(data)
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+  return bytes
+}
+
+function streamItemText(item: unknown): string {
+  if (typeof item === 'string') return item
+  if (item && typeof item === 'object' && (item as { type?: string }).type === 'text') {
+    return String((item as { text?: string }).text ?? '')
+  }
+  return ''
+}
+
+function joinTranscript(current: string, next: string) {
+  const piece = next.trim()
+  if (!piece) return current
+  return current ? `${current} ${piece}` : piece
+}
+
+export async function startLiveTranscription(
+  feature: string,
+  featureConfig: LocalAiFeatureModelConfig,
+  { onText, onLevel }: LiveTranscriptionHandlers,
+): Promise<LiveTranscription> {
+  const native = ExpoLocalAi
+  if (!native) throw new LocalAiError(LOCAL_AI_ERROR.MODEL_MISSING)
+  const sdk = await loadSdk()
+  const modelId = await loadSpeechModel(sdk, feature, featureConfig)
+  const [modelName] = getFeatureRegistryNames(feature, featureConfig)
+  const isParakeet =
+    (LOCAL_AI_REGISTRY_MODELS as RegistryModels)[modelName]?.engine === PARAKEET_ENGINE
+  const openStream = sdk.transcribeStream as unknown as (
+    params: Record<string, unknown>,
+  ) => Promise<TranscriptionStreamSession>
+  const session = await openStream({
+    modelId,
+    ...(isParakeet ? { parakeetStreamingConfig: {} } : {}),
+  })
+
+  let transcript = ''
+  let closed = false
+  const captured: Uint8Array[] = []
+  const reading = (async () => {
+    for await (const item of session) {
+      const next = joinTranscript(transcript, streamItemText(item))
+      if (next === transcript) continue
+      transcript = next
+      onText(transcript)
+    }
+  })().catch(() => {})
+
+  const subscription = native.addListener('onPcmChunk', (event) => {
+    if (closed) return
+    onLevel?.(event.level)
+    const chunk = decodeBase64(event.data)
+    captured.push(chunk)
+    session.write(chunk)
+  })
+
+  const release = async () => {
+    if (closed) return
+    closed = true
+    subscription.remove()
+    await native.stopPcmStream().catch(() => {})
+  }
+
+  try {
+    await native.startPcmStream()
+  } catch (error) {
+    await release()
+    session.destroy()
+    throw error
+  }
+
+  return {
+    stop: async () => {
+      await release()
+      session.end()
+      await reading
+      return transcript.trim()
+    },
+    cancel: () => {
+      release().finally(() => session.destroy())
+    },
+    saveAudio: () => writeWavFile(captured),
   }
 }
 

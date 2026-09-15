@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Animated, { useAnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+
+import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { LocalAiProcessing } from '@/components/LocalAiProcessing'
@@ -10,6 +13,9 @@ import { RecordingWaveBar } from '@/components/RecordingWaveBar'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import { fmtTimer, RECORDING_BAR_GAP, RECORDING_BARS } from '@/components/useAudioRecorderModal'
 import {
+  type AiScope,
+  type InsertMeta,
+  type TranscriptSummary,
   useVoiceTypingSheet,
   type VoiceTypingError,
   type VoiceTypingMode,
@@ -43,15 +49,20 @@ const PREVIEW_MAX_HEIGHT_RATIO = 0.42
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
   surfaceContainerHighest?: string
+  surfaceContainerLow?: string
   onSurfaceVariant?: string
 }
 
 interface VoiceTypingSheetProps {
   visible: boolean
   mode: VoiceTypingMode
+  scope?: AiScope
   sourceUri: string | null
+  sourceParagraphs?: string[] | null
   insertBlocked: boolean
-  onInsert: (text: string) => void
+  summaryAvailable?: boolean
+  onInsert: (text: string, summary: TranscriptSummary | null, meta: InsertMeta) => void
+  onAttachAudio?: (uri: string, durationMs: number) => void
   onClose: () => void
 }
 
@@ -59,23 +70,83 @@ const HERO_BASE_BY_MODE: Record<VoiceTypingMode, string> = {
   dictate: 'localAi.voiceTyping',
   transcribe: 'localAi.transcribe',
   extract: 'localAi.extractText',
+  describe: 'localAi.describeImage',
+  translate: 'localAi.translateNote',
+  summarizeNote: 'localAi.summarizeNote',
+  suggestTitle: 'localAi.suggestTitle',
+  keyPoints: 'localAi.keyPoints',
+  fixGrammar: 'localAi.fixGrammar',
+  rewrite: 'localAi.rewrite',
+  makeShorter: 'localAi.makeShorter',
+  makeProfessional: 'localAi.makeProfessional',
+  makeFriendly: 'localAi.makeFriendly',
+}
+
+const SELECTION_HERO_BASE: Partial<Record<VoiceTypingMode, string>> = {
+  summarizeNote: 'localAi.summarizeSelection',
+  keyPoints: 'localAi.keyPointsSelection',
+  translate: 'localAi.translateSelection',
+}
+
+const SELECTION_ERRORS: Partial<Record<VoiceTypingError, string>> = {
+  empty: 'emptySelection',
+  tooLong: 'selectionTooLong',
 }
 
 const ICON_BY_MODE: Record<VoiceTypingMode, string> = {
+  fixGrammar: 'spellcheck',
+  rewrite: 'auto-fix',
+  makeShorter: 'arrow-collapse-vertical',
+  makeProfessional: 'briefcase-outline',
+  makeFriendly: 'emoticon-happy-outline',
   dictate: 'waveform',
   transcribe: 'text-box-outline',
   extract: 'text-recognition',
+  describe: 'image-search-outline',
+  translate: 'translate',
+  summarizeNote: 'text-short',
+  suggestTitle: 'format-title',
+  keyPoints: 'format-list-bulleted',
 }
 
-function heroKeys(mode: VoiceTypingMode, phase: VoiceTypingPhase, error: VoiceTypingError | null) {
-  const base = HERO_BASE_BY_MODE[mode]
+const NOTE_TASK_ERRORS: Partial<Record<VoiceTypingError, string>> = {
+  empty: 'emptyNote',
+  failed: 'failedNoteTask',
+}
+
+const ERROR_KEY_OVERRIDES: Partial<
+  Record<VoiceTypingMode, Partial<Record<VoiceTypingError, string>>>
+> = {
+  extract: { empty: 'emptyImage', failed: 'failedExtract' },
+  describe: { empty: 'emptyDescribe', failed: 'failedDescribe' },
+  translate: {
+    empty: 'emptyTranslate',
+    failed: 'failedTranslate',
+    noSpace: 'noSpace',
+    downloadFailed: 'failedDownload',
+  },
+  summarizeNote: NOTE_TASK_ERRORS,
+  suggestTitle: NOTE_TASK_ERRORS,
+  keyPoints: NOTE_TASK_ERRORS,
+  fixGrammar: NOTE_TASK_ERRORS,
+  rewrite: NOTE_TASK_ERRORS,
+  makeShorter: NOTE_TASK_ERRORS,
+  makeProfessional: NOTE_TASK_ERRORS,
+  makeFriendly: NOTE_TASK_ERRORS,
+}
+
+function heroKeys(
+  mode: VoiceTypingMode,
+  phase: VoiceTypingPhase,
+  error: VoiceTypingError | null,
+  scope: AiScope,
+) {
+  const base = (scope === 'selection' && SELECTION_HERO_BASE[mode]) || HERO_BASE_BY_MODE[mode]
   if (phase === 'error') {
     const errorKey =
-      mode === 'extract' && error === 'empty'
-        ? 'emptyImage'
-        : mode === 'extract' && error === 'failed'
-          ? 'failedExtract'
-          : error
+      (error && scope === 'selection' && SELECTION_ERRORS[error]) ||
+      (error && ERROR_KEY_OVERRIDES[mode]?.[error]) ||
+      error
     return {
       title: `localAi.errors.${errorKey}.title`,
       subtitle: `localAi.errors.${errorKey}.subtitle`,
@@ -88,8 +159,12 @@ export function VoiceTypingSheet({
   visible,
   mode,
   sourceUri,
+  scope = 'note',
+  sourceParagraphs = null,
   insertBlocked,
+  summaryAvailable = false,
   onInsert,
+  onAttachAudio,
   onClose,
 }: VoiceTypingSheetProps) {
   const { t } = useTranslation()
@@ -99,12 +174,28 @@ export function VoiceTypingSheet({
   const styles = useStyles()
   const insets = useSafeAreaInsets()
   const { height: windowHeight } = useWindowDimensions()
+  const [sourcePickerOpen, setSourcePickerOpen] = useState(false)
   const {
     phase,
     elapsed,
     text,
+    liveText,
+    isLive,
     error,
     pageProgress,
+    summary,
+    summaryPhase,
+    canSummarize,
+    canReplace,
+    sourceLanguage,
+    targetLanguage,
+    translateLanguages,
+    downloadProgress,
+    noSpaceBytes,
+    handleChooseTarget,
+    handleChooseSource,
+    handleDownloadNow,
+    handleReportProblem,
     copied,
     handleCopy,
     isPresented,
@@ -114,10 +205,25 @@ export function VoiceTypingSheet({
     handleRecord,
     handleStop,
     handleAgain,
+    handleSummarize,
     handleClose,
     handleInsert,
     handleOpenSettings,
-  } = useVoiceTypingSheet({ visible, mode, sourceUri, onInsert, onClose })
+    hasSavedAudio,
+    canAttachAudio,
+    handleRetrySavedAudio,
+    handleAttachAudio,
+  } = useVoiceTypingSheet({
+    visible,
+    mode,
+    sourceUri,
+    scope,
+    sourceParagraphs,
+    summaryAvailable,
+    onInsert,
+    onAttachAudio,
+    onClose,
+  })
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({ opacity: sheetProgress.value }))
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
@@ -126,15 +232,60 @@ export function VoiceTypingSheet({
 
   if (!isPresented) return null
 
-  const keys = heroKeys(mode, phase, error)
-  const canInsert = phase === 'preview' && !insertBlocked
+  const languageName = (code: string | null) => {
+    if (!code) return ''
+    return code === 'en'
+      ? t('localAi.translateNote.english')
+      : t(`settings.onDeviceAi.languages.${code}`)
+  }
+  const heroParams = {
+    language: languageName(targetLanguage),
+    percent: downloadProgress.percent,
+    size: formatBytes(phase === 'error' ? noSpaceBytes : downloadProgress.missingBytes),
+  }
+  const keys = heroKeys(mode, phase, error, scope)
+  const canInsert = phase === 'preview' && !insertBlocked && summaryPhase !== 'working'
   const isRecording = phase === 'recording'
   const isError = phase === 'error'
+  const isBusy = phase === 'transcribing'
   const showRecorder = mode === 'dictate' && (phase === 'idle' || phase === 'recording')
-  const showProcessing = phase === 'transcribing' || (phase === 'idle' && mode !== 'dictate')
+  const showProcessing =
+    phase === 'transcribing' ||
+    phase === 'downloading' ||
+    phase === 'preparing' ||
+    (phase === 'idle' && mode !== 'dictate')
+  const showGeneratedDisclaimer = mode === 'keyPoints' || mode === 'suggestTitle' || canReplace
+  const showReportLink =
+    mode === 'describe' ||
+    mode === 'translate' ||
+    mode === 'suggestTitle' ||
+    mode === 'keyPoints' ||
+    canReplace ||
+    !!summary
   const subtitle =
-    phase === 'preview' && insertBlocked ? t('localAi.conflictBlocked') : t(keys.subtitle)
+    phase === 'preview' && insertBlocked
+      ? t('localAi.conflictBlocked')
+      : t(keys.subtitle, heroParams)
   const mutedColor = c.onSurfaceVariant ?? colors.textSecondary
+
+  const renderLanguageChip = (code: string, selected: boolean, onPress: () => void) => (
+    <Pressable
+      key={code}
+      onPress={onPress}
+      disabled={isBusy}
+      accessibilityRole="radio"
+      accessibilityState={{ selected, disabled: isBusy }}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+        {languageName(code)}
+      </Text>
+    </Pressable>
+  )
 
   return (
     <Modal
@@ -167,7 +318,7 @@ export function VoiceTypingSheet({
                 />
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.title}>{t(keys.title)}</Text>
+                <Text style={styles.title}>{t(keys.title, heroParams)}</Text>
                 <Text style={styles.subtitle}>{subtitle}</Text>
               </View>
               <Pressable
@@ -181,8 +332,70 @@ export function VoiceTypingSheet({
               </Pressable>
             </View>
 
+            {mode === 'translate' && !!sourceLanguage && !isError && (
+              <View style={styles.languagePanel}>
+                <Pressable
+                  onPress={() => setSourcePickerOpen((open) => !open)}
+                  disabled={isBusy}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: sourcePickerOpen, disabled: isBusy }}
+                  style={({ pressed }) => [styles.languageHeader, pressed && styles.pressed]}
+                >
+                  <Text style={styles.languageLabel}>
+                    {t('localAi.translateNote.noteLanguage')}
+                  </Text>
+                  <Text style={styles.languageValue}>{languageName(sourceLanguage)}</Text>
+                  <MaterialCommunityIcons
+                    name={sourcePickerOpen ? 'chevron-up' : 'chevron-down'}
+                    size={UI_ICON_SIZE_20}
+                    color={mutedColor}
+                  />
+                </Pressable>
+                {sourcePickerOpen && (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.chipsScroll}
+                    accessibilityRole="radiogroup"
+                  >
+                    {translateLanguages.map((code) =>
+                      renderLanguageChip(code, code === sourceLanguage, () => {
+                        setSourcePickerOpen(false)
+                        handleChooseSource(code)
+                      }),
+                    )}
+                  </ScrollView>
+                )}
+                <Text style={styles.languageLabel}>{t('localAi.translateNote.to')}</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chipsScroll}
+                  accessibilityRole="radiogroup"
+                >
+                  {translateLanguages
+                    .filter((code) => code !== sourceLanguage)
+                    .map((code) =>
+                      renderLanguageChip(code, code === targetLanguage, () =>
+                        handleChooseTarget(code),
+                      ),
+                    )}
+                </ScrollView>
+              </View>
+            )}
+
             {showRecorder && (
               <View style={styles.recorder}>
+                {isLive && isRecording && (
+                  <ScrollView style={styles.liveCard} contentContainerStyle={styles.liveContent}>
+                    <Text
+                      style={[styles.liveText, !liveText && styles.livePlaceholder]}
+                      accessibilityLiveRegion="polite"
+                    >
+                      {liveText || t('localAi.livePlaceholder')}
+                    </Text>
+                  </ScrollView>
+                )}
                 <View style={styles.waveLane}>
                   <View style={styles.waveRow}>
                     {Array.from({ length: RECORDING_BARS }, (_, index) => (
@@ -232,13 +445,89 @@ export function VoiceTypingSheet({
                 style={[styles.previewCard, { maxHeight: windowHeight * PREVIEW_MAX_HEIGHT_RATIO }]}
                 contentContainerStyle={styles.previewContent}
               >
-                <Text style={styles.previewText} selectable>
-                  {text}
-                </Text>
+                {mode !== 'summarizeNote' && (
+                  <Text
+                    style={mode === 'suggestTitle' ? styles.titlePreview : styles.previewText}
+                    selectable
+                  >
+                    {text}
+                  </Text>
+                )}
+                {summary && (
+                  <View
+                    style={[
+                      styles.summaryBlock,
+                      mode === 'summarizeNote' && styles.summaryBlockFirst,
+                    ]}
+                  >
+                    {!!summary.summary && (
+                      <>
+                        <Text style={styles.summaryHeading}>{t('localAi.summary.title')}</Text>
+                        <Text style={styles.previewText} selectable>
+                          {summary.summary}
+                        </Text>
+                      </>
+                    )}
+                    {summary.actionItems.length > 0 && (
+                      <>
+                        <Text style={styles.summaryHeading}>
+                          {t('localAi.summary.actionItems')}
+                        </Text>
+                        {summary.actionItems.map((item, index) => (
+                          <Text key={index} style={styles.previewText} selectable>
+                            {`• ${item}`}
+                          </Text>
+                        ))}
+                      </>
+                    )}
+                  </View>
+                )}
               </ScrollView>
             )}
 
-            {(phase === 'preview' || isError) && (
+            {phase === 'preview' && summaryPhase === 'working' && (
+              <LocalAiProcessing
+                color={c.primary}
+                captionColor={mutedColor}
+                caption={t('localAi.summary.working')}
+              />
+            )}
+
+            {phase === 'preview' && summaryPhase === 'failed' && (
+              <Text style={styles.summaryError}>{t('localAi.summary.failed')}</Text>
+            )}
+
+            {phase === 'preview' && !!summary && (
+              <Text style={styles.disclaimer}>{t('localAi.summary.disclaimer')}</Text>
+            )}
+
+            {phase === 'preview' && showGeneratedDisclaimer && (
+              <Text style={styles.disclaimer}>{t('localAi.generatedDisclaimer')}</Text>
+            )}
+
+            {phase === 'preview' && showReportLink && (
+              <Pressable
+                onPress={() => handleReportProblem(t('localAi.reportSubject'))}
+                accessibilityRole="link"
+                hitSlop={8}
+                style={({ pressed }) => [styles.reportLink, pressed && styles.pressed]}
+              >
+                <Text style={styles.reportLinkText}>{t('localAi.actions.reportProblem')}</Text>
+              </Pressable>
+            )}
+
+            {canSummarize && !summary && summaryPhase !== 'working' && (
+              <Pressable
+                onPress={handleSummarize}
+                accessibilityRole="button"
+                style={({ pressed }) => [styles.summarizeButton, pressed && styles.pressed]}
+              >
+                <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_20} color={c.primary} />
+                <Text style={styles.summarizeButtonText}>{t('localAi.summary.action')}</Text>
+              </Pressable>
+            )}
+
+            {(phase === 'preview' || isError || phase === 'waiting') && (
               <View style={styles.actionsRow}>
                 {isError && error === 'micDenied' ? (
                   <Pressable
@@ -249,6 +538,80 @@ export function VoiceTypingSheet({
                       {t('localAi.actions.openSettings')}
                     </Text>
                   </Pressable>
+                ) : isError && hasSavedAudio ? (
+                  <>
+                    {canAttachAudio && (
+                      <Pressable
+                        onPress={handleAttachAudio}
+                        style={({ pressed }) => [styles.secondaryButton, pressed && styles.pressed]}
+                      >
+                        <MaterialCommunityIcons
+                          name="paperclip"
+                          size={UI_ICON_SIZE_20}
+                          color={md3.colors.onSecondaryContainer}
+                        />
+                        <Text style={styles.secondaryButtonText}>
+                          {t('localAi.actions.attachAudio')}
+                        </Text>
+                      </Pressable>
+                    )}
+                    <Pressable
+                      onPress={handleRetrySavedAudio}
+                      style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                    >
+                      <Text style={styles.primaryButtonText}>{t('localAi.actions.again')}</Text>
+                    </Pressable>
+                  </>
+                ) : phase === 'waiting' ? (
+                  <Pressable
+                    onPress={handleDownloadNow}
+                    style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.primaryButtonText}>{t('localAi.actions.downloadNow')}</Text>
+                  </Pressable>
+                ) : phase === 'preview' && canReplace ? (
+                  <>
+                    <Pressable
+                      onPress={handleCopy}
+                      accessibilityRole="button"
+                      accessibilityLabel={
+                        copied ? t('localAi.actions.copied') : t('localAi.actions.copy')
+                      }
+                      style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+                    >
+                      <MaterialCommunityIcons
+                        name={copied ? 'check' : 'content-copy'}
+                        size={UI_ICON_SIZE_20}
+                        color={copied ? md3.colors.primary : md3.colors.onSecondaryContainer}
+                      />
+                    </Pressable>
+                    <Pressable
+                      disabled={!canInsert}
+                      onPress={() => handleInsert('insert')}
+                      style={({ pressed }) => [
+                        styles.secondaryButton,
+                        !canInsert && styles.buttonDisabled,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Text style={styles.secondaryButtonText} numberOfLines={1}>
+                        {t('localAi.actions.insertBelow')}
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      disabled={!canInsert}
+                      onPress={() => handleInsert('replace')}
+                      style={({ pressed }) => [
+                        styles.primaryButton,
+                        !canInsert && styles.buttonDisabled,
+                        pressed && styles.pressed,
+                      ]}
+                    >
+                      <Text style={styles.primaryButtonText} numberOfLines={1}>
+                        {t('localAi.actions.replace')}
+                      </Text>
+                    </Pressable>
+                  </>
                 ) : (
                   <>
                     <Pressable
@@ -287,14 +650,22 @@ export function VoiceTypingSheet({
                     {phase === 'preview' && (
                       <Pressable
                         disabled={!canInsert}
-                        onPress={handleInsert}
+                        onPress={() => handleInsert('insert')}
                         style={({ pressed }) => [
                           styles.primaryButton,
                           !canInsert && styles.buttonDisabled,
                           pressed && styles.pressed,
                         ]}
                       >
-                        <Text style={styles.primaryButtonText}>{t('localAi.actions.insert')}</Text>
+                        <Text style={styles.primaryButtonText}>
+                          {t(
+                            mode === 'suggestTitle'
+                              ? 'localAi.actions.useTitle'
+                              : scope === 'selection'
+                                ? 'localAi.actions.insertBelow'
+                                : 'localAi.actions.insert',
+                          )}
+                        </Text>
                       </Pressable>
                     )}
                   </>
@@ -312,9 +683,7 @@ export function VoiceTypingSheet({
 
 const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
   const c = md3Theme.colors as ExtendedColors
-  const sheetBg = theme.isDark
-    ? (c.surfaceContainerHighest ?? theme.colors.sheetBackground)
-    : theme.colors.sheetBackground
+  const sheetBg = c.surfaceContainerLow ?? c.surface
   const styles = StyleSheet.create({
     overlay: {
       flex: 1,
@@ -342,13 +711,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       backgroundColor: sheetBg,
     },
     grabber: {
-      width: UI_SIZE_32,
+      width: UI_SIZE_32 + UI_SIZE_4,
       height: UI_SIZE_4,
       borderRadius: 9999,
       alignSelf: 'center',
       marginTop: UI_SIZE_4,
-      backgroundColor: c.onSurfaceVariant ?? theme.colors.text,
-      opacity: 0.4,
+      backgroundColor: hexWithAlpha(c.onSurfaceVariant ?? c.onSurface, 0.5),
     },
     header: {
       flexDirection: 'row',
@@ -361,7 +729,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       borderRadius: UI_SIZE_12,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: hexWithAlpha(md3Theme.colors.primary, 0.14),
+      backgroundColor: hexWithAlpha(
+        md3Theme.colors.primaryContainer || md3Theme.colors.primary,
+        0.15,
+      ),
     },
     badgeError: {
       backgroundColor: hexWithAlpha(md3Theme.colors.error, 0.14),
@@ -442,6 +813,132 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
     },
     recordStopCore: {
       borderRadius: UI_SIZE_4,
+    },
+    liveCard: {
+      minHeight: 72,
+      maxHeight: 160,
+      borderRadius: UI_SIZE_20,
+      backgroundColor: c.surfaceContainerHigh ?? theme.colors.cardSurface,
+    },
+    liveContent: {
+      padding: UI_SIZE_16,
+    },
+    liveText: {
+      fontSize: FontSize.subtitle,
+      lineHeight: 24,
+      fontFamily: FontFamily.regular,
+      color: c.onSurface,
+    },
+    livePlaceholder: {
+      color: c.onSurfaceVariant ?? theme.colors.textMuted,
+    },
+    summaryBlock: {
+      marginTop: UI_SIZE_14,
+      paddingTop: UI_SIZE_12,
+      gap: UI_SIZE_4,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: hexWithAlpha(md3Theme.colors.onSurface, 0.12),
+    },
+    summaryHeading: {
+      marginTop: UI_SIZE_4,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurface,
+    },
+    summaryBlockFirst: {
+      marginTop: 0,
+      paddingTop: 0,
+      borderTopWidth: 0,
+    },
+    titlePreview: {
+      fontSize: FontSize.title,
+      lineHeight: 28,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurface,
+    },
+    languagePanel: {
+      gap: UI_SIZE_8,
+    },
+    languageHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      alignSelf: 'flex-start',
+      gap: UI_SIZE_8,
+    },
+    languageLabel: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurfaceVariant ?? theme.colors.textSecondary,
+    },
+    languageValue: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurface,
+    },
+    chipsScroll: {
+      flexDirection: 'row',
+      gap: UI_SIZE_8,
+      paddingRight: UI_SIZE_8,
+    },
+    chip: {
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_8,
+      borderRadius: UI_SIZE_8,
+      borderWidth: 1,
+      borderColor: hexWithAlpha(md3Theme.colors.onSurface, 0.2),
+    },
+    chipSelected: {
+      borderColor: 'transparent',
+      backgroundColor: md3Theme.colors.secondaryContainer,
+    },
+    chipText: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.medium,
+      color: c.onSurfaceVariant ?? theme.colors.textSecondary,
+    },
+    chipTextSelected: {
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: md3Theme.colors.onSecondaryContainer,
+    },
+    disclaimer: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant ?? theme.colors.textMuted,
+    },
+    reportLink: {
+      alignSelf: 'flex-start',
+    },
+    reportLinkText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: md3Theme.colors.primary,
+    },
+    summaryError: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      color: md3Theme.colors.error,
+    },
+    summarizeButton: {
+      alignSelf: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_8,
+      borderRadius: UI_SIZE_20,
+      backgroundColor: hexWithAlpha(md3Theme.colors.primary, 0.14),
+    },
+    summarizeButtonText: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: md3Theme.colors.primary,
     },
     previewCard: {
       borderRadius: UI_SIZE_20,

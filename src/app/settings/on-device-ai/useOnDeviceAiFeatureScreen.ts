@@ -5,6 +5,7 @@ import {
   getFeatureLanguages,
   getFeatureRegistryNames,
   getFeatureTiers,
+  getOnDemandModelNames,
   getRegistryNamesBytes,
   LOCAL_AI_ENABLED,
   LOCAL_AI_FEATURE_IDS,
@@ -79,9 +80,10 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
 
   const models = useMemo<OnDeviceAiModelRow[]>(() => {
     if (!featureId) return []
-    return (getFeatureRegistryNames(featureId, featureConfig) as string[]).map((name) =>
-      buildModelRow(state, name),
-    )
+    return [
+      ...(getFeatureRegistryNames(featureId, featureConfig) as string[]),
+      ...(getOnDemandModelNames(featureId, state.models) as string[]),
+    ].map((name) => buildModelRow(state, name))
   }, [featureConfig, featureId, state])
 
   const selectTier = useCallback(

@@ -6,6 +6,7 @@ const {
   withAndroidManifest,
   withAppBuildGradle,
   withDangerousMod,
+  withProjectBuildGradle,
 } = require('expo/config-plugins')
 
 const PLUGIN_NAME = 'expo-local-ai'
@@ -13,6 +14,7 @@ const PLUGIN_VERSION = '1.0.0'
 const OPENCL_LIBRARY = 'libOpenCL.so'
 const OPENCL_PACKAGING_EXCLUDE = `excludes += "/lib/**/${OPENCL_LIBRARY}"`
 const BUILD_SCRIPTS = ['scripts/build-qvac-bundle.mjs', 'scripts/patch-bare-kit-linker.mjs']
+const QVAC_NDK_VERSION = '29.0.14206865'
 
 function runBuildScripts(projectRoot) {
   for (const script of BUILD_SCRIPTS) {
@@ -61,8 +63,23 @@ function withOpenCLPackagingExclude(config) {
   })
 }
 
+function withQvacNdkVersion(config) {
+  return withProjectBuildGradle(config, (mod) => {
+    const line = `ndkVersion = "${QVAC_NDK_VERSION}"`
+    const contents = mod.modResults.contents
+    if (/\bndkVersion\s*=/.test(contents)) {
+      mod.modResults.contents = contents.replace(/\bndkVersion\s*=\s*["'][^"']*["']/, line)
+    } else {
+      mod.modResults.contents = contents.replace(/buildscript\s*\{\s*ext\s*\{/, (match) => `${match}\n    ${line}`)
+    }
+    return mod
+  })
+}
+
 function withLocalAi(config) {
-  return withOpenCLPackagingExclude(withOptionalOpenCL(withQvacWorkerBundle(config)))
+  return withQvacNdkVersion(
+    withOpenCLPackagingExclude(withOptionalOpenCL(withQvacWorkerBundle(config))),
+  )
 }
 
 module.exports = createRunOncePlugin(withLocalAi, PLUGIN_NAME, PLUGIN_VERSION)

@@ -89,6 +89,7 @@ type EditorToolbarProps = {
   editorRef: React.RefObject<TiptapEditorHandle | null>
   onAttachPress: () => void
   onVoiceTyping?: () => void
+  onAiTools?: () => void
 }
 
 export const EditorToolbar = memo(function EditorToolbar({
@@ -96,6 +97,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   editorRef,
   onAttachPress,
   onVoiceTyping,
+  onAiTools,
 }: EditorToolbarProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -142,7 +144,8 @@ export const EditorToolbar = memo(function EditorToolbar({
   }))
 
   return (
-    <MotionView style={[styles.container, containerStyle]}>
+    <MotionView style={[styles.row, containerStyle]}>
+      <View style={styles.container}>
       <View style={styles.scrollWrap}>
         <ScrollView
           horizontal
@@ -379,6 +382,19 @@ export const EditorToolbar = memo(function EditorToolbar({
       >
         <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_24} color={c.onPrimaryContainer} />
       </Pressable>
+      </View>
+
+      {onAiTools && (
+        <Pressable
+          onPress={() => run(onAiTools)}
+          android_ripple={ripple}
+          accessibilityRole="button"
+          accessibilityLabel={t('localAi.writingTools.toolbarLabel')}
+          style={styles.aiButton}
+        >
+          <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_24} color={c.primary} />
+        </Pressable>
+      )}
     </MotionView>
   )
 })
@@ -392,10 +408,30 @@ const useToolbarHooks = () => {
 const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
   const c = md3.colors as any
   const styles = StyleSheet.create({
-    container: {
+    row: {
       position: 'absolute',
       left: UI_SIZE_12,
       right: UI_SIZE_12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_8,
+      zIndex: 10,
+    },
+    aiButton: {
+      width: UI_SIZE_44 + UI_SIZE_8 * 2,
+      height: UI_SIZE_44 + UI_SIZE_8 * 2,
+      flexShrink: 0,
+      overflow: 'hidden',
+      borderRadius: UI_SIZE_9999,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surface, 0.98),
+      borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),
+      elevation: 6,
+      shadowColor: theme.colors.black,
+    },
+    container: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       borderRadius: UI_SIZE_9999,

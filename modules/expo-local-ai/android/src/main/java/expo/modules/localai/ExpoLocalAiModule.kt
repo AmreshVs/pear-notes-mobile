@@ -1,12 +1,16 @@
 package expo.modules.localai
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioFormat
+import android.media.AudioRecord
 import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
+import android.media.MediaRecorder
 import android.os.Build
 import android.os.StatFs
+import android.util.Base64
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
@@ -24,7 +28,76 @@ private const val TARGET_SAMPLE_RATE = 16000
 private const val CODEC_TIMEOUT_US = 10_000L
 private const val PCM_SHORT_SCALE = 32768f
 
+private const val STREAM_CHUNK_MS = 100
+private const val STREAM_LEVEL_GAIN = 4.0
+private const val STREAM_STOP_JOIN_MS = 500L
+private const val MICROPHONE_UNAVAILABLE = "The microphone could not be started"
+
 class AudioDecodeException(message: String) : CodedException(message)
+
+class PcmStreamException(message: String) : CodedException(message)
+
+private fun pcmLevel(chunk: ByteArray, length: Int): Double {
+  val samples = length / 2
+  if (samples == 0) return 0.0
+  var sumSquares = 0.0
+  for (index in 0 until samples) {
+    val low = chunk[index * 2].toInt() and 0xff
+    val high = chunk[index * 2 + 1].toInt()
+    val sample = ((high shl 8) or low).toShort().toDouble() / PCM_SHORT_SCALE
+    sumSquares += sample * sample
+  }
+  return minOf(1.0, Math.sqrt(sumSquares / samples) * STREAM_LEVEL_GAIN)
+}
+
+private class PcmStreamer(private val onChunk: (ByteArray, Double) -> Unit) {
+  @Volatile private var running = false
+  private var recorder: AudioRecord? = null
+  private var worker: Thread? = null
+
+  @SuppressLint("MissingPermission")
+  fun start() {
+    val chunkBytes = TARGET_SAMPLE_RATE * STREAM_CHUNK_MS / 1000 * 2
+    val minBuffer = AudioRecord.getMinBufferSize(
+      TARGET_SAMPLE_RATE,
+      AudioFormat.CHANNEL_IN_MONO,
+      AudioFormat.ENCODING_PCM_16BIT
+    )
+    if (minBuffer <= 0) throw PcmStreamException(MICROPHONE_UNAVAILABLE)
+    val record = AudioRecord(
+      MediaRecorder.AudioSource.VOICE_RECOGNITION,
+      TARGET_SAMPLE_RATE,
+      AudioFormat.CHANNEL_IN_MONO,
+      AudioFormat.ENCODING_PCM_16BIT,
+      maxOf(minBuffer, chunkBytes * 2)
+    )
+    if (record.state != AudioRecord.STATE_INITIALIZED) {
+      record.release()
+      throw PcmStreamException(MICROPHONE_UNAVAILABLE)
+    }
+    recorder = record
+    running = true
+    record.startRecording()
+    worker = Thread {
+      val buffer = ByteArray(chunkBytes)
+      while (running) {
+        val read = record.read(buffer, 0, buffer.size)
+        if (read > 0) onChunk(buffer.copyOf(read), pcmLevel(buffer, read))
+      }
+    }.also { it.start() }
+  }
+
+  fun stop() {
+    running = false
+    worker?.join(STREAM_STOP_JOIN_MS)
+    worker = null
+    recorder?.let { record ->
+      runCatching { record.stop() }
+      record.release()
+    }
+    recorder = null
+  }
+}
 
 private class MonoResampler(private val targetRate: Int) {
   private var inputIndex = -1L
@@ -155,10 +228,36 @@ class ExpoLocalAiModule : Module() {
   private val context: Context
     get() = appContext.reactContext ?: throw Exceptions.ReactContextLost()
 
+  private var pcmStreamer: PcmStreamer? = null
+
   private fun modelsDirectory(): File = File(context.filesDir, MODELS_DIRECTORY)
 
   override fun definition() = ModuleDefinition {
     Name(MODULE_NAME)
+
+    Events("onPcmChunk")
+
+    OnDestroy {
+      pcmStreamer?.stop()
+      pcmStreamer = null
+    }
+
+    AsyncFunction("startPcmStream") {
+      pcmStreamer?.stop()
+      val streamer = PcmStreamer { data, level ->
+        sendEvent(
+          "onPcmChunk",
+          mapOf("data" to Base64.encodeToString(data, Base64.NO_WRAP), "level" to level)
+        )
+      }
+      streamer.start()
+      pcmStreamer = streamer
+    }
+
+    AsyncFunction("stopPcmStream") {
+      pcmStreamer?.stop()
+      pcmStreamer = null
+    }
 
     AsyncFunction("prepareModelsDirectory") {
       val directory = modelsDirectory()
