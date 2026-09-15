@@ -8,9 +8,14 @@ import {
   type PressableAndroidRippleConfig,
   ScrollView,
   StyleSheet,
+  Text,
   View,
 } from 'react-native'
-import { useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated'
+import Animated, {
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+  useSharedValue,
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
@@ -19,8 +24,11 @@ import { MotionView } from '@/components/MotionView'
 import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
+import { useAiEditButtonMotion } from '@/components/useAiEditButtonMotion'
 import {
   commonStyles,
+  FontFamily,
+  FontSize,
   UI_ICON_SIZE_22,
   UI_ICON_SIZE_24,
   UI_SIZE_2,
@@ -113,6 +121,8 @@ export const EditorToolbar = memo(function EditorToolbar({
     hapticLight()
     action()
   }, [])
+  const hasSelection = !!onAiTools && isActive('hasSelection')
+  const aiMotion = useAiEditButtonMotion(hasSelection)
 
   const keyboard = useAnimatedKeyboard()
   const insets = useSafeAreaInsets()
@@ -389,10 +399,23 @@ export const EditorToolbar = memo(function EditorToolbar({
           onPress={() => run(onAiTools)}
           android_ripple={ripple}
           accessibilityRole="button"
-          accessibilityLabel={t('localAi.writingTools.toolbarLabel')}
+          accessibilityLabel={t(
+            hasSelection
+              ? 'localAi.writingTools.selectionToolbarLabel'
+              : 'localAi.writingTools.toolbarLabel',
+          )}
           style={styles.aiButton}
         >
-          <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_24} color={c.primary} />
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.aiButtonHighlight, aiMotion.highlightStyle]}
+          />
+          <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_22} color={c.primary} />
+          <Animated.View style={[styles.aiButtonLabelClip, aiMotion.labelStyle]}>
+            <Text numberOfLines={1} ellipsizeMode="clip" style={styles.aiButtonLabel}>
+              {t('localAi.writingTools.editLabel')}
+            </Text>
+          </Animated.View>
         </Pressable>
       )}
     </MotionView>
@@ -418,8 +441,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       zIndex: 10,
     },
     aiButton: {
-      width: UI_SIZE_44 + UI_SIZE_8 * 2,
+      minWidth: UI_SIZE_44 + UI_SIZE_8 * 2,
       height: UI_SIZE_44 + UI_SIZE_8 * 2,
+      paddingHorizontal: UI_SIZE_8 * 2,
+      flexDirection: 'row',
       flexShrink: 0,
       overflow: 'hidden',
       borderRadius: UI_SIZE_9999,
@@ -429,6 +454,22 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),
       elevation: 6,
       shadowColor: theme.colors.black,
+    },
+    aiButtonHighlight: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: hexWithAlpha(c.primary, 0.16),
+    },
+    aiButtonLabelClip: {
+      overflow: 'hidden',
+    },
+    aiButtonLabel: {
+      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.body,
+      color: c.primary,
     },
     container: {
       flex: 1,

@@ -46,17 +46,22 @@ export function buildAiTools({
   hasSelection: boolean
 }): AiTool[] {
   const tools: AiTool[] = []
-  if (hasSelection && summarizeReady) {
-    for (const mode of REWRITE_TOOL_MODES) {
-      tools.push(tool(mode, 'selection', 'edit', `localAi.${mode}.menuLabel`))
+  if (hasSelection) {
+    if (summarizeReady) {
+      for (const mode of REWRITE_TOOL_MODES) {
+        tools.push(tool(mode, 'selection', 'edit', `localAi.${mode}.menuLabel`))
+      }
+      tools.push(
+        tool('summarizeNote', 'selection', 'understand', 'localAi.summarizeSelection.menuLabel'),
+        tool('keyPoints', 'selection', 'understand', 'localAi.keyPointsSelection.menuLabel'),
+      )
     }
-    tools.push(
-      tool('summarizeNote', 'selection', 'understand', 'localAi.summarizeSelection.menuLabel'),
-      tool('keyPoints', 'selection', 'understand', 'localAi.keyPointsSelection.menuLabel'),
-    )
-  }
-  if (hasSelection && translateReady) {
-    tools.push(tool('translate', 'selection', 'understand', 'localAi.translateSelection.menuLabel'))
+    if (translateReady) {
+      tools.push(
+        tool('translate', 'selection', 'understand', 'localAi.translateSelection.menuLabel'),
+      )
+    }
+    return tools
   }
   if (summarizeReady) {
     tools.push(

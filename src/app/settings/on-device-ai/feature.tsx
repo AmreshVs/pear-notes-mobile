@@ -16,7 +16,7 @@ import {
   FontWeight,
   Radii,
   Space,
-  UI_ICON_SIZE_20,
+  UI_ICON_SIZE_16,
   UI_SIZE_44,
   UI_SIZE_60,
 } from '@/constants/commonStyles'
@@ -60,6 +60,12 @@ export default function OnDeviceAiFeatureScreen() {
 
   if (!featureId) return null
 
+  const limitationsValue = t(`settings.onDeviceAi.features.${featureId}.limitations`, {
+    returnObjects: true,
+    defaultValue: [],
+  }) as unknown
+  const limitations = Array.isArray(limitationsValue) ? (limitationsValue as string[]) : []
+
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
@@ -99,7 +105,7 @@ export default function OnDeviceAiFeatureScreen() {
                     )}
                   </RNView>
                   {option.selected && (
-                    <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+                    <SymbolIcon name="checkmark" size={UI_ICON_SIZE_16} color={colors.primary} />
                   )}
                 </Pressable>
               </Fragment>
@@ -132,19 +138,47 @@ export default function OnDeviceAiFeatureScreen() {
                       {t(`settings.onDeviceAi.tiers.${option.tier}`)}
                     </Text>
                     <Text style={styles.rowDesc}>
-                      {t(`settings.onDeviceAi.tierDescriptions.${option.tier}`, {
-                        size: formatBytes(option.bytes),
-                      })}
+                      {t(
+                        [
+                          `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
+                          `settings.onDeviceAi.tierDescriptions.${option.tier}`,
+                        ],
+                        {
+                          size: formatBytes(option.bytes),
+                        },
+                      )}
                     </Text>
                   </RNView>
                   {option.selected && (
-                    <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+                    <SymbolIcon name="checkmark" size={UI_ICON_SIZE_16} color={colors.primary} />
                   )}
                 </Pressable>
               </Fragment>
             ))}
           </RNView>
           <Text style={styles.note}>{t('settings.onDeviceAi.tierSwitchNote')}</Text>
+        </RNView>
+      )}
+
+      {limitations.length > 0 && (
+        <RNView style={styles.section}>
+          <Text style={commonThemedStyles.sectionCamelCase}>
+            {t('settings.onDeviceAi.limitations')}
+          </Text>
+          <RNView style={commonThemedStyles.card}>
+            {limitations.map((item, index) => (
+              <Fragment key={item}>
+                {index > 0 && (
+                  <RNView style={styles.dividerWrap}>
+                    <Divider />
+                  </RNView>
+                )}
+                <RNView style={styles.row}>
+                  <Text style={styles.limitationText}>{item}</Text>
+                </RNView>
+              </Fragment>
+            ))}
+          </RNView>
         </RNView>
       )}
 
@@ -233,15 +267,21 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     rowInfo: {
       flex: 1,
-      gap: Space.xs,
     },
     rowLabel: {
-      fontSize: FontSize.subtitle,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
       color: theme.colors.text,
     },
     rowDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       color: theme.colors.textMuted,
+    },
+    limitationText: {
+      flex: 1,
+      fontSize: FontSize.body,
+      lineHeight: FontSize.body * 1.4,
+      color: theme.colors.text,
     },
     dividerWrap: {
       marginHorizontal: Space.base,

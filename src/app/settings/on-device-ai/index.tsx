@@ -1,8 +1,7 @@
-import { Fragment, useEffect, useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,7 @@ import {
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { Divider } from '@/components/Divider'
+import { OnDeviceAiConfirmSheet } from '@/components/OnDeviceAiConfirmSheet'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -70,61 +70,6 @@ export default function OnDeviceAiScreen() {
     () => ({ false: colors.controlBackground, true: colors.primary }),
     [colors.controlBackground, colors.primary],
   )
-
-  useEffect(() => {
-    if (!confirm) return
-    const feature = t(`settings.onDeviceAi.features.${confirm.feature}.inline`)
-    const size = formatBytes(confirm.bytes)
-    if (confirm.kind === 'turnOn') {
-      Alert.alert(
-        t('settings.onDeviceAi.turnOn.title', { feature }),
-        confirm.waitsForNetwork
-          ? t('settings.onDeviceAi.turnOn.messageWaiting', { size })
-          : t('settings.onDeviceAi.turnOn.message', { size }),
-        [
-          { text: t('common.cancel'), style: 'cancel', onPress: dismissConfirm },
-          {
-            text: confirm.waitsForNetwork
-              ? t('settings.onDeviceAi.turnOn.confirmWaiting')
-              : t('settings.onDeviceAi.turnOn.confirm', { size }),
-            onPress: confirmTurnOn,
-          },
-        ],
-        { cancelable: true, onDismiss: dismissConfirm },
-      )
-      return
-    }
-    Alert.alert(
-      t('settings.onDeviceAi.turnOff.title', { feature }),
-      t('settings.onDeviceAi.turnOff.message', { size }),
-      [
-        { text: t('settings.onDeviceAi.turnOff.keep'), onPress: () => confirmTurnOff(false) },
-        {
-          text: t('settings.onDeviceAi.turnOff.delete'),
-          style: 'destructive',
-          onPress: () => confirmTurnOff(true),
-        },
-        { text: t('common.cancel'), style: 'cancel', onPress: dismissConfirm },
-      ],
-      { cancelable: true, onDismiss: dismissConfirm },
-    )
-  }, [confirm, confirmTurnOff, confirmTurnOn, dismissConfirm, t])
-
-  useEffect(() => {
-    if (!notice) return
-    Alert.alert(
-      t('settings.onDeviceAi.notEnoughSpace.title'),
-      notice.feature
-        ? t('settings.onDeviceAi.notEnoughSpace.message', {
-            feature: t(`settings.onDeviceAi.features.${notice.feature}.title`),
-            size: formatBytes(notice.requiredBytes ?? 0),
-            short: formatBytes(notice.shortBytes ?? 0),
-          })
-        : t('settings.onDeviceAi.notEnoughSpace.messageGeneric'),
-      [{ text: t('common.ok'), onPress: dismissNotice }],
-      { cancelable: true, onDismiss: dismissNotice },
-    )
-  }, [notice, dismissNotice, t])
 
   const verdictText =
     device.status === LOCAL_AI_DEVICE_STATUS.UNSUPPORTED
@@ -396,6 +341,14 @@ export default function OnDeviceAiScreen() {
           </>
         )}
       </ScrollView>
+      <OnDeviceAiConfirmSheet
+        confirm={confirm}
+        notice={notice}
+        onTurnOn={confirmTurnOn}
+        onTurnOff={confirmTurnOff}
+        onDismissConfirm={dismissConfirm}
+        onDismissNotice={dismissNotice}
+      />
     </RNView>
   )
 }
@@ -513,7 +466,6 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     toggleInfo: {
       flex: 1,
-      gap: Space.xs,
     },
     titleRow: {
       ...commonStyles.row,

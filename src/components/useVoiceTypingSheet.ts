@@ -14,6 +14,7 @@ import { File } from 'expo-file-system'
 import * as Localization from 'expo-localization'
 
 import {
+  LOCAL_AI_ERROR,
   LOCAL_AI_FEATURE,
   LOCAL_AI_MODEL_STATUS,
   LOCAL_AI_NOTICE,
@@ -55,6 +56,7 @@ import {
   extractTextFromImage,
   extractTextFromPdf,
   type LiveTranscription,
+  resetLocalAiModelHealth,
   runNoteTask,
   startLiveTranscription,
   summarizeTranscript,
@@ -113,6 +115,8 @@ export type VoiceTypingError =
   | 'downloadFailed'
   | 'tooLong'
   | 'dictationFailed'
+  | 'notEnoughMemory'
+  | 'unstable'
 export type SummaryPhase = 'idle' | 'working' | 'failed'
 
 export interface TranscriptSummary {
@@ -204,6 +208,13 @@ interface FeatureConfig {
   language?: string
 }
 
+function errorFromCause(cause: unknown): VoiceTypingError | null {
+  const code = (cause as { code?: string } | null)?.code
+  if (code === LOCAL_AI_ERROR.NOT_ENOUGH_MEMORY) return 'notEnoughMemory'
+  if (code === LOCAL_AI_ERROR.MODEL_UNSTABLE) return 'unstable'
+  return null
+}
+
 function deleteLocalFile(uri: string | null) {
   if (!uri) return
   try {
@@ -233,6 +244,9 @@ export function useVoiceTypingSheet({
   const featureConfig = useSelector((state) => getLocalAiFeatureConfig(state, feature)) as
     | FeatureConfig
     | undefined
+  const summaryConfig = useSelector((state) =>
+    getLocalAiFeatureConfig(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS),
+  ) as FeatureConfig | undefined
   const lastTarget = useSelector(getLocalAiTranslationTarget) as string | null
   const deviceLanguage = useMemo(
     () => normalizeLanguageCode(Localization.getLocales()[0]?.languageCode) as string | null,
@@ -341,9 +355,9 @@ export function useVoiceTypingSheet({
   }, [updateSummaryPhase])
 
   const failWith = useCallback(
-    (code: VoiceTypingError) => {
+    (code: VoiceTypingError, cause?: unknown) => {
       hapticWarning()
-      setError(code)
+      setError(errorFromCause(cause) ?? code)
       updatePhase('error')
     },
     [updatePhase],
@@ -395,9 +409,9 @@ export function useVoiceTypingSheet({
         hapticSuccess()
         setText(result)
         updatePhase('preview')
-      } catch {
+      } catch (error) {
         if (runId !== runIdRef.current) return
-        failWith('failed')
+        failWith('failed', error)
       } finally {
         if (deleteAfter) deleteLocalFile(uri)
       }
@@ -424,9 +438,9 @@ export function useVoiceTypingSheet({
       hapticSuccess()
       setText(result)
       updatePhase('preview')
-    } catch {
+    } catch (error) {
       if (runId !== runIdRef.current) return
-      failWith('failed')
+      failWith('failed', error)
     }
   }, [failWith, paragraphs, updatePhase])
 
@@ -522,7 +536,7 @@ export function useVoiceTypingSheet({
     }
     updatePhase('transcribing')
     try {
-      const output = await runNoteTask(task, input)
+      const output = await runNoteTask(task, input, summaryConfig ?? {})
       if (runId !== runIdRef.current) return
       let result = ''
       if (mode === 'summarizeNote') {
@@ -549,11 +563,11 @@ export function useVoiceTypingSheet({
       hapticSuccess()
       setText(result)
       updatePhase('preview')
-    } catch {
+    } catch (error) {
       if (runId !== runIdRef.current) return
-      failWith('failed')
+      failWith('failed', error)
     }
-  }, [failWith, mode, paragraphs, resetSummary, scope, updatePhase])
+  }, [failWith, mode, paragraphs, resetSummary, scope, summaryConfig, updatePhase])
 
   const startBars = useCallback(
     (sample: () => number) => {
@@ -623,9 +637,9 @@ export function useVoiceTypingSheet({
       recorder.record()
       updatePhase('recording')
       startBars(sampleAmp)
-    } catch {
+    } catch (error) {
       if (runId !== runIdRef.current) return
-      failWith('failed')
+      failWith('failed', error)
     } finally {
       startingRef.current = false
     }
@@ -668,9 +682,9 @@ export function useVoiceTypingSheet({
       hapticSuccess()
       setText(transcript)
       updatePhase('preview')
-    } catch {
+    } catch (error) {
       if (runId !== runIdRef.current) return
-      failWith('dictationFailed')
+      failWith('dictationFailed', error)
     }
   }, [discardSavedAudio, failWith, feature, featureConfig, updatePhase])
 
@@ -798,6 +812,7 @@ export function useVoiceTypingSheet({
   }, [])
 
   const handleAgain = useCallback(() => {
+    if (error === 'unstable') resetLocalAiModelHealth()
     if (mode === 'translate') {
       if (sourceLanguage) startTranslate(sourceLanguage, targetLanguage)
       else beginTranslate()
@@ -814,6 +829,7 @@ export function useVoiceTypingSheet({
     handleRecord()
   }, [
     beginTranslate,
+    error,
     handleRecord,
     mode,
     processSource,
@@ -831,7 +847,7 @@ export function useVoiceTypingSheet({
     const runId = runIdRef.current
     updateSummaryPhase('working')
     try {
-      const parsed = parseSummaryOutput(await summarizeTranscript(text))
+      const parsed = parseSummaryOutput(await summarizeTranscript(text, summaryConfig ?? {}))
       if (runId !== runIdRef.current) return
       if (!parsed.summary && parsed.actionItems.length === 0) {
         hapticWarning()
@@ -846,7 +862,7 @@ export function useVoiceTypingSheet({
       hapticWarning()
       updateSummaryPhase('failed')
     }
-  }, [text, updateSummaryPhase])
+  }, [summaryConfig, text, updateSummaryPhase])
 
   const handleCopy = useCallback(async () => {
     if (!text) return

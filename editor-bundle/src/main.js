@@ -440,6 +440,12 @@ window.addEventListener(
 
 let styleTimer = null
 let lastStyleJSON = ''
+function hasTextSelection(ed) {
+  const { from, to, empty } = ed.state.selection
+  if (empty) return false
+  return ed.state.doc.textBetween(from, to, '\n', ' ').trim().length > 0
+}
+
 function broadcastStyleState(ed) {
   if (styleTimer) return
   styleTimer = requestAnimationFrame(() => {
@@ -467,6 +473,7 @@ function broadcastStyleState(ed) {
       alignJustify: { isActive: ed.isActive({ textAlign: 'justify' }) },
       undo: { isActive: ed.can().undo() },
       redo: { isActive: ed.can().redo() },
+      hasSelection: { isActive: hasTextSelection(ed) },
     }
     const json = JSON.stringify(state)
     if (json === lastStyleJSON) return
@@ -1791,6 +1798,12 @@ window.editorBridge = {
       case 'blur':
         editor.commands.blur()
         break
+      case 'collapseSelection': {
+        lastSelection = null
+        const { to, empty } = editor.state.selection
+        if (!empty) editor.commands.setTextSelection(to)
+        break
+      }
     }
   },
 }

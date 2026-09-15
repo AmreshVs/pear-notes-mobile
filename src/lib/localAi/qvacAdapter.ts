@@ -1,12 +1,15 @@
 import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'react-native'
+import * as Device from 'expo-device'
 import { File, Paths } from 'expo-file-system'
 
 import {
+  canRunModels,
   getFeatureRegistryNames,
   LOCAL_AI_ERROR,
   LOCAL_AI_FEATURE,
   LOCAL_AI_LANGUAGE,
   LOCAL_AI_NETWORK,
+  LOCAL_AI_OCR_LANGUAGES,
   LOCAL_AI_REGISTRY_MODELS,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { getTranslationSteps } from '@pear-notes/core/store/services/localAiLanguage.js'
@@ -60,7 +63,6 @@ interface PendingDownload {
 const QVAC_RUNTIME_CONFIG_FILE = 'qvac.config.json'
 const PCM_FILE_PREFIX = 'local-ai-audio-'
 const PCM_FILE_EXTENSION = '.raw'
-const OCR_LANGUAGES = ['en']
 const OCR_MAG_RATIO = 1
 const OCR_CANVAS_SIZE = 1280
 const OCR_RECOGNIZER_BATCH_SIZE = 8
@@ -87,6 +89,7 @@ export class LocalAiError extends Error {
 let sdkPromise: Promise<QvacSdk> | null = null
 let modelsDirectory: string | null = null
 let appStateSubscription: NativeEventSubscription | null = null
+let memoryWarningSubscription: NativeEventSubscription | null = null
 let loadedModel: { key: string; modelId: string } | null = null
 let downloadCounter = 0
 const pendingDownloads = new Map<string, PendingDownload>()
@@ -123,25 +126,151 @@ async function unloadCurrentModel(sdk: QvacSdk) {
   } catch {}
 }
 
+const MODEL_GUARD_FILE = 'local-ai-model-guard.json'
+const MODEL_CRASH_LIMIT = 2
+const MODEL_IDLE_UNLOAD_MS = 60 * 1000
+
+interface ModelGuard {
+  active: string | null
+  crashes: Record<string, number>
+}
+
+let modelGuard: ModelGuard | null = null
+let activeModelWork = 0
+let idleUnloadTimer: ReturnType<typeof setTimeout> | null = null
+let unloadWhenIdle = false
+
+function readModelGuard(): ModelGuard {
+  if (modelGuard) return modelGuard
+  let stored: Partial<ModelGuard> = {}
+  try {
+    const file = new File(Paths.document, MODEL_GUARD_FILE)
+    if (file.exists) stored = JSON.parse(file.textSync()) as Partial<ModelGuard>
+  } catch {}
+  const crashes = { ...(stored.crashes ?? {}) }
+  if (stored.active) crashes[stored.active] = (crashes[stored.active] ?? 0) + 1
+  modelGuard = { active: null, crashes }
+  if (stored.active) writeModelGuard()
+  return modelGuard
+}
+
+function writeModelGuard() {
+  if (!modelGuard) return
+  try {
+    new File(Paths.document, MODEL_GUARD_FILE).write(JSON.stringify(modelGuard))
+  } catch {}
+}
+
+function setActiveModel(key: string | null) {
+  const guard = readModelGuard()
+  if (guard.active === key) return
+  guard.active = key
+  writeModelGuard()
+}
+
+function recordModelSuccess(key: string) {
+  const guard = readModelGuard()
+  if (!guard.crashes[key]) return
+  delete guard.crashes[key]
+  writeModelGuard()
+}
+
+function forgetModelCrashes(match: (key: string) => boolean) {
+  const guard = readModelGuard()
+  const keys = Object.keys(guard.crashes).filter(match)
+  if (keys.length === 0) return
+  for (const key of keys) delete guard.crashes[key]
+  writeModelGuard()
+}
+
+export function resetLocalAiModelHealth() {
+  forgetModelCrashes(() => true)
+}
+
+function clearIdleUnload() {
+  if (idleUnloadTimer) clearTimeout(idleUnloadTimer)
+  idleUnloadTimer = null
+}
+
+function releaseModelWhenIdle() {
+  if (activeModelWork > 0 || !sdkPromise) return
+  clearIdleUnload()
+  unloadWhenIdle = false
+  sdkPromise.then(unloadCurrentModel).catch(() => {})
+}
+
+async function withModelWork<T>(work: () => Promise<T>): Promise<T> {
+  activeModelWork += 1
+  clearIdleUnload()
+  try {
+    const result = await work()
+    if (loadedModel) recordModelSuccess(loadedModel.key)
+    return result
+  } finally {
+    activeModelWork = Math.max(0, activeModelWork - 1)
+    if (activeModelWork === 0) {
+      setActiveModel(null)
+      if (unloadWhenIdle) releaseModelWhenIdle()
+      else idleUnloadTimer = setTimeout(releaseModelWhenIdle, MODEL_IDLE_UNLOAD_MS)
+    }
+  }
+}
+
+function handleMemoryWarning() {
+  unloadWhenIdle = true
+  releaseModelWhenIdle()
+}
+
 const BACKGROUND_SUSPEND_DELAY_MS = 1500
 let suspendTimer: ReturnType<typeof setTimeout> | null = null
-let suspended = false
-let lifecycle: Promise<void> = Promise.resolve()
+let runtimeSuspended = false
+let wantsSuspend = false
+let usedSinceResume = false
+let lifecycleRun: Promise<void> | null = null
 
-function queueLifecycle(step: () => Promise<void>) {
-  lifecycle = lifecycle.then(step).catch(() => {})
+const hasWorkToSuspend = () => usedSinceResume || !!loadedModel || pendingDownloads.size > 0
+
+const lifecycleNeedsWork = () =>
+  (wantsSuspend && !runtimeSuspended && hasWorkToSuspend()) || (!wantsSuspend && runtimeSuspended)
+
+function reconcileLifecycle(sdk: QvacSdk): Promise<void> {
+  if (lifecycleRun) return lifecycleRun
+  const run = (async () => {
+    while (lifecycleNeedsWork()) {
+      if (wantsSuspend) {
+        await unloadCurrentModel(sdk)
+        try {
+          await sdk.suspend()
+        } catch {}
+        runtimeSuspended = true
+        continue
+      }
+      try {
+        await sdk.resume()
+      } catch {
+        return
+      }
+      runtimeSuspended = false
+      usedSinceResume = false
+    }
+  })()
+  lifecycleRun = run
+  run.finally(() => {
+    if (lifecycleRun === run) lifecycleRun = null
+    if (!wantsSuspend && runtimeSuspended) return
+    if (lifecycleNeedsWork()) reconcileLifecycle(sdk)
+  })
+  return run
 }
 
 function handleAppStateChange(sdk: QvacSdk, state: AppStateStatus) {
   if (state === 'background') {
+    setActiveModel(null)
     if (suspendTimer) return
     suspendTimer = setTimeout(() => {
       suspendTimer = null
-      queueLifecycle(async () => {
-        await unloadCurrentModel(sdk)
-        await sdk.suspend()
-        suspended = true
-      })
+      wantsSuspend = true
+      reconcileLifecycle(sdk)
     }, BACKGROUND_SUSPEND_DELAY_MS)
     return
   }
@@ -150,11 +279,8 @@ function handleAppStateChange(sdk: QvacSdk, state: AppStateStatus) {
     clearTimeout(suspendTimer)
     suspendTimer = null
   }
-  if (!suspended) return
-  queueLifecycle(async () => {
-    await sdk.resume()
-    suspended = false
-  })
+  wantsSuspend = false
+  reconcileLifecycle(sdk)
 }
 
 function loadSdk(): Promise<QvacSdk> {
@@ -164,9 +290,11 @@ function loadSdk(): Promise<QvacSdk> {
       await writeRuntimeConfig(directory)
       const sdk = await import('@qvac/sdk')
       appStateSubscription?.remove()
+      memoryWarningSubscription?.remove()
       appStateSubscription = AppState.addEventListener('change', (state) =>
         handleAppStateChange(sdk, state),
       )
+      memoryWarningSubscription = AppState.addEventListener('memoryWarning', handleMemoryWarning)
       return sdk
     })()
     sdkPromise = pending
@@ -175,7 +303,9 @@ function loadSdk(): Promise<QvacSdk> {
     })
   }
   return sdkPromise.then(async (sdk) => {
-    await lifecycle
+    if (AppState.currentState === 'active') wantsSuspend = false
+    await reconcileLifecycle(sdk)
+    usedSinceResume = true
     return sdk
   })
 }
@@ -191,6 +321,13 @@ function loadModelWith(sdk: QvacSdk, options: LoadModelInput): Promise<string> {
 }
 
 async function ensureModelLoaded(sdk: QvacSdk, key: string, load: () => Promise<string>) {
+  if ((readModelGuard().crashes[key] ?? 0) >= MODEL_CRASH_LIMIT) {
+    throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
+  }
+  if (!canRunModels(key.split('|'), Device.totalMemory ?? 0)) {
+    throw new LocalAiError(LOCAL_AI_ERROR.NOT_ENOUGH_MEMORY)
+  }
+  if (AppState.currentState === 'active') setActiveModel(key)
   if (loadedModel?.key === key) return loadedModel.modelId
   await unloadCurrentModel(sdk)
   const modelId = await load()
@@ -207,6 +344,15 @@ function toDownloadError(error: unknown) {
 
 async function getNetworkKind() {
   return toLocalAiNetwork(await getConnectionKind())
+}
+
+async function getDownloadedBytes(sdk: QvacSdk, name: string) {
+  try {
+    const info = await sdk.getModelInfo({ name })
+    const bytes = Number(info?.actualSize) || Number(info?.expectedSize)
+    if (bytes > 0) return bytes
+  } catch {}
+  return (LOCAL_AI_REGISTRY_MODELS as RegistryModels)[name]?.bytes ?? 0
 }
 
 function download(name: string, { onProgress }: DownloadOptions = {}) {
@@ -230,7 +376,7 @@ function download(name: string, { onProgress }: DownloadOptions = {}) {
         sdk.cancel({ requestId: operation.requestId, clearCache: pending.discard }).catch(() => {})
       }
       await operation
-      return { bytes: (LOCAL_AI_REGISTRY_MODELS as RegistryModels)[name]?.bytes ?? 0 }
+      return { bytes: await getDownloadedBytes(sdk, name) }
     } catch (error) {
       throw toDownloadError(error)
     } finally {
@@ -252,6 +398,7 @@ async function cancel(requestId: string, { discard = false }: CancelOptions = {}
 }
 
 async function deleteModel(name: string) {
+  forgetModelCrashes((key) => key.split('|').includes(name))
   const sdk = await loadSdk()
   await unloadCurrentModel(sdk)
   const info = await sdk.getModelInfo({ name })
@@ -266,6 +413,11 @@ async function deleteModel(name: string) {
 async function closeAndWipe() {
   appStateSubscription?.remove()
   appStateSubscription = null
+  memoryWarningSubscription?.remove()
+  memoryWarningSubscription = null
+  clearIdleUnload()
+  modelGuard = { active: null, crashes: {} }
+  writeModelGuard()
   const pendingSdk = sdkPromise
   sdkPromise = null
   if (pendingSdk) {
@@ -277,6 +429,12 @@ async function closeAndWipe() {
   }
   loadedModel = null
   pendingDownloads.clear()
+  if (suspendTimer) clearTimeout(suspendTimer)
+  suspendTimer = null
+  runtimeSuspended = false
+  wantsSuspend = false
+  usedSinceResume = false
+  lifecycleRun = null
   if (ExpoLocalAi) await ExpoLocalAi.deleteModelsDirectory()
   modelsDirectory = null
 }
@@ -308,7 +466,7 @@ async function loadSpeechModel(
   })
 }
 
-export async function transcribeAudioFile(
+async function transcribeAudioFileNow(
   fileUri: string,
   feature: string,
   featureConfig: LocalAiFeatureModelConfig,
@@ -328,7 +486,7 @@ export async function transcribeAudioFile(
   }
 }
 
-export async function extractTextFromImage(fileUri: string): Promise<string> {
+async function extractTextFromImageNow(fileUri: string): Promise<string> {
   const sdk = await loadSdk()
   const [recognizerName, detectorName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, {})
   const modelId = await ensureModelLoaded(sdk, `${recognizerName}|${detectorName}|mobile`, () =>
@@ -337,7 +495,7 @@ export async function extractTextFromImage(fileUri: string): Promise<string> {
       modelType: 'ocr',
       modelConfig: {
         detectorModelSrc: registryAsset(sdk, detectorName),
-        langList: OCR_LANGUAGES,
+        langList: LOCAL_AI_OCR_LANGUAGES,
         magRatio: OCR_MAG_RATIO,
         canvasSize: OCR_CANVAS_SIZE,
         defaultRotationAngles: [],
@@ -396,8 +554,12 @@ function runCompletion(sdk: QvacSdk, input: CompletionInput): Promise<string> {
   return run.text
 }
 
-function loadLlmFeature(sdk: QvacSdk, feature: string) {
-  const [modelName, projectionName] = getFeatureRegistryNames(feature, {})
+function loadLlmFeature(
+  sdk: QvacSdk,
+  feature: string,
+  featureConfig: LocalAiFeatureModelConfig = {},
+) {
+  const [modelName, projectionName] = getFeatureRegistryNames(feature, featureConfig)
   return ensureModelLoaded(sdk, [modelName, projectionName].filter(Boolean).join('|'), () =>
     loadModelWith(sdk, {
       modelSrc: registryAsset(sdk, modelName),
@@ -410,7 +572,7 @@ function loadLlmFeature(sdk: QvacSdk, feature: string) {
   )
 }
 
-export async function describeImage(fileUri: string): Promise<string> {
+async function describeImageNow(fileUri: string): Promise<string> {
   const sdk = await loadSdk()
   const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.DESCRIBE_IMAGES)
   const prepared = await downscaleImage(fileUri, DESCRIBE_IMAGE_MAX_SIDE)
@@ -433,9 +595,13 @@ export async function describeImage(fileUri: string): Promise<string> {
   }
 }
 
-export async function runNoteTask(task: string, text: string): Promise<string> {
+async function runNoteTaskNow(
+  task: string,
+  text: string,
+  featureConfig: LocalAiFeatureModelConfig = {},
+): Promise<string> {
   const sdk = await loadSdk()
-  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS)
+  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
   const output = await runCompletion(sdk, {
     modelId,
     history: buildNoteTaskMessages(task, text),
@@ -448,10 +614,63 @@ export async function runNoteTask(task: string, text: string): Promise<string> {
   return cleanModelOutput(output)
 }
 
-export const summarizeTranscript = (transcript: string) =>
-  runNoteTask(NOTE_TASK.TRANSCRIPT_SUMMARY, transcript)
+export const transcribeAudioFile = (
+  fileUri: string,
+  feature: string,
+  featureConfig: LocalAiFeatureModelConfig,
+) => withModelWork(() => transcribeAudioFileNow(fileUri, feature, featureConfig))
 
-export async function translateParagraphs(
+export const extractTextFromImage = (fileUri: string) =>
+  withModelWork(() => extractTextFromImageNow(fileUri))
+
+export const describeImage = (fileUri: string) => withModelWork(() => describeImageNow(fileUri))
+
+export const runNoteTask = (
+  task: string,
+  text: string,
+  featureConfig: LocalAiFeatureModelConfig = {},
+) => withModelWork(() => runNoteTaskNow(task, text, featureConfig))
+
+export const translateParagraphs = (paragraphs: string[], from: string, to: string) =>
+  withModelWork(() => translateParagraphsNow(paragraphs, from, to))
+
+export function startLiveTranscription(
+  feature: string,
+  featureConfig: LocalAiFeatureModelConfig,
+  handlers: LiveTranscriptionHandlers,
+): Promise<LiveTranscription> {
+  return new Promise((resolve, reject) => {
+    withModelWork(async () => {
+      let finish = () => {}
+      const finished = new Promise<void>((done) => {
+        finish = done
+      })
+      let live: LiveTranscription
+      try {
+        live = await startLiveTranscriptionNow(feature, featureConfig, handlers)
+      } catch (error) {
+        reject(error)
+        throw error
+      }
+      resolve({
+        stop: () => live.stop().finally(finish),
+        cancel: () => {
+          live.cancel()
+          finish()
+        },
+        saveAudio: live.saveAudio,
+      })
+      await finished
+    }).catch(() => {})
+  })
+}
+
+export const summarizeTranscript = (
+  transcript: string,
+  featureConfig: LocalAiFeatureModelConfig = {},
+) => runNoteTask(NOTE_TASK.TRANSCRIPT_SUMMARY, transcript, featureConfig)
+
+async function translateParagraphsNow(
   paragraphs: string[],
   from: string,
   to: string,
@@ -558,7 +777,7 @@ function joinTranscript(current: string, next: string) {
   return current ? `${current} ${piece}` : piece
 }
 
-export async function startLiveTranscription(
+async function startLiveTranscriptionNow(
   feature: string,
   featureConfig: LocalAiFeatureModelConfig,
   { onText, onLevel }: LiveTranscriptionHandlers,

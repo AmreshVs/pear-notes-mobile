@@ -41,7 +41,7 @@ import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/Themed'
-import type { EditorSelection, SelectionMenuItem } from '@/components/TiptapEditor'
+import type { EditorSelection } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import { useNoteConflict } from '@/components/useNoteConflict'
@@ -857,14 +857,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [aiToolsTarget?.selection, summarizeReady, translateReady],
   )
 
-  const selectionMenuItems = useMemo<SelectionMenuItem[] | undefined>(
-    () =>
-      aiToolsAvailable
-        ? [{ key: 'aiTools', label: t('localAi.writingTools.menuLabel') }]
-        : undefined,
-    [aiToolsAvailable, t],
-  )
-
   const runSelectionTool = useCallback(
     (mode: VoiceTypingMode, selection: EditorSelection) => {
       selectionRef.current = selection
@@ -886,16 +878,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       if (!noteId || !aiToolsAvailable) return
       const current = await editorRef.current?.getSelection(allowRemembered)
       const selection = current && current.text.trim() ? current : null
-      if (allowRemembered && !selection) return
       await hideKeyboard(() => editorRef.current?.blur())
+      if (selection) editorRef.current?.collapseSelection()
       setAiToolsTarget({ selection })
     },
     [aiToolsAvailable, editorRef, noteId],
   )
 
-  const handleAiToolsButton = useCallback(() => openAiTools(false), [openAiTools])
-
-  const handleSelectionMenu = useCallback(() => openAiTools(true), [openAiTools])
+  const handleAiToolsButton = useCallback(
+    () => openAiTools(isActive('hasSelection')),
+    [isActive, openAiTools],
+  )
 
   const handleSelectAiTool = useCallback(
     (tool: AiTool) => {
@@ -1025,8 +1018,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onDeleteAttachment={handleDeleteAttachment}
             onImageLongPress={handleImageLongPress}
             onAttachmentLongPress={handleAttachmentLongPress}
-            selectionMenuItems={selectionMenuItems}
-            onSelectionMenu={handleSelectionMenu}
           />
         )}
 

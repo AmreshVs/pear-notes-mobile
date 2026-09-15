@@ -1,14 +1,18 @@
 import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { SymbolView } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
-import { ScrollEdgeFade } from '@/components/ScrollEdgeFade'
-import { createThemedStylesheet } from '@/components/Themed'
+import { ScrollEdgeMask } from '@/components/ScrollEdgeMask'
+import { createThemedStylesheet, Text } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
+import { useAiEditButtonMotion } from '@/components/useAiEditButtonMotion'
 import {
   commonStyles,
+  FontFamily,
+  FontSize,
   Radii,
   Space,
   UI_ICON_SIZE_22,
@@ -198,6 +202,8 @@ export const EditorToolbar = memo(function EditorToolbar({
     hapticLight()
     action()
   }, [])
+  const hasSelection = !!onAiTools && isActive('hasSelection')
+  const aiMotion = useAiEditButtonMotion(hasSelection)
 
   const handleFocusEdit = useCallback(() => {
     setTimeout(() => editorRef.current?.focus(), 100)
@@ -231,7 +237,7 @@ export const EditorToolbar = memo(function EditorToolbar({
     <View style={[styles.floatingToolbar, { bottom: toolbarBottom }]}>
       <GlassView intensity={0} borderRadius={28} style={styles.glassBar} isInteractive>
         {isEditing ? (
-          <>
+          <ScrollEdgeMask visible={showEndFade} style={styles.scrollMask}>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -462,8 +468,7 @@ export const EditorToolbar = memo(function EditorToolbar({
                 styles={styles}
               />
             </ScrollView>
-            <ScrollEdgeFade color={colors.background} visible={showEndFade} />
-          </>
+          </ScrollEdgeMask>
         ) : (
           <View style={styles.toolbarRowCompact}>
             <AttachMenu
@@ -504,10 +509,18 @@ export const EditorToolbar = memo(function EditorToolbar({
           style={isEditing ? styles.aiButtonGlass : styles.aiButtonGlassTrailing}
           isInteractive
         >
+          <Animated.View
+            pointerEvents="none"
+            style={[styles.aiButtonHighlight, aiMotion.highlightStyle]}
+          />
           <Pressable
             onPress={() => run(onAiTools)}
             accessibilityRole="button"
-            accessibilityLabel={t('localAi.writingTools.toolbarLabel')}
+            accessibilityLabel={t(
+              hasSelection
+                ? 'localAi.writingTools.selectionToolbarLabel'
+                : 'localAi.writingTools.toolbarLabel',
+            )}
             style={({ pressed }) => [styles.aiButton, pressed && styles.pressed]}
           >
             <SymbolView
@@ -516,6 +529,11 @@ export const EditorToolbar = memo(function EditorToolbar({
               tintColor={colors.primary}
               weight="semibold"
             />
+            <Animated.View style={[styles.aiButtonLabelClip, aiMotion.labelStyle]}>
+              <Text numberOfLines={1} ellipsizeMode="clip" style={styles.aiButtonLabel}>
+                {t('localAi.writingTools.editLabel')}
+              </Text>
+            </Animated.View>
           </Pressable>
         </GlassView>
       )}
@@ -534,6 +552,9 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'flex-start',
       gap: Space.md,
     },
+    scrollMask: {
+      flexShrink: 1,
+    },
     glassBar: {
       minHeight: 52,
       flexShrink: 1,
@@ -541,23 +562,42 @@ const useStyles = createThemedStylesheet((theme) => {
       overflow: 'hidden',
     },
     aiButtonGlass: {
-      width: 52,
+      minWidth: 52,
       height: 52,
       flexShrink: 0,
       overflow: 'hidden',
     },
     aiButtonGlassTrailing: {
-      width: 52,
+      minWidth: 52,
       height: 52,
       flexShrink: 0,
       overflow: 'hidden',
       marginLeft: 'auto',
     },
     aiButton: {
-      width: 52,
+      minWidth: 52,
       height: 52,
+      paddingHorizontal: 15,
+      flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    aiButtonHighlight: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      borderRadius: 26,
+      backgroundColor: theme.colors.primary + '33',
+    },
+    aiButtonLabelClip: {
+      overflow: 'hidden',
+    },
+    aiButtonLabel: {
+      fontFamily: FontFamily.semiBold,
+      fontSize: FontSize.subtitle,
+      color: theme.colors.primary,
     },
     toolbarRow: {
       flexDirection: 'row',

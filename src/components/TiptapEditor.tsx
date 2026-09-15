@@ -41,11 +41,6 @@ export interface EditorSelection {
   text: string
 }
 
-export interface SelectionMenuItem {
-  key: string
-  label: string
-}
-
 export interface TiptapStyleState {
   bold: { isActive: boolean }
   italic: { isActive: boolean }
@@ -69,6 +64,7 @@ export interface TiptapStyleState {
   alignJustify: { isActive: boolean }
   undo: { isActive: boolean }
   redo: { isActive: boolean }
+  hasSelection: { isActive: boolean }
 }
 
 export interface TiptapEditorHandle {
@@ -111,6 +107,7 @@ export interface TiptapEditorHandle {
   focus: () => void
   focusTitle: () => void
   blur: () => void
+  collapseSelection: () => void
   save: () => Promise<void>
   getHTML: () => Promise<string | undefined>
   setHTML: (html: string) => void
@@ -166,8 +163,6 @@ export interface TiptapEditorProps {
     attachmentId?: string,
   ) => void
   onYjsMessage?: (dataBase64: string) => void
-  selectionMenuItems?: SelectionMenuItem[]
-  onSelectionMenu?: (key: string) => void
 }
 
 type WebViewMsg =
@@ -180,6 +175,7 @@ type WebViewMsg =
   | { type: 'focus' }
   | { type: 'focusTitle' }
   | { type: 'blur' }
+  | { type: 'collapseSelection' }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'requestPdfThumbnail'; url: string; fileName: string; attachmentId: string }
@@ -282,8 +278,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onImageLongPress,
       onAttachmentLongPress,
       onYjsMessage,
-      selectionMenuItems,
-      onSelectionMenu,
     },
     ref,
   ) => {
@@ -320,9 +314,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onImageLongPressRef = useRef(onImageLongPress)
     const onAttachmentLongPressRef = useRef(onAttachmentLongPress)
     const onYjsMessageRef = useRef(onYjsMessage)
-    const onSelectionMenuRef = useRef(onSelectionMenu)
 
-    onSelectionMenuRef.current = onSelectionMenu
     onContentChangeRef.current = onContentChange
     onTitleChangeRef.current = onTitleChange
     onStyleStateChangeRef.current = onStyleStateChange
@@ -440,10 +432,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       },
       [sendCommand],
     )
-
-    const handleCustomMenuSelection = useCallback((event: { nativeEvent: { key: string } }) => {
-      onSelectionMenuRef.current?.(event.nativeEvent.key)
-    }, [])
 
     const handleMessage = useCallback(
       (event: WebViewMessageEvent) => {
@@ -685,6 +673,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           requestNativeWebViewFocus()
           sendCommand({ type: 'focusTitle' })
         },
+        collapseSelection: () => sendCommand({ type: 'collapseSelection' }),
         blur: () => {
           sendCommand({ type: 'blur' })
           webViewRef.current?.injectJavaScript(
@@ -778,8 +767,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             cacheEnabled
             cacheMode="LOAD_CACHE_ELSE_NETWORK"
             startInLoadingState={false}
-            menuItems={selectionMenuItems?.length ? selectionMenuItems : undefined}
-            onCustomMenuSelection={handleCustomMenuSelection}
             {...iosWebViewProps}
           />
         </View>

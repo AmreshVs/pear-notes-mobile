@@ -61,6 +61,13 @@ export default function AndroidOnDeviceAiFeatureScreen() {
     confirmDelete,
     dismissConfirm,
   } = useOnDeviceAiFeatureScreen(feature)
+  const limitationsValue = featureId
+    ? (t(`settings.onDeviceAi.features.${featureId}.limitations`, {
+        returnObjects: true,
+        defaultValue: [],
+      }) as unknown)
+    : []
+  const limitations = Array.isArray(limitationsValue) ? (limitationsValue as string[]) : []
 
   const confirmText = confirm ? getDeleteConfirmText(t, confirm) : null
   const confirmActions = useMemo(
@@ -162,9 +169,15 @@ export default function AndroidOnDeviceAiFeatureScreen() {
                         {t(`settings.onDeviceAi.tiers.${option.tier}`)}
                       </Text>
                       <Text style={styles.rowDesc}>
-                        {t(`settings.onDeviceAi.tierDescriptions.${option.tier}`, {
-                          size: formatBytes(option.bytes),
-                        })}
+                        {t(
+                          [
+                            `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
+                            `settings.onDeviceAi.tierDescriptions.${option.tier}`,
+                          ],
+                          {
+                            size: formatBytes(option.bytes),
+                          },
+                        )}
                       </Text>
                     </View>
                     {option.selected && (
@@ -178,6 +191,24 @@ export default function AndroidOnDeviceAiFeatureScreen() {
                 ))}
               </View>
               <Text style={styles.note}>{t('settings.onDeviceAi.tierSwitchNote')}</Text>
+            </>
+          )}
+
+          {limitations.length > 0 && (
+            <>
+              <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
+                {t('settings.onDeviceAi.limitations')}
+              </Text>
+              <View style={styles.card}>
+                {limitations.map((item, index) => (
+                  <View
+                    key={item}
+                    style={index < limitations.length - 1 ? styles.rowDivider : styles.row}
+                  >
+                    <Text style={styles.limitationText}>{item}</Text>
+                  </View>
+                ))}
+              </View>
             </>
           )}
 
@@ -313,7 +344,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     },
     rowInfo: {
       ...commonStyles.flex1,
-      gap: UI_SIZE_4,
     },
     rowLabel: {
       fontSize: FontSize.body,
@@ -321,9 +351,16 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       color: c.onSurface,
     },
     rowDesc: {
-      fontSize: FontSize.caption,
+      fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
+    },
+    limitationText: {
+      flex: 1,
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      lineHeight: FontSize.body * 1.4,
+      color: c.onSurface,
     },
     note: {
       fontSize: FontSize.caption,

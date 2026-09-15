@@ -532,7 +532,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     toggleInfo: {
       ...commonStyles.flex1,
-      gap: Space.xs,
     },
     titleRow: {
       ...commonStyles.row,

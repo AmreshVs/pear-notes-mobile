@@ -201,7 +201,16 @@ if (hasErrors(verification)) {
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
 const addons = Array.isArray(manifest.addons) ? manifest.addons : []
 
+const registryModels = await import(
+  pathToFileURL(
+    path.join(findPackageDir('@qvac/inference'), 'dist', 'models', 'registry', 'models.js'),
+  ).href
+)
+const { findLocalAiRegistryMismatches } =
+  await import('@pear-notes/core/store/services/localAiRegistryCheck.js')
+
 const problems = [
+  ...findLocalAiRegistryMismatches(registryModels),
   ...findRangeViolations([...new Set([...qvacPackages, ...addons])]),
   ...findUnlinkableAddons(addons),
   ...findDeferredStaticImports(generatedBundle),
