@@ -325,7 +325,10 @@ export default function OnDeviceAiScreen() {
                         <Switch
                           value={row.enabled}
                           onValueChange={() => toggleFeature(row)}
-                          disabled={isUnsupported}
+                          disabled={
+                            isUnsupported ||
+                            (row.status === LOCAL_AI_FEATURE_STATUS.NEEDS_MEMORY && !row.enabled)
+                          }
                           trackColor={trackColor}
                           thumbColor={colors.white}
                         />

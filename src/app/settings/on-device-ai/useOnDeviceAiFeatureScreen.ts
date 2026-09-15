@@ -98,10 +98,11 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
   const selectTier = useCallback(
     (tier: string) => {
       if (!featureId || featureConfig?.tier === tier) return
+      if (!canRunFeature(featureId, { ...featureConfig, tier }, totalMemoryBytes)) return
       hapticSelection()
       send(setLocalAiFeatureTier, { feature: featureId, tier })
     },
-    [featureConfig?.tier, featureId, send],
+    [featureConfig, featureId, send, totalMemoryBytes],
   )
 
   const selectLanguage = useCallback(

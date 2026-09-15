@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import fs from 'fs'
 import { createRequire } from 'module'
 import path from 'path'
@@ -206,11 +207,15 @@ const registryModels = await import(
     path.join(findPackageDir('@qvac/inference'), 'dist', 'models', 'registry', 'models.js'),
   ).href
 )
-const { findLocalAiRegistryMismatches } =
+const { findLocalAiRegistryMismatches, findMissingLocalAiModelNames } =
   await import('@pear-notes/core/store/services/localAiRegistryCheck.js')
+const localeModelNames = JSON.parse(
+  fs.readFileSync(path.join(projectRoot, 'src', 'locales', 'en.json'), 'utf8'),
+).settings?.onDeviceAi?.modelNames
 
 const problems = [
   ...findLocalAiRegistryMismatches(registryModels),
+  ...findMissingLocalAiModelNames(localeModelNames),
   ...findRangeViolations([...new Set([...qvacPackages, ...addons])]),
   ...findUnlinkableAddons(addons),
   ...findDeferredStaticImports(generatedBundle),

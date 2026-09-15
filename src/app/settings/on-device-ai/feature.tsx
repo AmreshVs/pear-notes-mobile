@@ -129,24 +129,25 @@ export default function OnDeviceAiFeatureScreen() {
                 )}
                 <Pressable
                   onPress={() => selectTier(option.tier)}
+                  disabled={!option.fits}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: option.selected }}
+                  accessibilityState={{ selected: option.selected, disabled: !option.fits }}
                   style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
                 >
-                  <RNView style={styles.rowInfo}>
+                  <RNView style={[styles.rowInfo, !option.fits && styles.unavailable]}>
                     <Text style={styles.rowLabel}>
                       {t(`settings.onDeviceAi.tiers.${option.tier}`)}
                     </Text>
                     <Text style={styles.rowDesc}>
-                      {t(
-                        [
-                          `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
-                          `settings.onDeviceAi.tierDescriptions.${option.tier}`,
-                        ],
-                        {
-                          size: formatBytes(option.bytes),
-                        },
-                      )}
+                      {option.fits
+                        ? t(
+                            [
+                              `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
+                              `settings.onDeviceAi.tierDescriptions.${option.tier}`,
+                            ],
+                            { size: formatBytes(option.bytes) },
+                          )
+                        : t('settings.onDeviceAi.tierNeedsMemory')}
                     </Text>
                   </RNView>
                   {option.selected && (
@@ -272,6 +273,9 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       fontFamily: FontFamily.semiBold,
       color: theme.colors.text,
+    },
+    unavailable: {
+      opacity: 0.45,
     },
     rowDesc: {
       fontSize: FontSize.body,
