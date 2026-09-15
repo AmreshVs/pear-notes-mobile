@@ -150,6 +150,11 @@ function artifactPath(platform, version, buildNumber) {
   return path.join(ARTIFACT_DIR, `pear-notes-${version}-${buildNumber}.${extension}`)
 }
 
+async function prepareNativeAddons() {
+  await sh('node scripts/patch-bare-kit-linker.mjs', 'Patching the react-native-bare-kit linkers')
+  await sh('node scripts/build-qvac-bundle.mjs', 'Building the on-device AI worker bundle')
+}
+
 async function prepareSources() {
   await sh('npm run lint', 'Linting')
   await sh('npm run bare-bundle', 'Bundling the Bare backend worklet')
@@ -419,6 +424,8 @@ async function main() {
     finish(outcomes, Date.now() - started, version, buildNumber, null)
     return
   }
+
+  await prepareNativeAddons()
 
   if (!args.skipPreflight) {
     heading('Running release preflight')

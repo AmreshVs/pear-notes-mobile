@@ -275,6 +275,54 @@ function checkNoPlaintextKeys() {
   pass('plaintext-keys', 'Keys/ holds no private key or service-account files')
 }
 
+function checkNativeAddonSetup() {
+  const linkers = ['ios', 'android'].map((platform) =>
+    path.join(ROOT, 'node_modules', 'react-native-bare-kit', platform, 'link.mjs'),
+  )
+  const unpatched = linkers.filter(
+    (file) => !fs.existsSync(file) || !fs.readFileSync(file, 'utf8').includes('linkNativeAddons'),
+  )
+  if (unpatched.length) {
+    return fail(
+      'native-addons',
+      `${unpatched.map((file) => path.relative(ROOT, file)).join(', ')} not patched - postinstall ` +
+        'did not run (ignore-scripts?). Run node scripts/patch-bare-kit-linker.mjs',
+    )
+  }
+
+  if (!fs.existsSync(path.join(ROOT, 'qvac.config.json'))) {
+    return pass('native-addons', 'bare-kit linkers patched, on-device AI not configured')
+  }
+
+  const manifest = path.join(ROOT, 'qvac', 'addons.manifest.json')
+  const built = path.join(ROOT, 'qvac', 'worker.bundle.js')
+  const installed = path.join(
+    ROOT,
+    'node_modules',
+    '@qvac',
+    'sdk',
+    'dist',
+    'worker.mobile.bundle.js',
+  )
+  if (!fs.existsSync(manifest) || !fs.existsSync(built) || !fs.existsSync(installed)) {
+    return fail(
+      'native-addons',
+      'on-device AI worker bundle or addons manifest missing - run node scripts/build-qvac-bundle.mjs',
+    )
+  }
+  if (!fs.readFileSync(built).equals(fs.readFileSync(installed))) {
+    return fail(
+      'native-addons',
+      'installed on-device AI worker bundle differs from qvac/worker.bundle.js - run node scripts/build-qvac-bundle.mjs',
+    )
+  }
+  const addons = JSON.parse(fs.readFileSync(manifest, 'utf8')).addons ?? []
+  pass(
+    'native-addons',
+    `bare-kit linkers patched, AI worker bundle installed with ${addons.length} addons`,
+  )
+}
+
 function checkEditorBundle() {
   const bundle = path.join(ROOT, 'src', 'utils', 'tiptap-editor-bundle.ts')
   if (!fs.existsSync(bundle))
@@ -694,6 +742,7 @@ checkBackendBundle()
 checkBundleHygiene()
 checkNoSensitiveLogs()
 checkNoPlaintextKeys()
+checkNativeAddonSetup()
 checkEditorBundle()
 checkReleaseSigning()
 checkVersionConsistency()
