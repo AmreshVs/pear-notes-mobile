@@ -60,11 +60,19 @@ function isHyperdriveUrl(url) {
   return typeof url === 'string' && url.startsWith(HYPERDRIVE_URL_PREFIX)
 }
 
-// A blob link only becomes loadable once the worklet has reported the local
-// server's address, and the blob itself can still be a moment away from being
-// served right after an upload. Media rendered before either is ready would sit
-// there broken forever, so every element that points at the drive is registered
-// here and reloaded when the address lands.
+const LOOPBACK_MEDIA_URL = /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?\//
+
+function isDriveMediaUrl(url) {
+  return isHyperdriveUrl(url) || (typeof url === 'string' && LOOPBACK_MEDIA_URL.test(url))
+}
+
+// Media pointing at the drive can fail to load for a moment: before the worklet
+// has reported the server address, or while the blob server is reopening its
+// socket after a suspend. The Android photo picker is a separate activity, so
+// picking an image backgrounds the app, suspends the worklet and closes that
+// socket; the upload then lands and the image is inserted before resume has
+// finished. Every such element is registered here, retried on error and
+// reloaded when the address lands.
 const hyperdriveMedia = new Set()
 
 function registerHyperdriveMedia(reload) {
@@ -82,7 +90,7 @@ function reloadHyperdriveMedia() {
   }
 }
 
-const MEDIA_RETRY_DELAYS = [400, 1200, 3000]
+const MEDIA_RETRY_DELAYS = [300, 800, 1500, 3000, 5000]
 
 function sendToRN(msg) {
   try {
@@ -400,11 +408,17 @@ const ImageWithSize = Image.extend({
 
       img.addEventListener('load', () => {
         retryIndex = 0
+        img.style.visibility = 'visible'
       })
 
+      // Keep the broken-image glyph off screen while a retry is still pending;
+      // it only shows once every attempt has failed.
       img.addEventListener('error', () => {
-        if (!isHyperdriveUrl(node.attrs.src)) return
-        if (retryIndex >= MEDIA_RETRY_DELAYS.length) return
+        if (!isDriveMediaUrl(node.attrs.src) || retryIndex >= MEDIA_RETRY_DELAYS.length) {
+          img.style.visibility = 'visible'
+          return
+        }
+        img.style.visibility = 'hidden'
         const delay = MEDIA_RETRY_DELAYS[retryIndex]
         retryIndex += 1
         clearTimeout(retryTimer)
@@ -412,7 +426,7 @@ const ImageWithSize = Image.extend({
       })
 
       const unregisterMedia = registerHyperdriveMedia(() => {
-        if (!isHyperdriveUrl(node.attrs.src)) return
+        if (!isDriveMediaUrl(node.attrs.src)) return
         retryIndex = 0
         loadImage()
       })

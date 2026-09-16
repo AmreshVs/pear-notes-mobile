@@ -256,13 +256,6 @@ const iosWebViewProps =
       }
     : {}
 
-// The editor document is served from an https base URL while the drive's blob
-// server is plain http on the loopback interface, so every image and audio tag
-// is mixed content. Android's WebView blocks that by default and shows a broken
-// image; cleartext is still fenced to 127.0.0.1/localhost by the network
-// security config. iOS does not need the prop.
-const androidWebViewProps = Platform.OS === 'android' ? { mixedContentMode: 'always' as const } : {}
-
 const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
   (
     {
@@ -774,7 +767,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             cacheEnabled
             cacheMode="LOAD_CACHE_ELSE_NETWORK"
             startInLoadingState={false}
-            {...androidWebViewProps}
             {...iosWebViewProps}
           />
         </View>

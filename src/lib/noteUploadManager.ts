@@ -1,5 +1,11 @@
+import { AppState } from 'react-native'
+
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
+import {
+  getHyperdriveServerAddress,
+  setHyperdriveServerAddress,
+} from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
 import {
@@ -8,6 +14,9 @@ import {
   isNoteUploadItemCancelled,
   updateNoteUploadItemProgress,
 } from '@/lib/uploadRegistry'
+import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
+
+const BLOB_SERVER_READY_TIMEOUT_MS = 5000
 
 export class UploadCancelledError extends Error {
   constructor() {
@@ -100,6 +109,34 @@ function appendAttachmentToStoredNote(
   appendHtmlToStoredNote(noteId, buildAttachmentHtml(link, attachment, fileName))
 }
 
+async function waitForBlobServer(): Promise<string | null> {
+  if (AppState.currentState !== 'active') return null
+  const timeout = new Promise<null>((resolve) =>
+    setTimeout(() => resolve(null), BLOB_SERVER_READY_TIMEOUT_MS),
+  )
+  const ready = (async () => {
+    try {
+      const chore = (await backendApi.getChore()) as { hyperdriveServerAddress?: string } | null
+      return chore?.hyperdriveServerAddress || null
+    } catch {
+      return null
+    }
+  })()
+  const address = await Promise.race([ready, timeout])
+  if (address && address !== getHyperdriveServerAddress(store.getState())) {
+    store.dispatch(setHyperdriveServerAddress(address) as any)
+  }
+  return address
+}
+
+function resolveLiveLink(
+  link: string,
+  address: string | null,
+  resolveLink: (link: string) => string,
+): string {
+  return (address && resolveHyperdriveUrl(link, address)) || resolveLink(link)
+}
+
 type RunNoteUploadOptions = {
   noteId: string
   itemId: string
@@ -137,8 +174,9 @@ export async function runNoteUpload(options: RunNoteUploadOptions): Promise<void
   try {
     const { link } = await promise
     if (!link) return
+    const address = isNoteOpen() ? await waitForBlobServer() : null
     if (isNoteOpen()) {
-      insertLive(resolveLink(link))
+      insertLive(resolveLiveLink(link, address, resolveLink))
     } else {
       appendAttachmentToStoredNote(noteId, link, attachment, displayName)
     }
