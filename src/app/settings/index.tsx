@@ -24,9 +24,7 @@ import {
   UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_20,
-  UI_SIZE_40,
   UI_SIZE_44,
-  UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getAppVersionLabel } from '@/lib/appVersion'
@@ -182,6 +180,7 @@ export default function SettingsScreen() {
 const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
   const styles = StyleSheet.create({
     footerContainer: {
+      marginTop: UI_SIZE_20,
       marginBottom: insets.bottom + UI_SIZE_12,
     },
     scrollContainer: {
@@ -189,7 +188,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     },
     scroll: {
       paddingHorizontal: UI_SIZE_20,
-      paddingBottom: UI_SIZE_60,
       paddingTop: UI_SIZE_12,
     },
     dividerWrap: {
@@ -203,7 +201,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     footer: {
       textAlign: 'center',
       fontSize: FontSize.caption,
-      marginTop: UI_SIZE_40,
       fontStyle: 'italic',
       color: theme.colors.textMuted,
     },

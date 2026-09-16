@@ -47,6 +47,8 @@ import {
 import * as Y from 'yjs'
 
 const HYPERDRIVE_URL_PREFIX = 'http://hyperdrive'
+const TAP_SLOP = 10
+const SYNTHETIC_CLICK_WINDOW = 700
 let hyperdriveServerAddress = null
 
 function resolveHyperdriveUrl(url) {
@@ -165,8 +167,10 @@ lowlight.register('json', langJSON)
 
 // Tiptap's stock task-item node view toggles the checkbox with
 // `editor.chain().focus()`, which focuses the contenteditable and pops the
-// on-screen keyboard every time a box is ticked. Handle the tap ourselves and
-// dispatch a plain transaction so ticking a box never changes focus.
+// on-screen keyboard every time a box is ticked. On iOS the caret is placed
+// straight from the touch sequence, so cancelling the synthesised mousedown is
+// not enough - the tap has to be answered on touchend and the document updated
+// by hand.
 const TaskItemNoFocusSteal = TaskItem.extend({
   addNodeView() {
     const renderTaskItem = this.parent?.()
@@ -177,35 +181,99 @@ const TaskItemNoFocusSteal = TaskItem.extend({
       const label = nodeView?.dom?.querySelector?.('label')
       if (!label) return nodeView
 
+      const input = label.querySelector('input[type="checkbox"]')
       const { editor, getPos } = props
 
-      // Keep the tap from reaching ProseMirror, which would otherwise move the
-      // selection into the list item and focus the editor.
+      const applyChecked = (checked) => {
+        if (!editor.isEditable || typeof getPos !== 'function') return
+        const pos = getPos()
+        if (typeof pos !== 'number') return
+        const { state } = editor.view
+        const taskItem = state.doc.nodeAt(pos)
+        if (!taskItem) return
+        if (input) input.checked = checked
+        editor.view.dispatch(
+          state.tr.setNodeMarkup(pos, undefined, { ...taskItem.attrs, checked }),
+        )
+      }
+
+      const toggle = () => {
+        if (typeof getPos !== 'function') return
+        const pos = getPos()
+        if (typeof pos !== 'number') return
+        const taskItem = editor.view.state.doc.nodeAt(pos)
+        if (!taskItem) return
+        applyChecked(!taskItem.attrs.checked)
+      }
+
+      let touchStartX = 0
+      let touchStartY = 0
+      let touchMoved = false
+      let lastTouchToggle = 0
+
+      label.addEventListener(
+        'touchstart',
+        (e) => {
+          touchMoved = false
+          touchStartX = e.touches[0].clientX
+          touchStartY = e.touches[0].clientY
+        },
+        { passive: true },
+      )
+
+      label.addEventListener(
+        'touchmove',
+        (e) => {
+          if (Math.hypot(e.touches[0].clientX - touchStartX, e.touches[0].clientY - touchStartY) > TAP_SLOP) {
+            touchMoved = true
+          }
+        },
+        { passive: true },
+      )
+
+      // Cancelling touchend suppresses the synthetic click WebKit would send
+      // next, and with it the caret placement that raises the keyboard.
+      label.addEventListener(
+        'touchend',
+        (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (touchMoved) return
+          lastTouchToggle = Date.now()
+          toggle()
+        },
+        { passive: false },
+      )
+
+      label.addEventListener('touchcancel', () => {
+        touchMoved = true
+      })
+
+      // Pointer path, for a trackpad or a mouse in the dev preview.
       label.addEventListener('mousedown', (e) => {
         e.preventDefault()
         e.stopPropagation()
       })
-      label.addEventListener('click', (e) => e.stopPropagation(), true)
 
-      // Stopping propagation while the event is still on its way down means the
-      // stock `change` handler on the input never runs. The native toggle has
-      // already happened, so only the document needs catching up.
+      label.addEventListener(
+        'click',
+        (e) => {
+          e.preventDefault()
+          e.stopPropagation()
+          if (Date.now() - lastTouchToggle < SYNTHETIC_CLICK_WINDOW) return
+          toggle()
+        },
+        true,
+      )
+
+      // Assistive technology activates the input itself, which does fire a
+      // native change. Keep that working, minus the stock focus-stealing
+      // handler further down the capture chain.
       label.addEventListener(
         'change',
         (e) => {
           e.stopPropagation()
-          if (!editor.isEditable || typeof getPos !== 'function') return
-          const pos = getPos()
-          if (typeof pos !== 'number') return
-          const { state } = editor.view
-          const taskItem = state.doc.nodeAt(pos)
-          if (!taskItem) return
-          editor.view.dispatch(
-            state.tr.setNodeMarkup(pos, undefined, {
-              ...taskItem.attrs,
-              checked: e.target.checked,
-            }),
-          )
+          applyChecked(e.target.checked)
         },
         true,
       )

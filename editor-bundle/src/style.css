@@ -187,6 +187,8 @@ body {
   margin: 0;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
 }
 .tiptap ul[data-type='taskList'] li > label::after {
   content: '';

@@ -752,6 +752,7 @@ export function useVoiceTypingSheet({
     setError(null)
     setElapsed(0)
     setKeyPoints([])
+    setPageProgress(null)
     resetSummary()
     if (mode === 'translate') {
       beginTranslate()
