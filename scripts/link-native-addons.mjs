@@ -9,8 +9,13 @@ const qvacConfigPath = path.join(projectRoot, 'qvac.config.json')
 const backendBundlePath = path.join(projectRoot, 'src', 'backend', 'backend.bundle.js')
 const EXCLUDED_DEPENDENCIES = ['@qvac/sdk']
 const EXCLUDED_LIBRARIES = [/ggml-vulkan/]
-const ADDON_ARTIFACT = /\.(xcframework|so)$/
-const ADDON_VERSION_SUFFIX = /\.\d+(?:\.\d+)*(?:[-+][0-9A-Za-z.-]+)?$/
+// bare-link names an addon after the package and the version Bare resolves it
+// by — `bare-fs.4.8.1.xcframework`, `libbare-fs.4.8.1.so`. Anything else in the
+// output is a companion library an addon dlopens (the ggml compute backends,
+// for one), so it carries no version and must be left alone.
+const VERSION = String.raw`\d+(?:\.\d+)*(?:[-+][0-9A-Za-z.-]+)?`
+const ADDON_ARTIFACT = new RegExp(String.raw`^(?:lib)?(.+?)\.${VERSION}\.(?:xcframework|so)$`)
+const XCFRAMEWORK = /\.xcframework$/
 
 // bare-link walks the whole dependency graph, and since @qvac/sdk pulls in
 // bare-runtime (a full desktop Bare) every addon that runtime is built from
@@ -20,10 +25,7 @@ const ADDON_VERSION_SUFFIX = /\.\d+(?:\.\d+)*(?:[-+][0-9A-Za-z.-]+)?$/
 // the worklet aborts the moment it boots. Only the addons the bundles we
 // actually run ask for are allowed into the app.
 function addonNameFromArtifact(entry) {
-  return entry
-    .replace(ADDON_ARTIFACT, '')
-    .replace(ADDON_VERSION_SUFFIX, '')
-    .replace(/^lib/, '')
+  return ADDON_ARTIFACT.exec(entry)?.[1] ?? null
 }
 
 function normalizeAddonName(name) {
@@ -51,7 +53,8 @@ export function readBackendBundleAddons() {
   const names = new Set()
   for (const addon of header.addons ?? []) {
     const artifact = addon.replace(/^linked:/, '').split('/').pop()
-    names.add(addonNameFromArtifact(artifact))
+    const name = addonNameFromArtifact(artifact)
+    if (name) names.add(name)
   }
   return [...names]
 }
@@ -86,7 +89,7 @@ function pruneAddons(directory, allowed, pruned = []) {
   if (!fs.existsSync(directory)) return pruned
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     const entryPath = path.join(directory, entry.name)
-    if (entry.isDirectory() && !ADDON_ARTIFACT.test(entry.name)) {
+    if (entry.isDirectory() && !XCFRAMEWORK.test(entry.name)) {
       pruneAddons(entryPath, allowed, pruned)
       continue
     }
@@ -94,9 +97,8 @@ function pruneAddons(directory, allowed, pruned = []) {
       fs.rmSync(entryPath, { recursive: true, force: true })
       continue
     }
-    if (!ADDON_ARTIFACT.test(entry.name)) continue
     const name = addonNameFromArtifact(entry.name)
-    if (allowed.has(name)) continue
+    if (name === null || allowed.has(name)) continue
     fs.rmSync(entryPath, { recursive: true, force: true })
     pruned.push(entry.name)
   }
@@ -106,11 +108,12 @@ function pruneAddons(directory, allowed, pruned = []) {
 function collectLinkedAddons(directory, found = new Set()) {
   if (!fs.existsSync(directory)) return found
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
-    if (entry.isDirectory() && !ADDON_ARTIFACT.test(entry.name)) {
+    if (entry.isDirectory() && !XCFRAMEWORK.test(entry.name)) {
       collectLinkedAddons(path.join(directory, entry.name), found)
-    } else if (ADDON_ARTIFACT.test(entry.name)) {
-      found.add(addonNameFromArtifact(entry.name))
+      continue
     }
+    const name = addonNameFromArtifact(entry.name)
+    if (name) found.add(name)
   }
   return found
 }
