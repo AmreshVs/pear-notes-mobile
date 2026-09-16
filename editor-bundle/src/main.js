@@ -56,6 +56,34 @@ function resolveHyperdriveUrl(url) {
   return url.replace(HYPERDRIVE_URL_PREFIX, hyperdriveServerAddress.replace(/\/$/, ''))
 }
 
+function isHyperdriveUrl(url) {
+  return typeof url === 'string' && url.startsWith(HYPERDRIVE_URL_PREFIX)
+}
+
+// A blob link only becomes loadable once the worklet has reported the local
+// server's address, and the blob itself can still be a moment away from being
+// served right after an upload. Media rendered before either is ready would sit
+// there broken forever, so every element that points at the drive is registered
+// here and reloaded when the address lands.
+const hyperdriveMedia = new Set()
+
+function registerHyperdriveMedia(reload) {
+  hyperdriveMedia.add(reload)
+  return () => hyperdriveMedia.delete(reload)
+}
+
+function reloadHyperdriveMedia() {
+  for (const reload of hyperdriveMedia) {
+    try {
+      reload()
+    } catch (e) {
+      console.error('Failed to reload drive media', e)
+    }
+  }
+}
+
+const MEDIA_RETRY_DELAYS = [400, 1200, 3000]
+
 function sendToRN(msg) {
   try {
     if (window.ReactNativeWebView) {
@@ -356,7 +384,40 @@ const ImageWithSize = Image.extend({
       inner.style.cssText = 'display: inline-block; position: relative;'
 
       const img = document.createElement('img')
-      if (node.attrs.src) img.src = resolveHyperdriveUrl(node.attrs.src)
+
+      let retryIndex = 0
+      let retryTimer = null
+
+      const loadImage = () => {
+        const raw = node.attrs.src
+        if (!raw) return
+        const resolved = resolveHyperdriveUrl(raw)
+        if (!resolved || (isHyperdriveUrl(resolved) && !hyperdriveServerAddress)) return
+        clearTimeout(retryTimer)
+        img.removeAttribute('src')
+        img.src = resolved
+      }
+
+      img.addEventListener('load', () => {
+        retryIndex = 0
+      })
+
+      img.addEventListener('error', () => {
+        if (!isHyperdriveUrl(node.attrs.src)) return
+        if (retryIndex >= MEDIA_RETRY_DELAYS.length) return
+        const delay = MEDIA_RETRY_DELAYS[retryIndex]
+        retryIndex += 1
+        clearTimeout(retryTimer)
+        retryTimer = setTimeout(loadImage, delay)
+      })
+
+      const unregisterMedia = registerHyperdriveMedia(() => {
+        if (!isHyperdriveUrl(node.attrs.src)) return
+        retryIndex = 0
+        loadImage()
+      })
+
+      loadImage()
       if (node.attrs.width)
         img.style.width =
           typeof node.attrs.width === 'number' ? `${node.attrs.width}px` : node.attrs.width
@@ -372,6 +433,11 @@ const ImageWithSize = Image.extend({
         dom: wrapper,
         stopEvent: () => true,
         ignoreMutation: () => true,
+        destroy: () => {
+          clearTimeout(retryTimer)
+          clearTimeout(longPressTimer)
+          unregisterMedia()
+        },
       }
     }
   },
@@ -578,6 +644,10 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   const audio = document.createElement('audio')
   audio.preload = 'metadata'
   audio.src = resolveHyperdriveUrl(src) || ''
+  registerHyperdriveMedia(() => {
+    if (!isHyperdriveUrl(src) || audio.readyState !== 0) return
+    audio.src = resolveHyperdriveUrl(src) || ''
+  })
   audio.style.display = 'none'
   playBtn.appendChild(audio)
 
@@ -1391,9 +1461,13 @@ window.editorBridge = {
         handleYjsMessage(msg.data)
         break
 
-      case 'setHyperdriveAddress':
-        hyperdriveServerAddress = msg.address || null
+      case 'setHyperdriveAddress': {
+        const nextAddress = msg.address || null
+        const changed = nextAddress !== hyperdriveServerAddress
+        hyperdriveServerAddress = nextAddress
+        if (changed && nextAddress) reloadHyperdriveMedia()
         break
+      }
 
       case 'setCollaborator':
         if (msg.collaborator) {
