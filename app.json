@@ -19,7 +19,7 @@
         "NSPhotoLibraryAddUsageDescription": "Allow Pear Notes to save images to your photo library.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "28"
+      "buildNumber": "29"
     },
     "android": {
       "icon": "./assets/images/icon.png",
@@ -39,7 +39,7 @@
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
       ],
-      "versionCode": 28
+      "versionCode": 29
     },
     "web": {
       "bundler": "metro",
