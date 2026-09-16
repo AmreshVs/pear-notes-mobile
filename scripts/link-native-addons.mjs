@@ -1,7 +1,8 @@
+import link from 'bare-link'
+import { Buffer } from 'buffer'
 import fs from 'fs'
 import path from 'path'
-import { fileURLToPath } from 'url'
-import link from 'bare-link'
+import { fileURLToPath, URL } from 'url'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const manifestPath = path.join(projectRoot, 'qvac', 'addons.manifest.json')
@@ -52,7 +53,10 @@ export function readBackendBundleAddons() {
   const header = JSON.parse(bundle.subarray(newline + 1, newline + headerLength).toString())
   const names = new Set()
   for (const addon of header.addons ?? []) {
-    const artifact = addon.replace(/^linked:/, '').split('/').pop()
+    const artifact = addon
+      .replace(/^linked:/, '')
+      .split('/')
+      .pop()
     const name = addonNameFromArtifact(artifact)
     if (name) names.add(name)
   }
@@ -77,7 +81,7 @@ function allowedAddonNames() {
   if (fs.existsSync(qvacConfigPath) && !fs.existsSync(manifestPath)) {
     throw new Error(
       'qvac/addons.manifest.json is missing, so the on-device AI addons cannot be linked. ' +
-        'Run `npm run qvac-bundle` before linking.',
+        'Run `npm run native-addons` before linking.',
     )
   }
   const allowed = new Set(readBackendBundleAddons().map(normalizeAddonName))

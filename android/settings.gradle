@@ -31,6 +31,15 @@ extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
 }
 expoAutolinking.useExpoModules()
 
+def nativeAddonsSetup = providers.exec {
+  workingDir(rootDir.parentFile)
+  commandLine("node", "scripts/prepare-native-addons.mjs")
+  ignoreExitValue = true
+}
+if (nativeAddonsSetup.result.get().exitValue != 0) {
+  throw new GradleException("scripts/prepare-native-addons.mjs failed\n" + nativeAddonsSetup.standardOutput.asText.get() + nativeAddonsSetup.standardError.asText.get())
+}
+
 rootProject.name = 'Pear Notes'
 
 expoAutolinking.useExpoVersionCatalog()

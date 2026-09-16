@@ -1,41 +1,65 @@
-const { execFileSync } = require('child_process')
-const path = require('path')
 const {
   AndroidConfig,
   createRunOncePlugin,
   withAndroidManifest,
   withAppBuildGradle,
-  withDangerousMod,
+  withPodfile,
   withProjectBuildGradle,
+  withSettingsGradle,
 } = require('expo/config-plugins')
 
 const PLUGIN_NAME = 'expo-local-ai'
 const PLUGIN_VERSION = '1.0.0'
 const OPENCL_LIBRARY = 'libOpenCL.so'
 const OPENCL_PACKAGING_EXCLUDE = `excludes += "/lib/**/${OPENCL_LIBRARY}"`
-const BUILD_SCRIPTS = ['scripts/build-qvac-bundle.mjs', 'scripts/patch-bare-kit-linker.mjs']
+const NATIVE_ADDONS_SCRIPT = 'scripts/prepare-native-addons.mjs'
 const QVAC_NDK_VERSION = '29.0.14206865'
 
-function runBuildScripts(projectRoot) {
-  for (const script of BUILD_SCRIPTS) {
-    execFileSync(process.execPath, [path.join(projectRoot, script)], {
-      cwd: projectRoot,
-      stdio: 'inherit',
-    })
+const PODFILE_SETUP = [
+  "project_root = File.expand_path('..', __dir__)",
+  "system('node', File.join(project_root, 'scripts', 'prepare-native-addons.mjs'), chdir: project_root) or raise 'scripts/prepare-native-addons.mjs failed'",
+].join('\n')
+
+const SETTINGS_GRADLE_SETUP = [
+  'def nativeAddonsSetup = providers.exec {',
+  '  workingDir(rootDir.parentFile)',
+  '  commandLine("node", "scripts/prepare-native-addons.mjs")',
+  '  ignoreExitValue = true',
+  '}',
+  'if (nativeAddonsSetup.result.get().exitValue != 0) {',
+  '  throw new GradleException("scripts/prepare-native-addons.mjs failed\\n" + nativeAddonsSetup.standardOutput.asText.get() + nativeAddonsSetup.standardError.asText.get())',
+  '}',
+].join('\n')
+
+function insertOnce(contents, anchor, insertion, label) {
+  if (contents.includes(NATIVE_ADDONS_SCRIPT)) return contents
+  if (!anchor.test(contents)) {
+    throw new Error(
+      `${PLUGIN_NAME}: could not find where to add the native addon setup in ${label}`,
+    )
   }
+  return contents.replace(anchor, insertion)
 }
 
-function withQvacWorkerBundle(config) {
-  let built = false
-  const build = (mod) => {
-    if (!built) {
-      runBuildScripts(mod.modRequest.projectRoot)
-      built = true
-    }
+function withNativeAddonsSetup(config) {
+  config = withPodfile(config, (mod) => {
+    mod.modResults.contents = insertOnce(
+      mod.modResults.contents,
+      /^require 'json'\n/m,
+      `require 'json'\n\n${PODFILE_SETUP}\n`,
+      'the Podfile',
+    )
     return mod
-  }
-  config = withDangerousMod(config, ['android', build])
-  config = withDangerousMod(config, ['ios', build])
+  })
+  config = withSettingsGradle(config, (mod) => {
+    mod.modResults.contents = insertOnce(
+      mod.modResults.contents,
+      /^rootProject\.name/m,
+      `${SETTINGS_GRADLE_SETUP}\n\nrootProject.name`,
+      'settings.gradle',
+    )
+    return mod
+  })
   return config
 }
 
@@ -84,7 +108,7 @@ function withQvacNdkVersion(config) {
 
 function withLocalAi(config) {
   return withQvacNdkVersion(
-    withOpenCLPackagingExclude(withOptionalOpenCL(withQvacWorkerBundle(config))),
+    withOpenCLPackagingExclude(withOptionalOpenCL(withNativeAddonsSetup(config))),
   )
 }
 

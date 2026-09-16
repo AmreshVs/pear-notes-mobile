@@ -9,12 +9,12 @@ const sharedLinker = path.join(projectRoot, 'scripts', 'link-native-addons.mjs')
 const LINKERS = [
   {
     file: path.join(bareKitDir, 'android', 'link.mjs'),
-    hosts: ['android-arm64', 'android-arm', 'android-ia32', 'android-x64'],
+    hosts: ['android-arm64'],
     out: './src/main/addons',
   },
   {
     file: path.join(bareKitDir, 'ios', 'link.mjs'),
-    hosts: ['ios-arm64', 'ios-arm64-simulator', 'ios-x64-simulator'],
+    hosts: ['ios-arm64', 'ios-arm64-simulator'],
     out: './addons',
   },
 ]

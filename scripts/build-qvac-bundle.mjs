@@ -17,7 +17,7 @@ const importsMapPath = path.join(outputDir, 'bare-imports.json')
 const decoderStubPath = path.join(outputDir, 'decoder-audio-stub.mjs')
 const installedBundle = path.join(sdkDir, 'dist', 'worker.mobile.bundle.js')
 
-const MOBILE_HOSTS = ['android-arm64', 'ios-arm64', 'ios-arm64-simulator', 'ios-x64-simulator']
+const MOBILE_HOSTS = ['android-arm64', 'ios-arm64', 'ios-arm64-simulator']
 const DEFERRED_MODULES = [
   'expo-file-system',
   'react-native-bare-kit',
@@ -201,6 +201,13 @@ if (hasErrors(verification)) {
 
 const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'))
 const addons = Array.isArray(manifest.addons) ? manifest.addons : []
+
+if (addons.length === 0) {
+  console.error(
+    'QVAC worker bundle refused: the addons manifest is empty, so the app would link no on-device AI addons. Run this script from the project root.',
+  )
+  process.exit(1)
+}
 
 const registryModels = await import(
   pathToFileURL(

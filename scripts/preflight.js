@@ -276,51 +276,25 @@ function checkNoPlaintextKeys() {
 }
 
 function checkNativeAddonSetup() {
-  const linkers = ['ios', 'android'].map((platform) =>
-    path.join(ROOT, 'node_modules', 'react-native-bare-kit', platform, 'link.mjs'),
-  )
-  const unpatched = linkers.filter(
-    (file) => !fs.existsSync(file) || !fs.readFileSync(file, 'utf8').includes('linkNativeAddons'),
-  )
-  if (unpatched.length) {
+  const script = 'scripts/prepare-native-addons.mjs'
+  if (!fs.existsSync(path.join(ROOT, script))) {
+    return fail('native-addons', `${script} is missing`)
+  }
+  const entryPoints = ['ios/Podfile', 'android/settings.gradle']
+  const unwired = entryPoints.filter((file) => {
+    const fullPath = path.join(ROOT, file)
+    return (
+      !fs.existsSync(fullPath) ||
+      !fs.readFileSync(fullPath, 'utf8').includes('prepare-native-addons.mjs')
+    )
+  })
+  if (unwired.length) {
     return fail(
       'native-addons',
-      `${unpatched.map((file) => path.relative(ROOT, file)).join(', ')} not patched - postinstall ` +
-        'did not run (ignore-scripts?). Run node scripts/patch-bare-kit-linker.mjs',
+      `${unwired.join(', ')} no longer run ${script} - native builds would link every QVAC addon. Re-run expo prebuild or restore the setup call`,
     )
   }
-
-  if (!fs.existsSync(path.join(ROOT, 'qvac.config.json'))) {
-    return pass('native-addons', 'bare-kit linkers patched, on-device AI not configured')
-  }
-
-  const manifest = path.join(ROOT, 'qvac', 'addons.manifest.json')
-  const built = path.join(ROOT, 'qvac', 'worker.bundle.js')
-  const installed = path.join(
-    ROOT,
-    'node_modules',
-    '@qvac',
-    'sdk',
-    'dist',
-    'worker.mobile.bundle.js',
-  )
-  if (!fs.existsSync(manifest) || !fs.existsSync(built) || !fs.existsSync(installed)) {
-    return fail(
-      'native-addons',
-      'on-device AI worker bundle or addons manifest missing - run node scripts/build-qvac-bundle.mjs',
-    )
-  }
-  if (!fs.readFileSync(built).equals(fs.readFileSync(installed))) {
-    return fail(
-      'native-addons',
-      'installed on-device AI worker bundle differs from qvac/worker.bundle.js - run node scripts/build-qvac-bundle.mjs',
-    )
-  }
-  const addons = JSON.parse(fs.readFileSync(manifest, 'utf8')).addons ?? []
-  pass(
-    'native-addons',
-    `bare-kit linkers patched, AI worker bundle installed with ${addons.length} addons`,
-  )
+  pass('native-addons', `${script} runs from ${entryPoints.join(' and ')}`)
 }
 
 function checkEditorBundle() {
