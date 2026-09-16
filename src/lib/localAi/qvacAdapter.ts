@@ -25,6 +25,11 @@ import {
 } from '@pear-notes/core/store/services/localAiPrompts.js'
 import { formatOcrBlocks } from '@pear-notes/core/store/services/localAiText.js'
 import { getTranslationModelName } from '@pear-notes/core/store/services/localAiTranslationModels.js'
+import {
+  countWords,
+  WORK_EVENT,
+  WORK_STEP,
+} from '@pear-notes/core/store/services/localAiWorkProgress.js'
 
 import { getLocalAiDeviceSupport, getLocalAiDiskSpace } from '@/lib/localAi/deviceSupport'
 import { ConnectionKind, getConnectionKind } from '@/lib/networkState'
@@ -35,6 +40,31 @@ type QvacSdk = typeof import('@qvac/sdk')
 type LoadModelInput = Record<string, unknown>
 type RegistryModels = Record<string, { bytes: number; engine: string } | undefined>
 type DownloadAssetInput = Parameters<QvacSdk['downloadAsset']>[0]
+
+export interface LocalAiWorkEvent {
+  type: string
+  step?: string
+  model?: string
+  text?: string
+  doneMs?: number
+  totalMs?: number
+  page?: number
+  total?: number
+  words?: number
+  done?: number
+  hop?: number
+  hops?: number
+  from?: string
+  to?: string
+}
+
+export type LocalAiWorkListener = (event: LocalAiWorkEvent) => void
+
+export interface LocalAiWorkOptions {
+  onProgress?: LocalAiWorkListener
+}
+
+const TRANSLATE_BATCH_PARAGRAPHS = 8
 
 export interface LocalAiFeatureModelConfig {
   tier?: string
@@ -466,19 +496,63 @@ async function loadSpeechModel(
   })
 }
 
+interface TranscribeSegment {
+  text?: string
+  endMs?: number
+}
+
+async function transcribeWithPosition(
+  sdk: QvacSdk,
+  modelId: string,
+  audioPath: string,
+  totalMs: number,
+  onProgress: LocalAiWorkListener,
+): Promise<string> {
+  const openStream = sdk.transcribeStream as unknown as (
+    params: Record<string, unknown>,
+  ) => AsyncIterable<TranscribeSegment>
+  let transcript = ''
+  let received = false
+  try {
+    for await (const segment of openStream({ modelId, audioChunk: audioPath, metadata: true })) {
+      received = true
+      transcript = joinTranscript(transcript, String(segment?.text ?? ''))
+      onProgress({ type: WORK_EVENT.TEXT, text: transcript })
+      if (Number(segment?.endMs) > 0) {
+        onProgress({ type: WORK_EVENT.POSITION, doneMs: Number(segment.endMs), totalMs })
+      }
+    }
+  } catch (error) {
+    if (received) throw error
+    return (await sdk.transcribe({ modelId, audioChunk: audioPath })).trim()
+  }
+  return transcript.trim()
+}
+
 async function transcribeAudioFileNow(
   fileUri: string,
   feature: string,
   featureConfig: LocalAiFeatureModelConfig,
+  onProgress: LocalAiWorkListener = () => {},
 ): Promise<string> {
   if (!ExpoLocalAi) throw new LocalAiError(LOCAL_AI_ERROR.MODEL_MISSING)
   const sdk = await loadSdk()
-  const modelId = await loadSpeechModel(sdk, feature, featureConfig)
   const pcmFile = new File(Paths.cache, `${PCM_FILE_PREFIX}${Date.now()}${PCM_FILE_EXTENSION}`)
   try {
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.PREPARE_AUDIO })
     await ExpoLocalAi.decodeAudioToPcm(toFilePath(fileUri), toFilePath(pcmFile.uri))
-    const text = await sdk.transcribe({ modelId, audioChunk: toFilePath(pcmFile.uri) })
-    return text.trim()
+    const [modelName] = getFeatureRegistryNames(feature, featureConfig)
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
+    const modelId = await loadSpeechModel(sdk, feature, featureConfig)
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.TRANSCRIBE })
+    const audioPath = toFilePath(pcmFile.uri)
+    const isParakeet =
+      (LOCAL_AI_REGISTRY_MODELS as RegistryModels)[modelName]?.engine === PARAKEET_ENGINE
+    if (isParakeet) return (await sdk.transcribe({ modelId, audioChunk: audioPath })).trim()
+    const totalMs = Math.round(
+      ((pcmFile.size ?? 0) / (PCM_SAMPLE_RATE * PCM_BYTES_PER_SAMPLE)) * 1000,
+    )
+    return await transcribeWithPosition(sdk, modelId, audioPath, totalMs, onProgress)
   } finally {
     try {
       if (pcmFile.exists) pcmFile.delete()
@@ -486,9 +560,15 @@ async function transcribeAudioFileNow(
   }
 }
 
-async function extractTextFromImageNow(fileUri: string): Promise<string> {
+async function extractTextFromImageNow(
+  fileUri: string,
+  onProgress: LocalAiWorkListener = () => {},
+): Promise<string> {
   const sdk = await loadSdk()
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.PREPARE_PHOTO })
+  const prepared = await downscaleImage(fileUri, OCR_IMAGE_MAX_SIDE)
   const [recognizerName, detectorName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, {})
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: recognizerName })
   const modelId = await ensureModelLoaded(sdk, `${recognizerName}|${detectorName}|mobile`, () =>
     loadModelWith(sdk, {
       modelSrc: registryAsset(sdk, recognizerName),
@@ -503,8 +583,11 @@ async function extractTextFromImageNow(fileUri: string): Promise<string> {
         backendDevice: Platform.OS === 'ios' ? 'metal' : 'cpu',
       },
     }),
-  )
-  const prepared = await downscaleImage(fileUri, OCR_IMAGE_MAX_SIDE)
+  ).catch((error) => {
+    deleteLocalUri(prepared)
+    throw error
+  })
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_TEXT })
   try {
     const { blocks } = sdk.ocr({ modelId, image: toFilePath(prepared ?? fileUri) })
     return formatOcrBlocks(await blocks)
@@ -547,10 +630,25 @@ async function downscaleImage(fileUri: string, maxSide: number): Promise<string 
 
 type CompletionInput = Record<string, unknown>
 
-function runCompletion(sdk: QvacSdk, input: CompletionInput): Promise<string> {
-  const run = (sdk.completion as unknown as (params: CompletionInput) => { text: Promise<string> })(
-    input,
-  )
+interface CompletionRun {
+  text: Promise<string>
+  tokenStream: AsyncIterable<string>
+}
+
+async function runCompletion(
+  sdk: QvacSdk,
+  input: CompletionInput,
+  onText?: (text: string) => void,
+): Promise<string> {
+  const run = (sdk.completion as unknown as (params: CompletionInput) => CompletionRun)({
+    ...input,
+    stream: true,
+  })
+  let streamed = ''
+  for await (const token of run.tokenStream) {
+    streamed += token
+    onText?.(streamed)
+  }
   return run.text
 }
 
@@ -572,23 +670,33 @@ function loadLlmFeature(
   )
 }
 
-async function describeImageNow(fileUri: string): Promise<string> {
+async function describeImageNow(
+  fileUri: string,
+  onProgress: LocalAiWorkListener = () => {},
+): Promise<string> {
   const sdk = await loadSdk()
-  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.DESCRIBE_IMAGES)
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.PREPARE_PHOTO })
   const prepared = await downscaleImage(fileUri, DESCRIBE_IMAGE_MAX_SIDE)
   try {
-    const output = await runCompletion(sdk, {
-      modelId,
-      history: [
-        {
-          role: 'user',
-          content: DESCRIBE_IMAGE_PROMPT,
-          attachments: [{ path: toFilePath(prepared ?? fileUri) }],
-        },
-      ],
-      stream: false,
-      generationParams: { temp: LLM_TEMPERATURE, predict: DESCRIBE_MAX_TOKENS },
-    })
+    const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.DESCRIBE_IMAGES, {})
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
+    const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.DESCRIBE_IMAGES)
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOOK })
+    const output = await runCompletion(
+      sdk,
+      {
+        modelId,
+        history: [
+          {
+            role: 'user',
+            content: DESCRIBE_IMAGE_PROMPT,
+            attachments: [{ path: toFilePath(prepared ?? fileUri) }],
+          },
+        ],
+        generationParams: { temp: LLM_TEMPERATURE, predict: DESCRIBE_MAX_TOKENS },
+      },
+      (text) => onProgress({ type: WORK_EVENT.TEXT, text }),
+    )
     return cleanModelOutput(output)
   } finally {
     deleteLocalUri(prepared)
@@ -599,18 +707,25 @@ async function runNoteTaskNow(
   task: string,
   text: string,
   featureConfig: LocalAiFeatureModelConfig = {},
+  onProgress: LocalAiWorkListener = () => {},
 ): Promise<string> {
   const sdk = await loadSdk()
+  const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
   const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
-  const output = await runCompletion(sdk, {
-    modelId,
-    history: buildNoteTaskMessages(task, text),
-    stream: false,
-    generationParams: {
-      temp: LLM_TEMPERATURE,
-      predict: getNoteTaskMaxTokens(task, text) as number,
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
+  const output = await runCompletion(
+    sdk,
+    {
+      modelId,
+      history: buildNoteTaskMessages(task, text),
+      generationParams: {
+        temp: LLM_TEMPERATURE,
+        predict: getNoteTaskMaxTokens(task, text) as number,
+      },
     },
-  })
+    (partial) => onProgress({ type: WORK_EVENT.TEXT, text: partial }),
+  )
   return cleanModelOutput(output)
 }
 
@@ -618,21 +733,28 @@ export const transcribeAudioFile = (
   fileUri: string,
   feature: string,
   featureConfig: LocalAiFeatureModelConfig,
-) => withModelWork(() => transcribeAudioFileNow(fileUri, feature, featureConfig))
+  { onProgress }: LocalAiWorkOptions = {},
+) => withModelWork(() => transcribeAudioFileNow(fileUri, feature, featureConfig, onProgress))
 
-export const extractTextFromImage = (fileUri: string) =>
-  withModelWork(() => extractTextFromImageNow(fileUri))
+export const extractTextFromImage = (fileUri: string, { onProgress }: LocalAiWorkOptions = {}) =>
+  withModelWork(() => extractTextFromImageNow(fileUri, onProgress))
 
-export const describeImage = (fileUri: string) => withModelWork(() => describeImageNow(fileUri))
+export const describeImage = (fileUri: string, { onProgress }: LocalAiWorkOptions = {}) =>
+  withModelWork(() => describeImageNow(fileUri, onProgress))
 
 export const runNoteTask = (
   task: string,
   text: string,
   featureConfig: LocalAiFeatureModelConfig = {},
-) => withModelWork(() => runNoteTaskNow(task, text, featureConfig))
+  { onProgress }: LocalAiWorkOptions = {},
+) => withModelWork(() => runNoteTaskNow(task, text, featureConfig, onProgress))
 
-export const translateParagraphs = (paragraphs: string[], from: string, to: string) =>
-  withModelWork(() => translateParagraphsNow(paragraphs, from, to))
+export const translateParagraphs = (
+  paragraphs: string[],
+  from: string,
+  to: string,
+  { onProgress }: LocalAiWorkOptions = {},
+) => withModelWork(() => translateParagraphsNow(paragraphs, from, to, onProgress))
 
 export function startLiveTranscription(
   feature: string,
@@ -674,25 +796,48 @@ async function translateParagraphsNow(
   paragraphs: string[],
   from: string,
   to: string,
+  onProgress: LocalAiWorkListener = () => {},
 ): Promise<string[]> {
   const steps = getTranslationSteps(from, to) as [string, string][]
   if (steps.length === 0) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED)
   const sdk = await loadSdk()
   let lines = paragraphs
-  for (const [stepFrom, stepTo] of steps) {
+  for (const [hopIndex, [stepFrom, stepTo]] of steps.entries()) {
     const modelName = getTranslationModelName(stepFrom, stepTo)
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
     const modelId = await ensureModelLoaded(sdk, `${modelName}|translate`, () =>
       loadModelWith(sdk, {
         modelSrc: registryAsset(sdk, modelName),
         modelConfig: { engine: 'Bergamot', from: stepFrom, to: stepTo },
       }),
     )
-    const run = (
-      sdk.translate as unknown as (params: Record<string, unknown>) => {
-        translations: Promise<string[]>
-      }
-    )({ modelId, text: lines, modelType: 'nmtcpp-translation', stream: false })
-    lines = (await run.translations).map((line) => String(line ?? ''))
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.TRANSLATE })
+    const translate = sdk.translate as unknown as (params: Record<string, unknown>) => {
+      translations: Promise<string[]>
+    }
+    const translated: string[] = []
+    const reportParagraphs = () =>
+      onProgress({
+        type: WORK_EVENT.PARAGRAPHS,
+        done: translated.length,
+        total: lines.length,
+        hop: hopIndex + 1,
+        hops: steps.length,
+        from: stepFrom,
+        to: stepTo,
+      })
+    reportParagraphs()
+    for (let start = 0; start < lines.length; start += TRANSLATE_BATCH_PARAGRAPHS) {
+      const run = translate({
+        modelId,
+        text: lines.slice(start, start + TRANSLATE_BATCH_PARAGRAPHS),
+        modelType: 'nmtcpp-translation',
+        stream: false,
+      })
+      translated.push(...(await run.translations).map((line) => String(line ?? '')))
+      reportParagraphs()
+    }
+    lines = translated
   }
   return lines
 }
@@ -850,7 +995,7 @@ const OCR_MAX_PDF_PAGES = 20
 
 export interface PdfExtractOptions {
   signal?: AbortSignal
-  onProgress?: (progress: { page: number; total: number }) => void
+  onProgress?: LocalAiWorkListener
 }
 
 export async function extractTextFromPdf(
@@ -860,16 +1005,27 @@ export async function extractTextFromPdf(
   const { renderPdfPageForOcr } = await import('@/lib/pdfTools')
   const FileSystem = await import('expo-file-system/legacy')
   const texts: string[] = []
+  let words = 0
   let pageCount = 1
   for (let pageIndex = 0; pageIndex < Math.min(pageCount, OCR_MAX_PDF_PAGES); pageIndex += 1) {
     if (signal?.aborted) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED)
     const rendered = await renderPdfPageForOcr(fileUri, pageIndex)
     if (!rendered) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED)
     pageCount = rendered.pageCount
-    onProgress?.({ page: pageIndex + 1, total: Math.min(pageCount, OCR_MAX_PDF_PAGES) })
+    const total = Math.min(pageCount, OCR_MAX_PDF_PAGES)
+    const reportPage = (done: number) =>
+      onProgress?.({ type: WORK_EVENT.PAGE, page: pageIndex + 1, total, done, words })
+    const forwardPageEvent: LocalAiWorkListener = (event) => {
+      if (event.step === WORK_STEP.LOAD_MODEL) onProgress?.(event)
+      if (event.step === WORK_STEP.READ_TEXT) reportPage(pageIndex)
+    }
     try {
-      const pageText = (await extractTextFromImage(rendered.uri)).trim()
+      const pageText = (
+        await extractTextFromImage(rendered.uri, { onProgress: forwardPageEvent })
+      ).trim()
       if (pageText) texts.push(pageText)
+      words += countWords(pageText)
+      reportPage(pageIndex + 1)
     } finally {
       await FileSystem.deleteAsync(rendered.uri, { idempotent: true }).catch(() => {})
     }

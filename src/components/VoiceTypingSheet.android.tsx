@@ -9,7 +9,9 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { LocalAiProcessing } from '@/components/LocalAiProcessing'
+import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { RecordingWaveBar } from '@/components/RecordingWaveBar'
+import { RewriteChanges } from '@/components/RewriteChanges'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import { fmtTimer, RECORDING_BAR_GAP, RECORDING_BARS } from '@/components/useAudioRecorderModal'
 import {
@@ -25,6 +27,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_SIZE_2,
@@ -182,11 +185,12 @@ export function VoiceTypingSheet({
     liveText,
     isLive,
     error,
-    pageProgress,
+    workView,
     summary,
     summaryPhase,
     canSummarize,
     canReplace,
+    rewriteDiff,
     sourceLanguage,
     targetLanguage,
     translateLanguages,
@@ -254,7 +258,9 @@ export function VoiceTypingSheet({
     phase === 'downloading' ||
     phase === 'preparing' ||
     (phase === 'idle' && mode !== 'dictate')
-  const showGeneratedDisclaimer = mode === 'keyPoints' || mode === 'suggestTitle' || canReplace
+  const rewriteUnchanged = phase === 'preview' && !!rewriteDiff?.unchanged
+  const showGeneratedDisclaimer =
+    (mode === 'keyPoints' || mode === 'suggestTitle' || canReplace) && !rewriteUnchanged
   const showReportLink =
     mode === 'describe' ||
     mode === 'translate' ||
@@ -262,8 +268,13 @@ export function VoiceTypingSheet({
     mode === 'keyPoints' ||
     canReplace ||
     !!summary
-  const subtitle =
-    phase === 'preview' && insertBlocked
+  const title = rewriteUnchanged
+    ? t('localAi.rewriteChanges.noChangesTitle')
+    : t(keys.title, heroParams)
+  const isWorking = phase === 'transcribing' || (phase === 'idle' && mode !== 'dictate')
+  const subtitle = rewriteUnchanged
+    ? t('localAi.rewriteChanges.noChangesSubtitle')
+    : phase === 'preview' && insertBlocked
       ? t('localAi.conflictBlocked')
       : t(keys.subtitle, heroParams)
   const mutedColor = c.onSurfaceVariant ?? colors.textSecondary
@@ -318,8 +329,19 @@ export function VoiceTypingSheet({
                 />
               </View>
               <View style={styles.headerText}>
-                <Text style={styles.title}>{t(keys.title, heroParams)}</Text>
-                <Text style={styles.subtitle}>{subtitle}</Text>
+                <Text style={styles.title}>{title}</Text>
+                {isWorking ? (
+                  <View style={styles.onDeviceRow}>
+                    <MaterialCommunityIcons
+                      name="shield-check"
+                      size={UI_ICON_SIZE_16}
+                      color={mutedColor}
+                    />
+                    <Text style={styles.subtitle}>{t('localAi.work.onDevice')}</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.subtitle}>{subtitle}</Text>
+                )}
               </View>
               <Pressable
                 hitSlop={12}
@@ -432,15 +454,25 @@ export function VoiceTypingSheet({
               </View>
             )}
 
-            {showProcessing && (
-              <LocalAiProcessing
-                color={c.primary}
-                captionColor={mutedColor}
-                caption={pageProgress ? t('localAi.extractText.pageProgress', pageProgress) : null}
+            {showProcessing && workView && (
+              <LocalAiWorkProgress view={workView} languageName={languageName} />
+            )}
+
+            {showProcessing && !workView && (
+              <LocalAiProcessing color={c.primary} captionColor={mutedColor} />
+            )}
+
+            {phase === 'preview' && rewriteDiff && (
+              <RewriteChanges
+                key={text}
+                diff={rewriteDiff}
+                resultText={text}
+                showFixCount={mode === 'fixGrammar'}
+                maxHeight={windowHeight * PREVIEW_MAX_HEIGHT_RATIO}
               />
             )}
 
-            {phase === 'preview' && (
+            {phase === 'preview' && !rewriteDiff && (
               <ScrollView
                 style={[styles.previewCard, { maxHeight: windowHeight * PREVIEW_MAX_HEIGHT_RATIO }]}
                 contentContainerStyle={styles.previewContent}
@@ -568,6 +600,13 @@ export function VoiceTypingSheet({
                     style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
                   >
                     <Text style={styles.primaryButtonText}>{t('localAi.actions.downloadNow')}</Text>
+                  </Pressable>
+                ) : rewriteUnchanged ? (
+                  <Pressable
+                    onPress={handleClose}
+                    style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+                  >
+                    <Text style={styles.primaryButtonText}>{t('common.done')}</Text>
                   </Pressable>
                 ) : phase === 'preview' && canReplace ? (
                   <>
@@ -753,6 +792,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       lineHeight: 20,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant ?? theme.colors.textSecondary,
+    },
+    onDeviceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_4,
     },
     closeButton: {
       width: UI_SIZE_40,

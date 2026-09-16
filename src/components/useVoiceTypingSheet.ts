@@ -37,6 +37,7 @@ import {
   REWRITE_MAX_CHARS,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
 import { TRANSLATION_SOURCE_LANGUAGE } from '@pear-notes/core/store/services/localAiTranslationModels.js'
+import { WORK_KIND } from '@pear-notes/core/store/services/localAiWorkProgress.js'
 import {
   clearLocalAiNotice,
   downloadLocalAiModelNow,
@@ -49,6 +50,7 @@ import {
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 
 import { RECORDING_BARS, sampleAmp } from '@/components/useAudioRecorderModal'
+import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
 import { hapticMedium, hapticSelection, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import {
   cancelLocalAiTask,
@@ -63,6 +65,8 @@ import {
   transcribeAudioFile,
   translateParagraphs,
 } from '@/lib/localAi/qvacAdapter'
+import { getRewriteDiff } from '@/lib/localAi/rewriteChanges'
+import { SHORTER_TARGET_RATIO } from '@/lib/localAi/workProgress'
 
 import ExpoLocalAi from '../../modules/expo-local-ai'
 
@@ -262,7 +266,7 @@ export function useVoiceTypingSheet({
   const [isLive, setIsLive] = useState(false)
   const [error, setError] = useState<VoiceTypingError | null>(null)
   const [isPresented, setIsPresented] = useState(visible)
-  const [pageProgress, setPageProgress] = useState<{ page: number; total: number } | null>(null)
+  const { workView, beginWork, endWork } = useLocalAiWorkProgress()
   const [summary, setSummary] = useState<TranscriptSummary | null>(null)
   const [summaryPhase, setSummaryPhase] = useState<SummaryPhase>('idle')
   const [keyPoints, setKeyPoints] = useState<string[]>([])
@@ -384,23 +388,27 @@ export function useVoiceTypingSheet({
       const controller = new AbortController()
       abortRef.current = controller
       setError(null)
-      setPageProgress(null)
       resetSummary()
+      const isPdf = uri.toLowerCase().endsWith('.pdf')
+      const onProgress = beginWork(
+        mode === 'describe'
+          ? WORK_KIND.DESCRIBE
+          : mode !== 'extract'
+            ? WORK_KIND.TRANSCRIBE
+            : isPdf
+              ? WORK_KIND.EXTRACT_PDF
+              : WORK_KIND.EXTRACT_IMAGE,
+      )
       updatePhase('transcribing')
       try {
         const result =
           mode === 'describe'
-            ? await describeImage(uri)
+            ? await describeImage(uri, { onProgress })
             : mode !== 'extract'
-              ? await transcribeAudioFile(uri, feature, featureConfig ?? {})
-              : uri.toLowerCase().endsWith('.pdf')
-                ? await extractTextFromPdf(uri, {
-                    signal: controller.signal,
-                    onProgress: (progress) => {
-                      if (runId === runIdRef.current) setPageProgress(progress)
-                    },
-                  })
-                : await extractTextFromImage(uri)
+              ? await transcribeAudioFile(uri, feature, featureConfig ?? {}, { onProgress })
+              : isPdf
+                ? await extractTextFromPdf(uri, { signal: controller.signal, onProgress })
+                : await extractTextFromImage(uri, { onProgress })
         if (runId !== runIdRef.current) return
         if (!result) {
           failWith('empty')
@@ -416,16 +424,19 @@ export function useVoiceTypingSheet({
         if (deleteAfter) deleteLocalFile(uri)
       }
     },
-    [failWith, feature, featureConfig, mode, resetSummary, updatePhase],
+    [beginWork, failWith, feature, featureConfig, mode, resetSummary, updatePhase],
   )
 
   const runTranslation = useCallback(async () => {
     const request = translateRequestRef.current
     if (!request) return
     const runId = runIdRef.current
+    const onProgress = beginWork(WORK_KIND.TRANSLATE)
     updatePhase('transcribing')
     try {
-      const translations = await translateParagraphs(paragraphs, request.source, request.target)
+      const translations = await translateParagraphs(paragraphs, request.source, request.target, {
+        onProgress,
+      })
       if (runId !== runIdRef.current) return
       const result = translations
         .map((line) => String(line ?? '').trim())
@@ -442,7 +453,7 @@ export function useVoiceTypingSheet({
       if (runId !== runIdRef.current) return
       failWith('failed', error)
     }
-  }, [failWith, paragraphs, updatePhase])
+  }, [beginWork, failWith, paragraphs, updatePhase])
 
   const checkDownload = useCallback(() => {
     if (phaseRef.current !== 'downloading' && phaseRef.current !== 'waiting') return
@@ -534,9 +545,13 @@ export function useVoiceTypingSheet({
       failWith('tooLong')
       return
     }
+    const onProgress = beginWork(isRewriteTask(task) ? WORK_KIND.REWRITE : WORK_KIND.NOTE_TASK, {
+      input,
+      targetRatio: mode === 'makeShorter' ? SHORTER_TARGET_RATIO : 1,
+    })
     updatePhase('transcribing')
     try {
-      const output = await runNoteTask(task, input, summaryConfig ?? {})
+      const output = await runNoteTask(task, input, summaryConfig ?? {}, { onProgress })
       if (runId !== runIdRef.current) return
       let result = ''
       if (mode === 'summarizeNote') {
@@ -567,7 +582,7 @@ export function useVoiceTypingSheet({
       if (runId !== runIdRef.current) return
       failWith('failed', error)
     }
-  }, [failWith, mode, paragraphs, resetSummary, scope, summaryConfig, updatePhase])
+  }, [beginWork, failWith, mode, paragraphs, resetSummary, scope, summaryConfig, updatePhase])
 
   const startBars = useCallback(
     (sample: () => number) => {
@@ -670,9 +685,12 @@ export function useVoiceTypingSheet({
     runIdRef.current += 1
     const runId = runIdRef.current
     setError(null)
+    const onProgress = beginWork(WORK_KIND.TRANSCRIBE)
     updatePhase('transcribing')
     try {
-      const transcript = await transcribeAudioFile(saved.uri, feature, featureConfig ?? {})
+      const transcript = await transcribeAudioFile(saved.uri, feature, featureConfig ?? {}, {
+        onProgress,
+      })
       if (runId !== runIdRef.current) return
       if (!transcript) {
         failWith('dictationFailed')
@@ -686,7 +704,7 @@ export function useVoiceTypingSheet({
       if (runId !== runIdRef.current) return
       failWith('dictationFailed', error)
     }
-  }, [discardSavedAudio, failWith, feature, featureConfig, updatePhase])
+  }, [beginWork, discardSavedAudio, failWith, feature, featureConfig, updatePhase])
 
   const finishLive = useCallback(
     async (live: LiveTranscription, durationMs: number) => {
@@ -752,7 +770,7 @@ export function useVoiceTypingSheet({
     setError(null)
     setElapsed(0)
     setKeyPoints([])
-    setPageProgress(null)
+    endWork()
     resetSummary()
     if (mode === 'translate') {
       beginTranslate()
@@ -922,6 +940,18 @@ export function useVoiceTypingSheet({
     [keyPoints, mode, onInsert, sourceUri, summary, targetLanguage, text, updatePhase, usesSource],
   )
 
+  useEffect(() => {
+    if (phase !== 'transcribing') endWork()
+  }, [endWork, phase])
+
+  const rewriteDiff = useMemo(
+    () =>
+      phase === 'preview' && scope === 'selection' && isRewriteMode(mode) && text
+        ? getRewriteDiff(paragraphs.join('\n'), text)
+        : null,
+    [mode, paragraphs, phase, scope, text],
+  )
+
   const handleOpenSettings = useCallback(() => {
     Linking.openSettings().catch(() => {})
   }, [])
@@ -933,11 +963,12 @@ export function useVoiceTypingSheet({
     liveText,
     isLive,
     error,
-    pageProgress,
+    workView,
     summary,
     summaryPhase,
     canSummarize: summaryAvailable && mode === 'transcribe' && phase === 'preview',
     canReplace: scope === 'selection' && (mode === 'translate' || isRewriteMode(mode)),
+    rewriteDiff,
     sourceLanguage,
     targetLanguage,
     translateLanguages: TRANSLATE_LANGUAGES,

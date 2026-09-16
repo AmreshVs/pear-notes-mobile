@@ -9,7 +9,9 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { GlassView } from '@/components/GlassView'
 import { LocalAiProcessing } from '@/components/LocalAiProcessing'
+import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { RecordingWaveBar } from '@/components/RecordingWaveBar'
+import { RewriteChanges } from '@/components/RewriteChanges'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   fmtTimer,
@@ -32,6 +34,7 @@ import {
   FontWeight,
   Layout,
   Radii,
+  UI_ICON_SIZE_12,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_SIZE_2,
@@ -177,11 +180,12 @@ export function VoiceTypingSheet({
     liveText,
     isLive,
     error,
-    pageProgress,
+    workView,
     summary,
     summaryPhase,
     canSummarize,
     canReplace,
+    rewriteDiff,
     sourceLanguage,
     targetLanguage,
     translateLanguages,
@@ -249,7 +253,9 @@ export function VoiceTypingSheet({
     phase === 'downloading' ||
     phase === 'preparing' ||
     (phase === 'idle' && mode !== 'dictate')
-  const showGeneratedDisclaimer = mode === 'keyPoints' || mode === 'suggestTitle' || canReplace
+  const rewriteUnchanged = phase === 'preview' && !!rewriteDiff?.unchanged
+  const showGeneratedDisclaimer =
+    (mode === 'keyPoints' || mode === 'suggestTitle' || canReplace) && !rewriteUnchanged
   const showReportLink =
     mode === 'describe' ||
     mode === 'translate' ||
@@ -257,8 +263,13 @@ export function VoiceTypingSheet({
     mode === 'keyPoints' ||
     canReplace ||
     !!summary
-  const subtitle =
-    phase === 'preview' && insertBlocked
+  const title = rewriteUnchanged
+    ? t('localAi.rewriteChanges.noChangesTitle')
+    : t(keys.title, heroParams)
+  const isWorking = phase === 'transcribing' || (phase === 'idle' && mode !== 'dictate')
+  const subtitle = rewriteUnchanged
+    ? t('localAi.rewriteChanges.noChangesSubtitle')
+    : phase === 'preview' && insertBlocked
       ? t('localAi.conflictBlocked')
       : t(keys.subtitle, heroParams)
 
@@ -295,8 +306,20 @@ export function VoiceTypingSheet({
           />
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.title}>{t(keys.title, heroParams)}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+          <Text style={styles.title}>{title}</Text>
+          {isWorking ? (
+            <View style={styles.onDeviceRow}>
+              <SymbolView
+                name="checkmark.shield.fill"
+                size={UI_ICON_SIZE_12}
+                tintColor={colors.textSecondary}
+                weight="semibold"
+              />
+              <Text style={styles.subtitle}>{t('localAi.work.onDevice')}</Text>
+            </View>
+          ) : (
+            <Text style={styles.subtitle}>{subtitle}</Text>
+          )}
         </View>
         <Pressable
           hitSlop={12}
@@ -409,15 +432,25 @@ export function VoiceTypingSheet({
         </View>
       )}
 
-      {showProcessing && (
-        <LocalAiProcessing
-          color={colors.primary}
-          captionColor={colors.textSecondary}
-          caption={pageProgress ? t('localAi.extractText.pageProgress', pageProgress) : null}
+      {showProcessing && workView && (
+        <LocalAiWorkProgress view={workView} languageName={languageName} />
+      )}
+
+      {showProcessing && !workView && (
+        <LocalAiProcessing color={colors.primary} captionColor={colors.textSecondary} />
+      )}
+
+      {phase === 'preview' && rewriteDiff && (
+        <RewriteChanges
+          key={text}
+          diff={rewriteDiff}
+          resultText={text}
+          showFixCount={mode === 'fixGrammar'}
+          maxHeight={windowHeight * PREVIEW_MAX_HEIGHT_RATIO}
         />
       )}
 
-      {phase === 'preview' && (
+      {phase === 'preview' && !rewriteDiff && (
         <ScrollView
           style={[styles.previewCard, { maxHeight: windowHeight * PREVIEW_MAX_HEIGHT_RATIO }]}
           contentContainerStyle={styles.previewContent}
@@ -542,6 +575,13 @@ export function VoiceTypingSheet({
               style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
             >
               <Text style={styles.primaryButtonText}>{t('localAi.actions.downloadNow')}</Text>
+            </Pressable>
+          ) : rewriteUnchanged ? (
+            <Pressable
+              onPress={handleClose}
+              style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed]}
+            >
+              <Text style={styles.primaryButtonText}>{t('common.done')}</Text>
             </Pressable>
           ) : phase === 'preview' && canReplace ? (
             <>
@@ -756,6 +796,11 @@ const useStyles = createThemedStylesheet((theme) => {
       lineHeight: 20,
       fontFamily: FontFamily.regular,
       color: theme.colors.textSecondary,
+    },
+    onDeviceRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_4,
     },
     closeButton: {
       width: UI_SIZE_32,
