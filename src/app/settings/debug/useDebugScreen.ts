@@ -1,33 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useTranslation } from 'react-i18next'
 
 import {
   captureDebugSnapshot,
   copyDebugReport,
   type DebugSnapshot,
-  resetStalledMedia,
   shareDebugReport,
-  type StalledMediaResetSummary,
 } from '@/lib/debugSnapshot'
 
 const POLL_INTERVAL_MS = 2000
 const COPIED_RESET_MS = 2000
 
-function describeReset(
-  summary: StalledMediaResetSummary,
-  t: ReturnType<typeof useTranslation>['t'],
-): string {
-  if (summary.error) return summary.error
-  if (summary.reset === 0 && summary.skipped === 0) return t('debug.unblockMediaNothing')
-  const reset = t('debug.unblockMediaReset', { count: summary.reset })
-  if (summary.skipped === 0) return reset
-  return `${reset} ${t('debug.unblockMediaSkipped', { count: summary.skipped, reasons: summary.reasons.join(', ') })}`
-}
-
 export function useDebugScreen() {
-  const { t } = useTranslation()
-  const [unblocking, setUnblocking] = useState(false)
-  const [notice, setNotice] = useState('')
   const [snapshot, setSnapshot] = useState<DebugSnapshot | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
@@ -93,30 +76,13 @@ export function useDebugScreen() {
     }
   }, [snapshot])
 
-  const handleUnblockMedia = useCallback(async () => {
-    setUnblocking(true)
-    const summary = await resetStalledMedia().catch((e) => ({
-      reset: 0,
-      skipped: 0,
-      reasons: [],
-      error: String((e as Error)?.message || e),
-    }))
-    if (!mountedRef.current) return
-    setNotice(describeReset(summary, t))
-    setUnblocking(false)
-    await load(true)
-  }, [load, t])
-
   return {
     snapshot,
     error,
     copied,
     refreshing,
-    unblocking,
-    notice,
     handleRefresh,
     handleCopy,
     handleShare,
-    handleUnblockMedia,
   }
 }

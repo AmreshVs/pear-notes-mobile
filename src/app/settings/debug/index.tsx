@@ -32,18 +32,8 @@ export default function DebugScreen() {
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const { colors } = useTheme()
-  const {
-    snapshot,
-    error,
-    copied,
-    refreshing,
-    unblocking,
-    notice,
-    handleRefresh,
-    handleCopy,
-    handleShare,
-    handleUnblockMedia,
-  } = useDebugScreen()
+  const { snapshot, error, copied, refreshing, handleRefresh, handleCopy, handleShare } =
+    useDebugScreen()
 
   const renderRow = useCallback(
     (row: DebugRow) => (
@@ -129,27 +119,7 @@ export default function DebugScreen() {
           <SymbolIcon name="arrow.clockwise" size={UI_ICON_SIZE_15} color={colors.primary} />
           <Text style={styles.secondaryButtonText}>{t('debug.refresh')}</Text>
         </Pressable>
-        <Pressable
-          onPress={handleUnblockMedia}
-          disabled={unblocking}
-          style={styles.secondaryButton}
-        >
-          <SymbolIcon
-            name="arrow.triangle.2.circlepath"
-            size={UI_ICON_SIZE_15}
-            color={colors.primary}
-          />
-          <Text style={styles.secondaryButtonText}>
-            {unblocking ? t('debug.unblockingMedia') : t('debug.unblockMedia')}
-          </Text>
-        </Pressable>
       </RNView>
-
-      {notice ? (
-        <RNView style={styles.errorBox}>
-          <Text style={styles.errorText}>{notice}</Text>
-        </RNView>
-      ) : null}
 
       {error ? (
         <RNView style={styles.errorBox}>

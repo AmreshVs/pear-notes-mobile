@@ -15,6 +15,8 @@ const TIMESTAMP_KEYS = [
   'lastWakeAt',
   'backgroundServiceFailedAt',
   'activityOldestAt',
+  'mediaLastRebuildAt',
+  'mediaHealthCheckedAt',
 ]
 
 export function shortenHex(value: string): string {
