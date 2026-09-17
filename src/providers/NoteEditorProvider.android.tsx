@@ -51,6 +51,7 @@ import type {
   TranscriptSummary,
   VoiceTypingMode,
 } from '@/components/useVoiceTypingSheet'
+import { VoiceTypingBar } from '@/components/VoiceTypingBar'
 import { VoiceTypingSheet } from '@/components/VoiceTypingSheet'
 import {
   FontFamily,
@@ -255,6 +256,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
+  const [dictationActive, setDictationActive] = useState(false)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
   const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
   const [voiceParagraphs, setVoiceParagraphs] = useState<string[] | null>(null)
@@ -516,8 +518,39 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleVoiceTyping = useCallback(() => {
     Keyboard.dismiss()
     editorRef.current?.blur()
-    openVoiceSheet('dictate')
-  }, [editorRef, openVoiceSheet])
+    editorRef.current?.startDictation()
+    setDictationActive(true)
+  }, [editorRef])
+
+  const handleDictationText = useCallback(
+    (text: string) => {
+      editorRef.current?.updateDictation(text)
+    },
+    [editorRef],
+  )
+
+  const handleDictationCommit = useCallback(
+    (text: string) => {
+      editorRef.current?.updateDictation(text)
+      editorRef.current?.endDictation(true)
+      setDictationActive(false)
+    },
+    [editorRef],
+  )
+
+  const handleDictationCancel = useCallback(() => {
+    editorRef.current?.endDictation(false)
+    setDictationActive(false)
+  }, [editorRef])
+
+  const handleDictationAttachAudio = useCallback(
+    (uri: string, durationMs: number) => {
+      editorRef.current?.endDictation(true)
+      setDictationActive(false)
+      handleRecordingDone(uri, durationMs)
+    },
+    [editorRef, handleRecordingDone],
+  )
 
   const openSourceSheet = useCallback(
     async (mode: VoiceTypingMode, src: string, fileName: string, downloadErrorKey: string) => {
@@ -1106,7 +1139,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <EdgeFade color={c.background} placement="bottom" />
         </View>
 
-        {!isNoteLocked && (
+        {!isNoteLocked && !dictationActive && (
           <EditorToolbar
             isActive={isActive}
             editorRef={editorRef}
@@ -1337,6 +1370,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           transcriptAvailable={transcribeReady}
           onDone={handleRecorderDone}
           onCancel={() => setIsRecorderVisible(false)}
+        />
+      )}
+
+      {LOCAL_AI_ENABLED && dictationActive && (
+        <VoiceTypingBar
+          visible={dictationActive}
+          onLiveText={handleDictationText}
+          onCommit={handleDictationCommit}
+          onCancel={handleDictationCancel}
+          onAttachAudio={handleDictationAttachAudio}
         />
       )}
 

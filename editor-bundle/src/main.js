@@ -327,13 +327,25 @@ const ImageWithSize = Image.extend({
     return ({ node, getPos, view }) => {
       const wrapper = document.createElement('div')
       wrapper.style.cssText =
-        'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
+        'display: block; cursor: pointer; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-user-drag: none;'
       wrapper.addEventListener('mousedown', (e) => {
         e.preventDefault()
       })
       wrapper.addEventListener('contextmenu', (e) => {
         e.preventDefault()
       })
+
+      // ProseMirror marks the node view draggable because the image node spec is,
+      // and Android's WebView answers a long press on a draggable element by
+      // lifting a drag shadow that follows the finger. The action sheet is the
+      // only thing a long press should do here.
+      const blockDrag = (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        return false
+      }
+      wrapper.addEventListener('dragstart', blockDrag)
+      wrapper.addEventListener('drag', blockDrag)
 
       let longPressTimer = null
       let didLongPress = false
@@ -438,11 +450,13 @@ const ImageWithSize = Image.extend({
       if (node.attrs.height)
         img.style.height =
           typeof node.attrs.height === 'number' ? `${node.attrs.height}px` : node.attrs.height
-      img.style.cssText += 'display: block; max-width: 100%; height: auto; border-radius: 8px;'
+      img.style.cssText +=
+        'display: block; max-width: 100%; height: auto; border-radius: 8px; -webkit-user-drag: none;'
       img.draggable = false
 
       inner.appendChild(img)
       wrapper.appendChild(inner)
+      wrapper.draggable = false
       return {
         dom: wrapper,
         stopEvent: () => true,
@@ -565,6 +579,40 @@ function resumeCaretAutoscroll() {
   caretAutoscrollSuspended = false
 }
 
+// Dictation writes straight into the document while the editor is blurred, so
+// there is no native caret to watch. This draws one at the insertion point.
+let dictation = null
+let dictationCaretEl = null
+
+function moveDictationCaret() {
+  if (!dictation || !editor || editor.isDestroyed) return
+  if (!dictationCaretEl) {
+    dictationCaretEl = document.createElement('div')
+    dictationCaretEl.className = 'dictation-caret'
+    document.body.appendChild(dictationCaretEl)
+  }
+  try {
+    const pos = Math.min(dictation.from + dictation.length, editor.state.doc.content.size)
+    const coords = editor.view.coordsAtPos(pos)
+    dictationCaretEl.style.left = coords.left + 'px'
+    dictationCaretEl.style.top = coords.top + 'px'
+    dictationCaretEl.style.height = Math.max(14, coords.bottom - coords.top) + 'px'
+  } catch (_) {}
+}
+
+function removeDictationCaret() {
+  if (!dictationCaretEl) return
+  dictationCaretEl.remove()
+  dictationCaretEl = null
+}
+
+function dictationRange() {
+  const size = editor.state.doc.content.size
+  const from = Math.max(0, Math.min(dictation.from, size))
+  const to = Math.max(from, Math.min(from + dictation.length, size))
+  return { from, to }
+}
+
 function keepCaretVisible() {
   if (!caretScrollFrame) {
     caretScrollFrame = requestAnimationFrame(() => {
@@ -575,6 +623,11 @@ function keepCaretVisible() {
   clearTimeout(caretScrollTimer)
   caretScrollTimer = setTimeout(adjustCaretScroll, CARET_RECHECK_DELAY_MS)
 }
+
+window.addEventListener('scroll', () => dictation && moveDictationCaret(), {
+  passive: true,
+  capture: true,
+})
 
 window.addEventListener(
   'scroll',
@@ -1805,6 +1858,55 @@ window.editorBridge = {
         } else {
           editor.chain().insertContentAt(blockEndAfter(doc, to), paragraphNodes(lines)).run()
         }
+        flushContentChange(editor.getHTML(), editor.getText())
+        break
+      }
+
+      case 'dictationStart': {
+        const { doc, selection } = editor.state
+        const size = doc.content.size
+        const raw = selection.empty ? selection.from : selection.to
+        const at = Number.isFinite(raw) && raw > 0 ? Math.min(raw, size) : size
+        const before = at > 0 ? doc.textBetween(Math.max(0, at - 1), at) : ''
+        dictation = { from: at, length: 0, prefix: before.trim() ? ' ' : '' }
+        moveDictationCaret()
+        keepCaretVisible()
+        break
+      }
+
+      case 'dictationUpdate': {
+        if (!dictation) break
+        const spoken = typeof msg.text === 'string' ? msg.text.replace(/\s+/g, ' ').trim() : ''
+        const text = spoken ? dictation.prefix + spoken : ''
+        const { from, to } = dictationRange()
+        if (!text && to === from) break
+        const tr = editor.state.tr
+        if (text) tr.insertText(text, from, to)
+        else tr.delete(from, to)
+        dictation.length = text.length
+        tr.setSelection(Selection.near(tr.doc.resolve(from + text.length)))
+        editor.view.dispatch(tr)
+        moveDictationCaret()
+        resumeCaretAutoscroll()
+        keepCaretVisible()
+        break
+      }
+
+      case 'dictationEnd': {
+        if (!dictation) {
+          removeDictationCaret()
+          break
+        }
+        if (msg.commit === false) {
+          const { from, to } = dictationRange()
+          if (to > from) {
+            const tr = editor.state.tr.delete(from, to)
+            tr.setSelection(Selection.near(tr.doc.resolve(from)))
+            editor.view.dispatch(tr)
+          }
+        }
+        dictation = null
+        removeDictationCaret()
         flushContentChange(editor.getHTML(), editor.getText())
         break
       }

@@ -102,6 +102,9 @@ export interface TiptapEditorHandle {
   getSelection: (allowRemembered?: boolean) => Promise<EditorSelection | null>
   replaceRange: (from: number, to: number, expected: string, text: string) => void
   insertParagraphsAfter: (pos: number, text: string) => void
+  startDictation: () => void
+  updateDictation: (text: string) => void
+  endDictation: (commit: boolean) => void
   insertCaption: (src: string | null, text: string) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
@@ -663,6 +666,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'replaceRange', from, to, expected, text }),
         insertParagraphsAfter: (pos, text) =>
           sendCommand({ type: 'insertParagraphsAfter', pos, text }),
+        startDictation: () => sendCommand({ type: 'dictationStart' }),
+        updateDictation: (text) => sendCommand({ type: 'dictationUpdate', text }),
+        endDictation: (commit) => sendCommand({ type: 'dictationEnd', commit }),
         insertCaption: (src, text) => sendCommand({ type: 'insertCaption', src, text }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => {

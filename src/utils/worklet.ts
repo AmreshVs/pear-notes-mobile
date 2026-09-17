@@ -26,6 +26,7 @@ interface StartWorkletOptions {
 }
 
 let _activeWorklet: any = null
+const _deliberateTerminations = new WeakSet<object>()
 let _appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null
 let _foregroundServiceActive = false
 let _keepAliveTimer: ReturnType<typeof setInterval> | null = null
@@ -162,6 +163,7 @@ export function terminateWorkletIfActive(worklet: any): boolean {
   _appStateSubscription?.remove()
   _appStateSubscription = null
   _activeWorklet = null
+  _deliberateTerminations.add(worklet)
 
   try {
     worklet.terminate()
@@ -250,12 +252,14 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
 
   if (_activeWorklet) {
     logLifecycle('startWorklet -> terminating the previous worklet', workletState(_activeWorklet))
+    const previous = _activeWorklet
+    _activeWorklet = null
+    _deliberateTerminations.add(previous)
     try {
-      _activeWorklet.terminate()
+      previous.terminate()
     } catch (err) {
       console.error('[lifecycle] app failed to terminate the previous worklet', err)
     }
-    _activeWorklet = null
   }
 
   if (_foregroundServiceActive) {
@@ -271,6 +275,20 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
   const worklet = new Worklet()
   _activeWorklet = worklet
   logLifecycle('startWorklet -> booting a new worklet')
+
+  // The native side calls terminate() when the Bare worklet exits on its own.
+  // Without this listener a backend that dies in the foreground is invisible:
+  // every pending hrpc request stays unresolved forever, so the app still reads
+  // whatever the store already holds but can no longer save, delete or create.
+  worklet.on('terminate', () => {
+    if (_deliberateTerminations.has(worklet)) return
+    if (_activeWorklet !== worklet) return
+    logLifecycle('worklet terminated on its own -> restarting', workletState(worklet))
+    _activeWorklet = null
+    stopKeepAlive()
+    options?.onWorkletDied?.()
+  })
+
   worklet.start('app:/main.bundle', require('../backend/backend.bundle'), [storagePath])
 
   attachAppStateHandler(worklet, options)
