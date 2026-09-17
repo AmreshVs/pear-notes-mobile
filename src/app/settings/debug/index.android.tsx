@@ -38,8 +38,18 @@ export default function DebugScreenAndroid() {
   const styles = useStyles()
   const { colors } = useMD3Theme()
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
-  const { snapshot, error, copied, refreshing, handleRefresh, handleCopy, handleShare } =
-    useDebugScreen()
+  const {
+    snapshot,
+    error,
+    copied,
+    refreshing,
+    unblocking,
+    notice,
+    handleRefresh,
+    handleCopy,
+    handleShare,
+    handleUnblockMedia,
+  } = useDebugScreen()
 
   const handleBack = useCallback(() => router.back(), [])
 
@@ -149,7 +159,24 @@ export default function DebugScreenAndroid() {
             <MaterialCommunityIcons name="refresh" size={UI_ICON_SIZE_18} color={colors.primary} />
             <Text style={styles.secondaryButtonText}>{t('debug.refresh')}</Text>
           </Pressable>
+          <Pressable
+            onPress={handleUnblockMedia}
+            disabled={unblocking}
+            android_ripple={ripple}
+            style={styles.secondaryButton}
+          >
+            <MaterialCommunityIcons name="sync" size={UI_ICON_SIZE_18} color={colors.primary} />
+            <Text style={styles.secondaryButtonText}>
+              {unblocking ? t('debug.unblockingMedia') : t('debug.unblockMedia')}
+            </Text>
+          </Pressable>
         </View>
+
+        {notice ? (
+          <View style={styles.errorBox}>
+            <Text style={styles.errorText}>{notice}</Text>
+          </View>
+        ) : null}
 
         {error ? (
           <View style={styles.errorBox}>

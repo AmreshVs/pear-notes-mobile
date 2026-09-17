@@ -4,7 +4,7 @@ import Constants from 'expo-constants'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { appBoot } from '@pear-notes/core/bootTimeline.js'
-import { formatDebugReport } from '@pear-notes/core/utils.js'
+import { formatDebugReport, summarizeStalledMediaReset } from '@pear-notes/core/utils.js'
 
 import { getAppBuildNumber, getAppVersionLabel } from './appVersion'
 
@@ -34,6 +34,17 @@ export async function captureDebugSnapshot({ heavy = false } = {}): Promise<Debu
     app: appSection(),
     appBoot: appBoot.snapshot(),
   }
+}
+
+export type StalledMediaResetSummary = {
+  reset: number
+  skipped: number
+  reasons: string[]
+  error: string
+}
+
+export async function resetStalledMedia(): Promise<StalledMediaResetSummary> {
+  return summarizeStalledMediaReset(await backendApi.resetStalledMedia())
 }
 
 export function buildDebugReport(snapshot: DebugSnapshot | null): string {
