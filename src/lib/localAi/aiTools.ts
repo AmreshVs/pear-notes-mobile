@@ -1,6 +1,7 @@
 import { Keyboard } from 'react-native'
 
 import type { VoiceTypingMode } from '@/components/useVoiceTypingSheet'
+import { dismissKeyboard, KEYBOARD_HIDE_TIMEOUT_MS } from '@/lib/keyboard'
 
 export type AiToolScope = 'note' | 'selection'
 export type AiToolGroup = 'ask' | 'edit' | 'understand' | 'note'
@@ -28,8 +29,6 @@ const REWRITE_TOOL_MODES: VoiceTypingMode[] = [
   'makeProfessional',
   'makeFriendly',
 ]
-
-const KEYBOARD_HIDE_TIMEOUT_MS = 450
 
 const tool = (
   mode: AiToolMode,
@@ -94,6 +93,6 @@ export function hideKeyboard(blur: () => void): Promise<void> {
     }
     const subscription = Keyboard.addListener('keyboardDidHide', finish)
     const timer = setTimeout(finish, KEYBOARD_HIDE_TIMEOUT_MS)
-    Keyboard.dismiss()
+    dismissKeyboard()
   })
 }

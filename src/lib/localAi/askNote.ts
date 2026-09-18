@@ -1,6 +1,7 @@
 import {
   applyTextEdits,
   ASK_KIND,
+  ASK_QUESTION_MAX_CHARS as CORE_ASK_QUESTION_MAX_CHARS,
   createAskTurn,
   getAskHistory as getCoreAskHistory,
   getAskScopeInfo as getCoreAskScopeInfo,
@@ -15,7 +16,15 @@ import type { RewriteDiff } from '@/lib/localAi/rewriteChanges'
 export type AskScope = 'selection' | 'note'
 export type AskKind = (typeof ASK_KIND)[keyof typeof ASK_KIND]
 export type AskTurnStatus = 'working' | 'done' | 'failed'
-export type AskError = 'failed' | 'notEnoughMemory' | 'unstable' | 'noMatch'
+export type AskError =
+  | 'failed'
+  | 'notEnoughMemory'
+  | 'unstable'
+  | 'noMatch'
+  | 'unchanged'
+  | 'unreliable'
+  | 'formatting'
+  | 'newBlock'
 
 export interface AskTurnView {
   id: number
@@ -40,6 +49,7 @@ export interface AskScopeInfo {
 export interface AskApplyRequest {
   scope: AskScope
   edits: NoteTextEdit[]
+  replaceText: string | null
   lengthDelta: number
 }
 
@@ -52,8 +62,18 @@ export interface AskNoteSheetProps {
   onClose: () => void
 }
 
-export const ASK_KINDS = ASK_KIND as Record<'ANSWER' | 'EDITS' | 'NOT_FOUND', AskKind>
+export const ASK_KINDS = ASK_KIND as Record<'ANSWER' | 'EDITS' | 'REWRITE' | 'NOT_FOUND', AskKind>
+
+export const canApplyAskTurn = (turn: AskTurnView, scope: AskScope) =>
+  turn.editedText !== null &&
+  (turn.kind === ASK_KINDS.EDITS || (turn.kind === ASK_KINDS.REWRITE && scope === 'selection'))
+
+export function replaceOnce(text: string, find: string, replace: string) {
+  const index = text.indexOf(find)
+  return index === -1 ? text : `${text.slice(0, index)}${replace}${text.slice(index + find.length)}`
+}
 export const ASK_MAX_CHARACTERS = SUMMARY_MAX_TRANSCRIPT_CHARS as number
+export const ASK_QUESTION_MAX_CHARS = CORE_ASK_QUESTION_MAX_CHARS as number
 
 export const createWorkingTurn = (id: number, question: string) =>
   createAskTurn(id, question) as AskTurnView

@@ -43,8 +43,10 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 import {
   ASK_KINDS,
   ASK_MAX_CHARACTERS,
+  ASK_QUESTION_MAX_CHARS,
   type AskNoteSheetProps,
   type AskTurnView,
+  canApplyAskTurn,
 } from '@/lib/localAi/askNote'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -58,6 +60,10 @@ const THREAD_MAX_HEIGHT_RATIO = 0.5
 const DIFF_MAX_HEIGHT_RATIO = 0.3
 const INPUT_MAX_LINES_HEIGHT = 120
 const NUMBER_FORMAT = new Intl.NumberFormat()
+const APPLY_LABELS = {
+  edits: { idle: 'localAi.ask.apply', done: 'localAi.ask.applied' },
+  rewrite: { idle: 'localAi.ask.replaceSelection', done: 'localAi.ask.replaced' },
+} as const
 
 const noopLanguageName = (code: string | null) => code ?? ''
 
@@ -88,6 +94,7 @@ export function AskNoteSheet({
     busy,
     canSend,
     droppedTurns,
+    emptySource,
     copiedId,
     handleSend,
     handleToggleScope,
@@ -122,12 +129,15 @@ export function AskNoteSheet({
           </View>
         )
       }
-      if (turn.kind === ASK_KINDS.EDITS && turn.diff && turn.editedText !== null) {
+      if (turn.diff && turn.editedText !== null && canApplyAskTurn(turn, scope)) {
+        const isRewrite = turn.kind === ASK_KINDS.REWRITE
         const disabled = turn.applied || insertBlocked || busy
         return (
           <View style={styles.editsBlock}>
             <Text style={styles.editsTitle}>
-              {t('localAi.ask.editsTitle', { count: turn.edits.length })}
+              {isRewrite
+                ? t('localAi.ask.rewriteTitle')
+                : t('localAi.ask.editsTitle', { count: turn.edits.length })}
             </Text>
             <RewriteChanges
               diff={turn.diff}
@@ -158,18 +168,16 @@ export function AskNoteSheet({
                 />
               )}
               <Text style={[styles.applyText, turn.applied && styles.appliedText]}>
-                {t(turn.applied ? 'localAi.ask.applied' : 'localAi.ask.apply')}
+                {t(APPLY_LABELS[isRewrite ? 'rewrite' : 'edits'][turn.applied ? 'done' : 'idle'])}
               </Text>
             </Pressable>
           </View>
         )
       }
       const notFound = turn.kind === ASK_KINDS.NOT_FOUND
-      const answer =
-        turn.error === 'noMatch'
-          ? t('localAi.ask.errors.noMatch')
-          : turn.answer ||
-            t(notFound ? 'localAi.ask.notFoundFallback' : 'localAi.ask.errors.failed')
+      const answer = turn.error
+        ? t(`localAi.ask.errors.${turn.error}`)
+        : turn.answer || t(notFound ? 'localAi.ask.notFoundFallback' : 'localAi.ask.errors.failed')
       const copied = copiedId === turn.id
       return (
         <View style={[styles.answerCard, notFound && styles.answerCardMuted]}>
@@ -207,6 +215,7 @@ export function AskNoteSheet({
       handleCopy,
       insertBlocked,
       mutedColor,
+      scope,
       ripple,
       styles,
       t,
@@ -304,6 +313,12 @@ export function AskNoteSheet({
 
       {droppedTurns && <Text style={styles.note}>{t('localAi.ask.droppedTurns')}</Text>}
 
+      {emptySource && (
+        <Text style={styles.note}>
+          {t(scope === 'selection' ? 'localAi.ask.emptySelection' : 'localAi.ask.emptyNote')}
+        </Text>
+      )}
+
       <View style={styles.inputRow}>
         <TextInput
           value={question}
@@ -313,6 +328,7 @@ export function AskNoteSheet({
           )}
           placeholderTextColor={mutedColor}
           multiline
+          maxLength={ASK_QUESTION_MAX_CHARS}
           autoFocus
           editable={!busy}
           style={styles.input}

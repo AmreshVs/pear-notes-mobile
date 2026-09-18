@@ -752,8 +752,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleCloseAiTools = useCallback(() => setAiToolsTarget(null), [])
 
   const handleApplyAskEdits = useCallback(
-    ({ scope, edits, lengthDelta }: AskApplyRequest) => {
+    ({ scope, edits, replaceText, lengthDelta }: AskApplyRequest) => {
       const selection = scope === 'selection' ? selectionRef.current : null
+      if (replaceText !== null) {
+        if (!selection) return
+        editorRef.current?.replaceRange(selection.from, selection.to, selection.text, replaceText)
+        selectionRef.current = { ...selection, text: replaceText, to: selection.to + lengthDelta }
+        return
+      }
       editorRef.current?.applyEdits(
         edits,
         selection ? { from: selection.from, to: selection.to } : null,

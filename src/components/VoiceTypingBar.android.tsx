@@ -1,21 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  ActivityIndicator,
-  AppState,
-  type AppStateStatus,
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
-import Animated, {
-  useAnimatedKeyboard,
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import Animated from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -31,8 +17,10 @@ import {
   UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_44,
+  UI_SIZE_64,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useKeyboardAnchoredBottom } from '@/hooks/useKeyboardAnchoredBottom'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
@@ -41,9 +29,10 @@ export function VoiceTypingBar(props: VoiceTypingBarProps) {
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors as any
-  const insets = useSafeAreaInsets()
-  const keyboard = useAnimatedKeyboard()
-  const keyboardTrusted = useSharedValue(0)
+  const containerStyle = useKeyboardAnchoredBottom({
+    gap: UI_SIZE_12,
+    enabled: props.keyboardAnchored ?? true,
+  })
 
   const {
     elapsed,
@@ -61,31 +50,6 @@ export function VoiceTypingBar(props: VoiceTypingBarProps) {
     handleOpenSettings,
     handleAttachAudio,
   } = useVoiceTypingBar(props)
-
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', () => {
-      keyboardTrusted.value = 1
-    })
-    const hide = Keyboard.addListener('keyboardDidHide', () => {
-      keyboardTrusted.value = 0
-    })
-    const appState = AppState.addEventListener('change', (next: AppStateStatus) => {
-      if (next !== 'active') keyboardTrusted.value = 0
-    })
-
-    return () => {
-      show.remove()
-      hide.remove()
-      appState.remove()
-    }
-  }, [keyboardTrusted])
-
-  const containerStyle = useAnimatedStyle(() => ({
-    bottom:
-      keyboardTrusted.value === 1 && keyboard.height.value > 0
-        ? keyboard.height.value + UI_SIZE_12
-        : insets.bottom + UI_SIZE_12,
-  }))
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
@@ -207,6 +171,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       fontFamily: FontFamily.semiBold,
       fontSize: FontSize.body,
       color: c.onSurface,
+      minWidth: UI_SIZE_64,
+      textAlign: 'center',
+      fontVariant: ['tabular-nums'],
     },
     btn: {
       overflow: 'hidden',

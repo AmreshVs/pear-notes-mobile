@@ -336,10 +336,6 @@ const ImageWithSize = Image.extend({
         e.preventDefault()
       })
 
-      // ProseMirror marks the node view draggable because the image node spec is,
-      // and Android's WebView answers a long press on a draggable element by
-      // lifting a drag shadow that follows the finger. The action sheet is the
-      // only thing a long press should do here.
       const blockDrag = (e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -580,8 +576,6 @@ function resumeCaretAutoscroll() {
   caretAutoscrollSuspended = false
 }
 
-// Dictation writes straight into the document while the editor is blurred, so
-// there is no native caret to watch. This draws one at the insertion point.
 let dictation = null
 let dictationCaretEl = null
 
@@ -2082,6 +2076,12 @@ const titleInputEl = document.getElementById('note-title')
 if (titleInputEl) {
   titleInputEl.addEventListener('input', () => {
     sendToRN({ type: 'titleChange', title: titleInputEl.value })
+  })
+  titleInputEl.addEventListener('focus', () => {
+    sendToRN({ type: 'focus' })
+  })
+  titleInputEl.addEventListener('blur', () => {
+    sendToRN({ type: 'blur' })
   })
   titleInputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === 'ArrowDown') {

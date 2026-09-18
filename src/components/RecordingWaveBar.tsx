@@ -6,20 +6,38 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 
-import { RECORDING_BAR_W, RECORDING_BARS } from '@/components/useAudioRecorderModal'
+import {
+  RECORDING_BAR_MIN_RATIO,
+  RECORDING_BAR_PEAK,
+  RECORDING_BAR_REST_RATIO,
+  RECORDING_BAR_W,
+  RECORDING_BARS,
+} from '@/components/useAudioRecorderModal'
 
 interface RecordingWaveBarProps {
   index: number
   values: SharedValue<number[]>
   color: string
   active: boolean
+  width?: number
+  peak?: number
 }
 
-export function RecordingWaveBar({ index, values, color, active }: RecordingWaveBarProps) {
+export function RecordingWaveBar({
+  index,
+  values,
+  color,
+  active,
+  width = RECORDING_BAR_W,
+  peak = RECORDING_BAR_PEAK,
+}: RecordingWaveBarProps) {
   const animatedStyle = useAnimatedStyle(() => {
     const amp = values.value[index] ?? 0.16
+    const minHeight = peak * RECORDING_BAR_MIN_RATIO
+    const restHeight = peak * RECORDING_BAR_REST_RATIO
     return {
-      height: withTiming(active ? Math.max(16, amp * 84) : 20, {
+      width,
+      height: withTiming(active ? Math.max(minHeight, amp * peak) : restHeight, {
         duration: 120,
         easing: Easing.out(Easing.quad),
       }),
@@ -29,14 +47,13 @@ export function RecordingWaveBar({ index, values, color, active }: RecordingWave
         easing: Easing.out(Easing.quad),
       }),
     }
-  }, [active, color, index, values])
+  }, [active, color, index, peak, values, width])
 
   return <Animated.View style={[styles.recordingBar, animatedStyle]} />
 }
 
 const styles = StyleSheet.create({
   recordingBar: {
-    width: RECORDING_BAR_W,
     borderRadius: 999,
   },
 })

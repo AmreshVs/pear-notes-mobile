@@ -9,15 +9,9 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import type { RecordingDoneOptions } from '@/components/AudioRecorderModal'
-import { RecordingWaveBar } from '@/components/RecordingWaveBar'
 import { createThemedStylesheetWithHooks, Text, Theme, useTheme } from '@/components/Themed'
-import {
-  fmtShort,
-  fmtTimer,
-  RECORDING_BAR_GAP,
-  RECORDING_BARS,
-  useAudioRecorderModal,
-} from '@/components/useAudioRecorderModal'
+import { fmtShort, fmtTimer, useAudioRecorderModal } from '@/components/useAudioRecorderModal'
+import { VoiceTypingWave } from '@/components/VoiceTypingWave'
 import {
   FontFamily,
   FontSize,
@@ -29,7 +23,6 @@ import {
   UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_8,
-  UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_16,
@@ -39,7 +32,6 @@ import {
   UI_SIZE_28,
   UI_SIZE_32,
   UI_SIZE_36,
-  UI_SIZE_40,
   UI_SIZE_48,
 } from '@/constants/commonStyles'
 
@@ -51,7 +43,8 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerLowest: string
 }
 
-const TIMELINE_H = 88
+const RECORDING_WAVE_H = 64
+const RECORDING_WAVE_PEAK = 56
 
 interface AudioRecorderModalProps {
   visible: boolean
@@ -79,9 +72,6 @@ interface SheetBodyProps {
   timerMs: number
   timerColor: string
   totalTimelineMs: number
-  recordingWindowStartSec: number
-  recordingMidSec: number
-  recordingEndSec: number
   bottomInset: number
   onCancel: () => void
   onDone: () => void
@@ -113,9 +103,6 @@ function SheetBody({
   timerMs,
   timerColor,
   totalTimelineMs,
-  recordingWindowStartSec,
-  recordingMidSec,
-  recordingEndSec,
   bottomInset,
   onCancel,
   onDone,
@@ -173,40 +160,18 @@ function SheetBody({
 
       <View style={styles.heroBlock}>
         <Text style={styles.heroTitle}>{status.title}</Text>
-        <Text style={styles.heroSubtitle}>{status.subtitle}</Text>
+        {!!status.subtitle && <Text style={styles.heroSubtitle}>{status.subtitle}</Text>}
       </View>
 
       <View style={[styles.timelineWrap, hasRecording && styles.timelineWrapPlayback]}>
         {showRecordingSurface ? (
-          <View style={styles.recordingWave}>
-            <View style={styles.recordingBarsLane}>
-              <View style={styles.recordingBarsRow}>
-                {Array.from({ length: RECORDING_BARS }, (_, index) => (
-                  <RecordingWaveBar
-                    key={index}
-                    active={isRecording}
-                    index={index}
-                    values={liveBars}
-                    color={colors.error}
-                  />
-                ))}
-              </View>
-            </View>
-            <View style={styles.recordingNeedle} pointerEvents="none">
-              <View
-                style={[
-                  styles.recordingNeedleCap,
-                  !isRecording && styles.recordingNeedleCapInactive,
-                ]}
-              />
-              <View
-                style={[
-                  styles.recordingNeedleStem,
-                  !isRecording && styles.recordingNeedleStemInactive,
-                ]}
-              />
-            </View>
-          </View>
+          <VoiceTypingWave
+            values={liveBars}
+            color={colors.error}
+            active={isRecording}
+            height={RECORDING_WAVE_H}
+            peak={RECORDING_WAVE_PEAK}
+          />
         ) : (
           <View style={styles.timelineOuter}>
             <View style={styles.playbackTrackWrap}>
@@ -230,24 +195,9 @@ function SheetBody({
             </View>
           </View>
         )}
-
-        {showRecordingSurface && (
-          <View style={styles.recordingRuler}>
-            <Text style={styles.recordingTick}>
-              {fmtShort(isRecording ? recordingWindowStartSec : 0)}
-            </Text>
-            <Text style={styles.recordingTick}>{fmtShort(isRecording ? recordingMidSec : 0)}</Text>
-            <Text style={styles.recordingTick}>{fmtShort(isRecording ? recordingEndSec : 2)}</Text>
-          </View>
-        )}
       </View>
 
       <View style={styles.timerBlock}>
-        <Text style={styles.timerLabel}>
-          {hasRecording
-            ? t('audioRecorder.timer.playbackPosition')
-            : t('audioRecorder.timer.recordingTime')}
-        </Text>
         <Text style={[styles.timer, { color: timerColor }, isRecording && styles.timerRecording]}>
           {fmtTimer(timerMs)}
         </Text>
@@ -395,9 +345,6 @@ export function AudioRecorderModal({
     isPresented,
     liveBars,
     sheetProgress,
-    recordingWindowStartSec,
-    recordingMidSec,
-    recordingEndSec,
     status,
     handleSheetShow,
     handleRecord,
@@ -470,9 +417,6 @@ export function AudioRecorderModal({
               timerMs={timerMs}
               timerColor={timerColor}
               totalTimelineMs={totalTimelineMs}
-              recordingWindowStartSec={recordingWindowStartSec}
-              recordingMidSec={recordingMidSec}
-              recordingEndSec={recordingEndSec}
               bottomInset={bottomInset}
               onCancel={handleCancelInner}
               onDone={handleDoneInner}
@@ -553,7 +497,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
     },
     heroBlock: {
       alignItems: 'center',
-      marginBottom: UI_SIZE_24,
+      marginBottom: UI_SIZE_16,
     },
     heroTitle: {
       fontSize: FontSize.heading,
@@ -574,66 +518,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       color: theme.colors.textSecondary,
     },
     timelineWrap: {
-      height: TIMELINE_H,
-      marginBottom: UI_SIZE_32,
+      height: RECORDING_WAVE_H,
+      marginBottom: UI_SIZE_16,
       justifyContent: 'center',
     },
     timelineWrapPlayback: {
       height: 72,
-    },
-    recordingWave: {
-      height: 84,
-      justifyContent: 'center',
-      position: 'relative',
-    },
-    recordingBarsLane: {
-      height: 84,
-      overflow: 'hidden',
-    },
-    recordingBarsRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      height: '100%',
-      gap: RECORDING_BAR_GAP,
-    },
-    recordingNeedle: {
-      position: 'absolute',
-      right: 0,
-      top: -4,
-      bottom: -4,
-      width: UI_SIZE_2,
-      alignItems: 'center',
-    },
-    recordingNeedleCap: {
-      width: UI_SIZE_8,
-      height: UI_SIZE_8,
-      borderRadius: UI_SIZE_4,
-      marginBottom: -1,
-      backgroundColor: theme.colors.error,
-    },
-    recordingNeedleCapInactive: {
-      opacity: 0.56,
-    },
-    recordingNeedleStem: {
-      flex: 1,
-      width: UI_SIZE_2,
-      borderRadius: 1,
-      backgroundColor: theme.colors.error,
-    },
-    recordingNeedleStemInactive: {
-      opacity: 0.46,
-    },
-    recordingRuler: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: UI_SIZE_10,
-      paddingHorizontal: UI_SIZE_2,
-    },
-    recordingTick: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.mono,
-      color: theme.colors.textMuted,
     },
     timelineOuter: {
       width: '100%',
@@ -666,24 +556,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
     },
     timerBlock: {
       alignItems: 'center',
-      marginBottom: UI_SIZE_40,
-    },
-    timerLabel: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.bold,
-      fontWeight: FontWeight.bold,
-      textTransform: 'uppercase',
-      letterSpacing: 1.2,
-      marginBottom: UI_SIZE_8,
-      opacity: 0.7,
-      color: theme.colors.textSecondary,
+      marginBottom: UI_SIZE_24,
     },
     timer: {
-      fontSize: 54,
-      lineHeight: 64,
+      fontSize: 28,
+      lineHeight: 36,
       fontWeight: '300',
       fontFamily: FontFamily.mono,
-      letterSpacing: -1,
+      letterSpacing: -0.6,
       includeFontPadding: false,
     },
     timerRecording: {

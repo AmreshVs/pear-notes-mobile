@@ -25,6 +25,9 @@ const RECORDING_WINDOW_MS = 30000
 const RECORDING_BARS = 52
 const RECORDING_BAR_W = 3
 const RECORDING_BAR_GAP = 3
+const RECORDING_BAR_PEAK = 84
+const RECORDING_BAR_MIN_RATIO = 0.19
+const RECORDING_BAR_REST_RATIO = 0.24
 
 let energy = 0.4
 export function sampleAmp() {
@@ -32,7 +35,15 @@ export function sampleAmp() {
   return Math.max(0.12, Math.min(1, energy + (Math.random() - 0.5) * 0.28))
 }
 
-export { RECORDING_BAR_GAP, RECORDING_BAR_W, RECORDING_BARS, RECORDING_WINDOW_MS }
+export {
+  RECORDING_BAR_GAP,
+  RECORDING_BAR_MIN_RATIO,
+  RECORDING_BAR_PEAK,
+  RECORDING_BAR_REST_RATIO,
+  RECORDING_BAR_W,
+  RECORDING_BARS,
+  RECORDING_WINDOW_MS,
+}
 
 export function fmtTimer(ms: number) {
   const s = Math.floor(ms / 1000)
@@ -64,9 +75,6 @@ export interface AudioRecorderModalState {
   isPresented: boolean
   liveBars: SharedValue<number[]>
   sheetProgress: SharedValue<number>
-  recordingWindowStartSec: number
-  recordingMidSec: number
-  recordingEndSec: number
   status: { title: string; subtitle: string }
   handleSheetShow: () => void
   handleRecord: () => Promise<void>
@@ -126,10 +134,6 @@ export function useAudioRecorderModal({
   const totalTimelineMs = hasRecording
     ? Math.max(recordedDuration, 1)
     : Math.max(elapsed, RECORDING_WINDOW_MS)
-  const recordingCurrentSec = Math.floor(elapsed / 1000)
-  const recordingWindowStartSec = Math.max(0, recordingCurrentSec - 2)
-  const recordingMidSec = recordingCurrentSec
-  const recordingEndSec = recordingCurrentSec + 2
 
   useEffect(() => {
     return () => {
@@ -454,11 +458,14 @@ export function useAudioRecorderModal({
         subtitle: t('audioRecorder.status.capturedSubtitle'),
       }
     }
+    if (isRecording) {
+      return { title: t('audioRecorder.status.recordingTitle'), subtitle: '' }
+    }
     return {
       title: t('audioRecorder.status.idleTitle'),
       subtitle: t('audioRecorder.status.idleSubtitle'),
     }
-  }, [hasRecording, t])
+  }, [hasRecording, isRecording, t])
 
   return {
     isRecording,
@@ -473,9 +480,6 @@ export function useAudioRecorderModal({
     isPresented,
     liveBars,
     sheetProgress,
-    recordingWindowStartSec,
-    recordingMidSec,
-    recordingEndSec,
     status,
     handleSheetShow,
     handleRecord,

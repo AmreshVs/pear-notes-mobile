@@ -121,7 +121,7 @@ const AttachMenu = memo(function AttachMenu({
       >
         <ExpoUI.Button
           label={t('attachments.recordAudio')}
-          systemImage="mic"
+          systemImage="mic.badge.plus"
           onPress={onRecordAudio}
         />
         <ExpoUI.Button

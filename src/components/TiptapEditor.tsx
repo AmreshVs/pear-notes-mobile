@@ -38,6 +38,7 @@ export interface TranscriptSummaryBlock {
 export interface NoteTextEdit {
   find: string
   replace: string
+  all?: boolean
 }
 
 export interface EditorSelection {

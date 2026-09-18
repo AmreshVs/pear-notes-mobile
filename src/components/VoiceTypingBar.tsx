@@ -16,6 +16,7 @@ import {
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_SIZE_52,
+  UI_SIZE_64,
 } from '@/constants/commonStyles'
 
 export function VoiceTypingBar({ toolbarBottom = 0, ...options }: VoiceTypingBarProps) {
@@ -162,6 +163,8 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       color: theme.colors.text,
       fontVariant: ['tabular-nums'],
+      minWidth: UI_SIZE_64,
+      textAlign: 'center',
     },
     iconButton: {
       width: Space.xxl + Space.sm,

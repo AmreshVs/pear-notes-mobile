@@ -10,14 +10,17 @@ import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import {
   applyEditsToText,
+  ASK_KINDS,
   type AskApplyRequest,
   type AskError,
   type AskScope,
   type AskTurnView,
+  canApplyAskTurn,
   createWorkingTurn,
   getAskHistory,
   getAskScopeInfo,
   hasDroppedTurns,
+  replaceOnce,
   resolveAskTurn,
 } from '@/lib/localAi/askNote'
 import { askAboutNote, cancelLocalAiTask } from '@/lib/localAi/qvacAdapter'
@@ -69,7 +72,8 @@ export function useAskNoteSheet({
   const sourceText = scope === 'selection' ? texts.selection : texts.note
   const scopeInfo = useMemo(() => getAskScopeInfo(scope, sourceText), [scope, sourceText])
   const droppedTurns = useMemo(() => hasDroppedTurns(turns), [turns])
-  const canSend = question.trim().length > 0 && !busy
+  const emptySource = sourceText.trim().length === 0
+  const canSend = question.trim().length > 0 && !busy && !emptySource
 
   useEffect(() => {
     if (!visible) return
@@ -130,22 +134,25 @@ export function useAskNoteSheet({
   const handleApply = useCallback(
     (id: number) => {
       const turn = turns.find((item) => item.id === id)
-      if (!turn || turn.applied || turn.editedText === null || busy) return
+      if (!turn || turn.applied || !canApplyAskTurn(turn, scope) || busy) return
+      const editedText = turn.editedText ?? ''
+      const isRewrite = turn.kind === ASK_KINDS.REWRITE
       hapticSuccess()
       onApplyEdits({
         scope,
         edits: turn.edits,
-        lengthDelta: turn.editedText.length - sourceText.length,
+        replaceText: isRewrite ? editedText : null,
+        lengthDelta: editedText.length - sourceText.length,
       })
       setTexts((current) => ({
         selection:
-          scope === 'selection'
-            ? (turn.editedText ?? current.selection)
-            : applyEditsToText(current.selection, turn.edits),
+          scope === 'selection' ? editedText : applyEditsToText(current.selection, turn.edits),
         note:
           scope === 'note'
-            ? (turn.editedText ?? current.note)
-            : applyEditsToText(current.note, turn.edits),
+            ? editedText
+            : isRewrite
+              ? replaceOnce(current.note, current.selection, editedText)
+              : applyEditsToText(current.note, turn.edits),
       }))
       updateTurn(id, (item) => ({ ...item, applied: true }))
     },
@@ -183,6 +190,7 @@ export function useAskNoteSheet({
     busy,
     canSend,
     droppedTurns,
+    emptySource,
     copiedId,
     handleSend,
     handleToggleScope,

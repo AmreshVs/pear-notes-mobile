@@ -1,9 +1,6 @@
-import React, { memo, useCallback, useEffect, useMemo } from 'react'
+import React, { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  AppState,
-  type AppStateStatus,
-  Keyboard,
   Pressable,
   type PressableAndroidRippleConfig,
   ScrollView,
@@ -11,12 +8,7 @@ import {
   Text,
   View,
 } from 'react-native'
-import Animated, {
-  useAnimatedKeyboard,
-  useAnimatedStyle,
-  useSharedValue,
-} from 'react-native-reanimated'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import Animated from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -39,6 +31,7 @@ import {
   UI_SIZE_44,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useKeyboardAnchoredBottom } from '@/hooks/useKeyboardAnchoredBottom'
 import { useScrollEdgeFade } from '@/hooks/useScrollEdgeFade'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -98,6 +91,7 @@ type EditorToolbarProps = {
   onAttachPress: () => void
   onVoiceTyping?: () => void
   onAiTools?: () => void
+  keyboardAnchored?: boolean
 }
 
 export const EditorToolbar = memo(function EditorToolbar({
@@ -106,6 +100,7 @@ export const EditorToolbar = memo(function EditorToolbar({
   onAttachPress,
   onVoiceTyping,
   onAiTools,
+  keyboardAnchored = true,
 }: EditorToolbarProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -124,34 +119,10 @@ export const EditorToolbar = memo(function EditorToolbar({
   const hasSelection = !!onAiTools && isActive('hasSelection')
   const aiMotion = useAiEditButtonMotion(hasSelection)
 
-  const keyboard = useAnimatedKeyboard()
-  const insets = useSafeAreaInsets()
-  const keyboardTrusted = useSharedValue(0)
-
-  useEffect(() => {
-    const show = Keyboard.addListener('keyboardDidShow', () => {
-      keyboardTrusted.value = 1
-    })
-    const hide = Keyboard.addListener('keyboardDidHide', () => {
-      keyboardTrusted.value = 0
-    })
-    const appState = AppState.addEventListener('change', (next: AppStateStatus) => {
-      if (next !== 'active') keyboardTrusted.value = 0
-    })
-
-    return () => {
-      show.remove()
-      hide.remove()
-      appState.remove()
-    }
-  }, [keyboardTrusted])
-
-  const containerStyle = useAnimatedStyle(() => ({
-    bottom:
-      keyboardTrusted.value === 1 && keyboard.height.value > 0
-        ? keyboard.height.value + UI_SIZE_12
-        : insets.bottom + UI_SIZE_12,
-  }))
+  const containerStyle = useKeyboardAnchoredBottom({
+    gap: UI_SIZE_12,
+    enabled: keyboardAnchored,
+  })
 
   return (
     <MotionView style={[styles.row, containerStyle]}>

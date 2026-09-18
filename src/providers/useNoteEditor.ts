@@ -29,6 +29,7 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 
 import { useReduceMotion } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
+import { dismissKeyboard, subscribeKeyboardHidden } from '@/lib/keyboard'
 import { snapTo } from '@/lib/motion'
 
 const FOCUS_TITLE_DELAY = 250
@@ -44,6 +45,7 @@ export function useNoteEditor() {
   const [isOpen, setIsOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [keyboardHeight, setKeyboardHeight] = useState(0)
+  const [editorOwnsKeyboard, setEditorOwnsKeyboard] = useState(false)
   const [isSharing, setIsSharing] = useState(false)
   const [uploadInfo, setUploadInfo] = useState<{
     fileName: string
@@ -139,6 +141,7 @@ export function useNoteEditor() {
         editorRef.current?.setBottomInset(0, ANDROID_TOOLBAR_INSET_IDLE)
         editorRef.current?.blur()
         setIsEditing(false)
+        setEditorOwnsKeyboard(false)
       }
     })
     return () => {
@@ -155,6 +158,7 @@ export function useNoteEditor() {
     const resetKeyboardLayout = () => {
       setKeyboardHeight(0)
       setIsEditing(false)
+      setEditorOwnsKeyboard(false)
       isEditorFocusedRef.current = false
       editorRef.current?.blur()
       if (isIos) editorRef.current?.setBottomInset(0, IOS_TOOLBAR_INSET_IDLE)
@@ -163,7 +167,7 @@ export function useNoteEditor() {
 
     const subscription = AppState.addEventListener('change', (next: AppStateStatus) => {
       if (next === 'background') {
-        Keyboard.dismiss()
+        dismissKeyboard()
         if (!isIos) resetKeyboardLayout()
         return
       }
@@ -173,18 +177,28 @@ export function useNoteEditor() {
         resetKeyboardLayout()
         return
       }
-      Keyboard.dismiss()
+      dismissKeyboard()
       resetKeyboardLayout()
     })
 
     return () => subscription.remove()
   }, [isOpen])
 
+  useEffect(
+    () =>
+      subscribeKeyboardHidden(() => {
+        setKeyboardHeight(0)
+        setEditorOwnsKeyboard(false)
+      }),
+    [],
+  )
+
   useEffect(() => {
     if (!isOpen) {
       setIsEditing(false)
       setIsEdgeSwipeActive(false)
       setKeyboardHeight(0)
+      setEditorOwnsKeyboard(false)
     }
   }, [isOpen])
 
@@ -284,7 +298,7 @@ export function useNoteEditor() {
 
   const closeNote = useCallback(() => {
     editorRef.current?.blur()
-    Keyboard.dismiss()
+    dismissKeyboard()
     editorRef.current?.save()
     animateClose()
     if (process.env.EXPO_OS === 'android' && router.canGoBack()) {
@@ -306,8 +320,9 @@ export function useNoteEditor() {
   }, [isOpen, closeNote])
 
   const openNote = useCallback((id: string, options?: { focusTitle?: boolean }) => {
-    Keyboard.dismiss()
+    dismissKeyboard()
     setIsEditing(false)
+    setEditorOwnsKeyboard(false)
     editorRef.current?.blur()
     loadedNoteRef.current = null
     shouldFocusTitleRef.current = options?.focusTitle === true
@@ -328,10 +343,12 @@ export function useNoteEditor() {
   const handleEditorFocus = useCallback(() => {
     isEditorFocusedRef.current = true
     setIsEditing(true)
+    setEditorOwnsKeyboard(true)
   }, [])
 
   const handleEditorBlur = useCallback(() => {
     isEditorFocusedRef.current = false
+    setEditorOwnsKeyboard(false)
   }, [])
 
   const resolveHyperdriveUrl = useCallback(
@@ -404,6 +421,7 @@ export function useNoteEditor() {
     setIsEditing,
     keyboardHeight,
     setKeyboardHeight,
+    editorOwnsKeyboard,
     isSharing,
     setIsSharing,
     uploadInfo,

@@ -104,7 +104,7 @@ export function AttachmentSheet({
         onPress: () => dismiss(onScanDocument),
       },
       {
-        icon: 'microphone-outline',
+        icon: 'microphone-plus',
         label: t('attachments.recordAudio'),
         onPress: () => dismiss(onRecordAudio),
       },

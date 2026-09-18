@@ -3,12 +3,16 @@ import * as Device from 'expo-device'
 import { File, Paths } from 'expo-file-system'
 
 import {
-  ASK_GENERATION_PARAMS,
   ASK_RESPONSE_FORMAT,
+  buildAskFullTextMessages,
   buildAskMessages,
   extractPartialAnswer,
+  getAskFullTextParams,
+  getAskGenerationParams,
   pickAskReply,
   shouldRetryAskForEdits,
+  shouldTryAskFullText,
+  toAskFullTextReply,
 } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
   canRunModels,
@@ -761,7 +765,7 @@ async function askAboutNoteNow(
         modelId,
         history: buildAskMessages({ note, turns, question, forceEdits }).messages,
         responseFormat: ASK_RESPONSE_FORMAT,
-        generationParams: ASK_GENERATION_PARAMS,
+        generationParams: getAskGenerationParams(note),
       },
       (partial) => {
         const answer = extractPartialAnswer(partial)
@@ -770,7 +774,14 @@ async function askAboutNoteNow(
     )
   const first = await ask(false)
   if (!shouldRetryAskForEdits(note, question, first)) return first
-  return pickAskReply(note, first, await ask(true)) as string
+  const picked = pickAskReply(note, first, await ask(true), question) as string
+  if (!shouldTryAskFullText(note, question, picked)) return picked
+  const fullText = await runCompletion(sdk, {
+    modelId,
+    history: buildAskFullTextMessages({ note, question }),
+    generationParams: getAskFullTextParams(note),
+  })
+  return (toAskFullTextReply(note, question, fullText) as string | null) ?? picked
 }
 
 export const askAboutNote = (

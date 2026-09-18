@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   Animated,
   Dimensions,
-  Keyboard,
   Modal,
   Pressable,
   StatusBar,
@@ -82,6 +81,7 @@ import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hasFileExtension } from '@/lib/fileSignature'
 import { hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
+import { dismissKeyboard } from '@/lib/keyboard'
 import { type AiTool, buildAiTools, hideKeyboard } from '@/lib/localAi/aiTools'
 import type { AskApplyRequest } from '@/lib/localAi/askNote'
 import { snapTo } from '@/lib/motion'
@@ -159,6 +159,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isOpen,
     isEditing,
     keyboardHeight,
+    editorOwnsKeyboard,
     isSharing,
     setIsSharing,
     uploadInfo,
@@ -211,8 +212,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const hasUploadQueue = uploadQueue.items.length > 0
   const uploadBannerBottom = useMemo(
     () =>
-      (keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12) + UI_SIZE_72,
-    [keyboardHeight, insets.bottom],
+      (editorOwnsKeyboard && keyboardHeight > 0
+        ? keyboardHeight + UI_SIZE_42
+        : insets.bottom + UI_SIZE_12) + UI_SIZE_72,
+    [editorOwnsKeyboard, keyboardHeight, insets.bottom],
   )
   const lockMethod = useSelector(getLockMethod)
   const activityEnabled = useSelector(getActivityLogEnabled) as boolean
@@ -521,7 +524,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const handleVoiceTyping = useCallback(() => {
-    Keyboard.dismiss()
+    dismissKeyboard()
     editorRef.current?.blur()
     editorRef.current?.startDictation()
     setDictationActive(true)
@@ -838,7 +841,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   )
 
   const handleRecordAudio = useCallback(() => {
-    Keyboard.dismiss()
+    dismissKeyboard()
     setRecorderEverOpened(true)
     setIsRecorderVisible(true)
   }, [setRecorderEverOpened, setIsRecorderVisible])
@@ -875,7 +878,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     (mode: VoiceTypingMode) => {
       if (!noteId) return
       setMoreSheetVisible(false)
-      Keyboard.dismiss()
+      dismissKeyboard()
       editorRef.current?.blur()
       setVoiceParagraphs(htmlToParagraphs(noteContentRef.current))
       openVoiceSheet(mode)
@@ -898,7 +901,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const runSelectionTool = useCallback(
     (mode: VoiceTypingMode, selection: EditorSelection) => {
       selectionRef.current = selection
-      Keyboard.dismiss()
+      dismissKeyboard()
       setVoiceParagraphs(
         selection.text
           .split('\n')
@@ -952,8 +955,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleCloseAiTools = useCallback(() => setAiToolsTarget(null), [])
 
   const handleApplyAskEdits = useCallback(
-    ({ scope, edits, lengthDelta }: AskApplyRequest) => {
+    ({ scope, edits, replaceText, lengthDelta }: AskApplyRequest) => {
       const selection = scope === 'selection' ? selectionRef.current : null
+      if (replaceText !== null) {
+        if (!selection) return
+        editorRef.current?.replaceRange(selection.from, selection.to, selection.text, replaceText)
+        selectionRef.current = { ...selection, text: replaceText, to: selection.to + lengthDelta }
+        return
+      }
       editorRef.current?.applyEdits(
         edits,
         selection ? { from: selection.from, to: selection.to } : null,
@@ -1173,10 +1182,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <EditorToolbar
             isActive={isActive}
             editorRef={editorRef}
+            keyboardAnchored={editorOwnsKeyboard}
             onVoiceTyping={voiceTypingReady ? handleVoiceTyping : undefined}
             onAiTools={aiToolsAvailable ? handleAiToolsButton : undefined}
             onAttachPress={() => {
-              Keyboard.dismiss()
+              dismissKeyboard()
               editorRef.current?.blur()
               setAttachSheetVisible(true)
             }}
@@ -1406,6 +1416,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       {LOCAL_AI_ENABLED && dictationActive && (
         <VoiceTypingBar
           visible={dictationActive}
+          keyboardAnchored={editorOwnsKeyboard}
           onLiveText={handleDictationText}
           onCommit={handleDictationCommit}
           onCancel={handleDictationCancel}
