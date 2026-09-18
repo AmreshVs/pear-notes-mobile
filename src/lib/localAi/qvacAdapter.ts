@@ -30,7 +30,7 @@ import {
   cleanModelOutput,
   DESCRIBE_IMAGE_PROMPT,
   DESCRIBE_MAX_TOKENS,
-  getNoteTaskMaxTokens,
+  getNoteTaskGenerationParams,
   LLM_CONTEXT_SIZE,
   LLM_TEMPERATURE,
   NOTE_TASK,
@@ -731,10 +731,7 @@ async function runNoteTaskNow(
     {
       modelId,
       history: buildNoteTaskMessages(task, text),
-      generationParams: {
-        temp: LLM_TEMPERATURE,
-        predict: getNoteTaskMaxTokens(task, text) as number,
-      },
+      generationParams: getNoteTaskGenerationParams(task, text) as Record<string, number>,
     },
     (partial) => onProgress({ type: WORK_EVENT.TEXT, text: partial }),
   )
