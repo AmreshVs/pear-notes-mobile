@@ -3,6 +3,14 @@ import * as Device from 'expo-device'
 import { File, Paths } from 'expo-file-system'
 
 import {
+  ASK_GENERATION_PARAMS,
+  ASK_RESPONSE_FORMAT,
+  buildAskMessages,
+  extractPartialAnswer,
+  pickAskReply,
+  shouldRetryAskForEdits,
+} from '@pear-notes/core/store/services/localAiAsk.js'
+import {
   canRunModels,
   getFeatureRegistryNames,
   LOCAL_AI_ERROR,
@@ -728,6 +736,50 @@ async function runNoteTaskNow(
   )
   return cleanModelOutput(output)
 }
+
+export interface AskTurn {
+  question: string
+  reply: string
+}
+
+async function askAboutNoteNow(
+  note: string,
+  turns: AskTurn[],
+  question: string,
+  featureConfig: LocalAiFeatureModelConfig = {},
+  onProgress: LocalAiWorkListener = () => {},
+): Promise<string> {
+  const sdk = await loadSdk()
+  const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
+  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
+  const ask = (forceEdits: boolean) =>
+    runCompletion(
+      sdk,
+      {
+        modelId,
+        history: buildAskMessages({ note, turns, question, forceEdits }).messages,
+        responseFormat: ASK_RESPONSE_FORMAT,
+        generationParams: ASK_GENERATION_PARAMS,
+      },
+      (partial) => {
+        const answer = extractPartialAnswer(partial)
+        if (answer) onProgress({ type: WORK_EVENT.TEXT, text: answer })
+      },
+    )
+  const first = await ask(false)
+  if (!shouldRetryAskForEdits(note, question, first)) return first
+  return pickAskReply(note, first, await ask(true)) as string
+}
+
+export const askAboutNote = (
+  note: string,
+  turns: AskTurn[],
+  question: string,
+  featureConfig: LocalAiFeatureModelConfig = {},
+  { onProgress }: LocalAiWorkOptions = {},
+) => withModelWork(() => askAboutNoteNow(note, turns, question, featureConfig, onProgress))
 
 export const transcribeAudioFile = (
   fileUri: string,

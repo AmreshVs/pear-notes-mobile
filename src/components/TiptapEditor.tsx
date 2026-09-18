@@ -35,6 +35,11 @@ export interface TranscriptSummaryBlock {
   bullets?: string[]
 }
 
+export interface NoteTextEdit {
+  find: string
+  replace: string
+}
+
 export interface EditorSelection {
   from: number
   to: number
@@ -101,6 +106,7 @@ export interface TiptapEditorHandle {
   ) => void
   getSelection: (allowRemembered?: boolean) => Promise<EditorSelection | null>
   replaceRange: (from: number, to: number, expected: string, text: string) => void
+  applyEdits: (edits: NoteTextEdit[], range?: { from: number; to: number } | null) => void
   insertParagraphsAfter: (pos: number, text: string) => void
   startDictation: () => void
   updateDictation: (text: string) => void
@@ -664,6 +670,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         getSelection: getSelectionAsync,
         replaceRange: (from, to, expected, text) =>
           sendCommand({ type: 'replaceRange', from, to, expected, text }),
+        applyEdits: (edits, range) =>
+          sendCommand({ type: 'applyEdits', edits, from: range?.from, to: range?.to }),
         insertParagraphsAfter: (pos, text) =>
           sendCommand({ type: 'insertParagraphsAfter', pos, text }),
         startDictation: () => sendCommand({ type: 'dictationStart' }),

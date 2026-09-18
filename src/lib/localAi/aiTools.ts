@@ -3,17 +3,19 @@ import { Keyboard } from 'react-native'
 import type { VoiceTypingMode } from '@/components/useVoiceTypingSheet'
 
 export type AiToolScope = 'note' | 'selection'
-export type AiToolGroup = 'edit' | 'understand' | 'note'
+export type AiToolGroup = 'ask' | 'edit' | 'understand' | 'note'
+export type AiToolMode = VoiceTypingMode | 'ask'
 
 export interface AiTool {
   id: string
-  mode: VoiceTypingMode
+  mode: AiToolMode
   scope: AiToolScope
   group: AiToolGroup
   labelKey: string
 }
 
 export const AI_TOOL_GROUPS: { id: AiToolGroup; labelKey: string }[] = [
+  { id: 'ask', labelKey: 'localAi.ask.group' },
   { id: 'edit', labelKey: 'localAi.writingTools.editGroup' },
   { id: 'understand', labelKey: 'localAi.writingTools.understandGroup' },
   { id: 'note', labelKey: 'localAi.writingTools.noteGroup' },
@@ -30,7 +32,7 @@ const REWRITE_TOOL_MODES: VoiceTypingMode[] = [
 const KEYBOARD_HIDE_TIMEOUT_MS = 450
 
 const tool = (
-  mode: VoiceTypingMode,
+  mode: AiToolMode,
   scope: AiToolScope,
   group: AiToolGroup,
   labelKey: string,
@@ -48,6 +50,7 @@ export function buildAiTools({
   const tools: AiTool[] = []
   if (hasSelection) {
     if (summarizeReady) {
+      tools.push(tool('ask', 'selection', 'ask', 'localAi.ask.menuLabelSelection'))
       for (const mode of REWRITE_TOOL_MODES) {
         tools.push(tool(mode, 'selection', 'edit', `localAi.${mode}.menuLabel`))
       }
@@ -65,6 +68,7 @@ export function buildAiTools({
   }
   if (summarizeReady) {
     tools.push(
+      tool('ask', 'note', 'ask', 'localAi.ask.menuLabelNote'),
       tool('summarizeNote', 'note', 'note', 'localAi.summarizeNote.menuLabel'),
       tool('suggestTitle', 'note', 'note', 'localAi.suggestTitle.menuLabel'),
       tool('keyPoints', 'note', 'note', 'localAi.keyPoints.menuLabel'),

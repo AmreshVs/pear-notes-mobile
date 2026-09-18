@@ -35,6 +35,7 @@ const EXCERPT_MAX_CHARS = 140
 const LIST_MAX_HEIGHT_RATIO = 0.6
 
 const ICON_BY_MODE: Record<string, string> = {
+  ask: 'questionmark.bubble',
   fixGrammar: 'checkmark.circle',
   rewrite: 'wand.and.stars',
   makeShorter: 'arrow.down.right.and.arrow.up.left',

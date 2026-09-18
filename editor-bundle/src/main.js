@@ -20,6 +20,7 @@ import Underline from '@tiptap/extension-underline'
 import { DOMParser as PMDOMParser } from '@tiptap/pm/model'
 import { Selection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
+import { buildNoteEditsTransaction } from '@pear-notes/core/store/services/localAiNoteEdits.js'
 import langBash from 'highlight.js/lib/languages/bash'
 import langCSS from 'highlight.js/lib/languages/css'
 import langJS from 'highlight.js/lib/languages/javascript'
@@ -1858,6 +1859,17 @@ window.editorBridge = {
         } else {
           editor.chain().insertContentAt(blockEndAfter(doc, to), paragraphNodes(lines)).run()
         }
+        flushContentChange(editor.getHTML(), editor.getText())
+        break
+      }
+
+      case 'applyEdits': {
+        const edits = Array.isArray(msg.edits) ? msg.edits : []
+        const range =
+          Number.isFinite(msg.from) && Number.isFinite(msg.to) ? { from: msg.from, to: msg.to } : {}
+        const { tr } = buildNoteEditsTransaction(editor.state, edits, range)
+        if (!tr) break
+        editor.view.dispatch(tr)
         flushContentChange(editor.getHTML(), editor.getText())
         break
       }

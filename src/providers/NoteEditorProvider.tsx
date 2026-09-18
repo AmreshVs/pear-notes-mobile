@@ -32,6 +32,7 @@ import {
 
 import { NoteHistoryModal } from '@/components/activity/NoteHistoryModal'
 import { AiToolsSheet } from '@/components/AiToolsSheet'
+import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { AudioRecorderModal, type RecordingDoneOptions } from '@/components/AudioRecorderModal'
 import { EdgeFade } from '@/components/EdgeFade'
 import { GlassView } from '@/components/GlassView'
@@ -72,6 +73,7 @@ import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtec
 import { useShareIntakeController } from '@/hooks/useShareIntakeController'
 import { hapticError, hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { type AiTool, buildAiTools, hideKeyboard } from '@/lib/localAi/aiTools'
+import type { AskApplyRequest } from '@/lib/localAi/askNote'
 import { snapTo } from '@/lib/motion'
 import {
   cleanupCachedAttachment,
@@ -206,6 +208,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     null,
   )
   const selectionRef = useRef<EditorSelection | null>(null)
+  const [askTarget, setAskTarget] = useState<{ selectionText: string; noteText: string } | null>(
+    null,
+  )
   const voiceSheetVisibleRef = useRef(false)
   const transcriptTargetRef = useRef<string | null>(null)
   const captionTargetRef = useRef<string | null>(null)
@@ -727,16 +732,41 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     (tool: AiTool) => {
       const selection = aiToolsTarget?.selection ?? null
       setAiToolsTarget(null)
+      if (tool.mode === 'ask') {
+        selectionRef.current = tool.scope === 'selection' ? selection : null
+        setAskTarget({
+          selectionText: tool.scope === 'selection' ? (selection?.text ?? '') : '',
+          noteText: htmlToParagraphs(noteContentRef.current).join('\n'),
+        })
+        return
+      }
       if (tool.scope === 'selection' && selection) {
         runSelectionTool(tool.mode, selection)
         return
       }
       handleNoteAi(tool.mode)
     },
-    [aiToolsTarget, handleNoteAi, runSelectionTool],
+    [aiToolsTarget, handleNoteAi, noteContentRef, runSelectionTool],
   )
 
   const handleCloseAiTools = useCallback(() => setAiToolsTarget(null), [])
+
+  const handleApplyAskEdits = useCallback(
+    ({ scope, edits, lengthDelta }: AskApplyRequest) => {
+      const selection = scope === 'selection' ? selectionRef.current : null
+      editorRef.current?.applyEdits(
+        edits,
+        selection ? { from: selection.from, to: selection.to } : null,
+      )
+      if (selection) selectionRef.current = { ...selection, to: selection.to + lengthDelta }
+    },
+    [editorRef],
+  )
+
+  const handleCloseAsk = useCallback(() => {
+    selectionRef.current = null
+    setAskTarget(null)
+  }, [])
 
   const handleExtractTextAttachment = useCallback(() => {
     if (!selectedAttachmentSrc) return
@@ -1257,6 +1287,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onCommit={handleDictationCommit}
               onCancel={handleDictationCancel}
               onAttachAudio={handleDictationAttachAudio}
+            />
+          )}
+
+          {LOCAL_AI_ENABLED && (
+            <AskNoteSheet
+              visible={!!askTarget}
+              selectionText={askTarget?.selectionText ?? ''}
+              noteText={askTarget?.noteText ?? ''}
+              insertBlocked={hasNoteConflict}
+              onApplyEdits={handleApplyAskEdits}
+              onClose={handleCloseAsk}
             />
           )}
 

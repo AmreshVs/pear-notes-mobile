@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, Pressable, StyleSheet, View } from 'react-native'
+import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
   runOnJS,
@@ -39,6 +39,7 @@ interface AiBottomSheetProps {
   title: string
   subtitle?: string
   subtitleLines?: number
+  avoidKeyboard?: boolean
   onClose: () => void
   children: (dismissThen: DismissThen) => ReactNode
 }
@@ -50,6 +51,7 @@ export function AiBottomSheet({
   title,
   subtitle,
   subtitleLines,
+  avoidKeyboard = false,
   onClose,
   children,
 }: AiBottomSheetProps) {
@@ -166,18 +168,25 @@ export function AiBottomSheet({
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         </Animated.View>
-        <Animated.View
-          style={[styles.sheetWrap, sheetAnimatedStyle]}
-          pointerEvents={visible ? 'auto' : 'none'}
+        <KeyboardAvoidingView
+          style={styles.keyboardArea}
+          behavior="padding"
+          enabled={avoidKeyboard}
+          pointerEvents="box-none"
         >
-          {isDark ? (
-            <GlassView intensity={70} borderRadius={Radii.sheet} style={styles.sheet}>
-              {body}
-            </GlassView>
-          ) : (
-            <View style={[styles.sheet, styles.sheetLight]}>{body}</View>
-          )}
-        </Animated.View>
+          <Animated.View
+            style={[styles.sheetWrap, sheetAnimatedStyle]}
+            pointerEvents={visible ? 'auto' : 'none'}
+          >
+            {isDark ? (
+              <GlassView intensity={70} borderRadius={Radii.sheet} style={styles.sheet}>
+                {body}
+              </GlassView>
+            ) : (
+              <View style={[styles.sheet, styles.sheetLight]}>{body}</View>
+            )}
+          </Animated.View>
+        </KeyboardAvoidingView>
       </View>
     </Modal>
   )
@@ -192,6 +201,10 @@ const useStyles = createThemedStylesheet((theme) => {
     backdrop: {
       ...StyleSheet.absoluteFill,
       backgroundColor: theme.colors.backdrop,
+    },
+    keyboardArea: {
+      flex: 1,
+      justifyContent: 'flex-end',
     },
     sheetWrap: {
       justifyContent: 'flex-end',
