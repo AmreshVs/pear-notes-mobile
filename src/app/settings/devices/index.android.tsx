@@ -208,7 +208,7 @@ export default function AndroidSyncScreen() {
         >
           <View style={styles.segRow}>
             <View style={styles.segTrack}>
-              {(['link', 'devices'] as const).map((tValue) => {
+              {(['devices', 'link'] as const).map((tValue) => {
                 const active = tab === tValue
                 return (
                   <Pressable

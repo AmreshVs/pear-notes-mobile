@@ -83,7 +83,15 @@ const ToolbarBtn = memo(function ToolbarBtn({
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
+  surfaceContainerLow?: string
 }
+
+/**
+ * The editor page is white in light mode, so the bar has to sit a step *below*
+ * it rather than above it. Dark mode keeps its original container tone.
+ */
+const toolbarSurfaceFor = (c: ExtendedColors, isDark: boolean) =>
+  (isDark ? c.surfaceContainerHigh : c.surfaceContainerLow) ?? c.surface
 
 type EditorToolbarProps = {
   isActive: (key: keyof TiptapStyleState) => boolean
@@ -338,7 +346,7 @@ export const EditorToolbar = memo(function EditorToolbar({
             styles={styles}
           />
         </ScrollView>
-        <ScrollEdgeFade color={c.surfaceContainerHigh ?? c.surface} visible={showEndFade} />
+        <ScrollEdgeFade color={toolbarSurfaceFor(c, md3.dark)} visible={showEndFade} />
       </View>
 
       <View style={styles.divider} />
@@ -421,8 +429,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       borderRadius: UI_SIZE_9999,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surface, 0.98),
-      borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),
+      backgroundColor: hexWithAlpha(toolbarSurfaceFor(c, isDark), 0.98),
+      borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.5),
       elevation: 6,
       shadowColor: theme.colors.black,
     },
@@ -451,8 +459,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       paddingLeft: UI_SIZE_8,
       paddingRight: UI_SIZE_8,
       zIndex: 10,
-      backgroundColor: hexWithAlpha(c.surfaceContainerHigh ?? c.surface, 0.98),
-      borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.3),
+      backgroundColor: hexWithAlpha(toolbarSurfaceFor(c, isDark), 0.98),
+      borderColor: hexWithAlpha(c.outlineVariant, isDark ? 0.15 : 0.5),
       elevation: 6,
       shadowColor: theme.colors.black,
     },

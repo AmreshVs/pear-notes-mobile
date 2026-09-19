@@ -1044,7 +1044,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           ) : null}
 
           <View style={[styles.header, { paddingTop: insets.top - 5 }]}>
-            <EdgeFade color={colors.background} />
+            <EdgeFade color={colors.editorBackground} />
             <View style={styles.headerRow}>
               <GlassView intensity={0} borderRadius={24} style={styles.headerBtn} isInteractive>
                 <Pressable
@@ -1231,7 +1231,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <NoteConflictBanner noteKey={noteId} />
 
           <View style={bottomFadeStyle} pointerEvents="none">
-            <EdgeFade color={colors.background} placement="bottom" />
+            <EdgeFade color={colors.editorBackground} placement="bottom" />
           </View>
 
           {isOpen && !isNoteLocked && !dictationActive && (
@@ -1484,7 +1484,7 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     animatedView: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.editorBackground,
     },
     lockOverlay: {
       ...StyleSheet.absoluteFill,

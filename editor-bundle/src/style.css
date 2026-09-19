@@ -2,8 +2,10 @@
   color-scheme: light;
   --c-text: #000000;
   --c-text-secondary: #48484a;
-  --c-bg: #f2f2f7;
+  --c-bg: #ffffff;
   --c-surface: #ffffff;
+  --c-attachment-bg: #f2f2f7;
+  --c-attachment-inset: #ffffff;
   --c-primary: #dca323;
   --c-border: #c6c6c8;
   --c-placeholder: rgba(0, 0, 0, 0.28);
@@ -27,6 +29,8 @@
     --c-text-secondary: #b0b0b5;
     --c-bg: #202020;
     --c-surface: #1c1c1e;
+    --c-attachment-bg: #1c1c1e;
+    --c-attachment-inset: #202020;
     --c-primary: #dca323;
     --c-border: #38383a;
     --c-placeholder: rgba(255, 255, 255, 0.28);

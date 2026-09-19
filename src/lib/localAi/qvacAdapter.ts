@@ -52,6 +52,7 @@ type QvacSdk = typeof import('@qvac/sdk')
 type LoadModelInput = Record<string, unknown>
 type RegistryModels = Record<string, { bytes: number; engine: string } | undefined>
 type DownloadAssetInput = Parameters<QvacSdk['downloadAsset']>[0]
+type OcrBlock = Awaited<ReturnType<QvacSdk['ocr']>['blocks']>[number]
 
 export interface LocalAiWorkEvent {
   type: string
@@ -77,6 +78,8 @@ export interface LocalAiWorkOptions {
 }
 
 const TRANSLATE_BATCH_PARAGRAPHS = 8
+
+const joinParts = (parts: string[]) => parts.filter(Boolean).join('\n\n')
 
 export interface LocalAiFeatureModelConfig {
   tier?: string
@@ -601,8 +604,19 @@ async function extractTextFromImageNow(
   })
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_TEXT })
   try {
-    const { blocks } = sdk.ocr({ modelId, image: toFilePath(prepared ?? fileUri) })
-    return formatOcrBlocks(await blocks)
+    const { blockStream } = sdk.ocr({
+      modelId,
+      image: toFilePath(prepared ?? fileUri),
+      stream: true,
+    })
+    const found: OcrBlock[] = []
+    let text = ''
+    for await (const chunk of blockStream) {
+      found.push(...chunk)
+      text = formatOcrBlocks(found)
+      onProgress({ type: WORK_EVENT.TEXT, text })
+    }
+    return text
   } finally {
     deleteLocalUri(prepared)
   }
@@ -896,6 +910,7 @@ async function translateParagraphsNow(
       })
       translated.push(...(await run.translations).map((line) => String(line ?? '')))
       reportParagraphs()
+      onProgress({ type: WORK_EVENT.TEXT, text: joinParts(translated) })
     }
     lines = translated
   }
@@ -1078,6 +1093,9 @@ export async function extractTextFromPdf(
     const forwardPageEvent: LocalAiWorkListener = (event) => {
       if (event.step === WORK_STEP.LOAD_MODEL) onProgress?.(event)
       if (event.step === WORK_STEP.READ_TEXT) reportPage(pageIndex)
+      if (event.type === WORK_EVENT.TEXT) {
+        onProgress?.({ type: WORK_EVENT.TEXT, text: joinParts([...texts, event.text ?? '']) })
+      }
     }
     try {
       const pageText = (
@@ -1090,7 +1108,7 @@ export async function extractTextFromPdf(
       await FileSystem.deleteAsync(rendered.uri, { idempotent: true }).catch(() => {})
     }
   }
-  return texts.join('\n\n')
+  return joinParts(texts)
 }
 
 export async function cancelLocalAiTask() {

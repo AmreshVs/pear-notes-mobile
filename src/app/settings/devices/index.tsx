@@ -146,7 +146,7 @@ export default function SyncScreen() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        <RNView style={styles.segRow}>{(['link', 'devices'] as const).map(renderTabPill)}</RNView>
+        <RNView style={styles.segRow}>{(['devices', 'link'] as const).map(renderTabPill)}</RNView>
 
         {tab === 'link' ? (
           <MotionView

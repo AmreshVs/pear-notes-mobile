@@ -798,14 +798,14 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.editorBackground,
     },
     flex: {
       flex: 1,
     },
     webView: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.editorBackground,
     },
     overlay: {
       ...StyleSheet.absoluteFill,

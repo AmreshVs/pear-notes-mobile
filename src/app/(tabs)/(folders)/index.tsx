@@ -398,8 +398,8 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     iconBtn: {
       ...commonStyles.centered,
-      minWidth: UI_SIZE_44,
-      minHeight: UI_SIZE_44,
+      minWidth: 38,
+      minHeight: 38,
       padding: Space.sm,
     },
   })

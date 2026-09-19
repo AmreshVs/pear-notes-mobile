@@ -166,11 +166,14 @@ function applyTheme(colors, isDark) {
   const r = document.documentElement.style
   r.setProperty('--c-text', colors.text)
   r.setProperty('--c-text-secondary', colors.textSecondary)
-  r.setProperty('--c-bg', colors.background)
+  const editorBg = colors.editorBackground || colors.background
+  r.setProperty('--c-bg', editorBg)
   r.setProperty('--c-surface', colors.surface)
+  r.setProperty('--c-attachment-bg', colors.attachmentSurface || colors.surface)
+  r.setProperty('--c-attachment-inset', colors.attachmentInset || colors.background)
   r.setProperty('--c-primary', colors.primary)
   r.setProperty('--c-border', colors.border)
-  document.body.style.background = colors.background
+  document.body.style.background = editorBg
 
   r.setProperty('color-scheme', isDark ? 'dark' : 'light')
   r.setProperty('--c-highlight', isDark ? '#854D0E' : '#FEF08A')
@@ -682,7 +685,7 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
   const container = document.createElement('div')
   container.className = 'audio-player-container'
   container.style.cssText =
-    'display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; margin: 12px 0; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
+    'display: flex; flex-direction: column; background: var(--c-attachment-bg); border: 1px solid var(--c-border); border-radius: 12px; transition: all 0.3s ease; position: relative; overflow: hidden; margin: 12px 0; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;'
   container.addEventListener('contextmenu', (e) => {
     e.preventDefault()
   })
@@ -742,7 +745,7 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
 
   const badge = document.createElement('span')
   badge.style.cssText =
-    'font-size: 12px; font-weight: 500; color: var(--c-text-secondary); background-color: var(--c-bg); padding: 2px 8px; border-radius: 6px;'
+    'font-size: 12px; font-weight: 500; color: var(--c-text-secondary); background-color: var(--c-attachment-inset); padding: 2px 8px; border-radius: 6px;'
   badge.textContent = fileExt || 'AUDIO'
 
   const dotSpan = document.createElement('span')
@@ -783,7 +786,7 @@ function createAudioPlayerDOM(src, titleText, initialDuration, fileExt) {
 
   const sliderTrack = document.createElement('div')
   sliderTrack.style.cssText =
-    'position: relative; height: 6px; background-color: var(--c-bg); width: 100%; border-radius: 3px;'
+    'position: relative; height: 6px; background-color: var(--c-attachment-inset); width: 100%; border-radius: 3px;'
 
   const sliderFill = document.createElement('div')
   sliderFill.style.cssText =
@@ -890,7 +893,7 @@ function createPdfPreviewDOM() {
   const wrapper = document.createElement('div')
   wrapper.className = 'pdf-preview'
   wrapper.style.cssText =
-    'display: none; align-items: center; justify-content: center; padding: 12px 12px 0 12px; background: var(--c-bg);'
+    'display: none; align-items: center; justify-content: center; padding: 12px 12px 0 12px; background: transparent;'
 
   const image = document.createElement('img')
   image.className = 'pdf-preview-image'
@@ -1014,7 +1017,7 @@ const FileAttachment = Node.create({
       dom.dataset.attachmentId = 'att-' + ++_attachmentIdCounter
       dom.className = 'file-attachment-container'
       dom.style.cssText =
-        'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;'
+        'display: flex; flex-direction: column; margin: 12px 0; background: var(--c-attachment-bg); border: 1px solid var(--c-border); border-radius: 12px; position: relative; overflow: hidden; font-family: sans-serif; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; cursor: pointer;'
 
       const loadingOverlay = document.createElement('div')
       loadingOverlay.className = 'attachment-loading-overlay'
@@ -1058,7 +1061,7 @@ const FileAttachment = Node.create({
 
       const iconContainer = document.createElement('div')
       iconContainer.style.cssText =
-        'flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background-color: var(--c-bg); display: flex; align-items: center; justify-content: center; color: var(--c-text-secondary); border: 1px solid var(--c-border);'
+        'flex-shrink: 0; width: 48px; height: 48px; border-radius: 12px; background-color: var(--c-attachment-inset); display: flex; align-items: center; justify-content: center; color: var(--c-text-secondary); border: 1px solid var(--c-border);'
       const iconType = isVideo
         ? '<path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>'
         : '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/>'
@@ -1097,7 +1100,7 @@ const FileAttachment = Node.create({
 
       const extSpan = document.createElement('span')
       extSpan.style.cssText =
-        'font-size: 12px; font-weight: 500; color: var(--c-text-secondary); background-color: var(--c-bg); padding: 2px 8px; border-radius: 6px;'
+        'font-size: 12px; font-weight: 500; color: var(--c-text-secondary); background-color: var(--c-attachment-inset); padding: 2px 8px; border-radius: 6px;'
       extSpan.textContent = ext
       meta.appendChild(extSpan)
 
@@ -1736,7 +1739,8 @@ window.editorBridge = {
         const content = paragraphs.map((paragraph) => {
           const text = typeof paragraph?.text === 'string' ? paragraph.text : ''
           if (!text) return { type: 'paragraph' }
-          const isWebLink = typeof paragraph.link === 'string' && /^https?:\/\//i.test(paragraph.link)
+          const isWebLink =
+            typeof paragraph.link === 'string' && /^https?:\/\//i.test(paragraph.link)
           const textNode = isWebLink
             ? { type: 'text', text, marks: [{ type: 'link', attrs: { href: paragraph.link } }] }
             : { type: 'text', text }
@@ -1749,7 +1753,9 @@ window.editorBridge = {
       case 'insertTranscript': {
         const lines = Array.isArray(msg.paragraphs)
           ? msg.paragraphs
-              .map((paragraph) => (typeof paragraph?.text === 'string' ? paragraph.text.trim() : ''))
+              .map((paragraph) =>
+                typeof paragraph?.text === 'string' ? paragraph.text.trim() : '',
+              )
               .filter(Boolean)
           : []
         const heading = (text) => ({
@@ -1768,7 +1774,12 @@ window.editorBridge = {
         const summaryText = typeof msg.summary === 'string' ? msg.summary.trim() : ''
         const actionItems = cleanList(msg.actionItems)
         const bullets = cleanList(msg.bullets)
-        if (lines.length === 0 && bullets.length === 0 && !summaryText && actionItems.length === 0) {
+        if (
+          lines.length === 0 &&
+          bullets.length === 0 &&
+          !summaryText &&
+          actionItems.length === 0
+        ) {
           break
         }
         const quote = {
@@ -1848,7 +1859,8 @@ window.editorBridge = {
         const to = Math.max(from, Math.min(Number(msg.to) || 0, size))
         const unchanged = doc.textBetween(from, to, '\n', ' ') === msg.expected
         if (unchanged) {
-          const content = lines.length === 1 ? { type: 'text', text: lines[0] } : paragraphNodes(lines)
+          const content =
+            lines.length === 1 ? { type: 'text', text: lines[0] } : paragraphNodes(lines)
           editor.chain().insertContentAt({ from, to }, content).run()
         } else {
           editor.chain().insertContentAt(blockEndAfter(doc, to), paragraphNodes(lines)).run()

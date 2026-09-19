@@ -12,6 +12,11 @@ interface GlassViewProps extends ViewProps {
   borderRadius?: number
   style?: ViewStyle
   isInteractive?: boolean
+  /**
+   * Solid colour used when the blur is disabled (reduce transparency). Pass this
+   * alongside a translucent `style.backgroundColor` so the fallback stays opaque.
+   */
+  opaqueColor?: string
 }
 
 export const GlassView = memo(function GlassView({
@@ -19,6 +24,7 @@ export const GlassView = memo(function GlassView({
   intensity = 20,
   borderRadius = 20,
   style,
+  opaqueColor,
   ...props
 }: GlassViewProps) {
   const styles = useStyles()
@@ -33,8 +39,14 @@ export const GlassView = memo(function GlassView({
   )
 
   const opaqueStyle = useMemo(
-    () => [styles.container, styles.opaque, { borderRadius }, style],
-    [borderRadius, styles.container, styles.opaque, style],
+    () => [
+      styles.container,
+      styles.opaque,
+      { borderRadius },
+      style,
+      opaqueColor ? { backgroundColor: opaqueColor } : null,
+    ],
+    [borderRadius, styles.container, styles.opaque, style, opaqueColor],
   )
 
   const blurStyle = useMemo(() => [StyleSheet.absoluteFill, { borderRadius }], [borderRadius])

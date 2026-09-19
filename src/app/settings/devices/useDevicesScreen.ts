@@ -59,7 +59,7 @@ function useSyncScreen() {
   const isSynced = localPreferences?.isSynced === 'true'
   const notes = useSelector(getNotes) as any[]
 
-  const [tab, setTab] = useState<'link' | 'devices'>('link')
+  const [tab, setTab] = useState<'link' | 'devices'>('devices')
   const [copied, setCopied] = useState(false)
   const [pasteCode, setPasteCode] = useState('')
   const [scannerVisible, setScannerVisible] = useState(false)

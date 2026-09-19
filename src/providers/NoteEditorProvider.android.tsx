@@ -138,11 +138,15 @@ function applyDownloadedExtension(fileName: string, localPath: string): string {
 
 const EDITOR_HEADER_HEIGHT = 52
 
+type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
+  editorBackground?: string
+}
+
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
   const reduceMotion = useReduceMotion()
   const { t } = useTranslation()
   const theme = useMD3Theme()
-  const c = theme.colors
+  const c = theme.colors as ExtendedColors
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const rippleSave = useMemo(() => androidRipple(c.onPrimaryContainer), [c.onPrimaryContainer])
@@ -1077,7 +1081,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             initialTitle=""
             safeAreaTop={insets.top + EDITOR_HEADER_HEIGHT}
             safeAreaBottom={0}
-            backgroundColor={c.background}
+            backgroundColor={c.editorBackground ?? c.background}
             onContentChange={handleUpdate}
             onYjsMessage={handleYjsMessage}
             onTitleChange={handleTitleChange}
@@ -1102,7 +1106,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         )}
 
         <View style={styles.headerFade} pointerEvents="none">
-          <EdgeFade color={c.background} />
+          <EdgeFade color={c.editorBackground ?? c.background} />
         </View>
 
         <View style={styles.floatingLeft} pointerEvents="box-none">
@@ -1175,7 +1179,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         <LockedContentShield active={protectLockedNote} />
 
         <View style={styles.bottomFade} pointerEvents="none">
-          <EdgeFade color={c.background} placement="bottom" />
+          <EdgeFade color={c.editorBackground ?? c.background} placement="bottom" />
         </View>
 
         {!isNoteLocked && !dictationActive && (
@@ -1465,7 +1469,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
   const styles = StyleSheet.create({
     animatedView: {
       ...StyleSheet.absoluteFill,
-      backgroundColor: c.background,
+      backgroundColor: c.editorBackground ?? c.background,
     },
     lockOverlay: {
       position: 'absolute',

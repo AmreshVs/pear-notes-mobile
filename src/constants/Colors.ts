@@ -58,6 +58,11 @@ export default {
     rerecordBorder: 'rgba(0,0,0,0.18)',
     recordRingBg: 'rgba(255,69,58,0.06)',
     sheetBackground: '#f2f2f7',
+    editorBackground: '#ffffff',
+    attachmentSurface: '#f2f2f7',
+    attachmentInset: '#ffffff',
+    toolbarGlass: 'rgba(242, 242, 247, 0.92)',
+    toolbarSurface: '#f2f2f7',
   },
   dark: {
     text: '#ffffff',
@@ -114,5 +119,10 @@ export default {
     rerecordBorder: 'rgba(255,255,255,0.18)',
     recordRingBg: 'rgba(255,69,58,0.08)',
     sheetBackground: '#2c2c2e',
+    editorBackground: '#090909',
+    attachmentSurface: '#1b1b1d',
+    attachmentInset: '#090909',
+    toolbarGlass: 'rgba(255, 255, 255, 0.05)',
+    toolbarSurface: '#1b1b1d',
   },
 }
