@@ -153,7 +153,7 @@
       }
     },
     "onDeviceAi": {
-      "rowTitle": "Private AI",
+      "rowTitle": "On-device AI",
       "screenDesc": "AI processes your notes, recordings and photos on this device. Nothing ever leaves your device. Each feature downloads its model once, then works offline.",
       "loading": "Loading AI settings",
       "thisDevice": "This device",
@@ -169,15 +169,15 @@
       },
       "verdict": {
         "unknown": "Checking what this device supports.",
-        "supported": "Private AI is ready to use on this device.",
+        "supported": "On-device AI is ready to use on this device.",
         "limited": "This device has less memory, so the Best quality models may be slow. Lite and Standard work normally."
       },
       "unsupportedReason": {
-        "simulator": "Private AI only runs on a physical device. Everything else in Pear Notes works as usual.",
-        "os-version": "Private AI needs {{requirement}}. Everything else in Pear Notes works as usual.",
-        "architecture": "Private AI needs a 64-bit ARM device. Everything else in Pear Notes works as usual.",
-        "gpu": "Private AI needs a supported graphics driver. Everything else in Pear Notes works as usual.",
-        "store-build": "Private AI isn't available in this build. Everything else in Pear Notes works as usual."
+        "simulator": "On-device AI only runs on a physical device. Everything else in Pear Notes works as usual.",
+        "os-version": "On-device AI needs {{requirement}}. Everything else in Pear Notes works as usual.",
+        "architecture": "On-device AI needs a 64-bit ARM device. Everything else in Pear Notes works as usual.",
+        "gpu": "On-device AI needs a supported graphics driver. Everything else in Pear Notes works as usual.",
+        "store-build": "On-device AI isn't available in this build. Everything else in Pear Notes works as usual."
       },
       "requirementIos": "iOS 17 or later",
       "requirementAndroid": "Android 12 or later",
@@ -504,7 +504,7 @@
         "title": "Delete all AI models?",
         "message": "This frees {{size}} and turns off every AI feature on this device. Your notes aren't affected."
       },
-      "storageRow": "Private AI models",
+      "storageRow": "On-device AI models",
       "storageRowDesc": "Not included in backups or sync.",
       "noLanguagesYet": "No languages yet. A language downloads the first time you translate into it.",
       "limitations": "Limitations",
@@ -988,7 +988,7 @@
     "backupPassword": "Backup password",
     "noteLockPassword": "Note lock password",
     "privacyAndSecurity": "Privacy & security",
-    "onDeviceAi": "Private AI",
+    "onDeviceAi": "On-device AI",
     "storage": "Storage",
     "activity": "Activity",
     "linkDevices": "My devices",
@@ -1622,11 +1622,11 @@
       },
       "failed": {
         "title": "Couldn't transcribe",
-        "subtitle": "Try again. If it keeps failing, check the model in Private AI settings."
+        "subtitle": "Try again. If it keeps failing, check the model in On-device AI settings."
       },
       "failedDescribe": {
         "title": "Couldn't describe the image",
-        "subtitle": "Try again. If it keeps failing, check the model in Private AI settings."
+        "subtitle": "Try again. If it keeps failing, check the model in On-device AI settings."
       },
       "emptyDescribe": {
         "title": "Nothing to describe",
@@ -1634,7 +1634,7 @@
       },
       "failedExtract": {
         "title": "Couldn't extract text",
-        "subtitle": "Try again. If it keeps failing, check the model in Private AI settings."
+        "subtitle": "Try again. If it keeps failing, check the model in On-device AI settings."
       },
       "empty": {
         "title": "Didn't catch anything",
@@ -1685,11 +1685,11 @@
       },
       "notEnoughMemory": {
         "title": "Not enough memory",
-        "subtitle": "This device doesn't have enough free memory for this right now. Close other apps and try again, or choose a lighter quality in Private AI settings."
+        "subtitle": "This device doesn't have enough free memory for this right now. Close other apps and try again, or choose a lighter quality in On-device AI settings."
       },
       "unstable": {
         "title": "Paused to keep Pear Notes stable",
-        "subtitle": "This AI model stopped the app twice, so it's paused on this device. Try again, or choose a lighter quality in Private AI settings."
+        "subtitle": "This AI model stopped the app twice, so it's paused on this device. Try again, or choose a lighter quality in On-device AI settings."
       }
     },
     "translateNote": {
@@ -1728,7 +1728,7 @@
         "subtitle": "{{size}} download. Download now uses mobile data."
       }
     },
-    "reportSubject": "Pear Notes Private AI: problem with a result",
+    "reportSubject": "Pear Notes on-device AI: problem with a result",
     "summarizeNote": {
       "menuLabel": "Summarize note",
       "insertTitle": "Summary",
@@ -1877,7 +1877,7 @@
       "errors": {
         "failed": "Couldn't answer that. Try again or rephrase it.",
         "notEnoughMemory": "Not enough free memory right now. Close other apps and try again.",
-        "unstable": "This model stopped the app before, so it's paused. Try a lighter quality in Private AI settings.",
+        "unstable": "This model stopped the app before, so it's paused. Try a lighter quality in On-device AI settings.",
         "noMatch": "Couldn't find that text in the note, so nothing can be changed. Try quoting the exact words.",
         "unchanged": "Couldn't change the text. Try asking again with more detail.",
         "unreliable": "Couldn't make that change reliably, so nothing was changed. Try naming the exact words to change, or select just that part first.",

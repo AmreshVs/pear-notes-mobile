@@ -22,7 +22,7 @@ import {
   LOCAL_AI_ENABLED,
   LOCAL_AI_FEATURE,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
-import { htmlToParagraphs } from '@pear-notes/core/store/services/localAiPrompts.js'
+import { htmlToNoteText, htmlToParagraphs } from '@pear-notes/core/store/services/localAiPrompts.js'
 import { selectIsLocalAiFeatureReady } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
@@ -736,7 +736,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         selectionRef.current = tool.scope === 'selection' ? selection : null
         setAskTarget({
           selectionText: tool.scope === 'selection' ? (selection?.text ?? '') : '',
-          noteText: htmlToParagraphs(noteContentRef.current).join('\n'),
+          noteText: htmlToNoteText(noteContentRef.current),
         })
         return
       }
