@@ -197,8 +197,7 @@
           "limitations": [
             "Works best in a quiet place with one person speaking.",
             "Accuracy depends on language and accent. Lite and Standard are most accurate in English; Best covers about 25 languages.",
-            "Punctuation and names can be wrong, so check the text before you insert it.",
-            "Your voice is processed on this device and never uploaded."
+            "Punctuation and names can be wrong, so check the text before you insert it."
           ]
         },
         "summarizeRecordings": {
@@ -297,6 +296,7 @@
         "message": "{{feature}} needs {{size}}. Pear Notes keeps some space free so your notes can always save. Free up {{short}} and try again.",
         "messageGeneric": "A model download stopped because this device is almost full. Free up some space and try again."
       },
+      "footerLibrary": "QVAC",
       "footer": "Models are downloaded from the QVAC model library and checked before use. These settings apply to this device only.",
       "manageModels": "Manage models",
       "modelsTitle": "AI models",
@@ -489,6 +489,7 @@
         "standard": "Whisper base · {{size}} · recommended",
         "best": "Parakeet · {{size}} · most languages"
       },
+      "modelDocs": "View documentation",
       "tierSwitchNote": "Switching downloads the new model. The current one stays on this device until you delete it.",
       "model": "Model",
       "deleteModel": "Delete model",
@@ -508,7 +509,7 @@
       "storageRowDesc": "Not included in backups or sync.",
       "noLanguagesYet": "No languages yet. A language downloads the first time you translate into it.",
       "limitations": "Limitations",
-      "tierNeedsMemory": "Needs more memory than this device has"
+      "tierNeedsMemory": "Needs more memory than this device has \u2014 may be slow or close the app"
     }
   },
   "sync": {

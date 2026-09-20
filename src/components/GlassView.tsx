@@ -12,10 +12,6 @@ interface GlassViewProps extends ViewProps {
   borderRadius?: number
   style?: ViewStyle
   isInteractive?: boolean
-  /**
-   * Solid colour used when the blur is disabled (reduce transparency). Pass this
-   * alongside a translucent `style.backgroundColor` so the fallback stays opaque.
-   */
   opaqueColor?: string
 }
 

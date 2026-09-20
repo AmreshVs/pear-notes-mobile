@@ -1,6 +1,7 @@
 import type { TFunction } from 'i18next'
 
 import {
+  getModelDocsUrl,
   LOCAL_AI_LICENSE,
   LOCAL_AI_MODEL_STATUS,
   LOCAL_AI_REGISTRY_MODELS,
@@ -32,6 +33,7 @@ export interface OnDeviceAiModelRow {
   status: string
   onDevice: boolean
   users: string[]
+  docsUrl: string | null
 }
 
 export interface OnDeviceAiDeleteConfirm {
@@ -58,6 +60,7 @@ export function buildModelRow(state: LocalAiModelsState, name: string): OnDevice
     status: model?.status ?? LOCAL_AI_MODEL_STATUS.NONE,
     onDevice: !!model,
     users: computeModelUsers(state.config, name) as string[],
+    docsUrl: getModelDocsUrl(name) as string | null,
   }
 }
 

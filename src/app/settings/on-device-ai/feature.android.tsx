@@ -1,6 +1,6 @@
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import { Linking, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
@@ -36,6 +36,7 @@ import useOnDeviceAiFeatureScreen from './useOnDeviceAiFeatureScreen'
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
   onSurfaceVariant?: string
+  warning?: string
 }
 
 export default function AndroidOnDeviceAiFeatureScreen() {
@@ -158,27 +159,32 @@ export default function AndroidOnDeviceAiFeatureScreen() {
                   <Pressable
                     key={option.tier}
                     onPress={() => selectTier(option.tier)}
-                    disabled={!option.fits}
                     android_ripple={ripple}
                     accessibilityRole="button"
-                    accessibilityState={{ selected: option.selected, disabled: !option.fits }}
+                    accessibilityState={{ selected: option.selected }}
+                    accessibilityHint={
+                      option.fits ? undefined : t('settings.onDeviceAi.tierNeedsMemory')
+                    }
                     style={index < tiers.length - 1 ? styles.rowDivider : styles.row}
                   >
-                    <View style={[styles.rowInfo, !option.fits && styles.unavailable]}>
+                    <View style={styles.rowInfo}>
                       <Text style={styles.rowLabel}>
                         {t(`settings.onDeviceAi.tiers.${option.tier}`)}
                       </Text>
                       <Text style={styles.rowDesc}>
-                        {option.fits
-                          ? t(
-                              [
-                                `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
-                                `settings.onDeviceAi.tierDescriptions.${option.tier}`,
-                              ],
-                              { size: formatBytes(option.bytes) },
-                            )
-                          : t('settings.onDeviceAi.tierNeedsMemory')}
+                        {t(
+                          [
+                            `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
+                            `settings.onDeviceAi.tierDescriptions.${option.tier}`,
+                          ],
+                          { size: formatBytes(option.bytes) },
+                        )}
                       </Text>
+                      {!option.fits && (
+                        <Text style={styles.rowWarning}>
+                          {t('settings.onDeviceAi.tierNeedsMemory')}
+                        </Text>
+                      )}
                     </View>
                     {option.selected && (
                       <MaterialCommunityIcons
@@ -240,6 +246,15 @@ export default function AndroidOnDeviceAiFeatureScreen() {
                           {t('settings.onDeviceAi.sharedModel', {
                             features: getFeatureTitles(t, otherUsers),
                           })}
+                        </Text>
+                      )}
+                      {row.docsUrl && (
+                        <Text
+                          style={styles.rowLink}
+                          accessibilityRole="link"
+                          onPress={() => Linking.openURL(row.docsUrl as string)}
+                        >
+                          {t('settings.onDeviceAi.modelDocs')}
                         </Text>
                       )}
                     </View>
@@ -350,13 +365,21 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
-    unavailable: {
-      opacity: 0.45,
-    },
     rowDesc: {
       fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
+    },
+    rowWarning: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      color: c.warning ?? c.onSurfaceVariant,
+    },
+    rowLink: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      color: c.primary,
+      marginTop: 2,
     },
     limitationText: {
       flex: 1,

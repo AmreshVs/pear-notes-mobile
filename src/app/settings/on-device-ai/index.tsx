@@ -2,6 +2,7 @@ import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,6 +14,7 @@ import { router } from 'expo-router'
 import {
   LOCAL_AI_DEVICE_STATUS,
   LOCAL_AI_FEATURE_STATUS,
+  QVAC_MODEL_LIBRARY_URL,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
 
@@ -41,6 +43,8 @@ import useOnDeviceAiScreen, { type OnDeviceAiFeatureRow } from './useOnDeviceAiS
 
 export default function OnDeviceAiScreen() {
   const { t } = useTranslation()
+  const footerLibrary = t('settings.onDeviceAi.footerLibrary')
+  const [footerBefore, footerAfter] = t('settings.onDeviceAi.footer').split(footerLibrary)
   const { colors } = useTheme()
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
@@ -340,7 +344,17 @@ export default function OnDeviceAiScreen() {
               </RNView>
             ))}
 
-            <Text style={styles.footer}>{t('settings.onDeviceAi.footer')}</Text>
+            <Text style={styles.footer}>
+              {footerBefore}
+              <Text
+                style={styles.footerLink}
+                accessibilityRole="link"
+                onPress={() => Linking.openURL(QVAC_MODEL_LIBRARY_URL)}
+              >
+                {footerLibrary}
+              </Text>
+              {footerAfter}
+            </Text>
           </>
         )}
       </ScrollView>
@@ -538,6 +552,11 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
       marginTop: Space.lg,
       marginHorizontal: Space.sm,
+      lineHeight: FontSize.caption * 1.45,
+    },
+    footerLink: {
+      color: theme.colors.primary,
+      fontSize: FontSize.caption,
       lineHeight: FontSize.caption * 1.45,
     },
   })

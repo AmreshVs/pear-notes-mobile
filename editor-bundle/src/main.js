@@ -1,4 +1,4 @@
-import { Editor, Node, mergeAttributes } from '@tiptap/core'
+import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core'
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
 import Collaboration from '@tiptap/extension-collaboration'
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
@@ -18,7 +18,8 @@ import TaskList from '@tiptap/extension-task-list'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
 import { DOMParser as PMDOMParser } from '@tiptap/pm/model'
-import { Selection } from '@tiptap/pm/state'
+import { Decoration, DecorationSet } from '@tiptap/pm/view'
+import { Plugin, PluginKey, Selection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import { buildNoteEditsTransaction } from '@pear-notes/core/store/services/localAiNoteEdits.js'
 import langBash from 'highlight.js/lib/languages/bash'
@@ -472,9 +473,17 @@ const ImageWithSize = Image.extend({
 }).configure({ inline: false, allowBase64: true })
 
 let contentTimer = null
-function scheduleContentChange(html, text) {
+// Serializing the document is the expensive half of a content change, so the
+// debounce has to cover it too. Taking getHTML()/getText() up front — once per
+// transaction — makes a burst of small edits (live dictation emits one every
+// few hundred ms) pay for a full serialization per tick and then throw all but
+// the last result away.
+function scheduleContentChange(editor) {
   clearTimeout(contentTimer)
-  contentTimer = setTimeout(() => sendToRN({ type: 'contentChange', html, text }), 500)
+  contentTimer = setTimeout(() => {
+    if (!editor || editor.isDestroyed) return
+    sendToRN({ type: 'contentChange', html: editor.getHTML(), text: editor.getText() })
+  }, 500)
 }
 function flushContentChange(html, text) {
   clearTimeout(contentTimer)
@@ -604,6 +613,18 @@ function removeDictationCaret() {
   dictationCaretEl = null
 }
 
+function beginDictation() {
+  if (!editor || editor.isDestroyed) return
+  const { doc, selection } = editor.state
+  const size = doc.content.size
+  const raw = selection.empty ? selection.from : selection.to
+  const at = Number.isFinite(raw) && raw > 0 ? Math.min(raw, size) : size
+  const before = at > 0 ? doc.textBetween(Math.max(0, at - 1), at) : ''
+  dictation = { from: at, length: 0, prefix: before.trim() ? ' ' : '' }
+  moveDictationCaret()
+  keepCaretVisible()
+}
+
 function dictationRange() {
   const size = editor.state.doc.content.size
   const from = Math.max(0, Math.min(dictation.from, size))
@@ -640,6 +661,9 @@ window.addEventListener(
 let styleTimer = null
 let lastStyleJSON = ''
 function hasTextSelection(ed) {
+  // A kept range still counts: the toolbar has to keep offering Edit, and the
+  // AI button passes this flag back as `allowRemembered` when it reopens.
+  if (keptSelectionRange(ed.state)) return true
   const { from, to, empty } = ed.state.selection
   if (empty) return false
   return ed.state.doc.textBetween(from, to, '\n', ' ').trim().length > 0
@@ -1341,6 +1365,18 @@ function seedGenesisFromHtml(html) {
   Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(seedDoc), 'seed')
 }
 
+function clearEditorHistory() {
+  if (!editor) return
+  const { state, view } = editor
+  const historyPlugin = state.plugins.find(
+    (plugin) => typeof plugin.key === 'string' && plugin.key.startsWith('history$'),
+  )
+  if (!historyPlugin || !historyPlugin.spec || !historyPlugin.spec.state) return
+  view.dispatch(
+    state.tr.setMeta(historyPlugin, { historyState: historyPlugin.spec.state.init({}, state) }),
+  )
+}
+
 function handleYjsMessage(b64) {
   if (!collaborationEnabled || !ydoc || !b64) return
   const data = base64ToUint8(b64)
@@ -1377,6 +1413,77 @@ function destroyEditorSession() {
   awareness = null
 }
 
+// --- Kept selection -------------------------------------------------------
+//
+// Opening the AI tools has to drop the real selection: leaving one live keeps
+// the iOS grab handles and the keyboard on screen over the sheet. That used to
+// leave the user with no idea what the tool was about to act on, so the range
+// is re-drawn as a decoration instead. It survives until the user taps
+// somewhere else in the note, which is also what cancels it.
+const keptSelectionKey = new PluginKey('keptSelection')
+
+const KeptSelection = Extension.create({
+  name: 'keptSelection',
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: keptSelectionKey,
+        state: {
+          init: () => DecorationSet.empty,
+          apply(tr, value) {
+            const meta = tr.getMeta(keptSelectionKey)
+            if (meta === null) return DecorationSet.empty
+            if (meta) {
+              const from = Math.max(0, Math.min(meta.from, tr.doc.content.size))
+              const to = Math.max(from, Math.min(meta.to, tr.doc.content.size))
+              if (to === from) return DecorationSet.empty
+              return DecorationSet.create(tr.doc, [
+                Decoration.inline(from, to, { class: 'kept-selection' }),
+              ])
+            }
+            return value.map(tr.mapping, tr.doc)
+          },
+        },
+        props: {
+          decorations(state) {
+            return keptSelectionKey.getState(state)
+          },
+          handleDOMEvents: {
+            // Any tap in the note cancels it. pointerdown fires before the
+            // selection moves, so the range is still the one being dismissed.
+            pointerdown(view) {
+              if (!keptSelectionRange(view.state)) return false
+              clearKeptSelection(view)
+              return false
+            },
+            // Belt and braces for WebKit, where pointer events have been the
+            // flakier of the two. Clearing twice is a no-op.
+            touchstart(view) {
+              if (!keptSelectionRange(view.state)) return false
+              clearKeptSelection(view)
+              return false
+            },
+          },
+        },
+      }),
+    ]
+  },
+})
+
+function keptSelectionRange(state) {
+  const decorations = keptSelectionKey.getState(state)
+  if (!decorations) return null
+  const found = decorations.find()
+  return found.length > 0 ? { from: found[0].from, to: found[0].to } : null
+}
+
+function clearKeptSelection(view) {
+  if (!view) return
+  lastSelection = null
+  view.dispatch(view.state.tr.setMeta(keptSelectionKey, null))
+  sendToRN({ type: 'keptSelectionCleared' })
+}
+
 function createEditorSession(collaborator, html) {
   hasReceivedSync = false
 
@@ -1399,6 +1506,7 @@ function createEditorSession(collaborator, html) {
     CodeBlockLowlight.configure({ lowlight }),
     FileAttachment,
     AudioAttachment,
+    KeptSelection,
   ]
 
   let collabExtensions = []
@@ -1450,7 +1558,7 @@ function createEditorSession(collaborator, html) {
     content: collaborationEnabled ? undefined : html || '',
 
     onUpdate: ({ editor }) => {
-      scheduleContentChange(editor.getHTML(), editor.getText())
+      scheduleContentChange(editor)
       broadcastStyleState(editor)
       resumeCaretAutoscroll()
       keepCaretVisible()
@@ -1581,6 +1689,10 @@ window.editorBridge = {
         } else {
           currentNoteId = msg.noteId
           if (msg.html != null) editor.commands.setContent(msg.html, false)
+          // Undo history is per note: the editor is reused across notes, and loading one
+          // is itself an undoable step, so undo would otherwise walk back into the note
+          // that was open before.
+          clearEditorHistory()
         }
         // The WebView is reused across notes, so a freshly loaded note would otherwise
         // inherit the previous note's scroll offset. Reset once layout has settled.
@@ -1829,12 +1941,18 @@ window.editorBridge = {
 
       case 'getSelection': {
         const { from, to, empty } = editor.state.selection
+        const kept = keptSelectionRange(editor.state)
         const remembered =
-          msg.allowRemembered &&
-          empty &&
-          lastSelection &&
-          Date.now() - lastSelection.at < SELECTION_MEMORY_MS
-            ? lastSelection
+          msg.allowRemembered && empty
+            ? kept
+              ? {
+                  from: kept.from,
+                  to: kept.to,
+                  text: editor.state.doc.textBetween(kept.from, kept.to, '\n', ' '),
+                }
+              : lastSelection && Date.now() - lastSelection.at < SELECTION_MEMORY_MS
+                ? lastSelection
+                : null
             : null
         sendToRN({
           type: 'selectionResponse',
@@ -1881,18 +1999,17 @@ window.editorBridge = {
       }
 
       case 'dictationStart': {
-        const { doc, selection } = editor.state
-        const size = doc.content.size
-        const raw = selection.empty ? selection.from : selection.to
-        const at = Number.isFinite(raw) && raw > 0 ? Math.min(raw, size) : size
-        const before = at > 0 ? doc.textBetween(Math.max(0, at - 1), at) : ''
-        dictation = { from: at, length: 0, prefix: before.trim() ? ' ' : '' }
-        moveDictationCaret()
-        keepCaretVisible()
+        beginDictation()
         break
       }
 
       case 'dictationUpdate': {
+        // dictationStart can be missed — the command is injected into the
+        // WebView a beat before the recorder is mounted, so a slow or
+        // reloading editor never opens the session. Dropping the update here
+        // loses the whole transcript silently, so open one at the caret
+        // instead and carry on.
+        if (!dictation) beginDictation()
         if (!dictation) break
         const spoken = typeof msg.text === 'string' ? msg.text.replace(/\s+/g, ' ').trim() : ''
         const text = spoken ? dictation.prefix + spoken : ''
@@ -2076,10 +2193,33 @@ window.editorBridge = {
         break
       case 'collapseSelection': {
         lastSelection = null
+        editor.view.dispatch(editor.state.tr.setMeta(keptSelectionKey, null))
         const { to, empty } = editor.state.selection
         if (!empty) editor.commands.setTextSelection(to)
         break
       }
+
+      // Drop the real selection but keep it drawn, so the sheet that is about
+      // to cover the note still shows what it will act on.
+      case 'keepSelection': {
+        const { from, to, empty } = editor.state.selection
+        const range = empty ? keptSelectionRange(editor.state) || lastSelection : { from, to }
+        if (!range || range.to <= range.from) break
+        lastSelection = {
+          from: range.from,
+          to: range.to,
+          text: editor.state.doc.textBetween(range.from, range.to, '\n', ' '),
+          at: Date.now(),
+        }
+        const tr = editor.state.tr.setMeta(keptSelectionKey, { from: range.from, to: range.to })
+        if (!empty) tr.setSelection(Selection.near(tr.doc.resolve(range.to)))
+        editor.view.dispatch(tr)
+        break
+      }
+
+      case 'clearKeptSelection':
+        clearKeptSelection(editor.view)
+        break
     }
   },
 }

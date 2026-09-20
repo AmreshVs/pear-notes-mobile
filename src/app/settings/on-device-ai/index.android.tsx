@@ -1,6 +1,14 @@
 import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native'
 import { Switch } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -9,6 +17,7 @@ import { router, Stack } from 'expo-router'
 import {
   LOCAL_AI_DEVICE_STATUS,
   LOCAL_AI_FEATURE_STATUS,
+  QVAC_MODEL_LIBRARY_URL,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
 
@@ -53,6 +62,8 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 export default function AndroidOnDeviceAiScreen() {
   const { t } = useTranslation()
+  const footerLibrary = t('settings.onDeviceAi.footerLibrary')
+  const [footerBefore, footerAfter] = t('settings.onDeviceAi.footer').split(footerLibrary)
   const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
@@ -381,7 +392,17 @@ export default function AndroidOnDeviceAiScreen() {
               </Fragment>
             ))}
 
-            <Text style={styles.footerText}>{t('settings.onDeviceAi.footer')}</Text>
+            <Text style={styles.footerText}>
+              {footerBefore}
+              <Text
+                style={styles.footerLink}
+                accessibilityRole="link"
+                onPress={() => Linking.openURL(QVAC_MODEL_LIBRARY_URL)}
+              >
+                {footerLibrary}
+              </Text>
+              {footerAfter}
+            </Text>
           </>
         )}
       </ScrollView>
@@ -620,6 +641,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.regular,
       marginTop: UI_SIZE_12,
       paddingHorizontal: UI_SIZE_8,
+    },
+    footerLink: {
+      color: c.primary,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
     },
   })
   return styles

@@ -32,6 +32,7 @@ import {
   appReady,
   initApp,
   refreshHyperdriveAddress,
+  resetAppState,
   resyncApp,
 } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
@@ -88,6 +89,11 @@ SplashScreen.preventAutoHideAsync()
 const storage = WORKLET_STORAGE_PATH
 const MAX_WORKLET_RESTART_ATTEMPTS = 5
 
+// rootSaga dispatches initApp once, off the first appReady it sees. Every later boot of
+// the backend - a worklet restart, or the soft reload below - has to ask for it, and the
+// flag has to outlive the remount that soft reload performs.
+let hasInitializedBackend = false
+
 export default function RootLayout() {
   const { t } = useTranslation()
   const [remountKey, setRemountKey] = useState(0)
@@ -139,7 +145,6 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const [fatalError, setFatalError] = useState<string | null>(null)
   const savedEncryptionKeyRef = useRef<string | null>(null)
   const workletRestartAttemptsRef = useRef(0)
-  const hasInitializedRef = useRef(false)
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
@@ -187,8 +192,8 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       loadAndroidColorTheme()
       getBackgroundSyncMode().then(applyBackgroundSyncMode)
       dispatch(appReady())
-      if (hasInitializedRef.current) dispatch(initApp())
-      hasInitializedRef.current = true
+      if (hasInitializedBackend) dispatch(initApp())
+      hasInitializedBackend = true
       setLocalDeviceName(getLocalDeviceName())
     } catch (e) {
       console.error('Error in initWorklet', e)
@@ -221,6 +226,9 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       dispatch(setNeedsReload(false))
       router.dismissAll()
       router.replace('/(tabs)/(folders)')
+      // The remount below rebuilds the React tree, not the store, so without this the
+      // wiped or restored notes stay on screen until the app is killed and reopened.
+      dispatch(resetAppState())
       triggerReload()
     }
   }, [needsReload, dispatch, triggerReload])

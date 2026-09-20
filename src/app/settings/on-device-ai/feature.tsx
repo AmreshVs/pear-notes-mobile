@@ -1,6 +1,6 @@
 import { Fragment, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Alert, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { Stack, useLocalSearchParams } from 'expo-router'
 
 import { LOCAL_AI_LANGUAGE } from '@pear-notes/core/store/services/localAiCatalog.js'
@@ -129,26 +129,31 @@ export default function OnDeviceAiFeatureScreen() {
                 )}
                 <Pressable
                   onPress={() => selectTier(option.tier)}
-                  disabled={!option.fits}
                   accessibilityRole="button"
-                  accessibilityState={{ selected: option.selected, disabled: !option.fits }}
+                  accessibilityState={{ selected: option.selected }}
+                  accessibilityHint={
+                    option.fits ? undefined : t('settings.onDeviceAi.tierNeedsMemory')
+                  }
                   style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
                 >
-                  <RNView style={[styles.rowInfo, !option.fits && styles.unavailable]}>
+                  <RNView style={styles.rowInfo}>
                     <Text style={styles.rowLabel}>
                       {t(`settings.onDeviceAi.tiers.${option.tier}`)}
                     </Text>
                     <Text style={styles.rowDesc}>
-                      {option.fits
-                        ? t(
-                            [
-                              `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
-                              `settings.onDeviceAi.tierDescriptions.${option.tier}`,
-                            ],
-                            { size: formatBytes(option.bytes) },
-                          )
-                        : t('settings.onDeviceAi.tierNeedsMemory')}
+                      {t(
+                        [
+                          `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
+                          `settings.onDeviceAi.tierDescriptions.${option.tier}`,
+                        ],
+                        { size: formatBytes(option.bytes) },
+                      )}
                     </Text>
+                    {!option.fits && (
+                      <Text style={styles.rowWarning}>
+                        {t('settings.onDeviceAi.tierNeedsMemory')}
+                      </Text>
+                    )}
                   </RNView>
                   {option.selected && (
                     <SymbolIcon name="checkmark" size={UI_ICON_SIZE_16} color={colors.primary} />
@@ -217,6 +222,15 @@ export default function OnDeviceAiFeatureScreen() {
                         })}
                       </Text>
                     )}
+                    {row.docsUrl && (
+                      <Text
+                        style={styles.rowLink}
+                        accessibilityRole="link"
+                        onPress={() => Linking.openURL(row.docsUrl as string)}
+                      >
+                        {t('settings.onDeviceAi.modelDocs')}
+                      </Text>
+                    )}
                   </RNView>
                   {!row.onDevice && (
                     <Text style={styles.statusText}>{t('settings.onDeviceAi.notDownloaded')}</Text>
@@ -274,12 +288,18 @@ const useStyles = createThemedStylesheet((theme) => {
       fontFamily: FontFamily.semiBold,
       color: theme.colors.text,
     },
-    unavailable: {
-      opacity: 0.45,
-    },
     rowDesc: {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
+    },
+    rowLink: {
+      fontSize: FontSize.body,
+      color: theme.colors.primary,
+      marginTop: 2,
+    },
+    rowWarning: {
+      fontSize: FontSize.body,
+      color: theme.colors.warning,
     },
     limitationText: {
       flex: 1,

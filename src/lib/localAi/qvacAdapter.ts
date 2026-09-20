@@ -1,5 +1,4 @@
 import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'react-native'
-import * as Device from 'expo-device'
 import { File, Paths } from 'expo-file-system'
 
 import {
@@ -15,7 +14,6 @@ import {
   toAskFullTextReply,
 } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
-  canRunModels,
   getFeatureRegistryNames,
   LOCAL_AI_ERROR,
   LOCAL_AI_FEATURE,
@@ -368,9 +366,6 @@ function loadModelWith(sdk: QvacSdk, options: LoadModelInput): Promise<string> {
 async function ensureModelLoaded(sdk: QvacSdk, key: string, load: () => Promise<string>) {
   if ((readModelGuard().crashes[key] ?? 0) >= MODEL_CRASH_LIMIT) {
     throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
-  }
-  if (!canRunModels(key.split('|'), Device.totalMemory ?? 0)) {
-    throw new LocalAiError(LOCAL_AI_ERROR.NOT_ENOUGH_MEMORY)
   }
   if (AppState.currentState === 'active') setActiveModel(key)
   if (loadedModel?.key === key) return loadedModel.modelId

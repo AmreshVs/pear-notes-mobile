@@ -717,7 +717,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       const selection = current && current.text.trim() ? current : null
       hapticMedium()
       await hideKeyboard(() => editorRef.current?.blur())
-      if (selection) editorRef.current?.collapseSelection()
+      if (selection) editorRef.current?.keepSelection()
       setAiToolsTarget({ selection })
     },
     [aiToolsAvailable, editorRef, noteId],
@@ -769,10 +769,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [editorRef],
   )
 
+  const handleKeptSelectionCleared = useCallback(() => {
+    selectionRef.current = null
+  }, [])
+
   const handleCloseAsk = useCallback(() => {
     selectionRef.current = null
+    editorRef.current?.clearKeptSelection()
     setAskTarget(null)
-  }, [])
+  }, [editorRef])
 
   const handleExtractTextAttachment = useCallback(() => {
     if (!selectedAttachmentSrc) return
@@ -799,6 +804,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       captionTargetRef.current = null
       const selection = voiceScope === 'selection' ? selectionRef.current : null
       selectionRef.current = null
+      editorRef.current?.clearKeptSelection()
       if (selection) {
         if (voiceMode === 'summarizeNote') {
           if (!summary) return
@@ -1225,6 +1231,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onImageLongPress={handleImageLongPress}
               onAttachmentLongPress={handleAttachmentLongPress}
               onYjsMessage={handleYjsMessage}
+              onKeptSelectionCleared={handleKeptSelectionCleared}
             />
           )}
 

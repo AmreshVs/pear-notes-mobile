@@ -118,6 +118,8 @@ export interface TiptapEditorHandle {
   focusTitle: () => void
   blur: () => void
   collapseSelection: () => void
+  keepSelection: () => void
+  clearKeptSelection: () => void
   save: () => Promise<void>
   getHTML: () => Promise<string | undefined>
   setHTML: (html: string) => void
@@ -158,6 +160,7 @@ export interface TiptapEditorProps {
   onStyleStateChange?: (state: TiptapStyleState) => void
   onEditorFocus?: () => void
   onEditorBlur?: () => void
+  onKeptSelectionCleared?: () => void
   onOpenAttachment?: (url: string, fileName: string) => void
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
   onRequestPdfThumbnail?: (url: string, fileName: string, attachmentId: string) => void
@@ -186,6 +189,7 @@ type WebViewMsg =
   | { type: 'focusTitle' }
   | { type: 'blur' }
   | { type: 'collapseSelection' }
+  | { type: 'keptSelectionCleared' }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'requestPdfThumbnail'; url: string; fileName: string; attachmentId: string }
@@ -281,6 +285,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onStyleStateChange,
       onEditorFocus,
       onEditorBlur,
+      onKeptSelectionCleared,
       onOpenAttachment,
       onPreviewAttachment,
       onRequestPdfThumbnail,
@@ -317,6 +322,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onStyleStateChangeRef = useRef(onStyleStateChange)
     const onEditorFocusRef = useRef(onEditorFocus)
     const onEditorBlurRef = useRef(onEditorBlur)
+    const onKeptSelectionClearedRef = useRef(onKeptSelectionCleared)
     const onOpenAttachmentRef = useRef(onOpenAttachment)
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
     const onRequestPdfThumbnailRef = useRef(onRequestPdfThumbnail)
@@ -330,6 +336,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onStyleStateChangeRef.current = onStyleStateChange
     onEditorFocusRef.current = onEditorFocus
     onEditorBlurRef.current = onEditorBlur
+    onKeptSelectionClearedRef.current = onKeptSelectionCleared
     onOpenAttachmentRef.current = onOpenAttachment
     onPreviewAttachmentRef.current = onPreviewAttachment
     onRequestPdfThumbnailRef.current = onRequestPdfThumbnail
@@ -522,6 +529,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onEditorBlurRef.current?.()
             break
 
+          case 'keptSelectionCleared':
+            onKeptSelectionClearedRef.current?.()
+            break
+
           case 'openAttachment':
             onOpenAttachmentRef.current?.(msg.url, msg.fileName)
             break
@@ -689,6 +700,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           sendCommand({ type: 'focusTitle' })
         },
         collapseSelection: () => sendCommand({ type: 'collapseSelection' }),
+        keepSelection: () => sendCommand({ type: 'keepSelection' }),
+        clearKeptSelection: () => sendCommand({ type: 'clearKeptSelection' }),
         blur: () => {
           sendCommand({ type: 'blur' })
           webViewRef.current?.injectJavaScript(

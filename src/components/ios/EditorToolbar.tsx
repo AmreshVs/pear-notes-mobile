@@ -583,9 +583,6 @@ const useStyles = createThemedStylesheet((theme) => {
       height: 52,
       overflow: 'hidden',
     },
-    // The glass surfaces clip to their rounded corners, and on iOS that clips
-    // their shadow too — so the shadow lives on an unclipped wrapper that also
-    // carries the row layout.
     glassBarShadow: {
       flexShrink: 1,
       borderRadius: 28,
@@ -602,8 +599,6 @@ const useStyles = createThemedStylesheet((theme) => {
     toolbarShadow: theme.isDark
       ? {}
       : {
-          // An opaque backing gives the shadow a clean path to trace; the glass
-          // sits on top of it at 0.92 so it is not visible in its own right.
           backgroundColor: theme.colors.toolbarSurface,
           shadowColor: theme.colors.black,
           shadowOffset: { width: 0, height: 4 },

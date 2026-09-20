@@ -13,11 +13,13 @@ export const materialYouLightOverrides = {
   surfaceContainerHigh: '#FFFFFF',
   background: '#f2f2f7',
   editorBackground: '#ffffff',
+  warning: '#a15200',
 }
 
 const obsidianOverrides = {
   background: '#090909',
   editorBackground: '#090909',
+  warning: '#ff9f0a',
   surface: '#1e1e20',
   surfaceVariant: '#191919',
   surfaceContainer: '#1e1e20',
@@ -48,6 +50,7 @@ const obsidianOverrides = {
 const lightOverrides = {
   background: '#f2f2f7',
   editorBackground: '#ffffff',
+  warning: '#a15200',
   surface: '#FFFFFF',
   surfaceVariant: '#E4E4E4',
   surfaceContainer: '#FFFFFF',

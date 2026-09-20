@@ -1,5 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
-import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Keyboard, Modal, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
   runOnJS,
@@ -39,12 +39,14 @@ export function KeyboardSheetShell({ visible, onClose, children }: KeyboardSheet
   const insets = useSafeAreaInsets()
   const [isPresented, setIsPresented] = useState(visible)
   const sheetProgress = useSharedValue(visible ? 1 : 0)
+  const keyboardHeight = useSharedValue(Keyboard.metrics()?.height ?? 0)
   const bottomSpacerStyle = useMemo(
     () => ({ height: Math.max(insets.bottom, UI_SIZE_12) }),
     [insets.bottom],
   )
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({ opacity: sheetProgress.value }))
+  const keyboardAreaStyle = useAnimatedStyle(() => ({ paddingBottom: keyboardHeight.value }))
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: (1 - sheetProgress.value) * SHEET_TRAVEL }],
   }))
@@ -57,8 +59,28 @@ export function KeyboardSheetShell({ visible, onClose, children }: KeyboardSheet
   }, [sheetProgress])
 
   useEffect(() => {
+    const onShow = Keyboard.addListener('keyboardDidShow', (event) => {
+      keyboardHeight.value = withTiming(event.endCoordinates.height, {
+        duration: Durations.slide,
+        easing: Easing.out(Easing.cubic),
+      })
+    })
+    const onHide = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardHeight.value = withTiming(0, {
+        duration: Durations.slide,
+        easing: Easing.in(Easing.cubic),
+      })
+    })
+    return () => {
+      onShow.remove()
+      onHide.remove()
+    }
+  }, [keyboardHeight])
+
+  useEffect(() => {
     if (visible) {
       sheetProgress.value = 0
+      keyboardHeight.value = Keyboard.metrics()?.height ?? 0
       setIsPresented(true)
       return
     }
@@ -69,7 +91,7 @@ export function KeyboardSheetShell({ visible, onClose, children }: KeyboardSheet
         if (finished) runOnJS(setIsPresented)(false)
       },
     )
-  }, [sheetProgress, visible])
+  }, [keyboardHeight, sheetProgress, visible])
 
   if (!isPresented) return null
 
@@ -89,7 +111,7 @@ export function KeyboardSheetShell({ visible, onClose, children }: KeyboardSheet
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         </Animated.View>
-        <KeyboardAvoidingView style={styles.keyboardArea} pointerEvents="box-none">
+        <Animated.View style={[styles.keyboardArea, keyboardAreaStyle]} pointerEvents="box-none">
           <Animated.View
             style={[styles.sheetWrap, sheetAnimatedStyle]}
             pointerEvents={visible ? 'auto' : 'none'}
@@ -100,7 +122,7 @@ export function KeyboardSheetShell({ visible, onClose, children }: KeyboardSheet
               <View style={bottomSpacerStyle} />
             </View>
           </Animated.View>
-        </KeyboardAvoidingView>
+        </Animated.View>
       </View>
     </Modal>
   )

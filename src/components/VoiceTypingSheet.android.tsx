@@ -936,8 +936,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       borderColor: hexWithAlpha(md3Theme.colors.onSurface, 0.2),
     },
     chipSelected: {
-      borderColor: 'transparent',
-      backgroundColor: md3Theme.colors.secondaryContainer,
+      borderColor: c.primary,
+      backgroundColor: c.primaryContainer,
     },
     chipText: {
       fontSize: FontSize.body,
@@ -945,9 +945,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       color: c.onSurfaceVariant ?? theme.colors.textSecondary,
     },
     chipTextSelected: {
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
-      color: md3Theme.colors.onSecondaryContainer,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      color: c.onPrimaryContainer,
     },
     disclaimer: {
       fontSize: FontSize.caption,

@@ -356,6 +356,12 @@ body {
   background: color-mix(in srgb, var(--c-primary) 30%, transparent);
 }
 
+/* The range the AI tools will act on, drawn while the real selection is gone. */
+.kept-selection {
+  background: color-mix(in srgb, var(--c-primary) 30%, transparent);
+  border-radius: 2px;
+}
+
 .collaboration-cursor__caret {
   position: relative;
   margin-left: -1px;

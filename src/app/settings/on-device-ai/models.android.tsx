@@ -1,6 +1,14 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -122,6 +130,15 @@ export default function AndroidOnDeviceAiModelsScreen() {
                     </Text>
                     <Text style={styles.rowDesc}>{getModelSubtitle(t, row)}</Text>
                     <Text style={styles.rowDesc}>{getLicenseLabel(t, row)}</Text>
+                    {row.docsUrl && (
+                      <Text
+                        style={styles.rowLink}
+                        accessibilityRole="link"
+                        onPress={() => Linking.openURL(row.docsUrl as string)}
+                      >
+                        {t('settings.onDeviceAi.modelDocs')}
+                      </Text>
+                    )}
                   </View>
                   <Pressable
                     onPress={() => requestDeleteModel(row)}
@@ -140,7 +157,6 @@ export default function AndroidOnDeviceAiModelsScreen() {
               ))}
             </View>
 
-            <Text style={styles.sectionTitleDanger}>{t('storage.dangerZone')}</Text>
             <View style={styles.dangerCard}>
               <View style={styles.dangerTextContent}>
                 <Text style={styles.dangerCardTitle}>
@@ -265,6 +281,12 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
     },
+    rowLink: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.primary,
+      marginTop: 2,
+    },
     deleteIconBtn: {
       width: UI_SIZE_40,
       height: UI_SIZE_40,
@@ -272,16 +294,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       overflow: 'hidden',
       borderRadius: UI_SIZE_9999,
       backgroundColor: hexWithAlpha(c.error, 0.08),
-    },
-    sectionTitleDanger: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      marginBottom: UI_SIZE_8,
-      marginLeft: UI_SIZE_8,
-      marginTop: UI_SIZE_28,
-      letterSpacing: 0.5,
     },
     dangerCard: {
       ...commonStyles.centered,

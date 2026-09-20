@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -98,6 +99,15 @@ export default function OnDeviceAiModelsScreen() {
                     </Text>
                     <Text style={styles.rowDesc}>{getModelSubtitle(t, row)}</Text>
                     <Text style={styles.rowDesc}>{getLicenseLabel(t, row)}</Text>
+                    {row.docsUrl && (
+                      <Text
+                        style={styles.rowLink}
+                        accessibilityRole="link"
+                        onPress={() => Linking.openURL(row.docsUrl as string)}
+                      >
+                        {t('settings.onDeviceAi.modelDocs')}
+                      </Text>
+                    )}
                   </RNView>
                   <Pressable
                     onPress={() => requestDeleteModel(row)}
@@ -119,9 +129,6 @@ export default function OnDeviceAiModelsScreen() {
           </RNView>
 
           <RNView style={styles.section}>
-            <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
-              {t('storage.dangerZone')}
-            </Text>
             <RNView style={[commonThemedStyles.card, styles.dangerCard]}>
               <Text style={styles.dangerTitle}>{t('settings.onDeviceAi.deleteAllModels')}</Text>
               <Text style={styles.dangerDesc}>{t('settings.onDeviceAi.deleteAllModelsDesc')}</Text>
@@ -189,6 +196,11 @@ const useStyles = createThemedStylesheet((theme) => {
     rowDesc: {
       fontSize: FontSize.caption,
       color: theme.colors.textMuted,
+    },
+    rowLink: {
+      fontSize: FontSize.caption,
+      color: theme.colors.primary,
+      marginTop: 2,
     },
     dividerWrap: {
       marginHorizontal: Space.base,
