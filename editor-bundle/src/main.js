@@ -515,10 +515,30 @@ function applyBottomInset() {
   document.documentElement.style.setProperty('--bottom-inset', `${obstructed}px`)
 }
 
+// For a range selection the only edge worth keeping clear of the keyboard is the one the user is
+// moving, which is the DOM focus. range.getBoundingClientRect() is the union of both edges, so its
+// bottom sits at the far end of the selection and a correction measured from it scrolls away from
+// the edge being dragged rather than towards it.
+function getSelectionFocusRect(selection) {
+  if (!selection.focusNode) return null
+  try {
+    const focusRange = document.createRange()
+    focusRange.setStart(selection.focusNode, selection.focusOffset)
+    focusRange.collapse(true)
+    const focusRect = focusRange.getBoundingClientRect()
+    if (focusRect && (focusRect.height || focusRect.top || focusRect.bottom)) return focusRect
+  } catch (_) {}
+  return null
+}
+
 function getCaretRect() {
   const selection = window.getSelection()
   if (!selection || !selection.rangeCount) return null
   const range = selection.getRangeAt(0)
+  if (!range.collapsed) {
+    const focusRect = getSelectionFocusRect(selection)
+    if (focusRect) return focusRect
+  }
   const rangeRect = range.getBoundingClientRect()
   if (rangeRect && (rangeRect.height || rangeRect.top || rangeRect.bottom)) return rangeRect
   let node = range.startContainer
@@ -1570,6 +1590,12 @@ function createEditorSession(collaborator, html) {
       const from = editor.state.selection.from
       if (from === lastSelectionFrom) return
       lastSelectionFrom = from
+      // A range selection means the user is working the drag handles, and correcting the scroll
+      // fights them. Dragging the start handle up moves `from`, which used to resume autoscroll
+      // and pull the view back down to the far end of the range, so the selection could never be
+      // extended past the top of the screen. The platform already scrolls a handle drag that
+      // reaches a viewport edge.
+      if (!editor.state.selection.empty) return
       resumeCaretAutoscroll()
       keepCaretVisible()
     },
