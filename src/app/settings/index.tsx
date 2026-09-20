@@ -165,7 +165,6 @@ export default function SettingsScreen() {
             </RNView>
           </MotionView>
         </View>
-        <View style={commonStyles.flex1} />
         <RNView style={styles.footerContainer}>
           <Text style={styles.footer}>{t('settings.footer')}</Text>
           <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>

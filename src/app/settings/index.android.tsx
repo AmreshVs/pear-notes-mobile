@@ -156,7 +156,6 @@ export default function AndroidSettingsScreen() {
             </MotionView>
           ))}
         </View>
-        <View style={commonStyles.flex1} />
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>{t('settings.footer')}</Text>
           <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>
