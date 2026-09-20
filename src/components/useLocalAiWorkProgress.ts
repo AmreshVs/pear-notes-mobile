@@ -6,7 +6,7 @@ import {
   reduceWorkProgress,
 } from '@pear-notes/core/store/services/localAiWorkProgress.js'
 
-import type { LocalAiWorkEvent } from '@/lib/localAi/qvacAdapter'
+import type { LocalAiWorkEvent } from '@/lib/localAi/localAi'
 import type { BeginWorkOptions, WorkKind, WorkProgressView } from '@/lib/localAi/workProgress'
 
 type WorkProgress = ReturnType<typeof createWorkProgress>

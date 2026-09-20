@@ -34,6 +34,7 @@ import {
   FontWeight,
   Layout,
   Radii,
+  SHEET_MAX_WIDTH,
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
@@ -713,13 +714,15 @@ export function VoiceTypingSheet({
           style={[styles.sheetWrap, { paddingTop: insets.top + UI_SIZE_18 }, sheetAnimatedStyle]}
           pointerEvents={visible ? 'auto' : 'none'}
         >
-          {isDark ? (
-            <GlassView intensity={70} borderRadius={Radii.sheet} style={styles.sheet}>
-              {body}
-            </GlassView>
-          ) : (
-            <View style={[styles.sheet, styles.sheetLight]}>{body}</View>
-          )}
+          <View style={styles.sheetSizer}>
+            {isDark ? (
+              <GlassView intensity={70} borderRadius={Radii.sheet} style={styles.sheet}>
+                {body}
+              </GlassView>
+            ) : (
+              <View style={[styles.sheet, styles.sheetLight]}>{body}</View>
+            )}
+          </View>
         </Animated.View>
       </View>
     </Modal>
@@ -739,6 +742,11 @@ const useStyles = createThemedStylesheet((theme) => {
     sheetWrap: {
       flex: 1,
       justifyContent: 'flex-end',
+    },
+    sheetSizer: {
+      width: '100%',
+      maxWidth: SHEET_MAX_WIDTH,
+      alignSelf: 'center',
     },
     sheet: {
       paddingHorizontal: UI_SIZE_18,

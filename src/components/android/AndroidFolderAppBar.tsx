@@ -42,6 +42,9 @@ type AndroidFolderAppBarProps = {
   searchInputRef: RefObject<TextInput | null>
   searchBarStyle: AnimatedStyle<ViewStyle>
   onBack: () => void
+  showBack?: boolean
+  showCreateNote?: boolean
+  onCreateNote?: () => void
   onStartSelecting: () => void
   onToggleSearch: () => void
   onOpenFolderOptions: () => void
@@ -58,6 +61,9 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   searchInputRef,
   searchBarStyle,
   onBack,
+  showBack = true,
+  showCreateNote,
+  onCreateNote,
   onStartSelecting,
   onToggleSearch,
   onOpenFolderOptions,
@@ -77,19 +83,41 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
     <>
       <View style={styles.appBar}>
         <View style={styles.appBarLeft}>
-          <Pressable
-            onPress={onBack}
-            android_ripple={ripple}
-            style={styles.iconBtn}
-            hitSlop={UI_SIZE_8}
-            accessibilityRole="button"
-            accessibilityLabel={t('common.back')}
-          >
-            <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-          </Pressable>
+          {showBack && (
+            <Pressable
+              onPress={onBack}
+              android_ripple={ripple}
+              style={styles.iconBtn}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('common.back')}
+            >
+              <MaterialCommunityIcons
+                name="arrow-left"
+                size={UI_ICON_SIZE_24}
+                color={c.primary}
+              />
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.appBarRight}>
+          {showCreateNote && (
+            <Pressable
+              onPress={onCreateNote}
+              android_ripple={ripple}
+              style={styles.iconBtn}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('folderView.empty.newNoteBtn')}
+            >
+              <MaterialCommunityIcons
+                name="square-edit-outline"
+                size={UI_ICON_SIZE_24}
+                color={c.primary}
+              />
+            </Pressable>
+          )}
           <Pressable
             onPress={onStartSelecting}
             disabled={!canMultiSelect}

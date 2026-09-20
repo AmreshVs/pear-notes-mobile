@@ -1,6 +1,15 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native'
+import {
+  Pressable,
+  ScrollView,
+  StatusBar,
+  type StyleProp,
+  StyleSheet,
+  Text,
+  type TextStyle,
+  View,
+} from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -23,34 +32,104 @@ import {
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { confirmCopyFullReport } from '@/lib/debugSnapshot'
 import {
   buildDebugRows,
   buildTimelineRows,
   type DebugRow,
   describeDevice,
+  getCopyFullReportLabels,
   shortenHex,
+  showsSensitiveDebugInfo,
 } from '@/utils/debugRows'
 
 import { useDebugScreen } from './useDebugScreen'
+
+type DebugStyles = ReturnType<typeof useStyles>
+
+type RevealableValueProps = {
+  styles: DebugStyles
+  revealKey: string
+  shortValue: string
+  fullValue?: string
+  revealed: boolean
+  onToggle: (key: string) => void
+  textStyle: StyleProp<TextStyle>
+  revealLabel: string
+  hideLabel: string
+}
+
+function RevealableValue({
+  styles,
+  revealKey,
+  shortValue,
+  fullValue,
+  revealed,
+  onToggle,
+  textStyle,
+  revealLabel,
+  hideLabel,
+}: RevealableValueProps) {
+  const handlePress = useCallback(() => onToggle(revealKey), [onToggle, revealKey])
+
+  if (!fullValue || fullValue === shortValue) return <Text style={textStyle}>{shortValue}</Text>
+
+  return (
+    <Pressable
+      onPress={handlePress}
+      hitSlop={UI_SIZE_6}
+      accessibilityRole="button"
+      accessibilityLabel={revealed ? hideLabel : revealLabel}
+      style={styles.revealTarget}
+    >
+      <Text style={textStyle}>{revealed ? fullValue : shortValue}</Text>
+    </Pressable>
+  )
+}
 
 export default function DebugScreenAndroid() {
   const { t } = useTranslation()
   const styles = useStyles()
   const { colors } = useMD3Theme()
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
-  const { snapshot, error, copied, refreshing, handleRefresh, handleCopy, handleShare } =
-    useDebugScreen()
+  const {
+    snapshot,
+    error,
+    copied,
+    refreshing,
+    revealed,
+    toggleReveal,
+    handleRefresh,
+    handleCopy,
+    copyFullReport,
+    handleShare,
+  } = useDebugScreen()
 
   const handleBack = useCallback(() => router.back(), [])
+
+  const handleCopyFull = useCallback(
+    () => confirmCopyFullReport(getCopyFullReportLabels(t), copyFullReport),
+    [copyFullReport, t],
+  )
 
   const renderRow = useCallback(
     (row: DebugRow) => (
       <View key={row.key} style={styles.row}>
         <Text style={styles.rowLabel}>{row.label}</Text>
-        <Text style={row.emphasis ? styles.rowValueEmphasis : styles.rowValue}>{row.value}</Text>
+        <RevealableValue
+          styles={styles}
+          revealKey={row.key}
+          shortValue={row.value}
+          fullValue={row.fullValue}
+          revealed={!!revealed[row.key]}
+          onToggle={toggleReveal}
+          textStyle={row.emphasis ? styles.rowValueEmphasis : styles.rowValue}
+          revealLabel={t('debug.revealValue')}
+          hideLabel={t('debug.hideValue')}
+        />
       </View>
     ),
-    [styles],
+    [revealed, styles, t, toggleReveal],
   )
 
   const renderSection = useCallback(
@@ -93,10 +172,22 @@ export default function DebugScreenAndroid() {
             offline: t('debug.deviceOffline'),
           })}
         </Text>
-        <Text style={styles.deviceKey}>{shortenHex(String(device.localKey || ''))}</Text>
+        {showsSensitiveDebugInfo() ? (
+          <RevealableValue
+            styles={styles}
+            revealKey={`device-${String(device.localKey || index)}`}
+            shortValue={shortenHex(String(device.localKey || ''))}
+            fullValue={String(device.localKey || '') || undefined}
+            revealed={!!revealed[`device-${String(device.localKey || index)}`]}
+            onToggle={toggleReveal}
+            textStyle={styles.deviceKey}
+            revealLabel={t('debug.revealValue')}
+            hideLabel={t('debug.hideValue')}
+          />
+        ) : null}
       </View>
     ),
-    [styles, t],
+    [revealed, styles, t, toggleReveal],
   )
 
   const devices = (snapshot?.devices as Record<string, unknown>[]) || []
@@ -140,6 +231,20 @@ export default function DebugScreenAndroid() {
             />
             <Text style={styles.secondaryButtonText}>{t('debug.share')}</Text>
           </Pressable>
+          {showsSensitiveDebugInfo() ? (
+            <Pressable
+              onPress={handleCopyFull}
+              android_ripple={ripple}
+              style={styles.secondaryButton}
+            >
+              <MaterialCommunityIcons
+                name="eye-outline"
+                size={UI_ICON_SIZE_18}
+                color={colors.primary}
+              />
+              <Text style={styles.secondaryButtonText}>{t('debug.copyFull')}</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             onPress={handleRefresh}
             disabled={refreshing}
@@ -292,6 +397,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
       flexShrink: 0,
+    },
+    revealTarget: {
+      flexShrink: 1,
     },
     rowValue: {
       fontFamily: FontFamily.mono,

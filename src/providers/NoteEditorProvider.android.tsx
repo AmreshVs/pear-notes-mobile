@@ -193,6 +193,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     dialogInfo,
     setDialogInfo,
     slideAnim,
+    handlePaneLayout,
+    getPaneWidth,
     titleRef,
     noteContentRef,
     moveFolders,
@@ -861,7 +863,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       isDestructive: true,
       onConfirm: () => {
         dispatch(deleteNote(noteId as any))
-        const w = Dimensions.get('window').width
+        const w = getPaneWidth()
         if (reduceMotion) {
           snapTo(slideAnim, w, resetEditorState)
           return
@@ -1075,6 +1077,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       {children}
       <Animated.View
         style={[styles.animatedView, { transform: [{ translateX: slideAnim }] }]}
+        onLayout={handlePaneLayout}
         pointerEvents={isOpen ? 'auto' : 'none'}
       >
         <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
@@ -1532,6 +1535,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       borderColor: md3.dark ? c.transparent : hexWithAlpha(c.outline, 0.5),
     },
     saveBtn: {
+      overflow: 'hidden',
       width: 38,
       height: 38,
       borderRadius: UI_SIZE_9999,

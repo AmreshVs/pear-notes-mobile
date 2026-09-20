@@ -1,8 +1,24 @@
+import { SENSITIVE_DEBUG_KEYS, SHOW_SENSITIVE_DEBUG_INFO } from '@pear-notes/core/constant.js'
+
 const HEX_PREVIEW_LENGTH = 8
 const HEX_PATTERN = /^[0-9a-f]+$/i
 const SECTION_SKIP_KEYS = ['downloads', 'uploads', 'devices']
 
-export type DebugRow = { key: string; label: string; value: string; emphasis: boolean }
+export function isSensitiveDebugKey(key: string): boolean {
+  return SENSITIVE_DEBUG_KEYS.includes(key)
+}
+
+export function showsSensitiveDebugInfo(): boolean {
+  return SHOW_SENSITIVE_DEBUG_INFO
+}
+
+export type DebugRow = {
+  key: string
+  label: string
+  value: string
+  emphasis: boolean
+  fullValue?: string
+}
 export type DebugMark = { label: string; at: number }
 export type DebugBlock = { continued?: boolean; marks?: DebugMark[] }
 export type DebugTimeline = { blocks?: DebugBlock[] }
@@ -30,28 +46,35 @@ function formatTimestamp(value: unknown): string {
   return new Date(value).toLocaleString()
 }
 
-export function formatDebugValue(value: unknown): string {
+export function formatDebugValue(value: unknown, { shorten = true } = {}): string {
   if (value === null || value === undefined) return '—'
   if (typeof value === 'boolean') return value ? 'yes' : 'no'
   if (Array.isArray(value)) {
     if (value.length === 0) return '—'
-    return value.map((item) => formatDebugValue(item)).join(', ')
+    return value.map((item) => formatDebugValue(item, { shorten })).join(', ')
   }
   if (typeof value === 'object') return JSON.stringify(value)
   if (typeof value === 'number') return value.toLocaleString()
-  return shortenHex(String(value))
+  return shorten ? shortenHex(String(value)) : String(value)
 }
 
 export function buildDebugRows(data: unknown): DebugRow[] {
   if (!data || typeof data !== 'object') return []
   return Object.entries(data as Record<string, unknown>)
     .filter(([key]) => !SECTION_SKIP_KEYS.includes(key))
-    .map(([key, value]) => ({
-      key,
-      label: key,
-      value: TIMESTAMP_KEYS.includes(key) ? formatTimestamp(value) : formatDebugValue(value),
-      emphasis: EMPHASIS_KEYS.includes(key),
-    }))
+    .filter(([key]) => SHOW_SENSITIVE_DEBUG_INFO || !isSensitiveDebugKey(key))
+    .map(([key, value]) => {
+      const isTimestamp = TIMESTAMP_KEYS.includes(key)
+      const shown = isTimestamp ? formatTimestamp(value) : formatDebugValue(value)
+      const full = isTimestamp ? shown : formatDebugValue(value, { shorten: false })
+      return {
+        key,
+        label: key,
+        value: shown,
+        emphasis: EMPHASIS_KEYS.includes(key),
+        ...(full === shown ? null : { fullValue: full }),
+      }
+    })
 }
 
 export function buildTimelineRows(timeline: DebugTimeline | undefined): DebugRow[] {
@@ -79,6 +102,22 @@ export function buildTimelineRows(timeline: DebugTimeline | undefined): DebugRow
     })
   })
   return rows
+}
+
+export type CopyFullReportLabels = {
+  title: string
+  message: string
+  cancel: string
+  confirm: string
+}
+
+export function getCopyFullReportLabels(t: (key: string) => string): CopyFullReportLabels {
+  return {
+    title: t('debug.copyFullTitle'),
+    message: t('debug.copyFullDesc'),
+    cancel: t('common.cancel'),
+    confirm: t('debug.copyFullConfirm'),
+  }
 }
 
 export function describeDevice(

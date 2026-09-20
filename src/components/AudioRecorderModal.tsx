@@ -16,6 +16,7 @@ import {
   FontWeight,
   Layout,
   Radii,
+  SHEET_MAX_WIDTH,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_24,
   UI_SIZE_2,
@@ -475,6 +476,9 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: 0,
     },
     sheet: {
+      width: '100%',
+      maxWidth: SHEET_MAX_WIDTH,
+      alignSelf: 'center',
       paddingHorizontal: UI_SIZE_18,
       paddingTop: UI_SIZE_10,
       paddingBottom: UI_SIZE_4,

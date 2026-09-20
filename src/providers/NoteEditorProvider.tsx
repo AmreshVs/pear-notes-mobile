@@ -133,6 +133,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isAttachmentActionSheetOpen,
     setIsAttachmentActionSheetOpen,
     slideAnim,
+    handlePaneLayout,
+    getPaneWidth,
     titleRef,
     noteContentRef,
     moveFolders,
@@ -288,7 +290,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         style: 'destructive',
         onPress: () => {
           dispatch(deleteNote(noteId as any))
-          const w = Dimensions.get('window').width
+          const w = getPaneWidth()
           if (reduceMotion) {
             snapTo(slideAnim, w, resetEditorState)
             return
@@ -1039,6 +1041,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       <>
         <Animated.View
           style={[styles.animatedView, { transform: [{ translateX: slideAnim }] }]}
+          onLayout={handlePaneLayout}
           pointerEvents={isOpen ? 'auto' : 'none'}
         >
           {Platform.OS === 'ios' && isOpen ? (

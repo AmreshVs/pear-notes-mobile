@@ -1,6 +1,13 @@
 {
   "name": "pear-notes",
   "main": "index.js",
+  "expo": {
+    "autolinking": {
+      "buildFromSource": [
+        "expo-ui"
+      ]
+    }
+  },
   "version": "1.0.0",
   "standard": {
     "globals": [

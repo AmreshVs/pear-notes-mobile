@@ -1,17 +1,13 @@
-import { Fragment, useCallback, useMemo } from 'react'
+import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useSelector } from 'react-redux'
-import { router, Stack } from 'expo-router'
-
-import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
-import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { router, Stack, usePathname } from 'expo-router'
 
 import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
-import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -27,15 +23,25 @@ import {
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
+import { useSettingsSections } from '@/hooks/useSettingsSections'
 import { getAppVersionLabel } from '@/lib/appVersion'
+
+const SETTINGS_ROOT_PATH = '/settings'
 
 export default function SettingsScreen() {
   const { t } = useTranslation()
+  const isLargeScreen = useIsLargeScreen()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    if (!isLargeScreen || pathname !== SETTINGS_ROOT_PATH) return
+    router.push('/settings/general' as never)
+  }, [isLargeScreen, pathname])
   const theme = useTheme()
   const { colors } = theme
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
-  const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
 
   const handleClose = useCallback(() => {
     router.back()
@@ -45,66 +51,15 @@ export default function SettingsScreen() {
     router.push('/settings/debug' as never)
   }, [])
 
+  const allSections = useSettingsSections()
+
   const sections = useMemo(
-    () => [
-      {
-        key: 'general',
-        icon: 'slider.horizontal.3' as IconName,
-        label: t('layouts.general'),
-        onPress: () => router.push('/settings/general' as any),
-      },
-      {
-        key: 'privacy',
-        icon: 'checkmark.shield' as IconName,
-        label: t('settings.privacy.rowTitle'),
-        onPress: () => router.push('/settings/privacy' as any),
-      },
-      ...(LOCAL_AI_ENABLED
-        ? [
-            {
-              key: 'onDeviceAi',
-              icon: 'sparkles' as IconName,
-              label: t('settings.onDeviceAi.rowTitle'),
-              onPress: () => router.push('/settings/on-device-ai' as any),
-            },
-          ]
-        : []),
-      {
-        key: 'devices',
-        icon: 'laptopcomputer.and.iphone' as IconName,
-        label: t('settings.devices.rowTitle'),
-        onPress: () => router.push('/settings/devices' as any),
-      },
-      {
-        key: 'sync',
-        icon: 'arrow.clockwise' as IconName,
-        label: t('settings.sync.rowTitle'),
-        onPress: () => router.push('/settings/sync' as any),
-      },
-      ...(hasLinkedDevices
-        ? [
-            {
-              key: 'activity',
-              icon: 'clock.arrow.circlepath' as IconName,
-              label: t('layouts.activity'),
-              onPress: () => router.push('/settings/activity' as any),
-            },
-          ]
-        : []),
-      {
-        key: 'backup',
-        icon: 'square.and.arrow.down' as IconName,
-        label: t('settings.backup.backupAndRestore'),
-        onPress: () => router.push('/settings/backup' as any),
-      },
-      {
-        key: 'storage',
-        icon: 'cylinder.split.1x2' as IconName,
-        label: t('settings.storage.storageTitle'),
-        onPress: () => router.push('/settings/storage' as any),
-      },
-    ],
-    [t, hasLinkedDevices],
+    () =>
+      allSections.map((section) => ({
+        ...section,
+        onPress: () => router.push(section.route as any),
+      })),
+    [allSections],
   )
 
   return (
@@ -134,7 +89,7 @@ export default function SettingsScreen() {
         <View style={styles.scroll}>
           <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
             <RNView style={commonThemedStyles.card}>
-              {sections.map(({ key, icon, label, onPress }, i) => (
+              {sections.map(({ key, iosIcon, label, onPress }, i) => (
                 <Fragment key={key}>
                   <Pressable
                     onPress={onPress}
@@ -145,7 +100,7 @@ export default function SettingsScreen() {
                   >
                     <RNView style={commonStyles.settingsRowLeft}>
                       <RNView style={commonThemedStyles.iconBox34}>
-                        <SymbolIcon name={icon} size={UI_SIZE_20} color={colors.primary} />
+                        <SymbolIcon name={iosIcon} size={UI_SIZE_20} color={colors.primary} />
                       </RNView>
                       <Text style={styles.rowLabel}>{label}</Text>
                     </RNView>

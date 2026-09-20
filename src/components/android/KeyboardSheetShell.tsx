@@ -14,6 +14,7 @@ import { useSheetStyles } from '@/components/android/useSheetStyles'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   Durations,
+  SHEET_MAX_WIDTH,
   UI_SIZE_4,
   UI_SIZE_12,
   UI_SIZE_14,
@@ -147,6 +148,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       justifyContent: 'flex-end',
     },
     sheet: {
+      width: '100%',
+      maxWidth: SHEET_MAX_WIDTH,
+      alignSelf: 'center',
       borderTopLeftRadius: UI_SIZE_28,
       borderTopRightRadius: UI_SIZE_28,
       paddingHorizontal: UI_SIZE_20,

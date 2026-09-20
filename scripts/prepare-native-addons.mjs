@@ -58,6 +58,7 @@ function isWorkerBundleCurrent() {
 }
 
 runScript('patch-bare-kit-linker.mjs')
+runScript('patch-expo-ui-sheet.mjs')
 
 if (isWorkerBundleCurrent()) {
   console.log(`QVAC worker bundle is up to date with ${readManifestAddons().length} native addons`)

@@ -12,6 +12,7 @@ import { VoiceTypingWave } from '@/components/VoiceTypingWave'
 import {
   FontFamily,
   FontSize,
+  SHEET_MAX_WIDTH,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_SIZE_8,
@@ -147,6 +148,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
     },
     container: {
       flex: 1,
+      maxWidth: SHEET_MAX_WIDTH,
+      alignSelf: 'center',
       flexDirection: 'row',
       alignItems: 'center',
       gap: UI_SIZE_8,

@@ -51,6 +51,15 @@ export const UI_SIZE_200 = 200
 export const UI_SIZE_280 = 280
 export const UI_SIZE_9999 = 9999
 
+export const SHEET_MAX_WIDTH = 640
+export const LARGE_SCREEN_MIN_WIDTH = 768
+export const SHORT_WINDOW_MAX_HEIGHT = 600
+export const SIDEBAR_WIDTH = 360
+export const SETTINGS_MENU_WIDTH = 300
+export const SETTINGS_PANEL_WIDTH_RATIO = '88%'
+export const SETTINGS_PANEL_HEIGHT_RATIO = '88%'
+export const SETTINGS_PANEL_MAX_WIDTH = 1100
+
 export const UI_ICON_SIZE_18 = 18
 export const UI_ICON_SIZE_20 = 20
 export const UI_ICON_SIZE_22 = 22

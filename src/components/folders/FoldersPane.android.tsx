@@ -72,6 +72,8 @@ import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/h
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { MAX_FONT_SCALE_CHROME } from '@/utils/dynamicType'
 
+import { FoldersPaneProps } from './types'
+
 type Folder = {
   id: string
   key?: string
@@ -91,7 +93,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceTint: string
 }
 
-export default function AndroidFoldersScreen() {
+export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: FoldersPaneProps) {
   const { t } = useTranslation()
   const md3 = useMD3Theme()
   const theme = useTheme()
@@ -135,11 +137,12 @@ export default function AndroidFoldersScreen() {
   )
 
   useEffect(() => {
+    if (embedded) return
     if (isInitialMount.current) {
       isInitialMount.current = false
       router.push(`/folder/${ALL_NOTES_KEY}` as Href)
     }
-  }, [])
+  }, [embedded])
 
   useEffect(() => {
     if (creatingNoteRef.current && selectedNote && selectedNote !== lastSelectedNoteRef.current) {
@@ -156,9 +159,13 @@ export default function AndroidFoldersScreen() {
   const handleSelectFolder = useCallback(
     (folderId: string) => {
       dispatch(setSelectedFolder(folderId))
+      if (onSelectFolder) {
+        onSelectFolder(folderId)
+        return
+      }
       router.push(`/folder/${folderId}` as Href)
     },
-    [dispatch],
+    [dispatch, onSelectFolder],
   )
 
   const handleCreateFolder = useCallback(() => {
@@ -332,14 +339,36 @@ export default function AndroidFoldersScreen() {
           <View>
             <Text style={styles.pageTitle}>{t('folders.title')}</Text>
           </View>
-          <Pressable
-            onPress={handleOpenSettings}
-            android_ripple={screenRippleBorderless}
-            style={styles.gearBtn}
-            hitSlop={UI_SIZE_8}
-          >
-            <MaterialCommunityIcons name="cog-outline" size={UI_ICON_SIZE_24} color={c.onSurface} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            {embedded && (
+              <Pressable
+                onPress={handleCreateFolder}
+                android_ripple={screenRippleBorderless}
+                style={styles.gearBtn}
+                hitSlop={UI_SIZE_8}
+                accessibilityRole="button"
+                accessibilityLabel={t('folders.a11y.newFolder')}
+              >
+                <MaterialCommunityIcons
+                  name="folder-plus-outline"
+                  size={UI_ICON_SIZE_24}
+                  color={c.onSurface}
+                />
+              </Pressable>
+            )}
+            <Pressable
+              onPress={handleOpenSettings}
+              android_ripple={screenRippleBorderless}
+              style={styles.gearBtn}
+              hitSlop={UI_SIZE_8}
+            >
+              <MaterialCommunityIcons
+                name="cog-outline"
+                size={UI_ICON_SIZE_24}
+                color={c.onSurface}
+              />
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.searchWrap}>
@@ -377,6 +406,7 @@ export default function AndroidFoldersScreen() {
               isTrash={folder.isTrash}
               count={noteCounts[folder.id || folder.key!] ?? 0}
               isLast={index === topFolders.length - 1}
+              selected={(folder.id || folder.key) === selectedFolderId}
               colors={c}
               onPress={handleSelectFolder}
               onLongPress={handleFolderLongPress}
@@ -406,6 +436,7 @@ export default function AndroidFoldersScreen() {
                   isTrash={folder.isTrash}
                   count={noteCounts[folder.id || folder.key!] ?? 0}
                   isLast={index === archiveFolders.length - 1}
+                  selected={(folder.id || folder.key) === selectedFolderId}
                   colors={c}
                   onPress={handleSelectFolder}
                   onLongPress={handleFolderLongPress}
@@ -424,14 +455,16 @@ export default function AndroidFoldersScreen() {
         <EdgeFade color={c.background} placement="bottom" />
       </View>
 
-      <FAB
-        icon="plus"
-        onPress={handleCreateFolder}
-        style={styles.fab}
-        color={c.onPrimaryContainer}
-        customSize={64}
-        theme={{ colors: { primaryContainer: c.primaryContainer } }}
-      />
+      {!embedded && (
+        <FAB
+          icon="plus"
+          onPress={handleCreateFolder}
+          style={styles.fab}
+          color={c.onPrimaryContainer}
+          customSize={64}
+          theme={{ colors: { primaryContainer: c.primaryContainer } }}
+        />
+      )}
 
       <Modal
         visible={!!folderDialog}
@@ -514,6 +547,7 @@ type VaultFolderRowProps = {
   isTrash?: boolean
   count: number
   isLast: boolean
+  selected?: boolean
   colors: ExtendedColors
   onPress: (id: string) => void
   onLongPress: (id: string) => void
@@ -527,6 +561,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
   isTrash,
   count,
   isLast,
+  selected,
   colors: c,
   onPress,
   onLongPress,
@@ -546,7 +581,7 @@ const VaultFolderRow = memo(function VaultFolderRow({
         onPress={handlePress}
         onLongPress={handleLongPress}
         android_ripple={ripple}
-        style={styles.row}
+        style={[styles.row, selected && styles.rowSelected]}
       >
         <View style={styles.rowLeft}>
           <View style={[styles.iconWrap, isTrash ? styles.iconWrapTrash : styles.iconWrapDefault]}>
@@ -619,6 +654,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
       paddingHorizontal: UI_SIZE_20,
       paddingTop: insets.top + UI_SIZE_24,
       paddingBottom: insets.bottom + 100,
+    },
+    headerActions: {
+      ...commonStyles.row,
     },
     header: {
       ...commonStyles.row,
@@ -751,6 +789,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     row: {
       ...commonStyles.rowBetween,
       padding: UI_SIZE_16,
+    },
+    rowSelected: {
+      backgroundColor: c.secondaryContainer,
     },
     dividerWrap: {
       marginHorizontal: UI_SIZE_16,

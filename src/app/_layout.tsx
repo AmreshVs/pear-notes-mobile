@@ -1,7 +1,7 @@
 import '@/devtools/reactotron'
 import '@/locales/i18n'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -15,6 +15,7 @@ import {
 } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { ReducedMotionConfig, ReduceMotion } from 'react-native-reanimated'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Provider, useDispatch, useSelector } from 'react-redux'
 import * as Crypto from 'expo-crypto'
 import { router, Stack, usePathname } from 'expo-router'
@@ -52,6 +53,7 @@ import {
 } from '@/components/Themed'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
+import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
 import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
 import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
@@ -60,7 +62,7 @@ import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { loadHapticsPreference } from '@/lib/haptics'
-import { qvacAdapter } from '@/lib/localAi/qvacAdapter'
+import { localAiAdapter } from '@/lib/localAi/localAi'
 import { useLocalAiBridge } from '@/lib/localAi/useLocalAiBridge'
 import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
 import { useAttachmentCachePrune } from '@/lib/useAttachmentCachePrune'
@@ -76,7 +78,7 @@ export { AppErrorBoundary as ErrorBoundary } from '@/components/AppErrorBoundary
 
 LogBox.ignoreAllLogs()
 
-if (LOCAL_AI_ENABLED) setLocalAiAdapter(qvacAdapter)
+if (LOCAL_AI_ENABLED) setLocalAiAdapter(localAiAdapter)
 
 const _initialScheme = Appearance.getColorScheme()
 SystemUI.setBackgroundColorAsync(
@@ -136,6 +138,12 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const styles = useStyles()
+  const insets = useSafeAreaInsets()
+
+  const gestureViewStyle = useMemo(
+    () => [styles.gestureView, { paddingLeft: insets.left, paddingRight: insets.right }],
+    [styles.gestureView, insets.left, insets.right],
+  )
 
   useMediaSyncAutoDetect()
   useAttachmentCachePrune()
@@ -262,7 +270,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   }
 
   return (
-    <GestureHandlerRootView style={styles.gestureView}>
+    <GestureHandlerRootView style={gestureViewStyle}>
       <RootLayoutNav />
     </GestureHandlerRootView>
   )
@@ -323,10 +331,33 @@ const CustomLightTheme = {
   },
 }
 
+const SETTINGS_PATH_PREFIX = '/settings'
+
 function RootLayoutNav() {
   const colorScheme = useResolvedColorScheme()
   const isDark = colorScheme === 'dark'
   const reduceMotion = useReduceMotion()
+  const isLargeScreen = useIsLargeScreen()
+  const pathname = usePathname()
+  const isSettingsOpen = pathname.startsWith(SETTINGS_PATH_PREFIX)
+  const [settingsUsesPanel, setSettingsUsesPanel] = useState(isLargeScreen)
+
+  useEffect(() => {
+    if (isSettingsOpen) return
+    setSettingsUsesPanel(isLargeScreen)
+  }, [isSettingsOpen, isLargeScreen])
+
+  const settingsOptions = useMemo(
+    () =>
+      settingsUsesPanel && Platform.OS === 'ios'
+        ? {
+            presentation: 'transparentModal' as const,
+            headerShown: false,
+            animation: 'fade' as const,
+          }
+        : { presentation: 'modal' as const, headerShown: false, sheetGrabberVisible: true },
+    [settingsUsesPanel],
+  )
 
   useEffect(() => {
     SystemUI.setBackgroundColorAsync(isDark ? Colors.dark.background : Colors.light.background)
@@ -347,14 +378,7 @@ function RootLayoutNav() {
               >
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="note" options={{ headerShown: false }} />
-                <Stack.Screen
-                  name="settings"
-                  options={{
-                    presentation: 'modal',
-                    headerShown: false,
-                    sheetGrabberVisible: true,
-                  }}
-                />
+                <Stack.Screen name="settings" options={settingsOptions} />
               </Stack>
 
               <PairingOverlay />

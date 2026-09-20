@@ -51,6 +51,7 @@ import {
 
 import { RECORDING_BARS, sampleAmp } from '@/components/useAudioRecorderModal'
 import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
+import { MOCK_LOCAL_AI } from '@/constants/constants'
 import { hapticMedium, hapticSelection, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import {
   cancelLocalAiTask,
@@ -64,7 +65,7 @@ import {
   summarizeTranscript,
   transcribeAudioFile,
   translateParagraphs,
-} from '@/lib/localAi/qvacAdapter'
+} from '@/lib/localAi/localAi'
 import { getRewriteDiff } from '@/lib/localAi/rewriteChanges'
 import { SHORTER_TARGET_RATIO } from '@/lib/localAi/workProgress'
 
@@ -227,7 +228,8 @@ function deleteLocalFile(uri: string | null) {
   } catch {}
 }
 
-const supportsLiveDictation = () => typeof ExpoLocalAi?.startPcmStream === 'function'
+const supportsLiveDictation = () =>
+  MOCK_LOCAL_AI || typeof ExpoLocalAi?.startPcmStream === 'function'
 
 export function useVoiceTypingSheet({
   visible,

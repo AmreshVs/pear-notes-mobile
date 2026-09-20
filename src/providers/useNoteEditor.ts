@@ -7,6 +7,7 @@ import {
   Dimensions,
   InteractionManager,
   Keyboard,
+  type LayoutChangeEvent,
 } from 'react-native'
 import { useSelector } from 'react-redux'
 import { router } from 'expo-router'
@@ -91,6 +92,7 @@ export function useNoteEditor() {
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
   const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current
+  const paneWidthRef = useRef(Dimensions.get('window').width)
   const isClosingRef = useRef(false)
   const titleRef = useRef<string>('')
   const noteContentRef = useRef<string>('')
@@ -273,6 +275,18 @@ export function useNoteEditor() {
     })
   }, [noteId, hyperdriveServerAddress])
 
+  const getPaneWidth = useCallback(() => paneWidthRef.current, [])
+
+  const handlePaneLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const { width } = event.nativeEvent.layout
+      if (!width || width === paneWidthRef.current) return
+      paneWidthRef.current = width
+      if (!isOpen) slideAnim.setValue(width)
+    },
+    [isOpen, slideAnim],
+  )
+
   const resetEditorState = useCallback(() => {
     setIsOpen(false)
     setNoteId(null)
@@ -284,7 +298,7 @@ export function useNoteEditor() {
   const animateClose = useCallback(() => {
     if (isClosingRef.current) return
     isClosingRef.current = true
-    const w = Dimensions.get('window').width
+    const w = paneWidthRef.current
     if (reduceMotion) {
       snapTo(slideAnim, w, resetEditorState)
       return
@@ -466,6 +480,8 @@ export function useNoteEditor() {
     styleStateRef,
     styleStateVersion,
     slideAnim,
+    handlePaneLayout,
+    getPaneWidth,
     isClosingRef,
     titleRef,
     noteContentRef,

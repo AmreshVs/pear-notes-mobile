@@ -1,14 +1,10 @@
-import React, { useCallback, useMemo } from 'react'
+import React, { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
-
-import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
-import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { router, Stack, usePathname } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
@@ -30,14 +26,23 @@ import {
   UI_SIZE_40,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
+import { useSettingsSections } from '@/hooks/useSettingsSections'
 import { androidRipple } from '@/lib/androidRipple'
 import { getAppVersionLabel } from '@/lib/appVersion'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
-type IconName = React.ComponentProps<typeof MaterialCommunityIcons>['name']
+const SETTINGS_ROOT_PATH = '/settings'
 
 export default function AndroidSettingsScreen() {
   const { t } = useTranslation()
+  const isLargeScreen = useIsLargeScreen()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    if (!isLargeScreen || pathname !== SETTINGS_ROOT_PATH) return
+    router.push('/settings/general' as never)
+  }, [isLargeScreen, pathname])
   const styles = useStyles()
   const theme = useTheme()
   const md3 = useMD3Theme()
@@ -45,72 +50,20 @@ export default function AndroidSettingsScreen() {
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
 
   const handleOpenDebug = useCallback(() => {
     router.push('/settings/debug' as never)
   }, [])
 
-  const sections = useMemo<{ key: string; icon: IconName; label: string; onPress: () => void }[]>(
-    () => [
-      {
-        key: 'general',
-        icon: 'tune-variant',
-        label: t('layouts.general'),
-        onPress: () => router.push('/settings/general' as any),
-      },
-      {
-        key: 'privacy',
-        icon: 'shield-check-outline',
-        label: t('settings.privacy.rowTitle'),
-        onPress: () => router.push('/settings/privacy' as any),
-      },
-      ...(LOCAL_AI_ENABLED
-        ? [
-            {
-              key: 'onDeviceAi',
-              icon: 'creation-outline' as IconName,
-              label: t('settings.onDeviceAi.rowTitle'),
-              onPress: () => router.push('/settings/on-device-ai' as any),
-            },
-          ]
-        : []),
-      {
-        key: 'devices',
-        icon: 'devices',
-        label: t('settings.devices.rowTitle'),
-        onPress: () => router.push('/settings/devices' as any),
-      },
-      {
-        key: 'sync',
-        icon: 'sync',
-        label: t('settings.sync.rowTitle'),
-        onPress: () => router.push('/settings/sync' as any),
-      },
-      ...(hasLinkedDevices
-        ? [
-            {
-              key: 'activity',
-              icon: 'history' as IconName,
-              label: t('layouts.activity'),
-              onPress: () => router.push('/settings/activity' as any),
-            },
-          ]
-        : []),
-      {
-        key: 'backup',
-        icon: 'cloud-download-outline',
-        label: t('settings.backup.backupAndRestore'),
-        onPress: () => router.push('/settings/backup' as any),
-      },
-      {
-        key: 'storage',
-        icon: 'database-outline',
-        label: t('settings.storage.storageTitle'),
-        onPress: () => router.push('/settings/storage' as any),
-      },
-    ],
-    [t, hasLinkedDevices],
+  const allSections = useSettingsSections()
+
+  const sections = useMemo(
+    () =>
+      allSections.map((section) => ({
+        ...section,
+        onPress: () => router.push(section.route as any),
+      })),
+    [allSections],
   )
 
   return (
@@ -135,14 +88,18 @@ export default function AndroidSettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.scrollContent}>
-          {sections.map(({ key, icon, label, onPress }, i) => (
+          {sections.map(({ key, androidIcon, label, onPress }, i) => (
             <MotionView
               key={key}
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
             >
               <Pressable onPress={onPress} android_ripple={ripple} style={styles.cardRow}>
                 <View style={styles.iconWrap}>
-                  <MaterialCommunityIcons name={icon} size={UI_ICON_SIZE_20} color={c.primary} />
+                  <MaterialCommunityIcons
+                    name={androidIcon}
+                    size={UI_ICON_SIZE_20}
+                    color={c.primary}
+                  />
                 </View>
                 <View style={styles.rowContent}>
                   <Text style={styles.rowTitle}>{label}</Text>

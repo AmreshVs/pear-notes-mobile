@@ -6,6 +6,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  SHEET_MAX_WIDTH,
   UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_14,
@@ -46,7 +47,15 @@ export const useSheetStyles = createThemedStylesheetWithHooks((theme, md3Theme) 
       alignSelf: 'center',
       backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.5),
     },
+    sheetContainer: {
+      width: '100%',
+      maxWidth: SHEET_MAX_WIDTH,
+      alignSelf: 'center',
+    },
     content: {
+      width: '100%',
+      maxWidth: SHEET_MAX_WIDTH,
+      alignSelf: 'center',
       paddingHorizontal: UI_SIZE_20,
     },
     header: {

@@ -23,7 +23,7 @@ import {
   replaceOnce,
   resolveAskTurn,
 } from '@/lib/localAi/askNote'
-import { askAboutNote, cancelLocalAiTask } from '@/lib/localAi/qvacAdapter'
+import { askAboutNote, cancelLocalAiTask } from '@/lib/localAi/localAi'
 
 const COPIED_RESET_MS = 2000
 

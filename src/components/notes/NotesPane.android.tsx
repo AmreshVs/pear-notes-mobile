@@ -18,7 +18,7 @@ import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
-import { router, useLocalSearchParams } from 'expo-router'
+import { router } from 'expo-router'
 
 import {
   ALL_NOTES_KEY,
@@ -84,12 +84,13 @@ import {
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
+import { useNoteSelection } from '@/hooks/useNoteSelection'
 import { androidRipple } from '@/lib/androidRipple'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { buildNoteSections } from '@/utils/noteSections'
 
-import { useNoteSelection } from './useNoteSelection'
+import { NotesPaneProps } from './types'
 
 function noteKey(note: any): string {
   return note.key
@@ -97,9 +98,17 @@ function noteKey(note: any): string {
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
 
-export default function AndroidFolderNotesScreen() {
+export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps) {
   const { t } = useTranslation()
-  const { id } = useLocalSearchParams<{ id: string }>()
+  const id = folderId
+
+  const closePane = useCallback(() => {
+    if (onRequestClose) {
+      onRequestClose()
+      return
+    }
+    router.back()
+  }, [onRequestClose])
   const { height } = useWindowDimensions()
   const dispatch = useDispatch()
   const theme = useTheme()
@@ -421,8 +430,8 @@ export default function AndroidFolderNotesScreen() {
     hapticWarning()
     dispatch(deleteFolder(id as any))
     setShowFolderDeleteConfirm(false)
-    router.back()
-  }, [dispatch, id])
+    closePane()
+  }, [closePane, dispatch, id])
 
   const handleChangeRenameText = useCallback((value: string) => {
     setRenameText(value)
@@ -633,10 +642,6 @@ export default function AndroidFolderNotesScreen() {
 
   const noteSheetActions = isTrashFolder ? trashNoteSheetActions : folderNoteSheetActions
 
-  const handleBack = useCallback(() => {
-    router.back()
-  }, [])
-
   const handleOpenFolderOptions = useCallback(() => {
     setFolderOptionsSheet(true)
   }, [])
@@ -728,7 +733,10 @@ export default function AndroidFolderNotesScreen() {
             canSearch={canSearch}
             searchInputRef={searchInputRef}
             searchBarStyle={searchBarAnimStyle}
-            onBack={handleBack}
+            onBack={closePane}
+            showBack={!embedded}
+            showCreateNote={embedded && !isTrashFolder}
+            onCreateNote={handleCreateNote}
             onStartSelecting={handleStartSelecting}
             onToggleSearch={toggleSearch}
             onOpenFolderOptions={handleOpenFolderOptions}
@@ -760,7 +768,7 @@ export default function AndroidFolderNotesScreen() {
         <EdgeFade color={c.background} placement="bottom" />
       </View>
 
-      {!isTrashFolder && !isSelecting && (
+      {!isTrashFolder && !isSelecting && !embedded && (
         <FAB
           icon="plus"
           onPress={handleCreateNote}

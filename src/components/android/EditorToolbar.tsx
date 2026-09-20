@@ -489,6 +489,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       backgroundColor: hexWithAlpha(c.outlineVariant, 0.25),
     },
     addBtn: {
+      overflow: 'hidden',
       width: UI_SIZE_44,
       height: UI_SIZE_44,
       borderRadius: UI_SIZE_9999,

@@ -74,7 +74,7 @@ export function FolderPickerSheet({ visible, onDismiss, folders, onSelect }: Pro
       handleIndicatorStyle={sheet.handleIndicator}
       onDismiss={onDismiss}
     >
-      <BottomSheetView>
+      <BottomSheetView style={sheet.sheetContainer}>
         <View style={styles.headerRow}>
           <Pressable
             onPress={onDismiss}

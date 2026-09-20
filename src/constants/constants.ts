@@ -5,6 +5,8 @@ export const LIST_BATCHING_PERIOD_MS = 60
 
 export const ANDROID_RIPPLE_ENABLED = true
 
+export const MOCK_LOCAL_AI = __DEV__ && false
+
 export const ATTACHMENT_THUMBNAIL_CACHE_DIR = 'attachment-thumb'
 
 export const MIN_TITLE_COLLAPSE_DISTANCE = 140

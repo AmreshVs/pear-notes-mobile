@@ -15,6 +15,7 @@ export function useDebugScreen() {
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
+  const [revealed, setRevealed] = useState<Record<string, boolean>>({})
   const mountedRef = useRef(true)
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const heavyStorageRef = useRef<Record<string, unknown> | null>(null)
@@ -54,19 +55,34 @@ export function useDebugScreen() {
     if (mountedRef.current) setRefreshing(false)
   }, [load])
 
-  const handleCopy = useCallback(async () => {
-    try {
-      const done = await copyDebugReport(snapshot)
-      if (!done || !mountedRef.current) return
-      setCopied(true)
-      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
-      copiedTimerRef.current = setTimeout(() => {
-        if (mountedRef.current) setCopied(false)
-      }, COPIED_RESET_MS)
-    } catch (e) {
-      if (mountedRef.current) setError(String((e as Error)?.message || e))
-    }
-  }, [snapshot])
+  const copy = useCallback(
+    async (redact: boolean) => {
+      try {
+        const done = await copyDebugReport(snapshot, { redact })
+        if (!done || !mountedRef.current) return
+        setCopied(true)
+        if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
+        copiedTimerRef.current = setTimeout(() => {
+          if (mountedRef.current) setCopied(false)
+        }, COPIED_RESET_MS)
+      } catch (e) {
+        if (mountedRef.current) setError(String((e as Error)?.message || e))
+      }
+    },
+    [snapshot],
+  )
+
+  const handleCopy = useCallback(() => {
+    copy(true)
+  }, [copy])
+
+  const copyFullReport = useCallback(() => {
+    copy(false)
+  }, [copy])
+
+  const toggleReveal = useCallback((key: string) => {
+    setRevealed((current) => ({ ...current, [key]: !current[key] }))
+  }, [])
 
   const handleShare = useCallback(async () => {
     try {
@@ -81,8 +97,11 @@ export function useDebugScreen() {
     error,
     copied,
     refreshing,
+    revealed,
+    toggleReveal,
     handleRefresh,
     handleCopy,
+    copyFullReport,
     handleShare,
   }
 }

@@ -27,6 +27,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  SHEET_MAX_WIDTH,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
@@ -737,6 +738,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       justifyContent: 'flex-end',
     },
     sheet: {
+      width: '100%',
+      maxWidth: SHEET_MAX_WIDTH,
+      alignSelf: 'center',
       borderTopLeftRadius: UI_SIZE_28,
       borderTopRightRadius: UI_SIZE_28,
       paddingHorizontal: UI_SIZE_20,

@@ -1,10 +1,12 @@
-import { Platform, Share } from 'react-native'
+import { Alert, Platform, Share } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import Constants from 'expo-constants'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { appBoot } from '@pear-notes/core/bootTimeline.js'
 import { formatDebugReport } from '@pear-notes/core/utils.js'
+
+import type { CopyFullReportLabels } from '@/utils/debugRows'
 
 import { getAppBuildNumber, getAppVersionLabel } from './appVersion'
 
@@ -36,16 +38,26 @@ export async function captureDebugSnapshot({ heavy = false } = {}): Promise<Debu
   }
 }
 
-export function buildDebugReport(snapshot: DebugSnapshot | null): string {
+export function buildDebugReport(snapshot: DebugSnapshot | null, { redact = true } = {}): string {
   if (!snapshot) return ''
-  return formatDebugReport(snapshot)
+  return formatDebugReport(snapshot, { redact })
 }
 
-export async function copyDebugReport(snapshot: DebugSnapshot | null): Promise<boolean> {
-  const report = buildDebugReport(snapshot)
+export async function copyDebugReport(
+  snapshot: DebugSnapshot | null,
+  { redact = true } = {},
+): Promise<boolean> {
+  const report = buildDebugReport(snapshot, { redact })
   if (!report) return false
   await Clipboard.setStringAsync(report)
   return true
+}
+
+export function confirmCopyFullReport(labels: CopyFullReportLabels, onConfirm: () => void): void {
+  Alert.alert(labels.title, labels.message, [
+    { text: labels.cancel, style: 'cancel' },
+    { text: labels.confirm, onPress: onConfirm },
+  ])
 }
 
 export async function shareDebugReport(snapshot: DebugSnapshot | null): Promise<boolean> {

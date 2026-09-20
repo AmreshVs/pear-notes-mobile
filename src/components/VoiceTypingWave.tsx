@@ -12,6 +12,7 @@ import {
 import { UI_SIZE_32 } from '@/constants/commonStyles'
 
 const MIN_VISIBLE_BARS = 12
+const MIN_BAR_WIDTH = 1
 const BAR_WIDTH_EPSILON = 0.5
 
 type WaveLayout = { indexes: number[]; barWidth: number }
@@ -31,12 +32,13 @@ function getWaveLayout(width: number): WaveLayout {
   const fittingBars = Math.floor((width + RECORDING_BAR_GAP) / slotWidth)
   const visibleBars = Math.min(RECORDING_BARS, Math.max(MIN_VISIBLE_BARS, fittingBars))
   const gapsWidth = (visibleBars - 1) * RECORDING_BAR_GAP
+  const fittedWidth = (width - gapsWidth) / visibleBars
   return {
     indexes: Array.from(
       { length: visibleBars },
       (_, offset) => RECORDING_BARS - visibleBars + offset,
     ),
-    barWidth: Math.max(RECORDING_BAR_W, (width - gapsWidth) / visibleBars),
+    barWidth: Math.min(RECORDING_BAR_W, Math.max(MIN_BAR_WIDTH, fittedWidth)),
   }
 }
 
@@ -87,7 +89,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     gap: RECORDING_BAR_GAP,
     overflow: 'hidden',
   },
