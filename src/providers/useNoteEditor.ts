@@ -356,7 +356,6 @@ export function useNoteEditor() {
 
   const handleEditorFocus = useCallback(() => {
     isEditorFocusedRef.current = true
-    setIsEditing(true)
     setEditorOwnsKeyboard(true)
   }, [])
 

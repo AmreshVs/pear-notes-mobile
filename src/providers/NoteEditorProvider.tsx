@@ -152,6 +152,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleYjsMessage,
   } = editor
 
+  const hasTextSelection = isActive('hasSelection')
+
   const isPreviewingRef = useRef(false)
 
   const shouldMountEditor = useDeferredEditorMount(isOpen)
@@ -1047,7 +1049,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           {Platform.OS === 'ios' && isOpen ? (
             <View
               style={styles.edgeSwipeZone}
-              pointerEvents="box-only"
+              pointerEvents={hasTextSelection ? 'none' : 'box-only'}
               {...edgeSwipeResponder.panHandlers}
             />
           ) : null}

@@ -23,6 +23,7 @@ import { useAppUpdateBanner } from './useAppUpdateBanner'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
+  surfaceContainerHighest?: string
 }
 
 const useBannerHooks = () => ({
@@ -90,12 +91,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     container: {
       position: 'absolute',
       zIndex: 5000,
+      elevation: 8,
       bottom: insets.bottom + Space.lg,
       left: Space.lg,
       right: Space.lg,
     },
     banner: {
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      backgroundColor: md3.dark
+        ? (c.surfaceContainerHighest ?? c.surfaceVariant)
+        : (c.surfaceContainerHigh ?? c.surface),
       padding: Space.md,
       borderRadius: UI_SIZE_28,
       gap: Space.sm,
