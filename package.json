@@ -47,7 +47,7 @@
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~56.0.26",
     "@pchmn/expo-material3-theme": "^1.4.0",
-    "@pear-notes/core": "github:AmreshVs/pear-notes-core#e62d224b5eda561969a7560b5a7b294af91b33de",
+    "@pear-notes/core": "github:AmreshVs/pear-notes-core#5d8d1434db994c71a01b132b8d3341575b419122",
     "@qvac/sdk": "^0.19.1",
     "@react-native-community/slider": "^5.1.2",
     "@react-native-masked-view/masked-view": "0.3.2",
