@@ -57,6 +57,7 @@ export default function ActivityScreen() {
     expandedId,
     confirmingClear,
     isEmpty,
+    hasLinkedDevices,
     toggleEnabled,
     selectRetention,
     selectFilter,
@@ -137,7 +138,10 @@ export default function ActivityScreen() {
     >
       <RNView style={styles.screen}>
         <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
-          <RNView style={commonThemedStyles.card}>
+          <RNView
+            style={[commonThemedStyles.card, !hasLinkedDevices && styles.disabledBlock]}
+            pointerEvents={hasLinkedDevices ? 'auto' : 'none'}
+          >
             <RNView style={styles.toggleRow}>
               <RNView style={commonStyles.flex1}>
                 <Text style={styles.rowTitle}>{t('activity.settings.record')}</Text>
@@ -179,7 +183,10 @@ export default function ActivityScreen() {
         </MotionView>
 
         <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
-          <RNView style={commonThemedStyles.card}>
+          <RNView
+            style={[commonThemedStyles.card, !hasLinkedDevices && styles.disabledBlock]}
+            pointerEvents={hasLinkedDevices ? 'auto' : 'none'}
+          >
             <RNView style={styles.noticeRow}>
               <SymbolIcon name="info.circle" size={UI_ICON_SIZE_15} color={colors.primary} />
               <Text style={styles.noticeText}>{t('activity.settings.syncNotice')}</Text>
@@ -188,7 +195,10 @@ export default function ActivityScreen() {
         </MotionView>
 
         <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
-          <RNView style={commonThemedStyles.card}>
+          <RNView
+            style={[commonThemedStyles.card, !hasLinkedDevices && styles.disabledBlock]}
+            pointerEvents={hasLinkedDevices ? 'auto' : 'none'}
+          >
             <RNView style={styles.clearRow}>
               <RNView style={commonStyles.flex1}>
                 <Text style={styles.rowTitle}>{t('activity.settings.clear')}</Text>
@@ -255,10 +265,18 @@ export default function ActivityScreen() {
               />
             </RNView>
             <Text style={styles.emptyTitle}>
-              {enabled ? t('activity.empty.title') : t('activity.empty.disabledTitle')}
+              {!hasLinkedDevices
+                ? t('activity.empty.noDevicesTitle')
+                : enabled
+                  ? t('activity.empty.title')
+                  : t('activity.empty.disabledTitle')}
             </Text>
             <Text style={styles.emptyDesc}>
-              {enabled ? t('activity.empty.description') : t('activity.empty.disabledDescription')}
+              {!hasLinkedDevices
+                ? t('activity.empty.noDevicesDescription')
+                : enabled
+                  ? t('activity.empty.description')
+                  : t('activity.empty.disabledDescription')}
             </Text>
           </RNView>
         ) : (
@@ -290,6 +308,9 @@ const useStyles = createThemedStylesheet((theme) => {
   }
 
   const styles = StyleSheet.create({
+    disabledBlock: {
+      opacity: 0.5,
+    },
     screen: {
       paddingHorizontal: Space.base,
       gap: Space.lg,

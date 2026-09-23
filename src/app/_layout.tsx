@@ -64,7 +64,12 @@ import { clearStorageState } from '@/lib/clearStorageState'
 import { loadHapticsPreference } from '@/lib/haptics'
 import { localAiAdapter } from '@/lib/localAi/localAi'
 import { useLocalAiBridge } from '@/lib/localAi/useLocalAiBridge'
-import { getDbEncryptionKey, setDbEncryptionKey } from '@/lib/secureStore'
+import {
+  getDbEncryptionKey,
+  getVaultEntropy,
+  setDbEncryptionKey,
+  setVaultEntropy,
+} from '@/lib/secureStore'
 import { useAttachmentCachePrune } from '@/lib/useAttachmentCachePrune'
 import { useMediaSyncAutoDetect } from '@/lib/useMediaSyncAutoDetect'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
@@ -95,6 +100,14 @@ const MAX_WORKLET_RESTART_ATTEMPTS = 5
 // the backend - a worklet restart, or the soft reload below - has to ask for it, and the
 // flag has to outlive the remount that soft reload performs.
 let hasInitializedBackend = false
+
+const randomHex32 = () => {
+  const bytes = new Uint8Array(32)
+  Crypto.getRandomValues(bytes)
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
+}
 
 export default function RootLayout() {
   const { t } = useTranslation()
@@ -186,14 +199,23 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       appBoot.mark('worklet started')
       let key = await getDbEncryptionKey()
       if (!key) {
-        const bytes = new Uint8Array(32)
-        Crypto.getRandomValues(bytes)
-        key = Array.from(bytes)
-          .map((b) => b.toString(16).padStart(2, '0'))
-          .join('')
+        key = randomHex32()
         await setDbEncryptionKey(key)
       }
-      await backendApi.ready({ storage, encryption: key })
+      let entropy = await getVaultEntropy()
+      if (!entropy) {
+        entropy = randomHex32()
+        await setVaultEntropy(entropy)
+      }
+      const readyResult = await backendApi.ready({ storage, encryption: key, entropy })
+      if (readyResult?.done !== true) {
+        setFatalError(
+          readyResult?.reason === 'VAULT_KEY_SEALED'
+            ? t('error.vaultSealed')
+            : t('error.backendFailed'),
+        )
+        return
+      }
       appBoot.mark('backendApi.ready resolved')
       workletRestartAttemptsRef.current = 0
       loadHapticsPreference()

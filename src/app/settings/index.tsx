@@ -11,7 +11,6 @@ import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -45,10 +44,6 @@ export default function SettingsScreen() {
 
   const handleClose = useCallback(() => {
     router.back()
-  }, [])
-
-  const handleOpenDebug = useCallback(() => {
-    router.push('/settings/debug' as never)
   }, [])
 
   const allSections = useSettingsSections()
@@ -122,9 +117,7 @@ export default function SettingsScreen() {
         </View>
         <RNView style={styles.footerContainer}>
           <Text style={styles.footer}>{t('settings.footer')}</Text>
-          <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>
-            <Text style={styles.version}>{getAppVersionLabel()}</Text>
-          </Pressable>
+          <Text style={styles.version}>{getAppVersionLabel()}</Text>
         </RNView>
       </ScrollView>
     </RNView>

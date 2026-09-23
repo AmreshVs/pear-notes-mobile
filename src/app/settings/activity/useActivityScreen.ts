@@ -24,7 +24,10 @@ import {
   getActivityRetentionDays,
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import {
+  getHasLinkedDevices,
+  getSyncedDevices,
+} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
 import { type ActivityEntry, type ActivityGroup, groupActivityByDay } from '@/utils/activityUtils'
 
@@ -33,6 +36,7 @@ export function useActivityScreen() {
 
   const entries = useSelector(getActivityEntries) as ActivityEntry[]
   const devices = useSelector(getSyncedDevices) as any[]
+  const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
   const enabled = useSelector(getActivityLogEnabled) as boolean
   const retentionDays = useSelector(getActivityRetentionDays) as number
   const filter = useSelector(getActivityFilter) as string
@@ -122,7 +126,10 @@ export function useActivityScreen() {
     stats,
     expandedId,
     confirmingClear,
-    isEmpty: !isLoading && groups.length === 0,
+    hasLinkedDevices,
+    // Activity is always listed in Settings now. With nothing linked there is no second
+    // device to attribute changes to, so the screen shows why instead of an empty list.
+    isEmpty: !hasLinkedDevices || (!isLoading && groups.length === 0),
     toggleEnabled,
     selectRetention,
     selectFilter,

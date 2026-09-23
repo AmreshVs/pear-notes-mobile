@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -43,6 +43,10 @@ export default function AndroidSyncScreen() {
   const styles = useStyles()
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
+  const openDiagnostics = useCallback(() => {
+    router.push('/settings/debug' as never)
+  }, [])
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
@@ -71,6 +75,10 @@ export default function AndroidSyncScreen() {
         <SyncStatusSection />
         <BackgroundSyncSection />
         <MediaSyncSection />
+
+        <Pressable onPress={openDiagnostics} style={styles.diagnostics}>
+          <Text style={styles.diagnosticsText}>{t('debug.openDiagnostics')}</Text>
+        </Pressable>
       </ScrollView>
     </View>
   )
@@ -132,6 +140,15 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       textAlign: 'center',
       lineHeight: UI_SIZE_22,
       paddingHorizontal: UI_SIZE_8,
+    },
+    diagnostics: {
+      ...commonStyles.centered,
+      paddingVertical: UI_SIZE_16,
+    },
+    diagnosticsText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
     },
   })
   return styles

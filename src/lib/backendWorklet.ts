@@ -2,7 +2,7 @@ import { Directory, Paths } from 'expo-file-system'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
 
-import { getDbEncryptionKey } from '@/lib/secureStore'
+import { getDbEncryptionKey, getVaultEntropy } from '@/lib/secureStore'
 import { withTimeout } from '@/utils/withTimeout'
 import { startWorklet, terminateWorkletIfActive } from '@/utils/worklet'
 
@@ -21,6 +21,8 @@ export async function startBackendWorkletForBackgroundTask(): Promise<any | null
     return null
   }
 
+  const entropy = await getVaultEntropy()
+
   const startedAt = Date.now()
   const { worklet } = await startWorklet(WORKLET_STORAGE_PATH)
   console.log(WORKLET_BOOT_LOG_PREFIX + ' worklet booted in ' + (Date.now() - startedAt) + 'ms')
@@ -28,7 +30,7 @@ export async function startBackendWorkletForBackgroundTask(): Promise<any | null
   const readyAt = Date.now()
   try {
     await withTimeout(
-      backendApi.ready({ storage: WORKLET_STORAGE_PATH, encryption }),
+      backendApi.ready({ storage: WORKLET_STORAGE_PATH, encryption, entropy }),
       BACKEND_READY_TIMEOUT_MS,
       'backendApi.ready',
     )

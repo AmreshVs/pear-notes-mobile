@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
@@ -11,7 +11,6 @@ import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   FontWeight,
@@ -50,10 +49,6 @@ export default function AndroidSettingsScreen() {
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-
-  const handleOpenDebug = useCallback(() => {
-    router.push('/settings/debug' as never)
-  }, [])
 
   const allSections = useSettingsSections()
 
@@ -115,9 +110,7 @@ export default function AndroidSettingsScreen() {
         </View>
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>{t('settings.footer')}</Text>
-          <Pressable onLongPress={handleOpenDebug} delayLongPress={Durations.debugHold}>
-            <Text style={styles.versionText}>{getAppVersionLabel()}</Text>
-          </Pressable>
+          <Text style={styles.versionText}>{getAppVersionLabel()}</Text>
         </View>
       </ScrollView>
     </View>

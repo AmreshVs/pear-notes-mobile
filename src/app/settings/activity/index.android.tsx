@@ -74,6 +74,7 @@ export default function ActivityScreenAndroid() {
     expandedId,
     confirmingClear,
     isEmpty,
+    hasLinkedDevices,
     toggleEnabled,
     selectRetention,
     selectFilter,
@@ -191,7 +192,8 @@ export default function ActivityScreenAndroid() {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <MotionView
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-          style={styles.card}
+          style={[styles.card, !hasLinkedDevices && styles.disabledBlock]}
+          pointerEvents={hasLinkedDevices ? 'auto' : 'none'}
         >
           <View style={styles.toggleRow}>
             <View style={commonStyles.flex1}>
@@ -234,7 +236,8 @@ export default function ActivityScreenAndroid() {
 
         <MotionView
           layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-          style={styles.card}
+          style={[styles.card, !hasLinkedDevices && styles.disabledBlock]}
+          pointerEvents={hasLinkedDevices ? 'auto' : 'none'}
         >
           <View style={styles.toggleRow}>
             <View style={commonStyles.flex1}>
@@ -309,10 +312,18 @@ export default function ActivityScreenAndroid() {
               />
             </View>
             <Text style={styles.emptyTitle}>
-              {enabled ? t('activity.empty.title') : t('activity.empty.disabledTitle')}
+              {!hasLinkedDevices
+                ? t('activity.empty.noDevicesTitle')
+                : enabled
+                  ? t('activity.empty.title')
+                  : t('activity.empty.disabledTitle')}
             </Text>
             <Text style={styles.emptyDesc}>
-              {enabled ? t('activity.empty.description') : t('activity.empty.disabledDescription')}
+              {!hasLinkedDevices
+                ? t('activity.empty.noDevicesDescription')
+                : enabled
+                  ? t('activity.empty.description')
+                  : t('activity.empty.disabledDescription')}
             </Text>
           </View>
         ) : (
@@ -371,6 +382,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
   }
 
   const styles = StyleSheet.create({
+    disabledBlock: {
+      opacity: 0.5,
+    },
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,

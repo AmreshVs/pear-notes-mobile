@@ -843,7 +843,8 @@
   "error": {
     "initFailed": "Initialization failed",
     "retry": "Retry",
-    "backendFailed": "Failed to initialize backend runtime."
+    "backendFailed": "Failed to initialize backend runtime.",
+    "vaultSealed": "Your notes are encrypted with a key held in this device’s secure storage, and that key is no longer available. Your notes have not been deleted — restore a backup, or link this device to another one that still has them."
   },
   "errorBoundary": {
     "title": "Something went wrong",
@@ -1398,7 +1399,9 @@
       "disabledTitle": "Activity recording is off",
       "disabledDescription": "Turn on recording to start keeping a history of what each device changes.",
       "noteTitle": "No history for this note",
-      "noteDescription": "Edits made from here on will be listed with the device that made them."
+      "noteDescription": "Edits made from here on will be listed with the device that made them.",
+      "noDevicesTitle": "Link a device to use activity",
+      "noDevicesDescription": "Activity keeps a history of what each linked device changed. Link a device under Link devices to start recording."
     },
     "diff": {
       "plainText": "Plain text",
@@ -1485,7 +1488,8 @@
       "runtime": "Runtime",
       "backendBoot": "Backend boot timeline",
       "appBoot": "App boot timeline"
-    }
+    },
+    "openDiagnostics": "Diagnostics"
   },
   "shareIntake": {
     "itemCount_one": "{{count}} shared item",

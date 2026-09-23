@@ -1,5 +1,7 @@
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { router } from 'expo-router'
 
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
 import { MediaSyncSection } from '@/components/settings/MediaSyncSection'
@@ -22,6 +24,10 @@ export default function SyncScreen() {
   const { colors } = useTheme()
   const styles = useStyles()
 
+  const openDiagnostics = useCallback(() => {
+    router.push('/settings/debug' as never)
+  }, [])
+
   return (
     <RNView style={styles.container}>
       <ScrollView
@@ -39,6 +45,10 @@ export default function SyncScreen() {
         <SyncStatusSection />
         <BackgroundSyncSection />
         <MediaSyncSection />
+
+        <Pressable onPress={openDiagnostics} style={styles.diagnostics}>
+          <Text style={styles.diagnosticsText}>{t('debug.openDiagnostics')}</Text>
+        </Pressable>
       </ScrollView>
     </RNView>
   )
@@ -74,6 +84,15 @@ const useStyles = createThemedStylesheet((theme) => {
       textAlign: 'center',
       lineHeight: FontSize.body * 1.45,
       maxWidth: 320,
+    },
+    diagnostics: {
+      ...commonStyles.centered,
+      paddingVertical: Space.lg,
+    },
+    diagnosticsText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textMuted,
     },
   })
   return styles

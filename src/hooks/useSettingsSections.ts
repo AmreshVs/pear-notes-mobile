@@ -1,11 +1,9 @@
 import type React from 'react'
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useSelector } from 'react-redux'
 import type MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
-import { getHasLinkedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 
 import type { IconName } from '@/components/SymbolIcon'
 
@@ -21,8 +19,6 @@ export type SettingsSection = {
 
 export function useSettingsSections(): SettingsSection[] {
   const { t } = useTranslation()
-  const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
-
   return useMemo(
     () => [
       {
@@ -64,17 +60,13 @@ export function useSettingsSections(): SettingsSection[] {
         iosIcon: 'arrow.clockwise' as IconName,
         androidIcon: 'sync' as MaterialIconName,
       },
-      ...(hasLinkedDevices
-        ? [
-            {
-              key: 'activity',
-              route: '/settings/activity',
-              label: t('layouts.activity'),
-              iosIcon: 'clock.arrow.circlepath' as IconName,
-              androidIcon: 'history' as MaterialIconName,
-            },
-          ]
-        : []),
+      {
+        key: 'activity',
+        route: '/settings/activity',
+        label: t('layouts.activity'),
+        iosIcon: 'clock.arrow.circlepath' as IconName,
+        androidIcon: 'history' as MaterialIconName,
+      },
       {
         key: 'backup',
         route: '/settings/backup',
@@ -90,6 +82,6 @@ export function useSettingsSections(): SettingsSection[] {
         androidIcon: 'database-outline' as MaterialIconName,
       },
     ],
-    [t, hasLinkedDevices],
+    [t],
   )
 }

@@ -57,7 +57,7 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticError, hapticMedium, hapticSuccess } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
-import { deleteDbEncryptionKey } from '@/lib/secureStore'
+import { clearVaultSecrets } from '@/lib/secureStore'
 import { getRelativeTime } from '@/utils/relativeTime'
 
 import { GlassView } from './GlassView'
@@ -323,7 +323,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Pressable
             onPress={() => {
               clearStorageState.setClearing(true)
-              deleteDbEncryptionKey().catch(console.error)
+              clearVaultSecrets().catch(console.error)
               dispatch(clearStorage())
               dispatch(setDeviceRemoved(false))
             }}

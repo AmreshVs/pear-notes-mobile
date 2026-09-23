@@ -31,7 +31,7 @@ import { formatDate } from '@pear-notes/core/utils.js'
 import { clearCaches, measureCacheBytes } from '@/lib/cacheCleanup'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
-import { deleteDbEncryptionKey } from '@/lib/secureStore'
+import { clearVaultSecrets } from '@/lib/secureStore'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 
 function useStorageScreen() {
@@ -147,7 +147,7 @@ function useStorageScreen() {
     hapticWarning()
     setResetSheetVisible(false)
     clearStorageState.setClearing(true)
-    deleteDbEncryptionKey().catch(console.error)
+    clearVaultSecrets().catch(console.error)
     dispatch(clearStorage())
   }, [dispatch])
 
