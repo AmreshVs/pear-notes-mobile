@@ -14,13 +14,14 @@ import QRCode from 'react-native-qrcode-svg'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
+import { Stack } from 'expo-router'
 
 import { INVITE_EXPIRY_MINUTES } from '@pear-notes/core/constant.js'
 import { formatInviteCountdown, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -34,7 +35,6 @@ import {
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_14,
   UI_ICON_SIZE_18,
-  UI_ICON_SIZE_24,
   UI_ICON_SIZE_30,
   UI_ICON_SIZE_48,
   UI_SIZE_2,
@@ -77,7 +77,6 @@ export default function AndroidSyncScreen() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const styles = useStyles()
   const md3Styles = useMD3CommonStyles()
@@ -187,17 +186,7 @@ export default function AndroidSyncScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.appBar}>
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={rippleBorderless}
-          hitSlop={UI_SIZE_8}
-          style={styles.iconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.appBarTitle}>{t('sync.title')}</Text>
-      </View>
+      <AndroidSettingsAppBar title={t('sync.title')} />
 
       <KeyboardAvoidingView behavior="height" style={styles.flex1}>
         <ScrollView
@@ -580,25 +569,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     flex1: {
       ...commonStyles.flex1,
-    },
-    appBar: {
-      ...commonStyles.row,
-      justifyContent: 'space-between',
-      paddingHorizontal: UI_SIZE_8,
-      paddingBottom: UI_SIZE_8,
-      paddingTop: insets.top + UI_SIZE_16,
-    },
-    iconBtn: {
-      overflow: 'hidden',
-      padding: UI_SIZE_8,
-      borderRadius: UI_SIZE_9999,
-    },
-    appBarTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      ...commonStyles.flex1,
-      color: c.onSurface,
     },
     scrollContent: {
       paddingHorizontal: UI_SIZE_16,

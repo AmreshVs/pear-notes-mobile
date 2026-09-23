@@ -12,10 +12,11 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 
 import { PASSWORD_MAX_LENGTH } from '@pear-notes/core/constant.js'
 
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -25,13 +26,11 @@ import {
   FontWeight,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
-  UI_ICON_SIZE_24,
   UI_ICON_SIZE_28,
   UI_SIZE_4,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
-  UI_SIZE_40,
   UI_SIZE_54,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
@@ -116,19 +115,9 @@ export default function AndroidBackupPasswordScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={rippleBorderless}
-          hitSlop={UI_SIZE_12}
-          style={styles.iconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>
-          {isCreate ? t('backup.password.createTitle') : t('backup.password.enterTitle')}
-        </Text>
-      </View>
+      <AndroidSettingsAppBar
+        title={isCreate ? t('backup.password.createTitle') : t('backup.password.enterTitle')}
+      />
 
       <KeyboardAvoidingView style={commonStyles.flex1} behavior="height">
         <ScrollView
@@ -241,25 +230,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
-    },
-    header: {
-      ...commonStyles.row,
-      paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_16,
-      paddingBottom: UI_SIZE_16,
-    },
-    iconBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-    },
-    headerTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
     },
     scroll: {
       paddingHorizontal: UI_SIZE_20,

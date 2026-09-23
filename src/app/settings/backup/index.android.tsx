@@ -12,11 +12,12 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
+import { Stack } from 'expo-router'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { AndroidBackupStatsSection } from '@/components/android/AndroidBackupStatsSection'
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
@@ -67,7 +68,6 @@ export default function AndroidBackupScreen() {
   const c = theme.colors as ExtendedColors
   const styles = useStyles()
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const {
     importStatus,
@@ -102,17 +102,7 @@ export default function AndroidBackupScreen() {
       <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={rippleBorderless}
-          hitSlop={UI_SIZE_12}
-          style={styles.iconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('backup.title')}</Text>
-      </View>
+      <AndroidSettingsAppBar title={t('backup.title')} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroContainer}>
@@ -274,26 +264,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     root: {
       flex: 1,
       backgroundColor: c.background,
-    },
-    header: {
-      ...commonStyles.row,
-      paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_16,
-      paddingBottom: UI_SIZE_16,
-    },
-    iconBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-    },
-    headerTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      marginLeft: UI_SIZE_8,
     },
     scrollContent: {
       padding: Space.base,

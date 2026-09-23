@@ -1,10 +1,10 @@
-import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import { ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
+import { Stack } from 'expo-router'
 
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { PrivacyLockSection } from '@/components/settings/PrivacyLockSection'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -12,11 +12,8 @@ import {
   commonStyles,
   FontFamily,
   FontSize,
-  FontWeight,
-  UI_ICON_SIZE_24,
   UI_ICON_SIZE_48,
   UI_SIZE_8,
-  UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_22,
@@ -24,9 +21,7 @@ import {
   UI_SIZE_40,
   UI_SIZE_48,
   UI_SIZE_96,
-  UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -40,24 +35,13 @@ export default function AndroidPrivacyScreen() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
-  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   return (
     <View style={styles.root}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={rippleBorderless}
-          hitSlop={UI_SIZE_12}
-          style={styles.iconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('settings.privacy.screenTitle')}</Text>
-      </View>
+      <AndroidSettingsAppBar title={t('settings.privacy.screenTitle')} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroContainer}>
@@ -89,26 +73,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
-    },
-    header: {
-      ...commonStyles.row,
-      paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_16,
-      paddingBottom: UI_SIZE_16,
-    },
-    iconBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-    },
-    headerTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      textAlign: 'left',
     },
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,

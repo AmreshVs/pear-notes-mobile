@@ -1,10 +1,10 @@
 import React, { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, usePathname } from 'expo-router'
 
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
@@ -13,8 +13,6 @@ import {
   FontSize,
   Space,
   UI_ICON_SIZE_20,
-  UI_ICON_SIZE_24,
-  UI_SIZE_8,
   UI_SIZE_36,
   UI_SIZE_56,
   UI_SIZE_9999,
@@ -28,21 +26,13 @@ export function SettingsMenuColumn() {
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors
-  const insets = useSafeAreaInsets()
   const pathname = usePathname()
   const sections = useSettingsSections()
-
-  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const handleClose = useCallback(() => {
     router.dismissAll()
     router.back()
   }, [])
-
-  const headerStyle = useMemo(
-    () => [styles.header, { paddingTop: insets.top + Space.sm }],
-    [styles.header, insets.top],
-  )
 
   const renderSection = useCallback(
     (section: SettingsSection) => (
@@ -57,19 +47,12 @@ export function SettingsMenuColumn() {
 
   return (
     <View style={styles.container}>
-      <View style={headerStyle}>
-        <Pressable
-          onPress={handleClose}
-          android_ripple={ripple}
-          style={styles.iconBtn}
-          hitSlop={UI_SIZE_8}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.back')}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.onSurface} />
-        </Pressable>
-        <Text style={styles.title}>{t('settings.title')}</Text>
-      </View>
+      <AndroidSettingsAppBar
+        title={t('settings.title')}
+        showBack
+        onBack={handleClose}
+        backTint={c.onSurface}
+      />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {sections.map(renderSection)}
       </ScrollView>
@@ -133,24 +116,6 @@ const useStyles = createThemedStylesheetWithHooks(
       container: {
         ...commonStyles.flex1,
         backgroundColor: c.background,
-      },
-      header: {
-        ...commonStyles.row,
-        gap: Space.sm,
-        paddingHorizontal: Space.sm,
-        paddingBottom: Space.sm,
-      },
-      iconBtn: {
-        overflow: 'hidden',
-        ...commonStyles.centered,
-        width: UI_ICON_SIZE_24 + Space.base,
-        height: UI_ICON_SIZE_24 + Space.base,
-        borderRadius: UI_SIZE_9999,
-      },
-      title: {
-        fontSize: FontSize.heading,
-        fontFamily: FontFamily.bold,
-        color: c.onSurface,
       },
       scrollContent: {
         paddingHorizontal: Space.sm,

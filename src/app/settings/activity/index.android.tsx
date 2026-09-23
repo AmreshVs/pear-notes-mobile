@@ -5,11 +5,12 @@ import { Switch } from 'react-native-paper'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack } from 'expo-router'
+import { Stack } from 'expo-router'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { ActivityRow } from '@/components/activity/ActivityRow'
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
@@ -22,10 +23,8 @@ import {
   Space,
   UI_ICON_SIZE_18,
   UI_ICON_SIZE_20,
-  UI_ICON_SIZE_24,
   UI_ICON_SIZE_36,
   UI_SIZE_2,
-  UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_28,
@@ -52,8 +51,6 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   onPrimaryContainer?: string
   onSurfaceVariant?: string
 }
-
-const rippleBorderless = { borderless: true }
 
 export default function ActivityScreenAndroid() {
   const { t } = useTranslation()
@@ -89,8 +86,6 @@ export default function ActivityScreenAndroid() {
   const [retentionSheetVisible, setRetentionSheetVisible] = useState(false)
   const [filterSheetVisible, setFilterSheetVisible] = useState(false)
   const [deviceSheetVisible, setDeviceSheetVisible] = useState(false)
-
-  const handleBack = useCallback(() => router.back(), [])
 
   const retentionActions = useMemo(
     () =>
@@ -177,17 +172,7 @@ export default function ActivityScreenAndroid() {
     <View style={styles.root}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable
-          onPress={handleBack}
-          android_ripple={rippleBorderless}
-          hitSlop={UI_SIZE_12}
-          style={styles.iconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('layouts.activity')}</Text>
-      </View>
+      <AndroidSettingsAppBar title={t('layouts.activity')} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <MotionView
@@ -390,29 +375,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       backgroundColor: c.background,
       paddingBottom: Space.lg,
     },
-    header: {
-      ...commonStyles.row,
-      paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_20,
-      gap: UI_SIZE_16,
-    },
     divider: {
       height: StyleSheet.hairlineWidth,
       marginHorizontal: Space.base,
       backgroundColor: theme.colors.border,
-    },
-    iconBtn: {
-      width: UI_SIZE_44,
-      height: UI_SIZE_44,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-    },
-    headerTitle: {
-      fontSize: FontSize.title,
-      fontFamily: FontFamily.bold,
-      fontWeight: FontWeight.bold,
-      color: c.onSurface,
     },
     scrollContent: {
       padding: Space.base,

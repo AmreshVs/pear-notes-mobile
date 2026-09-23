@@ -3,11 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Linking, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { router, Stack, useLocalSearchParams } from 'expo-router'
+import { Stack, useLocalSearchParams } from 'expo-router'
 
 import { LOCAL_AI_LANGUAGE } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
 
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -18,14 +19,11 @@ import {
   FontSize,
   FontWeight,
   UI_ICON_SIZE_20,
-  UI_ICON_SIZE_24,
   UI_SIZE_8,
-  UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_40,
-  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -90,19 +88,9 @@ export default function AndroidOnDeviceAiFeatureScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={ripple}
-          hitSlop={UI_SIZE_12}
-          style={styles.iconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>
-          {featureId ? t(`settings.onDeviceAi.features.${featureId}.title`) : ''}
-        </Text>
-      </View>
+      <AndroidSettingsAppBar
+        title={featureId ? t(`settings.onDeviceAi.features.${featureId}.title`) : ''}
+      />
 
       {featureId && (
         <ScrollView
@@ -307,25 +295,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
-    },
-    header: {
-      ...commonStyles.row,
-      paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_16,
-      paddingBottom: UI_SIZE_16,
-    },
-    iconBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-    },
-    headerTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
     },
     scrollContent: {
       paddingHorizontal: UI_SIZE_16,

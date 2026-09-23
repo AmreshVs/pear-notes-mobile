@@ -18,6 +18,7 @@ import {
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -69,7 +70,6 @@ export default function AndroidGeneralSettingsScreen() {
 
   const sliderMaxTrackColor = useMemo(() => hexWithAlpha(c.primary, 0.2), [c.primary])
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   const supportsDynamicColor = useMemo(() => {
     return Platform.OS === 'android' && Number(Platform.Version) >= 31
@@ -199,17 +199,7 @@ export default function AndroidGeneralSettingsScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={rippleBorderless}
-          hitSlop={UI_SIZE_12}
-          style={styles.iconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('layouts.general')}</Text>
-      </View>
+      <AndroidSettingsAppBar title={t('layouts.general')} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View>
@@ -364,26 +354,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
-    },
-    header: {
-      ...commonStyles.row,
-      paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_16,
-      paddingBottom: UI_SIZE_16,
-    },
-    iconBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-    },
-    headerTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      textAlign: 'left',
     },
     scrollContent: {
       paddingHorizontal: UI_SIZE_20,

@@ -21,6 +21,7 @@ import {
 } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
 
+import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -32,7 +33,6 @@ import {
   FontWeight,
   Space,
   UI_ICON_SIZE_20,
-  UI_ICON_SIZE_24,
   UI_ICON_SIZE_48,
   UI_SIZE_2,
   UI_SIZE_4,
@@ -250,17 +250,7 @@ export default function AndroidOnDeviceAiScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          android_ripple={rippleBorderless}
-          hitSlop={UI_SIZE_12}
-          style={styles.headerIconBtn}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('layouts.onDeviceAi')}</Text>
-      </View>
+      <AndroidSettingsAppBar title={t('layouts.onDeviceAi')} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroContainer}>
@@ -458,26 +448,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     root: {
       ...commonStyles.flex1,
       backgroundColor: c.background,
-    },
-    header: {
-      ...commonStyles.row,
-      paddingTop: insets.top + UI_SIZE_16,
-      paddingHorizontal: UI_SIZE_16,
-      paddingBottom: UI_SIZE_16,
-    },
-    headerIconBtn: {
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-    },
-    headerTitle: {
-      fontSize: FontSize.title,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      textAlign: 'left',
     },
     scrollContent: {
       paddingHorizontal: UI_SIZE_16,
