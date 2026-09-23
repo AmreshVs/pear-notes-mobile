@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
+  Alert,
   Appearance,
   LogBox,
   Platform,
@@ -164,6 +165,11 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useNoteAutoRelock()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
+  // LEGACY(hyperdb-migration): the vault predates the HyperDB view and the
+  // backend refused it without opening it. Remove with the core's
+  // preserveLegacyVault - docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8.
+  const [legacyVault, setLegacyVault] = useState(false)
+  const openBackupAfterReadyRef = useRef(false)
   const savedEncryptionKeyRef = useRef<string | null>(null)
   const workletRestartAttemptsRef = useRef(0)
 
@@ -179,6 +185,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const initWorklet = useCallback(async () => {
     try {
       setFatalError(null)
+      setLegacyVault(false)
       appBoot.mark('app js reached initWorklet')
       await startWorklet(storage, {
         onWorkletDied: () => {
@@ -209,6 +216,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       }
       const readyResult = await backendApi.ready({ storage, encryption: key, entropy })
       if (readyResult?.done !== true) {
+        if (readyResult?.reason === 'LEGACY_VAULT') {
+          setLegacyVault(true)
+          return
+        }
         setFatalError(
           readyResult?.reason === 'VAULT_KEY_SEALED'
             ? t('error.vaultSealed')
@@ -278,6 +289,41 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     prevNeedsConfirmRef.current = needsConfirm
   }, [inviterStatus?.step, receiverStatus?.step])
 
+  // LEGACY(hyperdb-migration): "start fresh and import a backup". The backend
+  // moves the old vault into <storage>/pre-hyperdb/ (never deletes it); a new
+  // worklet then opens an empty vault, and Backup opens once it has loaded.
+  // Confirmed first: this creates an empty vault, so it must never be one tap.
+  const startFreshFromLegacyVault = useCallback(async () => {
+    const fresh = await backendApi.startFreshVault({ storage }).catch(() => null)
+    if (fresh?.done !== true) {
+      setLegacyVault(false)
+      setFatalError(t('error.legacyVaultStartFreshFailed'))
+      return
+    }
+    openBackupAfterReadyRef.current = true
+    initWorklet()
+  }, [initWorklet, t])
+
+  const confirmStartFresh = useCallback(() => {
+    Alert.alert(t('error.legacyVaultConfirmTitle'), t('error.legacyVaultConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('error.legacyVaultConfirmAction'),
+        style: 'destructive',
+        onPress: startFreshFromLegacyVault,
+      },
+    ])
+  }, [startFreshFromLegacyVault, t])
+
+  // Waits for the notes to load, which means the navigator is mounted and the
+  // new vault is open - pushing a route any earlier can land before the root
+  // layout exists.
+  useEffect(() => {
+    if (notesLoading || !openBackupAfterReadyRef.current) return
+    openBackupAfterReadyRef.current = false
+    router.push('/settings/backup')
+  }, [notesLoading])
+
   useEffect(() => {
     if (!notesLoading && clearStorageState.getClearing()) {
       const timer = setTimeout(() => {
@@ -286,6 +332,17 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       return () => clearTimeout(timer)
     }
   }, [notesLoading])
+
+  if (legacyVault) {
+    return (
+      <ErrorScreen
+        title={t('error.legacyVaultTitle')}
+        message={t('error.legacyVault')}
+        onRetry={initWorklet}
+        action={{ label: t('error.legacyVaultStartFresh'), onPress: confirmStartFresh }}
+      />
+    )
+  }
 
   if (fatalError) {
     return <ErrorScreen message={fatalError} onRetry={initWorklet} />
