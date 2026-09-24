@@ -13,6 +13,16 @@ const { setRPC } = require('@pear-notes/core/rpc.js')
 const FramedStream = require('framed-stream')
 const { Worklet } = require('react-native-bare-kit')
 
+const WORKLET_EXITED = 'exited'
+
+class ObservedWorklet extends Worklet {
+  terminate() {
+    const wasRunning = !this.terminated
+    super.terminate()
+    if (wasRunning) this.emit(WORKLET_EXITED)
+  }
+}
+
 const BACKGROUND_LINGER_MS = 20_000
 const RESYNC_AFTER_AWAY_MS = 20_000
 export const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
@@ -272,7 +282,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
     message: options?.notificationMessage ?? _notificationStrings.message,
   }
 
-  const worklet = new Worklet()
+  const worklet = new ObservedWorklet()
   _activeWorklet = worklet
   logLifecycle('startWorklet -> booting a new worklet')
 
@@ -280,7 +290,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
   // Without this listener a backend that dies in the foreground is invisible:
   // every pending hrpc request stays unresolved forever, so the app still reads
   // whatever the store already holds but can no longer save, delete or create.
-  worklet.on('terminate', () => {
+  worklet.on(WORKLET_EXITED, () => {
     if (_deliberateTerminations.has(worklet)) return
     if (_activeWorklet !== worklet) return
     logLifecycle('worklet terminated on its own -> restarting', workletState(worklet))
