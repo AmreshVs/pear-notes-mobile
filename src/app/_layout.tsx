@@ -311,6 +311,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   }, [startFreshFromLegacyVault, t])
 
   useEffect(() => {
+    if (legacyVault || fatalError) SplashScreen.hideAsync()
+  }, [legacyVault, fatalError])
+
+  useEffect(() => {
     if (notesLoading || !openBackupAfterReadyRef.current) return
     openBackupAfterReadyRef.current = false
     router.push('/settings/backup')
