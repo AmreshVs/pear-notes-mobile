@@ -165,9 +165,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useNoteAutoRelock()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
-  // LEGACY(hyperdb-migration): the vault predates the HyperDB view and the
-  // backend refused it without opening it. Remove with the core's
-  // preserveLegacyVault - docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8.
+  // LEGACY(hyperdb-migration): see docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8
   const [legacyVault, setLegacyVault] = useState(false)
   const openBackupAfterReadyRef = useRef(false)
   const savedEncryptionKeyRef = useRef<string | null>(null)
@@ -289,10 +287,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     prevNeedsConfirmRef.current = needsConfirm
   }, [inviterStatus?.step, receiverStatus?.step])
 
-  // LEGACY(hyperdb-migration): "start fresh and import a backup". The backend
-  // moves the old vault into <storage>/pre-hyperdb/ (never deletes it); a new
-  // worklet then opens an empty vault, and Backup opens once it has loaded.
-  // Confirmed first: this creates an empty vault, so it must never be one tap.
+  // LEGACY(hyperdb-migration): see docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8
   const startFreshFromLegacyVault = useCallback(async () => {
     const fresh = await backendApi.startFreshVault({ storage }).catch(() => null)
     if (fresh?.done !== true) {
@@ -315,9 +310,6 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     ])
   }, [startFreshFromLegacyVault, t])
 
-  // Waits for the notes to load, which means the navigator is mounted and the
-  // new vault is open - pushing a route any earlier can land before the root
-  // layout exists.
   useEffect(() => {
     if (notesLoading || !openBackupAfterReadyRef.current) return
     openBackupAfterReadyRef.current = false

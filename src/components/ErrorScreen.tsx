@@ -18,9 +18,6 @@ import { createThemedStylesheet, Text, View } from './Themed'
 interface ErrorScreenProps {
   message: string
   onRetry: () => void
-  // For errors that are not "try again" errors. `title` replaces the generic
-  // heading; `action` replaces Retry, drawn as a SECONDARY button - it is used
-  // for choices with consequences, which must not look like the easy way out.
   title?: string
   action?: { label: string; onPress: () => void }
 }
