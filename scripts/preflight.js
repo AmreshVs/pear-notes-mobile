@@ -221,6 +221,21 @@ function checkBundleHygiene() {
   pass('bundle-hygiene', `no "</", no sensitive strings, ${consoleLogs} console.log left`)
 }
 
+function checkHypercorePatched() {
+  const relative = 'src/backend/backend.bundle.js'
+  const bundle = path.join(ROOT, relative)
+  if (!fs.existsSync(bundle)) return
+
+  const contents = fs.readFileSync(bundle, 'utf8')
+  if (contents.includes('while (this.atomized.flushing)')) {
+    return fail(
+      'hypercore',
+      `${relative} carries hypercore's unguarded atom loop, which aborts the worklet at random during linking - rebuild with npm run bare-bundle`,
+    )
+  }
+  pass('hypercore', 'bundled hypercore has the null-atom guard')
+}
+
 const SENSITIVE_LOG_PATTERNS = [
   {
     file: 'node_modules/@pear-notes/core/backend/NoteBase.js',
@@ -714,6 +729,7 @@ checkLockfiles()
 checkCorePinned()
 checkBackendBundle()
 checkBundleHygiene()
+checkHypercorePatched()
 checkNoSensitiveLogs()
 checkNoPlaintextKeys()
 checkNativeAddonSetup()
