@@ -16,6 +16,7 @@
   },
   "private": true,
   "scripts": {
+    "setup": "node scripts/setup.mjs",
     "start:clean": "watchman watch-del $PWD; watchman watch-project $PWD && expo start --dev-client --port 8099 --clear",
     "android": "RCT_METRO_PORT=8099 expo run:android --port 8099",
     "android:release": "cd android && JAVA_HOME=$(/usr/libexec/java_home -v 21) ./gradlew assembleRelease",
