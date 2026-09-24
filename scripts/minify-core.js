@@ -65,6 +65,7 @@ function listJsFiles(dir) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
     if (entry.isDirectory()) {
+      if (entry.name === 'node_modules') continue
       found.push(...listJsFiles(full))
     } else if (entry.isFile() && full.endsWith('.js')) {
       found.push(full)
