@@ -158,6 +158,47 @@ function checkCorePinned() {
   pass('core', `lock and ../pear-notes-core both at ${lockedSha.slice(0, 12)}, pushed`)
 }
 
+const CORE_SHIPPED_DIRS = ['backend', 'spec', 'store']
+
+function checkInstalledCore() {
+  const lock = fs.readFileSync(path.join(ROOT, 'package-lock.json'), 'utf8')
+  const lockedSha = lock.match(/pear-notes-core(?:\.git)?#([0-9a-f]{40})/)?.[1]
+  const coreRoot = path.resolve(ROOT, '..', 'pear-notes-core')
+  const installed = path.join(ROOT, 'node_modules', '@pear-notes', 'core')
+  if (!lockedSha || !fs.existsSync(path.join(coreRoot, '.git'))) return
+  if (!fs.existsSync(installed))
+    return fail('core-install', 'node_modules/@pear-notes/core is missing - run npm install')
+
+  const tree = tryRun(
+    `git -C "${coreRoot}" ls-tree -r ${lockedSha} -- ${CORE_SHIPPED_DIRS.join(' ')}`,
+  )
+  if (!tree) return warn('core-install', `could not read core ${lockedSha.slice(0, 12)} to compare`)
+
+  const expected = new Map()
+  for (const line of tree.split('\n')) {
+    const [meta, file] = line.split('\t')
+    expected.set(file, meta.split(' ')[2])
+  }
+  const files = [...expected.keys()].filter((file) => fs.existsSync(path.join(installed, file)))
+  const hashes = tryRun(
+    `git hash-object ${files.map((file) => `"${path.join(installed, file)}"`).join(' ')}`,
+  )
+  const actual = new Map(files.map((file, i) => [file, hashes?.split('\n')[i]]))
+  const stale = [...expected]
+    .filter(([file, hash]) => actual.get(file) !== hash)
+    .map(([file]) => file)
+
+  if (stale.length > 0) {
+    return fail(
+      'core-install',
+      `node_modules/@pear-notes/core does not match the pinned ${lockedSha.slice(0, 12)} ` +
+        `(${stale.length} file(s) differ, e.g. ${stale[0]}) - the bundle would ship another core. ` +
+        'Run npm run pin-core, or delete node_modules/@pear-notes/core and npm install',
+    )
+  }
+  pass('core-install', `node_modules/@pear-notes/core matches ${lockedSha.slice(0, 12)}`)
+}
+
 function checkBackendBundle() {
   const relative = 'src/backend/backend.bundle.js'
   const bundle = path.join(ROOT, relative)
@@ -729,6 +770,7 @@ function report() {
 checkGitClean()
 checkLockfiles()
 checkCorePinned()
+checkInstalledCore()
 checkBackendBundle()
 checkBundleHygiene()
 checkHypercoreVersion()
