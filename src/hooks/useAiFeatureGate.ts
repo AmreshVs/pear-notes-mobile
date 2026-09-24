@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import { useStore } from 'react-redux'
-import { router } from 'expo-router'
 
 import {
   LOCAL_AI_ENABLED,
@@ -61,9 +60,11 @@ export function useAiFeatureGate(): (feature: string) => boolean {
       }
 
       showToast(
-        t(`localAi.gate.${(status && IN_PROGRESS_KEYS[status]) || 'setup'}`, { feature: name }),
+        t(`localAi.gate.${(status && IN_PROGRESS_KEYS[status]) || 'setup'}`, {
+          feature: name,
+          featureInline: t(`settings.onDeviceAi.features.${feature}.inline`),
+        }),
       )
-      router.push(`/settings/on-device-ai/feature?feature=${feature}` as never)
       return false
     },
     [showToast, store, t],
