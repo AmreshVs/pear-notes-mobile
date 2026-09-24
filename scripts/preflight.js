@@ -188,6 +188,23 @@ const BUNDLE_FORBIDDEN_STRINGS = [
   'redux store exposed',
 ]
 
+const HYPERCORE_FIRST_BAD = [11, 35, 5]
+
+function checkHypercoreVersion() {
+  const manifest = path.join(ROOT, 'node_modules', 'hypercore', 'package.json')
+  if (!fs.existsSync(manifest)) return fail('hypercore', 'node_modules/hypercore is missing')
+  const version = JSON.parse(fs.readFileSync(manifest, 'utf8')).version
+  const parts = version.split('.').map(Number)
+  const index = parts.findIndex((part, i) => part !== HYPERCORE_FIRST_BAD[i])
+  if (index === -1 || parts[index] > HYPERCORE_FIRST_BAD[index]) {
+    return fail(
+      'hypercore',
+      `hypercore ${version} hangs a joiner in multi-device linking (11.35.5+) - keep it at 11.35.4 or below`,
+    )
+  }
+  pass('hypercore', `hypercore ${version}`)
+}
+
 function checkBundleHygiene() {
   const relative = 'src/backend/backend.bundle.js'
   const bundle = path.join(ROOT, relative)
@@ -714,6 +731,7 @@ checkLockfiles()
 checkCorePinned()
 checkBackendBundle()
 checkBundleHygiene()
+checkHypercoreVersion()
 checkNoSensitiveLogs()
 checkNoPlaintextKeys()
 checkNativeAddonSetup()
