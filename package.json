@@ -24,7 +24,6 @@
     "ios": "RCT_METRO_PORT=8099 expo run:ios --port 8099",
     "ios:release": "expo run:ios --device --configuration Release",
     "pod": "cd ios && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install",
-    "schema": "node ./src/spec/schema.js",
     "bare-bundle": "node scripts/minify-core.js && npx bare-pack --host android-arm64 --host ios-arm64 --host ios-arm64-simulator --linked --out src/backend/backend.bundle.js .core-build/main.mjs",
     "harden-core": "node scripts/minify-core.js",
     "lint": "eslint . --fix",
