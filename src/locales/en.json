@@ -847,7 +847,14 @@
     "initFailed": "Initialization failed",
     "retry": "Retry",
     "backendFailed": "Failed to initialize backend runtime.",
-    "vaultSealed": "Your notes are encrypted with a key held in this device’s secure storage, and that key is no longer available. Your notes have not been deleted — restore a backup, or link this device to another one that still has them."
+    "vaultSealed": "Your notes are encrypted with a key held in this device’s secure storage, and that key is no longer available. Your notes have not been deleted — restore a backup, or link this device to another one that still has them.",
+    "legacyVaultTitle": "This vault needs an update",
+    "legacyVault": "Your notes were saved by an older version of Pear Notes and can’t be opened by this one. Nothing has been changed or deleted.\n\nInstall the previous version, export a backup, then come back and import it here. If you start fresh instead, your old notes stay on this device in a separate folder.",
+    "legacyVaultStartFresh": "Start fresh and import a backup",
+    "legacyVaultConfirmTitle": "Start fresh?",
+    "legacyVaultConfirm": "This creates a new, empty vault and opens Backup so you can import your notes. Your old notes are kept on this device in a separate folder.",
+    "legacyVaultConfirmAction": "Start fresh",
+    "legacyVaultStartFreshFailed": "Pear Notes could not set up a new vault. Your old notes have not been changed. Restart Pear Notes and try again."
   },
   "errorBoundary": {
     "title": "Something went wrong",
@@ -2076,10 +2083,10 @@
       }
     },
     "gate": {
-      "setup": "{{feature}} needs a one-time model download. Turn it on here to download it.",
-      "downloading": "{{feature}} is still downloading. It will work as soon as the download finishes.",
+      "setup": "{{feature}} needs a one-time model download. Turn it on in Settings > On-device AI.",
+      "downloading": "{{feature}} is still downloading. Try again once it finishes.",
       "waitingNetwork": "{{feature}} is waiting for a network connection to finish downloading.",
-      "paused": "{{feature}} is paused partway through its download. Resume it here to use it.",
+      "paused": "The download for {{featureInline}} is paused. Resume it in Settings > On-device AI.",
       "needsMemory": "{{feature}} needs more memory than this device has."
     }
   }

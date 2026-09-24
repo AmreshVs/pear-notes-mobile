@@ -18,9 +18,11 @@ import { createThemedStylesheet, Text, View } from './Themed'
 interface ErrorScreenProps {
   message: string
   onRetry: () => void
+  title?: string
+  action?: { label: string; onPress: () => void }
 }
 
-export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) => {
+export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry, title, action }) => {
   const { t } = useTranslation()
   const styles = useStyles()
 
@@ -32,18 +34,29 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry }) =>
         color={styles.icon.color}
         style={styles.icon}
       />
-      <Text style={styles.title}>{t('error.initFailed')}</Text>
+      <Text style={styles.title}>{title ?? t('error.initFailed')}</Text>
       <Text style={styles.message}>{message}</Text>
 
-      <TouchableOpacity style={styles.button} onPress={onRetry} activeOpacity={0.7}>
-        <SymbolIcon
-          name="arrow.counterclockwise"
-          size={UI_ICON_SIZE_20}
-          color={styles.buttonText.color}
-          style={styles.buttonIcon}
-        />
-        <Text style={styles.buttonText}>{t('error.retry')}</Text>
-      </TouchableOpacity>
+      {action ? (
+        <TouchableOpacity
+          style={styles.secondaryButton}
+          onPress={action.onPress}
+          activeOpacity={0.7}
+          accessibilityRole="button"
+        >
+          <Text style={styles.secondaryButtonText}>{action.label}</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity style={styles.button} onPress={onRetry} activeOpacity={0.7}>
+          <SymbolIcon
+            name="arrow.counterclockwise"
+            size={UI_ICON_SIZE_20}
+            color={styles.buttonText.color}
+            style={styles.buttonIcon}
+          />
+          <Text style={styles.buttonText}>{t('error.retry')}</Text>
+        </TouchableOpacity>
+      )}
     </View>
   )
 }
@@ -86,6 +99,20 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     buttonText: {
       color: theme.colors.onPrimary,
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.semibold,
+    },
+    secondaryButton: {
+      ...commonStyles.row,
+      ...commonStyles.centered,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+      paddingHorizontal: Space.xl,
+      paddingVertical: 14,
+      borderRadius: Radii.md,
+    },
+    secondaryButtonText: {
+      color: theme.colors.primary,
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.semibold,
     },
