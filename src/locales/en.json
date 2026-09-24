@@ -1005,7 +1005,8 @@
     "activity": "Activity",
     "linkDevices": "My devices",
     "sync": "Sync",
-    "debug": "Debug"
+    "debug": "Debug",
+    "errorLog": "Logs"
   },
   "noteLockPassword": {
     "createTitle": "Set note lock password",
@@ -1497,9 +1498,26 @@
       "app": "App",
       "runtime": "Runtime",
       "backendBoot": "Backend boot timeline",
-      "appBoot": "App boot timeline"
+      "appBoot": "App boot timeline",
+      "writers": "Writers"
     },
-    "openDiagnostics": "Diagnostics"
+    "openDiagnostics": "Diagnostics",
+    "openErrorLog": "Logs",
+    "writerSummary": "applied {{linearized}} · indexed {{indexed}} · blocks {{contiguous}}/{{length}} · peers {{peers}}",
+    "errorLog": {
+      "description": "Everything this device logged, from the app and its backend: errors, warnings, crashes and routine activity. Kept across restarts; the report includes the diagnostics too.",
+      "share": "Share report",
+      "shareMessage": "Pear Notes log report",
+      "clear": "Clear logs",
+      "clearTitle": "Clear the logs?",
+      "clearYes": "Clear",
+      "clearConfirm": "Every log entry on this device will be removed.",
+      "empty": "Nothing recorded on this device yet.",
+      "loading": "Reading logs…",
+      "count_one": "{{count}} entry",
+      "count_other": "{{count}} entries",
+      "repeated": "×{{count}}, last {{time}}"
+    }
   },
   "shareIntake": {
     "itemCount_one": "{{count}} shared item",

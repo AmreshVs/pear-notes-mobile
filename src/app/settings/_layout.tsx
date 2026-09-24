@@ -72,6 +72,7 @@ export default function SettingsLayout() {
       <Stack.Screen name="activity" options={{ title: t('layouts.activity') }} />
       <Stack.Screen name="font" options={{ title: t('settings.general.fontFamily') }} />
       <Stack.Screen name="debug" options={{ title: t('layouts.debug') }} />
+      <Stack.Screen name="debug/error-log" options={{ title: t('layouts.errorLog') }} />
     </Stack>
   )
 

@@ -8,6 +8,7 @@ import {
   type TextStyle,
   View as RNView,
 } from 'react-native'
+import { router } from 'expo-router'
 
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
@@ -28,6 +29,7 @@ import { confirmCopyFullReport } from '@/lib/debugSnapshot'
 import {
   buildDebugRows,
   buildTimelineRows,
+  buildWriterRows,
   type DebugRow,
   describeDevice,
   getCopyFullReportLabels,
@@ -180,7 +182,14 @@ export default function DebugScreen() {
     [revealed, styles, t, toggleReveal],
   )
 
+  const handleOpenErrorLog = useCallback(() => router.push('/settings/debug/error-log'), [])
+
   const devices = (snapshot?.devices as Record<string, unknown>[]) || []
+  const writerRows = buildWriterRows(
+    (snapshot?.writers as Record<string, unknown>[]) || [],
+    devices,
+    t,
+  )
 
   return (
     <ScrollView
@@ -214,6 +223,14 @@ export default function DebugScreen() {
           <SymbolIcon name="arrow.clockwise" size={UI_ICON_SIZE_15} color={colors.primary} />
           <Text style={styles.secondaryButtonText}>{t('debug.refresh')}</Text>
         </Pressable>
+        <Pressable onPress={handleOpenErrorLog} style={styles.secondaryButton}>
+          <SymbolIcon
+            name="exclamationmark.triangle"
+            size={UI_ICON_SIZE_15}
+            color={colors.primary}
+          />
+          <Text style={styles.secondaryButtonText}>{t('debug.openErrorLog')}</Text>
+        </Pressable>
       </RNView>
 
       {error ? (
@@ -232,6 +249,12 @@ export default function DebugScreen() {
             <RNView style={styles.section}>
               <Text style={styles.sectionTitle}>{t('debug.sections.devices')}</Text>
               <RNView style={commonThemedStyles.card}>{devices.map(renderDevice)}</RNView>
+            </RNView>
+          ) : null}
+          {writerRows.length > 0 ? (
+            <RNView style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('debug.sections.writers')}</Text>
+              <RNView style={commonThemedStyles.card}>{writerRows.map(renderRow)}</RNView>
             </RNView>
           ) : null}
           {renderSection(t('debug.sections.sync'), snapshot.sync)}

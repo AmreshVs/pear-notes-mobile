@@ -36,6 +36,7 @@ import { confirmCopyFullReport } from '@/lib/debugSnapshot'
 import {
   buildDebugRows,
   buildTimelineRows,
+  buildWriterRows,
   type DebugRow,
   describeDevice,
   getCopyFullReportLabels,
@@ -106,6 +107,7 @@ export default function DebugScreenAndroid() {
   } = useDebugScreen()
 
   const handleBack = useCallback(() => router.back(), [])
+  const handleOpenErrorLog = useCallback(() => router.push('/settings/debug/error-log'), [])
 
   const handleCopyFull = useCallback(
     () => confirmCopyFullReport(getCopyFullReportLabels(t), copyFullReport),
@@ -191,6 +193,11 @@ export default function DebugScreenAndroid() {
   )
 
   const devices = (snapshot?.devices as Record<string, unknown>[]) || []
+  const writerRows = buildWriterRows(
+    (snapshot?.writers as Record<string, unknown>[]) || [],
+    devices,
+    t,
+  )
 
   return (
     <View style={styles.screen}>
@@ -254,6 +261,18 @@ export default function DebugScreenAndroid() {
             <MaterialCommunityIcons name="refresh" size={UI_ICON_SIZE_18} color={colors.primary} />
             <Text style={styles.secondaryButtonText}>{t('debug.refresh')}</Text>
           </Pressable>
+          <Pressable
+            onPress={handleOpenErrorLog}
+            android_ripple={ripple}
+            style={styles.secondaryButton}
+          >
+            <MaterialCommunityIcons
+              name="alert-circle-outline"
+              size={UI_ICON_SIZE_18}
+              color={colors.primary}
+            />
+            <Text style={styles.secondaryButtonText}>{t('debug.openErrorLog')}</Text>
+          </Pressable>
         </View>
 
         {error ? (
@@ -272,6 +291,12 @@ export default function DebugScreenAndroid() {
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>{t('debug.sections.devices')}</Text>
                 <View style={styles.card}>{devices.map(renderDevice)}</View>
+              </View>
+            ) : null}
+            {writerRows.length > 0 ? (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>{t('debug.sections.writers')}</Text>
+                <View style={styles.card}>{writerRows.map(renderRow)}</View>
               </View>
             ) : null}
             {renderSection(t('debug.sections.sync'), snapshot.sync)}

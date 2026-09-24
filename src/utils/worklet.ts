@@ -1,6 +1,7 @@
 import { AppState, AppStateStatus, Platform } from 'react-native'
 import * as ExpoBackgroundService from 'expo-background-service'
 
+import { backendApi } from '@pear-notes/core/backend/api.js'
 import HRPC from '@pear-notes/core/spec/hrpc/index.js'
 import {
   clearBackgroundServiceFailure,
@@ -305,6 +306,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
 
   const rpc = new HRPC(new FramedStream(worklet.IPC))
   setRPC(rpc)
+  backendApi.captureAppLogs()
 
   return { worklet, rpc }
 }

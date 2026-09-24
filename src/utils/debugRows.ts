@@ -33,6 +33,9 @@ const TIMESTAMP_KEYS = [
   'activityOldestAt',
   'mediaLastRebuildAt',
   'mediaHealthCheckedAt',
+  'lastViewBackfillAt',
+  'lastFastForwardAt',
+  'lastErrorAt',
 ]
 
 export function shortenHex(value: string): string {
@@ -104,12 +107,14 @@ export function buildTimelineRows(timeline: DebugTimeline | undefined): DebugRow
   return rows
 }
 
-export type CopyFullReportLabels = {
+export type ConfirmLabels = {
   title: string
   message: string
   cancel: string
   confirm: string
 }
+
+export type CopyFullReportLabels = ConfirmLabels
 
 export function getCopyFullReportLabels(t: (key: string) => string): CopyFullReportLabels {
   return {
@@ -132,4 +137,33 @@ export function describeDevice(
   ]
     .filter(Boolean)
     .join(' · ')
+}
+
+export function getClearErrorLogLabels(t: (key: string) => string): ConfirmLabels {
+  return {
+    title: t('debug.errorLog.clearTitle'),
+    message: t('debug.errorLog.clearConfirm'),
+    cancel: t('common.cancel'),
+    confirm: t('debug.errorLog.clearYes'),
+  }
+}
+
+export function buildWriterRows(
+  writers: Record<string, unknown>[],
+  devices: Record<string, unknown>[],
+  t: (key: string, options?: Record<string, unknown>) => string,
+): DebugRow[] {
+  const titles = new Map(devices.map((device) => [device.localKey, device.title]))
+  return writers.map((writer, index) => ({
+    key: `writer-${String(writer.key || index)}`,
+    label: String(titles.get(writer.key) || t('debug.untitledDevice')),
+    value: t('debug.writerSummary', {
+      linearized: writer.linearized ?? '—',
+      indexed: writer.indexed ?? '—',
+      contiguous: writer.contiguousLength ?? '—',
+      length: writer.coreLength ?? '—',
+      peers: writer.peers ?? '—',
+    }),
+    emphasis: !!writer.isIndexer,
+  }))
 }
