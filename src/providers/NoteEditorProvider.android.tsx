@@ -74,6 +74,7 @@ import {
   UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useAiFeatureGate, useAiToolsVisible } from '@/hooks/useAiFeatureGate'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { useShareIntakeController } from '@/hooks/useShareIntakeController'
@@ -229,41 +230,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
-  const voiceTypingReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.VOICE_TYPING) as boolean),
-  )
+  const aiToolsVisible = useAiToolsVisible(!!noteData?.locked)
+  const gateAiFeature = useAiFeatureGate()
   const transcribeReady = useSelector(
     (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
+      aiToolsVisible &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS) as boolean),
-  )
-  const extractTextReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.EXTRACT_TEXT) as boolean),
-  )
-  const describeImagesReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.DESCRIBE_IMAGES) as boolean),
   )
   const summarizeReady = useSelector(
     (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
+      aiToolsVisible &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS) as boolean),
-  )
-  const translateReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSLATE_NOTES) as boolean),
   )
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
@@ -530,11 +507,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const handleVoiceTyping = useCallback(() => {
+    if (!gateAiFeature(LOCAL_AI_FEATURE.VOICE_TYPING)) return
     dismissKeyboard()
     editorRef.current?.blur()
     editorRef.current?.startDictation()
     setDictationActive(true)
-  }, [editorRef])
+  }, [editorRef, gateAiFeature])
 
   const handleDictationText = useCallback(
     (text: string) => {
@@ -591,9 +569,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     const fileName = selectedAttachmentFileName || getAttachmentFileName(src, 'recording.m4a')
     setSelectedAttachmentSrc(null)
     setSelectedAttachmentFileName(null)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS)) return
     transcriptTargetRef.current = src
     openSourceSheet('transcribe', src, fileName, 'localAi.errors.download')
   }, [
+    gateAiFeature,
     openSourceSheet,
     selectedAttachmentFileName,
     selectedAttachmentSrc,
@@ -607,19 +587,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setImageSheetVisible(false)
     const src = selectedImageSrc
     setSelectedImageSrc(null)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.EXTRACT_TEXT)) return
     openSourceSheet(
       'extract',
       src,
       getAttachmentFileName(src, FALLBACK_IMAGE_FILE_NAME),
       'localAi.errors.downloadImage',
     )
-  }, [openSourceSheet, selectedImageSrc, setImageSheetVisible, setSelectedImageSrc])
+  }, [gateAiFeature, openSourceSheet, selectedImageSrc, setImageSheetVisible, setSelectedImageSrc])
 
   const handleImageMenuDescribe = useCallback(() => {
     if (!selectedImageSrc) return
     setImageSheetVisible(false)
     const src = selectedImageSrc
     setSelectedImageSrc(null)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.DESCRIBE_IMAGES)) return
     captionTargetRef.current = src
     openSourceSheet(
       'describe',
@@ -627,7 +609,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       getAttachmentFileName(src, FALLBACK_IMAGE_FILE_NAME),
       'localAi.errors.downloadImage',
     )
-  }, [openSourceSheet, selectedImageSrc, setImageSheetVisible, setSelectedImageSrc])
+  }, [gateAiFeature, openSourceSheet, selectedImageSrc, setImageSheetVisible, setSelectedImageSrc])
 
   const handleAttachmentMenuExtractText = useCallback(() => {
     if (!selectedAttachmentSrc) return
@@ -636,8 +618,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     const fileName = selectedAttachmentFileName || getAttachmentFileName(src, 'document.pdf')
     setSelectedAttachmentSrc(null)
     setSelectedAttachmentFileName(null)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.EXTRACT_TEXT)) return
     openSourceSheet('extract', src, fileName, 'localAi.errors.downloadFile')
   }, [
+    gateAiFeature,
     openSourceSheet,
     selectedAttachmentFileName,
     selectedAttachmentSrc,
@@ -893,16 +877,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [editorRef, noteContentRef, noteId, openVoiceSheet, setMoreSheetVisible],
   )
 
-  const aiToolsAvailable = summarizeReady || translateReady
-
   const aiTools = useMemo(
-    () =>
-      buildAiTools({
-        summarizeReady,
-        translateReady,
-        hasSelection: !!aiToolsTarget?.selection,
-      }),
-    [aiToolsTarget?.selection, summarizeReady, translateReady],
+    () => buildAiTools({ hasSelection: !!aiToolsTarget?.selection }),
+    [aiToolsTarget?.selection],
   )
 
   const runSelectionTool = useCallback(
@@ -923,14 +900,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const openAiTools = useCallback(
     async (allowRemembered: boolean) => {
-      if (!noteId || !aiToolsAvailable) return
+      if (!noteId || !aiToolsVisible) return
       const current = await editorRef.current?.getSelection(allowRemembered)
       const selection = current && current.text.trim() ? current : null
       await hideKeyboard(() => editorRef.current?.blur())
       if (selection) editorRef.current?.keepSelection()
       setAiToolsTarget({ selection })
     },
-    [aiToolsAvailable, editorRef, noteId],
+    [aiToolsVisible, editorRef, noteId],
   )
 
   const handleAiToolsButton = useCallback(
@@ -942,6 +919,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     (tool: AiTool) => {
       const selection = aiToolsTarget?.selection ?? null
       setAiToolsTarget(null)
+      if (!gateAiFeature(tool.feature)) return
       if (tool.mode === 'ask') {
         selectionRef.current = tool.scope === 'selection' ? selection : null
         setAskTarget({
@@ -956,7 +934,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
       handleNoteAi(tool.mode)
     },
-    [aiToolsTarget, handleNoteAi, noteContentRef, runSelectionTool],
+    [aiToolsTarget, gateAiFeature, handleNoteAi, noteContentRef, runSelectionTool],
   )
 
   const handleCloseAiTools = useCallback(() => setAiToolsTarget(null), [])
@@ -1197,8 +1175,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             isActive={isActive}
             editorRef={editorRef}
             keyboardAnchored={editorOwnsKeyboard}
-            onVoiceTyping={voiceTypingReady ? handleVoiceTyping : undefined}
-            onAiTools={aiToolsAvailable ? handleAiToolsButton : undefined}
+            onVoiceTyping={aiToolsVisible ? handleVoiceTyping : undefined}
+            onAiTools={aiToolsVisible ? handleAiToolsButton : undefined}
             onAttachPress={() => {
               dismissKeyboard()
               editorRef.current?.blur()
@@ -1341,7 +1319,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             label: t('noteCard.actions.share'),
             onPress: handleImageMenuShare,
           },
-          ...(extractTextReady
+          ...(aiToolsVisible
             ? [
                 {
                   icon: 'text-recognition',
@@ -1350,7 +1328,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                 },
               ]
             : []),
-          ...(describeImagesReady
+          ...(aiToolsVisible
             ? [
                 {
                   icon: 'image-search-outline',
@@ -1383,7 +1361,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             label: t('noteCard.actions.share'),
             onPress: handleAttachmentMenuShare,
           },
-          ...(transcribeReady && isAudioFile(selectedAttachmentFileName ?? undefined)
+          ...(aiToolsVisible && isAudioFile(selectedAttachmentFileName ?? undefined)
             ? [
                 {
                   icon: 'text-box-outline',
@@ -1392,7 +1370,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                 },
               ]
             : []),
-          ...(extractTextReady && isPdfAttachment(selectedAttachmentFileName)
+          ...(aiToolsVisible && isPdfAttachment(selectedAttachmentFileName)
             ? [
                 {
                   icon: 'text-recognition',

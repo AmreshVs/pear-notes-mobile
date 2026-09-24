@@ -48,8 +48,10 @@ import {
   UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useShowAiTools } from '@/hooks/useShowAiTools'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { setShowAiTools } from '@/lib/localAi/aiToolsPreference'
 
 import useOnDeviceAiScreen, { type OnDeviceAiFeatureRow } from './useOnDeviceAiScreen'
 
@@ -62,6 +64,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 export default function AndroidOnDeviceAiScreen() {
   const { t } = useTranslation()
+  const showAiTools = useShowAiTools()
   const footerLibrary = t('settings.onDeviceAi.footerLibrary')
   const [footerBefore, footerAfter] = t('settings.onDeviceAi.footer').split(footerLibrary)
   const theme = useTheme()
@@ -316,6 +319,19 @@ export default function AndroidOnDeviceAiScreen() {
                   color={verdictColor}
                 />
                 <Text style={styles.verdictText}>{verdictText}</Text>
+              </View>
+            </View>
+
+            <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
+              {t('settings.onDeviceAi.noteEditor')}
+            </Text>
+            <View style={styles.groupCard}>
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Text style={styles.rowTitle}>{t('settings.onDeviceAi.showAiTools')}</Text>
+                  <Text style={styles.rowSubtitle}>{t('settings.onDeviceAi.showAiToolsDesc')}</Text>
+                </View>
+                <Switch value={showAiTools} onValueChange={setShowAiTools} />
               </View>
             </View>
 
