@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, View as RNView, type ViewStyle } from 'react-native'
 import { router } from 'expo-router'
 
 import { BackgroundSyncSection } from '@/components/settings/BackgroundSyncSection'
@@ -12,10 +12,13 @@ import {
   commonStyles,
   FontFamily,
   FontSize,
+  FontWeight,
   Radii,
   Space,
+  UI_ICON_SIZE_18,
   UI_ICON_SIZE_48,
   UI_SIZE_20,
+  UI_SIZE_54,
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 
@@ -27,6 +30,12 @@ export default function SyncScreen() {
   const openDiagnostics = useCallback(() => {
     router.push('/settings/debug' as never)
   }, [])
+
+  const getDiagnosticsStyle = useCallback(
+    ({ pressed }: { pressed: boolean }): ViewStyle[] =>
+      pressed ? [styles.diagnosticsBtn, commonStyles.pressed] : [styles.diagnosticsBtn],
+    [styles.diagnosticsBtn],
+  )
 
   return (
     <RNView style={styles.container}>
@@ -46,7 +55,13 @@ export default function SyncScreen() {
         <BackgroundSyncSection />
         <MediaSyncSection />
 
-        <Pressable onPress={openDiagnostics} style={styles.diagnostics}>
+        <Pressable onPress={openDiagnostics} style={getDiagnosticsStyle} accessibilityRole="button">
+          <SymbolIcon
+            name="stethoscope"
+            size={UI_ICON_SIZE_18}
+            color={colors.text}
+            weight="medium"
+          />
           <Text style={styles.diagnosticsText}>{t('debug.openDiagnostics')}</Text>
         </Pressable>
       </ScrollView>
@@ -85,14 +100,21 @@ const useStyles = createThemedStylesheet((theme) => {
       lineHeight: FontSize.body * 1.45,
       maxWidth: 320,
     },
-    diagnostics: {
-      ...commonStyles.centered,
-      paddingVertical: Space.lg,
+    diagnosticsBtn: {
+      minHeight: UI_SIZE_54,
+      borderRadius: Radii.lg,
+      backgroundColor: theme.colors.controlBackground,
+      borderColor: theme.colors.borderSecondary,
+      ...commonStyles.row,
+      justifyContent: 'center',
+      gap: Space.sm,
+      marginTop: Space.lg,
     },
     diagnosticsText: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.regular,
-      color: theme.colors.textMuted,
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      fontFamily: FontFamily.bold,
+      color: theme.colors.text,
     },
   })
   return styles
