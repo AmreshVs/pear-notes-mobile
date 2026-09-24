@@ -1,5 +1,7 @@
 import { Keyboard } from 'react-native'
 
+import { LOCAL_AI_FEATURE } from '@pear-notes/core/store/services/localAiCatalog.js'
+
 import type { VoiceTypingMode } from '@/components/useVoiceTypingSheet'
 import { dismissKeyboard, KEYBOARD_HIDE_TIMEOUT_MS } from '@/lib/keyboard'
 
@@ -13,6 +15,7 @@ export interface AiTool {
   scope: AiToolScope
   group: AiToolGroup
   labelKey: string
+  feature: string
 }
 
 export const AI_TOOL_GROUPS: { id: AiToolGroup; labelKey: string }[] = [
@@ -30,53 +33,48 @@ const REWRITE_TOOL_MODES: VoiceTypingMode[] = [
   'makeFriendly',
 ]
 
+const WRITING = LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS as string
+const TRANSLATE = LOCAL_AI_FEATURE.TRANSLATE_NOTES as string
+
 const tool = (
   mode: AiToolMode,
   scope: AiToolScope,
   group: AiToolGroup,
   labelKey: string,
-): AiTool => ({ id: `${scope}:${mode}`, mode, scope, group, labelKey })
+  feature: string,
+): AiTool => ({ id: `${scope}:${mode}`, mode, scope, group, labelKey, feature })
 
-export function buildAiTools({
-  summarizeReady,
-  translateReady,
-  hasSelection,
-}: {
-  summarizeReady: boolean
-  translateReady: boolean
-  hasSelection: boolean
-}): AiTool[] {
-  const tools: AiTool[] = []
+export function buildAiTools({ hasSelection }: { hasSelection: boolean }): AiTool[] {
   if (hasSelection) {
-    if (summarizeReady) {
-      tools.push(tool('ask', 'selection', 'ask', 'localAi.ask.menuLabelSelection'))
-      for (const mode of REWRITE_TOOL_MODES) {
-        tools.push(tool(mode, 'selection', 'edit', `localAi.${mode}.menuLabel`))
-      }
-      tools.push(
-        tool('summarizeNote', 'selection', 'understand', 'localAi.summarizeSelection.menuLabel'),
-        tool('keyPoints', 'selection', 'understand', 'localAi.keyPointsSelection.menuLabel'),
-      )
-    }
-    if (translateReady) {
-      tools.push(
-        tool('translate', 'selection', 'understand', 'localAi.translateSelection.menuLabel'),
-      )
-    }
-    return tools
+    return [
+      tool('ask', 'selection', 'ask', 'localAi.ask.menuLabelSelection', WRITING),
+      ...REWRITE_TOOL_MODES.map((mode) =>
+        tool(mode, 'selection', 'edit', `localAi.${mode}.menuLabel`, WRITING),
+      ),
+      tool(
+        'summarizeNote',
+        'selection',
+        'understand',
+        'localAi.summarizeSelection.menuLabel',
+        WRITING,
+      ),
+      tool('keyPoints', 'selection', 'understand', 'localAi.keyPointsSelection.menuLabel', WRITING),
+      tool(
+        'translate',
+        'selection',
+        'understand',
+        'localAi.translateSelection.menuLabel',
+        TRANSLATE,
+      ),
+    ]
   }
-  if (summarizeReady) {
-    tools.push(
-      tool('ask', 'note', 'ask', 'localAi.ask.menuLabelNote'),
-      tool('summarizeNote', 'note', 'note', 'localAi.summarizeNote.menuLabel'),
-      tool('suggestTitle', 'note', 'note', 'localAi.suggestTitle.menuLabel'),
-      tool('keyPoints', 'note', 'note', 'localAi.keyPoints.menuLabel'),
-    )
-  }
-  if (translateReady) {
-    tools.push(tool('translate', 'note', 'note', 'localAi.translateNote.menuLabel'))
-  }
-  return tools
+  return [
+    tool('ask', 'note', 'ask', 'localAi.ask.menuLabelNote', WRITING),
+    tool('summarizeNote', 'note', 'note', 'localAi.summarizeNote.menuLabel', WRITING),
+    tool('suggestTitle', 'note', 'note', 'localAi.suggestTitle.menuLabel', WRITING),
+    tool('keyPoints', 'note', 'note', 'localAi.keyPoints.menuLabel', WRITING),
+    tool('translate', 'note', 'note', 'localAi.translateNote.menuLabel', TRANSLATE),
+  ]
 }
 
 export function hideKeyboard(blur: () => void): Promise<void> {

@@ -38,11 +38,14 @@ import {
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { useShowAiTools } from '@/hooks/useShowAiTools'
+import { setShowAiTools } from '@/lib/localAi/aiToolsPreference'
 
 import useOnDeviceAiScreen, { type OnDeviceAiFeatureRow } from './useOnDeviceAiScreen'
 
 export default function OnDeviceAiScreen() {
   const { t } = useTranslation()
+  const showAiTools = useShowAiTools()
   const footerLibrary = t('settings.onDeviceAi.footerLibrary')
   const [footerBefore, footerAfter] = t('settings.onDeviceAi.footer').split(footerLibrary)
   const { colors } = useTheme()
@@ -262,6 +265,26 @@ export default function OnDeviceAiScreen() {
                   />
                 </RNView>
                 <Text style={styles.verdictText}>{verdictText}</Text>
+              </RNView>
+            </RNView>
+
+            <RNView style={styles.section}>
+              <Text style={commonThemedStyles.sectionCamelCase}>
+                {t('settings.onDeviceAi.noteEditor')}
+              </Text>
+              <RNView style={commonThemedStyles.card}>
+                <RNView style={styles.toggleRow}>
+                  <RNView style={styles.toggleInfo}>
+                    <Text style={styles.rowTitle}>{t('settings.onDeviceAi.showAiTools')}</Text>
+                    <Text style={styles.rowDesc}>{t('settings.onDeviceAi.showAiToolsDesc')}</Text>
+                  </RNView>
+                  <Switch
+                    value={showAiTools}
+                    onValueChange={setShowAiTools}
+                    trackColor={trackColor}
+                    thumbColor={colors.white}
+                  />
+                </RNView>
               </RNView>
             </RNView>
 

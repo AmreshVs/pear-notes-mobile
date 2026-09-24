@@ -68,6 +68,7 @@ import {
   UI_SIZE_80,
 } from '@/constants/commonStyles'
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
+import { useAiFeatureGate, useAiToolsVisible } from '@/hooks/useAiFeatureGate'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { useShareIntakeController } from '@/hooks/useShareIntakeController'
@@ -165,41 +166,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
 
-  const voiceTypingReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.VOICE_TYPING) as boolean),
-  )
+  const aiToolsVisible = useAiToolsVisible(!!noteData?.locked)
+  const gateAiFeature = useAiFeatureGate()
   const transcribeReady = useSelector(
     (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
+      aiToolsVisible &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS) as boolean),
-  )
-  const extractTextReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.EXTRACT_TEXT) as boolean),
-  )
-  const describeImagesReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.DESCRIBE_IMAGES) as boolean),
   )
   const summarizeReady = useSelector(
     (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
+      aiToolsVisible &&
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS) as boolean),
-  )
-  const translateReady = useSelector(
-    (state) =>
-      LOCAL_AI_ENABLED &&
-      !noteData?.locked &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSLATE_NOTES) as boolean),
   )
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
@@ -580,6 +557,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [])
 
   const handleVoiceTyping = useCallback(() => {
+    if (!gateAiFeature(LOCAL_AI_FEATURE.VOICE_TYPING)) return
     hapticMedium()
     Keyboard.dismiss()
     editorRef.current?.blur()
@@ -587,7 +565,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       editorRef.current?.startDictation()
       setDictationActive(true)
     }, 100)
-  }, [editorRef])
+  }, [editorRef, gateAiFeature])
 
   const handleDictationText = useCallback(
     (text: string) => {
@@ -640,6 +618,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleTranscribeAttachment = useCallback(() => {
     if (!selectedAttachmentSrc) return
     setIsAttachmentActionSheetOpen(false)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS)) return
     transcriptTargetRef.current = selectedAttachmentSrc
     openSourceSheet(
       'transcribe',
@@ -648,6 +627,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       'localAi.errors.download',
     )
   }, [
+    gateAiFeature,
     openSourceSheet,
     selectedAttachmentFileName,
     selectedAttachmentSrc,
@@ -657,23 +637,25 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleImageExtractText = useCallback(() => {
     if (!selectedImageSrc) return
     setIsImageActionSheetOpen(false)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.EXTRACT_TEXT)) return
     const src = selectedImageSrc
     const fileName = src.startsWith('data:')
       ? `image_${Date.now()}.jpg`
       : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
     openSourceSheet('extract', src, fileName, 'localAi.errors.downloadImage')
-  }, [openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
+  }, [gateAiFeature, openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
 
   const handleImageDescribe = useCallback(() => {
     if (!selectedImageSrc) return
     setIsImageActionSheetOpen(false)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.DESCRIBE_IMAGES)) return
     const src = selectedImageSrc
     const fileName = src.startsWith('data:')
       ? `image_${Date.now()}.jpg`
       : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
     captionTargetRef.current = src
     openSourceSheet('describe', src, fileName, 'localAi.errors.downloadImage')
-  }, [openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
+  }, [gateAiFeature, openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
 
   const handleNoteAi = useCallback(
     (mode: VoiceTypingMode) => {
@@ -686,16 +668,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     },
     [editorRef, noteContentRef, noteId, openVoiceSheet],
   )
-  const aiToolsAvailable = summarizeReady || translateReady
-
   const aiTools = useMemo(
-    () =>
-      buildAiTools({
-        summarizeReady,
-        translateReady,
-        hasSelection: !!aiToolsTarget?.selection,
-      }),
-    [aiToolsTarget?.selection, summarizeReady, translateReady],
+    () => buildAiTools({ hasSelection: !!aiToolsTarget?.selection }),
+    [aiToolsTarget?.selection],
   )
 
   const runSelectionTool = useCallback(
@@ -716,7 +691,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const openAiTools = useCallback(
     async (allowRemembered: boolean) => {
-      if (!noteId || !aiToolsAvailable) return
+      if (!noteId || !aiToolsVisible) return
       const current = await editorRef.current?.getSelection(allowRemembered)
       const selection = current && current.text.trim() ? current : null
       hapticMedium()
@@ -724,7 +699,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       if (selection) editorRef.current?.keepSelection()
       setAiToolsTarget({ selection })
     },
-    [aiToolsAvailable, editorRef, noteId],
+    [aiToolsVisible, editorRef, noteId],
   )
 
   const handleAiToolsButton = useCallback(
@@ -736,6 +711,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     (tool: AiTool) => {
       const selection = aiToolsTarget?.selection ?? null
       setAiToolsTarget(null)
+      if (!gateAiFeature(tool.feature)) return
       if (tool.mode === 'ask') {
         selectionRef.current = tool.scope === 'selection' ? selection : null
         setAskTarget({
@@ -750,7 +726,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
       handleNoteAi(tool.mode)
     },
-    [aiToolsTarget, handleNoteAi, noteContentRef, runSelectionTool],
+    [aiToolsTarget, gateAiFeature, handleNoteAi, noteContentRef, runSelectionTool],
   )
 
   const handleCloseAiTools = useCallback(() => setAiToolsTarget(null), [])
@@ -786,6 +762,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleExtractTextAttachment = useCallback(() => {
     if (!selectedAttachmentSrc) return
     setIsAttachmentActionSheetOpen(false)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.EXTRACT_TEXT)) return
     openSourceSheet(
       'extract',
       selectedAttachmentSrc,
@@ -793,6 +770,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       'localAi.errors.downloadFile',
     )
   }, [
+    gateAiFeature,
     openSourceSheet,
     selectedAttachmentFileName,
     selectedAttachmentSrc,
@@ -1259,8 +1237,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onScanDocument={handleScanDocument}
               onTakePhoto={handleTakePhoto}
               onTakeVideo={handleTakeVideo}
-              onVoiceTyping={voiceTypingReady ? handleVoiceTyping : undefined}
-              onAiTools={aiToolsAvailable ? handleAiToolsButton : undefined}
+              onVoiceTyping={aiToolsVisible ? handleVoiceTyping : undefined}
+              onAiTools={aiToolsVisible ? handleAiToolsButton : undefined}
             />
           )}
 
@@ -1381,14 +1359,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       systemImage="square.and.arrow.down"
                       onPress={handleImageSaveToPhotos}
                     />
-                    {extractTextReady && (
+                    {aiToolsVisible && (
                       <ExpoUI.Button
                         label={t('localAi.extractText.menuLabel')}
                         systemImage="text.viewfinder"
                         onPress={handleImageExtractText}
                       />
                     )}
-                    {describeImagesReady && (
+                    {aiToolsVisible && (
                       <ExpoUI.Button
                         label={t('localAi.describeImage.menuLabel')}
                         systemImage="text.below.photo"
@@ -1452,14 +1430,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       systemImage="square.and.arrow.up"
                       onPress={handleAttachmentShareAction}
                     />
-                    {transcribeReady && isAudioFile(selectedAttachmentFileName ?? undefined) && (
+                    {aiToolsVisible && isAudioFile(selectedAttachmentFileName ?? undefined) && (
                       <ExpoUI.Button
                         label={t('localAi.transcribe.menuLabel')}
                         systemImage="text.quote"
                         onPress={handleTranscribeAttachment}
                       />
                     )}
-                    {extractTextReady && isPdfAttachment(selectedAttachmentFileName) && (
+                    {aiToolsVisible && isPdfAttachment(selectedAttachmentFileName) && (
                       <ExpoUI.Button
                         label={t('localAi.extractText.menuLabel')}
                         systemImage="text.viewfinder"
