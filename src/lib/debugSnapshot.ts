@@ -104,18 +104,25 @@ export async function buildErrorReport(): Promise<string> {
   return `${formatDebugReport(snapshot)}\n${formatErrorLog(log)}`
 }
 
+async function removeOldErrorReports(): Promise<void> {
+  const cacheDir = FileSystem.cacheDirectory ?? ''
+  const names = await FileSystem.readDirectoryAsync(cacheDir).catch(() => [] as string[])
+  await Promise.all(
+    names
+      .filter((name) => name.startsWith(ERROR_REPORT_DIR_PREFIX))
+      .map((name) => FileSystem.deleteAsync(`${cacheDir}${name}`, { idempotent: true })),
+  ).catch(() => {})
+}
+
 export async function shareErrorReport(message: string): Promise<void> {
+  await removeOldErrorReports()
   const report = await buildErrorReport()
   const dir = `${FileSystem.cacheDirectory}${ERROR_REPORT_DIR_PREFIX}${Date.now()}/`
   const stamp = new Date().toISOString().replace(/[:.]/g, '-')
   const dest = `${dir}pear-notes-logs-${stamp}.txt`
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true })
   await FileSystem.writeAsStringAsync(dest, report)
-  try {
-    await ExpoNativeShareModule.share({ message, urls: [dest], resolveOnDismiss: true })
-  } finally {
-    await FileSystem.deleteAsync(dir, { idempotent: true }).catch(() => {})
-  }
+  await ExpoNativeShareModule.share({ message, urls: [dest], resolveOnDismiss: true })
 }
 
 export function confirmClearErrorLog(labels: ConfirmLabels, onConfirm: () => void): void {
