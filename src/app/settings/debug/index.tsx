@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import { router } from 'expo-router'
 
+import { DebugHealthRows } from '@/components/DebugHealthRows'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -243,6 +244,12 @@ export default function DebugScreen() {
         <Text style={styles.loading}>{t('debug.loading')}</Text>
       ) : (
         <>
+          <RNView style={styles.section}>
+            <Text style={styles.sectionTitle}>{t('debug.health.title')}</Text>
+            <RNView style={commonThemedStyles.card}>
+              <DebugHealthRows snapshot={snapshot} />
+            </RNView>
+          </RNView>
           {renderSection(t('debug.sections.autobase'), snapshot.autobase)}
           {renderSection(t('debug.sections.swarm'), snapshot.swarm)}
           {devices.length > 0 ? (

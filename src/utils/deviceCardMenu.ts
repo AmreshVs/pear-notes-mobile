@@ -1,30 +1,38 @@
+import {
+  canAddSyncLeader,
+  canRemoveSyncLeader,
+} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+
 import { DEVICE_ACTION } from '@/constants/deviceActions'
-import { canPromoteDevice } from '@/utils/indexerUtils'
 
 import type { ContextMenuItem } from '../../modules/expo-context-menu'
 
 export type DeviceActionFlags = {
   canRename: boolean
   canMakeIndexer: boolean
+  canRemoveIndexer: boolean
   canRemove: boolean
   hasAny: boolean
 }
 
-export function getDeviceActionFlags(device: any, indexerDevice?: any): DeviceActionFlags {
+export function getDeviceActionFlags(device: any, plan: any): DeviceActionFlags {
   const canRename = device?.isLocal === true
-  const canMakeIndexer = canPromoteDevice(device, indexerDevice)
+  const canMakeIndexer = canAddSyncLeader(device, plan)
+  const canRemoveIndexer = canRemoveSyncLeader(device, plan)
   const canRemove = device?.isLocal !== true && device?.isIndexer !== true
   return {
     canRename,
     canMakeIndexer,
+    canRemoveIndexer,
     canRemove,
-    hasAny: canRename || canMakeIndexer || canRemove,
+    hasAny: canRename || canMakeIndexer || canRemoveIndexer || canRemove,
   }
 }
 
 export type DeviceMenuLabels = {
   rename: string
   makeIndexer: string
+  removeIndexer: string
   remove: string
 }
 
@@ -40,6 +48,14 @@ export function buildDeviceCardMenu(
 
   if (flags.canMakeIndexer) {
     items.push({ id: DEVICE_ACTION.makeIndexer, title: labels.makeIndexer, systemImage: 'crown' })
+  }
+
+  if (flags.canRemoveIndexer) {
+    items.push({
+      id: DEVICE_ACTION.removeIndexer,
+      title: labels.removeIndexer,
+      systemImage: 'minus.circle',
+    })
   }
 
   if (flags.canRemove) {

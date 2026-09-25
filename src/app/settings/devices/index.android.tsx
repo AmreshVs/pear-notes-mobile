@@ -22,6 +22,7 @@ import { formatInviteCountdown, isValidInvite } from '@pear-notes/core/utils.js'
 import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
+import { AndroidSyncLeadersNotes } from '@/components/android/AndroidSyncLeadersNotes'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -82,8 +83,6 @@ export default function AndroidSyncScreen() {
   const md3Styles = useMD3CommonStyles()
 
   const {
-    indexerOffline,
-    indexerName,
     tab,
     handleSelectTab,
     copied,
@@ -495,29 +494,7 @@ export default function AndroidSyncScreen() {
                 </View>
               )}
 
-              <View style={styles.footNoteRow}>
-                <MaterialCommunityIcons
-                  name="crown-outline"
-                  size={UI_ICON_SIZE_12}
-                  color={c.primary}
-                  style={styles.warningIconMargin}
-                />
-                <Text style={styles.footNoteText}>{t('sync.devices.indexerExplain')}</Text>
-              </View>
-
-              {indexerOffline && (
-                <View style={styles.footNoteRow}>
-                  <MaterialCommunityIcons
-                    name="alert-outline"
-                    size={UI_ICON_SIZE_12}
-                    color={c.onSurfaceVariant}
-                    style={styles.warningIconMargin}
-                  />
-                  <Text style={styles.footNoteWarningText}>
-                    {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
-                  </Text>
-                </View>
-              )}
+              <AndroidSyncLeadersNotes />
 
               <View style={styles.footNoteRow}>
                 <MaterialCommunityIcons
@@ -890,13 +867,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       marginTop: UI_SIZE_24,
     },
     footNoteText: {
-      fontSize: FontSize.caption,
-      ...commonStyles.flex1,
-      lineHeight: UI_SIZE_17,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
-    },
-    footNoteWarningText: {
       fontSize: FontSize.caption,
       ...commonStyles.flex1,
       lineHeight: UI_SIZE_17,

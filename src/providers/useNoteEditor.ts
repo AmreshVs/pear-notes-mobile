@@ -12,10 +12,8 @@ import {
 import { useSelector } from 'react-redux'
 import { router } from 'expo-router'
 
-import { backendApi } from '@pear-notes/core/backend/api.js'
 import {
   ALL_NOTES_KEY,
-  COLLABORATION_ENABLED,
   HYPERDRIVE_URL_PREFIX,
   RECENTLY_DELETED_KEY,
 } from '@pear-notes/core/constant.js'
@@ -374,56 +372,6 @@ export function useNoteEditor() {
     [hyperdriveServerAddress],
   )
 
-  const handleYjsMessage = useCallback(
-    (dataBase64: string) => {
-      if (!COLLABORATION_ENABLED || !noteId || noteId === 'new') return
-      InteractionManager.runAfterInteractions(() => {
-        const binaryString = atob(dataBase64)
-        const bytes = new Uint8Array(binaryString.length)
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i)
-        }
-        backendApi.broadcastYjsUpdate({ noteId, data: bytes })
-      })
-    },
-    [noteId],
-  )
-
-  useEffect(() => {
-    if (!COLLABORATION_ENABLED || !noteId || noteId === 'new') return
-
-    let active = true
-    let stream: any = null
-
-    const setup = async () => {
-      try {
-        stream = await backendApi.subscribeYjsUpdate({ noteId })
-        for await (const msg of stream) {
-          if (!active) break
-          const yjsData = msg.data?.data
-          if (yjsData && yjsData.byteLength > 0) {
-            let binary = ''
-            for (let i = 0; i < yjsData.length; i++) {
-              binary += String.fromCharCode(yjsData[i])
-            }
-            editorRef.current?.applyYjsMessage(btoa(binary))
-          }
-        }
-      } catch (e) {
-        console.error('subscribeYjsUpdate error', e)
-      }
-    }
-
-    setup()
-
-    return () => {
-      active = false
-      if (stream && typeof stream.destroy === 'function') {
-        stream.destroy()
-      }
-    }
-  }, [noteId, editorRef])
-
   return {
     editorRef,
     noteId,
@@ -501,6 +449,5 @@ export function useNoteEditor() {
     handleEditorFocus,
     handleEditorBlur,
     resolveHyperdriveUrl,
-    handleYjsMessage,
   }
 }

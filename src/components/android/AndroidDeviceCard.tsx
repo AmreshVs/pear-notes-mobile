@@ -110,16 +110,16 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   const inputRef = useRef<TextInput>(null)
 
   const {
-    currentIndexer,
+    plan,
     isTransferring,
     stepKey,
     errorKey,
     isLocalTarget,
-    outgoingName,
-    confirmVisible,
-    openConfirm,
+    confirmMode,
+    openAdd,
+    openRemove,
     closeConfirm,
-    confirmTransfer,
+    confirmChange,
   } = useDeviceIndexer(device)
 
   const startEditing = useCallback(() => {
@@ -150,7 +150,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   )
 
   const [actionSheetVisible, setActionSheetVisible] = useState(false)
-  const actionFlags = getDeviceActionFlags(device, currentIndexer)
+  const actionFlags = getDeviceActionFlags(device, plan)
 
   const openActionSheet = useCallback(() => setActionSheetVisible(true), [])
   const closeActionSheet = useCallback(() => setActionSheetVisible(false), [])
@@ -162,8 +162,13 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
 
   const handleSheetMakeIndexer = useCallback(() => {
     setActionSheetVisible(false)
-    openConfirm()
-  }, [openConfirm])
+    openAdd()
+  }, [openAdd])
+
+  const handleSheetRemoveIndexer = useCallback(() => {
+    setActionSheetVisible(false)
+    openRemove()
+  }, [openRemove])
 
   const handleSheetRemove = useCallback(() => {
     setActionSheetVisible(false)
@@ -186,6 +191,13 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
         onPress: handleSheetMakeIndexer,
       })
     }
+    if (actionFlags.canRemoveIndexer) {
+      actions.push({
+        icon: 'minus-circle-outline',
+        label: t('sync.devices.removeIndexer'),
+        onPress: handleSheetRemoveIndexer,
+      })
+    }
     if (actionFlags.canRemove) {
       actions.push({
         icon: 'delete-outline',
@@ -195,7 +207,14 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
       })
     }
     return actions
-  }, [actionFlags, handleSheetRename, handleSheetMakeIndexer, handleSheetRemove, t])
+  }, [
+    actionFlags,
+    handleSheetRename,
+    handleSheetMakeIndexer,
+    handleSheetRemoveIndexer,
+    handleSheetRemove,
+    t,
+  ])
 
   const entering = useMemo(
     () =>
@@ -277,12 +296,12 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
       />
 
       <AndroidIndexerDialog
-        visible={confirmVisible}
+        visible={!!confirmMode}
+        mode={confirmMode || 'add'}
         deviceName={displayName}
-        outgoingName={outgoingName}
         isLocalTarget={isLocalTarget}
         onCancel={closeConfirm}
-        onConfirm={confirmTransfer}
+        onConfirm={confirmChange}
       />
     </MotionView>
   )

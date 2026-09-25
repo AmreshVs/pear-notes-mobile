@@ -8,7 +8,6 @@ import { router } from 'expo-router'
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteSyncedDevice,
-  getIndexerDevice,
   getLocalPreferences,
   getSyncedDevices,
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
@@ -22,12 +21,7 @@ import {
   resetInvite,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
-import {
-  extractInvite,
-  getDeviceDisplayName,
-  getInviteRemainingMs,
-  isValidInvite,
-} from '@pear-notes/core/utils.js'
+import { extractInvite, getInviteRemainingMs, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { useQrImageAttach } from '@/components/sync/useQrImageAttach'
 import {
@@ -40,7 +34,6 @@ import {
 } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 import { shareQrImage } from '@/lib/qrShare'
-import { isIndexerTransferBlocked } from '@/utils/indexerUtils'
 
 const INVITE_COUNTDOWN_TICK_MS = 1000
 const INVITE_EXPIRY_WARNING_MS = 60 * 1000
@@ -55,7 +48,6 @@ function useSyncScreen() {
   const isLoading = useSelector(getSyncIsLoading)
   const syncedDevices = useSelector(getSyncedDevices) as any[]
   const localPreferences = useSelector(getLocalPreferences) as any
-  const indexerDevice = useSelector(getIndexerDevice) as any
   const isSynced = localPreferences?.isSynced === 'true'
   const notes = useSelector(getNotes) as any[]
 
@@ -244,12 +236,7 @@ function useSyncScreen() {
     }
   }, [dispatch, deviceToDeleteKey])
 
-  const indexerOffline = isIndexerTransferBlocked(indexerDevice)
-  const indexerName = indexerDevice ? getDeviceDisplayName(indexerDevice) : ''
-
   return {
-    indexerOffline,
-    indexerName,
     tab,
     handleSelectTab,
     copied,

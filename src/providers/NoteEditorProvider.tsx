@@ -150,7 +150,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isEdgeSwipeActive,
     setIsEdgeSwipeActive,
     noteData,
-    handleYjsMessage,
   } = editor
 
   const hasTextSelection = isActive('hasSelection')
@@ -1213,7 +1212,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onDeleteAttachment={handleDeleteAttachment}
               onImageLongPress={handleImageLongPress}
               onAttachmentLongPress={handleAttachmentLongPress}
-              onYjsMessage={handleYjsMessage}
               onKeptSelectionCleared={handleKeptSelectionCleared}
             />
           )}

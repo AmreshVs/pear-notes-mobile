@@ -13,11 +13,8 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
 
-import { COLLABORATION_ENABLED } from '@pear-notes/core/constant.js'
 import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
-import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
-import { getCollaboratorIdentity } from '@pear-notes/core/utils.js'
 
 import { FontSize, FontWeight, UI_SIZE_8, UI_SIZE_12, UI_SIZE_20 } from '@/constants/commonStyles'
 import type { SharedParagraph } from '@/lib/shareIntake.types'
@@ -144,7 +141,6 @@ export interface TiptapEditorHandle {
   ) => void
   deleteImage: (src: string) => void
   deleteAttachment: (url: string) => void
-  applyYjsMessage: (dataBase64: string) => void
 }
 
 export interface TiptapEditorProps {
@@ -175,7 +171,6 @@ export interface TiptapEditorProps {
     rect?: { x: number; y: number; width: number; height: number },
     attachmentId?: string,
   ) => void
-  onYjsMessage?: (dataBase64: string) => void
 }
 
 type WebViewMsg =
@@ -206,7 +201,6 @@ type WebViewMsg =
       rect?: { x: number; y: number; width: number; height: number }
       attachmentId?: string
     }
-  | { type: 'yjsMessage'; data: string }
   | { type: 'selectionResponse'; requestId: string; from: number; to: number; text: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
@@ -292,7 +286,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onDeleteAttachment,
       onImageLongPress,
       onAttachmentLongPress,
-      onYjsMessage,
     },
     ref,
   ) => {
@@ -310,13 +303,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
     const webViewRef = useRef<WebView>(null)
 
-    const syncedDevices = useSelector(getSyncedDevices)
-    const localDevice = useMemo(() => syncedDevices.find((d: any) => d.isLocal), [syncedDevices])
-    const collaborator = useMemo(
-      () => getCollaboratorIdentity(localDevice, 'Mobile'),
-      [localDevice],
-    )
-
     const onContentChangeRef = useRef(onContentChange)
     const onTitleChangeRef = useRef(onTitleChange)
     const onStyleStateChangeRef = useRef(onStyleStateChange)
@@ -329,7 +315,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onDeleteAttachmentRef = useRef(onDeleteAttachment)
     const onImageLongPressRef = useRef(onImageLongPress)
     const onAttachmentLongPressRef = useRef(onAttachmentLongPress)
-    const onYjsMessageRef = useRef(onYjsMessage)
 
     onContentChangeRef.current = onContentChange
     onTitleChangeRef.current = onTitleChange
@@ -343,7 +328,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onDeleteAttachmentRef.current = onDeleteAttachment
     onImageLongPressRef.current = onImageLongPress
     onAttachmentLongPressRef.current = onAttachmentLongPress
-    onYjsMessageRef.current = onYjsMessage
 
     const colorsRef = useRef(colors)
     const isDarkRef = useRef(theme.isDark)
@@ -474,8 +458,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               title: initialTitleRef.current,
               html: initialContentRef.current,
               safeAreaTop: safeAreaTopRef.current,
-              collaborator,
-              collaborationEnabled: COLLABORATION_ENABLED,
               hyperdriveAddress: hyperdriveServerAddressRef.current,
             })
             break
@@ -557,10 +539,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             onAttachmentLongPressRef.current?.(msg.url, msg.fileName, msg.rect, msg.attachmentId)
             break
 
-          case 'yjsMessage':
-            onYjsMessageRef.current?.(msg.data)
-            break
-
           case 'selectionResponse': {
             const resolve = pendingSelectionRequests.current.get(msg.requestId)
             if (resolve) {
@@ -611,21 +589,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         sendCommand({ type: 'setHyperdriveAddress', address: hyperdriveServerAddress })
       }
     }, [hyperdriveServerAddress, sendCommand])
-
-    const prevCollaboratorRef = useRef(collaborator)
-
-    useEffect(() => {
-      if (
-        prevCollaboratorRef.current.name === collaborator.name &&
-        prevCollaboratorRef.current.color === collaborator.color
-      ) {
-        return
-      }
-      prevCollaboratorRef.current = collaborator
-      if (editorReadyRef.current) {
-        sendCommand({ type: 'setCollaborator', collaborator })
-      }
-    }, [collaborator, sendCommand])
 
     const handleError = useCallback((_e: any) => {
       setEditorState('error')
@@ -750,7 +713,6 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }),
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),
         deleteAttachment: (url) => sendCommand({ type: 'deleteAttachment', url }),
-        applyYjsMessage: (data) => sendCommand({ type: 'yjsMessage', data }),
         revealLastInsert: (url?: string) =>
           webViewRef.current?.injectJavaScript(revealLastInsertJs(url)),
         setKeyboardInset: (height: number, scrollToCursor?: boolean) =>

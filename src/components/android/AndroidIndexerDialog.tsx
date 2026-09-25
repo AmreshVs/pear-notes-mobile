@@ -11,15 +11,14 @@ import {
   FontSize,
   FontWeight,
   Space,
-  UI_ICON_SIZE_20,
   UI_ICON_SIZE_36,
-  UI_SIZE_12,
   UI_SIZE_28,
   UI_SIZE_52,
   UI_SIZE_80,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getLeaderModalCopy } from '@/utils/indexerUtils'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -33,8 +32,8 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 type Props = {
   visible: boolean
+  mode: 'add' | 'remove'
   deviceName: string
-  outgoingName: string
   isLocalTarget: boolean
   onCancel: () => void
   onConfirm: () => void
@@ -42,8 +41,8 @@ type Props = {
 
 export const AndroidIndexerDialog = memo(function AndroidIndexerDialog({
   visible,
+  mode,
   deviceName,
-  outgoingName,
   isLocalTarget,
   onCancel,
   onConfirm,
@@ -52,6 +51,7 @@ export const AndroidIndexerDialog = memo(function AndroidIndexerDialog({
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
+  const copy = getLeaderModalCopy(t, mode, isLocalTarget, deviceName)
 
   return (
     <Modal
@@ -67,36 +67,14 @@ export const AndroidIndexerDialog = memo(function AndroidIndexerDialog({
         <View style={styles.card} pointerEvents="box-none">
           <View style={styles.iconChip}>
             <MaterialCommunityIcons
-              name="crown-outline"
+              name={mode === 'remove' ? 'minus-circle-outline' : 'crown-outline'}
               size={UI_ICON_SIZE_36}
               color={c.onPrimaryContainer || c.primary}
             />
           </View>
 
-          <Text style={styles.title}>
-            {isLocalTarget
-              ? t('sync.devices.makeIndexerTitleLocal')
-              : t('sync.devices.makeIndexerTitle', { name: deviceName })}
-          </Text>
-          <Text style={styles.sub}>
-            {isLocalTarget
-              ? t('sync.devices.makeIndexerBodyLocal', { name: outgoingName })
-              : t('sync.devices.makeIndexerBody', { name: deviceName })}
-          </Text>
-
-          <View style={styles.handoffRow}>
-            <Text style={styles.handoffName} numberOfLines={1}>
-              {isLocalTarget ? outgoingName : t('sync.devices.thisDevice')}
-            </Text>
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={UI_ICON_SIZE_20}
-              color={c.onSurfaceVariant}
-            />
-            <Text style={styles.handoffNameActive} numberOfLines={1}>
-              {isLocalTarget ? t('sync.devices.thisDevice') : deviceName}
-            </Text>
-          </View>
+          <Text style={styles.title}>{copy.title}</Text>
+          <Text style={styles.sub}>{copy.body}</Text>
 
           <View style={styles.actions}>
             <Pressable
@@ -109,7 +87,7 @@ export const AndroidIndexerDialog = memo(function AndroidIndexerDialog({
               onPress={onConfirm}
               style={({ pressed }) => [styles.btnFilled, pressed && commonStyles.pressed]}
             >
-              <Text style={styles.btnFilledText}>{t('sync.devices.makeIndexerConfirm')}</Text>
+              <Text style={styles.btnFilledText}>{copy.confirm}</Text>
             </Pressable>
           </View>
         </View>
@@ -158,32 +136,8 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
       fontFamily: FontFamily.regular,
       textAlign: 'center',
       lineHeight: 22,
-      marginBottom: Space.lg,
-      color: c.onSurfaceVariant,
-    },
-    handoffRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      alignSelf: 'stretch',
-      justifyContent: 'center',
-      gap: Space.sm,
-      paddingVertical: UI_SIZE_12,
-      paddingHorizontal: Space.md,
       marginBottom: Space.xl,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: hexWithAlpha(c.onSurface, 0.06),
-    },
-    handoffName: {
-      flexShrink: 1,
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.medium,
       color: c.onSurfaceVariant,
-    },
-    handoffNameActive: {
-      flexShrink: 1,
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
     },
     actions: {
       flexDirection: 'row',

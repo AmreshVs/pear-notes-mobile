@@ -67,16 +67,16 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   const {
-    currentIndexer,
+    plan,
     isTransferring,
     stepKey,
     errorKey,
     isLocalTarget,
-    outgoingName,
-    confirmVisible,
-    openConfirm,
+    confirmMode,
+    openAdd,
+    openRemove,
     closeConfirm,
-    confirmTransfer,
+    confirmChange,
   } = useDeviceIndexer(device)
 
   const openDeleteModal = useCallback(() => {
@@ -122,12 +122,13 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
     [cancelEdit],
   )
 
-  const actionFlags = getDeviceActionFlags(device, currentIndexer)
+  const actionFlags = getDeviceActionFlags(device, plan)
   const menuItems = useMemo(
     () =>
       buildDeviceCardMenu(actionFlags, {
         rename: t('sync.devices.rename'),
         makeIndexer: t('sync.devices.makeIndexer'),
+        removeIndexer: t('sync.devices.removeIndexer'),
         remove: t('sync.delete.remove'),
       }),
     [actionFlags, t],
@@ -136,10 +137,11 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
   const handleMenuSelect = useCallback(
     (actionId: string) => {
       if (actionId === DEVICE_ACTION.rename) startEditing()
-      if (actionId === DEVICE_ACTION.makeIndexer) openConfirm()
+      if (actionId === DEVICE_ACTION.makeIndexer) openAdd()
+      if (actionId === DEVICE_ACTION.removeIndexer) openRemove()
       if (actionId === DEVICE_ACTION.remove) openDeleteModal()
     },
-    [startEditing, openConfirm, openDeleteModal],
+    [startEditing, openAdd, openRemove, openDeleteModal],
   )
 
   const platformNames = getPlatformNames(t)
@@ -242,12 +244,12 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
       </Reanimated.View>
 
       <SyncIndexerModal
-        visible={confirmVisible}
+        visible={!!confirmMode}
+        mode={confirmMode || 'add'}
         deviceName={getDeviceDisplayName(device) || t('sync.platforms.unknown')}
-        outgoingName={outgoingName}
         isLocalTarget={isLocalTarget}
         onCancel={closeConfirm}
-        onConfirm={confirmTransfer}
+        onConfirm={confirmChange}
       />
 
       <SyncDeleteModal

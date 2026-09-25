@@ -1,7 +1,5 @@
 import { Editor, Extension, Node, mergeAttributes } from '@tiptap/core'
 import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
-import Collaboration from '@tiptap/extension-collaboration'
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor'
 import Highlight from '@tiptap/extension-highlight'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
@@ -17,7 +15,6 @@ import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import TextAlign from '@tiptap/extension-text-align'
 import Underline from '@tiptap/extension-underline'
-import { DOMParser as PMDOMParser } from '@tiptap/pm/model'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { Plugin, PluginKey, Selection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
@@ -29,24 +26,7 @@ import langJSON from 'highlight.js/lib/languages/json'
 import langPy from 'highlight.js/lib/languages/python'
 import langTS from 'highlight.js/lib/languages/typescript'
 import langXML from 'highlight.js/lib/languages/xml'
-import * as decoding from 'lib0/decoding'
-import * as encoding from 'lib0/encoding'
 import { createLowlight } from 'lowlight'
-import { prosemirrorToYXmlFragment } from 'y-prosemirror'
-import {
-  Awareness,
-  applyAwarenessUpdate,
-  encodeAwarenessUpdate,
-  removeAwarenessStates,
-} from 'y-protocols/awareness'
-import {
-  messageYjsSyncStep1,
-  messageYjsSyncStep2,
-  messageYjsUpdate,
-  readSyncStep1,
-  writeSyncStep1,
-} from 'y-protocols/sync'
-import * as Y from 'yjs'
 
 const HYPERDRIVE_URL_PREFIX = 'http://hyperdrive'
 const TAP_SLOP = 10
@@ -1319,71 +1299,9 @@ const AudioAttachment = Node.create({
   },
 })
 
-const MESSAGE_SYNC = 0
-const MESSAGE_AWARENESS = 1
-const SYNC_RETRY_INTERVAL_MS = 1500
-const MAX_SYNC_RETRY_ATTEMPTS = 10
-const GENESIS_CLIENT_ID = 0
-const YJS_FRAGMENT = 'default'
-
-function uint8ToBase64(u8Arr) {
-  const CHUNK_SIZE = 0x8000
-  let index = 0
-  const length = u8Arr.length
-  let result = ''
-  let slice
-  while (index < length) {
-    slice = u8Arr.subarray(index, Math.min(index + CHUNK_SIZE, length))
-    result += String.fromCharCode.apply(null, slice)
-    index += CHUNK_SIZE
-  }
-  return btoa(result)
-}
-
-function base64ToUint8(b64) {
-  const binString = atob(b64)
-  const size = binString.length
-  const bytes = new Uint8Array(size)
-  for (let i = 0; i < size; i++) {
-    bytes[i] = binString.charCodeAt(i)
-  }
-  return bytes
-}
-
 let editor = null
-let ydoc = null
-let awareness = null
 let currentNoteId = null
-let currentCollaborator = null
-let hasReceivedSync = false
-let syncRetryInterval = null
-let collaborationEnabled = false
 
-function sendYjsEncoder(encoder) {
-  if (encoding.length(encoder) === 0) return
-  sendToRN({ type: 'yjsMessage', data: uint8ToBase64(encoding.toUint8Array(encoder)) })
-}
-
-function sendSyncStep1() {
-  if (!ydoc) return
-  const encoder = encoding.createEncoder()
-  encoding.writeVarUint(encoder, MESSAGE_SYNC)
-  writeSyncStep1(encoder, ydoc)
-  sendYjsEncoder(encoder)
-}
-
-function seedGenesisFromHtml(html) {
-  if (!ydoc || !editor) return
-  const fragment = ydoc.getXmlFragment(YJS_FRAGMENT)
-  if (fragment.length > 0 || !html) return
-  const container = document.createElement('div')
-  container.innerHTML = html
-  const pmDoc = PMDOMParser.fromSchema(editor.schema).parse(container)
-  const seedDoc = new Y.Doc()
-  seedDoc.clientID = GENESIS_CLIENT_ID
-  prosemirrorToYXmlFragment(pmDoc, seedDoc.getXmlFragment(YJS_FRAGMENT))
-  Y.applyUpdate(ydoc, Y.encodeStateAsUpdate(seedDoc), 'seed')
-}
 
 function clearEditorHistory() {
   if (!editor) return
@@ -1397,41 +1315,6 @@ function clearEditorHistory() {
   )
 }
 
-function handleYjsMessage(b64) {
-  if (!collaborationEnabled || !ydoc || !b64) return
-  const data = base64ToUint8(b64)
-  if (!data || data.byteLength === 0) return
-
-  const decoder = decoding.createDecoder(data)
-  const messageType = decoding.readVarUint(decoder)
-
-  if (messageType === MESSAGE_SYNC) {
-    const syncMessageType = decoding.readVarUint(decoder)
-    if (syncMessageType === messageYjsSyncStep1) {
-      const replyEncoder = encoding.createEncoder()
-      encoding.writeVarUint(replyEncoder, MESSAGE_SYNC)
-      readSyncStep1(decoder, replyEncoder, ydoc)
-      sendYjsEncoder(replyEncoder)
-    } else if (syncMessageType === messageYjsSyncStep2 || syncMessageType === messageYjsUpdate) {
-      hasReceivedSync = true
-      Y.applyUpdate(ydoc, decoding.readVarUint8Array(decoder), 'remote')
-    }
-  } else if (messageType === MESSAGE_AWARENESS) {
-    applyAwarenessUpdate(awareness, decoding.readVarUint8Array(decoder), 'remote')
-  }
-}
-
-function destroyEditorSession() {
-  if (syncRetryInterval) {
-    clearInterval(syncRetryInterval)
-    syncRetryInterval = null
-  }
-  if (awareness) removeAwarenessStates(awareness, [awareness.clientID], 'session-teardown')
-  if (editor) editor.destroy()
-  editor = null
-  ydoc = null
-  awareness = null
-}
 
 // --- Kept selection -------------------------------------------------------
 //
@@ -1504,9 +1387,7 @@ function clearKeptSelection(view) {
   sendToRN({ type: 'keptSelectionCleared' })
 }
 
-function createEditorSession(collaborator, html) {
-  hasReceivedSync = false
-
+function createEditorSession(html) {
   const commonExtensions = [
     Underline,
     Strike,
@@ -1529,38 +1410,6 @@ function createEditorSession(collaborator, html) {
     KeptSelection,
   ]
 
-  let collabExtensions = []
-  if (collaborationEnabled) {
-    ydoc = new Y.Doc()
-    awareness = new Awareness(ydoc)
-
-    awareness.on('update', ({ added, updated, removed }, origin) => {
-      if (origin === 'remote') return
-      const changedClients = added.concat(updated, removed)
-      const encoder = encoding.createEncoder()
-      encoding.writeVarUint(encoder, MESSAGE_AWARENESS)
-      encoding.writeVarUint8Array(encoder, encodeAwarenessUpdate(awareness, changedClients))
-      sendYjsEncoder(encoder)
-    })
-
-    ydoc.on('update', (update, origin) => {
-      if (origin === 'remote' || origin === 'seed') return
-      const encoder = encoding.createEncoder()
-      encoding.writeVarUint(encoder, MESSAGE_SYNC)
-      encoding.writeVarUint(encoder, messageYjsUpdate)
-      encoding.writeVarUint8Array(encoder, update)
-      sendYjsEncoder(encoder)
-    })
-
-    collabExtensions = [
-      Collaboration.configure({ document: ydoc }),
-      CollaborationCursor.configure({
-        provider: { awareness },
-        user: collaborator || { name: 'Pear Notes User', color: '#68CEF8' },
-      }),
-    ]
-  }
-
   editor = new Editor({
     element: document.querySelector('#editor'),
     extensions: [
@@ -1570,12 +1419,10 @@ function createEditorSession(collaborator, html) {
         orderedList: { keepMarks: true, keepAttributes: false },
         strike: false,
         codeBlock: false,
-        undoRedo: !collaborationEnabled,
       }),
-      ...collabExtensions,
       ...commonExtensions,
     ],
-    content: collaborationEnabled ? undefined : html || '',
+    content: html || '',
 
     onUpdate: ({ editor }) => {
       scheduleContentChange(editor)
@@ -1609,22 +1456,6 @@ function createEditorSession(collaborator, html) {
       sendToRN({ type: 'blur' })
     },
   })
-
-  if (!collaborationEnabled) return
-
-  seedGenesisFromHtml(html)
-
-  sendSyncStep1()
-  let syncRetryAttempts = 0
-  syncRetryInterval = setInterval(() => {
-    if (hasReceivedSync || syncRetryAttempts >= MAX_SYNC_RETRY_ATTEMPTS) {
-      clearInterval(syncRetryInterval)
-      syncRetryInterval = null
-      return
-    }
-    syncRetryAttempts += 1
-    sendSyncStep1()
-  }, SYNC_RETRY_INTERVAL_MS)
 }
 
 window.editorBridge = {
@@ -1656,10 +1487,6 @@ window.editorBridge = {
     const ch = () => editor.chain().focus(null, { scrollIntoView: false })
 
     switch (msg.type) {
-      case 'yjsMessage':
-        handleYjsMessage(msg.data)
-        break
-
       case 'setHyperdriveAddress': {
         const nextAddress = msg.address || null
         const changed = nextAddress !== hyperdriveServerAddress
@@ -1668,25 +1495,10 @@ window.editorBridge = {
         break
       }
 
-      case 'setCollaborator':
-        if (msg.collaborator) {
-          currentCollaborator = msg.collaborator
-          if (collaborationEnabled) {
-            try {
-              editor.commands.updateUser(msg.collaborator)
-            } catch (e) {
-              console.error('Failed to update collaborator', e)
-            }
-          }
-        }
-        break
-
       case 'init': {
-        collaborationEnabled = msg.collaborationEnabled !== false
-        currentCollaborator = msg.collaborator || currentCollaborator
         if (msg.hyperdriveAddress) hyperdriveServerAddress = msg.hyperdriveAddress
         if (!editor) {
-          createEditorSession(currentCollaborator, msg.html)
+          createEditorSession(msg.html)
           currentNoteId = msg.noteId
         }
 
@@ -1704,22 +1516,12 @@ window.editorBridge = {
       }
 
       case 'loadNote': {
-        if (collaborationEnabled) {
-          if (msg.noteId !== currentNoteId) {
-            destroyEditorSession()
-            createEditorSession(currentCollaborator, msg.html)
-            currentNoteId = msg.noteId
-          } else {
-            seedGenesisFromHtml(msg.html)
-          }
-        } else {
-          currentNoteId = msg.noteId
-          if (msg.html != null) editor.commands.setContent(msg.html, false)
-          // Undo history is per note: the editor is reused across notes, and loading one
-          // is itself an undoable step, so undo would otherwise walk back into the note
-          // that was open before.
-          clearEditorHistory()
-        }
+        currentNoteId = msg.noteId
+        if (msg.html != null) editor.commands.setContent(msg.html, false)
+        // Undo history is per note: the editor is reused across notes, and loading one
+        // is itself an undoable step, so undo would otherwise walk back into the note
+        // that was open before.
+        clearEditorHistory()
         // The WebView is reused across notes, so a freshly loaded note would otherwise
         // inherit the previous note's scroll offset. Reset once layout has settled.
         requestAnimationFrame(scrollDocumentToTop)
@@ -1742,11 +1544,7 @@ window.editorBridge = {
 
       case 'setContent':
         if (msg.html !== undefined && msg.html !== null) {
-          if (collaborationEnabled) {
-            seedGenesisFromHtml(msg.html)
-          } else {
-            editor.commands.setContent(msg.html, false)
-          }
+          editor.commands.setContent(msg.html, false)
         }
         break
 

@@ -18,6 +18,7 @@ import { formatInviteCountdown, isValidInvite } from '@pear-notes/core/utils.js'
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
+import { SyncLeadersNotes } from '@/components/sync/SyncLeadersNotes'
 import { SyncScannerModal } from '@/components/sync/SyncScannerModal'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -51,8 +52,6 @@ export default function SyncScreen() {
   const commonThemedStyles = useCommonThemedStyles()
 
   const {
-    indexerOffline,
-    indexerName,
     tab,
     handleSelectTab,
     copied,
@@ -410,29 +409,7 @@ export default function SyncScreen() {
               </RNView>
             )}
 
-            <RNView style={styles.footNoteRow}>
-              <SymbolIcon
-                name="crown"
-                size={UI_ICON_SIZE_13}
-                color={colors.primary}
-                style={styles.iconTopFix}
-              />
-              <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
-            </RNView>
-
-            {indexerOffline && (
-              <RNView style={styles.footNoteRow}>
-                <SymbolIcon
-                  name="exclamationmark.triangle"
-                  size={UI_ICON_SIZE_13}
-                  color={colors.textMuted}
-                  style={styles.iconTopFix}
-                />
-                <Text style={styles.footNoteWarning}>
-                  {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
-                </Text>
-              </RNView>
-            )}
+            <SyncLeadersNotes showSuggestion={false} />
 
             <RNView style={styles.footNoteRow}>
               <SymbolIcon
@@ -483,29 +460,7 @@ export default function SyncScreen() {
               </RNView>
             )}
 
-            <RNView style={styles.footNoteRow}>
-              <SymbolIcon
-                name="crown"
-                size={UI_ICON_SIZE_13}
-                color={colors.primary}
-                style={styles.iconTopFix}
-              />
-              <Text style={styles.footNote}>{t('sync.devices.indexerExplain')}</Text>
-            </RNView>
-
-            {indexerOffline && (
-              <RNView style={styles.footNoteRow}>
-                <SymbolIcon
-                  name="exclamationmark.triangle"
-                  size={UI_ICON_SIZE_13}
-                  color={colors.textMuted}
-                  style={styles.iconTopFix}
-                />
-                <Text style={styles.footNoteWarning}>
-                  {t('sync.devices.indexerOfflineNotice', { name: indexerName })}
-                </Text>
-              </RNView>
-            )}
+            <SyncLeadersNotes />
 
             <RNView style={styles.footNoteRow}>
               <SymbolIcon
@@ -865,12 +820,6 @@ const useStyles = createThemedStylesheet((theme) => {
       marginTop: Space.xl,
     },
     footNote: {
-      fontSize: FontSize.body,
-      flex: 1,
-      lineHeight: 20,
-      color: theme.colors.textMuted,
-    },
-    footNoteWarning: {
       fontSize: FontSize.body,
       flex: 1,
       lineHeight: 20,

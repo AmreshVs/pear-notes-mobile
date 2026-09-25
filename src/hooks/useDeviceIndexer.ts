@@ -2,23 +2,19 @@ import { useCallback, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import {
+  canAddSyncLeader,
+  canRemoveSyncLeader,
   clearIndexerError,
-  getIndexerDevice,
   getIndexerError,
   getIndexerErrorDeviceKey,
   getIndexerPendingKey,
   getIndexerPendingStep,
+  getSyncLeaderPlan,
   setDeviceIndexer,
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
-import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { hapticSuccess, hapticWarning } from '@/lib/haptics'
-import {
-  canPromoteDevice,
-  getIndexerErrorKey,
-  getIndexerStepKey,
-  isIndexerTransferBlocked,
-} from '@/utils/indexerUtils'
+import { getIndexerErrorKey, getIndexerStepKey } from '@/utils/indexerUtils'
 
 export function useDeviceIndexer(device: any) {
   const dispatch = useDispatch()
@@ -26,49 +22,56 @@ export function useDeviceIndexer(device: any) {
   const pendingStep = useSelector(getIndexerPendingStep)
   const indexerError = useSelector(getIndexerError)
   const errorDeviceKey = useSelector(getIndexerErrorDeviceKey)
-  const currentIndexer = useSelector(getIndexerDevice)
+  const plan = useSelector(getSyncLeaderPlan) as any
 
-  const [confirmVisible, setConfirmVisible] = useState(false)
+  const [confirmMode, setConfirmMode] = useState<'add' | 'remove' | null>(null)
 
-  const canPromote = canPromoteDevice(device, currentIndexer)
-  const transferBlocked = isIndexerTransferBlocked(currentIndexer)
+  const canAddLeader = canAddSyncLeader(device, plan)
+  const canRemoveLeader = canRemoveSyncLeader(device, plan)
   const isTransferring = !!device?.key && pendingKey === device.key
   const stepKey = getIndexerStepKey(pendingStep)
   const errorKey = errorDeviceKey === device?.key ? getIndexerErrorKey(indexerError) : ''
   const isLocalTarget = device?.isLocal === true
-  const outgoingName = currentIndexer ? getDeviceDisplayName(currentIndexer) : ''
 
-  const openConfirm = useCallback(() => {
-    hapticWarning()
-    dispatch(clearIndexerError())
-    setConfirmVisible(true)
-  }, [dispatch])
+  const open = useCallback(
+    (mode: 'add' | 'remove') => {
+      hapticWarning()
+      dispatch(clearIndexerError())
+      setConfirmMode(mode)
+    },
+    [dispatch],
+  )
 
-  const closeConfirm = useCallback(() => {
-    setConfirmVisible(false)
-  }, [])
+  const openAdd = useCallback(() => open('add'), [open])
+  const openRemove = useCallback(() => open('remove'), [open])
+  const closeConfirm = useCallback(() => setConfirmMode(null), [])
 
-  const confirmTransfer = useCallback(() => {
-    setConfirmVisible(false)
-    if (!device?.localKey) return
+  const confirmChange = useCallback(() => {
+    const mode = confirmMode
+    setConfirmMode(null)
+    if (!mode || !device?.localKey) return
     hapticSuccess()
     dispatch(
-      setDeviceIndexer({ key: device.key, localKey: device.localKey, isIndexer: true } as any),
+      setDeviceIndexer({
+        key: device.key,
+        localKey: device.localKey,
+        isIndexer: mode === 'add',
+      } as any),
     )
-  }, [dispatch, device?.key, device?.localKey])
+  }, [dispatch, confirmMode, device?.key, device?.localKey])
 
   return {
-    canPromote,
-    transferBlocked,
-    currentIndexer,
+    plan,
+    canAddLeader,
+    canRemoveLeader,
     isTransferring,
     stepKey,
     errorKey,
     isLocalTarget,
-    outgoingName,
-    confirmVisible,
-    openConfirm,
+    confirmMode,
+    openAdd,
+    openRemove,
     closeConfirm,
-    confirmTransfer,
+    confirmChange,
   }
 }

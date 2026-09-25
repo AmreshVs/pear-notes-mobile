@@ -15,6 +15,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { router, Stack } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { DebugHealthRows } from '@/components/DebugHealthRows'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -285,6 +286,12 @@ export default function DebugScreenAndroid() {
           <Text style={styles.loading}>{t('debug.loading')}</Text>
         ) : (
           <>
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>{t('debug.health.title')}</Text>
+              <View style={styles.card}>
+                <DebugHealthRows snapshot={snapshot} />
+              </View>
+            </View>
             {renderSection(t('debug.sections.autobase'), snapshot.autobase)}
             {renderSection(t('debug.sections.swarm'), snapshot.swarm)}
             {devices.length > 0 ? (

@@ -18,11 +18,12 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getLeaderModalCopy } from '@/utils/indexerUtils'
 
 type Props = {
   visible: boolean
+  mode: 'add' | 'remove'
   deviceName: string
-  outgoingName: string
   isLocalTarget: boolean
   onCancel: () => void
   onConfirm: () => void
@@ -30,8 +31,8 @@ type Props = {
 
 export function SyncIndexerModal({
   visible,
+  mode,
   deviceName,
-  outgoingName,
   isLocalTarget,
   onCancel,
   onConfirm,
@@ -40,6 +41,7 @@ export function SyncIndexerModal({
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const { t } = useTranslation()
+  const copy = getLeaderModalCopy(t, mode, isLocalTarget, deviceName)
 
   return (
     <Modal
@@ -59,19 +61,15 @@ export function SyncIndexerModal({
           <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.leaderIcon}>
-                <SymbolIcon name="crown" size={UI_ICON_SIZE_40} color={colors.primary} />
+                <SymbolIcon
+                  name={mode === 'remove' ? 'minus.circle' : 'crown'}
+                  size={UI_ICON_SIZE_40}
+                  color={colors.primary}
+                />
               </RNView>
 
-              <Text style={styles.modalTitle}>
-                {isLocalTarget
-                  ? t('sync.devices.makeIndexerTitleLocal')
-                  : t('sync.devices.makeIndexerTitle', { name: deviceName })}
-              </Text>
-              <Text style={styles.modalSub}>
-                {isLocalTarget
-                  ? t('sync.devices.makeIndexerBodyLocal', { name: outgoingName })
-                  : t('sync.devices.makeIndexerBody', { name: deviceName })}
-              </Text>
+              <Text style={styles.modalTitle}>{copy.title}</Text>
+              <Text style={styles.modalSub}>{copy.body}</Text>
 
               <RNView style={styles.modalRow}>
                 <Pressable
@@ -92,7 +90,7 @@ export function SyncIndexerModal({
                     pressed && commonStyles.pressed,
                   ]}
                 >
-                  <Text style={styles.confirmText}>{t('sync.devices.makeIndexerConfirm')}</Text>
+                  <Text style={styles.confirmText}>{copy.confirm}</Text>
                 </Pressable>
               </RNView>
             </RNView>

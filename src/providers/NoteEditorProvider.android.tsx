@@ -208,7 +208,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleEditorBlur,
     resolveHyperdriveUrl,
     noteData,
-    handleYjsMessage,
   } = editor
 
   const isPreviewingRef = useRef(false)
@@ -1070,7 +1069,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             safeAreaBottom={0}
             backgroundColor={c.editorBackground ?? c.background}
             onContentChange={handleUpdate}
-            onYjsMessage={handleYjsMessage}
             onKeptSelectionCleared={handleKeptSelectionCleared}
             onTitleChange={handleTitleChange}
             onStyleStateChange={handleStyleStateChange}
