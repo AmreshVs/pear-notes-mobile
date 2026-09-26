@@ -33,6 +33,7 @@ import {
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getVaultEnteredAt, getVaultPending } from '@pear-notes/core/store/slices/vaultsSlice.js'
 
 import { useReduceMotion } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
@@ -369,6 +370,18 @@ export function useNoteEditor() {
   )
 
   const closeNote = useCallback(() => closeNoteWithVelocity(), [closeNoteWithVelocity])
+
+  const vaultPending = useSelector(getVaultPending)
+  const vaultEnteredAt = useSelector(getVaultEnteredAt)
+
+  useEffect(() => {
+    if (!vaultPending || vaultPending === 'rename' || !isOpenRef.current) return
+    closeNote()
+  }, [vaultPending, closeNote])
+
+  useEffect(() => {
+    if (vaultEnteredAt && isOpenRef.current) resetEditorState()
+  }, [vaultEnteredAt, resetEditorState])
 
   useEffect(() => {
     if (process.env.EXPO_OS === 'ios') return

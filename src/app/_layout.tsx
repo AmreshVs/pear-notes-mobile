@@ -287,11 +287,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     if (!vaultEnteredAt) return
     if (router.canDismiss()) router.dismissAll()
     router.replace('/(tabs)/(folders)')
-    dispatch(resetAppState())
-    triggerReload()
-    dispatch(refreshHyperdriveAddress())
-    dispatch(initApp())
-  }, [vaultEnteredAt, dispatch, triggerReload])
+  }, [vaultEnteredAt])
 
   useEffect(() => {
     const errorKey = getVaultErrorKey(vaultError)
