@@ -4,5 +4,6 @@ export const NOTE_ACTION = {
   restore: 'restore',
   delete: 'delete',
   moveTo: 'moveTo',
+  moveToVault: 'moveToVault',
   options: 'options',
 } as const

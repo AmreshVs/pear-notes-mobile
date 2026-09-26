@@ -5,6 +5,7 @@ import type { ContextMenuItem } from '../../modules/expo-context-menu'
 export type NoteCardMenuLabels = {
   restore: string
   moveTo: string
+  moveToVault: string
   noFolders: string
   pin: string
   unpin: string
@@ -23,6 +24,7 @@ export type NoteCardMenuOptions = {
   canTogglePin: boolean
   canDelete: boolean
   moveFolders?: { id: string; name: string }[]
+  moveVaults?: { id: string; name: string }[]
 }
 
 export function buildNoteCardMenu({
@@ -35,6 +37,7 @@ export function buildNoteCardMenu({
   canTogglePin,
   canDelete,
   moveFolders,
+  moveVaults,
 }: NoteCardMenuOptions): ContextMenuItem[] {
   const items: ContextMenuItem[] = []
 
@@ -65,6 +68,19 @@ export function buildNoteCardMenu({
                 systemImage: 'folder.badge.minus',
               },
             ],
+    })
+  }
+
+  if (canMove && moveVaults && moveVaults.length > 0) {
+    items.push({
+      id: NOTE_ACTION.moveToVault,
+      title: labels.moveToVault,
+      systemImage: 'square.stack.3d.up',
+      children: moveVaults.map((vault) => ({
+        id: `${NOTE_ACTION.moveToVault}:${vault.id}`,
+        title: vault.name,
+        systemImage: 'square.stack.3d.up',
+      })),
     })
   }
 

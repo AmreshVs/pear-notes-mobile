@@ -37,7 +37,12 @@ import {
   resetAppState,
   resyncApp,
 } from '@pear-notes/core/store/slices/uiSlice.js'
-import { getVaultEnteredAt } from '@pear-notes/core/store/slices/vaultsSlice.js'
+import {
+  clearVaultError,
+  getVaultEnteredAt,
+  getVaultError,
+  getVaultFailedAction,
+} from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
 import { AppUpdateBanner } from '@/components/AppUpdateBanner'
@@ -74,6 +79,7 @@ import {
 } from '@/lib/secureStore'
 import { useAttachmentCachePrune } from '@/lib/useAttachmentCachePrune'
 import { useMediaSyncAutoDetect } from '@/lib/useMediaSyncAutoDetect'
+import { getVaultErrorKey } from '@/lib/vaultLabels'
 import { AndroidPaperProvider } from '@/providers/AndroidPaperProvider'
 import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { SheetProvider } from '@/providers/SheetProvider'
@@ -97,6 +103,7 @@ SplashScreen.preventAutoHideAsync()
 
 const storage = WORKLET_STORAGE_PATH
 const MAX_WORKLET_RESTART_ATTEMPTS = 5
+const ALERTED_VAULT_ACTIONS: (string | null)[] = ['move', 'switch']
 
 // rootSaga dispatches initApp once, off the first appReady it sees. Every later boot of
 // the backend - a worklet restart, or the soft reload below - has to ask for it, and the
@@ -174,6 +181,8 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const vaultEnteredAt = useSelector(getVaultEnteredAt)
+  const vaultError = useSelector(getVaultError)
+  const vaultFailedAction = useSelector(getVaultFailedAction)
   const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
   const inviterStatus = useSelector((state: any) => state.sync.inviterStatus)
   const notesLoading = useSelector(getNotesLoading)
@@ -283,6 +292,13 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     dispatch(refreshHyperdriveAddress())
     dispatch(initApp())
   }, [vaultEnteredAt, dispatch, triggerReload])
+
+  useEffect(() => {
+    const errorKey = getVaultErrorKey(vaultError)
+    if (!errorKey || !ALERTED_VAULT_ACTIONS.includes(vaultFailedAction)) return
+    Alert.alert(t(errorKey))
+    dispatch(clearVaultError())
+  }, [vaultError, vaultFailedAction, dispatch, t])
 
   useEffect(() => {
     const needsConfirm =

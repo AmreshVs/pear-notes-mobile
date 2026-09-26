@@ -10,6 +10,8 @@ const VAULT_ERROR_KEYS: Record<string, string> = {
   [VAULT_ERROR.LAST_VAULT]: 'vaults.errors.lastVault',
   [VAULT_ERROR.BUSY]: 'vaults.errors.busy',
   [VAULT_ERROR.SYNC_LEADER]: 'vaults.errors.syncLeader',
+  [VAULT_ERROR.MISSING_MEDIA]: 'vaults.errors.missingMedia',
+  [VAULT_ERROR.NOTHING_TO_MOVE]: 'vaults.errors.nothingToMove',
 }
 
 const FALLBACK_ERROR_KEY = 'vaults.errors.openFailed'

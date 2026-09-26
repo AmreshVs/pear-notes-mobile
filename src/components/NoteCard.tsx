@@ -93,6 +93,8 @@ interface NoteCardProps {
   onTogglePin?: (id: string, currentlyPinned: boolean) => void
   moveFolders?: MoveFolder[]
   onMoveTo?: (id: string, folderId: string) => void
+  moveVaults?: MoveFolder[]
+  onMoveToVault?: (id: string, vaultId: string) => void
   onToggleSelect?: (id: string) => void
 }
 
@@ -116,6 +118,8 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.locked === next.locked &&
     prev.pinned === next.pinned &&
     prev.moveFolders === next.moveFolders &&
+    prev.moveVaults === next.moveVaults &&
+    prev.onMoveToVault === next.onMoveToVault &&
     prev.onPress === next.onPress &&
     prev.onDelete === next.onDelete &&
     prev.onRestore === next.onRestore &&
@@ -152,6 +156,8 @@ export const NoteCard = memo(function NoteCard({
   onTogglePin,
   moveFolders,
   onMoveTo,
+  moveVaults,
+  onMoveToVault,
   onToggleSelect,
 }: NoteCardProps) {
   const { t } = useTranslation()
@@ -293,6 +299,7 @@ export const NoteCard = memo(function NoteCard({
         labels: {
           restore: t('noteCard.actions.restore'),
           moveTo: t('noteCard.actions.moveTo'),
+          moveToVault: t('vaults.move.menu'),
           noFolders: t('noteCard.actions.noFolders'),
           pin: t('noteCard.actions.pin'),
           unpin: t('noteCard.actions.unpin'),
@@ -308,6 +315,7 @@ export const NoteCard = memo(function NoteCard({
         canTogglePin: !!onTogglePin,
         canDelete: !!onDelete,
         moveFolders,
+        moveVaults: onMoveToVault ? moveVaults : undefined,
       }),
     [
       t,
@@ -320,6 +328,8 @@ export const NoteCard = memo(function NoteCard({
       onTogglePin,
       onDelete,
       moveFolders,
+      moveVaults,
+      onMoveToVault,
     ],
   )
 
@@ -330,6 +340,10 @@ export const NoteCard = memo(function NoteCard({
         if (folderId !== 'none') onMoveTo?.(id, folderId)
         return
       }
+      if (actionId.startsWith(`${NOTE_ACTION.moveToVault}:`)) {
+        onMoveToVault?.(id, actionId.slice(NOTE_ACTION.moveToVault.length + 1))
+        return
+      }
       const runner = {
         [NOTE_ACTION.togglePin]: handleTogglePin,
         [NOTE_ACTION.toggleLock]: handleToggleLock,
@@ -338,7 +352,7 @@ export const NoteCard = memo(function NoteCard({
       }[actionId]
       runner?.()
     },
-    [id, onMoveTo, handleTogglePin, handleToggleLock, handleRestore, handleDelete],
+    [id, onMoveTo, onMoveToVault, handleTogglePin, handleToggleLock, handleRestore, handleDelete],
   )
 
   const rowContent = (

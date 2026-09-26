@@ -51,6 +51,7 @@ import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getHasMultipleVaults } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { validateFolderName } from '@pear-notes/core/utils.js'
 
 import { AndroidEmptyState, AndroidNoteRow, useMD3Theme } from '@/components/android'
@@ -58,6 +59,7 @@ import { AndroidFolderAppBar } from '@/components/android/AndroidFolderAppBar'
 import { AndroidSelectionAppBar } from '@/components/android/AndroidSelectionAppBar'
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
+import { MoveToVaultBottomSheet } from '@/components/bottomsheet/MoveToVaultBottomSheet'
 import { EdgeFade } from '@/components/EdgeFade'
 import { LockNowButton } from '@/components/LockNowButton'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -127,6 +129,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const [searchVisible, setSearchVisible] = useState(false)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [noteSheetVisible, setNoteSheetVisible] = useState(false)
+  const [vaultMoveKeys, setVaultMoveKeys] = useState<string[]>([])
+  const hasOtherVaults = useSelector(getHasMultipleVaults) as boolean
   const [folderPickerVisible, setFolderPickerVisible] = useState(false)
   const [folderOptionsSheet, setFolderOptionsSheet] = useState(false)
   const [renameDialog, setRenameDialog] = useState<{ id: string; name: string } | null>(null)
@@ -356,6 +360,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     setNoteSheetVisible(false)
     setFolderPickerVisible(true)
   }, [])
+
+  const handleNoteSheetMoveToVault = useCallback(() => {
+    setNoteSheetVisible(false)
+    if (activeNoteId) setVaultMoveKeys([activeNoteId])
+  }, [activeNoteId])
+
+  const handleCloseVaultMove = useCallback(() => setVaultMoveKeys([]), [])
 
   const handleNoteSheetRestore = useCallback(() => {
     if (!activeNoteId) return
@@ -615,6 +626,15 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
             },
           ]
         : []),
+      ...(hasOtherVaults
+        ? [
+            {
+              icon: 'layers-outline',
+              label: t('vaults.move.menu'),
+              onPress: handleNoteSheetMoveToVault,
+            },
+          ]
+        : []),
       {
         icon: activeNoteLocked ? 'lock-off-outline' : 'lock-outline',
         label: activeNoteLocked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
@@ -636,6 +656,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       activeNoteLocked,
       activeNotePinned,
       moveFolders.length,
+      hasOtherVaults,
+      handleNoteSheetMoveToVault,
       t,
     ],
   )
@@ -824,6 +846,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         subtitle={t('noteCard.actions.options')}
         actions={noteSheetActions}
       />
+
+      <MoveToVaultBottomSheet noteKeys={vaultMoveKeys} onDismiss={handleCloseVaultMove} />
 
       <BottomActionSheet
         visible={folderOptionsSheet}

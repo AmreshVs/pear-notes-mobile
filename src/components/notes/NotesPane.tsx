@@ -36,6 +36,7 @@ import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getOtherVaults, moveToVault } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { formatDate, validateFolderName } from '@pear-notes/core/utils.js'
 
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
@@ -64,6 +65,9 @@ import { useNoteSelection } from '@/hooks/useNoteSelection'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
+import { getVaultLabel } from '@/lib/vaultLabels'
+import { confirmVaultMove } from '@/lib/vaultMove'
+import type { Vault } from '@/lib/vaults.types'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 import { buildNoteSections } from '@/utils/noteSections'
@@ -265,6 +269,23 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [dispatch],
   )
 
+  const otherVaults = useSelector(getOtherVaults) as Vault[]
+  const moveVaults = useMemo(
+    () => otherVaults.map((vault) => ({ id: vault.id, name: getVaultLabel(vault, t) })),
+    [otherVaults, t],
+  )
+
+  const handleMoveNoteToVault = useCallback(
+    (noteId: string, vaultId: string) => {
+      const vault = moveVaults.find((item) => item.id === vaultId)
+      if (!vault) return
+      confirmVaultMove(vault.name, 1, t, () =>
+        dispatch(moveToVault({ targetId: vaultId, noteKeys: [noteId] })),
+      )
+    },
+    [dispatch, moveVaults, t],
+  )
+
   const handleTogglePinNote = useCallback(
     (noteId: string, currentlyPinned: boolean) => {
       hapticMedium()
@@ -403,6 +424,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           onTogglePin={isTrashFolder ? undefined : handleTogglePinNote}
           moveFolders={isTrashFolder ? undefined : moveFolders}
           onMoveTo={isTrashFolder ? undefined : handleMoveNote}
+          moveVaults={moveVaults}
+          onMoveToVault={isTrashFolder ? undefined : handleMoveNoteToVault}
         />
       )
     },
@@ -420,6 +443,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       isTrashFolder,
       moveFolders,
       handleMoveNote,
+      moveVaults,
+      handleMoveNoteToVault,
     ],
   )
 
