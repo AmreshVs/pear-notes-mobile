@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useSelector } from 'react-redux'
 
 import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
@@ -11,7 +10,6 @@ import {
   getVaults,
 } from '@pear-notes/core/store/slices/vaultsSlice.js'
 
-import { getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
 
 export const VAULTS_SETTINGS_ROUTE = '/settings/vaults'
@@ -34,12 +32,4 @@ export function useVaultSwitcher() {
     sheetOpen,
     setSheetOpen,
   }
-}
-
-export function useVaultNavTitle(fallback: string): string {
-  const { t } = useTranslation()
-  const currentVault = useSelector(getCurrentVault) as Vault | null
-  const hasMultipleVaults = useSelector(getHasMultipleVaults) as boolean
-  if (!isMultiVaultEnabled() || !hasMultipleVaults) return fallback
-  return getVaultLabel(currentVault, t)
 }
