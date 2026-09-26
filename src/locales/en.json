@@ -1019,7 +1019,8 @@
     "linkDevices": "My devices",
     "sync": "Sync",
     "debug": "Debug",
-    "errorLog": "Logs"
+    "errorLog": "Logs",
+    "vaults": "Vaults"
   },
   "noteLockPassword": {
     "createTitle": "Set note lock password",
@@ -2138,6 +2139,46 @@
       "waitingNetwork": "{{feature}} is waiting for a network connection to finish downloading.",
       "paused": "The download for {{featureInline}} is paused. Resume it in Settings > On-device AI.",
       "needsMemory": "{{feature}} needs more memory than this device has."
+    }
+  },
+  "vaults": {
+    "title": "Vaults",
+    "rowTitle": "Vaults",
+    "screenDesc": "Each vault has its own notes, devices and settings. Only the open vault syncs.",
+    "defaultName": "My vault",
+    "manage": "Manage vaults",
+    "switchTitle": "Switch vault",
+    "newVault": "New vault",
+    "nameLabel": "Vault name",
+    "namePlaceholder": "Vault name, for example Shared",
+    "create": "Create",
+    "newVaultHint": "A new vault starts empty and only on this device. Open it, then link other devices from My devices.",
+    "open": "Open now",
+    "notOpen": "Not syncing while closed",
+    "openBtn": "Open",
+    "openingVault": "Opening vault…",
+    "rename": "Rename",
+    "remove": "Remove from this device",
+    "removeTitle": "Remove \"{{name}}\"?",
+    "removeDescription": "\"{{name}}\" and its notes will be deleted from this device. Other devices keep it. Keep its sync leader online so they see this device leave.",
+    "removeConfirm": "Remove",
+    "removing": "Leaving the vault and removing it…",
+    "limitReached": "You can have up to {{max}} vaults on a device.",
+    "join": {
+      "title": "Link to another vault?",
+      "description": "Choose what happens to the notes already on this device.",
+      "addTitle": "Add it as another vault",
+      "addBody": "Your notes here stay in their own vault. You can switch between the two at any time.",
+      "combineTitle": "Combine into it",
+      "addBtn": "Add vault"
+    },
+    "errors": {
+      "emptyName": "Enter a name for the vault.",
+      "maxVaults": "This device already has the most vaults it can hold. Remove one first.",
+      "lastVault": "A device always keeps at least one vault.",
+      "busy": "Another vault change is still in progress. Try again in a moment.",
+      "syncLeader": "This device is the only sync leader for that vault. Make another device the sync leader first.",
+      "openFailed": "The vault could not be opened. The previous vault is open again."
     }
   }
 }

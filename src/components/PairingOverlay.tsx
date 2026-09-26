@@ -17,6 +17,7 @@ import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { router } from 'expo-router'
 
+import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
 import {
   clearStorage,
   confirmPairing,
@@ -33,6 +34,7 @@ import {
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 
+import { JoinVaultChoice } from '@/components/JoinVaultChoice'
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { useQrImageAttach } from '@/components/sync/useQrImageAttach'
@@ -58,6 +60,7 @@ import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticError, hapticMedium, hapticSuccess } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
 import { clearVaultSecrets } from '@/lib/secureStore'
+import type { JoinMode } from '@/lib/vaults.types'
 import { getRelativeTime } from '@/utils/relativeTime'
 
 import { GlassView } from './GlassView'
@@ -74,6 +77,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const theme = useTheme()
   const [pasteCode, setPasteCode] = useState('')
   const [pendingInvite, setPendingInvite] = useState<string | null>(null)
+  const [joinMode, setJoinMode] = useState<JoinMode>('add')
+  const [joinVaultName, setJoinVaultName] = useState('')
+  const offersVaults = isMultiVaultEnabled()
+  const joinNeedsName = offersVaults && joinMode === 'add' && !joinVaultName.trim()
   const [isScanning, setIsScanning] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
   const [presenceNow, setPresenceNow] = useState(() => Date.now())
@@ -149,13 +156,15 @@ export const PairingOverlay = memo(function PairingOverlay() {
   }, [pasteCode])
 
   const handleConfirmMerge = useCallback(() => {
-    if (!pendingInvite) return
-    dispatch(subscribePairUser({ invite: pendingInvite }))
+    if (!pendingInvite || joinNeedsName) return
+    const vaultOptions = offersVaults ? { mode: joinMode, vaultName: joinVaultName.trim() } : {}
+    dispatch(subscribePairUser({ invite: pendingInvite, ...vaultOptions }))
     dispatch(setShowPairingInput(false))
     setPendingInvite(null)
     pendingInviteState.setPendingInvite(null)
     setPasteCode('')
-  }, [dispatch, pendingInvite])
+    setJoinVaultName('')
+  }, [dispatch, pendingInvite, joinNeedsName, offersVaults, joinMode, joinVaultName])
 
   const handleCancelMerge = useCallback(() => {
     setPendingInvite(null)
@@ -416,14 +425,34 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <View style={styles.iconGold}>
             <SymbolIcon name="link" size={UI_ICON_SIZE_40} color={colors.primary} />
           </View>
-          <Text style={styles.title}>{t('pairing.overlay.mergeTitle')}</Text>
-          <Text style={styles.sub}>{t('pairing.overlay.mergeDesc')}</Text>
+          <Text style={styles.title}>
+            {offersVaults ? t('vaults.join.title') : t('pairing.overlay.mergeTitle')}
+          </Text>
+          <Text style={styles.sub}>
+            {offersVaults ? t('vaults.join.description') : t('pairing.overlay.mergeDesc')}
+          </Text>
+          {offersVaults && (
+            <JoinVaultChoice
+              mode={joinMode}
+              vaultName={joinVaultName}
+              onChangeMode={setJoinMode}
+              onChangeVaultName={setJoinVaultName}
+            />
+          )}
           <View style={styles.row}>
             <Pressable onPress={handleCancelMerge} style={styles.cancelPressable}>
               <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
             </Pressable>
-            <Pressable onPress={handleConfirmMerge} style={[styles.btn, styles.confirmBtn]}>
-              <Text style={styles.confirmBtnText}>{t('pairing.overlay.mergeConfirm')}</Text>
+            <Pressable
+              onPress={handleConfirmMerge}
+              disabled={joinNeedsName}
+              style={[styles.btn, styles.confirmBtn, joinNeedsName && commonStyles.disabled]}
+            >
+              <Text style={styles.confirmBtnText}>
+                {offersVaults && joinMode === 'add'
+                  ? t('vaults.join.addBtn')
+                  : t('pairing.overlay.mergeConfirm')}
+              </Text>
             </Pressable>
           </View>
         </View>

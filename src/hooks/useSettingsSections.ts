@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
+import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
 import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 
 import type { IconName } from '@/components/SymbolIcon'
@@ -43,6 +44,17 @@ export function useSettingsSections(): SettingsSection[] {
               label: t('settings.onDeviceAi.rowTitle'),
               iosIcon: 'sparkles' as IconName,
               androidIcon: 'creation-outline' as MaterialIconName,
+            },
+          ]
+        : []),
+      ...(isMultiVaultEnabled()
+        ? [
+            {
+              key: 'vaults',
+              route: '/settings/vaults',
+              label: t('vaults.rowTitle'),
+              iosIcon: 'square.stack.3d.up' as IconName,
+              androidIcon: 'layers-outline' as MaterialIconName,
             },
           ]
         : []),

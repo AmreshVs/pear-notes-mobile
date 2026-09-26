@@ -41,6 +41,7 @@ import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { EdgeFade } from '@/components/EdgeFade'
+import { VaultSwitcher } from '@/components/folders/VaultSwitcher'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -338,6 +339,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
         <View style={styles.header}>
           <View>
             <Text style={styles.pageTitle}>{t('folders.title')}</Text>
+            <VaultSwitcher />
           </View>
           <View style={styles.headerActions}>
             {embedded && (

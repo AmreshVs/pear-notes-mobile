@@ -23,6 +23,7 @@ import { validateFolderName } from '@pear-notes/core/utils.js'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderRow } from '@/components/FolderRow'
+import { VaultSwitcher } from '@/components/folders/VaultSwitcher'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
@@ -372,6 +373,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
         {!embedded && (
           <View onLayout={handleTitleBlockLayout}>
             <Text style={styles.pageTitle}>{t('folders.title')}</Text>
+            <VaultSwitcher />
           </View>
         )}
         {topFolders.length > 0 && (

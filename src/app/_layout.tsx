@@ -37,6 +37,7 @@ import {
   resetAppState,
   resyncApp,
 } from '@pear-notes/core/store/slices/uiSlice.js'
+import { getVaultEnteredAt } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
 import { AppUpdateBanner } from '@/components/AppUpdateBanner'
@@ -172,6 +173,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const workletRestartAttemptsRef = useRef(0)
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
+  const vaultEnteredAt = useSelector(getVaultEnteredAt)
   const receiverStatus = useSelector((state: any) => state.sync.receiverStatus)
   const inviterStatus = useSelector((state: any) => state.sync.inviterStatus)
   const notesLoading = useSelector(getNotesLoading)
@@ -271,6 +273,16 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       triggerReload()
     }
   }, [needsReload, dispatch, triggerReload])
+
+  useEffect(() => {
+    if (!vaultEnteredAt) return
+    if (router.canDismiss()) router.dismissAll()
+    router.replace('/(tabs)/(folders)')
+    dispatch(resetAppState())
+    triggerReload()
+    dispatch(refreshHyperdriveAddress())
+    dispatch(initApp())
+  }, [vaultEnteredAt, dispatch, triggerReload])
 
   useEffect(() => {
     const needsConfirm =
