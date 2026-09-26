@@ -60,6 +60,7 @@ export default function StorageScreen() {
     handleRetryDownload,
     handlePauseDownload,
     handleResetPress,
+    multiVault,
     hasMultipleVaults,
     currentVault,
     handleClearVaultConfirm,
@@ -68,21 +69,20 @@ export default function StorageScreen() {
   } = useStorageScreen()
 
   const vaultName = getVaultLabel(currentVault, t)
+  const clearVaultDescription = hasMultipleVaults
+    ? t('storage.clearVaultDesc', { name: vaultName })
+    : t('storage.clearOnlyVaultDesc', { name: vaultName })
 
   const handleClearVaultPress = useCallback(() => {
-    Alert.alert(
-      t('storage.clearVaultConfirmTitle', { name: vaultName }),
-      t('storage.clearVaultDesc', { name: vaultName }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('storage.clearVaultBtn'),
-          style: 'destructive',
-          onPress: handleClearVaultConfirm,
-        },
-      ],
-    )
-  }, [handleClearVaultConfirm, t, vaultName])
+    Alert.alert(t('storage.clearVaultConfirmTitle', { name: vaultName }), clearVaultDescription, [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('storage.clearVaultBtn'),
+        style: 'destructive',
+        onPress: handleClearVaultConfirm,
+      },
+    ])
+  }, [clearVaultDescription, handleClearVaultConfirm, t, vaultName])
 
   return (
     <RNView style={styles.container}>
@@ -202,45 +202,21 @@ export default function StorageScreen() {
           <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
             {t('storage.dangerZone')}
           </Text>
-          {hasMultipleVaults && (
-            <RNView style={[commonThemedStyles.card, styles.dangerCard, styles.dangerCardSpaced]}>
-              <RNView style={styles.dangerContent}>
-                <RNView style={styles.dangerTextContent}>
-                  <Text style={styles.dangerTitle}>
-                    {t('storage.clearVault', { name: vaultName })}
-                  </Text>
-                  <Text style={styles.dangerDesc}>
-                    {t('storage.clearVaultDesc', { name: vaultName })}
-                  </Text>
-                </RNView>
-              </RNView>
-              <Pressable
-                onPress={handleClearVaultPress}
-                style={({ pressed }) => [styles.dangerBtn, pressed && commonStyles.pressed]}
-              >
-                <SymbolIcon
-                  name="trash"
-                  size={UI_ICON_SIZE_16}
-                  color={colors.error}
-                  weight="medium"
-                />
-                <Text style={styles.dangerBtnText}>{t('storage.clearVaultBtn')}</Text>
-              </Pressable>
-            </RNView>
-          )}
           <RNView style={[commonThemedStyles.card, styles.dangerCard]}>
             <RNView style={styles.dangerContent}>
               <RNView style={styles.dangerTextContent}>
-                <Text style={styles.dangerTitle}>{t('storage.clearAllData')}</Text>
+                <Text style={styles.dangerTitle}>
+                  {multiVault
+                    ? t('storage.clearVault', { name: vaultName })
+                    : t('storage.clearAllData')}
+                </Text>
                 <Text style={styles.dangerDesc}>
-                  {hasMultipleVaults
-                    ? t('storage.clearAllVaultsDesc')
-                    : t('storage.clearAllDataDesc')}
+                  {multiVault ? clearVaultDescription : t('storage.clearAllDataDesc')}
                 </Text>
               </RNView>
             </RNView>
             <Pressable
-              onPress={handleResetPress}
+              onPress={multiVault ? handleClearVaultPress : handleResetPress}
               style={({ pressed }) => [styles.dangerBtn, pressed && commonStyles.pressed]}
             >
               <SymbolIcon
@@ -249,7 +225,9 @@ export default function StorageScreen() {
                 color={colors.error}
                 weight="medium"
               />
-              <Text style={styles.dangerBtnText}>{t('storage.clearStorage')}</Text>
+              <Text style={styles.dangerBtnText}>
+                {multiVault ? t('storage.clearVaultBtn') : t('storage.clearStorage')}
+              </Text>
             </Pressable>
           </RNView>
         </RNView>
@@ -338,9 +316,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontFamily: FontFamily.semiBold,
       color: theme.colors.primary,
       textAlign: 'center',
-    },
-    dangerCardSpaced: {
-      marginBottom: Space.md,
     },
     dangerCard: {
       padding: Space.lg,

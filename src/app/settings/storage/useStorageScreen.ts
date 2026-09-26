@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { router } from 'expo-router'
 
+import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
 import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   getLocalAiLoaded,
@@ -25,7 +26,6 @@ import {
   subscribeStorageInfo,
   unsubscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
-import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
 import {
   getCurrentVault,
   getHasMultipleVaults,
@@ -34,9 +34,8 @@ import {
 import { formatDate } from '@pear-notes/core/utils.js'
 
 import { clearCaches, measureCacheBytes } from '@/lib/cacheCleanup'
-import { clearStorageState } from '@/lib/clearStorageState'
+import { resetAllData } from '@/lib/clearAllData'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
-import { clearVaultSecrets } from '@/lib/secureStore'
 import type { Vault } from '@/lib/vaults.types'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 
@@ -152,9 +151,7 @@ function useStorageScreen() {
   const handleResetConfirm = useCallback(() => {
     hapticWarning()
     setResetSheetVisible(false)
-    clearStorageState.setClearing(true)
-    clearVaultSecrets().catch(console.error)
-    dispatch(clearStorage())
+    resetAllData(dispatch)
   }, [dispatch])
 
   const handleResetCancel = useCallback(() => {
@@ -173,8 +170,9 @@ function useStorageScreen() {
   const handleClearVaultConfirm = useCallback(() => {
     hapticWarning()
     setClearVaultSheetVisible(false)
-    if (currentVault) dispatch(removeVault({ id: currentVault.id }))
-  }, [currentVault, dispatch])
+    if (hasMultipleVaults && currentVault) dispatch(removeVault({ id: currentVault.id }))
+    else resetAllData(dispatch)
+  }, [currentVault, dispatch, hasMultipleVaults])
 
   const handleClearVaultCancel = useCallback(() => setClearVaultSheetVisible(false), [])
 
@@ -201,6 +199,7 @@ function useStorageScreen() {
     handleRetryDownload,
     handlePauseDownload,
     handleResetPress,
+    multiVault: isMultiVaultEnabled(),
     hasMultipleVaults,
     currentVault,
     clearVaultSheetVisible,

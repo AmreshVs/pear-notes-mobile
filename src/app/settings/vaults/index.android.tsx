@@ -1,7 +1,8 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useDispatch } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 
@@ -11,6 +12,7 @@ import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBa
 import { BottomActionSheet, type SheetAction } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { VaultNameDialog } from '@/components/android/VaultNameDialog'
+import { DangerActionCard } from '@/components/settings/DangerActionCard'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -31,6 +33,7 @@ import {
 import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { resetAllData } from '@/lib/clearAllData'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
 
@@ -54,6 +57,24 @@ export default function AndroidVaultsScreen() {
   const { openVault, submitName, confirmRemove } = screen
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const dispatch = useDispatch()
+  const [deleteAllVisible, setDeleteAllVisible] = useState(false)
+  const openDeleteAll = useCallback(() => setDeleteAllVisible(true), [])
+  const closeDeleteAll = useCallback(() => setDeleteAllVisible(false), [])
+  const deleteAllActions = useMemo<SheetAction[]>(
+    () => [
+      {
+        icon: 'delete-forever-outline',
+        label: t('vaults.deleteAllBtn'),
+        destructive: true,
+        onPress: () => {
+          setDeleteAllVisible(false)
+          resetAllData(dispatch)
+        },
+      },
+    ],
+    [dispatch, t],
+  )
   const rippleOnTonal = useMemo(
     () => androidRipple(c.onSecondaryContainer),
     [c.onSecondaryContainer],
@@ -207,6 +228,16 @@ export default function AndroidVaultsScreen() {
         ) : (
           <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>
         )}
+        <View style={styles.dangerSection}>
+          <Text style={styles.dangerHeader}>{t('storage.dangerZone')}</Text>
+          <DangerActionCard
+            title={t('vaults.deleteAll')}
+            description={t('vaults.deleteAllDesc', { count: vaults.length })}
+            buttonLabel={t('vaults.deleteAllBtn')}
+            disabled={busy}
+            onPress={openDeleteAll}
+          />
+        </View>
       </ScrollView>
 
       <BottomActionSheet
@@ -222,6 +253,14 @@ export default function AndroidVaultsScreen() {
         subtitle={t('vaults.removeDescription', { name: removingName })}
         showHeader
         actions={removeActions}
+      />
+      <BottomActionSheet
+        visible={deleteAllVisible}
+        onDismiss={closeDeleteAll}
+        title={t('vaults.deleteAllConfirmTitle')}
+        subtitle={t('vaults.deleteAllDesc', { count: vaults.length })}
+        showHeader
+        actions={deleteAllActions}
       />
       <VaultNameDialog
         visible={!!nameDialog}
@@ -319,6 +358,16 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     rowSub: {
       fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
+    },
+    dangerSection: {
+      gap: UI_SIZE_8,
+      marginTop: UI_SIZE_16,
+    },
+    dangerHeader: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.bold,
+      color: c.onSurface,
+      marginLeft: UI_SIZE_8,
     },
     buttonRow: {
       ...commonStyles.row,

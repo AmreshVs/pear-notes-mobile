@@ -1236,7 +1236,8 @@
     "clearVaultDesc": "Deletes \"{{name}}\" and its notes from this device only. Other devices keep it, and your other vaults are not touched.",
     "clearVaultBtn": "Clear vault",
     "clearVaultConfirmTitle": "Clear \"{{name}}\" from this device?",
-    "clearAllVaultsDesc": "Permanently deletes every vault on this device, with all their notes, folders, settings and media."
+    "clearAllVaultsDesc": "Permanently deletes every vault on this device, with all their notes, folders, settings and media.",
+    "clearOnlyVaultDesc": "Deletes \"{{name}}\" and its notes from this device. It is your only vault, so the app starts fresh. Other devices keep their copies."
   },
   "update": {
     "overlay": {
@@ -2207,6 +2208,11 @@
       "removing": "Removing vault…",
       "moving": "Moving to \"{{name}}\"…"
     },
-    "longPressHint": "Touch and hold for options"
+    "longPressHint": "Touch and hold for options",
+    "deleteAll": "Delete all vaults",
+    "deleteAllDesc_one": "Deletes your vault and every note, folder, attachment and setting from this device, then starts fresh. Other devices keep their copies.",
+    "deleteAllDesc_other": "Deletes all {{count}} vaults and every note, folder, attachment and setting from this device, then starts fresh. Other devices keep their copies.",
+    "deleteAllBtn": "Delete all",
+    "deleteAllConfirmTitle": "Delete every vault on this device?"
   }
 }

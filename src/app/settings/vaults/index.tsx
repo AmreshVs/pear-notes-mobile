@@ -1,11 +1,13 @@
 import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { useDispatch } from 'react-redux'
 import { router } from 'expo-router'
 
 import { MAX_VAULTS } from '@pear-notes/core/constant.js'
 
 import { Divider } from '@/components/Divider'
+import { DangerActionCard } from '@/components/settings/DangerActionCard'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
 import {
@@ -21,6 +23,7 @@ import {
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { VAULT_ACTION } from '@/constants/vaultActions'
 import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
+import { resetAllData } from '@/lib/clearAllData'
 import { hapticSelection } from '@/lib/haptics'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
@@ -35,6 +38,7 @@ export default function VaultsScreen() {
   const styles = useStyles()
   const colors = useColors()
   const commonThemedStyles = useCommonThemedStyles()
+  const dispatch = useDispatch()
   const screen = useVaultsScreen()
   const { vaults, pending, error, canAdd, canRemove, busy, nameDialog } = screen
   const { openVault, submitName, confirmRemove, setNameDialog } = screen
@@ -94,6 +98,21 @@ export default function VaultsScreen() {
     },
     [openVault],
   )
+
+  const askDeleteAll = useCallback(() => {
+    Alert.alert(
+      t('vaults.deleteAllConfirmTitle'),
+      t('vaults.deleteAllDesc', { count: vaults.length }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('vaults.deleteAllBtn'),
+          style: 'destructive',
+          onPress: () => resetAllData(dispatch),
+        },
+      ],
+    )
+  }, [dispatch, t, vaults.length])
 
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
   const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
@@ -200,6 +219,18 @@ export default function VaultsScreen() {
       ) : (
         <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>
       )}
+      <RNView>
+        <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
+          {t('storage.dangerZone')}
+        </Text>
+        <DangerActionCard
+          title={t('vaults.deleteAll')}
+          description={t('vaults.deleteAllDesc', { count: vaults.length })}
+          buttonLabel={t('vaults.deleteAllBtn')}
+          disabled={busy}
+          onPress={askDeleteAll}
+        />
+      </RNView>
     </ScrollView>
   )
 }
