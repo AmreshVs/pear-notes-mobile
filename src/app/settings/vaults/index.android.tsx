@@ -30,14 +30,13 @@ import {
   UI_SIZE_56,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useVaultsScreen } from '@/hooks/useVaultsScreen'
 import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { resetAllData } from '@/lib/clearAllData'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
-
-import { useVaultsScreen } from './useVaultsScreen'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string

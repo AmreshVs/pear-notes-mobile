@@ -22,6 +22,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { VAULT_ACTION } from '@/constants/vaultActions'
+import { useVaultsScreen } from '@/hooks/useVaultsScreen'
 import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { resetAllData } from '@/lib/clearAllData'
 import { hapticSelection } from '@/lib/haptics'
@@ -30,8 +31,6 @@ import type { Vault } from '@/lib/vaults.types'
 import { buildVaultMenu } from '@/utils/vaultMenu'
 
 import { ContextMenuView } from '../../../../modules/expo-context-menu'
-
-import { useVaultsScreen } from './useVaultsScreen'
 
 export default function VaultsScreen() {
   const { t } = useTranslation()

@@ -2213,6 +2213,14 @@
     "deleteAllDesc_one": "Deletes your vault and every note, folder, attachment and setting from this device, then starts fresh. Other devices keep their copies.",
     "deleteAllDesc_other": "Deletes all {{count}} vaults and every note, folder, attachment and setting from this device, then starts fresh. Other devices keep their copies.",
     "deleteAllBtn": "Delete all",
-    "deleteAllConfirmTitle": "Delete every vault on this device?"
+    "deleteAllConfirmTitle": "Delete every vault on this device?",
+    "drawer": {
+      "open": "Open vaults",
+      "overline": "Open vault",
+      "count_one": "{{count}} of {{max}} vaults on this device",
+      "count_other": "{{count}} of {{max}} vaults on this device",
+      "syncNote": "Only the open vault syncs. Open a vault to bring it up to date.",
+      "optionsSubtitle": "Vault options"
+    }
   }
 }
