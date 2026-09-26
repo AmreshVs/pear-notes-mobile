@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { Animated, Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import Animated, { type SharedValue, useAnimatedStyle } from 'react-native-reanimated'
 import { BlurView } from 'expo-blur'
 
 import { GlassView } from '@/components/GlassView'
@@ -20,13 +21,14 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 
 type Props = {
   visible: boolean
-  fadeAnim: Animated.Value
+  opacity: SharedValue<number>
   onCancel: () => void
   onConfirm: () => void
 }
 
-export function SyncDeleteModal({ visible, fadeAnim, onCancel, onConfirm }: Props) {
+export function SyncDeleteModal({ visible, opacity, onCancel, onConfirm }: Props) {
   const { colors } = useTheme()
+  const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const { t } = useTranslation()
@@ -39,7 +41,7 @@ export function SyncDeleteModal({ visible, fadeAnim, onCancel, onConfirm }: Prop
       statusBarTranslucent
       onRequestClose={onCancel}
     >
-      <Animated.View style={[styles.modalFill, { opacity: fadeAnim }]}>
+      <Animated.View style={[styles.modalFill, fadeStyle]}>
         <BlurView intensity={95} tint="dark" style={StyleSheet.absoluteFill} />
         <RNView style={commonStyles.modalOverlay} />
 

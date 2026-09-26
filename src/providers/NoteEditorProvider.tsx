@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
   Alert,
-  Animated,
   Dimensions,
   Keyboard,
   PanResponder,
@@ -13,6 +12,7 @@ import {
   StyleSheet,
   View,
 } from 'react-native'
+import Animated, { cancelAnimation } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import * as FileSystem from 'expo-file-system'
@@ -41,7 +41,7 @@ import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
-import { createThemedStylesheet, useReduceMotion, useTheme } from '@/components/Themed'
+import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import type { EditorSelection } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
@@ -75,7 +75,6 @@ import { useShareIntakeController } from '@/hooks/useShareIntakeController'
 import { hapticError, hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { type AiTool, buildAiTools, hideKeyboard } from '@/lib/localAi/aiTools'
 import type { AskApplyRequest } from '@/lib/localAi/askNote'
-import { snapTo } from '@/lib/motion'
 import {
   cleanupCachedAttachment,
   downloadToCache,
@@ -99,7 +98,6 @@ const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 const EDITOR_HEADER_HEIGHT = 52
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
-  const reduceMotion = useReduceMotion()
   const { colors } = useTheme()
   const insets = useSafeAreaInsets()
   const dispatch = useDispatch()
@@ -133,7 +131,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setAttachmentActionRect,
     isAttachmentActionSheetOpen,
     setIsAttachmentActionSheetOpen,
-    slideAnim,
+    slideX,
+    paneStyle,
+    animatePane,
     handlePaneLayout,
     getPaneWidth,
     titleRef,
@@ -141,6 +141,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     moveFolders,
     resetEditorState,
     closeNote,
+    closeNoteWithVelocity,
     openNote,
     handleStyleStateChange,
     isActive,
@@ -268,22 +269,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         style: 'destructive',
         onPress: () => {
           dispatch(deleteNote(noteId as any))
-          const w = getPaneWidth()
-          if (reduceMotion) {
-            snapTo(slideAnim, w, resetEditorState)
-            return
-          }
-          Animated.timing(slideAnim, {
-            toValue: w,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(() => {
-            resetEditorState()
-          })
+          animatePane(getPaneWidth(), resetEditorState)
         },
       },
     ])
-  }, [noteId, dispatch, slideAnim, resetEditorState, reduceMotion, t])
+  }, [noteId, dispatch, animatePane, getPaneWidth, resetEditorState, t])
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
@@ -931,12 +921,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.2,
         onPanResponderGrant: () => {
           setIsEdgeSwipeActive(true)
-          slideAnim.stopAnimation()
+          cancelAnimation(slideX)
         },
         onPanResponderMove: (_, gestureState) => {
           if (!isOpen || gestureState.dx <= 0) return
           const width = Dimensions.get('window').width
-          slideAnim.setValue(Math.min(gestureState.dx, width))
+          slideX.value = Math.min(gestureState.dx, width)
         },
         onPanResponderRelease: (_, gestureState) => {
           if (!isOpen) return
@@ -944,37 +934,19 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           const shouldClose = gestureState.dx > width * 0.3 || gestureState.vx > 0.75
 
           if (shouldClose) {
-            closeNote()
+            closeNoteWithVelocity(gestureState.vx)
             return
           }
 
           setIsEdgeSwipeActive(false)
-          if (reduceMotion) {
-            snapTo(slideAnim, 0)
-          } else {
-            Animated.spring(slideAnim, {
-              toValue: 0,
-              useNativeDriver: true,
-              damping: 24,
-              stiffness: 260,
-            }).start()
-          }
+          animatePane(0)
         },
         onPanResponderTerminate: () => {
           setIsEdgeSwipeActive(false)
-          if (reduceMotion) {
-            snapTo(slideAnim, 0)
-          } else {
-            Animated.spring(slideAnim, {
-              toValue: 0,
-              useNativeDriver: true,
-              damping: 24,
-              stiffness: 260,
-            }).start()
-          }
+          animatePane(0)
         },
       }),
-    [closeNote, isOpen, slideAnim, setIsEdgeSwipeActive, reduceMotion],
+    [closeNoteWithVelocity, isOpen, slideX, animatePane, setIsEdgeSwipeActive],
   )
 
   const contextValue = useMemo(
@@ -1019,7 +991,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       {children}
       <>
         <Animated.View
-          style={[styles.animatedView, { transform: [{ translateX: slideAnim }] }]}
+          style={[styles.animatedView, paneStyle]}
           onLayout={handlePaneLayout}
           pointerEvents={isOpen ? 'auto' : 'none'}
         >

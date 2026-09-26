@@ -1,14 +1,14 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View as RNView,
-} from 'react-native'
-import Reanimated, { Easing, FadeIn, LinearTransition } from 'react-native-reanimated'
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
+import Reanimated, {
+  Easing,
+  FadeIn,
+  LinearTransition,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 import { useDispatch } from 'react-redux'
 
 import { DEVICE_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
@@ -46,6 +46,9 @@ type Props = {
   animationIndex?: number
 }
 
+const DELETE_MODAL_FADE_IN_MS = 220
+const DELETE_MODAL_FADE_OUT_MS = 180
+
 export const SyncDeviceCard = memo(function SyncDeviceCard({
   device,
   isOther,
@@ -64,7 +67,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
   const inputRef = useRef<TextInput>(null)
 
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const fadeAnim = useRef(new Animated.Value(0)).current
+  const deleteModalOpacity = useSharedValue(0)
 
   const {
     plan,
@@ -81,19 +84,20 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
 
   const openDeleteModal = useCallback(() => {
     setShowDeleteModal(true)
-    Animated.timing(fadeAnim, { toValue: 1, duration: 220, useNativeDriver: true }).start()
-  }, [fadeAnim])
+    deleteModalOpacity.value = withTiming(1, { duration: DELETE_MODAL_FADE_IN_MS })
+  }, [deleteModalOpacity])
 
   const closeDeleteModal = useCallback(() => {
-    Animated.timing(fadeAnim, { toValue: 0, duration: 180, useNativeDriver: true }).start(() =>
-      setShowDeleteModal(false),
-    )
-  }, [fadeAnim])
+    deleteModalOpacity.value = withTiming(0, { duration: DELETE_MODAL_FADE_OUT_MS }, (finished) => {
+      if (finished) scheduleOnRN(setShowDeleteModal, false)
+    })
+  }, [deleteModalOpacity])
 
   const confirmDelete = useCallback(() => {
     dispatch(deleteSyncedDevice({ key: device.key } as any))
+    deleteModalOpacity.value = 0
     setShowDeleteModal(false)
-  }, [dispatch, device.key])
+  }, [dispatch, device.key, deleteModalOpacity])
 
   const startEditing = useCallback(() => {
     if (isOther) return
@@ -254,7 +258,7 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
 
       <SyncDeleteModal
         visible={showDeleteModal}
-        fadeAnim={fadeAnim}
+        opacity={deleteModalOpacity}
         onCancel={closeDeleteModal}
         onConfirm={confirmDelete}
       />

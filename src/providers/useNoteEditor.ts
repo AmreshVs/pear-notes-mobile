@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  Animated,
   AppState,
   AppStateStatus,
   BackHandler,
@@ -9,6 +8,14 @@ import {
   Keyboard,
   type LayoutChangeEvent,
 } from 'react-native'
+import {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
+import { scheduleOnRN } from 'react-native-worklets'
 import { useSelector } from 'react-redux'
 import { router } from 'expo-router'
 
@@ -29,13 +36,29 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 import { useReduceMotion } from '@/components/Themed'
 import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEditor'
 import { dismissKeyboard, subscribeKeyboardHidden } from '@/lib/keyboard'
-import { snapTo } from '@/lib/motion'
 
 const FOCUS_TITLE_DELAY = 250
 const IOS_TOOLBAR_INSET_TYPING = 76
 const IOS_TOOLBAR_INSET_IDLE = 96
 const ANDROID_TOOLBAR_INSET_TYPING = 72
 const ANDROID_TOOLBAR_INSET_IDLE = 96
+
+const PANE_OPEN = { duration: 300, easing: Easing.out(Easing.cubic) }
+const PANE_CLOSE = { duration: 300, easing: Easing.inOut(Easing.cubic) }
+const PANE_FLING_MIN_VELOCITY = 0.3
+const PANE_FLING_MIN_DURATION = 120
+const EASE_OUT_CUBIC_START_SLOPE = 3
+
+function paneTiming(distance: number, toValue: number, releaseVelocity?: number) {
+  if (!releaseVelocity || releaseVelocity < PANE_FLING_MIN_VELOCITY) {
+    return toValue === 0 ? PANE_OPEN : PANE_CLOSE
+  }
+  const matchedDuration = (EASE_OUT_CUBIC_START_SLOPE * Math.abs(distance)) / releaseVelocity
+  return {
+    duration: Math.min(PANE_OPEN.duration, Math.max(PANE_FLING_MIN_DURATION, matchedDuration)),
+    easing: PANE_OPEN.easing,
+  }
+}
 
 export function useNoteEditor() {
   const reduceMotion = useReduceMotion()
@@ -89,7 +112,28 @@ export function useNoteEditor() {
 
   const styleStateRef = useRef<TiptapStyleState | null>(null)
   const [styleStateVersion, setStyleStateVersion] = useState(0)
-  const slideAnim = useRef(new Animated.Value(Dimensions.get('window').width)).current
+  const slideX = useSharedValue(Dimensions.get('window').width)
+  const paneStyle = useAnimatedStyle(() => ({ transform: [{ translateX: slideX.value }] }))
+
+  const animatePane = useCallback(
+    (toValue: number, onDone?: () => void, releaseVelocity?: number) => {
+      if (reduceMotion) {
+        cancelAnimation(slideX)
+        slideX.value = toValue
+        onDone?.()
+        return
+      }
+      const callback = onDone
+        ? () => {
+            'worklet'
+            scheduleOnRN(onDone)
+          }
+        : undefined
+      const timing = paneTiming(toValue - slideX.value, toValue, releaseVelocity)
+      slideX.value = withTiming(toValue, timing, callback)
+    },
+    [reduceMotion, slideX],
+  )
   const paneWidthRef = useRef(Dimensions.get('window').width)
   const isClosingRef = useRef(false)
   const titleRef = useRef<string>('')
@@ -219,16 +263,7 @@ export function useNoteEditor() {
     editorRef.current?.scrollToTop()
     editorRef.current?.setTitle(noteData?.title || '')
 
-    if (reduceMotion) {
-      snapTo(slideAnim, 0)
-    } else {
-      Animated.spring(slideAnim, {
-        toValue: 0,
-        useNativeDriver: true,
-        damping: 20,
-        stiffness: 200,
-      }).start()
-    }
+    animatePane(0)
 
     isLoadingNoteRef.current = true
     InteractionManager.runAfterInteractions(() => {
@@ -238,7 +273,7 @@ export function useNoteEditor() {
         setTimeout(() => editorRef.current?.focusTitle(), FOCUS_TITLE_DELAY)
       }
     })
-  }, [noteId, noteData, hyperdriveServerAddress, slideAnim])
+  }, [noteId, noteData, hyperdriveServerAddress, animatePane])
 
   useEffect(() => {
     if (!noteId || noteId === 'new' || noteId !== loadedNoteRef.current) return
@@ -280,9 +315,9 @@ export function useNoteEditor() {
       const { width } = event.nativeEvent.layout
       if (!width || width === paneWidthRef.current) return
       paneWidthRef.current = width
-      if (!isOpen) slideAnim.setValue(width)
+      if (!isOpen) slideX.value = width
     },
-    [isOpen, slideAnim],
+    [isOpen, slideX],
   )
 
   const resetEditorState = useCallback(() => {
@@ -293,30 +328,33 @@ export function useNoteEditor() {
     isClosingRef.current = false
   }, [])
 
-  const animateClose = useCallback(() => {
-    if (isClosingRef.current) return
-    isClosingRef.current = true
-    const w = paneWidthRef.current
-    if (reduceMotion) {
-      snapTo(slideAnim, w, resetEditorState)
-      return
-    }
-    Animated.timing(slideAnim, {
-      toValue: w,
-      duration: 250,
-      useNativeDriver: true,
-    }).start(resetEditorState)
-  }, [resetEditorState, slideAnim, reduceMotion])
+  const animateClose = useCallback(
+    (releaseVelocity?: number) => {
+      if (isClosingRef.current) return
+      isClosingRef.current = true
+      animatePane(
+        paneWidthRef.current,
+        () => {
+          resetEditorState()
+          if (process.env.EXPO_OS === 'android' && router.canGoBack()) router.back()
+        },
+        releaseVelocity,
+      )
+    },
+    [resetEditorState, animatePane],
+  )
 
-  const closeNote = useCallback(() => {
-    editorRef.current?.blur()
-    dismissKeyboard()
-    editorRef.current?.save()
-    animateClose()
-    if (process.env.EXPO_OS === 'android' && router.canGoBack()) {
-      router.back()
-    }
-  }, [animateClose])
+  const closeNoteWithVelocity = useCallback(
+    (releaseVelocity?: number) => {
+      editorRef.current?.blur()
+      dismissKeyboard()
+      editorRef.current?.save()
+      animateClose(releaseVelocity)
+    },
+    [animateClose],
+  )
+
+  const closeNote = useCallback(() => closeNoteWithVelocity(), [closeNoteWithVelocity])
 
   useEffect(() => {
     if (process.env.EXPO_OS === 'ios') return
@@ -426,7 +464,9 @@ export function useNoteEditor() {
 
     styleStateRef,
     styleStateVersion,
-    slideAnim,
+    slideX,
+    paneStyle,
+    animatePane,
     handlePaneLayout,
     getPaneWidth,
     isClosingRef,
@@ -443,6 +483,7 @@ export function useNoteEditor() {
     resetEditorState,
     animateClose,
     closeNote,
+    closeNoteWithVelocity,
     openNote,
     handleStyleStateChange,
     isActive,

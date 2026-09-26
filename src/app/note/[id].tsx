@@ -21,7 +21,7 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: theme.colors.transparent,
     },
   })
   return styles

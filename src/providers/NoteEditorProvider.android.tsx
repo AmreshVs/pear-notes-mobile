@@ -1,15 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import {
-  Animated,
-  Dimensions,
-  Modal,
-  Pressable,
-  StatusBar,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native'
+import { Dimensions, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native'
+import Animated from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -40,7 +32,7 @@ import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
-import { createThemedStylesheetWithHooks, useReduceMotion } from '@/components/Themed'
+import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { EditorSelection } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
@@ -85,7 +77,6 @@ import { hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { dismissKeyboard } from '@/lib/keyboard'
 import { type AiTool, buildAiTools, hideKeyboard } from '@/lib/localAi/aiTools'
 import type { AskApplyRequest } from '@/lib/localAi/askNote'
-import { snapTo } from '@/lib/motion'
 import {
   cleanupCachedAttachment,
   copyFileToSAF,
@@ -144,7 +135,6 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 }
 
 export function NoteEditorProvider({ children }: { children: React.ReactNode }) {
-  const reduceMotion = useReduceMotion()
   const { t } = useTranslation()
   const theme = useMD3Theme()
   const c = theme.colors as ExtendedColors
@@ -193,7 +183,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setRecorderEverOpened,
     dialogInfo,
     setDialogInfo,
-    slideAnim,
+    paneStyle,
+    animatePane,
     handlePaneLayout,
     getPaneWidth,
     titleRef,
@@ -846,21 +837,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       isDestructive: true,
       onConfirm: () => {
         dispatch(deleteNote(noteId as any))
-        const w = getPaneWidth()
-        if (reduceMotion) {
-          snapTo(slideAnim, w, resetEditorState)
-          return
-        }
-        Animated.timing(slideAnim, {
-          toValue: w,
-          duration: 250,
-          useNativeDriver: true,
-        }).start(() => {
-          resetEditorState()
-        })
+        animatePane(getPaneWidth(), resetEditorState)
       },
     })
-  }, [noteId, dispatch, slideAnim, resetEditorState, setDialogInfo, reduceMotion, t])
+  }, [noteId, dispatch, animatePane, getPaneWidth, resetEditorState, setDialogInfo, t])
 
   const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [setHistoryVisible])
 
@@ -1053,7 +1033,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     <NoteEditorContext.Provider value={contextValue}>
       {children}
       <Animated.View
-        style={[styles.animatedView, { transform: [{ translateX: slideAnim }] }]}
+        style={[styles.animatedView, paneStyle]}
         onLayout={handlePaneLayout}
         pointerEvents={isOpen ? 'auto' : 'none'}
       >
