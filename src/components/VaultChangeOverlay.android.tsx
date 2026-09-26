@@ -1,9 +1,12 @@
-import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, StyleSheet, View } from 'react-native'
+import { FadeIn, FadeOut } from 'react-native-reanimated'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
+  Durations,
   FontFamily,
   FontSize,
   UI_SIZE_16,
@@ -11,6 +14,8 @@ import {
   UI_SIZE_28,
 } from '@/constants/commonStyles'
 import { useVaultChangeOverlay } from '@/hooks/useVaultChangeOverlay'
+
+const OVERLAY_Z_INDEX = 1000
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -21,15 +26,21 @@ export function VaultChangeOverlay() {
   const md3 = useMD3Theme()
   const { visible, message } = useVaultChangeOverlay()
 
+  if (!visible) return null
+
   return (
-    <Modal visible={visible} transparent animationType="fade" statusBarTranslucent>
-      <View style={styles.scrim} accessibilityRole="progressbar" accessibilityLabel={message}>
-        <View style={styles.card}>
-          <ActivityIndicator size="large" color={md3.colors.primary} />
-          <Text style={styles.message}>{message}</Text>
-        </View>
+    <MotionView
+      style={styles.scrim}
+      entering={FadeIn.duration(Durations.overlayFade)}
+      exiting={FadeOut.duration(Durations.overlayFadeOut)}
+      accessibilityRole="progressbar"
+      accessibilityLabel={message}
+    >
+      <View style={styles.card}>
+        <ActivityIndicator size="large" color={md3.colors.primary} />
+        <Text style={styles.message}>{message}</Text>
       </View>
-    </Modal>
+    </MotionView>
   )
 }
 
@@ -42,8 +53,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
     scrim: {
-      ...commonStyles.flex1,
+      ...StyleSheet.absoluteFill,
       ...commonStyles.centered,
+      zIndex: OVERLAY_Z_INDEX,
       backgroundColor: theme.colors.backdrop,
     },
     card: {
