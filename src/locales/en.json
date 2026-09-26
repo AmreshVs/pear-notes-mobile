@@ -2171,7 +2171,11 @@
       "addBody": "Your notes here stay in their own vault. You can switch between the two at any time.",
       "combineTitle": "Combine into it",
       "addBtn": "Add vault",
-      "sectionTitle": "Join a vault"
+      "sectionTitle": "Join a vault",
+      "screenDesc": "Add a vault that another device already has. It opens next to your other vaults, and your notes here stay where they are.",
+      "codeLabel": "Invite code",
+      "joinBtn": "Join vault",
+      "hint": "On a device that already has the vault, open that vault, go to My devices and create an invite. Then scan its QR code or paste the code here."
     },
     "errors": {
       "emptyName": "Enter a name for the vault.",

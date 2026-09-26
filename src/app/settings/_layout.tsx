@@ -64,6 +64,7 @@ export default function SettingsLayout() {
         options={{ title: t('settings.onDeviceAi.modelsTitle') }}
       />
       <Stack.Screen name="vaults" options={{ title: t('layouts.vaults') }} />
+      <Stack.Screen name="vaults/join" options={{ title: t('vaults.join.sectionTitle') }} />
       <Stack.Screen name="devices" options={{ title: t('layouts.linkDevices') }} />
       <Stack.Screen name="sync" options={{ title: t('layouts.sync') }} />
       <Stack.Screen name="backup" options={{ title: t('layouts.backupRestore') }} />
