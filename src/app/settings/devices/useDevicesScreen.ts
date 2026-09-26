@@ -3,7 +3,7 @@ import { Linking, Platform, ScrollView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
-import { router } from 'expo-router'
+import { router, useLocalSearchParams } from 'expo-router'
 
 import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -53,7 +53,8 @@ function useSyncScreen() {
   const showJoinSection = !isSynced || isMultiVaultEnabled()
   const notes = useSelector(getNotes) as any[]
 
-  const [tab, setTab] = useState<'link' | 'devices'>('devices')
+  const params = useLocalSearchParams<{ tab?: string }>()
+  const [tab, setTab] = useState<'link' | 'devices'>(params.tab === 'link' ? 'link' : 'devices')
   const [copied, setCopied] = useState(false)
   const [pasteCode, setPasteCode] = useState('')
   const [scannerVisible, setScannerVisible] = useState(false)

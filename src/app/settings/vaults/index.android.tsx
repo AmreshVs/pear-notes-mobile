@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { Stack } from 'expo-router'
+import { router, Stack } from 'expo-router'
 
 import { MAX_VAULTS } from '@pear-notes/core/constant.js'
 
@@ -25,6 +25,7 @@ import {
   UI_SIZE_40,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
+import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
@@ -55,6 +56,7 @@ export default function AndroidVaultsScreen() {
   const closeRemove = useCallback(() => setRemovingVault(null), [setRemovingVault])
   const closeNameDialog = useCallback(() => setNameDialog(null), [setNameDialog])
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
+  const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
 
   const sheetActions = useMemo<SheetAction[]>(() => {
     if (!actionVault) return []
@@ -167,10 +169,20 @@ export default function AndroidVaultsScreen() {
               disabled={busy}
               android_ripple={ripple}
               accessibilityRole="button"
-              style={styles.row}
+              style={styles.rowDivider}
             >
               <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_20} color={c.primary} />
               <Text style={styles.addLabel}>{t('vaults.newVault')}</Text>
+            </Pressable>
+            <Pressable
+              onPress={handleJoin}
+              disabled={busy}
+              android_ripple={ripple}
+              accessibilityRole="button"
+              style={styles.row}
+            >
+              <MaterialCommunityIcons name="qrcode-scan" size={UI_ICON_SIZE_20} color={c.primary} />
+              <Text style={styles.addLabel}>{t('vaults.join.sectionTitle')}</Text>
             </Pressable>
           </View>
         ) : (

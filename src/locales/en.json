@@ -2152,7 +2152,7 @@
     "nameLabel": "Vault name",
     "namePlaceholder": "Vault name, for example Shared",
     "create": "Create",
-    "newVaultHint": "A new vault starts empty and only on this device. Open it, then link other devices from My devices.",
+    "newVaultHint": "A new vault starts empty and only on this device. To use a vault that another device already has, choose Join a vault instead.",
     "open": "Open now",
     "notOpen": "Not syncing while closed",
     "openBtn": "Open",
@@ -2170,7 +2170,8 @@
       "addTitle": "Add it as another vault",
       "addBody": "Your notes here stay in their own vault. You can switch between the two at any time.",
       "combineTitle": "Combine into it",
-      "addBtn": "Add vault"
+      "addBtn": "Add vault",
+      "sectionTitle": "Join a vault"
     },
     "errors": {
       "emptyName": "Enter a name for the vault.",

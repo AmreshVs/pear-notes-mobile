@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { router } from 'expo-router'
 
 import { MAX_VAULTS } from '@pear-notes/core/constant.js'
 
@@ -18,6 +19,7 @@ import {
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { hapticSelection } from '@/lib/haptics'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
@@ -89,6 +91,7 @@ export default function VaultsScreen() {
   )
 
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
+  const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
 
   const renderVault = useCallback(
     (vault: Vault, index: number) => {
@@ -148,19 +151,29 @@ export default function VaultsScreen() {
         </Text>
       )}
       {canAdd ? (
-        <Pressable
-          onPress={handleCreate}
-          disabled={busy}
-          accessibilityRole="button"
-          style={({ pressed }) => [
-            commonThemedStyles.card,
-            styles.row,
-            pressed && commonStyles.pressed,
-          ]}
-        >
-          <SymbolIcon name="plus" size={UI_ICON_SIZE_20} color={colors.primary} />
-          <Text style={styles.addLabel}>{t('vaults.newVault')}</Text>
-        </Pressable>
+        <RNView style={commonThemedStyles.card}>
+          <Pressable
+            onPress={handleCreate}
+            disabled={busy}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+          >
+            <SymbolIcon name="plus" size={UI_ICON_SIZE_20} color={colors.primary} />
+            <Text style={styles.addLabel}>{t('vaults.newVault')}</Text>
+          </Pressable>
+          <RNView style={styles.dividerWrap}>
+            <Divider />
+          </RNView>
+          <Pressable
+            onPress={handleJoin}
+            disabled={busy}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+          >
+            <SymbolIcon name="qrcode.viewfinder" size={UI_ICON_SIZE_20} color={colors.primary} />
+            <Text style={styles.addLabel}>{t('vaults.join.sectionTitle')}</Text>
+          </Pressable>
+        </RNView>
       ) : (
         <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>
       )}
