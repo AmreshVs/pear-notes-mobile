@@ -2195,6 +2195,12 @@
       "explain": "Every device linked to \"{{name}}\" will be able to read it. Attachments are copied. The original goes to Trash in this vault.",
       "confirmBtn": "Move",
       "moving": "Moving notes…"
+    },
+    "overlay": {
+      "opening": "Opening \"{{name}}\"…",
+      "creating": "Creating vault…",
+      "removing": "Removing vault…",
+      "moving": "Moving to \"{{name}}\"…"
     }
   }
 }

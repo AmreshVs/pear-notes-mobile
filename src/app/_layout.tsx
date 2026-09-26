@@ -58,6 +58,7 @@ import {
   useReduceMotion,
   useResolvedColorScheme,
 } from '@/components/Themed'
+import { VaultChangeOverlay } from '@/components/VaultChangeOverlay'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
@@ -488,6 +489,7 @@ function RootLayoutNav() {
               </Stack>
 
               <PairingOverlay />
+              <VaultChangeOverlay />
               <LockUnavailableModal />
               <NoteUnlockPasswordModal />
               <BackupProgressBanner />

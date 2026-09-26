@@ -23,7 +23,7 @@ import { validateFolderName } from '@pear-notes/core/utils.js'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderRow } from '@/components/FolderRow'
-import { VaultSwitcher } from '@/components/folders/VaultSwitcher'
+import { VaultTitle } from '@/components/folders/VaultTitle'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
@@ -41,6 +41,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
+import { useVaultNavTitle } from '@/hooks/useVaultSwitcher'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
@@ -287,7 +288,8 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
   const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
-  const headerTitle = useCallback(() => <CollapsedNavTitle title={t('folders.title')} />, [t])
+  const navTitle = useVaultNavTitle(t('folders.title'))
+  const headerTitle = useCallback(() => <CollapsedNavTitle title={navTitle} />, [navTitle])
 
   const screenOptions = useMemo(
     () => ({
@@ -331,7 +333,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           >
             <SymbolIcon name="gearshape" size={UI_ICON_SIZE_22} color={colors.text} />
           </Pressable>
-          <Text style={styles.sidebarTitle}>{t('folders.title')}</Text>
+          <VaultTitle title={t('folders.title')} titleStyle={styles.sidebarTitle} />
           <Pressable
             onPress={handleCreateFolder}
             style={iconBtnStyle}
@@ -372,8 +374,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
       >
         {!embedded && (
           <View onLayout={handleTitleBlockLayout}>
-            <Text style={styles.pageTitle}>{t('folders.title')}</Text>
-            <VaultSwitcher />
+            <VaultTitle title={t('folders.title')} titleStyle={styles.pageTitle} />
           </View>
         )}
         {topFolders.length > 0 && (

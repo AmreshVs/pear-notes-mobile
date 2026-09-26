@@ -5,6 +5,6 @@ export type Vault = {
   current: boolean
 }
 
-export type VaultAction = 'create' | 'switch' | 'rename' | 'remove'
+export type VaultAction = 'create' | 'switch' | 'rename' | 'remove' | 'move'
 
 export type JoinMode = 'add' | 'replace'
