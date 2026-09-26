@@ -512,7 +512,9 @@
       "tierNeedsMemory": "Needs more memory than this device has — may be slow or close the app",
       "noteEditor": "Note editor",
       "showAiTools": "Show AI tools",
-      "showAiToolsDesc": "Show AI actions in the note editor. Turning this off only hides them — downloaded models stay on this device."
+      "showAiToolsDesc": "Show AI actions in the note editor. Turning this off only hides them — downloaded models stay on this device.",
+      "showAiToolsInLocked": "Show in locked notes",
+      "showAiToolsInLockedDesc": "Also show AI actions in locked notes. AI runs on this device either way."
     }
   },
   "sync": {

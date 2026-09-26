@@ -7,6 +7,7 @@ import {
   InteractionManager,
   Keyboard,
   type LayoutChangeEvent,
+  TextInput,
 } from 'react-native'
 import {
   cancelAnimation,
@@ -38,6 +39,7 @@ import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEd
 import { dismissKeyboard, subscribeKeyboardHidden } from '@/lib/keyboard'
 
 const FOCUS_TITLE_DELAY = 250
+const STRAY_FOCUS_WINDOW_MS = 2000
 const IOS_TOOLBAR_INSET_TYPING = 76
 const IOS_TOOLBAR_INSET_IDLE = 96
 const ANDROID_TOOLBAR_INSET_TYPING = 72
@@ -136,6 +138,8 @@ export function useNoteEditor() {
   )
   const paneWidthRef = useRef(Dimensions.get('window').width)
   const isClosingRef = useRef(false)
+  const isOpenRef = useRef(false)
+  const closeStartedAtRef = useRef(0)
   const titleRef = useRef<string>('')
   const noteContentRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
@@ -167,6 +171,14 @@ export function useNoteEditor() {
     const hideEvent = isIos ? 'keyboardWillHide' : 'keyboardDidHide'
 
     const show = Keyboard.addListener(showEvent, (e) => {
+      if (!isIos && (!isOpen || isClosingRef.current)) {
+        const sinceClose = Date.now() - closeStartedAtRef.current
+        if (sinceClose < STRAY_FOCUS_WINDOW_MS && !TextInput.State.currentlyFocusedInput()) {
+          editorRef.current?.blur()
+          dismissKeyboard()
+        }
+        return
+      }
       if (!isOpen) return
       setKeyboardHeight(e.endCoordinates.height)
       setIsEditing(true)
@@ -321,6 +333,7 @@ export function useNoteEditor() {
   )
 
   const resetEditorState = useCallback(() => {
+    isOpenRef.current = false
     setIsOpen(false)
     setNoteId(null)
     setIsEdgeSwipeActive(false)
@@ -332,6 +345,7 @@ export function useNoteEditor() {
     (releaseVelocity?: number) => {
       if (isClosingRef.current) return
       isClosingRef.current = true
+      closeStartedAtRef.current = Date.now()
       animatePane(
         paneWidthRef.current,
         () => {
@@ -377,6 +391,7 @@ export function useNoteEditor() {
     loadedNoteRef.current = null
     shouldFocusTitleRef.current = options?.focusTitle === true
     setNoteId(id)
+    isOpenRef.current = true
     setIsOpen(true)
   }, [])
 
@@ -391,6 +406,11 @@ export function useNoteEditor() {
   )
 
   const handleEditorFocus = useCallback(() => {
+    if (!isOpenRef.current || isClosingRef.current) {
+      editorRef.current?.blur()
+      dismissKeyboard()
+      return
+    }
     isEditorFocusedRef.current = true
     setEditorOwnsKeyboard(true)
   }, [])

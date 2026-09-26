@@ -205,11 +205,6 @@ type WebViewMsg =
 
 type EditorState = 'loading' | 'ready' | 'error'
 
-// Brings a freshly inserted image/attachment into view, but only when it actually landed
-// off-screen. Unconditionally scrolling to the end of the document made short notes jump to
-// the bottom for no reason, and the jump then fought WebKit's own scroll back to the focused
-// title. Measuring is deferred until the image has decoded, otherwise the node is still
-// zero-height and reads as visible.
 const revealLastInsertJs = (url?: string) => `(function () {
   var pm = document.querySelector('.ProseMirror')
   if (!pm) return
@@ -225,18 +220,24 @@ const revealLastInsertJs = (url?: string) => `(function () {
   if (!target) target = nodes.length ? nodes[nodes.length - 1] : pm.lastElementChild
   if (!target) return
   while (target.parentElement && target.parentElement !== pm) target = target.parentElement
+  var seq = (window.__pearRevealSeq || 0) + 1
+  window.__pearRevealSeq = seq
   var done = false
   function reveal() {
     if (done) return
     done = true
+    if (seq !== window.__pearRevealSeq || !target.isConnected) return
     var inset = parseFloat(
       getComputedStyle(document.documentElement).getPropertyValue('--bottom-inset')
     ) || 0
+    var visibleBottom = window.innerHeight - inset
     var rect = target.getBoundingClientRect()
-    // The start of the insert is already on screen, so the user can see it landed. Anything
-    // more is an unrequested jump.
-    if (rect.top >= 0 && rect.top < window.innerHeight - inset) return
-    target.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+    if (rect.top >= 0 && rect.top < visibleBottom) return
+    var margin = 16
+    var delta = rect.height > visibleBottom - 2 * margin
+      ? rect.top - margin
+      : rect.bottom - visibleBottom + margin
+    window.scrollBy(0, delta)
   }
   var img = target.tagName === 'IMG' ? target : target.querySelector('img')
   if (img && !img.complete) {

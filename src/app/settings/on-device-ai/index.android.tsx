@@ -48,10 +48,10 @@ import {
   UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { useShowAiTools } from '@/hooks/useShowAiTools'
+import { useShowAiTools, useShowAiToolsInLocked } from '@/hooks/useShowAiTools'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { setShowAiTools } from '@/lib/localAi/aiToolsPreference'
+import { setShowAiTools, setShowAiToolsInLocked } from '@/lib/localAi/aiToolsPreference'
 
 import useOnDeviceAiScreen, { type OnDeviceAiFeatureRow } from './useOnDeviceAiScreen'
 
@@ -65,6 +65,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 export default function AndroidOnDeviceAiScreen() {
   const { t } = useTranslation()
   const showAiTools = useShowAiTools()
+  const showAiToolsInLocked = useShowAiToolsInLocked()
   const footerLibrary = t('settings.onDeviceAi.footerLibrary')
   const [footerBefore, footerAfter] = t('settings.onDeviceAi.footer').split(footerLibrary)
   const theme = useTheme()
@@ -332,6 +333,22 @@ export default function AndroidOnDeviceAiScreen() {
                   <Text style={styles.rowSubtitle}>{t('settings.onDeviceAi.showAiToolsDesc')}</Text>
                 </View>
                 <Switch value={showAiTools} onValueChange={setShowAiTools} />
+              </View>
+              <View style={styles.groupDivider} />
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Text style={styles.rowTitle}>
+                    {t('settings.onDeviceAi.showAiToolsInLocked')}
+                  </Text>
+                  <Text style={styles.rowSubtitle}>
+                    {t('settings.onDeviceAi.showAiToolsInLockedDesc')}
+                  </Text>
+                </View>
+                <Switch
+                  value={showAiToolsInLocked}
+                  onValueChange={setShowAiToolsInLocked}
+                  disabled={!showAiTools}
+                />
               </View>
             </View>
 

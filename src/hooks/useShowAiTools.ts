@@ -1,17 +1,26 @@
 import { useEffect, useSyncExternalStore } from 'react'
 
 import {
-  getShowAiTools,
-  loadShowAiTools,
-  subscribeShowAiTools,
+  showAiToolsInLockedPreference,
+  showAiToolsPreference,
 } from '@/lib/localAi/aiToolsPreference'
 
-export function useShowAiTools(): boolean {
-  const showAiTools = useSyncExternalStore(subscribeShowAiTools, getShowAiTools)
+type BooleanPreference = typeof showAiToolsPreference
+
+function useBooleanPreference(preference: BooleanPreference): boolean {
+  const value = useSyncExternalStore(preference.subscribe, preference.get)
 
   useEffect(() => {
-    loadShowAiTools()
-  }, [])
+    preference.load()
+  }, [preference])
 
-  return showAiTools
+  return value
+}
+
+export function useShowAiTools(): boolean {
+  return useBooleanPreference(showAiToolsPreference)
+}
+
+export function useShowAiToolsInLocked(): boolean {
+  return useBooleanPreference(showAiToolsInLockedPreference)
 }

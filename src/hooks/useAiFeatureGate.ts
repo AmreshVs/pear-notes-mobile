@@ -13,7 +13,7 @@ import {
   selectLocalAiFeatureStatus,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 
-import { useShowAiTools } from '@/hooks/useShowAiTools'
+import { useShowAiTools, useShowAiToolsInLocked } from '@/hooks/useShowAiTools'
 import { useToast } from '@/providers/ToastContext'
 
 const IN_PROGRESS_KEYS: Record<string, string> = {
@@ -24,7 +24,8 @@ const IN_PROGRESS_KEYS: Record<string, string> = {
 
 export function useAiToolsVisible(noteLocked: boolean): boolean {
   const showAiTools = useShowAiTools()
-  return LOCAL_AI_ENABLED && showAiTools && !noteLocked
+  const showInLocked = useShowAiToolsInLocked()
+  return LOCAL_AI_ENABLED && showAiTools && (!noteLocked || showInLocked)
 }
 
 export function useAiFeatureGate(): (feature: string) => boolean {

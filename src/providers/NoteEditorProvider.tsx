@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ActivityIndicator,
@@ -85,6 +85,7 @@ import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { buildNoteSharePayload } from '@/lib/noteShare'
 import { isPdfAttachment } from '@/lib/pdfTools'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
+import { setToastBottomOffset } from '@/lib/toastOffset'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { isAudioFile } from '@/utils/media'
@@ -958,6 +959,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     () => (keyboardHeight > 0 ? keyboardHeight + 12 : Platform.OS === 'ios' ? 32 : 16),
     [keyboardHeight],
   )
+
+  useEffect(() => {
+    if (!isOpen) return
+    setToastBottomOffset(toolbarBottom + UI_SIZE_64)
+    return () => setToastBottomOffset(null)
+  }, [isOpen, toolbarBottom])
 
   const hasUploadQueue = useNoteUploadQueue(noteId).items.length > 0
   const canAddSharedItems = isOpen && !!noteId && !isNoteLocked && keyboardHeight === 0

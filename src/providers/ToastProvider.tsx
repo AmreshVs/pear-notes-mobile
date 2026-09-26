@@ -15,6 +15,7 @@ import {
   UI_SIZE_12,
   UI_SIZE_20,
 } from '@/constants/commonStyles'
+import { useToastBottomOffset } from '@/lib/toastOffset'
 import { ToastContext } from '@/providers/ToastContext'
 import { useToastState } from '@/providers/useToastState'
 
@@ -23,6 +24,7 @@ export { useToast } from '@/providers/ToastContext'
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const styles = useStyles()
   const { visible, message, value } = useToastState()
+  const bottomOffset = useToastBottomOffset()
 
   useEffect(() => {
     if (visible && message) AccessibilityInfo.announceForAccessibility(message)
@@ -33,7 +35,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       {visible && (
         <MotionView
-          style={styles.wrapper}
+          style={[styles.wrapper, bottomOffset !== null && { bottom: bottomOffset }]}
           pointerEvents="none"
           entering={FadeInDown.duration(Durations.fade)}
           exiting={FadeOutDown.duration(Durations.fade)}

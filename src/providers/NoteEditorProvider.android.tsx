@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Dimensions, Modal, Pressable, StatusBar, StyleSheet, Text, View } from 'react-native'
 import Animated from 'react-native-reanimated'
@@ -85,6 +85,7 @@ import {
 } from '@/lib/noteAttachmentManager'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { buildNoteSharePayload } from '@/lib/noteShare'
+import { setToastBottomOffset } from '@/lib/toastOffset'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 
@@ -1024,6 +1025,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     }
   }, [isSharing, setIsSharing, resolveHyperdriveUrl, t])
 
+  const aboveToolbar =
+    (keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12) + UI_SIZE_72
+
+  useEffect(() => {
+    if (!isOpen) return
+    setToastBottomOffset(aboveToolbar)
+    return () => setToastBottomOffset(null)
+  }, [isOpen, aboveToolbar])
+
   const contextValue = useMemo(
     () => ({ openNote, closeNote, isOpen }),
     [openNote, closeNote, isOpen],
@@ -1184,9 +1194,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             style={[
               styles.uploadBanner,
               {
-                bottom:
-                  (keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12) +
-                  UI_SIZE_72,
+                bottom: aboveToolbar,
               },
             ]}
           />

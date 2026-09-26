@@ -38,14 +38,15 @@ import {
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { useShowAiTools } from '@/hooks/useShowAiTools'
-import { setShowAiTools } from '@/lib/localAi/aiToolsPreference'
+import { useShowAiTools, useShowAiToolsInLocked } from '@/hooks/useShowAiTools'
+import { setShowAiTools, setShowAiToolsInLocked } from '@/lib/localAi/aiToolsPreference'
 
 import useOnDeviceAiScreen, { type OnDeviceAiFeatureRow } from './useOnDeviceAiScreen'
 
 export default function OnDeviceAiScreen() {
   const { t } = useTranslation()
   const showAiTools = useShowAiTools()
+  const showAiToolsInLocked = useShowAiToolsInLocked()
   const footerLibrary = t('settings.onDeviceAi.footerLibrary')
   const [footerBefore, footerAfter] = t('settings.onDeviceAi.footer').split(footerLibrary)
   const { colors } = useTheme()
@@ -281,6 +282,26 @@ export default function OnDeviceAiScreen() {
                   <Switch
                     value={showAiTools}
                     onValueChange={setShowAiTools}
+                    trackColor={trackColor}
+                    thumbColor={colors.white}
+                  />
+                </RNView>
+                <RNView style={styles.dividerWrap}>
+                  <Divider />
+                </RNView>
+                <RNView style={styles.toggleRow}>
+                  <RNView style={styles.toggleInfo}>
+                    <Text style={styles.rowTitle}>
+                      {t('settings.onDeviceAi.showAiToolsInLocked')}
+                    </Text>
+                    <Text style={styles.rowDesc}>
+                      {t('settings.onDeviceAi.showAiToolsInLockedDesc')}
+                    </Text>
+                  </RNView>
+                  <Switch
+                    value={showAiToolsInLocked}
+                    onValueChange={setShowAiToolsInLocked}
+                    disabled={!showAiTools}
                     trackColor={trackColor}
                     thumbColor={colors.white}
                   />

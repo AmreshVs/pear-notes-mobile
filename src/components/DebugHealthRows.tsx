@@ -33,7 +33,7 @@ export function DebugHealthRows({ snapshot }: Props) {
   }
 
   return (
-    <>
+    <RNView style={styles.container}>
       <RNView style={styles.header}>
         <RNView style={[styles.bigDot, { backgroundColor: color[health.level] }]} />
         <Text style={[styles.headerText, { color: color[health.level] }]}>
@@ -46,18 +46,21 @@ export function DebugHealthRows({ snapshot }: Props) {
           <Text style={styles.rowText}>{t(`debug.health.${check.id}`, check.params)}</Text>
         </RNView>
       ))}
-    </>
+    </RNView>
   )
 }
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
+    container: {
+      paddingBottom: 16,
+    },
     header: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: Space.sm,
       paddingHorizontal: Space.base,
-      paddingVertical: Space.md,
+      paddingTop: Space.md,
     },
     bigDot: {
       width: UI_SIZE_10,
@@ -74,7 +77,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignItems: 'flex-start',
       gap: Space.sm,
       paddingHorizontal: Space.base,
-      paddingVertical: Space.sm,
+      paddingTop: Space.sm,
     },
     dot: {
       width: UI_SIZE_6,

@@ -433,6 +433,9 @@ const ImageWithSize = Image.extend({
           typeof node.attrs.height === 'number' ? `${node.attrs.height}px` : node.attrs.height
       img.style.cssText +=
         'display: block; max-width: 100%; height: auto; border-radius: 8px; -webkit-user-drag: none;'
+      const ratioW = parseFloat(node.attrs.width)
+      const ratioH = parseFloat(node.attrs.height)
+      if (ratioW > 0 && ratioH > 0) img.style.aspectRatio = `${ratioW} / ${ratioH}`
       img.draggable = false
 
       inner.appendChild(img)
