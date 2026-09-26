@@ -5,6 +5,7 @@ import { useCameraPermissions } from 'expo-camera'
 import * as Clipboard from 'expo-clipboard'
 import { router } from 'expo-router'
 
+import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteSyncedDevice,
@@ -49,6 +50,7 @@ function useSyncScreen() {
   const syncedDevices = useSelector(getSyncedDevices) as any[]
   const localPreferences = useSelector(getLocalPreferences) as any
   const isSynced = localPreferences?.isSynced === 'true'
+  const showJoinSection = !isSynced || isMultiVaultEnabled()
   const notes = useSelector(getNotes) as any[]
 
   const [tab, setTab] = useState<'link' | 'devices'>('devices')
@@ -113,7 +115,7 @@ function useSyncScreen() {
   const handleConnect = useCallback(() => {
     if (isValidInvite(pasteCode)) {
       const rawInvite = extractInvite(pasteCode)
-      if (notes.length > 0) {
+      if (notes.length > 0 || isMultiVaultEnabled()) {
         pendingInviteState.setPendingInvite(rawInvite)
         setPasteCode('')
         if (Platform.OS === 'ios') {
@@ -259,6 +261,7 @@ function useSyncScreen() {
     isLoading,
     syncedDevices,
     isSynced,
+    showJoinSection,
     handleCopy,
     handleConnect,
     handleOpenScanner,

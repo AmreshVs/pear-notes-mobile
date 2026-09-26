@@ -67,7 +67,7 @@ export default function SyncScreen() {
     inviteExpired,
     isLoading,
     syncedDevices,
-    isSynced,
+    showJoinSection,
     handleCopy,
     handleConnect,
     handleOpenScanner,
@@ -328,7 +328,7 @@ export default function SyncScreen() {
               )}
             </RNView>
 
-            {!isSynced && (
+            {showJoinSection && (
               <RNView>
                 <RNView style={styles.invitePasteHeader}>
                   <RNView style={styles.invitePasteLeft}>

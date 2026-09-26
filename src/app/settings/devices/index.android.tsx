@@ -98,7 +98,7 @@ export default function AndroidSyncScreen() {
     inviteExpired,
     isLoading,
     syncedDevices,
-    isSynced,
+    showJoinSection,
     handleCopy,
     handleConnect,
     handleOpenScanner,
@@ -370,7 +370,7 @@ export default function AndroidSyncScreen() {
                 </View>
               )}
 
-              {!isSynced && (
+              {showJoinSection && (
                 <View style={styles.invitePasteSection}>
                   <View style={styles.invitePasteHeader}>
                     <View style={styles.invitePasteLeft}>
