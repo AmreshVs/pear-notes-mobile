@@ -40,6 +40,7 @@ import {
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getVaultLabel } from '@/lib/vaultLabels'
 
 import useStorageScreen from './useStorageScreen'
 
@@ -81,7 +82,26 @@ export default function AndroidStorageScreen() {
     handleResetPress,
     handleResetConfirm,
     handleResetCancel,
+    hasMultipleVaults,
+    currentVault,
+    clearVaultSheetVisible,
+    handleClearVaultPress,
+    handleClearVaultConfirm,
+    handleClearVaultCancel,
   } = useStorageScreen()
+
+  const vaultName = getVaultLabel(currentVault, t)
+  const clearVaultActions = useMemo(
+    () => [
+      {
+        icon: 'trash-can-outline',
+        label: t('storage.clearVaultBtn'),
+        destructive: true,
+        onPress: handleClearVaultConfirm,
+      },
+    ],
+    [handleClearVaultConfirm, t],
+  )
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const rippleDanger = useMemo(() => androidRipple(c.error), [c.error])
@@ -210,10 +230,38 @@ export default function AndroidStorageScreen() {
 
         <View>
           <Text style={styles.sectionTitleDanger}>{t('storage.dangerZone')}</Text>
+          {hasMultipleVaults && (
+            <View style={[styles.dangerCard, styles.dangerCardSpaced]}>
+              <View style={styles.dangerTextContent}>
+                <Text style={styles.dangerCardTitle}>
+                  {t('storage.clearVault', { name: vaultName })}
+                </Text>
+                <Text style={styles.dangerDesc}>
+                  {t('storage.clearVaultDesc', { name: vaultName })}
+                </Text>
+              </View>
+              <Pressable
+                onPress={handleClearVaultPress}
+                android_ripple={rippleDanger}
+                style={styles.dangerBtn}
+              >
+                <MaterialCommunityIcons
+                  name="trash-can-outline"
+                  size={UI_ICON_SIZE_20}
+                  color={c.error}
+                />
+                <Text style={styles.dangerBtnText}>{t('storage.clearVaultBtn')}</Text>
+              </Pressable>
+            </View>
+          )}
           <View style={styles.dangerCard}>
             <View style={styles.dangerTextContent}>
               <Text style={styles.dangerCardTitle}>{t('storage.clearAllData')}</Text>
-              <Text style={styles.dangerDesc}>{t('storage.clearAllDataDesc')}</Text>
+              <Text style={styles.dangerDesc}>
+                {hasMultipleVaults
+                  ? t('storage.clearAllVaultsDesc')
+                  : t('storage.clearAllDataDesc')}
+              </Text>
             </View>
             <Pressable
               onPress={handleResetPress}
@@ -238,6 +286,14 @@ export default function AndroidStorageScreen() {
         subtitle={t('settings.reset.confirmMessage')}
         showHeader
         actions={resetActions}
+      />
+      <BottomActionSheet
+        visible={clearVaultSheetVisible}
+        onDismiss={handleClearVaultCancel}
+        title={t('storage.clearVaultConfirmTitle', { name: vaultName })}
+        subtitle={t('storage.clearVaultDesc', { name: vaultName })}
+        showHeader
+        actions={clearVaultActions}
       />
     </View>
   )
@@ -354,6 +410,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       color: c.primary,
       textAlign: 'center',
+    },
+    dangerCardSpaced: {
+      marginBottom: UI_SIZE_12,
     },
     dangerCard: {
       ...commonStyles.centered,

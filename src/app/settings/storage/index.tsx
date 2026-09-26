@@ -1,5 +1,6 @@
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { Alert, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 
 import { mediaKind } from '@pear-notes/core/store/slices/storageSlice.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
@@ -27,6 +28,7 @@ import {
   UI_SIZE_120,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { getVaultLabel } from '@/lib/vaultLabels'
 
 import useStorageScreen from './useStorageScreen'
 
@@ -58,9 +60,29 @@ export default function StorageScreen() {
     handleRetryDownload,
     handlePauseDownload,
     handleResetPress,
+    hasMultipleVaults,
+    currentVault,
+    handleClearVaultConfirm,
     handleResetConfirm,
     handleResetCancel,
   } = useStorageScreen()
+
+  const vaultName = getVaultLabel(currentVault, t)
+
+  const handleClearVaultPress = useCallback(() => {
+    Alert.alert(
+      t('storage.clearVaultConfirmTitle', { name: vaultName }),
+      t('storage.clearVaultDesc', { name: vaultName }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('storage.clearVaultBtn'),
+          style: 'destructive',
+          onPress: handleClearVaultConfirm,
+        },
+      ],
+    )
+  }, [handleClearVaultConfirm, t, vaultName])
 
   return (
     <RNView style={styles.container}>
@@ -180,11 +202,41 @@ export default function StorageScreen() {
           <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
             {t('storage.dangerZone')}
           </Text>
+          {hasMultipleVaults && (
+            <RNView style={[commonThemedStyles.card, styles.dangerCard, styles.dangerCardSpaced]}>
+              <RNView style={styles.dangerContent}>
+                <RNView style={styles.dangerTextContent}>
+                  <Text style={styles.dangerTitle}>
+                    {t('storage.clearVault', { name: vaultName })}
+                  </Text>
+                  <Text style={styles.dangerDesc}>
+                    {t('storage.clearVaultDesc', { name: vaultName })}
+                  </Text>
+                </RNView>
+              </RNView>
+              <Pressable
+                onPress={handleClearVaultPress}
+                style={({ pressed }) => [styles.dangerBtn, pressed && commonStyles.pressed]}
+              >
+                <SymbolIcon
+                  name="trash"
+                  size={UI_ICON_SIZE_16}
+                  color={colors.error}
+                  weight="medium"
+                />
+                <Text style={styles.dangerBtnText}>{t('storage.clearVaultBtn')}</Text>
+              </Pressable>
+            </RNView>
+          )}
           <RNView style={[commonThemedStyles.card, styles.dangerCard]}>
             <RNView style={styles.dangerContent}>
               <RNView style={styles.dangerTextContent}>
                 <Text style={styles.dangerTitle}>{t('storage.clearAllData')}</Text>
-                <Text style={styles.dangerDesc}>{t('storage.clearAllDataDesc')}</Text>
+                <Text style={styles.dangerDesc}>
+                  {hasMultipleVaults
+                    ? t('storage.clearAllVaultsDesc')
+                    : t('storage.clearAllDataDesc')}
+                </Text>
               </RNView>
             </RNView>
             <Pressable
@@ -286,6 +338,9 @@ const useStyles = createThemedStylesheet((theme) => {
       fontFamily: FontFamily.semiBold,
       color: theme.colors.primary,
       textAlign: 'center',
+    },
+    dangerCardSpaced: {
+      marginBottom: Space.md,
     },
     dangerCard: {
       padding: Space.lg,

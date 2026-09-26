@@ -18,12 +18,15 @@ import {
   FontSize,
   Radii,
   UI_ICON_SIZE_20,
+  UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_40,
+  UI_SIZE_48,
   UI_SIZE_56,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { androidRipple } from '@/lib/androidRipple'
@@ -51,11 +54,21 @@ export default function AndroidVaultsScreen() {
   const { openVault, submitName, confirmRemove } = screen
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const rippleOnTonal = useMemo(
+    () => androidRipple(c.onSecondaryContainer),
+    [c.onSecondaryContainer],
+  )
 
   const closeActions = useCallback(() => setActionVault(null), [setActionVault])
   const closeRemove = useCallback(() => setRemovingVault(null), [setRemovingVault])
   const closeNameDialog = useCallback(() => setNameDialog(null), [setNameDialog])
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
+  const handleOpen = useCallback(
+    (vault: Vault) => {
+      if (!vault.current) openVault(vault)
+    },
+    [openVault],
+  )
   const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
 
   const sheetActions = useMemo<SheetAction[]>(() => {
@@ -113,7 +126,9 @@ export default function AndroidVaultsScreen() {
       return (
         <Pressable
           key={vault.id}
-          onPress={() => setActionVault(vault)}
+          onPress={() => handleOpen(vault)}
+          onLongPress={() => setActionVault(vault)}
+          accessibilityHint={t('vaults.longPressHint')}
           disabled={busy}
           android_ripple={ripple}
           accessibilityRole="button"
@@ -163,26 +178,30 @@ export default function AndroidVaultsScreen() {
           </Text>
         )}
         {canAdd ? (
-          <View style={styles.card}>
+          <View style={styles.buttonRow}>
             <Pressable
               onPress={handleCreate}
               disabled={busy}
-              android_ripple={ripple}
+              android_ripple={rippleOnTonal}
               accessibilityRole="button"
-              style={styles.rowDivider}
+              style={styles.tonalButton}
             >
-              <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_20} color={c.primary} />
-              <Text style={styles.addLabel}>{t('vaults.newVault')}</Text>
+              <MaterialCommunityIcons
+                name="plus"
+                size={UI_ICON_SIZE_20}
+                color={c.onSecondaryContainer}
+              />
+              <Text style={styles.tonalButtonText}>{t('vaults.newVault')}</Text>
             </Pressable>
             <Pressable
               onPress={handleJoin}
               disabled={busy}
               android_ripple={ripple}
               accessibilityRole="button"
-              style={styles.row}
+              style={styles.outlinedButton}
             >
               <MaterialCommunityIcons name="qrcode-scan" size={UI_ICON_SIZE_20} color={c.primary} />
-              <Text style={styles.addLabel}>{t('vaults.join.sectionTitle')}</Text>
+              <Text style={styles.outlinedButtonText}>{t('vaults.join.sectionTitle')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -229,6 +248,15 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     height: UI_SIZE_40,
     borderRadius: Radii.md,
     ...commonStyles.centered,
+  }
+  const buttonBase = {
+    ...commonStyles.row,
+    ...commonStyles.flex1,
+    justifyContent: 'center' as const,
+    gap: UI_SIZE_8,
+    minHeight: UI_SIZE_48,
+    borderRadius: UI_SIZE_9999,
+    overflow: 'hidden' as const,
   }
   const rowBase = {
     ...commonStyles.row,
@@ -292,8 +320,27 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
     },
-    addLabel: {
-      fontSize: FontSize.subtitle,
+    buttonRow: {
+      ...commonStyles.row,
+      gap: UI_SIZE_12,
+    },
+    tonalButton: {
+      ...buttonBase,
+      backgroundColor: c.secondaryContainer,
+    },
+    tonalButtonText: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      color: c.onSecondaryContainer,
+    },
+    outlinedButton: {
+      ...buttonBase,
+      borderWidth: 1,
+      borderColor: c.outline,
+    },
+    outlinedButtonText: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
       color: c.primary,
     },
     note: {

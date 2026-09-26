@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect } from 'react'
+import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { router } from 'expo-router'
@@ -19,10 +19,14 @@ import {
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { VAULT_ACTION } from '@/constants/vaultActions'
 import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { hapticSelection } from '@/lib/haptics'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
+import { buildVaultMenu } from '@/utils/vaultMenu'
+
+import { ContextMenuView } from '../../../../modules/expo-context-menu'
 
 import { useVaultsScreen } from './useVaultsScreen'
 
@@ -68,26 +72,27 @@ export default function VaultsScreen() {
     [confirmRemove, t],
   )
 
-  const showActions = useCallback(
-    (vault: Vault) => {
-      hapticSelection()
-      const buttons = [
-        ...(vault.current ? [] : [{ text: t('vaults.openBtn'), onPress: () => openVault(vault) }]),
-        { text: t('vaults.rename'), onPress: () => setNameDialog({ mode: 'rename', vault }) },
-        ...(canRemove
-          ? [
-              {
-                text: t('vaults.remove'),
-                style: 'destructive' as const,
-                onPress: () => askRemove(vault),
-              },
-            ]
-          : []),
-        { text: t('common.cancel'), style: 'cancel' as const },
-      ]
-      Alert.alert(getVaultLabel(vault, t), undefined, buttons)
+  const menuLabels = useMemo(
+    () => ({ open: t('vaults.openBtn'), rename: t('vaults.rename'), remove: t('vaults.remove') }),
+    [t],
+  )
+
+  const handleMenuSelect = useCallback(
+    (vault: Vault, actionId: string) => {
+      if (actionId === VAULT_ACTION.open) openVault(vault)
+      if (actionId === VAULT_ACTION.rename) setNameDialog({ mode: 'rename', vault })
+      if (actionId === VAULT_ACTION.remove) askRemove(vault)
     },
-    [askRemove, canRemove, openVault, setNameDialog, t],
+    [askRemove, openVault, setNameDialog],
+  )
+
+  const handleOpen = useCallback(
+    (vault: Vault) => {
+      if (vault.current) return
+      hapticSelection()
+      openVault(vault)
+    },
+    [openVault],
   )
 
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
@@ -98,31 +103,39 @@ export default function VaultsScreen() {
       const label = getVaultLabel(vault, t)
       return (
         <Fragment key={vault.id}>
-          <Pressable
-            onPress={() => showActions(vault)}
-            disabled={busy}
-            accessibilityRole="button"
-            accessibilityState={{ selected: vault.current, disabled: busy }}
-            accessibilityLabel={label}
-            style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+          <ContextMenuView
+            items={buildVaultMenu(vault, canRemove, menuLabels)}
+            onSelect={(actionId) => handleMenuSelect(vault, actionId)}
+            previewCornerRadius={Radii.card}
+            menuEnabled={!busy}
           >
-            <RNView style={vault.current ? styles.avatarCurrent : styles.avatar}>
-              <Text style={vault.current ? styles.avatarTextCurrent : styles.avatarText}>
-                {getVaultInitial(label)}
-              </Text>
-            </RNView>
-            <RNView style={commonStyles.flex1}>
-              <Text style={styles.rowLabel} numberOfLines={1}>
-                {label}
-              </Text>
-              <Text style={styles.rowSub}>
-                {vault.current ? t('vaults.open') : t('vaults.notOpen')}
-              </Text>
-            </RNView>
-            {vault.current && (
-              <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
-            )}
-          </Pressable>
+            <Pressable
+              onPress={() => handleOpen(vault)}
+              disabled={busy}
+              accessibilityRole="button"
+              accessibilityState={{ selected: vault.current, disabled: busy }}
+              accessibilityLabel={label}
+              accessibilityHint={t('vaults.longPressHint')}
+              style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+            >
+              <RNView style={vault.current ? styles.avatarCurrent : styles.avatar}>
+                <Text style={vault.current ? styles.avatarTextCurrent : styles.avatarText}>
+                  {getVaultInitial(label)}
+                </Text>
+              </RNView>
+              <RNView style={commonStyles.flex1}>
+                <Text style={styles.rowLabel} numberOfLines={1}>
+                  {label}
+                </Text>
+                <Text style={styles.rowSub}>
+                  {vault.current ? t('vaults.open') : t('vaults.notOpen')}
+                </Text>
+              </RNView>
+              {vault.current && (
+                <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+              )}
+            </Pressable>
+          </ContextMenuView>
           {index < vaults.length - 1 && (
             <RNView style={styles.dividerWrap}>
               <Divider />
@@ -131,7 +144,17 @@ export default function VaultsScreen() {
         </Fragment>
       )
     },
-    [busy, colors.primary, showActions, styles, t, vaults.length],
+    [
+      busy,
+      canRemove,
+      colors.primary,
+      handleMenuSelect,
+      handleOpen,
+      menuLabels,
+      styles,
+      t,
+      vaults.length,
+    ],
   )
 
   const errorKey = getVaultErrorKey(error)

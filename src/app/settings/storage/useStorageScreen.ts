@@ -26,12 +26,18 @@ import {
   unsubscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
 import { clearStorage } from '@pear-notes/core/store/slices/syncSlice.js'
+import {
+  getCurrentVault,
+  getHasMultipleVaults,
+  removeVault,
+} from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
 import { clearCaches, measureCacheBytes } from '@/lib/cacheCleanup'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
 import { clearVaultSecrets } from '@/lib/secureStore'
+import type { Vault } from '@/lib/vaults.types'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 
 function useStorageScreen() {
@@ -155,6 +161,23 @@ function useStorageScreen() {
     setResetSheetVisible(false)
   }, [])
 
+  const hasMultipleVaults = useSelector(getHasMultipleVaults) as boolean
+  const currentVault = useSelector(getCurrentVault) as Vault | null
+  const [clearVaultSheetVisible, setClearVaultSheetVisible] = useState(false)
+
+  const handleClearVaultPress = useCallback(() => {
+    hapticLight()
+    setClearVaultSheetVisible(true)
+  }, [])
+
+  const handleClearVaultConfirm = useCallback(() => {
+    hapticWarning()
+    setClearVaultSheetVisible(false)
+    if (currentVault) dispatch(removeVault({ id: currentVault.id }))
+  }, [currentVault, dispatch])
+
+  const handleClearVaultCancel = useCallback(() => setClearVaultSheetVisible(false), [])
+
   return {
     totalBlobBytes,
     totalOnDiskBytes,
@@ -178,6 +201,12 @@ function useStorageScreen() {
     handleRetryDownload,
     handlePauseDownload,
     handleResetPress,
+    hasMultipleVaults,
+    currentVault,
+    clearVaultSheetVisible,
+    handleClearVaultPress,
+    handleClearVaultConfirm,
+    handleClearVaultCancel,
     handleResetConfirm,
     handleResetCancel,
   }

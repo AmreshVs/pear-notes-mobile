@@ -30,10 +30,12 @@ import {
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
+  UI_SIZE_24,
   UI_SIZE_32,
   UI_SIZE_36,
   UI_SIZE_40,
-  UI_SIZE_44,
+  UI_SIZE_52,
+  UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
@@ -170,6 +172,13 @@ export function VaultSwitcherBottomSheet({
       <Text style={styles.title}>{t('vaults.title')}</Text>
       <RNView style={styles.group}>{vaults.map(renderVault)}</RNView>
       <RNView style={styles.group}>{actionRows.map(renderAction)}</RNView>
+      <Pressable
+        onPress={handleCancel}
+        accessibilityRole="button"
+        style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
+      >
+        <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
+      </Pressable>
       <RNView style={bottomInsetStyle} />
     </>
   )
@@ -301,10 +310,10 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'flex-end',
     },
     sheet: {
-      paddingHorizontal: UI_SIZE_16,
+      paddingHorizontal: UI_SIZE_24,
       paddingTop: UI_SIZE_12,
       paddingBottom: UI_SIZE_4,
-      gap: UI_SIZE_12,
+      gap: UI_SIZE_16,
       borderCurve: 'continuous',
       borderTopLeftRadius: Radii.sheet,
       borderTopRightRadius: Radii.sheet,
@@ -331,7 +340,7 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       color: theme.colors.text,
-      paddingHorizontal: UI_SIZE_8,
+      textAlign: 'center',
     },
     group: {
       borderRadius: Radii.card,
@@ -342,9 +351,9 @@ const useStyles = createThemedStylesheet((theme) => {
     row: {
       ...commonStyles.row,
       gap: Space.md,
-      minHeight: UI_SIZE_44,
+      minHeight: UI_SIZE_56,
       paddingHorizontal: Space.base,
-      paddingVertical: Space.sm,
+      paddingVertical: Space.md,
     },
     rowCurrent: {
       backgroundColor: theme.colors.cardSelected,
@@ -383,6 +392,17 @@ const useStyles = createThemedStylesheet((theme) => {
     actionLabel: {
       fontSize: FontSize.subtitle,
       color: theme.colors.primary,
+    },
+    cancelBtn: {
+      ...commonStyles.centered,
+      minHeight: UI_SIZE_52,
+      borderRadius: Radii.btn,
+      backgroundColor: theme.colors.sheetCancelBackground,
+    },
+    cancelBtnText: {
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
     },
     bottomInset: {
       backgroundColor: theme.colors.transparent,
