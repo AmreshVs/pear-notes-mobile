@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Platform, Pressable, StyleSheet, View } from 'react-native'
 import { router, Stack } from 'expo-router'
 
+import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
+
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { SettingsMenuColumn } from '@/components/settings/SettingsMenuColumn'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
@@ -63,8 +65,16 @@ export default function SettingsLayout() {
         name="on-device-ai/models"
         options={{ title: t('settings.onDeviceAi.modelsTitle') }}
       />
-      <Stack.Screen name="vaults" options={{ title: t('layouts.vaults') }} />
-      <Stack.Screen name="vaults/join" options={{ title: t('vaults.join.sectionTitle') }} />
+      <Stack.Screen
+        name="vaults"
+        redirect={!isMultiVaultEnabled()}
+        options={{ title: t('layouts.vaults') }}
+      />
+      <Stack.Screen
+        name="vaults/join"
+        redirect={!isMultiVaultEnabled()}
+        options={{ title: t('vaults.join.sectionTitle') }}
+      />
       <Stack.Screen name="devices" options={{ title: t('layouts.linkDevices') }} />
       <Stack.Screen name="sync" options={{ title: t('layouts.sync') }} />
       <Stack.Screen name="backup" options={{ title: t('layouts.backupRestore') }} />
