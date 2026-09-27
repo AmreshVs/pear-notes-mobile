@@ -39,7 +39,7 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId, topInset = 
   }, [handleUnlock, t])
 
   const containerStyle = useMemo(
-    () => [styles.container, { paddingTop: topInset }],
+    () => [styles.container, { paddingTop: topInset, paddingBottom: topInset }],
     [styles.container, topInset],
   )
 

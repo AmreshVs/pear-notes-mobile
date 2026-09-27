@@ -52,6 +52,7 @@ import type {
   TranscriptSummary,
   VoiceTypingMode,
 } from '@/components/useVoiceTypingSheet'
+import { VideoPlayerModal } from '@/components/VideoPlayerModal'
 import { VoiceTypingBar } from '@/components/VoiceTypingBar'
 import { VoiceTypingSheet } from '@/components/VoiceTypingSheet'
 import {
@@ -72,6 +73,7 @@ import { useAiFeatureGate, useAiToolsVisible } from '@/hooks/useAiFeatureGate'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { useShareIntakeController } from '@/hooks/useShareIntakeController'
+import { useVideoAttachmentPlayer } from '@/hooks/useVideoAttachmentPlayer'
 import { hapticError, hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { type AiTool, buildAiTools, hideKeyboard } from '@/lib/localAi/aiTools'
 import type { AskApplyRequest } from '@/lib/localAi/askNote'
@@ -388,7 +390,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [t],
   )
 
-  const handlePreviewAttachment = useCallback(
+  const previewCopiedAttachment = useCallback(
     async (url: string, fileName: string, attachmentId?: string) => {
       if (!url || isPreviewingRef.current) return
       isPreviewingRef.current = true
@@ -412,6 +414,19 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
     },
     [t],
+  )
+
+  const { video, openVideo, closeVideo, handleVideoError } = useVideoAttachmentPlayer(
+    resolveHyperdriveUrl,
+    previewCopiedAttachment,
+  )
+
+  const handlePreviewAttachment = useCallback(
+    (url: string, fileName: string, attachmentId?: string) => {
+      if (openVideo(url, fileName, attachmentId)) return
+      previewCopiedAttachment(url, fileName, attachmentId)
+    },
+    [openVideo, previewCopiedAttachment],
   )
 
   const handleImageSaveToPhotos = useCallback(async () => {
@@ -967,7 +982,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [isOpen, toolbarBottom])
 
   const hasUploadQueue = useNoteUploadQueue(noteId).items.length > 0
-  const canAddSharedItems = isOpen && !!noteId && !isNoteLocked && keyboardHeight === 0
+  const canAddSharedItems = isOpen && !!noteId && !isNoteLocked
   const sharedTrayBottom = useMemo(() => {
     if (!isOpen) return insets.bottom + UI_SIZE_56
     const uploadClearance = hasUploadQueue ? UI_SIZE_80 : 0
@@ -1232,6 +1247,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               visible={historyVisible}
               noteId={noteId}
               onClose={handleCloseNoteHistory}
+            />
+          )}
+
+          {video && (
+            <VideoPlayerModal
+              uri={video.uri}
+              title={video.fileName}
+              onClose={closeVideo}
+              onError={handleVideoError}
             />
           )}
 

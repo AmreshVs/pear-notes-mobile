@@ -43,6 +43,7 @@ import type {
   TranscriptSummary,
   VoiceTypingMode,
 } from '@/components/useVoiceTypingSheet'
+import { VideoPlayerModal } from '@/components/VideoPlayerModal'
 import { VoiceTypingBar } from '@/components/VoiceTypingBar'
 import { VoiceTypingSheet } from '@/components/VoiceTypingSheet'
 import {
@@ -70,6 +71,7 @@ import { useAiFeatureGate, useAiToolsVisible } from '@/hooks/useAiFeatureGate'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { useShareIntakeController } from '@/hooks/useShareIntakeController'
+import { useVideoAttachmentPlayer } from '@/hooks/useVideoAttachmentPlayer'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hasFileExtension } from '@/lib/fileSignature'
@@ -250,7 +252,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const voiceSheetVisibleRef = useRef(false)
   const transcriptTargetRef = useRef<string | null>(null)
   const captionTargetRef = useRef<string | null>(null)
-  const canAddSharedItems = isOpen && !!noteId && !isNoteLocked && keyboardHeight === 0
+  const canAddSharedItems =
+    isOpen && !!noteId && !isNoteLocked && (keyboardHeight === 0 || editorOwnsKeyboard)
   const sharedTrayBottom = useMemo(() => {
     if (!isOpen) return insets.bottom + UI_SIZE_96
     return uploadBannerBottom + (hasUploadQueue ? UI_SIZE_80 : 0)
@@ -770,7 +773,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       try {
         const cleanUrl = resolveHyperdriveUrl(url)
         const name = fileName || cleanUrl.split('/').pop() || 'file'
-        const status = t('noteCard.actions.downloading', 'Downloading...')
+        const status = t('noteCard.actions.preparing', 'Preparing...')
         setUploadInfo({ fileName: name, status, progress: 0 })
         const localPath = await downloadToCache(cleanUrl, name, (progress) =>
           setUploadInfo({ fileName: name, status, progress }),
@@ -790,8 +793,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     [resolveHyperdriveUrl, setUploadInfo, t],
   )
 
+  const { video, openVideo, closeVideo, handleVideoError } = useVideoAttachmentPlayer(
+    resolveHyperdriveUrl,
+    handleOpenAttachment,
+  )
+
   const handlePreviewAttachment = useCallback(
     async (url: string, fileName: string) => {
+      if (openVideo(url, fileName)) return
       if (!isImageFile(fileName) && !url.startsWith('data:image/')) {
         handleOpenAttachment(url, fileName)
         return
@@ -811,7 +820,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         isPreviewingRef.current = false
       }
     },
-    [handleOpenAttachment, resolveHyperdriveUrl],
+    [handleOpenAttachment, openVideo, resolveHyperdriveUrl],
   )
 
   const handleConfirmMove = useCallback(
@@ -1379,6 +1388,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           visible={historyVisible}
           noteId={noteId}
           onClose={handleCloseNoteHistory}
+        />
+      )}
+
+      {video && (
+        <VideoPlayerModal
+          uri={video.uri}
+          title={video.fileName}
+          onClose={closeVideo}
+          onError={handleVideoError}
         />
       )}
 
