@@ -35,6 +35,11 @@
       "ios": {
         "simulator": false
       }
+    },
+    "production-cloud": {
+      "extends": "production",
+      "environment": "production",
+      "node": "24.21.0"
     }
   },
   "submit": {
@@ -48,6 +53,14 @@
       "ios": {
         "ascAppId": "6803172019",
         "appleTeamId": "DRQUZF86A2"
+      }
+    },
+    "production-cloud": {
+      "extends": "production",
+      "ios": {
+        "ascApiKeyPath": "$ASC_API_KEY_PATH",
+        "ascApiKeyIssuerId": "$ASC_ISSUER_ID",
+        "ascApiKeyId": "$ASC_KEY_ID"
       }
     }
   }

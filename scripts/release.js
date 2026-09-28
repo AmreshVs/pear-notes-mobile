@@ -12,6 +12,7 @@ const ARTIFACT_DIR = path.join(ROOT, 'build')
 
 const PLATFORMS = ['ios', 'android']
 const PROFILE = 'production'
+const CLOUD_PROFILE = 'production-cloud'
 
 const cleanups = []
 let viaEas = false
@@ -24,6 +25,7 @@ function parseArgs(argv) {
     skipPreflight: false,
     submitOnly: false,
     viaEas: false,
+    cloud: false,
     bump: true,
     commit: true,
     version: null,
@@ -40,6 +42,7 @@ function parseArgs(argv) {
     else if (arg === '--skip-preflight') args.skipPreflight = true
     else if (arg === '--submit-only') args.submitOnly = true
     else if (arg === '--via-eas') args.viaEas = true
+    else if (arg === '--cloud') args.cloud = true
   }
 
   return args
@@ -179,6 +182,75 @@ async function commitVersion({ commit, version, buildNumber }) {
   )
 }
 
+function captureJson(command, description, options = {}) {
+  heading(description)
+  const started = Date.now()
+  const stop = options.heartbeat ? startHeartbeat(options.heartbeat, started) : null
+
+  return new Promise((resolve) => {
+    const child = spawn(command, {
+      cwd: ROOT,
+      stdio: ['ignore', 'pipe', 'inherit'],
+      shell: true,
+      env: { ...process.env, ...(options.env ?? {}) },
+    })
+    let stdout = ''
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk
+    })
+
+    const finish = (status) => {
+      if (stop) stop()
+      console.log(`\x1b[2m    took ${formatDuration(Date.now() - started)}\x1b[0m`)
+      if (status !== 0)
+        return resolve({ json: null, failure: `\`${command}\` exited with code ${status}` })
+      try {
+        resolve({ json: JSON.parse(stdout.slice(stdout.indexOf('['))), failure: null })
+      } catch {
+        resolve({ json: null, failure: 'could not read the JSON that eas build printed' })
+      }
+    }
+
+    child.on('error', () => finish(1))
+    child.on('close', finish)
+  })
+}
+
+async function download(url, output) {
+  heading(`Downloading ${path.basename(output)}`)
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`download failed with HTTP ${response.status}`)
+  fs.writeFileSync(output, Buffer.from(await response.arrayBuffer()))
+}
+
+async function buildOnEas(platform, version, buildNumber) {
+  fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
+  const output = artifactPath(platform, version, buildNumber)
+
+  const { json, failure } = await captureJson(
+    `eas build --non-interactive --json --wait --platform ${platform} --profile ${CLOUD_PROFILE}`,
+    `Building ${platform} ${version} (${buildNumber}) on EAS`,
+    { heartbeat: `still building ${platform} on EAS` },
+  )
+  if (failure) return { file: null, failure }
+
+  const build = json?.[0]
+  const url = build?.artifacts?.applicationArchiveUrl ?? build?.artifacts?.buildUrl
+  if (!url)
+    return { file: null, failure: `EAS build ${build?.id ?? ''} finished without an artifact` }
+
+  try {
+    await download(url, output)
+  } catch (error) {
+    return { file: null, failure: error.message }
+  }
+
+  const sizeMb = (fs.statSync(output).size / 1e6).toFixed(1)
+  console.log(`\n  EAS build ${build.id}`)
+  console.log(`  artifact: ${path.relative(ROOT, output)} (${sizeMb} MB)`)
+  return { file: output, failure: null, easBuildId: build.id }
+}
+
 async function buildLocally(platform, profile, version, buildNumber) {
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
   const output = artifactPath(platform, version, buildNumber)
@@ -212,6 +284,23 @@ function resolvePlayKey() {
   }
 }
 
+async function submitIosThroughEas(artifact, config) {
+  const { failure } = await sh(
+    `eas submit --non-interactive --platform ios --profile ${CLOUD_PROFILE} --path "${artifact}"`,
+    'Uploading ios build to App Store Connect through EAS',
+    {
+      heartbeat: 'still uploading ios',
+      allowFailure: true,
+      env: {
+        ASC_API_KEY_PATH: asc.privateKeyPath(config.ASC_KEY_ID),
+        ASC_KEY_ID: config.ASC_KEY_ID,
+        ASC_ISSUER_ID: config.ASC_ISSUER_ID,
+      },
+    },
+  )
+  return { skipped: false, failure }
+}
+
 async function submitIos(artifact) {
   let config
   try {
@@ -224,6 +313,8 @@ async function submitIos(artifact) {
   }
 
   console.log(`\n  App Store Connect key: ${config.ASC_KEY_ID} (${config.source})`)
+
+  if (process.platform !== 'darwin') return submitIosThroughEas(artifact, config)
 
   const { failure } = await sh(
     `xcrun altool --upload-app -f "${artifact}" -t ios --apiKey ${config.ASC_KEY_ID} --apiIssuer ${config.ASC_ISSUER_ID}`,
@@ -388,8 +479,13 @@ async function main() {
 
   viaEas = args.viaEas
 
-  if (platforms.includes('ios') && process.platform !== 'darwin') {
-    abort('local iOS builds require macOS')
+  if (
+    platforms.includes('ios') &&
+    process.platform !== 'darwin' &&
+    !args.cloud &&
+    !args.submitOnly
+  ) {
+    abort('local iOS builds require macOS - add --cloud to build on EAS instead')
   }
 
   if (args.submitOnly) {
@@ -440,7 +536,9 @@ async function main() {
   const outcomes = []
 
   for (const platform of platforms) {
-    const { file, failure } = await buildLocally(platform, args.profile, version, buildNumber)
+    const { file, failure } = args.cloud
+      ? await buildOnEas(platform, version, buildNumber)
+      : await buildLocally(platform, args.profile, version, buildNumber)
 
     if (failure) {
       console.error(`\n\x1b[31m  ${platform} build failed: ${failure}\x1b[0m`)

@@ -1,0 +1,198 @@
+name: Mobile release
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Platform
+        type: choice
+        options: [all, ios, android]
+        default: all
+      builder:
+        description: 'Build on: github (GitHub runners) or eas (Expo cloud, uses the EAS free-plan builds)'
+        type: choice
+        options: [github, eas]
+        default: github
+      upload:
+        description: Upload to TestFlight / Google Play internal testing
+        type: boolean
+        default: true
+      version:
+        description: 'Marketing version, e.g. 1.1.0 (empty = keep current)'
+        type: string
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mobile-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.version.outputs.sha }}
+      platforms: ${{ steps.version.outputs.platforms }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Set the version and build number
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+          UPLOAD: ${{ inputs.upload }}
+          PLATFORM: ${{ inputs.platform }}
+          PUSH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: |
+          flags=()
+          [ -n "$VERSION" ] && flags+=(--version "$VERSION")
+          [ "$UPLOAD" = "true" ] && flags+=(--bump)
+          if [ ${#flags[@]} -gt 0 ]; then
+            node scripts/set-version.js "${flags[@]}"
+          fi
+          if [ -n "$(git status --porcelain)" ]; then
+            version=$(node -p "require('./app.json').expo.version")
+            build=$(node -p "require('./app.json').expo.android.versionCode")
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -am "Release ${version} (${build})"
+            git push "$PUSH_URL" "HEAD:${GITHUB_REF_NAME}"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          if [ "$PLATFORM" = "all" ]; then
+            echo 'platforms=["android","ios"]' >> "$GITHUB_OUTPUT"
+          else
+            echo "platforms=[\"$PLATFORM\"]" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.prepare.outputs.platforms) }}
+    runs-on: ${{ (inputs.builder == 'github' && matrix.platform == 'ios') && 'macos-26' || 'ubuntu-24.04' }}
+    timeout-minutes: 150
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          persist-credentials: false
+
+      - name: Free disk space for the Android build
+        if: runner.os == 'Linux' && inputs.builder == 'github'
+        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Select Xcode 26
+        if: runner.os == 'macOS'
+        run: |
+          xcode=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+          command -v fastlane >/dev/null || brew install fastlane
+          command -v pod >/dev/null || sudo gem install cocoapods
+
+      - name: Check secrets
+        env:
+          CORE_REPO_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PLATFORM: ${{ matrix.platform }}
+          UPLOAD: ${{ inputs.upload }}
+        run: |
+          missing=()
+          [ -z "$CORE_REPO_TOKEN" ] && missing+=(CORE_REPO_TOKEN)
+          [ -z "$EXPO_TOKEN" ] && missing+=(EXPO_TOKEN)
+          if [ "$UPLOAD" = "true" ] && [ "$PLATFORM" = "ios" ]; then
+            [ -z "$ASC_KEY_ID" ] && missing+=(ASC_KEY_ID)
+            [ -z "$ASC_ISSUER_ID" ] && missing+=(ASC_ISSUER_ID)
+            [ -z "$ASC_PRIVATE_KEY" ] && missing+=(ASC_PRIVATE_KEY)
+          fi
+          if [ "$UPLOAD" = "true" ] && [ "$PLATFORM" = "android" ]; then
+            [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ] && missing+=(PLAY_SERVICE_ACCOUNT_JSON)
+          fi
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing repository secrets: ${missing[*]} (see docs/RELEASE.md, GitHub Actions)"
+            exit 1
+          fi
+
+      - name: Give git read access to pear-notes-core
+        env:
+          CORE_REPO_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+        run: |
+          base="https://x-access-token:${CORE_REPO_TOKEN}@github.com/"
+          git config --global url."$base".insteadOf "https://github.com/"
+          git config --global --add url."$base".insteadOf "ssh://git@github.com/"
+          git config --global --add url."$base".insteadOf "git@github.com:"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install eas-cli
+        run: npm install -g eas-cli
+
+      - name: Install dependencies
+        run: npm run setup
+
+      - name: Write store credentials
+        if: inputs.upload
+        env:
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+          PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          PLATFORM: ${{ matrix.platform }}
+        run: |
+          umask 077
+          if [ "$PLATFORM" = "ios" ]; then
+            mkdir -p ~/.appstoreconnect/private_keys
+            printf '%s\n' "$ASC_PRIVATE_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          else
+            mkdir -p credentials
+            printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > credentials/play-service-account.json
+          fi
+
+      - name: Build and upload
+        env:
+          PLATFORM: ${{ matrix.platform }}
+          BUILDER: ${{ inputs.builder }}
+          UPLOAD: ${{ inputs.upload }}
+        run: |
+          flags=(--platform "$PLATFORM" --no-bump)
+          [ "$BUILDER" = "eas" ] && flags+=(--cloud)
+          [ "$UPLOAD" != "true" ] && flags+=(--no-submit)
+          node scripts/release.js "${flags[@]}"
+
+      - name: Keep the build
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pear-notes-${{ matrix.platform }}
+          path: |
+            build/*.ipa
+            build/*.aab
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Remove store credentials
+        if: always()
+        run: rm -rf credentials/play-service-account.json ~/.appstoreconnect/private_keys

@@ -41,7 +41,9 @@
     "release:all": "node scripts/release.js --platform all",
     "creds:check": "node scripts/check-eas-credentials.js",
     "pin-core": "node scripts/pin-core.js",
-    "native-addons": "node scripts/prepare-native-addons.mjs"
+    "native-addons": "node scripts/prepare-native-addons.mjs",
+    "eas-build-pre-install": "node scripts/eas-build-hooks.mjs pre-install",
+    "eas-build-post-install": "node scripts/eas-build-hooks.mjs post-install"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
