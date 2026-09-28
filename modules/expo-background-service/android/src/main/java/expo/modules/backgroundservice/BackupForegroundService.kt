@@ -30,6 +30,12 @@ class BackupForegroundService : Service() {
         const val EXTRA_MESSAGE = "EXTRA_MESSAGE"
         const val EXTRA_PROGRESS = "EXTRA_PROGRESS"
         const val EXTRA_MAX_PROGRESS = "EXTRA_MAX_PROGRESS"
+
+        const val STOP_REASON_TIMEOUT = "timeout"
+        const val STOP_REASON_START_REJECTED = "start-rejected"
+
+        @Volatile
+        var onStoppedBySystem: ((String) -> Unit)? = null
     }
 
     private var currentTitle: String = "Backup in progress"
@@ -73,15 +79,23 @@ class BackupForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onTimeout(startId: Int) {
-        releaseWakeLock()
-        stopForeground(true)
-        stopSelf()
+        stopBySystem(STOP_REASON_TIMEOUT)
     }
 
     override fun onTimeout(startId: Int, fgsType: Int) {
+        stopBySystem(STOP_REASON_TIMEOUT)
+    }
+
+    private fun stopBySystem(reason: String) {
+        Log.w(TAG, "stopped without being asked: $reason")
         releaseWakeLock()
         stopForeground(true)
         stopSelf()
+        try {
+            onStoppedBySystem?.invoke(reason)
+        } catch (e: Exception) {
+            Log.e(TAG, "could not report the stop", e)
+        }
     }
 
     override fun onDestroy() {
@@ -141,8 +155,7 @@ class BackupForegroundService : Service() {
             acquireWakeLock()
         } catch (e: Exception) {
             Log.e(TAG, "startForeground rejected by the system", e)
-            releaseWakeLock()
-            stopSelf()
+            stopBySystem(STOP_REASON_START_REJECTED)
         }
     }
 

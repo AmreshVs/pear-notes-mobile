@@ -10,6 +10,7 @@ import {
   type TextStyle,
   View,
 } from 'react-native'
+import { Switch } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
@@ -100,6 +101,8 @@ export default function ErrorLogScreenAndroid() {
   const {
     entries,
     loaded,
+    recording,
+    toggleRecording,
     error,
     refreshing,
     sharing,
@@ -167,6 +170,21 @@ export default function ErrorLogScreenAndroid() {
       <ScrollView style={commonStyles.flex1} contentContainerStyle={styles.content}>
         <Text style={styles.description}>{t('debug.errorLog.description')}</Text>
 
+        <View style={styles.recordCard}>
+          <View style={styles.toggleRow}>
+            <View style={commonStyles.flex1}>
+              <Text style={styles.rowTitle}>{t('debug.errorLog.record')}</Text>
+              <Text style={styles.rowDesc}>{t('debug.errorLog.recordDesc')}</Text>
+            </View>
+            <Switch
+              value={recording}
+              onValueChange={toggleRecording}
+              disabled={!loaded}
+              color={colors.primary}
+            />
+          </View>
+        </View>
+
         <View style={styles.actions}>
           <Pressable
             onPress={onShare}
@@ -214,7 +232,9 @@ export default function ErrorLogScreenAndroid() {
         {!loaded ? (
           <Text style={styles.muted}>{t('debug.errorLog.loading')}</Text>
         ) : entries.length === 0 ? (
-          <Text style={styles.muted}>{t('debug.errorLog.empty')}</Text>
+          <Text style={styles.muted}>
+            {t(recording ? 'debug.errorLog.empty' : 'debug.errorLog.emptyOff')}
+          </Text>
         ) : (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>
@@ -280,6 +300,31 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontSize: FontSize.body,
       color: c.onSurfaceVariant,
       marginBottom: Space.base,
+    },
+    recordCard: {
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: UI_SIZE_28,
+      overflow: 'hidden',
+      marginBottom: Space.base,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.md,
+      padding: Space.base,
+    },
+    rowTitle: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurface,
+    },
+    rowDesc: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+      marginTop: UI_SIZE_2,
+      lineHeight: FontSize.body * 1.4,
     },
     actions: {
       flexDirection: 'row',

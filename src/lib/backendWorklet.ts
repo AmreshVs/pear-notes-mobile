@@ -1,6 +1,7 @@
 import { Directory, Paths } from 'expo-file-system'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import * as log from '@pear-notes/core/log.js'
 
 import { getDbEncryptionKey, getVaultEntropy } from '@/lib/secureStore'
 import { withTimeout } from '@/utils/withTimeout'
@@ -12,12 +13,12 @@ const BACKEND_READY_TIMEOUT_MS = 60_000
 export const WORKLET_STORAGE_PATH = new Directory(Paths.document).uri.replace(/^file:\/+/, '/')
 
 export async function startBackendWorkletForBackgroundTask(): Promise<any | null> {
-  console.log(WORKLET_BOOT_LOG_PREFIX + ' starting')
+  log.info(WORKLET_BOOT_LOG_PREFIX + ' starting')
 
   const encryption = await getDbEncryptionKey()
-  console.log(WORKLET_BOOT_LOG_PREFIX + ' db encryption key present=' + !!encryption)
+  log.info(WORKLET_BOOT_LOG_PREFIX + ' db encryption key present=' + !!encryption)
   if (!encryption) {
-    console.log(WORKLET_BOOT_LOG_PREFIX + ' no vault on this device yet, nothing to sync')
+    log.info(WORKLET_BOOT_LOG_PREFIX + ' no vault on this device yet, nothing to sync')
     return null
   }
 
@@ -25,7 +26,7 @@ export async function startBackendWorkletForBackgroundTask(): Promise<any | null
 
   const startedAt = Date.now()
   const { worklet } = await startWorklet(WORKLET_STORAGE_PATH)
-  console.log(WORKLET_BOOT_LOG_PREFIX + ' worklet booted in ' + (Date.now() - startedAt) + 'ms')
+  log.info(WORKLET_BOOT_LOG_PREFIX + ' worklet booted in ' + (Date.now() - startedAt) + 'ms')
 
   const readyAt = Date.now()
   try {
@@ -35,11 +36,11 @@ export async function startBackendWorkletForBackgroundTask(): Promise<any | null
       'backendApi.ready',
     )
   } catch (err) {
-    console.log(WORKLET_BOOT_LOG_PREFIX + ' backend never became ready', err)
+    log.error(WORKLET_BOOT_LOG_PREFIX + ' backend never became ready', err)
     terminateWorkletIfActive(worklet)
     return null
   }
-  console.log(WORKLET_BOOT_LOG_PREFIX + ' backend ready in ' + (Date.now() - readyAt) + 'ms')
+  log.info(WORKLET_BOOT_LOG_PREFIX + ' backend ready in ' + (Date.now() - readyAt) + 'ms')
 
   return worklet
 }

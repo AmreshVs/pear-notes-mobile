@@ -2,6 +2,7 @@ import { AppState, AppStateStatus, Platform } from 'react-native'
 import * as ExpoBackgroundService from 'expo-background-service'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import * as log from '@pear-notes/core/log.js'
 import HRPC from '@pear-notes/core/spec/hrpc/index.js'
 import {
   clearBackgroundServiceFailure,
@@ -45,6 +46,7 @@ let _notificationStrings = { title: '', message: '' }
 let _backgroundSyncWindowActive = false
 let _suspendDeferredForBackgroundSync = false
 let _awaySince: number | null = null
+let _serviceStoppedSubscription: { remove: () => void } | null = null
 
 function logLifecycle(message: string, detail?: Record<string, unknown>) {
   const suffix = detail
@@ -53,7 +55,7 @@ function logLifecycle(message: string, detail?: Record<string, unknown>) {
         .map(([key, value]) => key + '=' + String(value))
         .join(' ')
     : ''
-  console.log('[lifecycle] app ' + message + suffix)
+  log.info('[lifecycle] app ' + message + suffix)
 }
 
 function workletState(worklet: any) {
@@ -100,18 +102,22 @@ function handleBackground(worklet: any) {
       return
     } catch (err) {
       _foregroundServiceActive = false
-      console.error('Failed to start the background sync service', err)
+      log.error('[lifecycle] app failed to start the background sync service', err)
       recordBackgroundServiceFailure()
     }
   }
 
+  suspendForBackground(worklet)
+}
+
+function suspendForBackground(worklet: any) {
   if (_backgroundSyncWindowActive) {
     _suspendDeferredForBackgroundSync = true
     logLifecycle('background -> background sync in flight, staying awake', workletState(worklet))
     try {
       worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
     } catch (err) {
-      console.error('[lifecycle] app failed to keep the worklet awake for background sync', err)
+      log.error('[lifecycle] app failed to keep the worklet awake for background sync', err)
     }
     return
   }
@@ -122,8 +128,30 @@ function handleBackground(worklet: any) {
     worklet.suspend(BACKGROUND_LINGER_MS)
     logLifecycle('background -> suspend returned', workletState(worklet))
   } catch (err) {
-    console.error('[lifecycle] app failed to suspend the worklet', err)
+    log.error('[lifecycle] app failed to suspend the worklet', err)
   }
+}
+
+function handleServiceStoppedBySystem({ reason }: { reason: string }) {
+  const worklet = _activeWorklet
+  log.error('[lifecycle] app background sync service stopped by Android: ' + reason, {
+    ...workletState(worklet),
+    appState: AppState.currentState,
+    wasActive: _foregroundServiceActive,
+  })
+  if (!_foregroundServiceActive) return
+  _foregroundServiceActive = false
+  stopKeepAlive()
+  if (reason === 'start-rejected') recordBackgroundServiceFailure()
+  if (!worklet || worklet.terminated || AppState.currentState === 'active') return
+  suspendForBackground(worklet)
+}
+
+function watchServiceStops() {
+  if (Platform.OS !== 'android' || _serviceStoppedSubscription) return
+  _serviceStoppedSubscription = ExpoBackgroundService.addServiceStoppedListener(
+    handleServiceStoppedBySystem,
+  )
 }
 
 export function isForegroundServiceActive(): boolean {
@@ -181,7 +209,7 @@ export function terminateWorkletIfActive(worklet: any): boolean {
     logLifecycle('background task -> terminate returned', workletState(worklet))
     return true
   } catch (err) {
-    console.error('[lifecycle] app failed to terminate the background-task worklet', err)
+    log.error('[lifecycle] app failed to terminate the background-task worklet', err)
     return false
   }
 }
@@ -195,7 +223,7 @@ export function suspendActiveWorklet(): boolean {
     _activeWorklet.suspend(0)
     return true
   } catch (err) {
-    console.error('[lifecycle] app failed to re-suspend after the background task', err)
+    log.error('[lifecycle] app failed to re-suspend after the background task', err)
     return false
   }
 }
@@ -214,7 +242,7 @@ function handleActive(worklet: any, onWorkletDied?: () => void, onResumed?: () =
   }
 
   if (!worklet || worklet.terminated) {
-    logLifecycle('active -> worklet is dead, restarting', workletState(worklet))
+    log.error('[lifecycle] app active -> worklet is dead, restarting', workletState(worklet))
     onWorkletDied?.()
     return
   }
@@ -225,7 +253,7 @@ function handleActive(worklet: any, onWorkletDied?: () => void, onResumed?: () =
     worklet.resume()
     logLifecycle('active -> resume returned', workletState(worklet))
   } catch (err) {
-    console.error('[lifecycle] app failed to resume the worklet', err)
+    log.error('[lifecycle] app failed to resume the worklet', err)
   }
 
   if (wasSuspended || wasAwayLong) {
@@ -256,6 +284,7 @@ function attachAppStateHandler(worklet: any, options?: StartWorkletOptions) {
 }
 
 export async function startWorklet(storagePath: string, options?: StartWorkletOptions) {
+  backendApi.captureAppLogs()
   stopKeepAlive()
   _appStateSubscription?.remove()
   _appStateSubscription = null
@@ -269,7 +298,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
     try {
       previous.terminate()
     } catch (err) {
-      console.error('[lifecycle] app failed to terminate the previous worklet', err)
+      log.error('[lifecycle] app failed to terminate the previous worklet', err)
     }
   }
 
@@ -283,6 +312,8 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
     message: options?.notificationMessage ?? _notificationStrings.message,
   }
 
+  watchServiceStops()
+
   const worklet = new ObservedWorklet()
   _activeWorklet = worklet
   logLifecycle('startWorklet -> booting a new worklet')
@@ -294,7 +325,7 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
   worklet.on(WORKLET_EXITED, () => {
     if (_deliberateTerminations.has(worklet)) return
     if (_activeWorklet !== worklet) return
-    logLifecycle('worklet terminated on its own -> restarting', workletState(worklet))
+    log.error('[lifecycle] app worklet terminated on its own -> restarting', workletState(worklet))
     _activeWorklet = null
     stopKeepAlive()
     options?.onWorkletDied?.()
@@ -306,7 +337,6 @@ export async function startWorklet(storagePath: string, options?: StartWorkletOp
 
   const rpc = new HRPC(new FramedStream(worklet.IPC))
   setRPC(rpc)
-  backendApi.captureAppLogs()
 
   return { worklet, rpc }
 }

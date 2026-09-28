@@ -26,6 +26,7 @@ import * as SystemUI from 'expo-system-ui'
 
 import { backendApi, setLocalDeviceName } from '@pear-notes/core/backend/api.js'
 import { appBoot } from '@pear-notes/core/bootTimeline.js'
+import * as log from '@pear-notes/core/log.js'
 import { setLocalAiAdapter } from '@pear-notes/core/store/services/localAiAdapter.js'
 import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { getIsLoading as getNotesLoading } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -104,6 +105,7 @@ SplashScreen.preventAutoHideAsync()
 
 const storage = WORKLET_STORAGE_PATH
 const MAX_WORKLET_RESTART_ATTEMPTS = 5
+const READY_SLOW_LOG_MS = 30_000
 const ALERTED_VAULT_ACTIONS: (string | null)[] = ['move', 'switch']
 
 // rootSaga dispatches initApp once, off the first appReady it sees. Every later boot of
@@ -200,6 +202,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       await startWorklet(storage, {
         onWorkletDied: () => {
           workletRestartAttemptsRef.current += 1
+          log.error('[boot] worklet died, restart attempt ' + workletRestartAttemptsRef.current)
           if (workletRestartAttemptsRef.current > MAX_WORKLET_RESTART_ATTEMPTS) {
             setFatalError(t('error.backendFailed'))
             return
@@ -224,8 +227,22 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         entropy = randomHex32()
         await setVaultEntropy(entropy)
       }
-      const readyResult = await backendApi.ready({ storage, encryption: key, entropy })
+      const readyStartedAt = Date.now()
+      const readySlowTimer = setTimeout(
+        () => log.error('[boot] backend ready still pending after ' + READY_SLOW_LOG_MS + 'ms'),
+        READY_SLOW_LOG_MS,
+      )
+      let readyResult
+      try {
+        readyResult = await backendApi.ready({ storage, encryption: key, entropy })
+      } finally {
+        clearTimeout(readySlowTimer)
+      }
       if (readyResult?.done !== true) {
+        log.error('[boot] backend ready failed', {
+          reason: readyResult?.reason ?? 'none',
+          ms: Date.now() - readyStartedAt,
+        })
         if (readyResult?.reason === 'LEGACY_VAULT') {
           setLegacyVault(true)
           return
@@ -238,6 +255,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         return
       }
       appBoot.mark('backendApi.ready resolved')
+      log.info('[boot] backend ready in ' + (Date.now() - readyStartedAt) + 'ms')
       workletRestartAttemptsRef.current = 0
       loadHapticsPreference()
       loadAndroidColorTheme()
@@ -247,7 +265,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       hasInitializedBackend = true
       setLocalDeviceName(getLocalDeviceName())
     } catch (e) {
-      console.error('Error in initWorklet', e)
+      log.error('[boot] initWorklet failed', e)
       setFatalError(e instanceof Error ? e.message : t('error.backendFailed'))
     }
   }, [dispatch, t])

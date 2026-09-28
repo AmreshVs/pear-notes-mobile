@@ -82,6 +82,7 @@ export type ErrorLogEntry = {
 
 export type ErrorLog = {
   capturedAt?: number
+  enabled?: boolean
   entries?: ErrorLogEntry[]
   error?: string
 }
@@ -90,6 +91,10 @@ const ERROR_REPORT_DIR_PREFIX = 'error-report-'
 
 export function readErrorLog(): Promise<ErrorLog> {
   return backendApi.getErrorLog()
+}
+
+export function setErrorLogEnabled(enabled: boolean): Promise<boolean> {
+  return backendApi.setErrorLogEnabled(enabled)
 }
 
 export function clearErrorLog(): Promise<boolean> {

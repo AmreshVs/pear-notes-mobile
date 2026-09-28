@@ -21,6 +21,17 @@ export function stopService(completionTitle?: string, completionMessage?: string
   ExpoBackgroundService.stop(completionTitle ?? null, completionMessage ?? null)
 }
 
+export type ServiceStopReason = 'timeout' | 'start-rejected'
+
+export function addServiceStoppedListener(
+  listener: (event: { reason: ServiceStopReason }) => void,
+): { remove: () => void } {
+  if (Platform.OS !== 'android' || typeof ExpoBackgroundService.addListener !== 'function') {
+    return { remove: () => {} }
+  }
+  return ExpoBackgroundService.addListener('onServiceStopped', listener)
+}
+
 export function isIgnoringBatteryOptimizations(): boolean {
   if (Platform.OS !== 'android') return true
   try {

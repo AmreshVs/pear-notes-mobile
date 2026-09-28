@@ -5,6 +5,7 @@ import {
   confirmClearErrorLog,
   type ErrorLog,
   readErrorLog,
+  setErrorLogEnabled,
   shareErrorReport,
 } from '@/lib/debugSnapshot'
 import type { ConfirmLabels } from '@/utils/debugRows'
@@ -77,6 +78,19 @@ export function useErrorLogScreen() {
     [fail, load],
   )
 
+  const toggleRecording = useCallback(
+    async (enabled: boolean) => {
+      setLog((current) => ({ ...(current ?? {}), enabled }))
+      try {
+        await setErrorLogEnabled(enabled)
+      } catch (e) {
+        fail(e)
+      }
+      await load()
+    },
+    [fail, load],
+  )
+
   const toggleEntry = useCallback((key: string) => {
     setExpanded((current) => ({ ...current, [key]: !current[key] }))
   }, [])
@@ -84,6 +98,8 @@ export function useErrorLogScreen() {
   return {
     entries: log?.entries || [],
     loaded: log !== null,
+    recording: log?.enabled === true,
+    toggleRecording,
     error,
     refreshing,
     sharing,

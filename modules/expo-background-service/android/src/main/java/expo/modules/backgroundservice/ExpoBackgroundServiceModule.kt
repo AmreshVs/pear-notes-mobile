@@ -12,6 +12,10 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
 class ExpoBackgroundServiceModule : Module() {
+  private val reportStop: (String) -> Unit = { reason ->
+    runCatching { sendEvent(SERVICE_STOPPED_EVENT, mapOf("reason" to reason)) }
+  }
+
   private fun deliver(intent: Intent, context: Context, asForeground: Boolean) {
     try {
       if (asForeground && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -26,6 +30,18 @@ class ExpoBackgroundServiceModule : Module() {
 
   override fun definition() = ModuleDefinition {
     Name("ExpoBackgroundService")
+
+    Events(SERVICE_STOPPED_EVENT)
+
+    OnCreate {
+      BackupForegroundService.onStoppedBySystem = reportStop
+    }
+
+    OnDestroy {
+      if (BackupForegroundService.onStoppedBySystem === reportStop) {
+        BackupForegroundService.onStoppedBySystem = null
+      }
+    }
 
     Function("isIgnoringBatteryOptimizations") {
       val context = appContext.reactContext ?: return@Function true
@@ -105,5 +121,6 @@ class ExpoBackgroundServiceModule : Module() {
 
   companion object {
     private const val TAG = "ExpoBackgroundService"
+    private const val SERVICE_STOPPED_EVENT = "onServiceStopped"
   }
 }

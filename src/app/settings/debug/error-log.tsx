@@ -5,6 +5,7 @@ import {
   ScrollView,
   type StyleProp,
   StyleSheet,
+  Switch,
   type TextStyle,
   View as RNView,
 } from 'react-native'
@@ -86,6 +87,8 @@ export default function ErrorLogScreen() {
   const {
     entries,
     loaded,
+    recording,
+    toggleRecording,
     error,
     refreshing,
     sharing,
@@ -141,6 +144,22 @@ export default function ErrorLogScreen() {
     >
       <Text style={styles.description}>{t('debug.errorLog.description')}</Text>
 
+      <RNView style={[commonThemedStyles.card, styles.recordCard]}>
+        <RNView style={styles.toggleRow}>
+          <RNView style={commonStyles.flex1}>
+            <Text style={styles.rowTitle}>{t('debug.errorLog.record')}</Text>
+            <Text style={styles.rowDesc}>{t('debug.errorLog.recordDesc')}</Text>
+          </RNView>
+          <Switch
+            value={recording}
+            onValueChange={toggleRecording}
+            disabled={!loaded}
+            trackColor={{ false: colors.borderSecondary, true: colors.primary }}
+            thumbColor={colors.white}
+          />
+        </RNView>
+      </RNView>
+
       <RNView style={styles.actions}>
         <Pressable onPress={onShare} disabled={sharing} style={styles.primaryButton}>
           <SymbolIcon name="square.and.arrow.up" size={UI_ICON_SIZE_15} color={colors.background} />
@@ -165,7 +184,9 @@ export default function ErrorLogScreen() {
       {!loaded ? (
         <Text style={styles.muted}>{t('debug.errorLog.loading')}</Text>
       ) : entries.length === 0 ? (
-        <Text style={styles.muted}>{t('debug.errorLog.empty')}</Text>
+        <Text style={styles.muted}>
+          {t(recording ? 'debug.errorLog.empty' : 'debug.errorLog.emptyOff')}
+        </Text>
       ) : (
         <RNView style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -194,6 +215,28 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
       marginBottom: Space.base,
+    },
+    recordCard: {
+      marginBottom: Space.base,
+    },
+    toggleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.md,
+      padding: Space.lg,
+    },
+    rowTitle: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
+    },
+    rowDesc: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textMuted,
+      marginTop: UI_SIZE_2,
+      lineHeight: FontSize.body * 1.4,
     },
     actions: {
       flexDirection: 'row',
