@@ -92,9 +92,24 @@ jobs:
           ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
 
-      - name: Free disk space for the Android build
-        if: runner.os == 'Linux' && inputs.builder == 'github'
-        run: sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost "$AGENT_TOOLSDIRECTORY/CodeQL"
+      - name: Free disk space
+        if: inputs.builder == 'github'
+        run: |
+          df -h /
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/local/share/boost \
+              /usr/share/swift /usr/local/share/powershell /usr/local/share/chromium \
+              /usr/local/lib/android/sdk/system-images /usr/local/lib/android/sdk/emulator \
+              "$AGENT_TOOLSDIRECTORY/CodeQL" "$AGENT_TOOLSDIRECTORY/go" "$AGENT_TOOLSDIRECTORY/PyPy"
+            sudo docker image prune --all --force >/dev/null
+          else
+            keep=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+            for xcode in /Applications/Xcode_*.app; do
+              [ "$xcode" = "$keep" ] || [ -L "$xcode" ] || sudo rm -rf "$xcode"
+            done
+            xcrun simctl delete unavailable || true
+          fi
+          df -h /
 
       - uses: actions/setup-node@v4
         with:

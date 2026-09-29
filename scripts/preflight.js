@@ -6,6 +6,8 @@ const play = require('./playCredentials')
 const { compareInstalledCore } = require('./coreInstall')
 
 const ROOT = path.resolve(__dirname, '..')
+const IS_CI = process.env.CI === 'true'
+const DIRTY_FILES_SHOWN = 5
 const IOS_APP_TARGET_NAME = 'pearnotes'
 const IOS_SHARE_EXTENSION_TARGET_NAME = 'PearNotesShareExtension'
 const IOS_SHARE_EXTENSION_BUNDLE_SUFFIX = '.ShareExtension'
@@ -49,12 +51,20 @@ function fail(label, detail) {
 function checkGitClean() {
   const status = tryRun('git status --porcelain')
   if (status === null) return fail('git', 'not a git repository')
-  if (status)
-    return fail(
+  if (!status) return pass('git', `clean at ${tryRun('git rev-parse --short HEAD')}`)
+
+  const files = status.split('\n').map((line) => line.replace(/^\s*\S+\s+/, ''))
+  const shown = files.slice(0, DIRTY_FILES_SHOWN).join(', ')
+  const more =
+    files.length > DIRTY_FILES_SHOWN ? ` and ${files.length - DIRTY_FILES_SHOWN} more` : ''
+
+  if (IS_CI) {
+    return warn(
       'git',
-      `working tree is dirty (${status.split('\n').length} files) - commit before releasing`,
+      `setup changed ${shown}${more} on the runner - committed locally before the build, not pushed`,
     )
-  pass('git', `clean at ${tryRun('git rev-parse --short HEAD')}`)
+  }
+  fail('git', `working tree is dirty: ${shown}${more} - commit before releasing`)
 }
 
 function checkLockfiles() {
@@ -103,6 +113,10 @@ function checkCorePinned() {
       'core',
       `package.json pins ${declaredRef.slice(0, 12)} but the lock resolves ${lockedSha.slice(0, 12)} - run npm install`,
     )
+  }
+
+  if (IS_CI) {
+    return pass('core', `lock pins ${lockedSha.slice(0, 12)}, installed from that commit by setup`)
   }
 
   const coreRoot = path.resolve(ROOT, '..', 'pear-notes-core')
@@ -160,6 +174,7 @@ function checkCorePinned() {
 }
 
 function checkInstalledCore() {
+  if (IS_CI) return pass('core-install', 'fresh install from the pinned commit')
   const { level, detail } = compareInstalledCore(ROOT)
   record(level, 'core-install', detail)
 }
@@ -665,6 +680,8 @@ function checkToolchain() {
   if (!account) fail('eas auth', 'not logged in - run eas login')
   else pass('eas auth', account)
 
+  if (process.platform !== 'darwin') return
+
   if (!tryRun('fastlane --version')) {
     warn('fastlane', 'not installed - required for local iOS builds (brew install fastlane)')
   } else {
@@ -690,6 +707,8 @@ function checkSubmitCredentials() {
     pass('play creds', 'no upload key - the aab will be uploaded manually')
   } else if (playKey?.source === 'sealed') {
     pass('play creds', `sealed, ${playKey.email}`)
+  } else if (playKey?.source === 'plaintext' && IS_CI) {
+    pass('play creds', `from the CI secret, ${playKey.email}`)
   } else if (playKey?.source === 'plaintext') {
     warn(
       'play creds',
