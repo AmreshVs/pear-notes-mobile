@@ -167,6 +167,17 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+      - name: Give Gradle more memory
+        if: runner.os == 'Linux' && inputs.builder == 'github' && matrix.platform == 'android'
+        run: |
+          free -h
+          mkdir -p ~/.gradle
+          {
+            echo "org.gradle.jvmargs=-Xmx4608m -XX:MaxMetaspaceSize=1g -XX:+HeapDumpOnOutOfMemoryError"
+            echo "kotlin.daemon.jvmargs=-Xmx1536m"
+            echo "org.gradle.workers.max=2"
+          } >> ~/.gradle/gradle.properties
+
       - name: Install eas-cli
         run: npm install -g eas-cli
 
