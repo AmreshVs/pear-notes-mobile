@@ -22,7 +22,7 @@ on:
         type: string
         required: false
       bump:
-        description: 'Bump the build number (stores reject a build number they already have)'
+        description: 'Bump the version (1.0.0 -> 1.0.1) and the build number. Needed for every store upload.'
         type: boolean
         default: false
 
@@ -58,8 +58,12 @@ jobs:
           PLATFORM: ${{ inputs.platform }}
         run: |
           build=$(node -p "require('./app.json').expo.android.versionCode")
-          [ "$BUMP" = "true" ] && build=$((build + 1))
-          version=${VERSION:-$(node -p "require('./app.json').expo.version")}
+          version=$(node -p "require('./app.json').expo.version")
+          if [ "$BUMP" = "true" ]; then
+            build=$((build + 1))
+            version=$(node -p "const [major, minor, patch] = '$version'.split('.').map(Number); [major, minor, patch + 1].join('.')")
+          fi
+          version=${VERSION:-$version}
           echo "Building ${version} (${build})"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
