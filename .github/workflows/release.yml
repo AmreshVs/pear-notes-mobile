@@ -21,6 +21,10 @@ on:
         description: 'Marketing version, e.g. 1.1.0 (empty = keep current)'
         type: string
         required: false
+      bump:
+        description: 'Bump the build number (stores reject a build number they already have)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -34,39 +38,32 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       sha: ${{ steps.version.outputs.sha }}
+      version: ${{ steps.version.outputs.version }}
+      build: ${{ steps.version.outputs.build }}
       platforms: ${{ steps.version.outputs.platforms }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
 
-      - name: Set the version and build number
+      - name: Choose the version and build number
         id: version
         env:
           VERSION: ${{ inputs.version }}
-          UPLOAD: ${{ inputs.upload }}
+          BUMP: ${{ inputs.bump }}
           PLATFORM: ${{ inputs.platform }}
-          PUSH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
         run: |
-          flags=()
-          [ -n "$VERSION" ] && flags+=(--version "$VERSION")
-          [ "$UPLOAD" = "true" ] && flags+=(--bump)
-          if [ ${#flags[@]} -gt 0 ]; then
-            node scripts/set-version.js "${flags[@]}"
-          fi
-          if [ -n "$(git status --porcelain)" ]; then
-            version=$(node -p "require('./app.json').expo.version")
-            build=$(node -p "require('./app.json').expo.android.versionCode")
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -am "Release ${version} (${build})"
-            git push "$PUSH_URL" "HEAD:${GITHUB_REF_NAME}"
-          fi
+          build=$(node -p "require('./app.json').expo.android.versionCode")
+          [ "$BUMP" = "true" ] && build=$((build + 1))
+          version=${VERSION:-$(node -p "require('./app.json').expo.version")}
+          echo "Building ${version} (${build})"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build=$build" >> "$GITHUB_OUTPUT"
           if [ "$PLATFORM" = "all" ]; then
             echo 'platforms=["android","ios"]' >> "$GITHUB_OUTPUT"
           else
@@ -87,7 +84,7 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.prepare.outputs.sha }}
           persist-credentials: false
@@ -103,19 +100,21 @@ jobs:
               "$AGENT_TOOLSDIRECTORY/CodeQL" "$AGENT_TOOLSDIRECTORY/go" "$AGENT_TOOLSDIRECTORY/PyPy"
             sudo docker image prune --all --force >/dev/null
           else
-            keep=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+            keep=$(realpath "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)")
+            echo "Keeping $keep"
             for xcode in /Applications/Xcode_*.app; do
-              [ "$xcode" = "$keep" ] || [ -L "$xcode" ] || sudo rm -rf "$xcode"
+              [ -L "$xcode" ] && continue
+              [ "$(realpath "$xcode")" = "$keep" ] || sudo rm -rf "$xcode"
             done
             xcrun simctl delete unavailable || true
           fi
           df -h /
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -123,7 +122,7 @@ jobs:
       - name: Select Xcode 26
         if: runner.os == 'macOS'
         run: |
-          xcode=$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)
+          xcode=$(realpath "$(ls -d /Applications/Xcode_26*.app | sort -V | tail -1)")
           sudo xcode-select -s "$xcode"
           xcodebuild -version
           command -v fastlane >/dev/null || brew install fastlane
@@ -186,6 +185,12 @@ jobs:
             printf '%s' "$PLAY_SERVICE_ACCOUNT_JSON" > credentials/play-service-account.json
           fi
 
+      - name: Apply the version and build number
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          BUILD: ${{ needs.prepare.outputs.build }}
+        run: node scripts/set-version.js --version "$VERSION" --build "$BUILD"
+
       - name: Build and upload
         env:
           PLATFORM: ${{ matrix.platform }}
@@ -196,6 +201,18 @@ jobs:
           [ "$BUILDER" = "eas" ] && flags+=(--cloud)
           [ "$UPLOAD" != "true" ] && flags+=(--no-submit)
           node scripts/release.js "${flags[@]}"
+
+      - name: Record the upload
+        if: success() && inputs.upload
+        run: mkdir -p uploaded && echo "${{ matrix.platform }}" > uploaded/${{ matrix.platform }}
+
+      - name: Keep the upload record
+        if: success() && inputs.upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: uploaded-${{ matrix.platform }}
+          path: uploaded/
+          retention-days: 1
 
       - name: Keep the build
         if: always()
@@ -211,3 +228,64 @@ jobs:
       - name: Remove store credentials
         if: always()
         run: rm -rf credentials/play-service-account.json ~/.appstoreconnect/private_keys
+
+  record-version:
+    needs: [prepare, build]
+    if: always() && inputs.upload && needs.prepare.result == 'success'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Find which platforms uploaded
+        id: uploaded
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          pattern: uploaded-*
+          path: uploaded
+          merge-multiple: true
+
+      - name: Decide whether to push
+        id: decide
+        run: |
+          if [ -d uploaded ] && [ -n "$(ls -A uploaded)" ]; then
+            echo "Uploaded: $(ls uploaded | tr '\n' ' ')"
+            echo "push=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No platform uploaded; the build number is not recorded."
+            echo "push=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.decide.outputs.push == 'true'
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-node@v5
+        if: steps.decide.outputs.push == 'true'
+        with:
+          node-version: 24
+
+      - name: Commit and push the release version
+        if: steps.decide.outputs.push == 'true'
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          BUILD: ${{ needs.prepare.outputs.build }}
+          PUSH_URL: https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch "$PUSH_URL" "$GITHUB_REF_NAME"
+          git checkout -B release-version FETCH_HEAD
+          current=$(node -p "require('./app.json').expo.android.versionCode")
+          if [ "$current" -ge "$BUILD" ]; then
+            echo "The branch is already at build ${current}, not moving it back to ${BUILD}"
+            exit 0
+          fi
+          node scripts/set-version.js --version "$VERSION" --build "$BUILD"
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "The branch already has ${VERSION} (${BUILD})"
+            exit 0
+          fi
+          git commit -am "Release ${VERSION} (${BUILD})"
+          git push "$PUSH_URL" "HEAD:${GITHUB_REF_NAME}"
