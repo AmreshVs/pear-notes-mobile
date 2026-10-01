@@ -127,46 +127,6 @@ export async function sweepThumbnailCache(notes: SweepNote[]): Promise<void> {
   }
 }
 
-async function directoryBytes(uri: string): Promise<number> {
-  let names: string[] = []
-  try {
-    names = await FileSystem.readDirectoryAsync(uri)
-  } catch {
-    // Not a directory — fall through to a plain stat.
-    const info = await FileSystem.getInfoAsync(uri).catch(() => null)
-    return info?.exists ? ((info as { size?: number }).size ?? 0) : 0
-  }
-
-  let total = 0
-  for (const name of names) total += await directoryBytes(`${uri}${name}`)
-  return total
-}
-
-/**
- * Bytes held by throwaway caches — everything under the cache directory except the attachment
- * thumbnails the notes list draws, which `clearCaches` deliberately keeps. The Storage screen's
- * other figures come from the vault (`corePath`), so without this the app reports less space than
- * the OS does and the gap has no explanation.
- */
-export async function measureCacheBytes(): Promise<number> {
-  const directory = FileSystem.cacheDirectory
-  if (!directory) return 0
-
-  let names: string[] = []
-  try {
-    names = await FileSystem.readDirectoryAsync(directory)
-  } catch {
-    return 0
-  }
-
-  let total = 0
-  for (const name of names) {
-    if (name === ATTACHMENT_THUMBNAIL_CACHE_DIR) continue
-    total += await directoryBytes(`${directory}${name}`)
-  }
-  return total
-}
-
 /**
  * Clears the throwaway caches. Attachment thumbnails are kept on purpose: they are what the notes
  * list draws, and dropping them would blank every row until each note was opened again.

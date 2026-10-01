@@ -34,12 +34,12 @@ private func preparedModelsDirectory() throws -> URL {
   return directory
 }
 
-private func allocatedSize(of directory: URL) -> Double {
+private func allocatedSize(of directory: URL, includeHidden: Bool = false) -> Double {
   let keys: [URLResourceKey] = [.isRegularFileKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey]
   guard let enumerator = FileManager.default.enumerator(
     at: directory,
     includingPropertiesForKeys: keys,
-    options: [.skipsHiddenFiles]
+    options: includeHidden ? [] : [.skipsHiddenFiles]
   ) else { return 0 }
 
   var total: Double = 0
@@ -228,6 +228,41 @@ public class ExpoLocalAiModule: Module {
         "freeBytes": Double(values.volumeAvailableCapacityForImportantUsage ?? 0),
         "totalBytes": Double(values.volumeTotalCapacity ?? 0)
       ]
+    }
+
+    AsyncFunction("getStorageRoots") { () -> [String: Any] in
+      let fileManager = FileManager.default
+      let resolve = { (url: URL?) -> String in url?.resolvingSymlinksInPath().path ?? "" }
+      var roots: [String: Any] = [
+        "home": resolve(URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)),
+        "documents": resolve(fileManager.urls(for: .documentDirectory, in: .userDomainMask).first),
+        "caches": resolve(fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first),
+        "models": resolve(try? applicationSupportDirectory().appendingPathComponent(modelsDirectoryName, isDirectory: true)),
+        "appBytes": allocatedSize(of: Bundle.main.bundleURL, includeHidden: true)
+      ]
+      if let group = Bundle.main.object(forInfoDictionaryKey: "PearNotesAppGroupIdentifier") as? String,
+         let container = fileManager.containerURL(forSecurityApplicationGroupIdentifier: group) {
+        roots["shared"] = resolve(container)
+      }
+      return roots
+    }
+
+    AsyncFunction("listDirectorySizes") { (path: String) -> [[String: Any]] in
+      let keys: [URLResourceKey] = [.isDirectoryKey, .isSymbolicLinkKey, .totalFileAllocatedSizeKey, .fileAllocatedSizeKey]
+      let directory = URL(fileURLWithPath: path, isDirectory: true)
+      guard let children = try? FileManager.default.contentsOfDirectory(
+        at: directory,
+        includingPropertiesForKeys: keys,
+        options: []
+      ) else { return [] }
+      return children.compactMap { url in
+        guard let values = try? url.resourceValues(forKeys: Set(keys)), values.isSymbolicLink != true else { return nil }
+        let isDirectory = values.isDirectory == true
+        let bytes = isDirectory
+          ? allocatedSize(of: url, includeHidden: true)
+          : Double(values.totalFileAllocatedSize ?? values.fileAllocatedSize ?? 0)
+        return ["name": url.lastPathComponent, "isDirectory": isDirectory, "bytes": bytes]
+      }
     }
 
     AsyncFunction("getDirectorySize") { (path: String) -> Double in

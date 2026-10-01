@@ -19,9 +19,6 @@ export type DebugRow = {
   emphasis: boolean
   fullValue?: string
 }
-export type DebugMark = { label: string; at: number }
-export type DebugBlock = { continued?: boolean; marks?: DebugMark[] }
-export type DebugTimeline = { blocks?: DebugBlock[] }
 
 export const EMPHASIS_KEYS = ['backlog', 'majority', 'indexerCount', 'writable']
 
@@ -78,33 +75,6 @@ export function buildDebugRows(data: unknown): DebugRow[] {
         ...(full === shown ? null : { fullValue: full }),
       }
     })
-}
-
-export function buildTimelineRows(timeline: DebugTimeline | undefined): DebugRow[] {
-  const blocks = timeline?.blocks || []
-  const rows: DebugRow[] = []
-  blocks.forEach((block, blockIndex) => {
-    const marks = block.marks || []
-    if (marks.length === 0) return
-    rows.push({
-      key: `block-${blockIndex}`,
-      label: block.continued ? '(continued)' : '(boot)',
-      value: '',
-      emphasis: true,
-    })
-    let previousAt = 0
-    marks.forEach((mark, markIndex) => {
-      const step = mark.at - previousAt
-      previousAt = mark.at
-      rows.push({
-        key: `block-${blockIndex}-mark-${markIndex}`,
-        label: mark.label,
-        value: `${mark.at}ms  +${step}ms`,
-        emphasis: false,
-      })
-    })
-  })
-  return rows
 }
 
 export type ConfirmLabels = {

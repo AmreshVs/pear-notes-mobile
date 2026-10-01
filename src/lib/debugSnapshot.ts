@@ -4,7 +4,6 @@ import Constants from 'expo-constants'
 import * as FileSystem from 'expo-file-system/legacy'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
-import { appBoot } from '@pear-notes/core/bootTimeline.js'
 import { formatDebugReport, formatErrorLog } from '@pear-notes/core/utils.js'
 
 import type { ConfirmLabels, CopyFullReportLabels } from '@/utils/debugRows'
@@ -22,11 +21,8 @@ function appSection() {
   return {
     version: getAppVersionLabel(),
     buildNumber: getAppBuildNumber(),
-    surface: 'mobile',
     platform: Platform.OS,
     osVersion: String(Platform.Version),
-    expoSdk: Constants.expoConfig?.sdkVersion ?? null,
-    appOwnership: Constants.appOwnership ?? null,
     deviceName: Constants.deviceName ?? null,
   }
 }
@@ -37,7 +33,6 @@ export async function captureDebugSnapshot({ heavy = false } = {}): Promise<Debu
     ...backend,
     capturedAt: backend?.capturedAt || Date.now(),
     app: appSection(),
-    appBoot: appBoot.snapshot(),
   }
 }
 

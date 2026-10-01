@@ -49,6 +49,7 @@ export const UI_SIZE_150 = 150
 export const UI_SIZE_180 = 180
 export const UI_SIZE_200 = 200
 export const UI_SIZE_280 = 280
+export const UI_SIZE_400 = 400
 export const UI_SIZE_9999 = 9999
 
 export const SHEET_MAX_WIDTH = 640

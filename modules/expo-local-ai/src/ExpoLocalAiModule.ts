@@ -1,6 +1,12 @@
 import { NativeModule, requireOptionalNativeModule } from 'expo'
 
-import { ExpoLocalAiEvents, LocalAiDecodedAudio, LocalAiDiskSpace } from './ExpoLocalAi.types'
+import {
+  ExpoLocalAiEvents,
+  LocalAiDecodedAudio,
+  LocalAiDirectoryEntry,
+  LocalAiDiskSpace,
+  LocalAiStorageRoots,
+} from './ExpoLocalAi.types'
 
 declare class ExpoLocalAiModule extends NativeModule<ExpoLocalAiEvents> {
   startPcmStream(): Promise<void>
@@ -9,6 +15,8 @@ declare class ExpoLocalAiModule extends NativeModule<ExpoLocalAiEvents> {
   deleteModelsDirectory(): Promise<boolean>
   getDiskSpace(): Promise<LocalAiDiskSpace>
   getDirectorySize(path: string): Promise<number>
+  getStorageRoots(): Promise<LocalAiStorageRoots>
+  listDirectorySizes(path: string): Promise<LocalAiDirectoryEntry[]>
   decodeAudioToPcm(inputPath: string, outputPath: string): Promise<LocalAiDecodedAudio>
   getSupportedAbis(): string[]
   is64BitProcess(): boolean

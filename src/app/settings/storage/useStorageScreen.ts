@@ -4,11 +4,7 @@ import { router } from 'expo-router'
 
 import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
 import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
-import {
-  getLocalAiLoaded,
-  initLocalAi,
-  selectLocalAiBytesOnDisk,
-} from '@pear-notes/core/store/slices/localAiSlice.js'
+import { getLocalAiLoaded, initLocalAi } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteNoteMedia,
@@ -33,8 +29,14 @@ import {
 } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
-import { clearCaches, measureCacheBytes } from '@/lib/cacheCleanup'
+import { clearCaches } from '@/lib/cacheCleanup'
 import { resetAllData } from '@/lib/clearAllData'
+import {
+  clearTemporaryFiles,
+  deleteOldVaults,
+  type DeviceStorageSummary,
+  measureDeviceStorage,
+} from '@/lib/deviceStorage'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
 import type { Vault } from '@/lib/vaults.types'
 import { getNoteMetadata } from '@/utils/noteMetadata'
@@ -71,7 +73,6 @@ function useStorageScreen() {
     [notesStorageInfo, notesData],
   )
 
-  const aiModelBytes = (useSelector(selectLocalAiBytesOnDisk) as number) ?? 0
   const localAiLoaded = useSelector(getLocalAiLoaded) as boolean
 
   useEffect(() => {
@@ -83,8 +84,14 @@ function useStorageScreen() {
   }, [])
 
   const [resetSheetVisible, setResetSheetVisible] = useState(false)
-  const [cacheBytes, setCacheBytes] = useState(0)
   const [isClearingCache, setIsClearingCache] = useState(false)
+  const [deviceStorage, setDeviceStorage] = useState<DeviceStorageSummary | null>(null)
+  const [isDeletingOldVaults, setIsDeletingOldVaults] = useState(false)
+
+  const refreshDeviceStorage = useCallback(async () => {
+    const summary = await measureDeviceStorage().catch(() => null)
+    if (summary) setDeviceStorage(summary)
+  }, [])
 
   useEffect(() => {
     dispatch(subscribeStorageInfo())
@@ -94,25 +101,35 @@ function useStorageScreen() {
   }, [dispatch])
 
   useEffect(() => {
-    let active = true
-    measureCacheBytes().then((bytes) => {
-      if (active) setCacheBytes(bytes)
-    })
-    return () => {
-      active = false
-    }
-  }, [])
+    refreshDeviceStorage()
+  }, [refreshDeviceStorage])
+
+  useEffect(() => {
+    if (!isReclaiming) refreshDeviceStorage()
+  }, [isReclaiming, refreshDeviceStorage])
 
   const handleClearCache = useCallback(async () => {
     hapticLight()
     setIsClearingCache(true)
     try {
       await clearCaches()
-      setCacheBytes(await measureCacheBytes())
+      await clearTemporaryFiles()
+      await refreshDeviceStorage()
     } finally {
       setIsClearingCache(false)
     }
-  }, [])
+  }, [refreshDeviceStorage])
+
+  const handleDeleteOldVaults = useCallback(async () => {
+    hapticWarning()
+    setIsDeletingOldVaults(true)
+    try {
+      await deleteOldVaults()
+      await refreshDeviceStorage()
+    } finally {
+      setIsDeletingOldVaults(false)
+    }
+  }, [refreshDeviceStorage])
 
   const handleDeleteMedia = useCallback(
     (noteKey: string, mediaPath: string) => {
@@ -188,11 +205,12 @@ function useStorageScreen() {
     notesStorageRows,
     buckets,
     resetSheetVisible,
-    cacheBytes,
     isClearingCache,
     handleClearCache,
     showAiModels: LOCAL_AI_ENABLED,
-    aiModelBytes,
+    deviceStorage,
+    isDeletingOldVaults,
+    handleDeleteOldVaults,
     handleOpenAiModels,
     handleDeleteMedia,
     handleReclaim,

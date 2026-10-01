@@ -3,6 +3,21 @@ export interface LocalAiDiskSpace {
   totalBytes: number
 }
 
+export interface LocalAiStorageRoots {
+  home: string
+  documents: string
+  caches: string
+  models: string
+  shared?: string
+  appBytes: number
+}
+
+export interface LocalAiDirectoryEntry {
+  name: string
+  isDirectory: boolean
+  bytes: number
+}
+
 export interface LocalAiDecodedAudio {
   durationMs: number
   bytes: number

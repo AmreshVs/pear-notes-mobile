@@ -1,6 +1,7 @@
 package expo.modules.localai
 
 import android.annotation.SuppressLint
+import android.app.usage.StorageStatsManager
 import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioRecord
@@ -9,6 +10,7 @@ import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.media.MediaRecorder
 import android.os.Build
+import android.os.Process
 import android.os.StatFs
 import android.util.Base64
 import expo.modules.kotlin.exception.CodedException
@@ -21,6 +23,7 @@ import java.io.FileOutputStream
 import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.file.Files
 
 private const val MODULE_NAME = "ExpoLocalAi"
 private const val MODELS_DIRECTORY = "local-ai"
@@ -232,6 +235,25 @@ class ExpoLocalAiModule : Module() {
 
   private fun modelsDirectory(): File = File(context.filesDir, MODELS_DIRECTORY)
 
+  private fun treeBytes(file: File): Long =
+    file.walkTopDown()
+      .onEnter { it == file || !Files.isSymbolicLink(it.toPath()) }
+      .filter { it.isFile }
+      .sumOf { it.length() }
+
+  private fun installedAppBytes(): Long {
+    val info = context.applicationInfo
+    val stats = try {
+      context.getSystemService(StorageStatsManager::class.java)
+        ?.queryStatsForUid(info.storageUuid, Process.myUid())
+    } catch (_: Exception) {
+      null
+    }
+    if (stats != null) return stats.appBytes
+    val apks = listOf(info.sourceDir) + (info.splitSourceDirs?.toList() ?: emptyList())
+    return apks.sumOf { File(it).length() } + treeBytes(File(info.nativeLibraryDir))
+  }
+
   override fun definition() = ModuleDefinition {
     Name(MODULE_NAME)
 
@@ -276,6 +298,30 @@ class ExpoLocalAiModule : Module() {
         "freeBytes" to stat.availableBytes.toDouble(),
         "totalBytes" to stat.totalBytes.toDouble()
       )
+    }
+
+    AsyncFunction("getStorageRoots") {
+      val roots = mutableMapOf<String, Any>(
+        "home" to context.dataDir.canonicalPath,
+        "documents" to context.filesDir.canonicalPath,
+        "caches" to context.cacheDir.canonicalPath,
+        "models" to modelsDirectory().canonicalPath,
+        "appBytes" to installedAppBytes().toDouble()
+      )
+      context.getExternalFilesDir(null)?.parentFile?.let { roots["shared"] = it.canonicalPath }
+      roots
+    }
+
+    AsyncFunction("listDirectorySizes") { path: String ->
+      (File(path).listFiles() ?: emptyArray())
+        .filter { !Files.isSymbolicLink(it.toPath()) }
+        .map {
+          mapOf(
+            "name" to it.name,
+            "isDirectory" to it.isDirectory,
+            "bytes" to (if (it.isDirectory) treeBytes(it) else it.length()).toDouble()
+          )
+        }
     }
 
     AsyncFunction("getDirectorySize") { path: String ->

@@ -10,6 +10,7 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBackupBreakdownSection'
 import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
+import { AndroidDeviceStorageSection } from '@/components/android/AndroidDeviceStorageSection'
 import { AndroidDownloadsSection } from '@/components/android/AndroidDownloadsSection'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { AndroidUploadsSection } from '@/components/android/AndroidUploadsSection'
@@ -63,11 +64,12 @@ export default function AndroidStorageScreen() {
     totalBlobBytes,
     totalOnDiskBytes,
     isReclaiming,
-    cacheBytes,
+    deviceStorage,
+    isDeletingOldVaults,
+    handleDeleteOldVaults,
     isClearingCache,
     handleClearCache,
     showAiModels,
-    aiModelBytes,
     handleOpenAiModels,
     activeDownloads,
     activeUploads,
@@ -182,46 +184,18 @@ export default function AndroidStorageScreen() {
                 </Text>
               </Pressable>
             </View>
-            <View style={[styles.usageRow, styles.usageRowBorder]}>
-              <View style={styles.reclaimLabelWrap}>
-                <Text style={styles.usageLabel}>
-                  {t('storage.cache')} · {formatBytes(cacheBytes)}
-                </Text>
-                <Text style={styles.reclaimDesc}>{t('storage.cacheDesc')}</Text>
-              </View>
-              <Pressable
-                onPress={handleClearCache}
-                disabled={isClearingCache}
-                android_ripple={ripple}
-                style={[styles.reclaimBtn, isClearingCache && styles.reclaimBtnDisabled]}
-              >
-                <Text style={styles.reclaimBtnText}>
-                  {isClearingCache ? t('storage.clearingCache') : t('storage.clearCache')}
-                </Text>
-              </Pressable>
-            </View>
-            {showAiModels && (
-              <Pressable
-                onPress={handleOpenAiModels}
-                android_ripple={ripple}
-                style={[styles.usageRow, styles.usageRowBorder]}
-              >
-                <View style={styles.reclaimLabelWrap}>
-                  <Text style={styles.usageLabel}>{t('settings.onDeviceAi.storageRow')}</Text>
-                  <Text style={styles.reclaimDesc}>{t('settings.onDeviceAi.storageRowDesc')}</Text>
-                </View>
-                <View style={styles.aiModelsValue}>
-                  <Text style={styles.usageValue}>{formatBytes(aiModelBytes)}</Text>
-                  <MaterialCommunityIcons
-                    name="chevron-right"
-                    size={UI_ICON_SIZE_20}
-                    color={c.onSurfaceVariant}
-                  />
-                </View>
-              </Pressable>
-            )}
           </View>
         </View>
+
+        <AndroidDeviceStorageSection
+          summary={deviceStorage}
+          showAiModels={showAiModels}
+          isClearingCache={isClearingCache}
+          isDeletingOldVaults={isDeletingOldVaults}
+          onClearCache={handleClearCache}
+          onDeleteOldVaults={handleDeleteOldVaults}
+          onOpenAiModels={handleOpenAiModels}
+        />
 
         <AndroidBackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
 
@@ -365,10 +339,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     },
     reclaimLabelWrap: {
       flex: 1,
-      gap: UI_SIZE_4,
-    },
-    aiModelsValue: {
-      ...commonStyles.row,
       gap: UI_SIZE_4,
     },
     reclaimDesc: {

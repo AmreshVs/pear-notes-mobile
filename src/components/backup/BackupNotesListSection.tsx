@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, Text as RNText, View as RNView } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text as RNText, View as RNView } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
 
 import { MotionView } from '@/components/MotionView'
@@ -16,6 +16,7 @@ import {
   UI_ICON_SIZE_16,
   UI_SIZE_12,
   UI_SIZE_14,
+  UI_SIZE_400,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getMediaDisplayName } from '@/lib/backupUtils'
@@ -135,10 +136,10 @@ export function BackupNotesListSection({
 
   return (
     <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.perNoteSection}>
-      <Text style={commonThemedStyles.sectionCamelCase}>
-        {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
-      </Text>
-      {notesStorageInfo.map(renderNoteItem)}
+      <Text style={commonThemedStyles.sectionCamelCase}>{t('storage.perNoteBreakdown')}</Text>
+      <ScrollView style={styles.perNoteList} nestedScrollEnabled showsVerticalScrollIndicator>
+        {notesStorageInfo.map(renderNoteItem)}
+      </ScrollView>
     </MotionView>
   )
 }
@@ -153,6 +154,9 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     perNoteSection: {
       marginTop: UI_SIZE_12,
+    },
+    perNoteList: {
+      maxHeight: UI_SIZE_400,
     },
     noteCard: {
       marginBottom: Space.sm,

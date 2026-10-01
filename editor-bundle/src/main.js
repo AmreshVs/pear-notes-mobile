@@ -456,6 +456,16 @@ const ImageWithSize = Image.extend({
 }).configure({ inline: false, allowBase64: true })
 
 let contentTimer = null
+let lastSentHtml = null
+function resetSentContent(editor) {
+  clearTimeout(contentTimer)
+  lastSentHtml = editor.getHTML()
+}
+function sendContentChange(html, text) {
+  if (html === lastSentHtml) return
+  lastSentHtml = html
+  sendToRN({ type: 'contentChange', html, text })
+}
 // Serializing the document is the expensive half of a content change, so the
 // debounce has to cover it too. Taking getHTML()/getText() up front — once per
 // transaction — makes a burst of small edits (live dictation emits one every
@@ -465,12 +475,12 @@ function scheduleContentChange(editor) {
   clearTimeout(contentTimer)
   contentTimer = setTimeout(() => {
     if (!editor || editor.isDestroyed) return
-    sendToRN({ type: 'contentChange', html: editor.getHTML(), text: editor.getText() })
+    sendContentChange(editor.getHTML(), editor.getText())
   }, 500)
 }
 function flushContentChange(html, text) {
   clearTimeout(contentTimer)
-  sendToRN({ type: 'contentChange', html, text })
+  sendContentChange(html, text)
 }
 
 const CARET_AUTOSCROLL_ENABLED = true
@@ -1483,6 +1493,7 @@ function createEditorSession(html) {
       sendToRN({ type: 'blur' })
     },
   })
+  resetSentContent(editor)
 }
 
 window.editorBridge = {
@@ -1544,7 +1555,8 @@ window.editorBridge = {
 
       case 'loadNote': {
         currentNoteId = msg.noteId
-        if (msg.html != null) editor.commands.setContent(msg.html, false)
+        if (msg.html != null) editor.commands.setContent(msg.html, { emitUpdate: false })
+        resetSentContent(editor)
         // Undo history is per note: the editor is reused across notes, and loading one
         // is itself an undoable step, so undo would otherwise walk back into the note
         // that was open before.
@@ -1571,7 +1583,8 @@ window.editorBridge = {
 
       case 'setContent':
         if (msg.html !== undefined && msg.html !== null) {
-          editor.commands.setContent(msg.html, false)
+          editor.commands.setContent(msg.html, { emitUpdate: false })
+          resetSentContent(editor)
         }
         break
 

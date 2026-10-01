@@ -36,7 +36,6 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 import { confirmCopyFullReport } from '@/lib/debugSnapshot'
 import {
   buildDebugRows,
-  buildTimelineRows,
   buildWriterRows,
   type DebugRow,
   describeDevice,
@@ -138,20 +137,6 @@ export default function DebugScreenAndroid() {
   const renderSection = useCallback(
     (title: string, data: unknown) => {
       const rows = buildDebugRows(data)
-      if (rows.length === 0) return null
-      return (
-        <View key={title} style={styles.section}>
-          <Text style={styles.sectionTitle}>{title}</Text>
-          <View style={styles.card}>{rows.map(renderRow)}</View>
-        </View>
-      )
-    },
-    [renderRow, styles],
-  )
-
-  const renderTimeline = useCallback(
-    (title: string, timeline: unknown) => {
-      const rows = buildTimelineRows(timeline as never)
       if (rows.length === 0) return null
       return (
         <View key={title} style={styles.section}>
@@ -310,8 +295,6 @@ export default function DebugScreenAndroid() {
             {renderSection(t('debug.sections.storage'), snapshot.storage)}
             {renderSection(t('debug.sections.app'), snapshot.app)}
             {renderSection(t('debug.sections.runtime'), snapshot.runtime)}
-            {renderTimeline(t('debug.sections.backendBoot'), snapshot.backendBoot)}
-            {renderTimeline(t('debug.sections.appBoot'), snapshot.appBoot)}
           </>
         )}
       </ScrollView>

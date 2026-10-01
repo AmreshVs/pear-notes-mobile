@@ -10,6 +10,7 @@ import { BackupNotesListSection } from '@/components/backup/BackupNotesListSecti
 import { DownloadsSection } from '@/components/backup/DownloadsSection'
 import { UploadsSection } from '@/components/backup/UploadsSection'
 import { ClearStorageBottomSheet } from '@/components/bottomsheet/ClearStorageAppBottomSheet'
+import { DeviceStorageSection } from '@/components/storage/DeviceStorageSection'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -43,11 +44,12 @@ export default function StorageScreen() {
     totalBlobBytes,
     totalOnDiskBytes,
     isReclaiming,
-    cacheBytes,
+    deviceStorage,
+    isDeletingOldVaults,
+    handleDeleteOldVaults,
     isClearingCache,
     handleClearCache,
     showAiModels,
-    aiModelBytes,
     handleOpenAiModels,
     activeDownloads,
     activeUploads,
@@ -142,52 +144,18 @@ export default function StorageScreen() {
                 </Text>
               </Pressable>
             </RNView>
-            <RNView style={[styles.usageRow, styles.usageRowBorder]}>
-              <RNView style={styles.reclaimLabelWrap}>
-                <Text style={styles.usageLabel}>
-                  {t('storage.cache')} · {formatBytes(cacheBytes)}
-                </Text>
-                <Text style={styles.reclaimDesc}>{t('storage.cacheDesc')}</Text>
-              </RNView>
-              <Pressable
-                onPress={handleClearCache}
-                disabled={isClearingCache}
-                style={({ pressed }) => [
-                  styles.reclaimBtn,
-                  isClearingCache && styles.reclaimBtnDisabled,
-                  pressed && commonStyles.pressed,
-                ]}
-              >
-                <Text style={styles.reclaimBtnText}>
-                  {isClearingCache ? t('storage.clearingCache') : t('storage.clearCache')}
-                </Text>
-              </Pressable>
-            </RNView>
-            {showAiModels && (
-              <Pressable
-                onPress={handleOpenAiModels}
-                style={({ pressed }) => [
-                  styles.usageRow,
-                  styles.usageRowBorder,
-                  pressed && commonStyles.pressed,
-                ]}
-              >
-                <RNView style={styles.reclaimLabelWrap}>
-                  <Text style={styles.usageLabel}>{t('settings.onDeviceAi.storageRow')}</Text>
-                  <Text style={styles.reclaimDesc}>{t('settings.onDeviceAi.storageRowDesc')}</Text>
-                </RNView>
-                <RNView style={commonStyles.settingsRowRight}>
-                  <Text style={styles.usageValue}>{formatBytes(aiModelBytes)}</Text>
-                  <SymbolIcon
-                    name="chevron.forward"
-                    size={UI_ICON_SIZE_16}
-                    color={colors.textMuted}
-                  />
-                </RNView>
-              </Pressable>
-            )}
           </RNView>
         </RNView>
+
+        <DeviceStorageSection
+          summary={deviceStorage}
+          showAiModels={showAiModels}
+          isClearingCache={isClearingCache}
+          isDeletingOldVaults={isDeletingOldVaults}
+          onClearCache={handleClearCache}
+          onDeleteOldVaults={handleDeleteOldVaults}
+          onOpenAiModels={handleOpenAiModels}
+        />
 
         <BackupBreakdownSection buckets={buckets} formatBytes={formatBytes} />
 

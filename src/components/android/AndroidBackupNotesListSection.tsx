@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { FadeInDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -21,6 +21,7 @@ import {
   UI_SIZE_12,
   UI_SIZE_14,
   UI_SIZE_20,
+  UI_SIZE_400,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { getMediaDisplayName, hexWithAlpha } from '@/lib/backupUtils'
@@ -151,9 +152,15 @@ export function AndroidBackupNotesListSection({
   return (
     <MotionView entering={FadeInDown.duration(Durations.slide)} style={styles.perNoteSection}>
       <Text style={md3CommonStyles.settingsSectionCamelCase}>
-        {t('backup.breakdownByType').replace('BY TYPE', 'PER NOTE')}
+        {t('storage.perNoteBreakdown')}
       </Text>
-      {notesStorageInfo.map(renderNoteItem)}
+      <ScrollView
+        style={styles.perNoteList}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator
+      >
+        {notesStorageInfo.map(renderNoteItem)}
+      </ScrollView>
     </MotionView>
   )
 }
@@ -169,6 +176,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
   const styles = StyleSheet.create({
     perNoteSection: {
       marginTop: UI_SIZE_12,
+    },
+    perNoteList: {
+      maxHeight: UI_SIZE_400,
     },
     noteCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
