@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
   Appearance,
+  AppState,
   LogBox,
   Platform,
   StyleSheet,
@@ -76,6 +77,7 @@ import { useLocalAiBridge } from '@/lib/localAi/useLocalAiBridge'
 import {
   getDbEncryptionKey,
   getVaultEntropy,
+  isKeychainLockedError,
   setDbEncryptionKey,
   setVaultEntropy,
 } from '@/lib/secureStore'
@@ -105,6 +107,8 @@ SplashScreen.preventAutoHideAsync()
 
 const storage = WORKLET_STORAGE_PATH
 const MAX_WORKLET_RESTART_ATTEMPTS = 5
+const MAX_KEYCHAIN_RETRY_ATTEMPTS = 5
+const KEYCHAIN_RETRY_DELAY_MS = 1000
 const READY_SLOW_LOG_MS = 30_000
 const ALERTED_VAULT_ACTIONS: (string | null)[] = ['move', 'switch']
 
@@ -181,6 +185,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const openBackupAfterReadyRef = useRef(false)
   const savedEncryptionKeyRef = useRef<string | null>(null)
   const workletRestartAttemptsRef = useRef(0)
+  const keychainRetryAttemptsRef = useRef(0)
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const vaultEnteredAt = useSelector(getVaultEnteredAt)
@@ -257,6 +262,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       appBoot.mark('backendApi.ready resolved')
       log.info('[boot] backend ready in ' + (Date.now() - readyStartedAt) + 'ms')
       workletRestartAttemptsRef.current = 0
+      keychainRetryAttemptsRef.current = 0
       loadHapticsPreference()
       loadAndroidColorTheme()
       getBackgroundSyncMode().then(applyBackgroundSyncMode)
@@ -265,6 +271,23 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       hasInitializedBackend = true
       setLocalDeviceName(getLocalDeviceName())
     } catch (e) {
+      if (
+        isKeychainLockedError(e) &&
+        keychainRetryAttemptsRef.current < MAX_KEYCHAIN_RETRY_ATTEMPTS
+      ) {
+        keychainRetryAttemptsRef.current += 1
+        log.warn('[boot] keychain locked, retry ' + keychainRetryAttemptsRef.current)
+        if (AppState.currentState === 'active') {
+          setTimeout(initWorklet, KEYCHAIN_RETRY_DELAY_MS)
+        } else {
+          const sub = AppState.addEventListener('change', (state) => {
+            if (state !== 'active') return
+            sub.remove()
+            initWorklet()
+          })
+        }
+        return
+      }
       log.error('[boot] initWorklet failed', e)
       setFatalError(e instanceof Error ? e.message : t('error.backendFailed'))
     }
