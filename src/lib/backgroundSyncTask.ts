@@ -157,12 +157,15 @@ async function coldStartWorklet(): Promise<any | null> {
   log.info(BACKGROUND_SYNC_LOG_PREFIX + ' cold start requested')
   try {
     const worklet = await startBackendWorkletForBackgroundTask()
+    const woke = !!worklet && wakeActiveWorklet(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
     log.info(
       BACKGROUND_SYNC_LOG_PREFIX +
         ' cold start finished in ' +
         (Date.now() - startedAt) +
         'ms, worklet=' +
-        !!worklet,
+        !!worklet +
+        ' woke=' +
+        woke,
     )
     return worklet
   } catch (err) {

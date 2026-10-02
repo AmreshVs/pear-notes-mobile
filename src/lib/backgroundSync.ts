@@ -6,6 +6,7 @@ export const BACKGROUND_SYNC_MODE_KEY = 'backgroundSyncMode'
 const DEFAULT_MODE: BackgroundSyncMode = 'off'
 
 let cachedMode: BackgroundSyncMode = DEFAULT_MODE
+let localChanges = 0
 
 type ModeListener = (mode: BackgroundSyncMode) => void
 const listeners = new Set<ModeListener>()
@@ -28,8 +29,10 @@ export function getCachedBackgroundSyncMode(): BackgroundSyncMode {
 }
 
 export async function getBackgroundSyncMode(): Promise<BackgroundSyncMode> {
+  const changesBeforeRead = localChanges
   try {
     const value = await backendApi.getPreference({ key: BACKGROUND_SYNC_MODE_KEY })
+    if (localChanges !== changesBeforeRead) return cachedMode
     publishMode(
       value === 'off' || value === 'periodic' || value === 'always-on' ? value : DEFAULT_MODE,
     )
@@ -40,6 +43,7 @@ export async function getBackgroundSyncMode(): Promise<BackgroundSyncMode> {
 }
 
 export async function setBackgroundSyncMode(mode: BackgroundSyncMode): Promise<void> {
+  localChanges += 1
   publishMode(mode)
   try {
     await backendApi.updatePreference({ key: BACKGROUND_SYNC_MODE_KEY, value: mode })

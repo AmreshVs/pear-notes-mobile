@@ -87,7 +87,8 @@ export const applyEditsToText = (text: string, edits: NoteTextEdit[]) =>
 export const getAskHistory = (turns: AskTurnView[]) =>
   getCoreAskHistory(turns) as { question: string; reply: string }[]
 
-export const hasDroppedTurns = (turns: AskTurnView[]) => hasDroppedAskTurns(turns) as boolean
+export const hasDroppedTurns = (turns: AskTurnView[], note: string) =>
+  hasDroppedAskTurns(turns, note) as boolean
 
 export const getAskScopeInfo = (scope: AskScope, text: string) =>
   getCoreAskScopeInfo(scope, text) as AskScopeInfo

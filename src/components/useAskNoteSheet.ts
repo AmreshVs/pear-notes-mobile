@@ -71,7 +71,7 @@ export function useAskNoteSheet({
   const busy = turns.some((turn) => turn.status === 'working')
   const sourceText = scope === 'selection' ? texts.selection : texts.note
   const scopeInfo = useMemo(() => getAskScopeInfo(scope, sourceText), [scope, sourceText])
-  const droppedTurns = useMemo(() => hasDroppedTurns(turns), [turns])
+  const droppedTurns = useMemo(() => hasDroppedTurns(turns, sourceText), [turns, sourceText])
   const emptySource = sourceText.trim().length === 0
   const canSend = question.trim().length > 0 && !busy && !emptySource
 

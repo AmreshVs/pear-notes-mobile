@@ -1,18 +1,7 @@
 import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'react-native'
 import { File, Paths } from 'expo-file-system'
 
-import {
-  ASK_RESPONSE_FORMAT,
-  buildAskFullTextMessages,
-  buildAskMessages,
-  extractPartialAnswer,
-  getAskFullTextParams,
-  getAskGenerationParams,
-  pickAskReply,
-  shouldRetryAskForEdits,
-  shouldTryAskFullText,
-  toAskFullTextReply,
-} from '@pear-notes/core/store/services/localAiAsk.js'
+import { runAsk } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
   getFeatureRegistryNames,
   LOCAL_AI_ERROR,
@@ -764,30 +753,14 @@ async function askAboutNoteNow(
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
   const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
-  const ask = (forceEdits: boolean) =>
-    runCompletion(
-      sdk,
-      {
-        modelId,
-        history: buildAskMessages({ note, turns, question, forceEdits }).messages,
-        responseFormat: ASK_RESPONSE_FORMAT,
-        generationParams: getAskGenerationParams(note),
-      },
-      (partial) => {
-        const answer = extractPartialAnswer(partial)
-        if (answer) onProgress({ type: WORK_EVENT.TEXT, text: answer })
-      },
-    )
-  const first = await ask(false)
-  if (!shouldRetryAskForEdits(note, question, first)) return first
-  const picked = pickAskReply(note, first, await ask(true), question) as string
-  if (!shouldTryAskFullText(note, question, picked)) return picked
-  const fullText = await runCompletion(sdk, {
-    modelId,
-    history: buildAskFullTextMessages({ note, question }),
-    generationParams: getAskFullTextParams(note),
+  return runAsk({
+    note,
+    turns,
+    question,
+    complete: (params: CompletionInput, onText?: (text: string) => void) =>
+      runCompletion(sdk, { modelId, ...params }, onText),
+    onText: (answer: string) => onProgress({ type: WORK_EVENT.TEXT, text: answer }),
   })
-  return (toAskFullTextReply(note, question, fullText) as string | null) ?? picked
 }
 
 export const askAboutNote = (
