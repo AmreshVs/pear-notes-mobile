@@ -191,7 +191,81 @@ lowlight.register('json', langJSON)
 // on-screen keyboard every time a box is ticked. On iOS the caret is placed
 // straight from the touch sequence, so cancelling the synthesised mousedown is
 // not enough - the tap has to be answered on touchend and the document updated
-// by hand.
+// by hand. Touches are routed by position rather than target: a finger that
+// lands beside the box, in the row's gutter, would otherwise hit the text and
+// raise the keyboard.
+const TASK_ROW_VERTICAL_SLACK = 10
+const taskToggles = new WeakMap()
+let lastTaskTouchToggle = 0
+let pendingTaskTap = null
+
+function taskLabelAt(x, y) {
+  const root = editor?.view?.dom
+  if (!root || !editor.isEditable) return null
+  if (x < root.getBoundingClientRect().left) return null
+  let nearest = null
+  let nearestDistance = Infinity
+  for (const label of root.querySelectorAll('ul[data-type="taskList"] > li > label')) {
+    const box = label.getBoundingClientRect()
+    const textLeft = label.nextElementSibling?.getBoundingClientRect().left ?? box.right
+    if (x >= textLeft) continue
+    const distance = Math.abs(y - (box.top + box.height / 2))
+    if (distance > box.height / 2 + TASK_ROW_VERTICAL_SLACK || distance >= nearestDistance) continue
+    nearest = label
+    nearestDistance = distance
+  }
+  return nearest
+}
+
+document.addEventListener(
+  'touchstart',
+  (e) => {
+    pendingTaskTap = null
+    if (e.touches.length !== 1) return
+    const { clientX, clientY } = e.touches[0]
+    const label = taskLabelAt(clientX, clientY)
+    if (label) pendingTaskTap = { label, x: clientX, y: clientY, moved: false }
+  },
+  { passive: true, capture: true },
+)
+
+document.addEventListener(
+  'touchmove',
+  (e) => {
+    if (!pendingTaskTap) return
+    const { clientX, clientY } = e.touches[0]
+    if (Math.hypot(clientX - pendingTaskTap.x, clientY - pendingTaskTap.y) > TAP_SLOP) {
+      pendingTaskTap.moved = true
+    }
+  },
+  { passive: true, capture: true },
+)
+
+// Cancelling touchend suppresses the synthetic click WebKit would send next,
+// and with it the caret placement that raises the keyboard.
+document.addEventListener(
+  'touchend',
+  (e) => {
+    const tap = pendingTaskTap
+    pendingTaskTap = null
+    if (!tap) return
+    e.preventDefault()
+    e.stopPropagation()
+    if (tap.moved) return
+    lastTaskTouchToggle = Date.now()
+    taskToggles.get(tap.label)?.()
+  },
+  { passive: false, capture: true },
+)
+
+document.addEventListener(
+  'touchcancel',
+  () => {
+    pendingTaskTap = null
+  },
+  { capture: true },
+)
+
 const TaskItemNoFocusSteal = TaskItem.extend({
   addNodeView() {
     const renderTaskItem = this.parent?.()
@@ -226,49 +300,7 @@ const TaskItemNoFocusSteal = TaskItem.extend({
         if (!taskItem) return
         applyChecked(!taskItem.attrs.checked)
       }
-
-      let touchStartX = 0
-      let touchStartY = 0
-      let touchMoved = false
-      let lastTouchToggle = 0
-
-      label.addEventListener(
-        'touchstart',
-        (e) => {
-          touchMoved = false
-          touchStartX = e.touches[0].clientX
-          touchStartY = e.touches[0].clientY
-        },
-        { passive: true },
-      )
-
-      label.addEventListener(
-        'touchmove',
-        (e) => {
-          if (Math.hypot(e.touches[0].clientX - touchStartX, e.touches[0].clientY - touchStartY) > TAP_SLOP) {
-            touchMoved = true
-          }
-        },
-        { passive: true },
-      )
-
-      // Cancelling touchend suppresses the synthetic click WebKit would send
-      // next, and with it the caret placement that raises the keyboard.
-      label.addEventListener(
-        'touchend',
-        (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          if (touchMoved) return
-          lastTouchToggle = Date.now()
-          toggle()
-        },
-        { passive: false },
-      )
-
-      label.addEventListener('touchcancel', () => {
-        touchMoved = true
-      })
+      taskToggles.set(label, toggle)
 
       // Pointer path, for a trackpad or a mouse in the dev preview.
       label.addEventListener('mousedown', (e) => {
@@ -281,7 +313,7 @@ const TaskItemNoFocusSteal = TaskItem.extend({
         (e) => {
           e.preventDefault()
           e.stopPropagation()
-          if (Date.now() - lastTouchToggle < SYNTHETIC_CLICK_WINDOW) return
+          if (Date.now() - lastTaskTouchToggle < SYNTHETIC_CLICK_WINDOW) return
           toggle()
         },
         true,
