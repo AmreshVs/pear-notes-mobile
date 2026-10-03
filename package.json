@@ -1,7 +1,7 @@
 {
   "name": "pear-notes",
-  "version": "1.0.0",
-  "buildNumber": 47,
+  "version": "1.1.0",
+  "buildNumber": 1,
   "private": true,
   "main": "index.js",
   "scripts": {
@@ -124,7 +124,7 @@
     "reactotron-react-native": "^5.3.1",
     "typescript": "~6.0.3"
   },
-    "expo": {
+  "expo": {
     "autolinking": {
       "buildFromSource": [
         "expo-ui"
