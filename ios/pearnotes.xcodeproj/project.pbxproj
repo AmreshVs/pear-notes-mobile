@@ -44,7 +44,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		9A1E5C3B2D7F4A6E8B0C1D2E /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		0E33A24F783782156FD83335 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-pearnotes/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* Pearnotes.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pearnotes.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = pearnotes/Images.xcassets; sourceTree = "<group>"; };
@@ -53,6 +52,7 @@
 		58E94FA66FC710E6C25923E2 /* Pods-pearnotes.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-pearnotes.release.xcconfig"; path = "Target Support Files/Pods-pearnotes/Pods-pearnotes.release.xcconfig"; sourceTree = "<group>"; };
 		8BE9E0ABC19D4987BCBA9346 /* PearNotesShareExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text.plist.entitlements; name = PearNotesShareExtension.entitlements; path = PearNotesShareExtension.entitlements; sourceTree = "<group>"; };
 		937D81F116D3496D9052CA20 /* expo.icon */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = expo.icon; path = pearnotes/expo.icon; sourceTree = "<group>"; };
+		9A1E5C3B2D7F4A6E8B0C1D2E /* Version.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Version.xcconfig; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = pearnotes/SplashScreen.storyboard; sourceTree = "<group>"; };
 		AD6883E3699B476B8DEF15C2 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = text.plist.xml; name = Info.plist; path = Info.plist; sourceTree = "<group>"; };
 		B29E0CD3379DCBF7050756CC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = pearnotes/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };

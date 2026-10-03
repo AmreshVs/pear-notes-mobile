@@ -2109,7 +2109,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - "react-native-bare-kit (0.15.5+5388be)":
+  - "react-native-bare-kit (0.15.5+d5eb3c)":
     - boost
     - DoubleConversion
     - fast_float
@@ -3793,7 +3793,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 3cf4ae68a4d69ca69de94385d423d57785907eb7
   React-microtasksnativemodule: 663a8165cfe10e4eb749796a53b3b8c68631b00c
   React-mutationobservernativemodule: 4f7e4c18735cfbb0f81eada4f34aa527697e8704
-  react-native-bare-kit: afec18bb4487d60b5a029f4af1ead27e925f718a
+  react-native-bare-kit: 45434a47350514832432d24a62b25b42820ff37f
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
   react-native-slider: 4faf1b2266c73f1afb7b30cc6ebb3df238a37c0b
   react-native-vector-icons-material-design-icons: a4b6ec02814573c09203a725ee3767a7e8d5eb77
@@ -3847,6 +3847,6 @@ SPEC CHECKSUMS:
   Yoga: 2fe23f676416a73cb4be2c15929e352c9395b9cf
   ZXingObjC: 8898711ab495761b2dbbdec76d90164a6d7e14c5
 
-PODFILE CHECKSUM: b9eb7222535e4ea6aaa04f691d7cb6d13f34a506
+PODFILE CHECKSUM: 07c603f7c609d51e76bf2588e6676754e0165f0e
 
 COCOAPODS: 1.16.2
