@@ -2,7 +2,6 @@
   "expo": {
     "name": "Pear Notes",
     "slug": "pear-notes",
-    "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "pearnotes",
@@ -18,8 +17,7 @@
         "NSPhotoLibraryUsageDescription": "Allow Pear Notes to access your photo library so you can attach images and videos to your notes.",
         "NSPhotoLibraryAddUsageDescription": "Allow Pear Notes to save images to your photo library.",
         "ITSAppUsesNonExemptEncryption": false
-      },
-      "buildNumber": "47"
+      }
     },
     "android": {
       "icon": "./assets/images/icon.png",
@@ -38,8 +36,7 @@
         "android.permission.WAKE_LOCK",
         "android.permission.USE_BIOMETRIC",
         "android.permission.USE_FINGERPRINT"
-      ],
-      "versionCode": 47
+      ]
     },
     "web": {
       "bundler": "metro",

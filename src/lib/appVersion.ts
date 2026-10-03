@@ -19,5 +19,5 @@ export function getAppBuildNumber(): string | null {
 export function getAppVersionLabel(): string {
   const build = getAppBuildNumber()
   const version = getAppVersion()
-  return build ? `v${version} (${build})` : `v${version}`
+  return build ? `v${version} (${Number(build) % 100})` : `v${version}`
 }

@@ -1,22 +1,12 @@
 const fs = require('fs')
 const path = require('path')
+const { storeBuild } = require('./store-build')
 
 const ROOT = path.resolve(__dirname, '..')
-const APP_JSON = path.join(ROOT, 'app.json')
 const PACKAGE_JSON = path.join(ROOT, 'package.json')
-const BUILD_GRADLE = path.join(ROOT, 'android', 'app', 'build.gradle')
-const PBXPROJ = path.join(ROOT, 'ios', 'pearnotes.xcodeproj', 'project.pbxproj')
-const INFO_PLIST = path.join(ROOT, 'ios', 'pearnotes', 'Info.plist')
+const XCCONFIG = path.join(ROOT, 'ios', 'Version.xcconfig')
 
 const SEMVER = /^\d+\.\d+\.\d+$/
-
-function read(file) {
-  return fs.readFileSync(file, 'utf8')
-}
-
-function write(file, contents) {
-  fs.writeFileSync(file, contents)
-}
 
 function fail(message) {
   console.error(`\n  set-version: ${message}\n`)
@@ -37,100 +27,47 @@ function parseArgs(argv) {
   return args
 }
 
-function readCurrentBuildNumber(gradle) {
-  const match = gradle.match(/versionCode\s+(\d+)/)
-  return match ? Number(match[1]) : 0
+function releaseLine(version) {
+  return version.split('.').slice(0, 2).join('.')
 }
 
-function applyToGradle(version, buildNumber) {
-  const original = read(BUILD_GRADLE)
-  const updated = original
-    .replace(/versionCode\s+\d+/, `versionCode ${buildNumber}`)
-    .replace(/versionName\s+"[^"]*"/, `versionName "${version}"`)
-
-  if (!/versionCode\s+\d+/.test(original) || !/versionName\s+"[^"]*"/.test(original)) {
-    fail('could not find versionCode/versionName in android/app/build.gradle')
-  }
-
-  write(BUILD_GRADLE, updated)
-}
-
-function applyToXcodeProject(version, buildNumber) {
-  const original = read(PBXPROJ)
-
-  if (!original.includes('MARKETING_VERSION')) {
-    fail('could not find MARKETING_VERSION in project.pbxproj')
-  }
-
-  const updated = original
-    .replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${version};`)
-    .replace(/CURRENT_PROJECT_VERSION = [^;]+;/g, `CURRENT_PROJECT_VERSION = ${buildNumber};`)
-
-  write(PBXPROJ, updated)
-}
-
-function applyToInfoPlist(version, buildNumber) {
-  const original = read(INFO_PLIST)
-
-  const updated = original
-    .replace(
-      /(<key>CFBundleShortVersionString<\/key>\s*\n\s*<string>)[^<]*(<\/string>)/,
-      `$1${version}$2`,
-    )
-    .replace(/(<key>CFBundleVersion<\/key>\s*\n\s*<string>)[^<]*(<\/string>)/, `$1${buildNumber}$2`)
-
-  if (updated === original && !original.includes(`<string>${version}</string>`)) {
-    fail('could not update CFBundleShortVersionString/CFBundleVersion in Info.plist')
-  }
-
-  write(INFO_PLIST, updated)
-}
-
-function applyToJson(file, version, buildNumber) {
-  const contents = read(file)
-  const parsed = JSON.parse(contents)
-  const indent = contents.match(/\n(\s+)"/)?.[1]?.length ?? 2
-
-  if (file === APP_JSON) {
-    parsed.expo.version = version
-    if (parsed.expo.ios) parsed.expo.ios.buildNumber = String(buildNumber)
-    if (parsed.expo.android) parsed.expo.android.versionCode = Number(buildNumber)
-  } else {
-    parsed.version = version
-  }
-
-  write(file, `${JSON.stringify(parsed, null, indent)}\n`)
+function xcconfigFor(version, buildNumber) {
+  return [
+    '// Generated from package.json by scripts/set-version.js - do not edit.',
+    `MARKETING_VERSION = ${version}`,
+    `CURRENT_PROJECT_VERSION = ${storeBuild(version, buildNumber)}`,
+    '',
+  ].join('\n')
 }
 
 function main() {
   const args = parseArgs(process.argv.slice(2))
-  const appJson = JSON.parse(read(APP_JSON))
-  const gradle = read(BUILD_GRADLE)
+  const contents = fs.readFileSync(PACKAGE_JSON, 'utf8')
+  const pkg = JSON.parse(contents)
 
-  const version = args.version ?? appJson.expo.version
-  const currentBuild = readCurrentBuildNumber(gradle)
-
+  const version = args.version ?? pkg.version
   if (!SEMVER.test(version)) {
     fail(`"${version}" is not a valid semver version (expected MAJOR.MINOR.PATCH)`)
   }
 
-  let buildNumber = currentBuild
+  const currentBuild = Number(pkg.buildNumber ?? 0)
+  let buildNumber = releaseLine(version) === releaseLine(pkg.version) ? currentBuild : 1
   if (args.build !== null && !Number.isNaN(args.build)) buildNumber = args.build
-  else if (args.bump) buildNumber = currentBuild + 1
+  else if (args.bump) buildNumber += 1
 
-  if (!Number.isInteger(buildNumber) || buildNumber < 1) {
-    fail(`build number must be a positive integer, got "${buildNumber}"`)
+  if (!Number.isInteger(buildNumber) || buildNumber < 1 || buildNumber > 99) {
+    fail(`build number must be between 1 and 99, got "${buildNumber}"`)
   }
 
-  applyToJson(APP_JSON, version, buildNumber)
-  applyToJson(PACKAGE_JSON, version, buildNumber)
-  applyToGradle(version, buildNumber)
-  applyToXcodeProject(version, buildNumber)
-  applyToInfoPlist(version, buildNumber)
+  pkg.version = version
+  pkg.buildNumber = buildNumber
+  const indent = contents.match(/\n(\s+)"/)?.[1]?.length ?? 2
+  fs.writeFileSync(PACKAGE_JSON, `${JSON.stringify(pkg, null, indent)}\n`)
+  fs.writeFileSync(XCCONFIG, xcconfigFor(version, buildNumber))
 
   console.log(`  version   ${version}`)
-  console.log(`  build     ${buildNumber}${args.bump ? ` (bumped from ${currentBuild})` : ''}`)
-  console.log('  synced    app.json, package.json, build.gradle, project.pbxproj, Info.plist')
+  console.log(`  build     ${buildNumber} (store build ${storeBuild(version, buildNumber)})`)
+  console.log('  synced    package.json, ios/Version.xcconfig')
 }
 
 main()

@@ -1,20 +1,9 @@
 {
   "name": "pear-notes",
-  "main": "index.js",
-  "expo": {
-    "autolinking": {
-      "buildFromSource": [
-        "expo-ui"
-      ]
-    }
-  },
   "version": "1.0.0",
-  "standard": {
-    "globals": [
-      "BareKit"
-    ]
-  },
+  "buildNumber": 47,
   "private": true,
+  "main": "index.js",
   "scripts": {
     "setup": "node scripts/setup.mjs",
     "start:clean": "watchman watch-del $PWD; watchman watch-project $PWD && expo start --dev-client --port 8099 --clear",
@@ -134,5 +123,17 @@
     "react-test-renderer": "19.1.0",
     "reactotron-react-native": "^5.3.1",
     "typescript": "~6.0.3"
+  },
+    "expo": {
+    "autolinking": {
+      "buildFromSource": [
+        "expo-ui"
+      ]
+    }
+  },
+  "standard": {
+    "globals": [
+      "BareKit"
+    ]
   }
 }

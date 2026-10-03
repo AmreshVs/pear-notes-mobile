@@ -6,6 +6,7 @@ const asc = require('./ascCredentials')
 const play = require('./playCredentials')
 const playUpload = require('./playUpload')
 const { formatDuration, startHeartbeat } = require('./progress')
+const { storeBuild } = require('./store-build')
 
 const ROOT = path.resolve(__dirname, '..')
 const ARTIFACT_DIR = path.join(ROOT, 'build')
@@ -26,7 +27,7 @@ function parseArgs(argv) {
     submitOnly: false,
     viaEas: false,
     cloud: false,
-    bump: true,
+    bump: false,
     commit: true,
     version: null,
   }
@@ -37,7 +38,7 @@ function parseArgs(argv) {
     else if (arg === '--profile') args.profile = argv[++i]
     else if (arg === '--version') args.version = argv[++i]
     else if (arg === '--no-submit') args.skipSubmit = true
-    else if (arg === '--no-bump') args.bump = false
+    else if (arg === '--bump') args.bump = true
     else if (arg === '--no-commit') args.commit = false
     else if (arg === '--skip-preflight') args.skipPreflight = true
     else if (arg === '--submit-only') args.submitOnly = true
@@ -116,14 +117,17 @@ function resolvePlatforms(platform) {
   return [platform]
 }
 
+function readPackage() {
+  return JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+}
+
 function readVersion() {
-  const appJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'app.json'), 'utf8'))
-  return appJson.expo.version
+  return readPackage().version
 }
 
 function readBuildNumber() {
-  const gradle = fs.readFileSync(path.join(ROOT, 'android', 'app', 'build.gradle'), 'utf8')
-  return Number(gradle.match(/versionCode\s+(\d+)/)?.[1] ?? 0)
+  const pkg = readPackage()
+  return storeBuild(pkg.version, pkg.buildNumber)
 }
 
 function readSubmitProfile(profile) {
@@ -159,7 +163,6 @@ async function prepareSources() {
 }
 
 async function applyVersion({ bump, version }) {
-  if (!bump && !version) return
   const flags = [version ? `--version ${version}` : '', bump ? '--bump' : '']
     .filter(Boolean)
     .join(' ')

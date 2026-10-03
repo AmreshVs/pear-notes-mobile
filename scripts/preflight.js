@@ -4,6 +4,7 @@ const path = require('path')
 
 const play = require('./playCredentials')
 const { compareInstalledCore } = require('./coreInstall')
+const { storeBuild } = require('./store-build')
 
 const ROOT = path.resolve(__dirname, '..')
 const IS_CI = process.env.CI === 'true'
@@ -366,27 +367,20 @@ function checkReleaseSigning() {
 }
 
 function checkVersionConsistency() {
-  const appJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'app.json'), 'utf8'))
-  const gradle = fs.readFileSync(path.join(ROOT, 'android', 'app', 'build.gradle'), 'utf8')
-  const pbxproj = fs.readFileSync(
-    path.join(ROOT, 'ios', 'pearnotes.xcodeproj', 'project.pbxproj'),
-    'utf8',
-  )
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
+  const xcconfig = fs.readFileSync(path.join(ROOT, 'ios', 'Version.xcconfig'), 'utf8')
 
-  const appVersion = appJson.expo.version
-  const gradleVersion = gradle.match(/versionName\s+"([^"]+)"/)?.[1]
-  const marketingVersion = pbxproj.match(/MARKETING_VERSION = ([^;]+);/)?.[1]
+  const build = storeBuild(pkg.version, pkg.buildNumber)
+  const marketingVersion = xcconfig.match(/MARKETING_VERSION = (\S+)/)?.[1]
+  const projectVersion = Number(xcconfig.match(/CURRENT_PROJECT_VERSION = (\d+)/)?.[1])
 
-  const gradleCode = gradle.match(/versionCode\s+(\d+)/)?.[1]
-  const projectVersion = pbxproj.match(/CURRENT_PROJECT_VERSION = ([^;]+);/)?.[1]
-
-  if (appVersion !== gradleVersion || appVersion !== marketingVersion) {
+  if (marketingVersion !== pkg.version || projectVersion !== build) {
     return fail(
       'version',
-      `mismatch: app.json=${appVersion} gradle=${gradleVersion} xcode=${marketingVersion} - run npm run version:set`,
+      `ios/Version.xcconfig (${marketingVersion}, ${projectVersion}) does not match package.json (${pkg.version}, ${build}) - run npm run version:set`,
     )
   }
-  pass('version', `${appVersion} (android build ${gradleCode}, ios build ${projectVersion})`)
+  pass('version', `${pkg.version} build ${pkg.buildNumber} (store build ${build})`)
 }
 
 function escapeRegExp(value) {
