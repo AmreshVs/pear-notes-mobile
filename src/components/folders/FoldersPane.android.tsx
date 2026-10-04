@@ -325,6 +325,37 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
     [handleConfirmDelete, t],
   )
 
+  const headerActions = (
+    <View style={styles.headerActions}>
+      {embedded && (
+        <Pressable
+          onPress={handleCreateFolder}
+          android_ripple={screenRippleBorderless}
+          style={styles.gearBtn}
+          hitSlop={UI_SIZE_8}
+          accessibilityRole="button"
+          accessibilityLabel={t('folders.a11y.newFolder')}
+        >
+          <MaterialCommunityIcons
+            name="folder-plus-outline"
+            size={UI_ICON_SIZE_24}
+            color={c.onSurface}
+          />
+        </Pressable>
+      )}
+      <Pressable
+        onPress={handleOpenSettings}
+        android_ripple={screenRippleBorderless}
+        style={styles.gearBtn}
+        hitSlop={UI_SIZE_8}
+        accessibilityRole="button"
+        accessibilityLabel={t('folders.a11y.openSettings')}
+      >
+        <MaterialCommunityIcons name="cog-outline" size={UI_ICON_SIZE_24} color={c.onSurface} />
+      </Pressable>
+    </View>
+  )
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
@@ -337,39 +368,8 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <View>
-            <VaultTitle title={t('folders.title')} titleStyle={styles.pageTitle} />
-          </View>
-          <View style={styles.headerActions}>
-            {embedded && (
-              <Pressable
-                onPress={handleCreateFolder}
-                android_ripple={screenRippleBorderless}
-                style={styles.gearBtn}
-                hitSlop={UI_SIZE_8}
-                accessibilityRole="button"
-                accessibilityLabel={t('folders.a11y.newFolder')}
-              >
-                <MaterialCommunityIcons
-                  name="folder-plus-outline"
-                  size={UI_ICON_SIZE_24}
-                  color={c.onSurface}
-                />
-              </Pressable>
-            )}
-            <Pressable
-              onPress={handleOpenSettings}
-              android_ripple={screenRippleBorderless}
-              style={styles.gearBtn}
-              hitSlop={UI_SIZE_8}
-            >
-              <MaterialCommunityIcons
-                name="cog-outline"
-                size={UI_ICON_SIZE_24}
-                color={c.onSurface}
-              />
-            </Pressable>
-          </View>
+          <VaultTitle title={t('folders.title')} titleStyle={styles.pageTitle} />
+          {headerActions}
         </View>
 
         <View style={styles.searchWrap}>

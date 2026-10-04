@@ -51,6 +51,7 @@ import { AppUpdateBanner } from '@/components/AppUpdateBanner'
 import { AppUpdateRequiredOverlay } from '@/components/AppUpdateRequiredOverlay'
 import { BackupProgressBanner } from '@/components/backup/BackupProgressBanner'
 import { ErrorScreen } from '@/components/ErrorScreen'
+import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
@@ -531,6 +532,7 @@ function RootLayoutNav() {
 
               <PairingOverlay />
               <VaultChangeOverlay />
+              <ForceVaultRemovalPrompt />
               <LockUnavailableModal />
               <NoteUnlockPasswordModal />
               <BackupProgressBanner />

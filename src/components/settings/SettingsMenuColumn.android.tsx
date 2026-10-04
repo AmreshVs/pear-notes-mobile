@@ -6,6 +6,7 @@ import { router, usePathname } from 'expo-router'
 
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { VaultSettingsCard } from '@/components/settings/VaultSettingsCard'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
   commonStyles,
@@ -17,7 +18,7 @@ import {
   UI_SIZE_56,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { type SettingsSection, useSettingsSections } from '@/hooks/useSettingsSections'
+import { type SettingsSection, useSettingsSectionGroups } from '@/hooks/useSettingsSections'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
@@ -27,7 +28,7 @@ export function SettingsMenuColumn() {
   const md3 = useMD3Theme()
   const c = md3.colors
   const pathname = usePathname()
-  const sections = useSettingsSections()
+  const sectionGroups = useSettingsSectionGroups()
 
   const handleClose = useCallback(() => {
     router.dismissAll()
@@ -45,6 +46,16 @@ export function SettingsMenuColumn() {
     [pathname],
   )
 
+  const renderGroup = useCallback(
+    (group: SettingsSection[], index: number) => (
+      <View key={group[0].group}>
+        {index > 0 && <View style={styles.groupDivider} />}
+        {group.map(renderSection)}
+      </View>
+    ),
+    [renderSection, styles.groupDivider],
+  )
+
   return (
     <View style={styles.container}>
       <AndroidSettingsAppBar
@@ -54,7 +65,10 @@ export function SettingsMenuColumn() {
         backTint={c.onSurface}
       />
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {sections.map(renderSection)}
+        <View style={styles.vaultCard}>
+          <VaultSettingsCard />
+        </View>
+        {sectionGroups.map(renderGroup)}
       </ScrollView>
     </View>
   )
@@ -131,6 +145,15 @@ const useStyles = createThemedStylesheetWithHooks(
       },
       rowActive: {
         backgroundColor: c.secondaryContainer,
+      },
+      vaultCard: {
+        paddingHorizontal: Space.sm,
+      },
+      groupDivider: {
+        height: StyleSheet.hairlineWidth,
+        marginVertical: Space.sm,
+        marginHorizontal: Space.base,
+        backgroundColor: hexWithAlpha(c.onSurface, 0.12),
       },
       iconWrap: {
         ...commonStyles.centered,

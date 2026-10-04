@@ -22,32 +22,28 @@ export default function JoinVaultScreen() {
   const { t } = useTranslation()
   const styles = useStyles()
   const colors = useColors()
-  const { vaultName, setVaultName, code, setCode, showCodeHint, canJoin, join, scanner } =
-    useJoinVaultScreen()
+  const {
+    vaultName,
+    setVaultName,
+    code,
+    setCode,
+    showCodeHint,
+    isDeviceLink,
+    nameFromInvite,
+    canJoin,
+    join,
+    scanner,
+  } = useJoinVaultScreen()
 
   return (
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
+      automaticallyAdjustKeyboardInsets
       contentContainerStyle={styles.scroll}
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
       <Text style={styles.description}>{t('vaults.join.screenDesc')}</Text>
-
-      <RNView style={styles.section}>
-        <Text style={styles.label}>{t('vaults.nameLabel')}</Text>
-        <RNView style={styles.inputRow}>
-          <TextInput
-            value={vaultName}
-            onChangeText={setVaultName}
-            maxLength={VAULT_NAME_MAX_LENGTH}
-            placeholder={t('vaults.namePlaceholder')}
-            placeholderTextColor={colors.textMuted}
-            accessibilityLabel={t('vaults.nameLabel')}
-            style={styles.input}
-          />
-        </RNView>
-      </RNView>
 
       <RNView style={styles.section}>
         <RNView style={styles.labelRow}>
@@ -78,7 +74,7 @@ export default function JoinVaultScreen() {
             value={code}
             onChangeText={setCode}
             onSubmitEditing={join}
-            placeholder={t('sync.paste.placeholder')}
+            placeholder={t('vaults.join.linkPlaceholder')}
             placeholderTextColor={colors.textMuted}
             accessibilityLabel={t('vaults.join.codeLabel')}
             autoCapitalize="none"
@@ -89,10 +85,28 @@ export default function JoinVaultScreen() {
         {!scanner.scannerVisible && !!scanner.scanError && (
           <Text style={styles.error}>{t(scanner.scanError)}</Text>
         )}
+        {!scanner.scanError && isDeviceLink && (
+          <Text style={styles.error}>{t('vaults.join.deviceLinkError')}</Text>
+        )}
         {!scanner.scanError && showCodeHint && (
           <Text style={styles.hint}>{t('sync.paste.hintInvalid')}</Text>
         )}
-        <Text style={styles.hint}>{t('vaults.join.hint')}</Text>
+      </RNView>
+
+      <RNView style={styles.section}>
+        <Text style={styles.label}>{t('vaults.nameLabel')}</Text>
+        <RNView style={styles.inputRow}>
+          <TextInput
+            value={vaultName}
+            onChangeText={setVaultName}
+            maxLength={VAULT_NAME_MAX_LENGTH}
+            placeholder={t('vaults.namePlaceholder')}
+            placeholderTextColor={colors.textMuted}
+            accessibilityLabel={t('vaults.nameLabel')}
+            style={styles.input}
+          />
+        </RNView>
+        {nameFromInvite && <Text style={styles.hint}>{t('vaults.join.nameFromInvite')}</Text>}
       </RNView>
 
       <Pressable
@@ -107,6 +121,8 @@ export default function JoinVaultScreen() {
       >
         <Text style={styles.joinBtnText}>{t('vaults.join.joinBtn')}</Text>
       </Pressable>
+
+      <Text style={styles.hint}>{t('vaults.join.hint')}</Text>
 
       <SyncScannerModal
         visible={scanner.scannerVisible}

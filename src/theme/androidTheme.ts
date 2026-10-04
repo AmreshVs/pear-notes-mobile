@@ -45,6 +45,7 @@ const obsidianOverrides = {
   onBackground: '#ffffff',
   outline: '#38383a',
   outlineVariant: 'rgba(255, 255, 255, 0.1)',
+  error: '#EF5350',
 }
 
 const lightOverrides = {

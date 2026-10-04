@@ -1,13 +1,11 @@
 import { Fragment, useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
-import { useDispatch } from 'react-redux'
 import { router } from 'expo-router'
 
 import { MAX_VAULTS } from '@pear-notes/core/constant.js'
 
 import { Divider } from '@/components/Divider'
-import { DangerActionCard } from '@/components/settings/DangerActionCard'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
 import {
@@ -23,8 +21,7 @@ import {
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { VAULT_ACTION } from '@/constants/vaultActions'
 import { useVaultsScreen } from '@/hooks/useVaultsScreen'
-import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
-import { resetAllData } from '@/lib/clearAllData'
+import { INVITE_VAULT_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { hapticSelection } from '@/lib/haptics'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
@@ -37,7 +34,6 @@ export default function VaultsScreen() {
   const styles = useStyles()
   const colors = useColors()
   const commonThemedStyles = useCommonThemedStyles()
-  const dispatch = useDispatch()
   const screen = useVaultsScreen()
   const { vaults, pending, error, canAdd, canRemove, busy, nameDialog } = screen
   const { openVault, submitName, confirmRemove, setNameDialog } = screen
@@ -98,23 +94,13 @@ export default function VaultsScreen() {
     [openVault],
   )
 
-  const askDeleteAll = useCallback(() => {
-    Alert.alert(
-      t('vaults.deleteAllConfirmTitle'),
-      t('vaults.deleteAllDesc', { count: vaults.length }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('vaults.deleteAllBtn'),
-          style: 'destructive',
-          onPress: () => resetAllData(dispatch),
-        },
-      ],
-    )
-  }, [dispatch, t, vaults.length])
-
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
   const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
+  const handleInvite = useCallback(() => router.push(INVITE_VAULT_ROUTE as never), [])
+  const currentLabel = getVaultLabel(
+    vaults.find((vault) => vault.current),
+    t,
+  )
 
   const renderVault = useCallback(
     (vault: Vault, index: number) => {
@@ -191,45 +177,46 @@ export default function VaultsScreen() {
           {t(errorKey)}
         </Text>
       )}
-      {canAdd ? (
-        <RNView style={commonThemedStyles.card}>
-          <Pressable
-            onPress={handleCreate}
-            disabled={busy}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
-          >
-            <SymbolIcon name="plus" size={UI_ICON_SIZE_20} color={colors.primary} />
-            <Text style={styles.addLabel}>{t('vaults.newVault')}</Text>
-          </Pressable>
-          <RNView style={styles.dividerWrap}>
-            <Divider />
-          </RNView>
-          <Pressable
-            onPress={handleJoin}
-            disabled={busy}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
-          >
-            <SymbolIcon name="qrcode.viewfinder" size={UI_ICON_SIZE_20} color={colors.primary} />
-            <Text style={styles.addLabel}>{t('vaults.join.sectionTitle')}</Text>
-          </Pressable>
-        </RNView>
-      ) : (
-        <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>
-      )}
-      <RNView>
-        <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
-          {t('storage.dangerZone')}
-        </Text>
-        <DangerActionCard
-          title={t('vaults.deleteAll')}
-          description={t('vaults.deleteAllDesc', { count: vaults.length })}
-          buttonLabel={t('vaults.deleteAllBtn')}
+      <RNView style={commonThemedStyles.card}>
+        <Pressable
+          onPress={handleInvite}
           disabled={busy}
-          onPress={askDeleteAll}
-        />
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+        >
+          <SymbolIcon name="person.badge.plus" size={UI_ICON_SIZE_20} color={colors.primary} />
+          <Text style={styles.addLabel}>{t('vaults.invite.title', { name: currentLabel })}</Text>
+        </Pressable>
+        {canAdd && (
+          <>
+            <RNView style={styles.dividerWrap}>
+              <Divider />
+            </RNView>
+            <Pressable
+              onPress={handleCreate}
+              disabled={busy}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+            >
+              <SymbolIcon name="plus" size={UI_ICON_SIZE_20} color={colors.primary} />
+              <Text style={styles.addLabel}>{t('vaults.newVault')}</Text>
+            </Pressable>
+            <RNView style={styles.dividerWrap}>
+              <Divider />
+            </RNView>
+            <Pressable
+              onPress={handleJoin}
+              disabled={busy}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+            >
+              <SymbolIcon name="qrcode.viewfinder" size={UI_ICON_SIZE_20} color={colors.primary} />
+              <Text style={styles.addLabel}>{t('vaults.join.sectionTitle')}</Text>
+            </Pressable>
+          </>
+        )}
       </RNView>
+      {!canAdd && <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>}
     </ScrollView>
   )
 }

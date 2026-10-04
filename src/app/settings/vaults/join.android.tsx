@@ -1,6 +1,13 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import {
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  View,
+} from 'react-native'
 import { TextInput as PaperTextInput } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -40,8 +47,18 @@ export default function AndroidJoinVaultScreen() {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
-  const { vaultName, setVaultName, code, setCode, showCodeHint, canJoin, join, scanner } =
-    useJoinVaultScreen()
+  const {
+    vaultName,
+    setVaultName,
+    code,
+    setCode,
+    showCodeHint,
+    isDeviceLink,
+    nameFromInvite,
+    canJoin,
+    join,
+    scanner,
+  } = useJoinVaultScreen()
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
 
@@ -51,74 +68,85 @@ export default function AndroidJoinVaultScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AndroidSettingsAppBar title={t('vaults.join.sectionTitle')} />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={styles.scrollContent}
-      >
-        <Text style={styles.description}>{t('vaults.join.screenDesc')}</Text>
-
-        <PaperTextInput
-          mode="outlined"
-          value={vaultName}
-          onChangeText={setVaultName}
-          maxLength={VAULT_NAME_MAX_LENGTH}
-          label={t('vaults.nameLabel')}
-          placeholder={t('vaults.namePlaceholder')}
-        />
-
-        <View style={styles.pillRow}>
-          <Pressable
-            onPress={scanner.openScanner}
-            android_ripple={ripple}
-            accessibilityRole="button"
-            accessibilityLabel={t('sync.paste.scanBtn')}
-            style={styles.pill}
-          >
-            <MaterialCommunityIcons name="qrcode-scan" size={UI_ICON_SIZE_18} color={c.primary} />
-            <Text style={styles.pillText}>{t('sync.paste.scanBtn')}</Text>
-          </Pressable>
-          <Pressable
-            onPress={scanner.attachQrImage}
-            android_ripple={ripple}
-            accessibilityRole="button"
-            accessibilityLabel={t('sync.paste.attachBtn')}
-            style={styles.pill}
-          >
-            <MaterialCommunityIcons name="image-outline" size={UI_ICON_SIZE_18} color={c.primary} />
-            <Text style={styles.pillText}>{t('sync.paste.attachBtn')}</Text>
-          </Pressable>
-        </View>
-
-        <PaperTextInput
-          mode="outlined"
-          value={code}
-          onChangeText={setCode}
-          onSubmitEditing={join}
-          label={t('vaults.join.codeLabel')}
-          placeholder={t('sync.paste.placeholder')}
-          autoCapitalize="none"
-          autoCorrect={false}
-          error={showCodeHint}
-        />
-        {!scanner.scannerVisible && !!scanner.scanError && (
-          <Text style={styles.error}>{t(scanner.scanError)}</Text>
-        )}
-        {!scanner.scanError && showCodeHint && (
-          <Text style={styles.hint}>{t('sync.paste.hintInvalid')}</Text>
-        )}
-        <Text style={styles.hint}>{t('vaults.join.hint')}</Text>
-
-        <Pressable
-          onPress={join}
-          disabled={!canJoin}
-          android_ripple={ripplePrimary}
-          accessibilityRole="button"
-          style={canJoin ? styles.joinBtn : styles.joinBtnDisabled}
+      <KeyboardAvoidingView behavior="height" style={commonStyles.flex1}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
         >
-          <Text style={styles.joinBtnText}>{t('vaults.join.joinBtn')}</Text>
-        </Pressable>
-      </ScrollView>
+          <Text style={styles.description}>{t('vaults.join.screenDesc')}</Text>
+
+          <View style={styles.pillRow}>
+            <Pressable
+              onPress={scanner.openScanner}
+              android_ripple={ripple}
+              accessibilityRole="button"
+              accessibilityLabel={t('sync.paste.scanBtn')}
+              style={styles.pill}
+            >
+              <MaterialCommunityIcons name="qrcode-scan" size={UI_ICON_SIZE_18} color={c.primary} />
+              <Text style={styles.pillText}>{t('sync.paste.scanBtn')}</Text>
+            </Pressable>
+            <Pressable
+              onPress={scanner.attachQrImage}
+              android_ripple={ripple}
+              accessibilityRole="button"
+              accessibilityLabel={t('sync.paste.attachBtn')}
+              style={styles.pill}
+            >
+              <MaterialCommunityIcons
+                name="image-outline"
+                size={UI_ICON_SIZE_18}
+                color={c.primary}
+              />
+              <Text style={styles.pillText}>{t('sync.paste.attachBtn')}</Text>
+            </Pressable>
+          </View>
+
+          <PaperTextInput
+            mode="outlined"
+            value={code}
+            onChangeText={setCode}
+            onSubmitEditing={join}
+            label={t('vaults.join.codeLabel')}
+            placeholder={t('vaults.join.linkPlaceholder')}
+            autoCapitalize="none"
+            autoCorrect={false}
+            error={showCodeHint || isDeviceLink}
+          />
+          {!scanner.scannerVisible && !!scanner.scanError && (
+            <Text style={styles.error}>{t(scanner.scanError)}</Text>
+          )}
+          {!scanner.scanError && isDeviceLink && (
+            <Text style={styles.error}>{t('vaults.join.deviceLinkError')}</Text>
+          )}
+          {!scanner.scanError && showCodeHint && (
+            <Text style={styles.hint}>{t('sync.paste.hintInvalid')}</Text>
+          )}
+
+          <PaperTextInput
+            mode="outlined"
+            value={vaultName}
+            onChangeText={setVaultName}
+            maxLength={VAULT_NAME_MAX_LENGTH}
+            label={t('vaults.nameLabel')}
+            placeholder={t('vaults.namePlaceholder')}
+          />
+          {nameFromInvite && <Text style={styles.hint}>{t('vaults.join.nameFromInvite')}</Text>}
+
+          <Pressable
+            onPress={join}
+            disabled={!canJoin}
+            android_ripple={ripplePrimary}
+            accessibilityRole="button"
+            style={canJoin ? styles.joinBtn : styles.joinBtnDisabled}
+          >
+            <Text style={styles.joinBtnText}>{t('vaults.join.joinBtn')}</Text>
+          </Pressable>
+
+          <Text style={styles.hint}>{t('vaults.join.hint')}</Text>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <AndroidScannerModal
         visible={scanner.scannerVisible}

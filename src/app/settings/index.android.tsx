@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
@@ -9,6 +9,7 @@ import { router, Stack, usePathname } from 'expo-router'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
+import { VaultSettingsCard } from '@/components/settings/VaultSettingsCard'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -20,13 +21,14 @@ import {
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
+  UI_SIZE_24,
   UI_SIZE_28,
   UI_SIZE_36,
   UI_SIZE_40,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
-import { useSettingsSections } from '@/hooks/useSettingsSections'
+import { type SettingsSection, useSettingsSectionGroups } from '@/hooks/useSettingsSections'
 import { androidRipple } from '@/lib/androidRipple'
 import { getAppVersionLabel } from '@/lib/appVersion'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -49,15 +51,41 @@ export default function AndroidSettingsScreen() {
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
-  const allSections = useSettingsSections()
+  const sectionGroups = useSettingsSectionGroups()
 
-  const sections = useMemo(
-    () =>
-      allSections.map((section) => ({
-        ...section,
-        onPress: () => router.push(section.route as any),
-      })),
-    [allSections],
+  const renderSection = useCallback(
+    ({ key, androidIcon, label, route }: SettingsSection, index: number) => (
+      <View key={key}>
+        {index > 0 && <View style={styles.rowDivider} />}
+        <Pressable
+          onPress={() => router.push(route as never)}
+          android_ripple={ripple}
+          style={styles.row}
+        >
+          <View style={styles.iconWrap}>
+            <MaterialCommunityIcons name={androidIcon} size={UI_ICON_SIZE_20} color={c.primary} />
+          </View>
+          <View style={styles.rowContent}>
+            <Text style={styles.rowTitle}>{label}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={UI_ICON_SIZE_20} color={c.primary} />
+        </Pressable>
+      </View>
+    ),
+    [c.primary, ripple, styles],
+  )
+
+  const renderGroup = useCallback(
+    (group: SettingsSection[], index: number) => (
+      <MotionView
+        key={group[0].group}
+        layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+        style={index > 0 ? styles.groupSpaced : styles.group}
+      >
+        {group.map(renderSection)}
+      </MotionView>
+    ),
+    [renderSection, styles.group, styles.groupSpaced],
   )
 
   return (
@@ -72,30 +100,8 @@ export default function AndroidSettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.scrollContent}>
-          {sections.map(({ key, androidIcon, label, onPress }, i) => (
-            <MotionView
-              key={key}
-              layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-            >
-              <Pressable onPress={onPress} android_ripple={ripple} style={styles.cardRow}>
-                <View style={styles.iconWrap}>
-                  <MaterialCommunityIcons
-                    name={androidIcon}
-                    size={UI_ICON_SIZE_20}
-                    color={c.primary}
-                  />
-                </View>
-                <View style={styles.rowContent}>
-                  <Text style={styles.rowTitle}>{label}</Text>
-                </View>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={UI_ICON_SIZE_20}
-                  color={c.primary}
-                />
-              </Pressable>
-            </MotionView>
-          ))}
+          <VaultSettingsCard />
+          {sectionGroups.map(renderGroup)}
         </View>
         <View style={styles.footerContainer}>
           <Text style={styles.footerText}>{t('settings.footer')}</Text>
@@ -129,13 +135,27 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingHorizontal: UI_SIZE_20,
       paddingBottom: insets.bottom + UI_SIZE_40,
     },
-    cardRow: {
+    group: {
       overflow: 'hidden',
-      ...commonStyles.row,
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
+    },
+    groupSpaced: {
+      overflow: 'hidden',
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: UI_SIZE_28,
+      marginTop: UI_SIZE_24,
+    },
+    row: {
+      overflow: 'hidden',
+      ...commonStyles.row,
       padding: UI_SIZE_16,
-      marginBottom: UI_SIZE_12,
+    },
+    rowDivider: {
+      height: StyleSheet.hairlineWidth,
+      marginLeft: UI_SIZE_16 + UI_SIZE_36 + UI_SIZE_16,
+      marginRight: UI_SIZE_16,
+      backgroundColor: hexWithAlpha(c.onSurface, 0.12),
     },
     iconWrap: {
       width: UI_SIZE_36,

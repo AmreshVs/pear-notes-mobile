@@ -144,14 +144,20 @@ export const createThemedStylesheetWithHooks = <T extends object, Output>(
   return () => {
     const theme = useTheme()
     const hooksOutput = hooks()
-    const cacheRef = useRef<{ theme: Theme; hooksOutput: Output; stylesheet: T } | null>(null)
+    const cacheRef = useRef<{
+      builder: typeof builder
+      theme: Theme
+      hooksOutput: Output
+      stylesheet: T
+    } | null>(null)
 
     if (
       !cacheRef.current ||
+      cacheRef.current.builder !== builder ||
       cacheRef.current.theme !== theme ||
       !isShallowEqual(cacheRef.current.hooksOutput, hooksOutput)
     ) {
-      cacheRef.current = { theme, hooksOutput, stylesheet: builder(theme, hooksOutput) }
+      cacheRef.current = { builder, theme, hooksOutput, stylesheet: builder(theme, hooksOutput) }
     }
 
     return cacheRef.current.stylesheet

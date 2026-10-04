@@ -10,16 +10,13 @@ import {
   TextInput,
   View,
 } from 'react-native'
-import QRCode from 'react-native-qrcode-svg'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Stack } from 'expo-router'
 
-import { INVITE_EXPIRY_MINUTES } from '@pear-notes/core/constant.js'
-import { formatInviteCountdown, isValidInvite } from '@pear-notes/core/utils.js'
-
 import { AndroidDeviceCard } from '@/components/android/AndroidDeviceCard'
+import { AndroidInviteCard } from '@/components/android/AndroidInviteCard'
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { AndroidSyncLeadersNotes } from '@/components/android/AndroidSyncLeadersNotes'
@@ -35,9 +32,7 @@ import {
   FontWeight,
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_14,
-  UI_ICON_SIZE_18,
   UI_ICON_SIZE_30,
-  UI_ICON_SIZE_48,
   UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_6,
@@ -47,21 +42,15 @@ import {
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_17,
-  UI_SIZE_18,
   UI_SIZE_20,
-  UI_SIZE_22,
   UI_SIZE_24,
   UI_SIZE_28,
-  UI_SIZE_32,
-  UI_SIZE_36,
   UI_SIZE_40,
-  UI_SIZE_120,
-  UI_SIZE_180,
-  UI_SIZE_200,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { buildDeviceInviteCopy } from '@/utils/inviteCopy'
 
 import useDevicesScreen from './useDevicesScreen'
 
@@ -85,7 +74,6 @@ export default function AndroidSyncScreen() {
   const {
     tab,
     handleSelectTab,
-    copied,
     pasteCode,
     setPasteCode,
     scannerVisible,
@@ -93,33 +81,29 @@ export default function AndroidSyncScreen() {
     deleteSheetVisible,
     setDeleteSheetVisible,
     scrollRef,
-    inviteCode,
-    inviteRemainingMs,
-    inviteExpired,
+    invite,
+    pasteIsDeviceInvite,
+    pasteIsVaultLink,
     isLoading,
     syncedDevices,
     showJoinSection,
-    handleCopy,
     handleConnect,
     handleOpenScanner,
     handleCloseScanner,
     handleBarcodeScanned,
-    handleGenerateInvite,
-    handleShareQr,
     handleAttachQrImage,
-    isSharingQr,
     scanError,
-    handleQrRef,
-    inviteExpiringSoon,
     handleScrollToEnd,
     handleDeleteDevice,
     handleConfirmDelete,
   } = useDevicesScreen()
 
-  const canLink = isValidInvite(pasteCode)
+  const deviceInviteCopy = useMemo(() => buildDeviceInviteCopy(t), [t])
+
+  const canLink = pasteIsDeviceInvite
   const linkDisabled = isLoading || !canLink
   const linkHint =
-    isLoading || canLink || scanError
+    isLoading || canLink || scanError || pasteIsVaultLink
       ? null
       : t(pasteCode.trim().length === 0 ? 'sync.paste.hintEmpty' : 'sync.paste.hintInvalid')
 
@@ -220,155 +204,12 @@ export default function AndroidSyncScreen() {
               layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
               style={styles.tabContent}
             >
-              {!inviteCode || inviteExpired ? (
-                <View style={styles.heroCard}>
-                  <View style={styles.heroSection}>
-                    <View style={styles.heroCircle}>
-                      <MaterialCommunityIcons
-                        name="devices"
-                        size={UI_ICON_SIZE_48}
-                        color={c.primary}
-                      />
-                    </View>
-                    <View style={styles.heroBadge}>
-                      <MaterialCommunityIcons
-                        name="sync"
-                        size={UI_ICON_SIZE_18}
-                        color={c.onPrimary || theme.colors.text}
-                      />
-                    </View>
-                  </View>
-
-                  <Text style={styles.heroTitle}>
-                    {inviteExpired ? t('sync.invite.expiredTitle') : t('sync.hero.title')}
-                  </Text>
-                  <Text style={styles.heroDesc}>
-                    {inviteExpired
-                      ? t('sync.invite.expiredDesc', { minutes: INVITE_EXPIRY_MINUTES })
-                      : t('sync.hero.description')}
-                  </Text>
-
-                  <Pressable
-                    onPress={handleGenerateInvite}
-                    disabled={isLoading}
-                    android_ripple={ripplePrimary}
-                    style={[styles.generateBtn, isLoading && styles.btnDisabled]}
-                  >
-                    {isLoading && (
-                      <ActivityIndicator size="small" color={loaderColor} style={styles.mr8} />
-                    )}
-                    <Text style={styles.generateBtnText}>
-                      {isLoading
-                        ? t('sync.hero.preparing')
-                        : inviteExpired
-                          ? t('sync.invite.regenerateBtn')
-                          : t('sync.hero.generateBtn')}
-                    </Text>
-                  </Pressable>
-                </View>
-              ) : (
-                <View style={styles.heroCard}>
-                  <View style={styles.heroSection}>
-                    <View style={styles.heroCircle}>
-                      <MaterialCommunityIcons
-                        name="shield-check-outline"
-                        size={UI_ICON_SIZE_48}
-                        color={c.primary}
-                      />
-                    </View>
-                  </View>
-
-                  <Text style={styles.heroTitle}>{t('sync.invite.header')}</Text>
-                  <View
-                    style={[styles.countdownPill, inviteExpiringSoon && styles.countdownPillUrgent]}
-                  >
-                    <MaterialCommunityIcons
-                      name="timer-outline"
-                      size={UI_ICON_SIZE_14}
-                      color={inviteExpiringSoon ? c.error : c.primary}
-                    />
-                    <Text
-                      style={[
-                        styles.countdownText,
-                        inviteExpiringSoon && styles.countdownTextUrgent,
-                      ]}
-                    >
-                      {t('sync.invite.expiresIn', {
-                        countdown: formatInviteCountdown(inviteRemainingMs),
-                      })}
-                    </Text>
-                  </View>
-
-                  <View style={styles.qrWrap}>
-                    <View style={styles.qrBox}>
-                      <QRCode
-                        getRef={handleQrRef}
-                        value={inviteCode}
-                        size={UI_SIZE_180}
-                        backgroundColor={theme.colors.white}
-                        color={theme.colors.qrDark}
-                      />
-                    </View>
-                    <Text style={styles.qrTitle}>{t('sync.invite.qrTitle')}</Text>
-                    <Text style={styles.qrDescription}>{t('sync.invite.qrDescription')}</Text>
-                    <Pressable
-                      onPress={handleShareQr}
-                      disabled={isSharingQr}
-                      android_ripple={ripple}
-                      style={[styles.shareQrBtn, isSharingQr && styles.btnDisabled]}
-                    >
-                      <MaterialCommunityIcons
-                        name="share-variant"
-                        size={UI_ICON_SIZE_14}
-                        color={c.primary}
-                      />
-                      <Text style={styles.shareQrBtnText}>{t('sync.invite.shareQrBtn')}</Text>
-                    </Pressable>
-                  </View>
-
-                  <Text style={styles.codeLabelText}>{t('sync.invite.codeLabel')}</Text>
-                  <View style={styles.codeBox}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                      <Text selectable style={styles.codeText}>
-                        {inviteCode}
-                      </Text>
-                    </ScrollView>
-                  </View>
-
-                  <Pressable
-                    onPress={handleCopy}
-                    android_ripple={ripplePrimary}
-                    style={[
-                      styles.generateBtn,
-                      copied ? styles.copyBtnSuccess : styles.copyBtnDefault,
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={copied ? 'check' : 'content-copy'}
-                      size={UI_ICON_SIZE_18}
-                      color={copied ? theme.colors.white : c.onPrimary || theme.colors.text}
-                    />
-                    <Text
-                      style={[
-                        styles.generateBtnText,
-                        copied ? styles.copyTextSuccess : styles.copyTextDefault,
-                      ]}
-                    >
-                      {copied ? t('sync.invite.copied') : t('sync.invite.copyBtn')}
-                    </Text>
-                  </Pressable>
-
-                  <View style={styles.warningRow}>
-                    <MaterialCommunityIcons
-                      name="shield-check"
-                      size={UI_ICON_SIZE_14}
-                      color={c.primary}
-                      style={styles.warningIconMargin}
-                    />
-                    <Text style={styles.warningText}>{t('sync.invite.warning')}</Text>
-                  </View>
-                </View>
-              )}
+              <AndroidInviteCard
+                invite={invite}
+                copy={deviceInviteCopy}
+                idleIcon="devices"
+                idleBadgeIcon="sync"
+              />
 
               {showJoinSection && (
                 <View style={styles.invitePasteSection}>
@@ -438,6 +279,10 @@ export default function AndroidSyncScreen() {
 
                   {!scannerVisible && !!scanError && (
                     <Text style={styles.pasteError}>{t(scanError)}</Text>
+                  )}
+
+                  {!scannerVisible && !scanError && pasteIsVaultLink && (
+                    <Text style={styles.pasteError}>{t('sync.paste.vaultLinkError')}</Text>
                   )}
 
                   {!scannerVisible && !!linkHint && (
@@ -584,191 +429,8 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
     tabContent: {
       ...commonStyles.flex1,
     },
-    heroCard: {
-      borderRadius: UI_SIZE_28,
-      padding: UI_SIZE_16,
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-    },
-    heroSection: {
-      alignItems: 'center',
-      position: 'relative',
-    },
-    heroCircle: {
-      width: UI_SIZE_120,
-      height: UI_SIZE_120,
-      borderRadius: UI_SIZE_9999,
-      ...commonStyles.centered,
-      backgroundColor: hexWithAlpha(c.onSurfaceVariant, 0.12),
-    },
-    heroBadge: {
-      position: 'absolute',
-      bottom: 0,
-      right: '33%',
-      width: UI_SIZE_36,
-      height: UI_SIZE_36,
-      borderRadius: UI_SIZE_9999,
-      ...commonStyles.centered,
-      backgroundColor: c.primary,
-    },
-    heroTitle: {
-      fontSize: FontSize.heading,
-      fontWeight: FontWeight.black,
-      fontFamily: FontFamily.extraBold,
-      textAlign: 'center',
-      marginTop: UI_SIZE_20,
-      marginBottom: UI_SIZE_12,
-      letterSpacing: -0.5,
-      color: c.onSurface,
-    },
-    heroDesc: {
-      fontSize: FontSize.body,
-      lineHeight: UI_SIZE_22,
-      textAlign: 'center',
-      marginBottom: UI_SIZE_32,
-      paddingHorizontal: UI_SIZE_8,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
-    },
-    generateBtn: {
-      overflow: 'hidden',
-      borderRadius: UI_SIZE_9999,
-      width: '100%',
-      ...commonStyles.row,
-      justifyContent: 'center',
-      paddingVertical: UI_SIZE_18,
-      backgroundColor: c.primary,
-    },
-    generateBtnText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onPrimary || theme.colors.text,
-    },
-    btnDisabled: {
-      opacity: 0.7,
-    },
-    mr8: {
-      marginRight: UI_SIZE_8,
-    },
-    qrWrap: {
-      alignItems: 'center',
-      marginBottom: UI_SIZE_20,
-    },
-    qrBox: {
-      width: UI_SIZE_200,
-      height: UI_SIZE_200,
-      borderRadius: UI_SIZE_16,
-      ...commonStyles.centered,
-      backgroundColor: theme.colors.white,
-    },
-    qrTitle: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      marginTop: UI_SIZE_12,
-      marginBottom: UI_SIZE_4,
-      color: c.onSurface,
-    },
-    qrDescription: {
-      fontSize: FontSize.body,
-      lineHeight: UI_SIZE_18,
-      textAlign: 'center',
-      color: c.onSurfaceVariant,
-      paddingHorizontal: UI_SIZE_20,
-    },
-    shareQrBtn: {
-      overflow: 'hidden',
-      ...commonStyles.row,
-      gap: UI_SIZE_6,
-      marginTop: UI_SIZE_12,
-      paddingVertical: UI_SIZE_8,
-      paddingHorizontal: UI_SIZE_16,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: hexWithAlpha(c.primary, 0.1),
-    },
-    shareQrBtnText: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.primary,
-    },
-    countdownPill: {
-      ...commonStyles.row,
-      alignSelf: 'center',
-      gap: UI_SIZE_6,
-      paddingVertical: UI_SIZE_6,
-      paddingHorizontal: UI_SIZE_12,
-      borderRadius: UI_SIZE_9999,
-      marginBottom: UI_SIZE_32,
-      backgroundColor: hexWithAlpha(c.primary, 0.12),
-    },
-    countdownPillUrgent: {
-      backgroundColor: hexWithAlpha(c.error, 0.14),
-    },
-    countdownText: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.primary,
-    },
-    countdownTextUrgent: {
-      color: c.error,
-    },
-    codeLabelText: {
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.bold,
-      letterSpacing: 1.4,
-      marginBottom: UI_SIZE_10,
-      color: c.onSurfaceVariant,
-    },
-    codeBox: {
-      borderStyle: 'dashed',
-      borderRadius: UI_SIZE_12,
-      paddingVertical: UI_SIZE_14,
-      paddingHorizontal: UI_SIZE_14,
-      marginBottom: UI_SIZE_16,
-      backgroundColor: c.surfaceContainerHighest ?? c.surfaceVariant,
-      borderColor: hexWithAlpha(c.outlineVariant, 0.25),
-    },
-    codeText: {
-      fontFamily: 'monospace',
-      fontSize: FontSize.body,
-      letterSpacing: 1,
-      color: c.onSurface,
-    },
-    copyBtnSuccess: {
-      backgroundColor: theme.colors.success,
-    },
-    copyBtnDefault: {
-      backgroundColor: c.primary,
-    },
-    copyTextSuccess: {
-      color: theme.colors.white,
-      marginLeft: UI_SIZE_8,
-    },
-    copyTextDefault: {
-      color: c.onPrimary || theme.colors.text,
-      marginLeft: UI_SIZE_8,
-    },
-    warningRow: {
-      ...commonStyles.row,
-      alignItems: 'flex-start',
-      gap: UI_SIZE_8,
-      borderRadius: UI_SIZE_12,
-      padding: UI_SIZE_14,
-      marginTop: UI_SIZE_12,
-      backgroundColor: hexWithAlpha(c.primary, 0.08),
-      borderColor: hexWithAlpha(c.primary, 0.2),
-    },
     warningIconMargin: {
       marginTop: UI_SIZE_2,
-    },
-    warningText: {
-      ...commonStyles.flex1,
-      fontSize: FontSize.caption,
-      lineHeight: UI_SIZE_17,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
     },
     invitePasteSection: {
       marginTop: UI_SIZE_28,

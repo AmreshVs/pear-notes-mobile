@@ -14,6 +14,7 @@ import type { Vault } from '@/lib/vaults.types'
 
 export const VAULTS_SETTINGS_ROUTE = '/settings/vaults'
 export const JOIN_VAULT_ROUTE = '/settings/vaults/join'
+export const INVITE_VAULT_ROUTE = '/settings/vaults/invite'
 
 export function useVaultSwitcher() {
   const vaults = useSelector(getVaults) as Vault[]

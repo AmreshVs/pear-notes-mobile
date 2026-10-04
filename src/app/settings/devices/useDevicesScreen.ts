@@ -1,121 +1,62 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Linking, Platform, ScrollView } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 import { useCameraPermissions } from 'expo-camera'
-import * as Clipboard from 'expo-clipboard'
 import { router } from 'expo-router'
 
-import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
+import { INVITE_KIND } from '@pear-notes/core/constant.js'
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteSyncedDevice,
   getLocalPreferences,
   getSyncedDevices,
 } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getSyncIsLoading, subscribePairUser } from '@pear-notes/core/store/slices/syncSlice.js'
 import {
-  createInvite,
-  getInvite,
-  getInviteExpiresAt,
-  getInviterStatus,
-  getReceiverStatus,
-  getSyncIsLoading,
-  resetInvite,
-  subscribePairUser,
-} from '@pear-notes/core/store/slices/syncSlice.js'
-import { extractInvite, getInviteRemainingMs, isValidInvite } from '@pear-notes/core/utils.js'
+  extractInvite,
+  formatDeviceInvite,
+  isInviteForOtherKind,
+  isValidInvite,
+} from '@pear-notes/core/utils.js'
 
 import { useQrImageAttach } from '@/components/sync/useQrImageAttach'
-import {
-  hapticError,
-  hapticLight,
-  hapticMedium,
-  hapticSelection,
-  hapticSuccess,
-  hapticWarning,
-} from '@/lib/haptics'
+import { useInviteLink } from '@/hooks/useInviteLink'
+import { hapticLight, hapticMedium, hapticSelection, hapticWarning } from '@/lib/haptics'
 import { pendingInviteState } from '@/lib/pendingInviteState'
-import { shareQrImage } from '@/lib/qrShare'
-
-const INVITE_COUNTDOWN_TICK_MS = 1000
-const INVITE_EXPIRY_WARNING_MS = 60 * 1000
-
-type QrCodeRef = { toDataURL: (callback: (data: string) => void) => void }
 
 function useSyncScreen() {
   const dispatch = useDispatch()
 
-  const inviteCode = useSelector(getInvite)
-  const expiresAt = useSelector(getInviteExpiresAt)
+  const invite = useInviteLink(formatDeviceInvite)
   const isLoading = useSelector(getSyncIsLoading)
   const syncedDevices = useSelector(getSyncedDevices) as any[]
   const localPreferences = useSelector(getLocalPreferences) as any
   const isSynced = localPreferences?.isSynced === 'true'
-  const showJoinSection = !isSynced || isMultiVaultEnabled()
+  const showJoinSection = !isSynced
   const notes = useSelector(getNotes) as any[]
 
   const [tab, setTab] = useState<'link' | 'devices'>('devices')
-  const [copied, setCopied] = useState(false)
   const [pasteCode, setPasteCode] = useState('')
   const [scannerVisible, setScannerVisible] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
   const [deleteSheetVisible, setDeleteSheetVisible] = useState(false)
   const [deviceToDeleteKey, setDeviceToDeleteKey] = useState<string | null>(null)
-  const [countdownTick, setCountdownTick] = useState(0)
 
-  const [isSharingQr, setIsSharingQr] = useState(false)
+  const pasteIsDeviceInvite = isValidInvite(pasteCode, INVITE_KIND.DEVICE)
+  const pasteIsVaultLink = isInviteForOtherKind(pasteCode, INVITE_KIND.DEVICE)
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
   const scrollRef = useRef<ScrollView>(null)
-  const qrRef = useRef<QrCodeRef | null>(null)
-
-  const inviterStatus = useSelector(getInviterStatus)
-  const receiverStatus = useSelector(getReceiverStatus)
-  const inviterStatusRef = useRef(inviterStatus)
-  const receiverStatusRef = useRef(receiverStatus)
-
-  useEffect(() => {
-    inviterStatusRef.current = inviterStatus
-    receiverStatusRef.current = receiverStatus
-  }, [inviterStatus, receiverStatus])
-
-  useEffect(() => {
-    return () => {
-      const inviterStep = inviterStatusRef.current?.step
-      const receiverStep = receiverStatusRef.current?.step
-
-      const isInviterActive =
-        inviterStep && !['idle', 'generating', 'ready', 'searching'].includes(inviterStep)
-      const isReceiverActive = receiverStep && !['idle', 'connecting'].includes(receiverStep)
-
-      if (!isInviterActive && !isReceiverActive) {
-        dispatch(resetInvite())
-      }
-    }
-  }, [dispatch])
-
-  useEffect(() => {
-    if (!inviteCode || !expiresAt) return
-    const timer = setInterval(() => setCountdownTick((n) => n + 1), INVITE_COUNTDOWN_TICK_MS)
-    return () => clearInterval(timer)
-  }, [inviteCode, expiresAt])
 
   const handleSelectTab = useCallback((next: 'link' | 'devices') => {
     hapticSelection()
     setTab(next)
   }, [])
 
-  const handleCopy = useCallback(async () => {
-    if (!inviteCode) return
-    await Clipboard.setStringAsync(inviteCode)
-    hapticSuccess()
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [inviteCode])
-
   const handleConnect = useCallback(() => {
-    if (isValidInvite(pasteCode)) {
+    if (pasteIsDeviceInvite) {
       const rawInvite = extractInvite(pasteCode)
-      if (notes.length > 0 || isMultiVaultEnabled()) {
+      if (notes.length > 0) {
         pendingInviteState.setPendingInvite(rawInvite)
         setPasteCode('')
         if (Platform.OS === 'ios') {
@@ -135,7 +76,7 @@ function useSyncScreen() {
         }
       }
     }
-  }, [dispatch, pasteCode, notes.length])
+  }, [dispatch, pasteCode, pasteIsDeviceInvite, notes.length])
 
   const handleRequestCameraPermission = useCallback(async () => {
     if (cameraPermission && !cameraPermission.granted && !cameraPermission.canAskAgain) {
@@ -181,36 +122,6 @@ function useSyncScreen() {
     [hasScanned],
   )
 
-  const handleQrRef = useCallback((instance: QrCodeRef | null) => {
-    qrRef.current = instance
-  }, [])
-
-  const handleShareQr = useCallback(async () => {
-    if (!qrRef.current || isSharingQr) return
-    hapticLight()
-    setIsSharingQr(true)
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('QR_RENDER_TIMEOUT')), 4000)
-        qrRef.current?.toDataURL((data) => {
-          clearTimeout(timer)
-          resolve(data)
-        })
-      })
-      await shareQrImage(base64, '')
-    } catch (error) {
-      console.error('handleShareQr', error)
-      hapticError()
-    } finally {
-      setIsSharingQr(false)
-    }
-  }, [isSharingQr])
-
-  const handleGenerateInvite = useCallback(() => {
-    hapticLight()
-    dispatch(createInvite())
-  }, [dispatch])
-
   const handleScrollToEnd = useCallback(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)
   }, [])
@@ -220,15 +131,6 @@ function useSyncScreen() {
     setDeviceToDeleteKey(deviceKey)
     setDeleteSheetVisible(true)
   }, [])
-
-  const inviteRemainingMs = useMemo(
-    () => getInviteRemainingMs(expiresAt),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [expiresAt, countdownTick],
-  )
-  const inviteExpired = !!inviteCode && !!expiresAt && inviteRemainingMs <= 0
-  const inviteExpiringSoon =
-    !inviteExpired && inviteRemainingMs > 0 && inviteRemainingMs <= INVITE_EXPIRY_WARNING_MS
 
   const handleConfirmDelete = useCallback(() => {
     setDeleteSheetVisible(false)
@@ -241,7 +143,6 @@ function useSyncScreen() {
   return {
     tab,
     handleSelectTab,
-    copied,
     pasteCode,
     setPasteCode,
     scannerVisible,
@@ -253,26 +154,19 @@ function useSyncScreen() {
     requestCameraPermission,
     handleRequestCameraPermission,
     scrollRef,
-    inviteCode,
-    expiresAt,
-    inviteRemainingMs,
-    inviteExpired,
-    inviteExpiringSoon,
+    invite,
+    pasteIsDeviceInvite,
+    pasteIsVaultLink,
     isLoading,
     syncedDevices,
     isSynced,
     showJoinSection,
-    handleCopy,
     handleConnect,
     handleOpenScanner,
     handleCloseScanner,
     handleBarcodeScanned,
-    handleGenerateInvite,
-    handleShareQr,
     handleAttachQrImage: attachQrImage,
-    isSharingQr,
     scanError,
-    handleQrRef,
     handleScrollToEnd,
     handleDeleteDevice,
     handleConfirmDelete,

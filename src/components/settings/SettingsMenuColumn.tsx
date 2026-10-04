@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { router, usePathname } from 'expo-router'
 
 import { Divider } from '@/components/Divider'
+import { VaultSettingsCard } from '@/components/settings/VaultSettingsCard'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import {
@@ -17,7 +18,7 @@ import {
   UI_SIZE_20,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { type SettingsSection, useSettingsSections } from '@/hooks/useSettingsSections'
+import { type SettingsSection, useSettingsSectionGroups } from '@/hooks/useSettingsSections'
 
 const SETTINGS_ROOT_PATH = '/settings'
 
@@ -26,7 +27,7 @@ export function SettingsMenuColumn() {
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const pathname = usePathname()
-  const sections = useSettingsSections()
+  const sectionGroups = useSettingsSectionGroups()
 
   const handleClose = useCallback(() => {
     router.dismissAll()
@@ -45,21 +46,30 @@ export function SettingsMenuColumn() {
   )
 
   const renderSection = useCallback(
-    (section: SettingsSection, index: number) => (
+    (section: SettingsSection, index: number, group: SettingsSection[]) => (
       <Fragment key={section.key}>
         <SettingsMenuRow
           section={section}
           active={pathname.startsWith(section.route)}
           onSelect={handleSelect}
         />
-        {index < sections.length - 1 && (
+        {index < group.length - 1 && (
           <RNView style={styles.dividerWrap}>
             <Divider />
           </RNView>
         )}
       </Fragment>
     ),
-    [pathname, handleSelect, sections.length, styles.dividerWrap],
+    [pathname, handleSelect, styles.dividerWrap],
+  )
+
+  const renderGroup = useCallback(
+    (group: SettingsSection[]) => (
+      <RNView key={group[0].group} style={commonThemedStyles.card}>
+        {group.map(renderSection)}
+      </RNView>
+    ),
+    [commonThemedStyles.card, renderSection],
   )
 
   return (
@@ -77,7 +87,8 @@ export function SettingsMenuColumn() {
         </Pressable>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <RNView style={commonThemedStyles.card}>{sections.map(renderSection)}</RNView>
+        <VaultSettingsCard />
+        {sectionGroups.map(renderGroup)}
       </ScrollView>
     </View>
   )
@@ -154,6 +165,7 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.primary,
     },
     scrollContent: {
+      gap: UI_SIZE_20,
       paddingHorizontal: Space.base,
       paddingBottom: Space.scrollBottom,
     },

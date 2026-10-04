@@ -23,7 +23,6 @@ import { validateFolderName } from '@pear-notes/core/utils.js'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderRow } from '@/components/FolderRow'
-import { VaultCapsule } from '@/components/folders/VaultCapsule'
 import { VaultTitle } from '@/components/folders/VaultTitle'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -37,12 +36,10 @@ import {
   UI_ICON_SIZE_22,
   UI_SIZE_8,
   UI_SIZE_42,
-  UI_SIZE_44,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
-import { useVaultSwitcher } from '@/hooks/useVaultSwitcher'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
@@ -289,13 +286,11 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
   const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
-  const { visible: showVaultCapsule } = useVaultSwitcher()
   const headerTitle = useCallback(() => <CollapsedNavTitle title={t('folders.title')} />, [t])
-  const vaultCapsule = useCallback(() => <VaultCapsule />, [])
 
   const screenOptions = useMemo(
     () => ({
-      headerTitle: showVaultCapsule ? vaultCapsule : isTitleCollapsed ? headerTitle : '',
+      headerTitle: isTitleCollapsed ? headerTitle : '',
       headerTransparent: true,
       headerLargeTitle: false,
       headerLeft,
@@ -318,8 +313,6 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
       colors.textSecondary,
       isTitleCollapsed,
       headerTitle,
-      showVaultCapsule,
-      vaultCapsule,
     ],
   )
 
@@ -337,11 +330,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           >
             <SymbolIcon name="gearshape" size={UI_ICON_SIZE_22} color={colors.text} />
           </Pressable>
-          {showVaultCapsule ? (
-            <VaultCapsule />
-          ) : (
-            <VaultTitle title={t('folders.title')} titleStyle={styles.sidebarTitle} />
-          )}
+          <VaultTitle title={t('folders.title')} titleStyle={styles.sidebarTitle} />
           <Pressable
             onPress={handleCreateFolder}
             style={iconBtnStyle}

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
 import Animated, {
@@ -21,56 +21,50 @@ import {
   FontSize,
   FontWeight,
   GlassIntensity,
-  Layout,
   Radii,
   Space,
+  UI_ICON_SIZE_14,
   UI_ICON_SIZE_20,
   UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
-  UI_SIZE_24,
+  UI_SIZE_20,
   UI_SIZE_32,
   UI_SIZE_36,
   UI_SIZE_40,
-  UI_SIZE_52,
   UI_SIZE_56,
 } from '@/constants/commonStyles'
+import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { hexWithAlpha } from '@/lib/backupUtils'
 import { getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
-
-export type VaultSheetAction = 'create' | 'join' | 'manage'
 
 type Props = {
   visible: boolean
   vaults: Vault[]
-  canAdd: boolean
   onSelectVault: (vault: Vault) => void
-  onAction: (action: VaultSheetAction) => void
+  onManage: () => void
   onClose: () => void
 }
 
-type ActionRow = { action: VaultSheetAction; icon: IconName; labelKey: string }
+type ActionRow = { icon: IconName; labelKey: string }
 
 const SHEET_TRAVEL = 480
+const VAULT_AVATAR_TINT_ALPHA = 0.08
 
-const ADD_ROWS: ActionRow[] = [
-  { action: 'create', icon: 'plus', labelKey: 'vaults.newVault' },
-  { action: 'join', icon: 'qrcode.viewfinder', labelKey: 'vaults.join.sectionTitle' },
-]
-const MANAGE_ROW: ActionRow = { action: 'manage', icon: 'gearshape', labelKey: 'vaults.manage' }
+const MANAGE_ROW: ActionRow = { icon: 'gearshape', labelKey: 'vaults.manage' }
 
 export function VaultSwitcherBottomSheet({
   visible,
   vaults,
-  canAdd,
   onSelectVault,
-  onAction,
+  onManage,
   onClose,
 }: Props) {
   const { t } = useTranslation()
-  const { isDark } = useTheme()
+  const { isDark, colors } = useTheme()
   const insets = useSafeAreaInsets()
   const styles = useStyles()
 
@@ -133,30 +127,16 @@ export function VaultSwitcherBottomSheet({
     [closeThen, handleCancel, onSelectVault],
   )
 
-  const handleAction = useCallback(
-    (action: VaultSheetAction) => closeThen(() => onAction(action)),
-    [closeThen, onAction],
-  )
-
-  const actionRows = useMemo(() => [...(canAdd ? ADD_ROWS : []), MANAGE_ROW], [canAdd])
+  const handleManage = useCallback(() => closeThen(onManage), [closeThen, onManage])
 
   const renderVault = useCallback(
-    (vault: Vault) => (
-      <VaultRow
-        key={vault.id}
-        vault={vault}
-        label={getVaultLabel(vault, t)}
-        onSelect={handleSelectVault}
-      />
+    (vault: Vault, index: number) => (
+      <Fragment key={vault.id}>
+        {index > 0 && <RNView style={styles.vaultSeparator} />}
+        <VaultRow vault={vault} label={getVaultLabel(vault, t)} onSelect={handleSelectVault} />
+      </Fragment>
     ),
-    [handleSelectVault, t],
-  )
-
-  const renderAction = useCallback(
-    (row: ActionRow) => (
-      <ActionItem key={row.action} row={row} label={t(row.labelKey)} onPress={handleAction} />
-    ),
-    [handleAction, t],
+    [handleSelectVault, styles.vaultSeparator, t],
   )
 
   const bottomInsetStyle = useMemo(
@@ -168,17 +148,28 @@ export function VaultSwitcherBottomSheet({
 
   const content = (
     <>
-      <RNView style={styles.grabber} />
-      <Text style={styles.title}>{t('vaults.title')}</Text>
+      <RNView style={styles.header}>
+        <Text style={styles.title}>{t('vaults.title')}</Text>
+        <Pressable
+          onPress={handleCancel}
+          hitSlop={UI_SIZE_8}
+          accessibilityRole="button"
+          accessibilityLabel={t('common.close')}
+          style={({ pressed }) => pressed && commonStyles.pressed}
+        >
+          <GlassView
+            intensity={GlassIntensity.low}
+            borderRadius={Radii.pill}
+            style={styles.closeBtn}
+          >
+            <SymbolIcon name="xmark" size={UI_ICON_SIZE_14} color={colors.textSecondary} />
+          </GlassView>
+        </Pressable>
+      </RNView>
       <RNView style={styles.group}>{vaults.map(renderVault)}</RNView>
-      <RNView style={styles.group}>{actionRows.map(renderAction)}</RNView>
-      <Pressable
-        onPress={handleCancel}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.cancelBtn, pressed && commonStyles.pressed]}
-      >
-        <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
-      </Pressable>
+      <RNView style={styles.group}>
+        <ActionItem row={MANAGE_ROW} label={t(MANAGE_ROW.labelKey)} onPress={handleManage} />
+      </RNView>
       <RNView style={bottomInsetStyle} />
     </>
   )
@@ -238,11 +229,7 @@ const VaultRow = memo(function VaultRow({ vault, label, onSelect }: VaultRowProp
       accessibilityRole="button"
       accessibilityState={accessibilityState}
       accessibilityLabel={label}
-      style={({ pressed }) => [
-        styles.row,
-        vault.current && styles.rowCurrent,
-        pressed && commonStyles.pressed,
-      ]}
+      style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
     >
       <RNView style={vault.current ? styles.avatarCurrent : styles.avatar}>
         <Text style={vault.current ? styles.avatarTextCurrent : styles.avatarText}>
@@ -267,22 +254,21 @@ const VaultRow = memo(function VaultRow({ vault, label, onSelect }: VaultRowProp
 type ActionItemProps = {
   row: ActionRow
   label: string
-  onPress: (action: VaultSheetAction) => void
+  onPress: () => void
 }
 
 const ActionItem = memo(function ActionItem({ row, label, onPress }: ActionItemProps) {
   const { colors } = useTheme()
   const styles = useStyles()
-  const handlePress = useCallback(() => onPress(row.action), [onPress, row.action])
-
+  const commonThemedStyles = useCommonThemedStyles()
   return (
     <Pressable
-      onPress={handlePress}
+      onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={label}
       style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
     >
-      <RNView style={styles.actionIcon}>
+      <RNView style={commonThemedStyles.iconBox34}>
         <SymbolIcon name={row.icon} size={UI_ICON_SIZE_20} color={colors.primary} />
       </RNView>
       <Text style={styles.actionLabel}>{label}</Text>
@@ -295,7 +281,16 @@ const useStyles = createThemedStylesheet((theme) => {
     width: UI_SIZE_36,
     height: UI_SIZE_36,
     borderRadius: Radii.md,
+    borderCurve: 'continuous' as const,
     ...commonStyles.centered,
+  }
+  const avatarTextBase = {
+    fontFamily: FontFamily.bold,
+    fontSize: FontSize.body,
+  }
+  const separatorBase = {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.colors.borderSecondary,
   }
   const styles = StyleSheet.create({
     overlay: {
@@ -310,8 +305,8 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'flex-end',
     },
     sheet: {
-      paddingHorizontal: UI_SIZE_24,
-      paddingTop: UI_SIZE_12,
+      paddingHorizontal: UI_SIZE_20,
+      paddingTop: UI_SIZE_20,
       paddingBottom: UI_SIZE_4,
       gap: UI_SIZE_16,
       borderCurve: 'continuous',
@@ -328,19 +323,19 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.background,
       borderColor: theme.colors.sheetBorder,
     },
-    grabber: {
-      alignSelf: 'center',
-      width: Layout.grabberWidth,
-      height: Layout.grabberHeight,
-      borderRadius: Radii.pill,
-      backgroundColor: theme.colors.sheetGrabber,
-      marginBottom: UI_SIZE_8,
+    header: {
+      ...commonStyles.rowBetween,
+      paddingLeft: UI_SIZE_4,
     },
     title: {
       fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       color: theme.colors.text,
-      textAlign: 'center',
+    },
+    closeBtn: {
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
+      ...commonStyles.centered,
     },
     group: {
       borderRadius: Radii.card,
@@ -355,25 +350,24 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: Space.base,
       paddingVertical: Space.md,
     },
-    rowCurrent: {
-      backgroundColor: theme.colors.cardSelected,
+    vaultSeparator: {
+      ...separatorBase,
+      marginLeft: Space.base + UI_SIZE_36 + Space.md,
     },
     avatar: {
       ...avatarBase,
-      backgroundColor: theme.colors.controlBackground,
+      backgroundColor: hexWithAlpha(theme.colors.text, VAULT_AVATAR_TINT_ALPHA),
     },
     avatarCurrent: {
       ...avatarBase,
       backgroundColor: theme.colors.primary,
     },
     avatarText: {
-      fontFamily: FontFamily.bold,
-      fontSize: FontSize.body,
+      ...avatarTextBase,
       color: theme.colors.textSecondary,
     },
     avatarTextCurrent: {
-      fontFamily: FontFamily.bold,
-      fontSize: FontSize.body,
+      ...avatarTextBase,
       color: theme.colors.onPrimary,
     },
     rowLabel: {
@@ -385,23 +379,8 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       color: theme.colors.textSecondary,
     },
-    actionIcon: {
-      width: UI_SIZE_36,
-      ...commonStyles.centered,
-    },
     actionLabel: {
       fontSize: FontSize.subtitle,
-      color: theme.colors.primary,
-    },
-    cancelBtn: {
-      ...commonStyles.centered,
-      minHeight: UI_SIZE_52,
-      borderRadius: Radii.btn,
-      backgroundColor: theme.colors.sheetCancelBackground,
-    },
-    cancelBtnText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
     bottomInset: {

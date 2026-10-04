@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { router } from 'expo-router'
 
 import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
-import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
-import { getLocalAiLoaded, initLocalAi } from '@pear-notes/core/store/slices/localAiSlice.js'
-import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
+import { getFolderKeys } from '@pear-notes/core/store/slices/foldersSlice.js'
+import { getNoteKeys, getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   deleteNoteMedia,
   getActiveDownloads,
@@ -25,23 +23,17 @@ import {
 import {
   getCurrentVault,
   getHasMultipleVaults,
+  getVaults,
   removeVault,
 } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
-import { clearCaches } from '@/lib/cacheCleanup'
 import { resetAllData } from '@/lib/clearAllData'
-import {
-  clearTemporaryFiles,
-  deleteOldVaults,
-  type DeviceStorageSummary,
-  measureDeviceStorage,
-} from '@/lib/deviceStorage'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
 import type { Vault } from '@/lib/vaults.types'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 
-function useStorageScreen() {
+function useVaultStorageScreen() {
   const dispatch = useDispatch()
 
   const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
@@ -53,6 +45,9 @@ function useStorageScreen() {
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
   const notesData = useSelector(getNotesData) as Record<string, any>
+  const noteCount = (useSelector(getNoteKeys) as string[] | undefined)?.length ?? 0
+  const folderCount = (useSelector(getFolderKeys) as string[] | undefined)?.length ?? 0
+  const vaults = useSelector(getVaults) as Vault[]
 
   const noteTitleByKey = useMemo(() => {
     const map: Record<string, string> = {}
@@ -73,63 +68,12 @@ function useStorageScreen() {
     [notesStorageInfo, notesData],
   )
 
-  const localAiLoaded = useSelector(getLocalAiLoaded) as boolean
-
-  useEffect(() => {
-    if (LOCAL_AI_ENABLED && !localAiLoaded) dispatch(initLocalAi())
-  }, [dispatch, localAiLoaded])
-
-  const handleOpenAiModels = useCallback(() => {
-    router.push('/settings/on-device-ai/models' as never)
-  }, [])
-
-  const [resetSheetVisible, setResetSheetVisible] = useState(false)
-  const [isClearingCache, setIsClearingCache] = useState(false)
-  const [deviceStorage, setDeviceStorage] = useState<DeviceStorageSummary | null>(null)
-  const [isDeletingOldVaults, setIsDeletingOldVaults] = useState(false)
-
-  const refreshDeviceStorage = useCallback(async () => {
-    const summary = await measureDeviceStorage().catch(() => null)
-    if (summary) setDeviceStorage(summary)
-  }, [])
-
   useEffect(() => {
     dispatch(subscribeStorageInfo())
     return () => {
       dispatch(unsubscribeStorageInfo())
     }
   }, [dispatch])
-
-  useEffect(() => {
-    refreshDeviceStorage()
-  }, [refreshDeviceStorage])
-
-  useEffect(() => {
-    if (!isReclaiming) refreshDeviceStorage()
-  }, [isReclaiming, refreshDeviceStorage])
-
-  const handleClearCache = useCallback(async () => {
-    hapticLight()
-    setIsClearingCache(true)
-    try {
-      await clearCaches()
-      await clearTemporaryFiles()
-      await refreshDeviceStorage()
-    } finally {
-      setIsClearingCache(false)
-    }
-  }, [refreshDeviceStorage])
-
-  const handleDeleteOldVaults = useCallback(async () => {
-    hapticWarning()
-    setIsDeletingOldVaults(true)
-    try {
-      await deleteOldVaults()
-      await refreshDeviceStorage()
-    } finally {
-      setIsDeletingOldVaults(false)
-    }
-  }, [refreshDeviceStorage])
 
   const handleDeleteMedia = useCallback(
     (noteKey: string, mediaPath: string) => {
@@ -160,21 +104,6 @@ function useStorageScreen() {
     [dispatch],
   )
 
-  const handleResetPress = useCallback(() => {
-    hapticLight()
-    setResetSheetVisible(true)
-  }, [])
-
-  const handleResetConfirm = useCallback(() => {
-    hapticWarning()
-    setResetSheetVisible(false)
-    resetAllData(dispatch)
-  }, [dispatch])
-
-  const handleResetCancel = useCallback(() => {
-    setResetSheetVisible(false)
-  }, [])
-
   const hasMultipleVaults = useSelector(getHasMultipleVaults) as boolean
   const currentVault = useSelector(getCurrentVault) as Vault | null
   const [clearVaultSheetVisible, setClearVaultSheetVisible] = useState(false)
@@ -204,29 +133,21 @@ function useStorageScreen() {
     notesStorageInfo,
     notesStorageRows,
     buckets,
-    resetSheetVisible,
-    isClearingCache,
-    handleClearCache,
-    showAiModels: LOCAL_AI_ENABLED,
-    deviceStorage,
-    isDeletingOldVaults,
-    handleDeleteOldVaults,
-    handleOpenAiModels,
     handleDeleteMedia,
     handleReclaim,
     handleRetryDownload,
     handlePauseDownload,
-    handleResetPress,
     multiVault: isMultiVaultEnabled(),
     hasMultipleVaults,
     currentVault,
+    noteCount,
+    folderCount,
+    otherVaults: vaults.filter((vault) => !vault.current),
     clearVaultSheetVisible,
     handleClearVaultPress,
     handleClearVaultConfirm,
     handleClearVaultCancel,
-    handleResetConfirm,
-    handleResetCancel,
   }
 }
 
-export default useStorageScreen
+export default useVaultStorageScreen

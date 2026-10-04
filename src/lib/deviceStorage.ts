@@ -19,6 +19,7 @@ export type DeviceStorageSummary = {
 type Item = { category: string; bytes: number }
 
 const HOME_CACHE_DIRS = new Set(['tmp'])
+const VAULTS_DIR = 'vaults'
 
 const join = (dir: string, name: string) => `${dir.replace(/\/+$/, '')}/${name}`
 const isAncestor = (dir: string, path: string) => !!path && path.startsWith(`${dir}/`)
@@ -70,6 +71,14 @@ export async function measureDeviceStorage(): Promise<DeviceStorageSummary | nul
     for (const entry of shared) items.push({ category: DEVICE_STORAGE.OTHER, bytes: entry.bytes })
   }
   return summarizeDeviceStorage(items) as DeviceStorageSummary
+}
+
+export async function measureVaultSizes(): Promise<Record<string, number>> {
+  if (!ExpoLocalAi?.getStorageRoots) return {}
+  const { documents } = await ExpoLocalAi.getStorageRoots()
+  const sizes: Record<string, number> = {}
+  for (const entry of await list(join(documents, VAULTS_DIR))) sizes[entry.name] = entry.bytes
+  return sizes
 }
 
 export async function deleteOldVaults(): Promise<void> {

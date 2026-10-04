@@ -1,8 +1,7 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useDispatch } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router, Stack } from 'expo-router'
 
@@ -11,31 +10,26 @@ import { MAX_VAULTS } from '@pear-notes/core/constant.js'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { BottomActionSheet, type SheetAction } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { VaultAvatar } from '@/components/android/VaultAvatar'
 import { VaultNameDialog } from '@/components/android/VaultNameDialog'
-import { DangerActionCard } from '@/components/settings/DangerActionCard'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   FontFamily,
   FontSize,
-  Radii,
   UI_ICON_SIZE_20,
-  UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
   UI_SIZE_28,
   UI_SIZE_40,
-  UI_SIZE_48,
   UI_SIZE_56,
-  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { useVaultsScreen } from '@/hooks/useVaultsScreen'
-import { JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
+import { INVITE_VAULT_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { resetAllData } from '@/lib/clearAllData'
-import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
+import { getVaultErrorKey, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -56,40 +50,23 @@ export default function AndroidVaultsScreen() {
   const { openVault, submitName, confirmRemove } = screen
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const dispatch = useDispatch()
-  const [deleteAllVisible, setDeleteAllVisible] = useState(false)
-  const openDeleteAll = useCallback(() => setDeleteAllVisible(true), [])
-  const closeDeleteAll = useCallback(() => setDeleteAllVisible(false), [])
-  const deleteAllActions = useMemo<SheetAction[]>(
-    () => [
-      {
-        icon: 'delete-forever-outline',
-        label: t('vaults.deleteAllBtn'),
-        destructive: true,
-        onPress: () => {
-          setDeleteAllVisible(false)
-          resetAllData(dispatch)
-        },
-      },
-    ],
-    [dispatch, t],
-  )
-  const rippleOnTonal = useMemo(
-    () => androidRipple(c.onSecondaryContainer),
-    [c.onSecondaryContainer],
-  )
 
   const closeActions = useCallback(() => setActionVault(null), [setActionVault])
   const closeRemove = useCallback(() => setRemovingVault(null), [setRemovingVault])
   const closeNameDialog = useCallback(() => setNameDialog(null), [setNameDialog])
-  const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
   const handleOpen = useCallback(
     (vault: Vault) => {
       if (!vault.current) openVault(vault)
     },
     [openVault],
   )
+  const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
   const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
+  const handleInvite = useCallback(() => router.push(INVITE_VAULT_ROUTE as never), [])
+  const currentLabel = getVaultLabel(
+    vaults.find((vault) => vault.current),
+    t,
+  )
 
   const sheetActions = useMemo<SheetAction[]>(() => {
     if (!actionVault) return []
@@ -156,11 +133,7 @@ export default function AndroidVaultsScreen() {
           accessibilityLabel={label}
           style={index < vaults.length - 1 ? styles.rowDivider : styles.row}
         >
-          <View style={vault.current ? styles.avatarCurrent : styles.avatar}>
-            <Text style={vault.current ? styles.avatarTextCurrent : styles.avatarText}>
-              {getVaultInitial(label)}
-            </Text>
-          </View>
+          <VaultAvatar label={label} current={vault.current} />
           <View style={commonStyles.flex1}>
             <Text style={styles.rowLabel} numberOfLines={1}>
               {label}
@@ -197,46 +170,74 @@ export default function AndroidVaultsScreen() {
             {t(errorKey)}
           </Text>
         )}
-        {canAdd ? (
-          <View style={styles.buttonRow}>
-            <Pressable
-              onPress={handleCreate}
-              disabled={busy}
-              android_ripple={rippleOnTonal}
-              accessibilityRole="button"
-              style={styles.tonalButton}
-            >
-              <MaterialCommunityIcons
-                name="plus"
-                size={UI_ICON_SIZE_20}
-                color={c.onSecondaryContainer}
-              />
-              <Text style={styles.tonalButtonText}>{t('vaults.newVault')}</Text>
-            </Pressable>
-            <Pressable
-              onPress={handleJoin}
-              disabled={busy}
-              android_ripple={ripple}
-              accessibilityRole="button"
-              style={styles.outlinedButton}
-            >
-              <MaterialCommunityIcons name="qrcode-scan" size={UI_ICON_SIZE_20} color={c.primary} />
-              <Text style={styles.outlinedButtonText}>{t('vaults.join.sectionTitle')}</Text>
-            </Pressable>
-          </View>
-        ) : (
+        <View style={styles.card}>
+          <Pressable
+            onPress={handleInvite}
+            disabled={busy}
+            android_ripple={ripple}
+            accessibilityRole="button"
+            style={canAdd ? styles.rowDivider : styles.row}
+          >
+            <MaterialCommunityIcons
+              name="account-plus-outline"
+              size={UI_ICON_SIZE_20}
+              color={c.primary}
+            />
+            <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
+              {t('vaults.invite.title', { name: currentLabel })}
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={UI_ICON_SIZE_20}
+              color={c.onSurfaceVariant}
+            />
+          </Pressable>
+          {canAdd && (
+            <>
+              <Pressable
+                onPress={handleCreate}
+                disabled={busy}
+                android_ripple={ripple}
+                accessibilityRole="button"
+                style={styles.rowDivider}
+              >
+                <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_20} color={c.primary} />
+                <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
+                  {t('vaults.newVault')}
+                </Text>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={UI_ICON_SIZE_20}
+                  color={c.onSurfaceVariant}
+                />
+              </Pressable>
+              <Pressable
+                onPress={handleJoin}
+                disabled={busy}
+                android_ripple={ripple}
+                accessibilityRole="button"
+                style={styles.row}
+              >
+                <MaterialCommunityIcons
+                  name="qrcode-scan"
+                  size={UI_ICON_SIZE_20}
+                  color={c.primary}
+                />
+                <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
+                  {t('vaults.join.sectionTitle')}
+                </Text>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={UI_ICON_SIZE_20}
+                  color={c.onSurfaceVariant}
+                />
+              </Pressable>
+            </>
+          )}
+        </View>
+        {!canAdd && (
           <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>
         )}
-        <View style={styles.dangerSection}>
-          <Text style={styles.dangerHeader}>{t('storage.dangerZone')}</Text>
-          <DangerActionCard
-            title={t('vaults.deleteAll')}
-            description={t('vaults.deleteAllDesc', { count: vaults.length })}
-            buttonLabel={t('vaults.deleteAllBtn')}
-            disabled={busy}
-            onPress={openDeleteAll}
-          />
-        </View>
       </ScrollView>
 
       <BottomActionSheet
@@ -252,14 +253,6 @@ export default function AndroidVaultsScreen() {
         subtitle={t('vaults.removeDescription', { name: removingName })}
         showHeader
         actions={removeActions}
-      />
-      <BottomActionSheet
-        visible={deleteAllVisible}
-        onDismiss={closeDeleteAll}
-        title={t('vaults.deleteAllConfirmTitle')}
-        subtitle={t('vaults.deleteAllDesc', { count: vaults.length })}
-        showHeader
-        actions={deleteAllActions}
       />
       <VaultNameDialog
         visible={!!nameDialog}
@@ -281,21 +274,6 @@ const useVaultsScreenHooks = () => {
 
 const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
   const c = md3.colors as ExtendedColors
-  const avatarBase = {
-    width: UI_SIZE_40,
-    height: UI_SIZE_40,
-    borderRadius: Radii.md,
-    ...commonStyles.centered,
-  }
-  const buttonBase = {
-    ...commonStyles.row,
-    ...commonStyles.flex1,
-    justifyContent: 'center' as const,
-    gap: UI_SIZE_8,
-    minHeight: UI_SIZE_48,
-    borderRadius: UI_SIZE_9999,
-    overflow: 'hidden' as const,
-  }
   const rowBase = {
     ...commonStyles.row,
     gap: UI_SIZE_16,
@@ -331,24 +309,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
     },
-    avatar: {
-      ...avatarBase,
-      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
-    },
-    avatarCurrent: {
-      ...avatarBase,
-      backgroundColor: c.primaryContainer,
-    },
-    avatarText: {
-      fontFamily: FontFamily.bold,
-      fontSize: FontSize.body,
-      color: c.onSurfaceVariant,
-    },
-    avatarTextCurrent: {
-      fontFamily: FontFamily.bold,
-      fontSize: FontSize.body,
-      color: c.onPrimaryContainer,
-    },
     rowLabel: {
       fontSize: FontSize.subtitle,
       fontFamily: FontFamily.semiBold,
@@ -357,39 +317,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     rowSub: {
       fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
-    },
-    dangerSection: {
-      gap: UI_SIZE_8,
-      marginTop: UI_SIZE_16,
-    },
-    dangerHeader: {
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-      marginLeft: UI_SIZE_8,
-    },
-    buttonRow: {
-      ...commonStyles.row,
-      gap: UI_SIZE_12,
-    },
-    tonalButton: {
-      ...buttonBase,
-      backgroundColor: c.secondaryContainer,
-    },
-    tonalButtonText: {
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      color: c.onSecondaryContainer,
-    },
-    outlinedButton: {
-      ...buttonBase,
-      borderWidth: 1,
-      borderColor: c.outline,
-    },
-    outlinedButtonText: {
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      color: c.primary,
     },
     note: {
       fontSize: FontSize.caption,

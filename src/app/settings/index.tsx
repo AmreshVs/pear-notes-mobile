@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo } from 'react'
+import { Fragment, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
@@ -7,6 +7,7 @@ import { router, Stack, usePathname } from 'expo-router'
 
 import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
+import { VaultSettingsCard } from '@/components/settings/VaultSettingsCard'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
@@ -23,7 +24,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
-import { useSettingsSections } from '@/hooks/useSettingsSections'
+import { type SettingsSection, useSettingsSectionGroups } from '@/hooks/useSettingsSections'
 import { getAppVersionLabel } from '@/lib/appVersion'
 
 const SETTINGS_ROOT_PATH = '/settings'
@@ -46,15 +47,35 @@ export default function SettingsScreen() {
     router.back()
   }, [])
 
-  const allSections = useSettingsSections()
+  const sectionGroups = useSettingsSectionGroups()
 
-  const sections = useMemo(
-    () =>
-      allSections.map((section) => ({
-        ...section,
-        onPress: () => router.push(section.route as any),
-      })),
-    [allSections],
+  const renderGroup = useCallback(
+    (group: SettingsSection[]) => (
+      <RNView key={group[0].group} style={commonThemedStyles.card}>
+        {group.map(({ key, iosIcon, label, route }, i) => (
+          <Fragment key={key}>
+            <Pressable
+              onPress={() => router.push(route as never)}
+              style={({ pressed }) => [commonStyles.settingsRow, pressed && commonStyles.pressed]}
+            >
+              <RNView style={commonStyles.settingsRowLeft}>
+                <RNView style={commonThemedStyles.iconBox34}>
+                  <SymbolIcon name={iosIcon} size={UI_SIZE_20} color={colors.primary} />
+                </RNView>
+                <Text style={styles.rowLabel}>{label}</Text>
+              </RNView>
+              <SymbolIcon name="chevron.forward" size={UI_ICON_SIZE_16} color={colors.textMuted} />
+            </Pressable>
+            {i < group.length - 1 && (
+              <RNView style={styles.dividerWrap}>
+                <Divider />
+              </RNView>
+            )}
+          </Fragment>
+        ))}
+      </RNView>
+    ),
+    [colors.primary, colors.textMuted, commonThemedStyles, styles.dividerWrap, styles.rowLabel],
   )
 
   return (
@@ -82,37 +103,12 @@ export default function SettingsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.scroll}>
-          <MotionView layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}>
-            <RNView style={commonThemedStyles.card}>
-              {sections.map(({ key, iosIcon, label, onPress }, i) => (
-                <Fragment key={key}>
-                  <Pressable
-                    onPress={onPress}
-                    style={({ pressed }) => [
-                      commonStyles.settingsRow,
-                      pressed && commonStyles.pressed,
-                    ]}
-                  >
-                    <RNView style={commonStyles.settingsRowLeft}>
-                      <RNView style={commonThemedStyles.iconBox34}>
-                        <SymbolIcon name={iosIcon} size={UI_SIZE_20} color={colors.primary} />
-                      </RNView>
-                      <Text style={styles.rowLabel}>{label}</Text>
-                    </RNView>
-                    <SymbolIcon
-                      name="chevron.forward"
-                      size={UI_ICON_SIZE_16}
-                      color={colors.textMuted}
-                    />
-                  </Pressable>
-                  {i < sections.length - 1 && (
-                    <RNView style={styles.dividerWrap}>
-                      <Divider />
-                    </RNView>
-                  )}
-                </Fragment>
-              ))}
-            </RNView>
+          <MotionView
+            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+            style={styles.groups}
+          >
+            <VaultSettingsCard />
+            {sectionGroups.map(renderGroup)}
           </MotionView>
         </View>
         <RNView style={styles.footerContainer}>
@@ -136,6 +132,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
     scroll: {
       paddingHorizontal: UI_SIZE_20,
       paddingTop: UI_SIZE_12,
+    },
+    groups: {
+      gap: UI_SIZE_20,
     },
     dividerWrap: {
       marginHorizontal: 18,
