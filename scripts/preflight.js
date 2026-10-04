@@ -5,9 +5,11 @@ const path = require('path')
 const play = require('./playCredentials')
 const { compareInstalledCore } = require('./coreInstall')
 const { storeBuild } = require('./store-build')
+const { findIosXcode, MAX_IOS_SDK_MAJOR } = require('./xcode')
 
 const ROOT = path.resolve(__dirname, '..')
 const IS_CI = process.env.CI === 'true'
+const BUILDS_IOS_LOCALLY = process.argv.includes('--local-ios')
 const DIRTY_FILES_SHOWN = 5
 const IOS_APP_TARGET_NAME = 'pearnotes'
 const IOS_SHARE_EXTENSION_TARGET_NAME = 'PearNotesShareExtension'
@@ -621,6 +623,25 @@ function checkBuildJdk() {
   )
 }
 
+function checkBuildXcode() {
+  if (process.platform !== 'darwin' || !BUILDS_IOS_LOCALLY) return
+
+  const xcode = findIosXcode()
+  if (!xcode.developerDir) return fail('xcode', 'no Xcode found - install Xcode 26')
+
+  if (xcode.usable) {
+    const via = xcode.selected ? 'selected' : 'used for iOS builds instead of the selected Xcode'
+    return pass('xcode', `iOS SDK ${xcode.sdk} at ${xcode.developerDir} (${via})`)
+  }
+
+  fail(
+    'xcode',
+    `iOS SDK ${xcode.sdk ?? 'unknown'} at ${xcode.developerDir} builds an app that crashes at launch on ` +
+      `iOS 27 (the iOS 27 SDK requires the UIScene lifecycle, which Expo SDK 56 lacks). Install ` +
+      `Xcode ${MAX_IOS_SDK_MAJOR} next to it as /Applications/Xcode-${MAX_IOS_SDK_MAJOR}.app`,
+  )
+}
+
 function checkCodeShrinking() {
   const properties = fs.readFileSync(path.join(ROOT, 'android', 'gradle.properties'), 'utf8')
   const rules = fs.readFileSync(path.join(ROOT, 'android', 'app', 'proguard-rules.pro'), 'utf8')
@@ -765,6 +786,7 @@ checkCleartextPolicy()
 checkCodeShrinking()
 checkIosCompliance()
 checkBuildJdk()
+checkBuildXcode()
 checkToolchain()
 checkSubmitCredentials()
 report()

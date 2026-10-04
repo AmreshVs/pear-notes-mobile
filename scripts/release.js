@@ -7,6 +7,7 @@ const play = require('./playCredentials')
 const playUpload = require('./playUpload')
 const { formatDuration, startHeartbeat } = require('./progress')
 const { storeBuild } = require('./store-build')
+const { findIosXcode, MAX_IOS_SDK_MAJOR } = require('./xcode')
 
 const ROOT = path.resolve(__dirname, '..')
 const ARTIFACT_DIR = path.join(ROOT, 'build')
@@ -146,9 +147,19 @@ function appleEnv(profile) {
     )
   }
 
+  const xcode = findIosXcode()
+  if (!xcode.usable) {
+    abort(
+      `no Xcode with an iOS ${MAX_IOS_SDK_MAJOR} SDK found - the iOS ${xcode.sdk ?? 'unknown'} SDK ` +
+        'builds an app that crashes at launch on iOS 27. Install Xcode ' +
+        `${MAX_IOS_SDK_MAJOR} as /Applications/Xcode-${MAX_IOS_SDK_MAJOR}.app`,
+    )
+  }
+
   return {
     EXPO_APPLE_TEAM_ID: appleTeamId,
     EXPO_APPLE_TEAM_TYPE: process.env.EXPO_APPLE_TEAM_TYPE ?? 'INDIVIDUAL',
+    DEVELOPER_DIR: xcode.developerDir,
   }
 }
 
@@ -521,7 +532,12 @@ async function main() {
 
   if (!args.skipPreflight) {
     heading('Running release preflight')
-    const preflight = spawnSync('node', ['scripts/preflight.js'], { cwd: ROOT, stdio: 'inherit' })
+    const buildsIosLocally = platforms.includes('ios') && !args.cloud
+    const preflightArgs = buildsIosLocally ? ['--local-ios'] : []
+    const preflight = spawnSync('node', ['scripts/preflight.js', ...preflightArgs], {
+      cwd: ROOT,
+      stdio: 'inherit',
+    })
     if (preflight.status !== 0) abort('preflight checks did not pass')
   }
 

@@ -39,7 +39,10 @@
     "production-cloud": {
       "extends": "production",
       "environment": "production",
-      "node": "24.21.0"
+      "node": "24.21.0",
+      "ios": {
+        "image": "macos-tahoe-26.5-xcode-26.6"
+      }
     }
   },
   "submit": {
