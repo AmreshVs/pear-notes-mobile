@@ -1,6 +1,7 @@
 const crypto = require('crypto')
 const fs = require('fs')
 const https = require('https')
+const net = require('net')
 
 const play = require('./playCredentials')
 
@@ -12,6 +13,9 @@ const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504])
 const MAX_ATTEMPTS = 3
 const RETRY_BASE_MS = 5000
 const UPLOAD_TIMEOUT_MS = 15 * 60_000
+
+// Node's 250ms happy-eyeballs window drops IPv4 when RTT is higher, then hangs on a dead IPv6 route.
+net.setDefaultAutoSelectFamilyAttemptTimeout(3000)
 
 class PlayUploadError extends Error {
   constructor(message, hint) {
