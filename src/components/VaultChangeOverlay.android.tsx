@@ -1,12 +1,9 @@
-import { ActivityIndicator, StyleSheet, View } from 'react-native'
-import { FadeIn, FadeOut } from 'react-native-reanimated'
+import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
-  Durations,
   FontFamily,
   FontSize,
   UI_SIZE_16,
@@ -15,7 +12,7 @@ import {
 } from '@/constants/commonStyles'
 import { useVaultChangeOverlay } from '@/hooks/useVaultChangeOverlay'
 
-const OVERLAY_Z_INDEX = 1000
+const noop = () => {}
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -26,21 +23,22 @@ export function VaultChangeOverlay() {
   const md3 = useMD3Theme()
   const { visible, message } = useVaultChangeOverlay()
 
-  if (!visible) return null
-
   return (
-    <MotionView
-      style={styles.scrim}
-      entering={FadeIn.duration(Durations.overlayFade)}
-      exiting={FadeOut.duration(Durations.overlayFadeOut)}
-      accessibilityRole="progressbar"
-      accessibilityLabel={message}
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      statusBarTranslucent
+      navigationBarTranslucent
+      onRequestClose={noop}
     >
-      <View style={styles.card}>
-        <ActivityIndicator size="large" color={md3.colors.primary} />
-        <Text style={styles.message}>{message}</Text>
+      <View style={styles.scrim} accessibilityRole="progressbar" accessibilityLabel={message}>
+        <View style={styles.card}>
+          <ActivityIndicator size="large" color={md3.colors.primary} />
+          <Text style={styles.message}>{message}</Text>
+        </View>
       </View>
-    </MotionView>
+    </Modal>
   )
 }
 
@@ -55,7 +53,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
     scrim: {
       ...StyleSheet.absoluteFill,
       ...commonStyles.centered,
-      zIndex: OVERLAY_Z_INDEX,
       backgroundColor: theme.colors.backdrop,
     },
     card: {

@@ -1,5 +1,6 @@
 import { ActivityIndicator, StyleSheet, View } from 'react-native'
 import { FadeIn, FadeOut } from 'react-native-reanimated'
+import { FullWindowOverlay } from 'react-native-screens'
 import { BlurView } from 'expo-blur'
 
 import { MotionView } from '@/components/MotionView'
@@ -18,24 +19,26 @@ export function VaultChangeOverlay() {
   if (!visible) return null
 
   return (
-    <MotionView
-      style={styles.layer}
-      entering={FadeIn.duration(Durations.overlayFade)}
-      exiting={FadeOut.duration(Durations.overlayFadeOut)}
-      accessibilityRole="progressbar"
-      accessibilityLabel={message}
-      accessibilityViewIsModal
-    >
-      <BlurView
-        intensity={BLUR_INTENSITY}
-        tint={theme.colorScheme}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.content}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-        <Text style={styles.message}>{message}</Text>
-      </View>
-    </MotionView>
+    <FullWindowOverlay>
+      <MotionView
+        style={styles.layer}
+        entering={FadeIn.duration(Durations.overlayFade)}
+        exiting={FadeOut.duration(Durations.overlayFadeOut)}
+        accessibilityRole="progressbar"
+        accessibilityLabel={message}
+        accessibilityViewIsModal
+      >
+        <BlurView
+          intensity={BLUR_INTENSITY}
+          tint={theme.colorScheme}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.content}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={styles.message}>{message}</Text>
+        </View>
+      </MotionView>
+    </FullWindowOverlay>
   )
 }
 
