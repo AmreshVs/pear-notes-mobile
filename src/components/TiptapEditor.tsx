@@ -13,6 +13,7 @@ import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
 
+import * as log from '@pear-notes/core/log.js'
 import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
@@ -356,6 +357,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const pendingContentRef = useRef<string | null>(null)
     const pendingLoadNoteRef = useRef<{ noteId: string; html: string } | null>(null)
     const pendingTitleRef = useRef<string | null>(null)
+    const currentNoteRef = useRef<{ noteId: string | null; html: string } | null>(null)
+    const currentTitleRef = useRef<string | null>(null)
 
     const initialTitleRef = useRef(initialTitle ?? '')
     const initialContentRef = useRef(initialContent)
@@ -490,10 +493,13 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             break
 
           case 'contentChange':
+            if (currentNoteRef.current) currentNoteRef.current.html = msg.html
+            else currentNoteRef.current = { noteId: null, html: msg.html }
             onContentChangeRef.current(msg.html)
             break
 
           case 'titleChange':
+            currentTitleRef.current = msg.title
             onTitleChangeRef.current?.(msg.title)
             break
 
@@ -610,6 +616,21 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       webViewRef.current?.reload()
     }, [])
 
+    const handleProcessGone = useCallback(() => {
+      log.warn('[editor] web content process ended, reloading the editor')
+      const current = currentNoteRef.current
+      editorReadyRef.current = false
+      editorInitializedRef.current = false
+      pendingContentRef.current = null
+      pendingLoadNoteRef.current = null
+      if (current?.noteId)
+        pendingLoadNoteRef.current = { noteId: current.noteId, html: current.html }
+      else if (current) pendingContentRef.current = current.html
+      pendingTitleRef.current = currentTitleRef.current
+      setEditorState('loading')
+      webViewRef.current?.reload()
+    }, [])
+
     useImperativeHandle(
       ref,
       () => ({
@@ -684,6 +705,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         },
         getHTML: getHTMLAsync,
         setHTML: (html) => {
+          if (currentNoteRef.current) currentNoteRef.current.html = html
+          else currentNoteRef.current = { noteId: null, html }
           if (!editorInitializedRef.current) {
             pendingContentRef.current = html
           } else {
@@ -691,6 +714,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }
         },
         loadNote: (noteId, html) => {
+          currentNoteRef.current = { noteId, html }
           if (!editorInitializedRef.current) {
             pendingLoadNoteRef.current = { noteId, html }
           } else {
@@ -698,6 +722,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }
         },
         setTitle: (title) => {
+          currentTitleRef.current = title
           if (!editorInitializedRef.current) {
             pendingTitleRef.current = title
           } else {
@@ -749,6 +774,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
             onMessage={handleMessage}
             onError={handleError}
+            onContentProcessDidTerminate={handleProcessGone}
+            onRenderProcessGone={handleProcessGone}
             style={[styles.webView, backgroundColor ? { backgroundColor } : null]}
             scrollEnabled={scrollEnabled}
             showsVerticalScrollIndicator={false}
