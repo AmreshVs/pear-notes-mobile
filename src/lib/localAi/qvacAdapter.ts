@@ -1,5 +1,5 @@
 import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'react-native'
-import { File, Paths } from 'expo-file-system'
+import { Directory, File, Paths } from 'expo-file-system'
 
 import { runAsk } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
@@ -7,6 +7,7 @@ import {
   LOCAL_AI_ERROR,
   LOCAL_AI_FEATURE,
   LOCAL_AI_LANGUAGE,
+  LOCAL_AI_MODEL_STATUS,
   LOCAL_AI_NETWORK,
   LOCAL_AI_OCR_LANGUAGES,
   LOCAL_AI_REGISTRY_MODELS,
@@ -29,6 +30,8 @@ import {
   WORK_EVENT,
   WORK_STEP,
 } from '@pear-notes/core/store/services/localAiWorkProgress.js'
+import { getLocalAiLoaded, getLocalAiModels } from '@pear-notes/core/store/slices/localAiSlice.js'
+import { store } from '@pear-notes/core/store/store.js'
 
 import { getLocalAiDeviceSupport, getLocalAiDiskSpace } from '@/lib/localAi/deviceSupport'
 import { ConnectionKind, getConnectionKind } from '@/lib/networkState'
@@ -119,6 +122,7 @@ export class LocalAiError extends Error {
 }
 
 let sdkPromise: Promise<QvacSdk> | null = null
+let registryCacheSwept = false
 let modelsDirectory: string | null = null
 let appStateSubscription: NativeEventSubscription | null = null
 let memoryWarningSubscription: NativeEventSubscription | null = null
@@ -315,9 +319,32 @@ function handleAppStateChange(sdk: QvacSdk, state: AppStateStatus) {
   reconcileLifecycle(sdk)
 }
 
+type ModelState = { status?: string; downloadedBytes?: number } | undefined
+
+function hasPartialDownload(): boolean {
+  const state = store.getState()
+  if (!getLocalAiLoaded(state)) return true
+  return Object.values(getLocalAiModels(state) as Record<string, ModelState>).some(
+    (model) =>
+      model?.status !== LOCAL_AI_MODEL_STATUS.READY && (Number(model?.downloadedBytes) || 0) > 0,
+  )
+}
+
+const registryBlockCacheDir = () => new Directory(Paths.document, '.qvac', 'registry-corestore')
+
+function sweepRegistryBlockCache() {
+  if (registryCacheSwept || hasPartialDownload()) return
+  registryCacheSwept = true
+  try {
+    const dir = registryBlockCacheDir()
+    if (dir.exists) dir.delete()
+  } catch {}
+}
+
 function loadSdk(): Promise<QvacSdk> {
   if (!sdkPromise) {
     const pending = (async () => {
+      sweepRegistryBlockCache()
       const directory = await ensureModelsDirectory()
       await writeRuntimeConfig(directory)
       const sdk = await import('@qvac/sdk')
@@ -439,14 +466,12 @@ async function deleteModel(name: string) {
   }
 }
 
-async function closeAndWipe() {
+async function shutDownSdk() {
   appStateSubscription?.remove()
   appStateSubscription = null
   memoryWarningSubscription?.remove()
   memoryWarningSubscription = null
   clearIdleUnload()
-  modelGuard = { active: null, crashes: {} }
-  writeModelGuard()
   const pendingSdk = sdkPromise
   sdkPromise = null
   if (pendingSdk) {
@@ -464,8 +489,27 @@ async function closeAndWipe() {
   wantsSuspend = false
   usedSinceResume = false
   lifecycleRun = null
+}
+
+async function closeAndWipe() {
+  modelGuard = { active: null, crashes: {} }
+  writeModelGuard()
+  await shutDownSdk()
   if (ExpoLocalAi) await ExpoLocalAi.deleteModelsDirectory()
   modelsDirectory = null
+}
+
+export async function clearLocalAiDownloadCache(): Promise<boolean> {
+  if (activeModelWork > 0 || pendingDownloads.size > 0 || hasPartialDownload()) return false
+  if (sdkPromise) await shutDownSdk()
+  if (sdkPromise) return false
+  try {
+    const dir = registryBlockCacheDir()
+    if (dir.exists) dir.delete()
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function loadSpeechModel(

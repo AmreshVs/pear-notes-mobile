@@ -294,7 +294,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Radii.card,
       borderCurve: 'continuous',
       overflow: 'hidden',
-      backgroundColor: theme.colors.controlBackground,
+      backgroundColor: theme.colors.cardSurface,
     },
     itemRow: {
       ...commonStyles.row,

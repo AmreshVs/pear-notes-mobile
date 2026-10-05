@@ -16,6 +16,7 @@ import {
   measureVaultSizes,
 } from '@/lib/deviceStorage'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
+import { clearLocalAiDownloadCache } from '@/lib/localAi/qvacAdapter'
 import type { Vault } from '@/lib/vaults.types'
 import { getDeviceStorageBreakdown, type VaultUsage } from '@/utils/storageBar'
 
@@ -71,6 +72,7 @@ export function useDeviceStorage() {
     try {
       await clearCaches()
       await clearTemporaryFiles()
+      if (LOCAL_AI_ENABLED) await clearLocalAiDownloadCache()
       await refresh()
     } finally {
       setIsClearingCache(false)

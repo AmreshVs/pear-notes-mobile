@@ -15,6 +15,7 @@ const THUMBNAIL_SWEEP_GRACE_MS = 5 * 60 * 1000
 const TRANSIENT_CACHE_DIRS = ['ImagePicker', 'Audio', 'AV', 'mlkit_docscan_ui_client']
 const UPLOAD_CACHE_PREFIX = 'upload-'
 const SCAN_PDF_PREFIX = 'scan-'
+const TRANSIENT_AUDIO_PREFIXES = ['transcript-', 'dictation-']
 
 export async function sweepTransientUploadCache(): Promise<void> {
   const directory = FileSystem.cacheDirectory
@@ -27,6 +28,7 @@ export async function sweepTransientUploadCache(): Promise<void> {
           (name) =>
             name.startsWith(UPLOAD_CACHE_PREFIX) ||
             name.startsWith(SCAN_PDF_PREFIX) ||
+            TRANSIENT_AUDIO_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
             TRANSIENT_CACHE_DIRS.includes(name),
         )
         .map((name) => FileSystem.deleteAsync(`${directory}${name}`, { idempotent: true })),

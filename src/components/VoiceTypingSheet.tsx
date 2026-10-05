@@ -950,6 +950,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderCurve: 'continuous',
       borderWidth: StyleSheet.hairlineWidth,
       borderColor: theme.colors.separator,
+      backgroundColor: theme.colors.cardSurface,
     },
     chipSelected: {
       borderColor: theme.colors.primary,
@@ -1027,9 +1028,7 @@ const useStyles = createThemedStylesheet((theme) => {
       borderCurve: 'continuous',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.isDark
-        ? theme.colors.surfaceSecondary
-        : theme.colors.sheetCancelBackground,
+      backgroundColor: theme.colors.cardSurface,
     },
     secondaryButton: {
       flex: 1,
@@ -1040,9 +1039,7 @@ const useStyles = createThemedStylesheet((theme) => {
       minHeight: UI_SIZE_54,
       borderRadius: 999,
       borderCurve: 'continuous',
-      backgroundColor: theme.isDark
-        ? theme.colors.surfaceSecondary
-        : theme.colors.sheetCancelBackground,
+      backgroundColor: theme.colors.cardSurface,
     },
     secondaryButtonText: {
       fontSize: FontSize.subtitle,

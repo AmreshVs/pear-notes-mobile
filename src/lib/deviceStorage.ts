@@ -20,6 +20,7 @@ type Item = { category: string; bytes: number }
 
 const HOME_CACHE_DIRS = new Set(['tmp'])
 const VAULTS_DIR = 'vaults'
+const QVAC_DIR = '.qvac'
 
 const join = (dir: string, name: string) => `${dir.replace(/\/+$/, '')}/${name}`
 const isAncestor = (dir: string, path: string) => !!path && path.startsWith(`${dir}/`)
@@ -44,6 +45,8 @@ export async function measureDeviceStorage(): Promise<DeviceStorageSummary | nul
       const path = join(dir, entry.name)
       if (path === roots.models) {
         items.push({ category: DEVICE_STORAGE.AI_MODELS, bytes: entry.bytes })
+      } else if (dir === roots.documents && entry.name === QVAC_DIR) {
+        items.push({ category: DEVICE_STORAGE.CACHE, bytes: entry.bytes })
       } else if (dir === roots.documents && !special.some((s) => isAncestor(path, s))) {
         const category = classifyVaultStorageEntry(entry.name) ?? DEVICE_STORAGE.OTHER
         items.push({ category, bytes: entry.bytes })
