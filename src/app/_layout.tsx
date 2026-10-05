@@ -90,7 +90,7 @@ import { NoteEditorProvider } from '@/providers/NoteEditorProvider'
 import { SheetProvider } from '@/providers/SheetProvider'
 import { ToastProvider } from '@/providers/ToastProvider'
 import { getLocalDeviceName } from '@/utils/deviceName'
-import { startWorklet } from '@/utils/worklet'
+import { markBackendReady, startWorklet } from '@/utils/worklet'
 
 export { AppErrorBoundary as ErrorBoundary } from '@/components/AppErrorBoundary'
 
@@ -261,6 +261,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         return
       }
       appBoot.mark('backendApi.ready resolved')
+      markBackendReady()
       log.info('[boot] backend ready in ' + (Date.now() - readyStartedAt) + 'ms')
       workletRestartAttemptsRef.current = 0
       keychainRetryAttemptsRef.current = 0

@@ -7,6 +7,7 @@ import {
 } from 'expo-background-task'
 import * as TaskManager from 'expo-task-manager'
 
+import { backendApi } from '@pear-notes/core/backend/api.js'
 import { SYNC_WAKE_RESULT } from '@pear-notes/core/constant.js'
 import * as log from '@pear-notes/core/log.js'
 import { getSyncStatusSnapshot, recordBackgroundWake } from '@pear-notes/core/utils.js'
@@ -16,10 +17,12 @@ import { withTimeout } from '@/utils/withTimeout'
 import {
   EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS,
   isActiveWorkletSuspended,
+  isBackendReady,
   setBackgroundSyncWindowActive,
   suspendActiveWorklet,
   suspendIfDeferredForBackgroundSync,
   terminateWorkletIfActive,
+  waitForBackendReady,
   wakeActiveWorklet,
 } from '@/utils/worklet'
 
@@ -38,6 +41,10 @@ const BACKGROUND_SUSPEND_SETTLE_MS = 2_000
 const BACKGROUND_SYNC_MINIMUM_INTERVAL_MINUTES = 30
 const BACKEND_RPC_TIMEOUT_MS = 10_000
 const APP_LOG_FLUSH_GRACE_MS = 2_500
+const BACKEND_READY_WAIT_MS = 120_000
+const WAKE_RENEWAL_MS = 15_000
+
+const isForeground = () => AppState.currentState === 'active'
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
@@ -69,17 +76,37 @@ async function recordWake(result: string): Promise<void> {
   }
 }
 
+function keepWorkletAwake(): () => void {
+  const timer = setInterval(() => {
+    if (isActiveWorkletSuspended()) wakeActiveWorklet(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+  }, WAKE_RENEWAL_MS)
+  return () => clearInterval(timer)
+}
+
+async function suspendBackendServices(): Promise<void> {
+  try {
+    await withTimeout(backendApi.suspendServices(), BACKEND_RPC_TIMEOUT_MS, 'suspendServices')
+  } catch (err) {
+    log.info(BACKGROUND_SYNC_LOG_PREFIX + ' could not suspend backend services', err)
+  }
+}
+
 async function resuspendIfTaskWokeIt(wokeFromSuspended: boolean): Promise<void> {
   if (!wokeFromSuspended) {
     log.info(BACKGROUND_SYNC_LOG_PREFIX + ' worklet was already awake, leaving it running')
     return
   }
 
-  if (AppState.currentState === 'active') {
+  if (isForeground()) {
     log.info(BACKGROUND_SYNC_LOG_PREFIX + ' app came to foreground, leaving it running')
     return
   }
 
+  await suspendBackendServices()
+  if (isForeground()) {
+    log.info(BACKGROUND_SYNC_LOG_PREFIX + ' app came to foreground, leaving it running')
+    return
+  }
   if (!suspendActiveWorklet()) return
 
   await delay(BACKGROUND_SUSPEND_SETTLE_MS)
@@ -195,6 +222,8 @@ log.info(
 TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
   log.info(BACKGROUND_SYNC_LOG_PREFIX + ' task fired at ' + new Date().toISOString())
   let coldStartedWorklet: any = null
+  const backendWasReady = isBackendReady()
+  const stopKeepingAwake = keepWorkletAwake()
   try {
     const { woke, wokeFromSuspended } = await waitForActiveWorklet()
 
@@ -207,12 +236,27 @@ TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
     }
 
     setBackgroundSyncWindowActive(true)
+    if (!coldStartedWorklet && !backendWasReady) {
+      const readyStartedAt = Date.now()
+      const ready = await waitForBackendReady(BACKEND_READY_WAIT_MS)
+      log.info(
+        BACKGROUND_SYNC_LOG_PREFIX +
+          ' app launched for this task, backend ready=' +
+          ready +
+          ' after ' +
+          (Date.now() - readyStartedAt) +
+          'ms',
+      )
+      if (!ready) return BackgroundTaskResult.Failed
+    }
+    const freshBoot = !!coldStartedWorklet || !backendWasReady
     const synced = await waitForSyncWindow(
-      coldStartedWorklet ? COLD_START_SYNC_WINDOW_MS : BACKGROUND_SYNC_WINDOW_MS,
+      freshBoot ? COLD_START_SYNC_WINDOW_MS : BACKGROUND_SYNC_WINDOW_MS,
     )
     const result = synced ? SYNC_WAKE_RESULT.OK : SYNC_WAKE_RESULT.NO_CHANGES
     await recordWake(result)
     log.info(BACKGROUND_SYNC_LOG_PREFIX + ' coldStarted=' + !!coldStartedWorklet)
+    stopKeepingAwake()
     if (!coldStartedWorklet) await resuspendIfTaskWokeIt(wokeFromSuspended)
     return BackgroundTaskResult.Success
   } catch (err) {
@@ -220,6 +264,7 @@ TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
     await recordWake(SYNC_WAKE_RESULT.ERROR)
     return BackgroundTaskResult.Failed
   } finally {
+    stopKeepingAwake()
     setBackgroundSyncWindowActive(false)
     if (coldStartedWorklet) await tearDownColdStartedWorklet(coldStartedWorklet)
     suspendIfDeferredForBackgroundSync()

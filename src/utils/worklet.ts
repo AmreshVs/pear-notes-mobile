@@ -47,6 +47,8 @@ let _backgroundSyncWindowActive = false
 let _suspendDeferredForBackgroundSync = false
 let _awaySince: number | null = null
 let _serviceStoppedSubscription: { remove: () => void } | null = null
+let _backendReadyWorklet: any = null
+let _backendReadyWaiters: (() => void)[] = []
 
 function logLifecycle(message: string, detail?: Record<string, unknown>) {
   const suffix = detail
@@ -166,6 +168,32 @@ export function wakeActiveWorklet(deadlineMs: number): boolean {
   } catch {
     return false
   }
+}
+
+export function markBackendReady(): void {
+  _backendReadyWorklet = _activeWorklet
+  const waiters = _backendReadyWaiters
+  _backendReadyWaiters = []
+  for (const waiter of waiters) waiter()
+}
+
+export function isBackendReady(): boolean {
+  return !!_activeWorklet && !_activeWorklet.terminated && _backendReadyWorklet === _activeWorklet
+}
+
+export function waitForBackendReady(timeoutMs: number): Promise<boolean> {
+  if (isBackendReady()) return Promise.resolve(true)
+  return new Promise((resolve) => {
+    const waiter = () => {
+      clearTimeout(timer)
+      resolve(isBackendReady())
+    }
+    const timer = setTimeout(() => {
+      _backendReadyWaiters = _backendReadyWaiters.filter((w) => w !== waiter)
+      resolve(false)
+    }, timeoutMs)
+    _backendReadyWaiters.push(waiter)
+  })
 }
 
 export function isActiveWorkletSuspended(): boolean {

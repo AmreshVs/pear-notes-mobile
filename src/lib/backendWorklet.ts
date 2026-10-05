@@ -5,7 +5,7 @@ import * as log from '@pear-notes/core/log.js'
 
 import { getDbEncryptionKey, getVaultEntropy } from '@/lib/secureStore'
 import { withTimeout } from '@/utils/withTimeout'
-import { startWorklet, terminateWorkletIfActive } from '@/utils/worklet'
+import { markBackendReady, startWorklet, terminateWorkletIfActive } from '@/utils/worklet'
 
 const WORKLET_BOOT_LOG_PREFIX = '[worklet-boot]'
 const BACKEND_READY_TIMEOUT_MS = 60_000
@@ -41,6 +41,7 @@ export async function startBackendWorkletForBackgroundTask(): Promise<any | null
     return null
   }
   log.info(WORKLET_BOOT_LOG_PREFIX + ' backend ready in ' + (Date.now() - readyAt) + 'ms')
+  markBackendReady()
 
   return worklet
 }
