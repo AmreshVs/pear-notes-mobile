@@ -64,6 +64,18 @@ function runCleanups() {
   }
 }
 
+function registerCleanup(cleanup) {
+  cleanups.push(cleanup)
+  return () => {
+    const index = cleanups.indexOf(cleanup)
+    if (index === -1) return
+    cleanups.splice(index, 1)
+    try {
+      cleanup()
+    } catch {}
+  }
+}
+
 function abort(message) {
   runCleanups()
   console.error(`\n\x1b[31mrelease failed: ${message}\x1b[0m\n`)
@@ -258,7 +270,7 @@ async function buildAndSubmitOnEas(platform, version, buildNumber) {
     }
     return { file: null, failure }
   } finally {
-    runCleanups()
+    env.cleanup?.()
   }
 }
 
@@ -295,9 +307,9 @@ function submitCredentialsEnv(platform) {
 
   const key = resolvePlayKey()
   if (!key) return { failure: 'no Play upload key configured - node scripts/setup-play-key.js' }
-  cleanups.push(key.cleanup)
+  const cleanup = registerCleanup(key.cleanup)
   console.log(`\n  Play upload key: ${key.email} (${key.source})`)
-  return { values: { [play.ENV_VAR]: key.path } }
+  return { values: { [play.ENV_VAR]: key.path }, cleanup }
 }
 
 async function buildOnEas(platform, version, buildNumber) {
@@ -478,6 +490,7 @@ async function submit(platform, profile, artifact, version, buildNumber) {
   }
 
   const env = {}
+  let cleanupKey = null
 
   if (platform === 'android') {
     const key = resolvePlayKey()
@@ -490,7 +503,7 @@ async function submit(platform, profile, artifact, version, buildNumber) {
       return { skipped: true, failure: null }
     }
 
-    cleanups.push(key.cleanup)
+    cleanupKey = registerCleanup(key.cleanup)
     env[play.ENV_VAR] = key.path
     console.log(`\n  Play upload key: ${key.email} (${key.source})`)
   }
@@ -503,7 +516,7 @@ async function submit(platform, profile, artifact, version, buildNumber) {
     )
     return { skipped: false, failure }
   } finally {
-    runCleanups()
+    cleanupKey?.()
   }
 }
 
@@ -547,6 +560,55 @@ function finish(outcomes, totalMs, version, buildNumber, commit) {
   }
   console.log('')
   process.exitCode = 1
+}
+
+async function releasePlatform(platform, args, version, buildNumber) {
+  const { file, failure, submitted, submitFailed } = args.autoSubmit
+    ? await buildAndSubmitOnEas(platform, version, buildNumber)
+    : args.cloud
+      ? await buildOnEas(platform, version, buildNumber)
+      : await buildLocally(platform, args.profile, version, buildNumber)
+
+  if (submitted) {
+    return { platform, status: 'ok', detail: 'built and submitted on EAS' }
+  }
+
+  if (submitFailed) {
+    console.error(`\n\x1b[31m  ${platform} built on EAS, but the EAS submission failed.\x1b[0m`)
+    if (file) {
+      console.error(
+        `  The build is kept at ${path.relative(ROOT, file)} - retry with --submit-only.`,
+      )
+    }
+    return { platform, status: 'failed', detail: 'built ok, EAS submit failed' }
+  }
+
+  if (failure) {
+    console.error(`\n\x1b[31m  ${platform} build failed: ${failure}\x1b[0m`)
+    return { platform, status: 'failed', detail: 'build failed' }
+  }
+
+  if (args.skipSubmit) {
+    return {
+      platform,
+      status: 'ok',
+      detail: `built, not uploaded (${path.relative(ROOT, file)})`,
+    }
+  }
+
+  const result = await submit(platform, args.profile, file, version, buildNumber)
+
+  if (result.skipped) {
+    return { platform, status: 'skipped', detail: 'built, no upload key' }
+  }
+
+  if (result.failure) {
+    console.error(`\n\x1b[31m  ${platform} submit failed.\x1b[0m The build is kept at`)
+    console.error(`  ${path.relative(ROOT, file)} — retry with --submit-only, no rebuild needed.`)
+    return { platform, status: 'failed', detail: 'built ok, submit failed' }
+  }
+
+  return { platform, status: 'ok', detail: 'built and submitted' }
 }
 
 async function main() {
@@ -621,62 +683,13 @@ async function main() {
   const commit = capture('git rev-parse --short HEAD')
   heading(`Releasing Pear Notes ${version} (build ${buildNumber}) from ${commit}`)
 
+  const release = (platform) => releasePlatform(platform, args, version, buildNumber)
   const outcomes = []
-
-  for (const platform of platforms) {
-    const { file, failure, submitted, submitFailed } = args.autoSubmit
-      ? await buildAndSubmitOnEas(platform, version, buildNumber)
-      : args.cloud
-        ? await buildOnEas(platform, version, buildNumber)
-        : await buildLocally(platform, args.profile, version, buildNumber)
-
-    if (submitted) {
-      outcomes.push({ platform, status: 'ok', detail: 'built and submitted on EAS' })
-      continue
-    }
-
-    if (submitFailed) {
-      console.error(`\n\x1b[31m  ${platform} built on EAS, but the EAS submission failed.\x1b[0m`)
-      if (file) {
-        console.error(
-          `  The build is kept at ${path.relative(ROOT, file)} - retry with --submit-only.`,
-        )
-      }
-      outcomes.push({ platform, status: 'failed', detail: 'built ok, EAS submit failed' })
-      continue
-    }
-
-    if (failure) {
-      console.error(`\n\x1b[31m  ${platform} build failed: ${failure}\x1b[0m`)
-      console.error('  Continuing with the remaining platforms.')
-      outcomes.push({ platform, status: 'failed', detail: 'build failed' })
-      continue
-    }
-
-    if (args.skipSubmit) {
-      outcomes.push({
-        platform,
-        status: 'ok',
-        detail: `built, not uploaded (${path.relative(ROOT, file)})`,
-      })
-      continue
-    }
-
-    const result = await submit(platform, args.profile, file, version, buildNumber)
-
-    if (result.skipped) {
-      outcomes.push({ platform, status: 'skipped', detail: 'built, no upload key' })
-      continue
-    }
-
-    if (result.failure) {
-      console.error(`\n\x1b[31m  ${platform} submit failed.\x1b[0m The build is kept at`)
-      console.error(`  ${path.relative(ROOT, file)} — retry with --submit-only, no rebuild needed.`)
-      outcomes.push({ platform, status: 'failed', detail: 'built ok, submit failed' })
-      continue
-    }
-
-    outcomes.push({ platform, status: 'ok', detail: 'built and submitted' })
+  if (args.cloud && platforms.length > 1) {
+    heading(`Building ${platforms.join(' and ')} on EAS at the same time`)
+    outcomes.push(...(await Promise.all(platforms.map(release))))
+  } else {
+    for (const platform of platforms) outcomes.push(await release(platform))
   }
 
   finish(outcomes, Date.now() - started, version, buildNumber, commit)
