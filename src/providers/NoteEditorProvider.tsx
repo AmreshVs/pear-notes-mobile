@@ -22,7 +22,11 @@ import {
   LOCAL_AI_ENABLED,
   LOCAL_AI_FEATURE,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
-import { htmlToNoteText, htmlToParagraphs } from '@pear-notes/core/store/services/localAiPrompts.js'
+import {
+  htmlToNoteText,
+  htmlToParagraphs,
+  isRewriteTask,
+} from '@pear-notes/core/store/services/localAiPrompts.js'
 import { selectIsLocalAiFeatureReady } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
@@ -741,7 +745,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       const selection = scope === 'selection' ? selectionRef.current : null
       if (replaceText !== null) {
         if (!selection) return
-        editorRef.current?.replaceRange(selection.from, selection.to, selection.text, replaceText)
+        editorRef.current?.replaceRange(
+          selection.from,
+          selection.to,
+          selection.text,
+          replaceText,
+          'ask',
+        )
         selectionRef.current = { ...selection, text: replaceText, to: selection.to + lengthDelta }
         return
       }
@@ -818,7 +828,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           return
         }
         if (meta?.action === 'replace') {
-          editorRef.current?.replaceRange(selection.from, selection.to, selection.text, text)
+          editorRef.current?.replaceRange(
+            selection.from,
+            selection.to,
+            selection.text,
+            text,
+            isRewriteTask(voiceMode) ? 'rewrite' : 'plain',
+          )
         } else {
           editorRef.current?.insertParagraphsAfter(selection.to, text)
         }

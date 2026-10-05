@@ -18,7 +18,10 @@ import Underline from '@tiptap/extension-underline'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { Plugin, PluginKey, Selection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
-import { buildNoteEditsTransaction } from '@pear-notes/core/store/services/localAiNoteEdits.js'
+import {
+  buildLineRewriteTransaction,
+  buildNoteEditsTransaction,
+} from '@pear-notes/core/store/services/localAiNoteEdits.js'
 import langBash from 'highlight.js/lib/languages/bash'
 import langCSS from 'highlight.js/lib/languages/css'
 import langJS from 'highlight.js/lib/languages/javascript'
@@ -1872,7 +1875,13 @@ window.editorBridge = {
         const from = Math.max(0, Math.min(Number(msg.from) || 0, size))
         const to = Math.max(from, Math.min(Number(msg.to) || 0, size))
         const unchanged = doc.textBetween(from, to, '\n', ' ') === msg.expected
-        if (unchanged) {
+        const inPlace =
+          unchanged && (msg.mode === 'rewrite' || msg.mode === 'ask')
+            ? buildLineRewriteTransaction(editor.state, { from, to }, msg.expected, msg.text)
+            : null
+        if (inPlace) {
+          if (inPlace.applied > 0) editor.view.dispatch(inPlace.tr)
+        } else if (unchanged && msg.mode !== 'rewrite') {
           const content =
             lines.length === 1 ? { type: 'text', text: lines[0] } : paragraphNodes(lines)
           editor.chain().insertContentAt({ from, to }, content).run()

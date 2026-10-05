@@ -31,7 +31,6 @@ import {
   NOTE_TASK,
   NOTE_TASK_MIN_CHARS,
   parseKeyPointsOutput,
-  parseRewriteOutput,
   parseSummaryOutput,
   parseTitleOutput,
   REWRITE_MAX_CHARS,
@@ -569,7 +568,7 @@ export function useVoiceTypingSheet({
         setKeyPoints(points)
         result = points.map((point) => `• ${point}`).join('\n')
       } else if (isRewriteTask(task)) {
-        result = parseRewriteOutput(output) as string
+        result = output
       } else {
         result = parseTitleOutput(output) as string
       }

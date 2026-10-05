@@ -103,7 +103,13 @@ export interface TiptapEditorHandle {
     afterPos?: number,
   ) => void
   getSelection: (allowRemembered?: boolean) => Promise<EditorSelection | null>
-  replaceRange: (from: number, to: number, expected: string, text: string) => void
+  replaceRange: (
+    from: number,
+    to: number,
+    expected: string,
+    text: string,
+    mode?: 'rewrite' | 'ask' | 'plain',
+  ) => void
   applyEdits: (edits: NoteTextEdit[], range?: { from: number; to: number } | null) => void
   insertParagraphsAfter: (pos: number, text: string) => void
   startDictation: () => void
@@ -644,8 +650,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             ...(summary ?? {}),
           }),
         getSelection: getSelectionAsync,
-        replaceRange: (from, to, expected, text) =>
-          sendCommand({ type: 'replaceRange', from, to, expected, text }),
+        replaceRange: (from, to, expected, text, mode = 'plain') =>
+          sendCommand({ type: 'replaceRange', from, to, expected, text, mode }),
         applyEdits: (edits, range) =>
           sendCommand({ type: 'applyEdits', edits, from: range?.from, to: range?.to }),
         insertParagraphsAfter: (pos, text) =>

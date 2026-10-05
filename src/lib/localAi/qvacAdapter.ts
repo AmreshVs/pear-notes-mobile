@@ -19,6 +19,7 @@ import {
   DESCRIBE_IMAGE_PROMPT,
   DESCRIBE_MAX_TOKENS,
   getNoteTaskGenerationParams,
+  isRewriteTask,
   LLM_CONTEXT_SIZE,
   LLM_TEMPERATURE,
   NOTE_TASK,
@@ -30,6 +31,7 @@ import {
   WORK_EVENT,
   WORK_STEP,
 } from '@pear-notes/core/store/services/localAiWorkProgress.js'
+import { runNoteRewrite } from '@pear-notes/core/store/services/localAiWritingTools.js'
 import { getLocalAiLoaded, getLocalAiModels } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
@@ -768,12 +770,21 @@ async function runNoteTaskNow(
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
   const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
+  if (isRewriteTask(task)) {
+    return runNoteRewrite({
+      task,
+      text,
+      complete: (params: CompletionInput, onText?: (partial: string) => void) =>
+        runCompletion(sdk, { modelId, ...params }, onText),
+      onText: (partial: string) => onProgress({ type: WORK_EVENT.TEXT, text: partial }),
+    })
+  }
   const output = await runCompletion(
     sdk,
     {
       modelId,
       history: buildNoteTaskMessages(task, text),
-      generationParams: getNoteTaskGenerationParams(task, text) as Record<string, number>,
+      generationParams: getNoteTaskGenerationParams(task) as Record<string, number>,
     },
     (partial) => onProgress({ type: WORK_EVENT.TEXT, text: partial }),
   )
