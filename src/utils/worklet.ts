@@ -28,6 +28,7 @@ class ObservedWorklet extends Worklet {
 const BACKGROUND_LINGER_MS = 20_000
 const RESYNC_AFTER_AWAY_MS = 20_000
 export const EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS = 5 * 60 * 1000
+export const BACKGROUND_TASK_WAKEUP_DEADLINE_MS = 20_000
 const KEEP_ALIVE_RENEWAL_MS = 60 * 1000
 
 interface StartWorkletOptions {
@@ -117,7 +118,7 @@ function suspendForBackground(worklet: any) {
     _suspendDeferredForBackgroundSync = true
     logLifecycle('background -> background sync in flight, staying awake', workletState(worklet))
     try {
-      worklet.wakeup(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+      worklet.wakeup(BACKGROUND_TASK_WAKEUP_DEADLINE_MS)
     } catch (err) {
       log.error('[lifecycle] app failed to keep the worklet awake for background sync', err)
     }

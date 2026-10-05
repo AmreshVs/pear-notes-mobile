@@ -15,6 +15,7 @@ import { getSyncStatusSnapshot, recordBackgroundWake } from '@pear-notes/core/ut
 import { startBackendWorkletForBackgroundTask } from '@/lib/backendWorklet'
 import { withTimeout } from '@/utils/withTimeout'
 import {
+  BACKGROUND_TASK_WAKEUP_DEADLINE_MS,
   EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS,
   isActiveWorkletSuspended,
   isBackendReady,
@@ -78,7 +79,7 @@ async function recordWake(result: string): Promise<void> {
 
 function keepWorkletAwake(): () => void {
   const timer = setInterval(() => {
-    if (isActiveWorkletSuspended()) wakeActiveWorklet(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)
+    if (isActiveWorkletSuspended()) wakeActiveWorklet(BACKGROUND_TASK_WAKEUP_DEADLINE_MS)
   }, WAKE_RENEWAL_MS)
   return () => clearInterval(timer)
 }
@@ -154,7 +155,7 @@ async function waitForActiveWorklet(): Promise<WorkletHandover> {
 
   for (;;) {
     const wokeFromSuspended = isActiveWorkletSuspended()
-    if (wakeActiveWorklet(EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS)) {
+    if (wakeActiveWorklet(BACKGROUND_TASK_WAKEUP_DEADLINE_MS)) {
       log.info(
         BACKGROUND_SYNC_LOG_PREFIX +
           ' worklet ready after ' +
