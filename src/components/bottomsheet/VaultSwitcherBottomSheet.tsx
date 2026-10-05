@@ -157,13 +157,9 @@ export function VaultSwitcherBottomSheet({
           accessibilityLabel={t('common.close')}
           style={({ pressed }) => pressed && commonStyles.pressed}
         >
-          <GlassView
-            intensity={GlassIntensity.low}
-            borderRadius={Radii.pill}
-            style={styles.closeBtn}
-          >
+          <RNView style={styles.closeBtn}>
             <SymbolIcon name="xmark" size={UI_ICON_SIZE_14} color={colors.textSecondary} />
-          </GlassView>
+          </RNView>
         </Pressable>
       </RNView>
       <RNView style={styles.group}>{vaults.map(renderVault)}</RNView>
@@ -199,7 +195,7 @@ export function VaultSwitcherBottomSheet({
         >
           {isDark ? (
             <GlassView
-              intensity={GlassIntensity.low}
+              intensity={GlassIntensity.sheet}
               borderRadius={Radii.sheet}
               style={styles.sheet}
             >
@@ -290,7 +286,7 @@ const useStyles = createThemedStylesheet((theme) => {
   }
   const separatorBase = {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: theme.colors.borderSecondary,
+    backgroundColor: theme.colors.separator,
   }
   const styles = StyleSheet.create({
     overlay: {
@@ -321,7 +317,7 @@ const useStyles = createThemedStylesheet((theme) => {
     sheetLight: {
       borderTopWidth: StyleSheet.hairlineWidth,
       backgroundColor: theme.colors.background,
-      borderColor: theme.colors.sheetBorder,
+      borderColor: theme.colors.separator,
     },
     header: {
       ...commonStyles.rowBetween,
@@ -335,7 +331,9 @@ const useStyles = createThemedStylesheet((theme) => {
     closeBtn: {
       width: UI_SIZE_32,
       height: UI_SIZE_32,
+      borderRadius: Radii.pill,
       ...commonStyles.centered,
+      backgroundColor: theme.colors.controlBackground,
     },
     group: {
       borderRadius: Radii.card,

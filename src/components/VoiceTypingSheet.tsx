@@ -32,6 +32,7 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  GlassIntensity,
   Layout,
   Radii,
   SHEET_MAX_WIDTH,
@@ -716,7 +717,11 @@ export function VoiceTypingSheet({
         >
           <View style={styles.sheetSizer}>
             {isDark ? (
-              <GlassView intensity={70} borderRadius={Radii.sheet} style={styles.sheet}>
+              <GlassView
+                intensity={GlassIntensity.sheet}
+                borderRadius={Radii.sheet}
+                style={styles.sheet}
+              >
                 {body}
               </GlassView>
             ) : (

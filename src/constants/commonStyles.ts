@@ -170,6 +170,7 @@ export const GlassIntensity = {
   low: 10,
   medium: 20,
   high: 50,
+  sheet: 70,
 } as const
 
 export const IconSize = {

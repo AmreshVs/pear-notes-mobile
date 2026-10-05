@@ -175,13 +175,9 @@ export function ClearStorageBottomSheet({
             accessibilityLabel={t('common.close')}
             style={({ pressed }) => pressed && commonStyles.pressed}
           >
-            <GlassView
-              intensity={GlassIntensity.low}
-              borderRadius={Radii.pill}
-              style={styles.closeBtn}
-            >
+            <RNView style={styles.closeBtn}>
               <SymbolIcon name="xmark" size={UI_ICON_SIZE_14} color={colors.textSecondary} />
-            </GlassView>
+            </RNView>
           </Pressable>
         </RNView>
         <RNView style={styles.group}>
@@ -227,7 +223,11 @@ export function ClearStorageBottomSheet({
           pointerEvents={visible ? 'auto' : 'none'}
         >
           {isDark ? (
-            <GlassView intensity={GlassIntensity.low} borderRadius={34} style={styles.sheet}>
+            <GlassView
+              intensity={GlassIntensity.sheet}
+              borderRadius={Radii.sheet}
+              style={styles.sheet}
+            >
               {content}
             </GlassView>
           ) : (
@@ -270,7 +270,7 @@ const useStyles = createThemedStylesheet((theme) => {
     sheetLight: {
       borderTopWidth: StyleSheet.hairlineWidth,
       backgroundColor: theme.colors.background,
-      borderColor: theme.colors.sheetBorder,
+      borderColor: theme.colors.separator,
     },
     content: {
       gap: UI_SIZE_16,
@@ -304,7 +304,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     itemBorder: {
       borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.colors.border,
+      borderTopColor: theme.colors.separator,
     },
     itemLabel: {
       ...commonStyles.flex1,
@@ -335,7 +335,9 @@ const useStyles = createThemedStylesheet((theme) => {
     closeBtn: {
       width: UI_SIZE_32,
       height: UI_SIZE_32,
+      borderRadius: Radii.pill,
       ...commonStyles.centered,
+      backgroundColor: theme.colors.controlBackground,
     },
     confirmBtn: {
       ...commonStyles.centered,
