@@ -14,15 +14,16 @@ on:
         options: [github, eas]
         default: github
       upload:
-        description: Upload to TestFlight / Google Play internal testing
-        type: boolean
-        default: true
+        description: 'Upload to TestFlight / Play internal: direct (from the runner), eas-submit (eas submit), eas-auto-submit (EAS submits right after building - needs builder eas), none'
+        type: choice
+        options: [direct, eas-submit, eas-auto-submit, none]
+        default: direct
       version:
-        description: 'Marketing version, e.g. 1.1.0 (empty = keep current)'
+        description: 'Marketing version, e.g. 1.2.0 (empty = keep current). A new MAJOR.MINOR restarts the build number at 1.'
         type: string
         required: false
       bump:
-        description: 'Bump the version (1.0.0 -> 1.0.1) and the build number. Needed for every store upload.'
+        description: 'Bump the build number (1.1.0 build 3 -> build 4). Needed for every store upload of the same version.'
         type: boolean
         default: false
 
@@ -50,6 +51,12 @@ jobs:
         with:
           node-version: 24
 
+      - name: Check the build and upload combination
+        if: inputs.upload == 'eas-auto-submit' && inputs.builder != 'eas'
+        run: |
+          echo "::error::upload eas-auto-submit needs builder eas - EAS can only auto-submit builds it made"
+          exit 1
+
       - name: Choose the version and build number
         id: version
         env:
@@ -57,14 +64,17 @@ jobs:
           BUMP: ${{ inputs.bump }}
           PLATFORM: ${{ inputs.platform }}
         run: |
-          build=$(node -p "require('./app.json').expo.android.versionCode")
-          version=$(node -p "require('./app.json').expo.version")
-          if [ "$BUMP" = "true" ]; then
-            build=$((build + 1))
-            version=$(node -p "const [major, minor, patch] = '$version'.split('.').map(Number); [major, minor, patch + 1].join('.')")
-          fi
-          version=${VERSION:-$version}
-          echo "Building ${version} (${build})"
+          read -r version build store < <(node -e "
+            const { storeBuild } = require('./scripts/store-build')
+            const pkg = require('./package.json')
+            const line = (v) => v.split('.').slice(0, 2).join('.')
+            const version = process.env.VERSION || pkg.version
+            let build = Number(pkg.buildNumber)
+            if (line(version) !== line(pkg.version)) build = 1
+            else if (process.env.BUMP === 'true') build += 1
+            console.log(version, build, storeBuild(version, build))
+          ")
+          echo "Building ${version} build ${build} (store ${store})"
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "build=$build" >> "$GITHUB_OUTPUT"
@@ -143,12 +153,12 @@ jobs:
           missing=()
           [ -z "$CORE_REPO_TOKEN" ] && missing+=(CORE_REPO_TOKEN)
           [ -z "$EXPO_TOKEN" ] && missing+=(EXPO_TOKEN)
-          if [ "$UPLOAD" = "true" ] && [ "$PLATFORM" = "ios" ]; then
+          if [ "$UPLOAD" != "none" ] && [ "$PLATFORM" = "ios" ]; then
             [ -z "$ASC_KEY_ID" ] && missing+=(ASC_KEY_ID)
             [ -z "$ASC_ISSUER_ID" ] && missing+=(ASC_ISSUER_ID)
             [ -z "$ASC_PRIVATE_KEY" ] && missing+=(ASC_PRIVATE_KEY)
           fi
-          if [ "$UPLOAD" = "true" ] && [ "$PLATFORM" = "android" ]; then
+          if [ "$UPLOAD" != "none" ] && [ "$PLATFORM" = "android" ]; then
             [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ] && missing+=(PLAY_SERVICE_ACCOUNT_JSON)
           fi
           if [ ${#missing[@]} -gt 0 ]; then
@@ -185,7 +195,7 @@ jobs:
         run: npm run setup
 
       - name: Write store credentials
-        if: inputs.upload
+        if: inputs.upload != 'none'
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -212,17 +222,21 @@ jobs:
           BUILDER: ${{ inputs.builder }}
           UPLOAD: ${{ inputs.upload }}
         run: |
-          flags=(--platform "$PLATFORM" --no-bump)
+          flags=(--platform "$PLATFORM")
           [ "$BUILDER" = "eas" ] && flags+=(--cloud)
-          [ "$UPLOAD" != "true" ] && flags+=(--no-submit)
+          case "$UPLOAD" in
+            none) flags+=(--no-submit) ;;
+            eas-submit) flags+=(--via-eas) ;;
+            eas-auto-submit) flags+=(--auto-submit) ;;
+          esac
           node scripts/release.js "${flags[@]}"
 
       - name: Record the upload
-        if: success() && inputs.upload
+        if: success() && inputs.upload != 'none'
         run: mkdir -p uploaded && echo "${{ matrix.platform }}" > uploaded/${{ matrix.platform }}
 
       - name: Keep the upload record
-        if: success() && inputs.upload
+        if: success() && inputs.upload != 'none'
         uses: actions/upload-artifact@v4
         with:
           name: uploaded-${{ matrix.platform }}
@@ -246,7 +260,7 @@ jobs:
 
   record-version:
     needs: [prepare, build]
-    if: always() && inputs.upload && needs.prepare.result == 'success'
+    if: always() && inputs.upload != 'none' && needs.prepare.result == 'success'
     runs-on: ubuntu-24.04
     steps:
       - name: Find which platforms uploaded
@@ -292,9 +306,10 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch "$PUSH_URL" "$GITHUB_REF_NAME"
           git checkout -B release-version FETCH_HEAD
-          current=$(node -p "require('./app.json').expo.android.versionCode")
-          if [ "$current" -ge "$BUILD" ]; then
-            echo "The branch is already at build ${current}, not moving it back to ${BUILD}"
+          current=$(node -p "const pkg = require('./package.json'); require('./scripts/store-build').storeBuild(pkg.version, pkg.buildNumber)")
+          target=$(node -p "require('./scripts/store-build').storeBuild(process.env.VERSION, process.env.BUILD)")
+          if [ "$current" -ge "$target" ]; then
+            echo "The branch is already at store build ${current}, not moving it back to ${target}"
             exit 0
           fi
           node scripts/set-version.js --version "$VERSION" --build "$BUILD"
@@ -302,5 +317,5 @@ jobs:
             echo "The branch already has ${VERSION} (${BUILD})"
             exit 0
           fi
-          git commit -am "Release ${VERSION} (${BUILD})"
+          git commit -am "Release ${VERSION} (${target})"
           git push "$PUSH_URL" "HEAD:${GITHUB_REF_NAME}"
