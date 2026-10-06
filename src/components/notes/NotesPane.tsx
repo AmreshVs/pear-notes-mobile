@@ -29,7 +29,6 @@ import {
   purgeExpiredTrash,
   restoreNote,
   restoreNotes,
-  setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
@@ -63,6 +62,7 @@ import {
 import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 import { useNoteSelection } from '@/hooks/useNoteSelection'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
+import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { getVaultLabel } from '@/lib/vaultLabels'
@@ -140,6 +140,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   )
 
   const orderedKeys = useMemo(() => notes.map((note: any) => note.key), [notes])
+  const { onViewableItemsChanged, viewabilityConfig } = useVisibleNotes(orderedKeys)
 
   const {
     isSelecting,
@@ -158,10 +159,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const handleSelectNote = useCallback(
     (noteId: string) => {
       searchBarRef.current?.blur()
-      dispatch(setSelectedNote(noteId as any))
       openNote(noteId)
     },
-    [dispatch, openNote],
+    [openNote],
   )
 
   const handleStartSelecting = useCallback(() => {
@@ -630,6 +630,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         sections={groupedNotes}
         keyExtractor={noteKey}
         renderItem={renderItem}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={listHeader}

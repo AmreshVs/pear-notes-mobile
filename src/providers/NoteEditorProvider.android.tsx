@@ -34,6 +34,7 @@ import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { EdgeFade } from '@/components/EdgeFade'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
+import { NoteBodyPlaceholder } from '@/components/NoteBodyPlaceholder'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
@@ -158,6 +159,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const {
     editorRef,
     noteId,
+    showBodyPlaceholder,
+    handleNoteLoaded,
     isOpen,
     isEditing,
     keyboardHeight,
@@ -684,7 +687,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         const nextTitle = text.trim()
         if (!nextTitle) return
         editorRef.current?.setTitle(nextTitle)
-        handleTitleChange(nextTitle)
+        handleTitleChange(nextTitle, noteId ?? null)
         return
       }
       if (voiceMode === 'summarizeNote') {
@@ -746,7 +749,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       if (voiceMode !== 'dictate') editorRef.current?.moveCursorToEnd()
       editorRef.current?.appendParagraphs(paragraphs)
     },
-    [editorRef, handleCloseVoiceSheet, handleTitleChange, t, voiceMode, voiceScope],
+    [editorRef, handleCloseVoiceSheet, handleTitleChange, noteId, t, voiceMode, voiceScope],
   )
 
   const handleRecorderDone = useCallback(
@@ -1095,6 +1098,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onDeleteAttachment={handleDeleteAttachment}
             onImageLongPress={handleImageLongPress}
             onAttachmentLongPress={handleAttachmentLongPress}
+            onNoteLoaded={handleNoteLoaded}
+          />
+        )}
+
+        {isOpen && showBodyPlaceholder && !isNoteLocked && (
+          <NoteBodyPlaceholder
+            key={noteId}
+            noteValue={noteData}
+            topInset={insets.top + EDITOR_HEADER_HEIGHT}
           />
         )}
 

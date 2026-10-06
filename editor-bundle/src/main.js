@@ -499,7 +499,7 @@ function resetSentContent(editor) {
 function sendContentChange(html, text) {
   if (html === lastSentHtml) return
   lastSentHtml = html
-  sendToRN({ type: 'contentChange', html, text })
+  sendToRN({ type: 'contentChange', html, text, noteId: currentNoteId })
 }
 // Serializing the document is the expensive half of a content change, so the
 // debounce has to cover it too. Taking getHTML()/getText() up front — once per
@@ -1599,6 +1599,9 @@ window.editorBridge = {
         // The WebView is reused across notes, so a freshly loaded note would otherwise
         // inherit the previous note's scroll offset. Reset once layout has settled.
         requestAnimationFrame(scrollDocumentToTop)
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => sendToRN({ type: 'noteLoaded', noteId: msg.noteId })),
+        )
         break
       }
 
@@ -1624,7 +1627,16 @@ window.editorBridge = {
         break
 
       case 'getHTML':
-        sendToRN({ type: 'htmlResponse', requestId: msg.requestId, html: editor.getHTML() })
+        {
+          const html = editor.getHTML()
+          sendToRN({
+            type: 'htmlResponse',
+            requestId: msg.requestId,
+            html,
+            noteId: currentNoteId,
+            changed: html !== lastSentHtml,
+          })
+        }
         break
 
       case 'setBottomInset': {
@@ -2132,7 +2144,7 @@ window.editorBridge = {
 const titleInputEl = document.getElementById('note-title')
 if (titleInputEl) {
   titleInputEl.addEventListener('input', () => {
-    sendToRN({ type: 'titleChange', title: titleInputEl.value })
+    sendToRN({ type: 'titleChange', title: titleInputEl.value, noteId: currentNoteId })
   })
   titleInputEl.addEventListener('focus', () => {
     sendToRN({ type: 'focus' })

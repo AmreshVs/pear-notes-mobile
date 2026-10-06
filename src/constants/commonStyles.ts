@@ -159,6 +159,7 @@ export const Durations = {
   delayLong: 120,
   delayExtraLong: 150,
   delayReset: 180,
+  loadingIndicatorDelay: 500,
   videoControlsHideIos: 3000,
   videoControlsHideAndroid: 5000,
   delayFooter: 220,

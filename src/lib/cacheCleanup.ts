@@ -1,10 +1,11 @@
 import * as FileSystem from 'expo-file-system/legacy'
 import { Image } from 'expo-image'
 
+import { getNoteSummary } from '@pear-notes/core/utils.js'
+
 import { ATTACHMENT_THUMBNAIL_CACHE_DIR } from '@/constants/constants'
 import { ATTACHMENT_CACHE_PREFIX } from '@/lib/noteAttachmentManager'
 import { thumbnailCacheKey, thumbnailFileNames } from '@/lib/thumbnailCache'
-import { getImageAttachments, getPdfAttachments } from '@/utils/noteUtils'
 
 export const IN_SESSION_CACHE_MAX_AGE_MS = 30 * 60 * 1000
 
@@ -70,7 +71,7 @@ export async function pruneAttachmentCache(maxAgeMs = 0): Promise<number> {
   return reclaimed
 }
 
-type SweepNote = { value?: { note?: string } | null } | null
+type SweepNote = { value?: object | null } | null
 
 /**
  * Drops every PDF thumbnail no note refers to any more.
@@ -96,10 +97,13 @@ export async function sweepThumbnailCache(notes: SweepNote[]): Promise<void> {
 
   const urls = new Set<string>()
   for (const note of notes) {
-    const html = note?.value?.note
-    if (!html) continue
-    for (const pdf of getPdfAttachments(html)) urls.add(pdf.url)
-    for (const image of getImageAttachments(html)) urls.add(image)
+    if (!note?.value) continue
+    const summary = getNoteSummary(note.value) as {
+      pdfs?: { url: string }[]
+      images?: string[]
+    }
+    for (const pdf of summary.pdfs || []) urls.add(pdf.url)
+    for (const image of summary.images || []) urls.add(image)
   }
 
   const liveFiles = new Set<string>()

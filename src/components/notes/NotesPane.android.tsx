@@ -44,7 +44,6 @@ import {
   purgeExpiredTrash,
   restoreNote,
   restoreNotes,
-  setSelectedNote,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
@@ -87,6 +86,7 @@ import {
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
 import { useNoteSelection } from '@/hooks/useNoteSelection'
+import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { androidRipple } from '@/lib/androidRipple'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
@@ -221,6 +221,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   }, [isTrashFolder, dispatch])
 
   const orderedKeys = useMemo(() => notes.map((note: any) => note.key), [notes])
+  const { onViewableItemsChanged, viewabilityConfig } = useVisibleNotes(orderedKeys)
 
   const {
     isSelecting,
@@ -246,10 +247,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       }
       searchInputRef.current?.blur()
       Keyboard.dismiss()
-      dispatch(setSelectedNote(noteId as any))
       router.push(`/note/${noteId}`)
     },
-    [dispatch, isSelecting, toggleSelect],
+    [isSelecting, toggleSelect],
   )
 
   const handleStartSelecting = useCallback(() => {
@@ -772,6 +772,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         sections={sections}
         keyExtractor={noteKey}
         renderItem={renderNote}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled={false}
         contentContainerStyle={listContentStyle}

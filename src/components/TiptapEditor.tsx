@@ -71,6 +71,8 @@ export interface TiptapStyleState {
   hasSelection: { isActive: boolean }
 }
 
+type EditorSnapshot = { html: string; noteId: string | null; changed: boolean }
+
 export interface TiptapEditorHandle {
   toggleBold: () => void
   toggleItalic: () => void
@@ -128,6 +130,7 @@ export interface TiptapEditorHandle {
   getHTML: () => Promise<string | undefined>
   setHTML: (html: string) => void
   loadNote: (noteId: string, html: string) => void
+  clearNote: () => void
   setTitle: (title: string) => void
   scrollToTop: () => void
   revealLastInsert: (url?: string) => void
@@ -158,12 +161,13 @@ export interface TiptapEditorProps {
   safeAreaBottom?: number
   scrollEnabled?: boolean
   backgroundColor?: string
-  onContentChange: (html: string) => void
-  onTitleChange?: (title: string) => void
+  onContentChange: (html: string, sourceNoteId: string | null) => void
+  onTitleChange?: (title: string, sourceNoteId: string | null) => void
   onStyleStateChange?: (state: TiptapStyleState) => void
   onEditorFocus?: () => void
   onEditorBlur?: () => void
   onKeptSelectionCleared?: () => void
+  onNoteLoaded?: (noteId: string) => void
   onOpenAttachment?: (url: string, fileName: string) => void
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
   onRequestPdfThumbnail?: (url: string, fileName: string, attachmentId: string) => void
@@ -183,15 +187,22 @@ export interface TiptapEditorProps {
 type WebViewMsg =
   | { type: 'ready' }
   | { type: 'initialized' }
-  | { type: 'contentChange'; html: string; text: string }
-  | { type: 'titleChange'; title: string }
+  | { type: 'contentChange'; html: string; text: string; noteId: string | null }
+  | { type: 'titleChange'; title: string; noteId: string | null }
   | { type: 'styleState'; state: TiptapStyleState }
-  | { type: 'htmlResponse'; requestId: string; html: string }
+  | {
+      type: 'htmlResponse'
+      requestId: string
+      html: string
+      noteId: string | null
+      changed?: boolean
+    }
   | { type: 'focus' }
   | { type: 'focusTitle' }
   | { type: 'blur' }
   | { type: 'collapseSelection' }
   | { type: 'keptSelectionCleared' }
+  | { type: 'noteLoaded'; noteId: string }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'requestPdfThumbnail'; url: string; fileName: string; attachmentId: string }
@@ -288,6 +299,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onEditorFocus,
       onEditorBlur,
       onKeptSelectionCleared,
+      onNoteLoaded,
       onOpenAttachment,
       onPreviewAttachment,
       onRequestPdfThumbnail,
@@ -317,6 +329,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onEditorFocusRef = useRef(onEditorFocus)
     const onEditorBlurRef = useRef(onEditorBlur)
     const onKeptSelectionClearedRef = useRef(onKeptSelectionCleared)
+    const onNoteLoadedRef = useRef(onNoteLoaded)
     const onOpenAttachmentRef = useRef(onOpenAttachment)
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
     const onRequestPdfThumbnailRef = useRef(onRequestPdfThumbnail)
@@ -330,6 +343,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onEditorFocusRef.current = onEditorFocus
     onEditorBlurRef.current = onEditorBlur
     onKeptSelectionClearedRef.current = onKeptSelectionCleared
+    onNoteLoadedRef.current = onNoteLoaded
     onOpenAttachmentRef.current = onOpenAttachment
     onPreviewAttachmentRef.current = onPreviewAttachment
     onRequestPdfThumbnailRef.current = onRequestPdfThumbnail
@@ -373,7 +387,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     }, [initialContent])
 
-    const pendingRequests = useRef<Map<string, (html: string) => void>>(new Map())
+    const pendingRequests = useRef<Map<string, (snapshot: EditorSnapshot) => void>>(new Map())
     const pendingSelectionRequests = useRef<Map<string, (selection: EditorSelection) => void>>(
       new Map(),
     )
@@ -411,20 +425,25 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       )
     }, [])
 
-    const getHTMLAsync = useCallback((): Promise<string | undefined> => {
+    const getSnapshotAsync = useCallback((): Promise<EditorSnapshot | undefined> => {
       return new Promise((resolve) => {
         const id = `req_${Date.now()}_${Math.random().toString(36).slice(2)}`
         const timer = setTimeout(() => {
           pendingRequests.current.delete(id)
           resolve(undefined)
         }, 3000)
-        pendingRequests.current.set(id, (html: string) => {
+        pendingRequests.current.set(id, (snapshot) => {
           clearTimeout(timer)
-          resolve(html)
+          resolve(snapshot)
         })
         sendCommand({ type: 'getHTML', requestId: id })
       })
     }, [sendCommand])
+
+    const getHTMLAsync = useCallback(
+      async (): Promise<string | undefined> => (await getSnapshotAsync())?.html,
+      [getSnapshotAsync],
+    )
 
     const getSelectionAsync = useCallback(
       (allowRemembered = false): Promise<EditorSelection | null> => {
@@ -495,12 +514,12 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           case 'contentChange':
             if (currentNoteRef.current) currentNoteRef.current.html = msg.html
             else currentNoteRef.current = { noteId: null, html: msg.html }
-            onContentChangeRef.current(msg.html)
+            onContentChangeRef.current(msg.html, msg.noteId ?? null)
             break
 
           case 'titleChange':
             currentTitleRef.current = msg.title
-            onTitleChangeRef.current?.(msg.title)
+            onTitleChangeRef.current?.(msg.title, msg.noteId ?? null)
             break
 
           case 'styleState':
@@ -510,7 +529,11 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           case 'htmlResponse': {
             const resolve = pendingRequests.current.get(msg.requestId)
             if (resolve) {
-              resolve(msg.html)
+              resolve({
+                html: msg.html,
+                noteId: msg.noteId ?? null,
+                changed: msg.changed !== false,
+              })
               pendingRequests.current.delete(msg.requestId)
             }
             break
@@ -526,6 +549,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
           case 'keptSelectionCleared':
             onKeptSelectionClearedRef.current?.()
+            break
+
+          case 'noteLoaded':
+            onNoteLoadedRef.current?.(msg.noteId)
             break
 
           case 'openAttachment':
@@ -700,8 +727,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           )
         },
         save: async () => {
-          const html = await getHTMLAsync()
-          if (html !== undefined) onContentChangeRef.current(html)
+          const snapshot = await getSnapshotAsync()
+          if (snapshot?.changed) onContentChangeRef.current(snapshot.html, snapshot.noteId)
         },
         getHTML: getHTMLAsync,
         setHTML: (html) => {
@@ -720,6 +747,15 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           } else {
             sendCommand({ type: 'loadNote', noteId, html })
           }
+        },
+        clearNote: () => {
+          currentNoteRef.current = null
+          currentTitleRef.current = ''
+          pendingLoadNoteRef.current = null
+          pendingTitleRef.current = null
+          if (!editorInitializedRef.current) return
+          sendCommand({ type: 'setTitle', title: '' })
+          sendCommand({ type: 'loadNote', noteId: null, html: '' })
         },
         setTitle: (title) => {
           currentTitleRef.current = title
@@ -754,7 +790,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
               : `(function(){var h='${height}px';document.body.style.paddingBottom=h;var pm=document.querySelector('.ProseMirror');if(pm)pm.style.paddingBottom=h})();true;`,
           ),
       }),
-      [sendCommand, getHTMLAsync, getSelectionAsync],
+      [sendCommand, getHTMLAsync, getSnapshotAsync, getSelectionAsync],
     )
 
     return (

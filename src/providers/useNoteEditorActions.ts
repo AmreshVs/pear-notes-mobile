@@ -138,8 +138,8 @@ export function useNoteEditorActions({
   )
 
   const handleUpdate = useCallback(
-    (html: string) => {
-      if (!noteId || noteId === 'new') return
+    (html: string, sourceNoteId: string | null) => {
+      if (!noteId || noteId === 'new' || sourceNoteId !== noteId) return
       let finalHtml = html
       if (resolveHyperdriveUrl) {
         finalHtml = finalHtml.replaceAll(
@@ -163,7 +163,8 @@ export function useNoteEditorActions({
   )
 
   const handleTitleChange = useCallback(
-    (newTitle: string) => {
+    (newTitle: string, sourceNoteId: string | null) => {
+      if (sourceNoteId !== noteId) return
       if (titleRef.current === newTitle) return
       titleRef.current = newTitle
       if (!noteId || noteId === 'new') return

@@ -47,7 +47,7 @@ import {
   scaledLineCount,
 } from '@/utils/dynamicType'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
-import { getNoteMetadata } from '@/utils/noteMetadata'
+import { getNoteMetadata, isSameNoteRow } from '@/utils/noteMetadata'
 import { formatTimeOfDay } from '@/utils/noteSections'
 import { type AttachmentKind } from '@/utils/noteUtils'
 
@@ -77,7 +77,7 @@ type NoteRowProps = {
 function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
   return (
     prev.note.key === next.note.key &&
-    prev.note.value === next.note.value &&
+    isSameNoteRow(prev.note.value, next.note.value) &&
     prev.folderName === next.folderName &&
     prev.folderIconToken === next.folderIconToken &&
     prev.sectionTitle === next.sectionTitle &&

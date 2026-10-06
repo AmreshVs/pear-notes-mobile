@@ -43,6 +43,7 @@ import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
+import { NoteBodyPlaceholder } from '@/components/NoteBodyPlaceholder'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
@@ -115,6 +116,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const {
     editorRef,
     noteId,
+    showBodyPlaceholder,
+    handleNoteLoaded,
     isOpen,
     isEditing,
     keyboardHeight,
@@ -848,7 +851,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         const nextTitle = text.trim()
         if (!nextTitle) return
         editorRef.current?.setTitle(nextTitle)
-        handleTitleChange(nextTitle)
+        handleTitleChange(nextTitle, noteId ?? null)
         return
       }
       if (voiceMode === 'summarizeNote') {
@@ -910,7 +913,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       if (voiceMode !== 'dictate') editorRef.current?.moveCursorToEnd()
       editorRef.current?.appendParagraphs(paragraphs)
     },
-    [editorRef, handleCloseVoiceSheet, handleTitleChange, t, voiceMode, voiceScope],
+    [editorRef, handleCloseVoiceSheet, handleTitleChange, noteId, t, voiceMode, voiceScope],
   )
 
   const handleRecorderDone = useCallback(
@@ -1223,7 +1226,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onImageLongPress={handleImageLongPress}
               onAttachmentLongPress={handleAttachmentLongPress}
               onKeptSelectionCleared={handleKeptSelectionCleared}
+              onNoteLoaded={handleNoteLoaded}
             />
+          )}
+
+          {isOpen && showBodyPlaceholder && !isNoteLocked && (
+            <NoteBodyPlaceholder key={noteId} noteValue={noteData} topInset={contentTop} />
           )}
 
           <NoteConflictBanner noteKey={noteId} />

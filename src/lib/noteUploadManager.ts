@@ -1,6 +1,7 @@
 import { AppState } from 'react-native'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import * as log from '@pear-notes/core/log.js'
 import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   getHyperdriveServerAddress,
@@ -89,12 +90,22 @@ function buildAttachmentHtml(link: string, attachment: StoredAttachment, fileNam
   return `<div data-file-attachment="" url="${url}" fileName="${escapeHtml(fileName)}" fileSize="${attachment.fileSize || 0}" fileType="${escapeHtml(attachment.fileType || '')}"></div>`
 }
 
-export function appendHtmlToStoredNote(noteId: string, html: string) {
+export async function appendHtmlToStoredNote(noteId: string, html: string) {
   if (!html) return
-  const note = getNoteData(noteId)(store.getState()) as
-    | { title?: string; note?: string }
+  let note = getNoteData(noteId)(store.getState()) as
+    | { title?: string; note?: string; bodyOmitted?: boolean }
     | undefined
   if (!note) return
+  if (note.bodyOmitted) {
+    const response = (await backendApi.getSingleNote({ key: noteId })) as {
+      data?: { title?: string; note?: string; folderKey?: string }
+    } | null
+    if (!response?.data?.folderKey) {
+      log.error('appendHtmlToStoredNote: could not read the note to append to', { noteId })
+      return
+    }
+    note = response.data
+  }
   store.dispatch(
     updateNote({ key: noteId, title: note.title || '', note: `${note.note || ''}${html}` } as any),
   )

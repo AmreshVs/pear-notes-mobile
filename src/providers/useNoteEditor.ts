@@ -17,7 +17,7 @@ import {
   withTiming,
 } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import { router } from 'expo-router'
 
 import {
@@ -26,12 +26,18 @@ import {
   RECENTLY_DELETED_KEY,
 } from '@pear-notes/core/constant.js'
 import {
+  getEditorBaseKey,
   getEditorContent,
   getEditorSyncToken,
   getEditorTitle,
 } from '@pear-notes/core/store/slices/editorSlice.js'
 import { getFolders } from '@pear-notes/core/store/slices/foldersSlice.js'
-import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
+import {
+  flushNoteSaves,
+  getNoteData,
+  getSelectedNote,
+  selectNote,
+} from '@pear-notes/core/store/slices/notesSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { getVaultEnteredAt, getVaultPending } from '@pear-notes/core/store/slices/vaultsSlice.js'
 
@@ -40,6 +46,7 @@ import type { TiptapEditorHandle, TiptapStyleState } from '@/components/TiptapEd
 import { dismissKeyboard, subscribeKeyboardHidden } from '@/lib/keyboard'
 
 const FOCUS_TITLE_DELAY = 250
+const NOTE_LOADED_FALLBACK_MS = 3000
 const STRAY_FOCUS_WINDOW_MS = 2000
 const IOS_TOOLBAR_INSET_TYPING = 76
 const IOS_TOOLBAR_INSET_IDLE = 96
@@ -144,19 +151,31 @@ export function useNoteEditor() {
   const titleRef = useRef<string>('')
   const noteContentRef = useRef<string>('')
   const loadedNoteRef = useRef<string | null>(null)
+  const openedNoteRef = useRef<string | null>(null)
   const isLoadingNoteRef = useRef(false)
   const isEditorFocusedRef = useRef(false)
   const lastSyncTokenRef = useRef(-1)
   const shouldFocusTitleRef = useRef(false)
   const appliedHyperdriveAddressRef = useRef<string>('')
+  const [placeholderNoteId, setPlaceholderNoteId] = useState<string | null>(null)
 
+  const dispatch = useDispatch()
+  const selectedNote = useSelector(getSelectedNote) as string | null
+  const selectedNoteRef = useRef(selectedNote)
+  selectedNoteRef.current = selectedNote
   const noteSelector = useMemo(() => getNoteData(noteId ?? ''), [noteId])
   const rawNoteData = useSelector(noteSelector)
   const noteData = useMemo(() => (rawNoteData || {}) as any, [rawNoteData])
+  const noteDataRef = useRef(noteData)
+  noteDataRef.current = noteData
+  const markNoteLoaded = useCallback((id: string) => {
+    if (id === openedNoteRef.current) setPlaceholderNoteId(null)
+  }, [])
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
   const editorContent = useSelector(getEditorContent) as string
   const editorTitle = useSelector(getEditorTitle) as string
   const syncToken = useSelector(getEditorSyncToken) as number
+  const editorBaseKey = useSelector(getEditorBaseKey) as string | null
   const allFolders = useSelector(getFolders) as any[]
   const moveFolders = useMemo(
     () =>
@@ -224,6 +243,9 @@ export function useNoteEditor() {
 
     const subscription = AppState.addEventListener('change', (next: AppStateStatus) => {
       if (next === 'background') {
+        Promise.resolve(editorRef.current?.save())
+          .catch(() => {})
+          .finally(() => dispatch(flushNoteSaves()))
         dismissKeyboard()
         if (!isIos) resetKeyboardLayout()
         return
@@ -239,7 +261,7 @@ export function useNoteEditor() {
     })
 
     return () => subscription.remove()
-  }, [isOpen])
+  }, [isOpen, dispatch])
 
   useEffect(
     () =>
@@ -260,7 +282,16 @@ export function useNoteEditor() {
   }, [isOpen])
 
   useEffect(() => {
+    if (!noteId || noteId === openedNoteRef.current) return
+    openedNoteRef.current = noteId
+    setPlaceholderNoteId(noteDataRef.current?.bodyOmitted ? noteId : null)
+    editorRef.current?.scrollToTop()
+    animatePane(0)
+  }, [noteId, animatePane])
+
+  useEffect(() => {
     if (!noteId || noteId === loadedNoteRef.current) return
+    if (noteData?.bodyOmitted) return
     loadedNoteRef.current = noteId
     titleRef.current = noteData?.title || ''
     noteContentRef.current = noteData?.note || ''
@@ -273,23 +304,30 @@ export function useNoteEditor() {
       )
     }
 
-    editorRef.current?.scrollToTop()
     editorRef.current?.setTitle(noteData?.title || '')
 
-    animatePane(0)
-
     isLoadingNoteRef.current = true
+    let sent = false
+    const load = () => {
+      if (sent || !editorRef.current) return
+      sent = true
+      editorRef.current.loadNote(noteId, content)
+      setTimeout(() => markNoteLoaded(noteId), NOTE_LOADED_FALLBACK_MS)
+    }
+    load()
     InteractionManager.runAfterInteractions(() => {
-      editorRef.current?.loadNote(noteId, content)
+      if (loadedNoteRef.current !== noteId) return
+      load()
       if (shouldFocusTitleRef.current) {
         shouldFocusTitleRef.current = false
         setTimeout(() => editorRef.current?.focusTitle(), FOCUS_TITLE_DELAY)
       }
     })
-  }, [noteId, noteData, hyperdriveServerAddress, animatePane])
+  }, [noteId, noteData, hyperdriveServerAddress])
 
   useEffect(() => {
     if (!noteId || noteId === 'new' || noteId !== loadedNoteRef.current) return
+    if (editorBaseKey !== noteId) return
     if (syncToken === lastSyncTokenRef.current) return
     lastSyncTokenRef.current = syncToken
     if (editorContent === noteContentRef.current && editorTitle === titleRef.current) return
@@ -304,7 +342,7 @@ export function useNoteEditor() {
     }
     editorRef.current?.setTitle(editorTitle)
     editorRef.current?.setHTML(content)
-  }, [noteId, syncToken, editorContent, editorTitle, hyperdriveServerAddress])
+  }, [noteId, editorBaseKey, syncToken, editorContent, editorTitle, hyperdriveServerAddress])
 
   useEffect(() => {
     const previous = appliedHyperdriveAddressRef.current
@@ -334,11 +372,13 @@ export function useNoteEditor() {
   )
 
   const resetEditorState = useCallback(() => {
+    editorRef.current?.clearNote()
     isOpenRef.current = false
     setIsOpen(false)
     setNoteId(null)
     setIsEdgeSwipeActive(false)
     loadedNoteRef.current = null
+    openedNoteRef.current = null
     isClosingRef.current = false
   }, [])
 
@@ -363,10 +403,12 @@ export function useNoteEditor() {
     (releaseVelocity?: number) => {
       editorRef.current?.blur()
       dismissKeyboard()
-      editorRef.current?.save()
+      Promise.resolve(editorRef.current?.save())
+        .catch(() => {})
+        .finally(() => dispatch(flushNoteSaves()))
       animateClose(releaseVelocity)
     },
-    [animateClose],
+    [animateClose, dispatch],
   )
 
   const closeNote = useCallback(() => closeNoteWithVelocity(), [closeNoteWithVelocity])
@@ -396,17 +438,24 @@ export function useNoteEditor() {
     return () => subscription.remove()
   }, [isOpen, closeNote])
 
-  const openNote = useCallback((id: string, options?: { focusTitle?: boolean }) => {
-    dismissKeyboard()
-    setIsEditing(false)
-    setEditorOwnsKeyboard(false)
-    editorRef.current?.blur()
-    loadedNoteRef.current = null
-    shouldFocusTitleRef.current = options?.focusTitle === true
-    setNoteId(id)
-    isOpenRef.current = true
-    setIsOpen(true)
-  }, [])
+  const handleNoteLoaded = useCallback((id: string) => markNoteLoaded(id), [markNoteLoaded])
+
+  const openNote = useCallback(
+    (id: string, options?: { focusTitle?: boolean }) => {
+      if (selectedNoteRef.current !== id) dispatch(selectNote(id as any))
+      dismissKeyboard()
+      setIsEditing(false)
+      setEditorOwnsKeyboard(false)
+      editorRef.current?.blur()
+      loadedNoteRef.current = null
+      openedNoteRef.current = null
+      shouldFocusTitleRef.current = options?.focusTitle === true
+      setNoteId(id)
+      isOpenRef.current = true
+      setIsOpen(true)
+    },
+    [dispatch],
+  )
 
   const handleStyleStateChange = useCallback((state: TiptapStyleState) => {
     styleStateRef.current = state
@@ -446,6 +495,8 @@ export function useNoteEditor() {
   return {
     editorRef,
     noteId,
+    showBodyPlaceholder: !!noteId && placeholderNoteId === noteId,
+    handleNoteLoaded,
     setNoteId,
     isOpen,
     setIsOpen,

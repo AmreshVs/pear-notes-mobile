@@ -30,7 +30,7 @@ export function useAttachmentCachePrune() {
       const state = store.getState() as any
       const notesState = state?.notes
       if (!notesState || notesState.isLoading) return null
-      const notes = (getNotes(state) ?? []) as { value?: { note?: string } | null }[]
+      const notes = (getNotes(state) ?? []) as { value?: object | null }[]
       if (notes.length !== (notesState.notesKeys?.length ?? 0)) return null
       return notes
     }
