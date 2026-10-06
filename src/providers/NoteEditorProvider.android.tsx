@@ -161,6 +161,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteId,
     showBodyPlaceholder,
     handleNoteLoaded,
+    handleEditorReset,
     isOpen,
     isEditing,
     keyboardHeight,
@@ -1099,6 +1100,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onImageLongPress={handleImageLongPress}
             onAttachmentLongPress={handleAttachmentLongPress}
             onNoteLoaded={handleNoteLoaded}
+            onEditorReset={handleEditorReset}
           />
         )}
 

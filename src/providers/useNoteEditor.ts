@@ -47,6 +47,7 @@ import { dismissKeyboard, subscribeKeyboardHidden } from '@/lib/keyboard'
 
 const FOCUS_TITLE_DELAY = 250
 const NOTE_LOADED_FALLBACK_MS = 3000
+const EDITOR_RESET_FALLBACK_MS = 10000
 const STRAY_FOCUS_WINDOW_MS = 2000
 const IOS_TOOLBAR_INSET_TYPING = 76
 const IOS_TOOLBAR_INSET_IDLE = 96
@@ -440,6 +441,14 @@ export function useNoteEditor() {
 
   const handleNoteLoaded = useCallback((id: string) => markNoteLoaded(id), [markNoteLoaded])
 
+  // While a dead editor page is rebuilt, show the note's placeholder rather than a blank page.
+  const handleEditorReset = useCallback(() => {
+    const id = openedNoteRef.current
+    if (!id) return
+    setPlaceholderNoteId(id)
+    setTimeout(() => markNoteLoaded(id), EDITOR_RESET_FALLBACK_MS)
+  }, [markNoteLoaded])
+
   const openNote = useCallback(
     (id: string, options?: { focusTitle?: boolean }) => {
       if (selectedNoteRef.current !== id) dispatch(selectNote(id as any))
@@ -497,6 +506,7 @@ export function useNoteEditor() {
     noteId,
     showBodyPlaceholder: !!noteId && placeholderNoteId === noteId,
     handleNoteLoaded,
+    handleEditorReset,
     setNoteId,
     isOpen,
     setIsOpen,
