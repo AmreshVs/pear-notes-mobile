@@ -1,6 +1,13 @@
 import { Fragment, memo, useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  useWindowDimensions,
+  View as RNView,
+} from 'react-native'
 import Animated, {
   Easing,
   runOnJS,
@@ -51,7 +58,7 @@ type Props = {
 
 type ActionRow = { icon: IconName; labelKey: string }
 
-const SHEET_TRAVEL = 480
+const VAULT_LIST_MAX_HEIGHT_RATIO = 0.45
 const VAULT_AVATAR_TINT_ALPHA = 0.08
 
 const MANAGE_ROW: ActionRow = { icon: 'gearshape', labelKey: 'vaults.manage' }
@@ -66,14 +73,19 @@ export function VaultSwitcherBottomSheet({
   const { t } = useTranslation()
   const { isDark, colors } = useTheme()
   const insets = useSafeAreaInsets()
+  const { height: windowHeight } = useWindowDimensions()
   const styles = useStyles()
+  const listStyle = useMemo(
+    () => [styles.group, { maxHeight: windowHeight * VAULT_LIST_MAX_HEIGHT_RATIO }],
+    [styles.group, windowHeight],
+  )
 
   const [isPresented, setIsPresented] = useState(visible)
   const sheetProgress = useSharedValue(visible ? 1 : 0)
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({ opacity: sheetProgress.value }))
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: (1 - sheetProgress.value) * SHEET_TRAVEL }],
+    transform: [{ translateY: (1 - sheetProgress.value) * windowHeight }],
   }))
 
   const handleSheetShow = useCallback(() => {
@@ -162,7 +174,13 @@ export function VaultSwitcherBottomSheet({
           </RNView>
         </Pressable>
       </RNView>
-      <RNView style={styles.group}>{vaults.map(renderVault)}</RNView>
+      <ScrollView
+        style={listStyle}
+        alwaysBounceVertical={false}
+        showsVerticalScrollIndicator={false}
+      >
+        {vaults.map(renderVault)}
+      </ScrollView>
       <RNView style={styles.group}>
         <ActionItem row={MANAGE_ROW} label={t(MANAGE_ROW.labelKey)} onPress={handleManage} />
       </RNView>

@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useRef } from 'react'
-import { Pressable, StyleSheet, Text, View } from 'react-native'
-import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
+import {
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetView,
+} from '@expo/ui/community/bottom-sheet'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -17,6 +21,8 @@ import {
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+
+const ACTION_LIST_MAX_HEIGHT_RATIO = 0.6
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   errorContainer: string
@@ -64,6 +70,11 @@ export function BottomActionSheet({
   const backgroundStyle = useMemo(() => sheet.sheetBackground, [sheet.sheetBackground])
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
   const rippleDestructive = useMemo(() => androidRipple(colors.error), [colors.error])
+  const { height: windowHeight } = useWindowDimensions()
+  const listStyle = useMemo(
+    () => [sheet.card, { maxHeight: windowHeight * ACTION_LIST_MAX_HEIGHT_RATIO }],
+    [sheet.card, windowHeight],
+  )
 
   return (
     <BottomSheetModal
@@ -82,7 +93,7 @@ export function BottomActionSheet({
           </View>
         ) : null}
 
-        <View style={sheet.card}>
+        <BottomSheetScrollView style={listStyle} showsVerticalScrollIndicator={false}>
           {actions.map((action, index) => (
             <React.Fragment key={action.label}>
               <Pressable
@@ -138,7 +149,7 @@ export function BottomActionSheet({
               {index < actions.length - 1 && <View style={sheet.separator} />}
             </React.Fragment>
           ))}
-        </View>
+        </BottomSheetScrollView>
 
         <View style={sheet.bottomPad} />
       </BottomSheetView>

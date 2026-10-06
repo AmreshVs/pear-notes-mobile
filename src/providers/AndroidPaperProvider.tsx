@@ -31,7 +31,7 @@ export function AndroidPaperProvider({ children }: AndroidPaperProviderProps) {
 
   const { theme: m3Theme } = useMaterial3Theme({ fallbackSourceColor: pearGold })
 
-  useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,
@@ -53,6 +53,8 @@ export function AndroidPaperProvider({ children }: AndroidPaperProviderProps) {
     }
     return isDark ? AndroidDarkTheme : AndroidLightTheme
   }, [isDark, androidColorTheme, m3Theme])
+
+  if (!fontsLoaded && !fontError) return null
 
   if (Platform.OS !== 'android') {
     return <>{children}</>

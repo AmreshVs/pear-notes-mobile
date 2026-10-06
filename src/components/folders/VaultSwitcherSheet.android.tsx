@@ -1,7 +1,11 @@
 import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, View } from 'react-native'
-import { BottomSheetModal, BottomSheetView } from '@expo/ui/community/bottom-sheet'
+import { Pressable, StyleSheet, useWindowDimensions, View } from 'react-native'
+import {
+  BottomSheetModal,
+  BottomSheetScrollView,
+  BottomSheetView,
+} from '@expo/ui/community/bottom-sheet'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router } from 'expo-router'
 
@@ -33,6 +37,8 @@ import { hapticSelection } from '@/lib/haptics'
 import { getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
 
+const VAULT_LIST_MAX_HEIGHT_RATIO = 0.45
+
 type Props = {
   visible: boolean
   onClose: () => void
@@ -46,6 +52,11 @@ export function VaultSwitcherSheet({ visible, onClose }: Props) {
   const styles = useStyles()
   const { colors } = useMD3Theme()
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
+  const { height: windowHeight } = useWindowDimensions()
+  const listStyle = useMemo(
+    () => [styles.card, { maxHeight: windowHeight * VAULT_LIST_MAX_HEIGHT_RATIO }],
+    [styles.card, windowHeight],
+  )
 
   const screen = useVaultsScreen()
   const { vaults, canRemove, busy, actionVault, removingVault, nameDialog } = screen
@@ -183,7 +194,9 @@ export function VaultSwitcherSheet({ visible, onClose }: Props) {
             <Text style={sheet.title}>{t('vaults.title')}</Text>
           </View>
 
-          <View style={styles.card}>{vaults.map(renderVault)}</View>
+          <BottomSheetScrollView style={listStyle} showsVerticalScrollIndicator={false}>
+            {vaults.map(renderVault)}
+          </BottomSheetScrollView>
 
           <Pressable
             onPress={handleManage}
