@@ -9,7 +9,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { AppState, Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import WebView, { WebViewMessageEvent } from 'react-native-webview'
 import { useSelector } from 'react-redux'
 
@@ -168,6 +168,7 @@ export interface TiptapEditorProps {
   onEditorBlur?: () => void
   onKeptSelectionCleared?: () => void
   onNoteLoaded?: (noteId: string) => void
+  onEditorReset?: () => void
   onOpenAttachment?: (url: string, fileName: string) => void
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
   onRequestPdfThumbnail?: (url: string, fileName: string, attachmentId: string) => void
@@ -203,6 +204,7 @@ type WebViewMsg =
   | { type: 'collapseSelection' }
   | { type: 'keptSelectionCleared' }
   | { type: 'noteLoaded'; noteId: string }
+  | { type: 'pong'; id: number }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'requestPdfThumbnail'; url: string; fileName: string; attachmentId: string }
@@ -222,6 +224,13 @@ type WebViewMsg =
   | { type: 'selectionResponse'; requestId: string; from: number; to: number; text: string }
 
 type EditorState = 'loading' | 'ready' | 'error'
+
+// iOS kills a backgrounded WebView's content process and does not always report
+// it, which leaves a blank editor. Each return to the foreground pings the page;
+// a page that does not answer, or never finishes loading, is brought back.
+const EDITOR_PING_TIMEOUT_MS = 2000
+const EDITOR_LOAD_TIMEOUT_MS = 8000
+const MAX_EDITOR_REMOUNTS = 3
 
 const revealLastInsertJs = (url?: string) => `(function () {
   var pm = document.querySelector('.ProseMirror')
@@ -300,6 +309,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onEditorBlur,
       onKeptSelectionCleared,
       onNoteLoaded,
+      onEditorReset,
       onOpenAttachment,
       onPreviewAttachment,
       onRequestPdfThumbnail,
@@ -330,6 +340,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onEditorBlurRef = useRef(onEditorBlur)
     const onKeptSelectionClearedRef = useRef(onKeptSelectionCleared)
     const onNoteLoadedRef = useRef(onNoteLoaded)
+    const onEditorResetRef = useRef(onEditorReset)
     const onOpenAttachmentRef = useRef(onOpenAttachment)
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
     const onRequestPdfThumbnailRef = useRef(onRequestPdfThumbnail)
@@ -344,6 +355,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onEditorBlurRef.current = onEditorBlur
     onKeptSelectionClearedRef.current = onKeptSelectionCleared
     onNoteLoadedRef.current = onNoteLoaded
+    onEditorResetRef.current = onEditorReset
     onOpenAttachmentRef.current = onOpenAttachment
     onPreviewAttachmentRef.current = onPreviewAttachment
     onRequestPdfThumbnailRef.current = onRequestPdfThumbnail
@@ -393,6 +405,12 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     )
 
     const [editorState, setEditorState] = useState<EditorState>('loading')
+    const [loadAttempt, setLoadAttempt] = useState(0)
+    const [webViewKey, setWebViewKey] = useState(0)
+    const remountsRef = useRef(0)
+    const pingSeqRef = useRef(0)
+    const pongSeqRef = useRef(0)
+    const recoverOnActiveRef = useRef(false)
 
     const revealEditor = useCallback(() => {
       setEditorState('ready')
@@ -493,6 +511,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
           case 'initialized':
             editorInitializedRef.current = true
+            remountsRef.current = 0
+            recoverOnActiveRef.current = false
             revealEditor()
             if (backgroundColorRef.current) {
               injectBackgroundColor(backgroundColorRef.current)
@@ -553,6 +573,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
           case 'noteLoaded':
             onNoteLoadedRef.current?.(msg.noteId)
+            break
+
+          case 'pong':
+            pongSeqRef.current = Math.max(pongSeqRef.current, msg.id)
             break
 
           case 'openAttachment':
@@ -634,17 +658,11 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       setEditorState('error')
     }, [])
 
-    const handleRetry = useCallback(() => {
-      editorReadyRef.current = false
-      editorInitializedRef.current = false
-      pendingContentRef.current = null
-      pendingTitleRef.current = null
-      setEditorState('loading')
-      webViewRef.current?.reload()
-    }, [])
-
-    const handleProcessGone = useCallback(() => {
-      log.warn('[editor] web content process ended, reloading the editor')
+    // The open note and title are replayed into the fresh page once it initializes.
+    const recoverEditor = useCallback((reason: string, remount: boolean) => {
+      log.warn(
+        '[editor] ' + reason + (remount ? ', remounting the editor' : ', reloading the editor'),
+      )
       const current = currentNoteRef.current
       editorReadyRef.current = false
       editorInitializedRef.current = false
@@ -655,8 +673,73 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       else if (current) pendingContentRef.current = current.html
       pendingTitleRef.current = currentTitleRef.current
       setEditorState('loading')
-      webViewRef.current?.reload()
+      setLoadAttempt((n) => n + 1)
+      onEditorResetRef.current?.()
+      if (remount) setWebViewKey((k) => k + 1)
+      else webViewRef.current?.reload()
     }, [])
+
+    const handleProcessGone = useCallback(() => {
+      recoverEditor('web content process ended', false)
+    }, [recoverEditor])
+
+    // A reload that never comes back gets a new WebView, and with it a new process.
+    const remountEditor = useCallback(() => {
+      if (remountsRef.current >= MAX_EDITOR_REMOUNTS) {
+        log.error('[editor] editor did not load after ' + MAX_EDITOR_REMOUNTS + ' remounts')
+        setEditorState('error')
+        return
+      }
+      remountsRef.current += 1
+      recoverEditor('editor did not load within ' + EDITOR_LOAD_TIMEOUT_MS + 'ms', true)
+    }, [recoverEditor])
+
+    const handleRetry = useCallback(() => {
+      remountsRef.current = 0
+      recoverEditor('retry requested', true)
+    }, [recoverEditor])
+
+    useEffect(() => {
+      if (editorState !== 'loading') return
+      const timer = setTimeout(() => {
+        if (editorInitializedRef.current) return
+        if (AppState.currentState !== 'active') {
+          recoverOnActiveRef.current = true
+          return
+        }
+        remountEditor()
+      }, EDITOR_LOAD_TIMEOUT_MS)
+      return () => clearTimeout(timer)
+    }, [editorState, loadAttempt, remountEditor])
+
+    useEffect(() => {
+      let probeTimer: ReturnType<typeof setTimeout> | null = null
+      const subscription = AppState.addEventListener('change', (next) => {
+        if (probeTimer) clearTimeout(probeTimer)
+        probeTimer = null
+        if (next !== 'active') return
+        if (recoverOnActiveRef.current) {
+          recoverOnActiveRef.current = false
+          if (!editorInitializedRef.current) remountEditor()
+          return
+        }
+        if (!editorInitializedRef.current) return
+        const id = ++pingSeqRef.current
+        webViewRef.current?.injectJavaScript(
+          `(function(){if(window.editorBridge&&window.ReactNativeWebView){window.ReactNativeWebView.postMessage(JSON.stringify({type:'pong',id:${id}}))}})();true;`,
+        )
+        probeTimer = setTimeout(() => {
+          probeTimer = null
+          if (pongSeqRef.current >= id || !editorInitializedRef.current) return
+          if (AppState.currentState !== 'active') return
+          recoverEditor('editor did not answer after returning to the foreground', false)
+        }, EDITOR_PING_TIMEOUT_MS)
+      })
+      return () => {
+        subscription.remove()
+        if (probeTimer) clearTimeout(probeTimer)
+      }
+    }, [recoverEditor, remountEditor])
 
     useImperativeHandle(
       ref,
@@ -806,6 +889,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
         <View style={[styles.flex, { paddingBottom: safeAreaBottom || 0 }]}>
           <WebView
+            key={webViewKey}
             ref={webViewRef}
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
             onMessage={handleMessage}
