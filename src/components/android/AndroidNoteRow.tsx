@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
 
+import { parseHighlight } from '@pear-notes/core/store/slices/searchSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 import { formatDate } from '@pear-notes/core/utils.js'
 
@@ -73,7 +74,7 @@ type NoteRowProps = {
   selecting?: boolean
   checked?: boolean
   searchHit?: NoteSearchHit | null
-  searchTerms?: string[]
+  titleHighlight?: string
   onPress: (noteKey: string) => void
   onLongPress: (noteKey: string) => void
 }
@@ -88,7 +89,7 @@ function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
     prev.selecting === next.selecting &&
     prev.checked === next.checked &&
     prev.searchHit === next.searchHit &&
-    prev.searchTerms === next.searchTerms &&
+    prev.titleHighlight === next.titleHighlight &&
     prev.onPress === next.onPress &&
     prev.onLongPress === next.onLongPress
   )
@@ -103,7 +104,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   selecting,
   checked,
   searchHit,
-  searchTerms,
+  titleHighlight,
   onPress,
   onLongPress,
 }: NoteRowProps) {
@@ -124,6 +125,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const previewText = masked ? t('noteCard.lockedSummary') : metadata.preview
   const attachment = masked ? null : metadata.attachment
   const searchSnippet = !masked && searchHit?.snippet ? searchHit : null
+  const titleRanges = useMemo(() => parseHighlight(titleHighlight), [titleHighlight])
   const showAttachment = !searchSnippet && !previewText && !!attachment
   const displayPreview = previewText || t('noteCard.noAdditionalText')
   const rawImageUrl = metadata.imageUrl
@@ -219,10 +221,10 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
         <View style={styles.content}>
           <View style={styles.titleRow}>
             <Text style={styles.title} numberOfLines={titleLines}>
-              {note.value?.title && searchTerms?.length ? (
+              {note.value?.title && titleRanges.length ? (
                 <HighlightedText
                   text={note.value.title}
-                  terms={searchTerms}
+                  ranges={titleRanges}
                   highlightStyle={styles.searchMatch}
                 />
               ) : (

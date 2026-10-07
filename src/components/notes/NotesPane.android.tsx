@@ -46,7 +46,7 @@ import {
   restoreNotes,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
-import { prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
+import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
@@ -328,9 +328,14 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [dispatch],
   )
 
+  const notesRef = useRef(notes)
+  useEffect(() => {
+    notesRef.current = notes
+  }, [notes])
+
   const handleNoteLongPress = useCallback(
     (noteId: string) => {
-      const note = notes.find((n: any) => n.key === noteId)
+      const note = notesRef.current.find((n: any) => n.key === noteId)
       if (!note) return
       hapticMedium()
       if (isSelecting) {
@@ -340,7 +345,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       setActiveNoteId(noteId)
       setNoteSheetVisible(true)
     },
-    [notes, isSelecting, toggleSelect],
+    [isSelecting, toggleSelect],
   )
 
   const handleNoteSheetDelete = useCallback(() => {
@@ -499,7 +504,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         folderName={showFolderNames ? folderNameMap[note.value?.folderKey] : undefined}
         folderIconToken={showFolderNames ? folderIconMap[note.value?.folderKey] : undefined}
         searchHit={searchHits[note.key] ?? null}
-        searchTerms={searchTerms}
+        titleHighlight={getTitleHighlight(note.value?.title, searchTerms)}
         sectionTitle={section.title}
         selecting={isSelecting}
         checked={selectedKeys.includes(note.key)}

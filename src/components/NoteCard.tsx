@@ -11,6 +11,7 @@ import { FadeIn } from 'react-native-reanimated'
 import { useSelector } from 'react-redux'
 import { Image } from 'expo-image'
 
+import { parseHighlight } from '@pear-notes/core/store/slices/searchSlice.js'
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import { HighlightedText } from '@/components/HighlightedText'
@@ -89,7 +90,7 @@ interface NoteCardProps {
   locked?: boolean
   pinned?: boolean
   searchHit?: NoteSearchHit | null
-  searchTerms?: string[]
+  titleHighlight?: string
   onPress: (id: string) => void
   onDelete?: (id: string) => void
   onRestore?: (id: string) => void
@@ -122,7 +123,7 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.locked === next.locked &&
     prev.pinned === next.pinned &&
     prev.searchHit === next.searchHit &&
-    prev.searchTerms === next.searchTerms &&
+    prev.titleHighlight === next.titleHighlight &&
     prev.moveFolders === next.moveFolders &&
     prev.moveVaults === next.moveVaults &&
     prev.onMoveToVault === next.onMoveToVault &&
@@ -155,7 +156,7 @@ export const NoteCard = memo(function NoteCard({
   locked,
   pinned,
   searchHit,
-  searchTerms,
+  titleHighlight,
   animationIndex = 0,
   onPress,
   onDelete,
@@ -252,6 +253,7 @@ export const NoteCard = memo(function NoteCard({
     return parts.join(', ')
   }, [displayTitle, pinned, locked, date, t])
   const searchSnippet = !masked && searchHit?.snippet ? searchHit : null
+  const titleRanges = useMemo(() => parseHighlight(titleHighlight), [titleHighlight])
   const showAttachment = !masked && !searchSnippet && !summary && !!attachment
   const attachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
   const deleteLabel = onRestore
@@ -378,10 +380,10 @@ export const NoteCard = memo(function NoteCard({
       <RNView style={styles.content}>
         <RNView style={styles.titleRow}>
           <Text variant="bodyBold" numberOfLines={titleLines} style={titleStyle}>
-            {title && searchTerms?.length ? (
+            {title && titleRanges.length ? (
               <HighlightedText
                 text={title}
-                terms={searchTerms}
+                ranges={titleRanges}
                 highlightStyle={styles.searchMatch}
               />
             ) : (

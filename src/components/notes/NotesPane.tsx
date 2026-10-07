@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import type { SearchBarCommands } from 'react-native-screens'
 import { useDispatch, useSelector } from 'react-redux'
-import { router, Stack } from 'expo-router'
+import { router, Stack, useNavigation } from 'expo-router'
 
 import {
   ALL_NOTES_KEY,
@@ -31,7 +31,7 @@ import {
   restoreNotes,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
-import { prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
+import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
@@ -102,6 +102,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
   const searchBarRef = useRef<SearchBarCommands>(null)
+  const navigation = useNavigation()
   const allFolders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
   const lockMethod = useSelector(getLockMethod)
@@ -372,6 +373,22 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     if (isTrashFolder) dispatch(purgeExpiredTrash())
   }, [isTrashFolder, dispatch])
 
+  useEffect(
+    () =>
+      navigation.addListener('beforeRemove', () => {
+        searchBarRef.current?.cancelSearch()
+      }),
+    [navigation],
+  )
+
+  useEffect(() => {
+    const searchBar = searchBarRef
+    return () => {
+      searchBar.current?.cancelSearch()
+      dispatch(setSearchQuery(''))
+    }
+  }, [dispatch, id])
+
   const scrollContentStyle = useMemo(
     () => [
       styles.scrollContent,
@@ -421,7 +438,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           locked={isLocked}
           pinned={isPinned}
           searchHit={searchHits[note.key] ?? null}
-          searchTerms={searchTerms}
+          titleHighlight={getTitleHighlight(note.value?.title, searchTerms)}
           onPress={handleSelectNote}
           onToggleSelect={handleToggleSelect}
           onDelete={handleDeleteNote}

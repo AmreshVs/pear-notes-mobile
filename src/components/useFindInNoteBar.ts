@@ -1,5 +1,5 @@
 import { type RefObject, useCallback, useEffect, useRef, useState } from 'react'
-import type { TextInput } from 'react-native'
+import { Keyboard, Platform, type TextInput } from 'react-native'
 
 import { SEARCH_QUERY_MAX_LENGTH } from '@pear-notes/core/constant.js'
 
@@ -19,7 +19,7 @@ export interface FindInNoteBarProps {
   toolbarBottom?: number
 }
 
-const FOCUS_DELAY_MS = 120
+const FOCUS_DELAYS_MS = Platform.OS === 'android' ? [350, 700] : [120]
 
 export function useFindInNoteBar({
   editorRef,
@@ -30,10 +30,17 @@ export function useFindInNoteBar({
   const inputRef = useRef<TextInput>(null)
 
   useEffect(() => {
-    const timer = setTimeout(() => inputRef.current?.focus(), FOCUS_DELAY_MS)
+    const timers = FOCUS_DELAYS_MS.map((delay) =>
+      setTimeout(() => {
+        const input = inputRef.current
+        if (!input || (input.isFocused() && Keyboard.isVisible())) return
+        if (input.isFocused()) input.blur()
+        input.focus()
+      }, delay),
+    )
     const editor = editorRef.current
     return () => {
-      clearTimeout(timer)
+      timers.forEach(clearTimeout)
       editor?.findClear()
     }
   }, [editorRef])
