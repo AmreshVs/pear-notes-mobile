@@ -15,6 +15,9 @@ const ARTIFACT_DIR = path.join(ROOT, 'build')
 const PLATFORMS = ['ios', 'android']
 const PROFILE = 'production'
 const CLOUD_PROFILE = 'production-cloud'
+const APK_PROFILE = 'production-apk'
+const CLOUD_APK_PROFILE = 'production-cloud-apk'
+const ANDROID_PACKAGES = ['aab', 'apk', 'both']
 
 const cleanups = []
 let viaEas = false
@@ -29,6 +32,7 @@ function parseArgs(argv) {
     viaEas: false,
     autoSubmit: false,
     cloud: false,
+    androidPackage: 'aab',
     bump: false,
     commit: true,
     version: null,
@@ -47,6 +51,7 @@ function parseArgs(argv) {
     else if (arg === '--via-eas') args.viaEas = true
     else if (arg === '--cloud') args.cloud = true
     else if (arg === '--auto-submit') args.autoSubmit = true
+    else if (arg === '--android-package') args.androidPackage = argv[++i]
   }
 
   return args
@@ -177,9 +182,9 @@ function appleEnv(profile) {
   }
 }
 
-function artifactPath(platform, version, buildNumber) {
-  const extension = platform === 'ios' ? 'ipa' : 'aab'
-  return path.join(ARTIFACT_DIR, `pear-notes-${version}-${buildNumber}.${extension}`)
+function artifactPath(platform, version, buildNumber, extension = null) {
+  const resolved = extension ?? (platform === 'ios' ? 'ipa' : 'aab')
+  return path.join(ARTIFACT_DIR, `pear-notes-${version}-${buildNumber}.${resolved}`)
 }
 
 async function prepareSources() {
@@ -312,13 +317,18 @@ function submitCredentialsEnv(platform) {
   return { values: { [play.ENV_VAR]: key.path }, cleanup }
 }
 
-async function buildOnEas(platform, version, buildNumber) {
+async function buildOnEas(
+  platform,
+  version,
+  buildNumber,
+  { profile = CLOUD_PROFILE, extension } = {},
+) {
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
-  const output = artifactPath(platform, version, buildNumber)
+  const output = artifactPath(platform, version, buildNumber, extension)
 
   const { json, failure } = await captureJson(
-    `eas build --non-interactive --json --wait --platform ${platform} --profile ${CLOUD_PROFILE}`,
-    `Building ${platform} ${version} (${buildNumber}) on EAS`,
+    `eas build --non-interactive --json --wait --platform ${platform} --profile ${profile}`,
+    `Building ${path.basename(output)} on EAS`,
     { heartbeat: `still building ${platform} on EAS` },
   )
   if (failure) return { file: null, failure }
@@ -340,13 +350,13 @@ async function buildOnEas(platform, version, buildNumber) {
   return { file: output, failure: null, easBuildId: build.id }
 }
 
-async function buildLocally(platform, profile, version, buildNumber) {
+async function buildLocally(platform, profile, version, buildNumber, extension = null) {
   fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
-  const output = artifactPath(platform, version, buildNumber)
+  const output = artifactPath(platform, version, buildNumber, extension)
 
   const { status, failure } = await sh(
     `eas build --local --non-interactive --platform ${platform} --profile ${profile} --output "${output}"`,
-    `Building ${platform} ${version} (${buildNumber}) locally`,
+    `Building ${path.basename(output)} locally`,
     {
       heartbeat: `still building ${platform}`,
       allowFailure: true,
@@ -554,9 +564,13 @@ function finish(outcomes, totalMs, version, buildNumber, commit) {
     `\n\x1b[31m${failed.length} of ${outcomes.length} platform(s) failed.\x1b[0m ` +
       'The others completed and are unaffected.',
   )
-  console.log('  Fix the cause, then retry just the failures without rebuilding:')
+  console.log('  Fix the cause, then retry just the failures:')
   for (const outcome of failed) {
-    console.log(`    npm run release:${outcome.platform} -- --submit-only`)
+    console.log(
+      outcome.platform === 'android apk'
+        ? '    npm run release:android -- --android-package apk --no-submit'
+        : `    npm run release:${outcome.platform} -- --submit-only`,
+    )
   }
   console.log('')
   process.exitCode = 1
@@ -611,12 +625,59 @@ async function releasePlatform(platform, args, version, buildNumber) {
   return { platform, status: 'ok', detail: 'built and submitted' }
 }
 
+async function buildSideloadApk(args, version, buildNumber) {
+  const { file, failure } = args.cloud
+    ? await buildOnEas('android', version, buildNumber, {
+        profile: CLOUD_APK_PROFILE,
+        extension: 'apk',
+      })
+    : await buildLocally('android', APK_PROFILE, version, buildNumber, 'apk')
+
+  if (failure) {
+    console.error(`\n\x1b[31m  android apk build failed: ${failure}\x1b[0m`)
+    return { platform: 'android apk', status: 'failed', detail: 'build failed' }
+  }
+  return {
+    platform: 'android apk',
+    status: 'ok',
+    detail: `built for sideloading, never uploaded (${path.relative(ROOT, file)})`,
+  }
+}
+
+async function releaseTargets(platform, args, version, buildNumber) {
+  if (platform !== 'android') return [await releasePlatform(platform, args, version, buildNumber)]
+
+  const outcomes = []
+  if (args.androidPackage !== 'apk') {
+    outcomes.push(await releasePlatform(platform, args, version, buildNumber))
+  }
+  if (args.androidPackage !== 'aab') {
+    outcomes.push(await buildSideloadApk(args, version, buildNumber))
+  }
+  return outcomes
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2))
   const platforms = resolvePlatforms(args.platform)
   const started = Date.now()
 
   viaEas = args.viaEas
+
+  if (!ANDROID_PACKAGES.includes(args.androidPackage)) {
+    abort(`--android-package must be one of ${ANDROID_PACKAGES.join(', ')}`)
+  }
+
+  if (
+    platforms.includes('android') &&
+    args.androidPackage === 'apk' &&
+    !args.skipSubmit &&
+    !args.submitOnly
+  ) {
+    abort(
+      'Google Play takes the AAB, not an APK - add --no-submit, or use --android-package both to upload the AAB and also build an APK',
+    )
+  }
 
   if (args.autoSubmit && (!args.cloud || args.skipSubmit || args.submitOnly || args.viaEas)) {
     abort(
@@ -683,13 +744,13 @@ async function main() {
   const commit = capture('git rev-parse --short HEAD')
   heading(`Releasing Pear Notes ${version} (build ${buildNumber}) from ${commit}`)
 
-  const release = (platform) => releasePlatform(platform, args, version, buildNumber)
+  const release = (platform) => releaseTargets(platform, args, version, buildNumber)
   const outcomes = []
   if (args.cloud && platforms.length > 1) {
     heading(`Building ${platforms.join(' and ')} on EAS at the same time`)
-    outcomes.push(...(await Promise.all(platforms.map(release))))
+    outcomes.push(...(await Promise.all(platforms.map(release))).flat())
   } else {
-    for (const platform of platforms) outcomes.push(await release(platform))
+    for (const platform of platforms) outcomes.push(...(await release(platform)))
   }
 
   finish(outcomes, Date.now() - started, version, buildNumber, commit)

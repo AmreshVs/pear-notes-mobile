@@ -18,6 +18,11 @@ on:
         type: choice
         options: [direct, eas-submit, eas-auto-submit, none]
         default: direct
+      android_package:
+        description: 'Android: aab (Google Play), both (AAB plus a sideload APK), apk (sideload APK only - needs upload none)'
+        type: choice
+        options: [aab, both, apk]
+        default: aab
       version:
         description: 'Marketing version, e.g. 1.2.0 (empty = keep current). A new MAJOR.MINOR restarts the build number at 1.'
         type: string
@@ -55,6 +60,12 @@ jobs:
         if: inputs.upload == 'eas-auto-submit' && inputs.builder != 'eas'
         run: |
           echo "::error::upload eas-auto-submit needs builder eas - EAS can only auto-submit builds it made"
+          exit 1
+
+      - name: Check the Android package and upload combination
+        if: inputs.android_package == 'apk' && inputs.upload != 'none' && inputs.platform != 'ios'
+        run: |
+          echo "::error::Google Play takes the AAB, not an APK - pick upload none, or android_package both"
           exit 1
 
       - name: Choose the version and build number
@@ -221,9 +232,11 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           BUILDER: ${{ inputs.builder }}
           UPLOAD: ${{ inputs.upload }}
+          ANDROID_PACKAGE: ${{ inputs.android_package }}
         run: |
           flags=(--platform "$PLATFORM")
           [ "$BUILDER" = "eas" ] && flags+=(--cloud)
+          [ "$PLATFORM" = "android" ] && flags+=(--android-package "$ANDROID_PACKAGE")
           case "$UPLOAD" in
             none) flags+=(--no-submit) ;;
             eas-submit) flags+=(--via-eas) ;;
@@ -251,6 +264,15 @@ jobs:
           path: |
             build/*.ipa
             build/*.aab
+          if-no-files-found: ignore
+          retention-days: 2
+
+      - name: Keep the sideload APK
+        if: always() && matrix.platform == 'android' && inputs.android_package != 'aab'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pear-notes-android-apk
+          path: build/*.apk
           if-no-files-found: ignore
           retention-days: 2
 
