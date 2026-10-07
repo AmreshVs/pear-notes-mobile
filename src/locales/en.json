@@ -911,7 +911,8 @@
       "attachmentOptions": "Attachment options",
       "saveToPhotos": "Save to Photos",
       "download": "Download",
-      "noteHistory": "Note history"
+      "noteHistory": "Note history",
+      "findInNote": "Find in note"
     },
     "emptyState": {
       "title": "Nothing open",
@@ -944,6 +945,14 @@
       "title": "Also edited on another device",
       "keepMine": "Keep mine",
       "useTheirs": "Use theirs"
+    },
+    "find": {
+      "placeholder": "Find in note",
+      "matchCount": "{{current}} of {{total}}",
+      "noMatches": "No matches",
+      "previous": "Previous match",
+      "next": "Next match",
+      "close": "Close find"
     }
   },
   "pairing": {
@@ -1006,7 +1015,9 @@
       "tryDifferent": "Try a different search term",
       "searchNotes": "Search your notes",
       "typeToFind": "Type above to find notes across your library"
-    }
+    },
+    "scopeLabel": "Search in",
+    "scopeAll": "All notes"
   },
   "layouts": {
     "settings": "Settings",

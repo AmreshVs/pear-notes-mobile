@@ -39,6 +39,7 @@ import { AiToolsSheet } from '@/components/AiToolsSheet'
 import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { AudioRecorderModal, type RecordingDoneOptions } from '@/components/AudioRecorderModal'
 import { EdgeFade } from '@/components/EdgeFade'
+import { FindInNoteBar } from '@/components/FindInNoteBar'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
 import { LockedContentShield } from '@/components/LockedContentShield'
@@ -50,6 +51,7 @@ import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import type { EditorSelection } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
+import { EMPTY_FIND_STATE, type FindInNoteState } from '@/components/useFindInNoteBar'
 import { useNoteConflict } from '@/components/useNoteConflict'
 import type {
   AiScope,
@@ -192,6 +194,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
   const [dictationActive, setDictationActive] = useState(false)
+  const [findNoteId, setFindNoteId] = useState<string | null>(null)
+  const [findState, setFindState] = useState<FindInNoteState>(EMPTY_FIND_STATE)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
   const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
   const [voiceParagraphs, setVoiceParagraphs] = useState<string[] | null>(null)
@@ -331,6 +335,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [])
 
+  const findActive = !!noteId && findNoteId === noteId && !isNoteLocked && !dictationActive
+
+  const handleFindInNote = useCallback(() => {
+    if (!noteId) return
+    setFindState(EMPTY_FIND_STATE)
+    setFindNoteId(noteId)
+  }, [noteId])
+
+  const handleFindDone = useCallback(() => setFindNoteId(null), [])
+
   const handleMoreOptions = useCallback(() => {
     if (!noteId) return
     hapticMedium()
@@ -338,6 +352,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       const lockLabel = noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock')
       const pinLabel = noteData?.pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin')
       const entries = [
+        { label: t('noteEditor.menu.findInNote'), run: handleFindInNote },
         { label: pinLabel, run: handleTogglePin },
         { label: t('noteCard.actions.moveTo'), run: showMoveToSheet },
         { label: lockLabel, run: handleToggleLock },
@@ -365,6 +380,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteData?.pinned,
     activityEnabled,
     handleOpenNoteHistory,
+    handleFindInNote,
     showMoveToSheet,
     handleTogglePin,
     handleToggleLock,
@@ -1132,6 +1148,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                         }
                       >
                         <ExpoUI.Button
+                          label={t('noteEditor.menu.findInNote')}
+                          systemImage="magnifyingglass"
+                          onPress={handleFindInNote}
+                        />
+                        <ExpoUI.Button
                           label={
                             noteData?.pinned
                               ? t('noteCard.actions.unpin')
@@ -1228,6 +1249,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onAttachmentLongPress={handleAttachmentLongPress}
               onKeptSelectionCleared={handleKeptSelectionCleared}
               onNoteLoaded={handleNoteLoaded}
+              onFindState={setFindState}
               onEditorReset={handleEditorReset}
             />
           )}
@@ -1242,7 +1264,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             <EdgeFade color={colors.editorBackground} placement="bottom" />
           </View>
 
-          {isOpen && !isNoteLocked && !dictationActive && (
+          {isOpen && !isNoteLocked && !dictationActive && !findActive && (
             <EditorToolbar
               isEditing={isEditing}
               isActive={isActive}
@@ -1299,6 +1321,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               tools={aiTools}
               onSelect={handleSelectAiTool}
               onClose={handleCloseAiTools}
+            />
+          )}
+
+          {isOpen && findActive && (
+            <FindInNoteBar
+              editorRef={editorRef}
+              findState={findState}
+              onDone={handleFindDone}
+              toolbarBottom={toolbarBottom}
             />
           )}
 

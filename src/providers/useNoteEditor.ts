@@ -38,7 +38,10 @@ import {
   getSelectedNote,
   selectNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
+import {
+  getHyperdriveServerAddress,
+  getSearchQuery,
+} from '@pear-notes/core/store/slices/uiSlice.js'
 import { getVaultEnteredAt, getVaultPending } from '@pear-notes/core/store/slices/vaultsSlice.js'
 
 import { useReduceMotion } from '@/components/Themed'
@@ -173,6 +176,8 @@ export function useNoteEditor() {
     if (id === openedNoteRef.current) setPlaceholderNoteId(null)
   }, [])
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
+  const searchQuery = useSelector(getSearchQuery) as string
+  const searchQueryRef = useRef(searchQuery)
   const editorContent = useSelector(getEditorContent) as string
   const editorTitle = useSelector(getEditorTitle) as string
   const syncToken = useSelector(getEditorSyncToken) as number
@@ -291,6 +296,10 @@ export function useNoteEditor() {
   }, [noteId, animatePane])
 
   useEffect(() => {
+    searchQueryRef.current = searchQuery
+  }, [searchQuery])
+
+  useEffect(() => {
     if (!noteId || noteId === loadedNoteRef.current) return
     if (noteData?.bodyOmitted) return
     loadedNoteRef.current = noteId
@@ -312,7 +321,7 @@ export function useNoteEditor() {
     const load = () => {
       if (sent || !editorRef.current) return
       sent = true
-      editorRef.current.loadNote(noteId, content)
+      editorRef.current.loadNote(noteId, content, (searchQueryRef.current || '').trim())
       setTimeout(() => markNoteLoaded(noteId), NOTE_LOADED_FALLBACK_MS)
     }
     load()

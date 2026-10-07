@@ -10,6 +10,7 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 import { formatDate } from '@pear-notes/core/utils.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { HighlightedText } from '@/components/HighlightedText'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useFontScale } from '@/components/Themed'
 import {
@@ -35,6 +36,7 @@ import {
 import { FALLBACK_FOLDER_MATERIAL, FOLDER_ICON_MATERIAL } from '@/constants/folderIcons'
 import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import type { NoteSearchHit } from '@/hooks/useNoteSearch'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
@@ -70,6 +72,8 @@ type NoteRowProps = {
   sectionTitle?: string
   selecting?: boolean
   checked?: boolean
+  searchHit?: NoteSearchHit | null
+  searchTerms?: string[]
   onPress: (noteKey: string) => void
   onLongPress: (noteKey: string) => void
 }
@@ -83,6 +87,8 @@ function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
     prev.sectionTitle === next.sectionTitle &&
     prev.selecting === next.selecting &&
     prev.checked === next.checked &&
+    prev.searchHit === next.searchHit &&
+    prev.searchTerms === next.searchTerms &&
     prev.onPress === next.onPress &&
     prev.onLongPress === next.onLongPress
   )
@@ -96,6 +102,8 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   sectionTitle,
   selecting,
   checked,
+  searchHit,
+  searchTerms,
   onPress,
   onLongPress,
 }: NoteRowProps) {
@@ -115,10 +123,20 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const metadata = getNoteMetadata(note.value)
   const previewText = masked ? t('noteCard.lockedSummary') : metadata.preview
   const attachment = masked ? null : metadata.attachment
-  const showAttachment = !previewText && !!attachment
+  const searchSnippet = !masked && searchHit?.snippet ? searchHit : null
+  const showAttachment = !searchSnippet && !previewText && !!attachment
   const displayPreview = previewText || t('noteCard.noAdditionalText')
   const rawImageUrl = metadata.imageUrl
-  const hasChecklist = !masked && metadata.isChecklist
+  const hasChecklist = !masked && !searchSnippet && metadata.isChecklist
+  const previewContent = searchSnippet ? (
+    <HighlightedText
+      text={searchSnippet.snippet}
+      ranges={searchSnippet.ranges}
+      highlightStyle={styles.searchMatch}
+    />
+  ) : (
+    displayPreview
+  )
   const timestamp = note.value?.updatedAt || note.value?.createdAt
   const relativeLabel = formatDate(timestamp) || ''
   const dateLabel =
@@ -201,7 +219,15 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
         <View style={styles.content}>
           <View style={styles.titleRow}>
             <Text style={styles.title} numberOfLines={titleLines}>
-              {title}{' '}
+              {note.value?.title && searchTerms?.length ? (
+                <HighlightedText
+                  text={note.value.title}
+                  terms={searchTerms}
+                  highlightStyle={styles.searchMatch}
+                />
+              ) : (
+                title
+              )}{' '}
               {pinned && (
                 <MaterialCommunityIcons
                   name="pin"
@@ -242,12 +268,12 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
                 style={styles.checkboxIcon}
               />
               <Text style={[styles.preview, styles.rowPreview]} numberOfLines={previewLines}>
-                {displayPreview}
+                {previewContent}
               </Text>
             </View>
           ) : (
             <Text style={styles.preview} numberOfLines={previewLines}>
-              {displayPreview}
+              {previewContent}
             </Text>
           )}
 
@@ -365,6 +391,10 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
       marginBottom: UI_SIZE_4,
       lineHeight: UI_SIZE_20,
       color: c.onSurfaceVariant,
+    },
+    searchMatch: {
+      color: c.onPrimaryContainer,
+      backgroundColor: c.primaryContainer,
     },
     checklistRow: {
       ...commonStyles.row,

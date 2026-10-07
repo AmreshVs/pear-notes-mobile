@@ -13,6 +13,7 @@ import { Image } from 'expo-image'
 
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
+import { HighlightedText } from '@/components/HighlightedText'
 import { MotionView } from '@/components/MotionView'
 import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import {
@@ -35,6 +36,7 @@ import {
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import type { NoteSearchHit } from '@/hooks/useNoteSearch'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { useCachedImageThumbnail } from '@/lib/useCachedImageThumbnail'
@@ -86,6 +88,8 @@ interface NoteCardProps {
   animationIndex?: number
   locked?: boolean
   pinned?: boolean
+  searchHit?: NoteSearchHit | null
+  searchTerms?: string[]
   onPress: (id: string) => void
   onDelete?: (id: string) => void
   onRestore?: (id: string) => void
@@ -117,6 +121,8 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.grouped === next.grouped &&
     prev.locked === next.locked &&
     prev.pinned === next.pinned &&
+    prev.searchHit === next.searchHit &&
+    prev.searchTerms === next.searchTerms &&
     prev.moveFolders === next.moveFolders &&
     prev.moveVaults === next.moveVaults &&
     prev.onMoveToVault === next.onMoveToVault &&
@@ -148,6 +154,8 @@ export const NoteCard = memo(function NoteCard({
   grouped,
   locked,
   pinned,
+  searchHit,
+  searchTerms,
   animationIndex = 0,
   onPress,
   onDelete,
@@ -243,7 +251,8 @@ export const NoteCard = memo(function NoteCard({
     parts.push(date)
     return parts.join(', ')
   }, [displayTitle, pinned, locked, date, t])
-  const showAttachment = !masked && !summary && !!attachment
+  const searchSnippet = !masked && searchHit?.snippet ? searchHit : null
+  const showAttachment = !masked && !searchSnippet && !summary && !!attachment
   const attachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
   const deleteLabel = onRestore
     ? t('folderView.permanentlyDeleteTitle')
@@ -369,7 +378,15 @@ export const NoteCard = memo(function NoteCard({
       <RNView style={styles.content}>
         <RNView style={styles.titleRow}>
           <Text variant="bodyBold" numberOfLines={titleLines} style={titleStyle}>
-            {displayTitle}
+            {title && searchTerms?.length ? (
+              <HighlightedText
+                text={title}
+                terms={searchTerms}
+                highlightStyle={styles.searchMatch}
+              />
+            ) : (
+              displayTitle
+            )}
             {'  '}
             {pinned && <SymbolIcon name="pin.fill" size={UI_ICON_SIZE_14} color={lockIconColor} />}
             {locked &&
@@ -390,7 +407,15 @@ export const NoteCard = memo(function NoteCard({
           </RNView>
         ) : (
           <Text variant="caption" numberOfLines={summaryLines} style={styles.summary}>
-            {displaySummary}
+            {searchSnippet ? (
+              <HighlightedText
+                text={searchSnippet.snippet}
+                ranges={searchSnippet.ranges}
+                highlightStyle={styles.searchMatch}
+              />
+            ) : (
+              displaySummary
+            )}
           </Text>
         )}
 
@@ -575,6 +600,10 @@ const useStyles = createThemedStylesheet((theme) => {
       marginBottom: UI_SIZE_6,
       color: theme.colors.textSecondary,
       lineHeight: UI_SIZE_22,
+    },
+    searchMatch: {
+      color: theme.colors.text,
+      backgroundColor: `${theme.colors.primary}40`,
     },
     attachmentRow: {
       flexDirection: 'row',

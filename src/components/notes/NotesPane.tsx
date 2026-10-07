@@ -31,6 +31,7 @@ import {
   restoreNotes,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
@@ -42,6 +43,7 @@ import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderEmptyState } from '@/components/FolderEmptyState'
 import { LockNowButton } from '@/components/LockNowButton'
 import { NoteCard } from '@/components/NoteCard'
+import { SearchScopeChips } from '@/components/notes/SearchScopeChips'
 import { NoteSelectionToolbar } from '@/components/NoteSelectionToolbar'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
@@ -60,6 +62,7 @@ import {
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
 import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
+import { useNoteSearch } from '@/hooks/useNoteSearch'
 import { useNoteSelection } from '@/hooks/useNoteSelection'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { useVisibleNotes } from '@/hooks/useVisibleNotes'
@@ -107,6 +110,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const localPreferences = useSelector(getLocalPreferences)
   const allNotes = useSelector(getNotes) as any[]
   const isTrashFolder = id === RECENTLY_DELETED_KEY
+  const { searchHits, searchTerms, searchScope, hideEmptyState, showSearchScope, showFolderNames } =
+    useNoteSearch(id)
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote || null)
 
@@ -389,10 +394,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       const isPinned = note.value?.pinned === true
       const metadata = getNoteMetadata(note.value)
 
-      const noteFolder =
-        folder?.id === ALL_NOTES_KEY
-          ? allFolders.find((f: any) => f.id === note.value?.folderKey)
-          : undefined
+      const noteFolder = showFolderNames
+        ? allFolders.find((f: any) => f.id === note.value?.folderKey)
+        : undefined
       const folderName = noteFolder?.name
 
       return (
@@ -416,6 +420,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           animationIndex={animationIndex}
           locked={isLocked}
           pinned={isPinned}
+          searchHit={searchHits[note.key] ?? null}
+          searchTerms={searchTerms}
           onPress={handleSelectNote}
           onToggleSelect={handleToggleSelect}
           onDelete={handleDeleteNote}
@@ -431,7 +437,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     },
     [
       allFolders,
-      folder?.id,
+      showFolderNames,
+      searchHits,
+      searchTerms,
       isSelecting,
       selectedKeys,
       handleToggleSelect,
@@ -483,6 +491,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
             <LockNowButton />
           </View>
         </View>
+        {showSearchScope && (
+          <SearchScopeChips folderName={folder?.name || t('folders.title')} scope={searchScope} />
+        )}
         {isTrashFolder && notes.length > 0 && (
           <Text style={styles.retentionNotice}>
             {t('folderView.trashRetentionNotice', { days: TRASH_RETENTION_DAYS })}
@@ -495,6 +506,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       notes.length,
       isSelecting,
       isTrashFolder,
+      showSearchScope,
+      searchScope,
       selectedCount,
       t,
       styles.pageTitle,
@@ -505,18 +518,20 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   )
 
   const listEmpty = useMemo(
-    () => (
-      <FolderEmptyState
-        containerStyle={emptyStateStyle}
-        hasSearchQuery={searchQuery.trim().length > 0}
-        isTrash={isTrashFolder}
-        showOnboarding={localPreferences['isSynced'] !== true && allNotes.length === 0}
-        onCreateNote={handleCreateNote}
-        onLinkDevice={handleLinkDevice}
-        onRestoreBackup={handleRestoreBackup}
-      />
-    ),
+    () =>
+      hideEmptyState ? null : (
+        <FolderEmptyState
+          containerStyle={emptyStateStyle}
+          hasSearchQuery={searchQuery.trim().length > 0}
+          isTrash={isTrashFolder}
+          showOnboarding={localPreferences['isSynced'] !== true && allNotes.length === 0}
+          onCreateNote={handleCreateNote}
+          onLinkDevice={handleLinkDevice}
+          onRestoreBackup={handleRestoreBackup}
+        />
+      ),
     [
+      hideEmptyState,
       emptyStateStyle,
       searchQuery,
       isTrashFolder,
@@ -533,6 +548,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       dispatch(setSearchQuery(event.nativeEvent.text.slice(0, SEARCH_QUERY_MAX_LENGTH) as any)),
     [dispatch],
   )
+
+  const handleSearchFocus = useCallback(() => dispatch(prewarmSearch()), [dispatch])
 
   const headerTitle = useCallback(
     () => (
@@ -562,6 +579,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         hintTextColor: colors.textSecondary,
         headerIconColor: colors.textSecondary,
         onChangeText: handleSearchChange,
+        onFocus: handleSearchFocus,
       },
     }),
     [
@@ -569,6 +587,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       colors.text,
       colors.textSecondary,
       handleSearchChange,
+      handleSearchFocus,
       isTitleCollapsed,
       headerTitle,
       embedded,

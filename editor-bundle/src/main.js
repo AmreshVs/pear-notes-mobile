@@ -30,6 +30,15 @@ import langPy from 'highlight.js/lib/languages/python'
 import langTS from 'highlight.js/lib/languages/typescript'
 import langXML from 'highlight.js/lib/languages/xml'
 import { createLowlight } from 'lowlight'
+import {
+  clearFind,
+  FindInNote,
+  getFindState,
+  isFinding,
+  moveFindMatch,
+  setFindQuery,
+  showSearchMatches,
+} from './findInNote.js'
 
 const HYPERDRIVE_URL_PREFIX = 'http://hyperdrive'
 const TAP_SLOP = 10
@@ -581,6 +590,13 @@ function scrollDocumentToTop() {
   if (document.scrollingElement) document.scrollingElement.scrollTop = 0
   document.body.scrollTop = 0
   document.documentElement.scrollTop = 0
+}
+
+function scrollDocumentToMatch(match) {
+  const coords = editor.view.coordsAtPos(match.from)
+  programmaticScrollUntil = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS
+  caretAutoscrollSuspended = false
+  window.scrollTo(0, Math.max(0, window.scrollY + coords.top - window.innerHeight / 3))
 }
 
 function scrollEditorBy(delta) {
@@ -1480,6 +1496,7 @@ function createEditorSession(html) {
     FileAttachment,
     AudioAttachment,
     KeptSelection,
+    FindInNote,
   ]
 
   editor = new Editor({
@@ -1499,6 +1516,7 @@ function createEditorSession(html) {
     onUpdate: ({ editor }) => {
       scheduleContentChange(editor)
       broadcastStyleState(editor)
+      if (isFinding(editor)) sendToRN({ type: 'findState', ...getFindState(editor) })
       resumeCaretAutoscroll()
       keepCaretVisible()
     },
@@ -1596,9 +1614,12 @@ window.editorBridge = {
         // is itself an undoable step, so undo would otherwise walk back into the note
         // that was open before.
         clearEditorHistory()
+        const firstMatch = showSearchMatches(editor, msg.findQuery || '')
         // The WebView is reused across notes, so a freshly loaded note would otherwise
         // inherit the previous note's scroll offset. Reset once layout has settled.
-        requestAnimationFrame(scrollDocumentToTop)
+        requestAnimationFrame(() =>
+          firstMatch ? scrollDocumentToMatch(firstMatch) : scrollDocumentToTop(),
+        )
         requestAnimationFrame(() =>
           requestAnimationFrame(() => sendToRN({ type: 'noteLoaded', noteId: msg.noteId })),
         )
@@ -2133,6 +2154,25 @@ window.editorBridge = {
         editor.view.dispatch(tr)
         break
       }
+
+      case 'findSetQuery': {
+        const match = setFindQuery(editor, msg.query || '')
+        if (match) scrollDocumentToMatch(match)
+        sendToRN({ type: 'findState', ...getFindState(editor) })
+        break
+      }
+
+      case 'findMove': {
+        const match = moveFindMatch(editor, msg.step === -1 ? -1 : 1)
+        if (match) scrollDocumentToMatch(match)
+        sendToRN({ type: 'findState', ...getFindState(editor) })
+        break
+      }
+
+      case 'findClear':
+        clearFind(editor)
+        sendToRN({ type: 'findState', ...getFindState(editor) })
+        break
 
       case 'clearKeptSelection':
         clearKeptSelection(editor.view)

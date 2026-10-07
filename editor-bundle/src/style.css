@@ -362,6 +362,15 @@ body {
   border-radius: 2px;
 }
 
+.find-match {
+  background: color-mix(in srgb, var(--c-primary) 30%, transparent);
+  border-radius: 2px;
+}
+
+.find-match-active {
+  background: color-mix(in srgb, var(--c-primary) 60%, transparent);
+}
+
 
 .dictation-caret {
   position: fixed;

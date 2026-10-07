@@ -129,7 +129,7 @@ export interface TiptapEditorHandle {
   save: () => Promise<void>
   getHTML: () => Promise<string | undefined>
   setHTML: (html: string) => void
-  loadNote: (noteId: string, html: string) => void
+  loadNote: (noteId: string, html: string, findQuery?: string) => void
   clearNote: () => void
   setTitle: (title: string) => void
   scrollToTop: () => void
@@ -151,6 +151,9 @@ export interface TiptapEditorHandle {
   ) => void
   deleteImage: (src: string) => void
   deleteAttachment: (url: string) => void
+  findSetQuery: (query: string) => void
+  findMove: (step: 1 | -1) => void
+  findClear: () => void
 }
 
 export interface TiptapEditorProps {
@@ -168,6 +171,7 @@ export interface TiptapEditorProps {
   onEditorBlur?: () => void
   onKeptSelectionCleared?: () => void
   onNoteLoaded?: (noteId: string) => void
+  onFindState?: (state: { count: number; active: number }) => void
   onEditorReset?: () => void
   onOpenAttachment?: (url: string, fileName: string) => void
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
@@ -204,6 +208,7 @@ type WebViewMsg =
   | { type: 'collapseSelection' }
   | { type: 'keptSelectionCleared' }
   | { type: 'noteLoaded'; noteId: string }
+  | { type: 'findState'; count: number; active: number }
   | { type: 'pong'; id: number }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
@@ -309,6 +314,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onEditorBlur,
       onKeptSelectionCleared,
       onNoteLoaded,
+      onFindState,
       onEditorReset,
       onOpenAttachment,
       onPreviewAttachment,
@@ -340,6 +346,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onEditorBlurRef = useRef(onEditorBlur)
     const onKeptSelectionClearedRef = useRef(onKeptSelectionCleared)
     const onNoteLoadedRef = useRef(onNoteLoaded)
+    const onFindStateRef = useRef(onFindState)
     const onEditorResetRef = useRef(onEditorReset)
     const onOpenAttachmentRef = useRef(onOpenAttachment)
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
@@ -355,6 +362,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onEditorBlurRef.current = onEditorBlur
     onKeptSelectionClearedRef.current = onKeptSelectionCleared
     onNoteLoadedRef.current = onNoteLoaded
+    onFindStateRef.current = onFindState
     onEditorResetRef.current = onEditorReset
     onOpenAttachmentRef.current = onOpenAttachment
     onPreviewAttachmentRef.current = onPreviewAttachment
@@ -381,7 +389,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const editorReadyRef = useRef(false)
     const editorInitializedRef = useRef(false)
     const pendingContentRef = useRef<string | null>(null)
-    const pendingLoadNoteRef = useRef<{ noteId: string; html: string } | null>(null)
+    const pendingLoadNoteRef = useRef<{ noteId: string; html: string; findQuery?: string } | null>(
+      null,
+    )
     const pendingTitleRef = useRef<string | null>(null)
     const currentNoteRef = useRef<{ noteId: string | null; html: string } | null>(null)
     const currentTitleRef = useRef<string | null>(null)
@@ -573,6 +583,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
           case 'noteLoaded':
             onNoteLoadedRef.current?.(msg.noteId)
+            break
+
+          case 'findState':
+            onFindStateRef.current?.({ count: msg.count, active: msg.active })
             break
 
           case 'pong':
@@ -823,13 +837,22 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             sendCommand({ type: 'setContent', html })
           }
         },
-        loadNote: (noteId, html) => {
+        loadNote: (noteId, html, findQuery) => {
           currentNoteRef.current = { noteId, html }
           if (!editorInitializedRef.current) {
-            pendingLoadNoteRef.current = { noteId, html }
+            pendingLoadNoteRef.current = { noteId, html, findQuery }
           } else {
-            sendCommand({ type: 'loadNote', noteId, html })
+            sendCommand({ type: 'loadNote', noteId, html, findQuery })
           }
+        },
+        findSetQuery: (query) => {
+          if (editorInitializedRef.current) sendCommand({ type: 'findSetQuery', query })
+        },
+        findMove: (step) => {
+          if (editorInitializedRef.current) sendCommand({ type: 'findMove', step })
+        },
+        findClear: () => {
+          if (editorInitializedRef.current) sendCommand({ type: 'findClear' })
         },
         clearNote: () => {
           currentNoteRef.current = null

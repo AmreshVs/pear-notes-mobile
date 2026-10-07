@@ -46,6 +46,7 @@ import {
   restoreNotes,
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
+import { prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
@@ -61,6 +62,7 @@ import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { MoveToVaultBottomSheet } from '@/components/bottomsheet/MoveToVaultBottomSheet'
 import { EdgeFade } from '@/components/EdgeFade'
 import { LockNowButton } from '@/components/LockNowButton'
+import { SearchScopeChips } from '@/components/notes/SearchScopeChips'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -85,6 +87,7 @@ import {
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
+import { useNoteSearch } from '@/hooks/useNoteSearch'
 import { useNoteSelection } from '@/hooks/useNoteSelection'
 import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { androidRipple } from '@/lib/androidRipple'
@@ -161,7 +164,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   )
 
   const isTrashFolder = id === RECENTLY_DELETED_KEY
-  const isAllNotes = folder?.id === ALL_NOTES_KEY
+  const { searchHits, searchTerms, searchScope, hideEmptyState, showSearchScope, showFolderNames } =
+    useNoteSearch(id)
 
   const folderNameMap = useMemo(() => {
     const map: Record<string, string> = {}
@@ -185,7 +189,10 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     searchBarHeight.value = withTiming(next ? 64 : 0, { duration: 220 })
     searchBarOpacity.value = withTiming(next ? 1 : 0, { duration: 180 })
     if (!next) dispatch(setSearchQuery(''))
-    else setTimeout(() => searchInputRef.current?.focus(), 150)
+    else {
+      dispatch(prewarmSearch())
+      setTimeout(() => searchInputRef.current?.focus(), 150)
+    }
   }, [searchVisible, searchBarHeight, searchBarOpacity, dispatch])
 
   const searchBarAnimStyle = useAnimatedStyle(() => ({
@@ -489,8 +496,10 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         note={note}
         index={index}
         isLast={index === section.data.length - 1}
-        folderName={isAllNotes ? folderNameMap[note.value?.folderKey] : undefined}
-        folderIconToken={isAllNotes ? folderIconMap[note.value?.folderKey] : undefined}
+        folderName={showFolderNames ? folderNameMap[note.value?.folderKey] : undefined}
+        folderIconToken={showFolderNames ? folderIconMap[note.value?.folderKey] : undefined}
+        searchHit={searchHits[note.key] ?? null}
+        searchTerms={searchTerms}
         sectionTitle={section.title}
         selecting={isSelecting}
         checked={selectedKeys.includes(note.key)}
@@ -499,7 +508,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       />
     ),
     [
-      isAllNotes,
+      showFolderNames,
+      searchHits,
+      searchTerms,
       folderNameMap,
       folderIconMap,
       isSelecting,
@@ -536,6 +547,12 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           <Text style={styles.pageCount}>{t('folderView.noteCount', { count: notes.length })}</Text>
           <LockNowButton />
         </View>
+        {showSearchScope && (
+          <SearchScopeChips
+            folderName={folder?.name || t('folders.untitled')}
+            scope={searchScope}
+          />
+        )}
         {isTrashFolder && notes.length > 0 && (
           <Text style={styles.retentionNotice}>
             {t('folderView.trashRetentionNotice', { days: TRASH_RETENTION_DAYS })}
@@ -548,6 +565,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       notes.length,
       isTrashFolder,
       isSelecting,
+      showSearchScope,
+      searchScope,
       searchSpacerStyle,
       t,
       styles.pageTitle,
@@ -557,20 +576,22 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   )
 
   const listEmpty = useMemo(
-    () => (
-      <AndroidEmptyState
-        hasSearch={searchQuery.trim().length > 0}
-        isOnboarding={
-          !isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0
-        }
-        isTrash={isTrashFolder}
-        onLinkDevice={handleLinkDevice}
-        onCreateNote={handleCreateNote}
-        onRestoreBackup={handleRestoreBackup}
-        height={height}
-      />
-    ),
+    () =>
+      hideEmptyState ? null : (
+        <AndroidEmptyState
+          hasSearch={searchQuery.trim().length > 0}
+          isOnboarding={
+            !isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0
+          }
+          isTrash={isTrashFolder}
+          onLinkDevice={handleLinkDevice}
+          onCreateNote={handleCreateNote}
+          onRestoreBackup={handleRestoreBackup}
+          height={height}
+        />
+      ),
     [
+      hideEmptyState,
       searchQuery,
       isTrashFolder,
       localPreferences,

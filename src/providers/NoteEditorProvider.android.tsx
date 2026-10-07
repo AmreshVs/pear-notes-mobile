@@ -32,6 +32,7 @@ import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { EdgeFade } from '@/components/EdgeFade'
+import { FindInNoteBar } from '@/components/FindInNoteBar'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteBodyPlaceholder } from '@/components/NoteBodyPlaceholder'
@@ -41,6 +42,7 @@ import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { EditorSelection } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
+import { EMPTY_FIND_STATE, type FindInNoteState } from '@/components/useFindInNoteBar'
 import { useNoteConflict } from '@/components/useNoteConflict'
 import type {
   AiScope,
@@ -246,6 +248,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
   const [dictationActive, setDictationActive] = useState(false)
+  const [findNoteId, setFindNoteId] = useState<string | null>(null)
+  const [findState, setFindState] = useState<FindInNoteState>(EMPTY_FIND_STATE)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
   const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
   const [voiceParagraphs, setVoiceParagraphs] = useState<string[] | null>(null)
@@ -976,8 +980,26 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setAskTarget(null)
   }, [editorRef])
 
+  const findActive = !!noteId && findNoteId === noteId && !isNoteLocked && !dictationActive
+
+  const handleFindInNote = useCallback(() => {
+    if (!noteId) return
+    setFindState(EMPTY_FIND_STATE)
+    setFindNoteId(noteId)
+  }, [noteId])
+
+  const handleFindDone = useCallback(() => setFindNoteId(null), [])
+
   const moreSheetActions = useMemo(() => {
     const list = []
+    list.push({
+      icon: 'text-search',
+      label: t('noteEditor.menu.findInNote'),
+      onPress: () => {
+        setMoreSheetVisible(false)
+        handleFindInNote()
+      },
+    })
     list.push({
       icon: noteData?.pinned ? 'pin-off-outline' : 'pin-outline',
       label: noteData?.pinned ? t('noteCard.actions.unpin') : t('noteCard.actions.pin'),
@@ -1027,6 +1049,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteData?.pinned,
     noteId,
     activityEnabled,
+    handleFindInNote,
     setHistoryVisible,
     t,
     handleDeleteNote,
@@ -1100,6 +1123,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onImageLongPress={handleImageLongPress}
             onAttachmentLongPress={handleAttachmentLongPress}
             onNoteLoaded={handleNoteLoaded}
+            onFindState={setFindState}
             onEditorReset={handleEditorReset}
           />
         )}
@@ -1197,7 +1221,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           <EdgeFade color={c.editorBackground ?? c.background} placement="bottom" />
         </View>
 
-        {!isNoteLocked && !dictationActive && (
+        {!isNoteLocked && !dictationActive && !findActive && (
           <EditorToolbar
             isActive={isActive}
             editorRef={editorRef}
@@ -1437,6 +1461,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           onDone={handleRecorderDone}
           onCancel={() => setIsRecorderVisible(false)}
         />
+      )}
+
+      {findActive && (
+        <FindInNoteBar editorRef={editorRef} findState={findState} onDone={handleFindDone} />
       )}
 
       {LOCAL_AI_ENABLED && dictationActive && (
