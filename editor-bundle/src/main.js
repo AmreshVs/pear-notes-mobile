@@ -505,13 +505,13 @@ function resetSentContent(editor) {
   clearTimeout(contentTimer)
   lastSentHtml = editor.getHTML()
 }
-function sendContentChange(html, text) {
+function sendContentChange(html) {
   if (html === lastSentHtml) return
   lastSentHtml = html
-  sendToRN({ type: 'contentChange', html, text, noteId: currentNoteId })
+  sendToRN({ type: 'contentChange', html, noteId: currentNoteId })
 }
 // Serializing the document is the expensive half of a content change, so the
-// debounce has to cover it too. Taking getHTML()/getText() up front — once per
+// debounce has to cover it too. Taking getHTML() up front — once per
 // transaction — makes a burst of small edits (live dictation emits one every
 // few hundred ms) pay for a full serialization per tick and then throw all but
 // the last result away.
@@ -519,12 +519,12 @@ function scheduleContentChange(editor) {
   clearTimeout(contentTimer)
   contentTimer = setTimeout(() => {
     if (!editor || editor.isDestroyed) return
-    sendContentChange(editor.getHTML(), editor.getText())
+    sendContentChange(editor.getHTML())
   }, 500)
 }
-function flushContentChange(html, text) {
+function flushContentChange(html) {
   clearTimeout(contentTimer)
-  sendContentChange(html, text)
+  sendContentChange(html)
 }
 
 const CARET_AUTOSCROLL_ENABLED = true
@@ -1542,7 +1542,7 @@ function createEditorSession(html) {
       sendToRN({ type: 'focus' })
     },
     onBlur: ({ editor }) => {
-      flushContentChange(editor.getHTML(), editor.getText())
+      flushContentChange(editor.getHTML())
       sendToRN({ type: 'blur' })
     },
   })
@@ -1867,7 +1867,7 @@ window.editorBridge = {
           }
         }
         editor.chain().insertContentAt(insertAt, quote).run()
-        flushContentChange(editor.getHTML(), editor.getText())
+        flushContentChange(editor.getHTML())
         break
       }
 
@@ -1921,7 +1921,7 @@ window.editorBridge = {
         } else {
           editor.chain().insertContentAt(blockEndAfter(doc, to), paragraphNodes(lines)).run()
         }
-        flushContentChange(editor.getHTML(), editor.getText())
+        flushContentChange(editor.getHTML())
         break
       }
 
@@ -1932,7 +1932,7 @@ window.editorBridge = {
         const { tr } = buildNoteEditsTransaction(editor.state, edits, range)
         if (!tr) break
         editor.view.dispatch(tr)
-        flushContentChange(editor.getHTML(), editor.getText())
+        flushContentChange(editor.getHTML())
         break
       }
 
@@ -1980,7 +1980,7 @@ window.editorBridge = {
         }
         dictation = null
         removeDictationCaret()
-        flushContentChange(editor.getHTML(), editor.getText())
+        flushContentChange(editor.getHTML())
         break
       }
 
@@ -1991,7 +1991,7 @@ window.editorBridge = {
           .chain()
           .insertContentAt(blockEndAfter(editor.state.doc, msg.pos), paragraphNodes(lines))
           .run()
-        flushContentChange(editor.getHTML(), editor.getText())
+        flushContentChange(editor.getHTML())
         break
       }
 
@@ -2016,7 +2016,7 @@ window.editorBridge = {
             content: [{ type: 'text', text: captionText, marks: [{ type: 'italic' }] }],
           })
           .run()
-        flushContentChange(editor.getHTML(), editor.getText())
+        flushContentChange(editor.getHTML())
         break
       }
 
@@ -2030,7 +2030,7 @@ window.editorBridge = {
             return false
           }
         })
-        if (deleted) flushContentChange(editor.getHTML(), editor.getText())
+        if (deleted) flushContentChange(editor.getHTML())
         break
       }
 
@@ -2049,7 +2049,7 @@ window.editorBridge = {
             return false
           }
         })
-        if (deleted) flushContentChange(editor.getHTML(), editor.getText())
+        if (deleted) flushContentChange(editor.getHTML())
         break
       }
 

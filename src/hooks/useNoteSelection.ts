@@ -7,16 +7,20 @@ type NoteSelectionState = {
 }
 
 const EMPTY_SELECTION: NoteSelectionState = { folder: null, active: false, keys: [] }
+const NO_KEYS: string[] = []
 
 export function useNoteSelection(folderId: string, orderedKeys: string[]) {
   const [selection, setSelection] = useState<NoteSelectionState>(EMPTY_SELECTION)
 
   const isSelecting = selection.active && selection.folder === folderId
 
-  const selectedKeys = useMemo(
-    () => (isSelecting ? selection.keys.filter((key) => orderedKeys.includes(key)) : []),
-    [isSelecting, selection.keys, orderedKeys],
-  )
+  const selectedKeys = useMemo(() => {
+    if (!isSelecting) return NO_KEYS
+    const live = new Set(orderedKeys)
+    return selection.keys.filter((key) => live.has(key))
+  }, [isSelecting, selection.keys, orderedKeys])
+
+  const selectedKeySet = useMemo(() => new Set(selectedKeys), [selectedKeys])
 
   const toggleSelect = useCallback(
     (key: string) => {
@@ -60,6 +64,7 @@ export function useNoteSelection(folderId: string, orderedKeys: string[]) {
   return {
     isSelecting,
     selectedKeys,
+    selectedKeySet,
     selectedCount: selectedKeys.length,
     isAllSelected,
     toggleSelect,

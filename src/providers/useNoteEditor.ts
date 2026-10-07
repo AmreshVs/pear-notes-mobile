@@ -17,7 +17,7 @@ import {
   withTiming,
 } from 'react-native-reanimated'
 import { scheduleOnRN } from 'react-native-worklets'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch, useSelector, useStore } from 'react-redux'
 import { router } from 'expo-router'
 
 import {
@@ -178,8 +178,7 @@ export function useNoteEditor() {
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
   const searchQuery = useSelector(getSearchQuery) as string
   const searchQueryRef = useRef(searchQuery)
-  const editorContent = useSelector(getEditorContent) as string
-  const editorTitle = useSelector(getEditorTitle) as string
+  const store = useStore()
   const syncToken = useSelector(getEditorSyncToken) as number
   const editorBaseKey = useSelector(getEditorBaseKey) as string | null
   const allFolders = useSelector(getFolders) as any[]
@@ -340,6 +339,9 @@ export function useNoteEditor() {
     if (editorBaseKey !== noteId) return
     if (syncToken === lastSyncTokenRef.current) return
     lastSyncTokenRef.current = syncToken
+    const state = store.getState()
+    const editorContent = getEditorContent(state) as string
+    const editorTitle = getEditorTitle(state) as string
     if (editorContent === noteContentRef.current && editorTitle === titleRef.current) return
     noteContentRef.current = editorContent
     titleRef.current = editorTitle
@@ -352,7 +354,7 @@ export function useNoteEditor() {
     }
     editorRef.current?.setTitle(editorTitle)
     editorRef.current?.setHTML(content)
-  }, [noteId, editorBaseKey, syncToken, editorContent, editorTitle, hyperdriveServerAddress])
+  }, [noteId, editorBaseKey, syncToken, hyperdriveServerAddress, store])
 
   useEffect(() => {
     const previous = appliedHyperdriveAddressRef.current

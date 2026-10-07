@@ -127,7 +127,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote) as string | null
   const localPreferences = useSelector(getLocalPreferences) as any
-  const allNotes = useSelector(getNotes) as any[]
+  const hasAnyNotes = useSelector((state: any) => (getNotes(state) as any[]).length > 0)
 
   const [searchVisible, setSearchVisible] = useState(false)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
@@ -233,6 +233,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const {
     isSelecting,
     selectedKeys,
+    selectedKeySet,
     selectedCount,
     isAllSelected,
     toggleSelect,
@@ -507,7 +508,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         titleHighlight={getTitleHighlight(note.value?.title, searchTerms)}
         sectionTitle={section.title}
         selecting={isSelecting}
-        checked={selectedKeys.includes(note.key)}
+        checked={selectedKeySet.has(note.key)}
         onPress={handleSelectNote}
         onLongPress={handleNoteLongPress}
       />
@@ -519,7 +520,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       folderNameMap,
       folderIconMap,
       isSelecting,
-      selectedKeys,
+      selectedKeySet,
       handleSelectNote,
       handleNoteLongPress,
     ],
@@ -585,9 +586,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       hideEmptyState ? null : (
         <AndroidEmptyState
           hasSearch={searchQuery.trim().length > 0}
-          isOnboarding={
-            !isTrashFolder && localPreferences['isSynced'] !== true && allNotes.length === 0
-          }
+          isOnboarding={!isTrashFolder && localPreferences['isSynced'] !== true && !hasAnyNotes}
           isTrash={isTrashFolder}
           onLinkDevice={handleLinkDevice}
           onCreateNote={handleCreateNote}
@@ -600,7 +599,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       searchQuery,
       isTrashFolder,
       localPreferences,
-      allNotes.length,
+      hasAnyNotes,
       handleLinkDevice,
       handleCreateNote,
       handleRestoreBackup,

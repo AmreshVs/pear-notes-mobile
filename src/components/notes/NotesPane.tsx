@@ -109,7 +109,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote)
   const localPreferences = useSelector(getLocalPreferences)
-  const allNotes = useSelector(getNotes) as any[]
+  const hasAnyNotes = useSelector((state: any) => (getNotes(state) as any[]).length > 0)
   const isTrashFolder = id === RECENTLY_DELETED_KEY
   const { searchHits, searchTerms, searchScope, hideEmptyState, showSearchScope, showFolderNames } =
     useNoteSearch(id)
@@ -131,6 +131,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [allFolders, id],
   )
 
+  const folderById = useMemo(() => new Map(allFolders.map((f: any) => [f.id, f])), [allFolders])
+
   const moveFolders = useMemo(
     () => allFolders.filter((f: any) => !f.isTrash && f.id !== ALL_NOTES_KEY && f.id !== id),
     [allFolders, id],
@@ -151,6 +153,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const {
     isSelecting,
     selectedKeys,
+    selectedKeySet,
     selectedCount,
     isAllSelected,
     toggleSelect,
@@ -411,9 +414,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       const isPinned = note.value?.pinned === true
       const metadata = getNoteMetadata(note.value)
 
-      const noteFolder = showFolderNames
-        ? allFolders.find((f: any) => f.id === note.value?.folderKey)
-        : undefined
+      const noteFolder = showFolderNames ? folderById.get(note.value?.folderKey) : undefined
       const folderName = noteFolder?.name
 
       return (
@@ -430,7 +431,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           folderIconToken={noteFolder?.icon}
           selected={false}
           selecting={isSelecting}
-          checked={selectedKeys.includes(note.key)}
+          checked={selectedKeySet.has(note.key)}
           isFirst={index === 0}
           isLast={isLast}
           grouped
@@ -453,12 +454,12 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       )
     },
     [
-      allFolders,
+      folderById,
       showFolderNames,
       searchHits,
       searchTerms,
       isSelecting,
-      selectedKeys,
+      selectedKeySet,
       handleToggleSelect,
       handleSelectNote,
       handleDeleteNote,
@@ -541,7 +542,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           containerStyle={emptyStateStyle}
           hasSearchQuery={searchQuery.trim().length > 0}
           isTrash={isTrashFolder}
-          showOnboarding={localPreferences['isSynced'] !== true && allNotes.length === 0}
+          showOnboarding={localPreferences['isSynced'] !== true && !hasAnyNotes}
           onCreateNote={handleCreateNote}
           onLinkDevice={handleLinkDevice}
           onRestoreBackup={handleRestoreBackup}
@@ -553,7 +554,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       searchQuery,
       isTrashFolder,
       localPreferences,
-      allNotes.length,
+      hasAnyNotes,
       handleCreateNote,
       handleLinkDevice,
       handleRestoreBackup,

@@ -192,7 +192,7 @@ export interface TiptapEditorProps {
 type WebViewMsg =
   | { type: 'ready' }
   | { type: 'initialized' }
-  | { type: 'contentChange'; html: string; text: string; noteId: string | null }
+  | { type: 'contentChange'; html: string; noteId: string | null }
   | { type: 'titleChange'; title: string; noteId: string | null }
   | { type: 'styleState'; state: TiptapStyleState }
   | {
