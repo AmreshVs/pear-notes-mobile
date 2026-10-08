@@ -92,6 +92,14 @@ async function suspendBackendServices(): Promise<void> {
   }
 }
 
+async function resumeBackendServices(): Promise<void> {
+  try {
+    await withTimeout(backendApi.resumeServices(), BACKEND_RPC_TIMEOUT_MS, 'resumeServices')
+  } catch (err) {
+    log.info(BACKGROUND_SYNC_LOG_PREFIX + ' could not resume backend services', err)
+  }
+}
+
 async function resuspendIfTaskWokeIt(wokeFromSuspended: boolean): Promise<void> {
   if (!wokeFromSuspended) {
     log.info(BACKGROUND_SYNC_LOG_PREFIX + ' worklet was already awake, leaving it running')
@@ -105,7 +113,8 @@ async function resuspendIfTaskWokeIt(wokeFromSuspended: boolean): Promise<void> 
 
   await suspendBackendServices()
   if (isForeground()) {
-    log.info(BACKGROUND_SYNC_LOG_PREFIX + ' app came to foreground, leaving it running')
+    log.info(BACKGROUND_SYNC_LOG_PREFIX + ' app came to foreground, resuming backend services')
+    await resumeBackendServices()
     return
   }
   if (!suspendActiveWorklet()) return

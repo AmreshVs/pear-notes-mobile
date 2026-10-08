@@ -209,6 +209,7 @@ export function setBackgroundSyncWindowActive(active: boolean): void {
 export function suspendIfDeferredForBackgroundSync(): boolean {
   if (!_suspendDeferredForBackgroundSync) return false
   _suspendDeferredForBackgroundSync = false
+  if (AppState.currentState === 'active') return false
 
   logLifecycle('background task -> applying the suspend it deferred', workletState(_activeWorklet))
   return suspendActiveWorklet()
@@ -245,6 +246,13 @@ export function terminateWorkletIfActive(worklet: any): boolean {
 
 export function suspendActiveWorklet(): boolean {
   if (!_activeWorklet || _activeWorklet.terminated) return false
+  if (AppState.currentState === 'active') {
+    logLifecycle(
+      'background task -> re-suspend skipped, app is active',
+      workletState(_activeWorklet),
+    )
+    return false
+  }
 
   logLifecycle('background task -> re-suspend', workletState(_activeWorklet))
 
@@ -263,6 +271,7 @@ function handleActive(worklet: any, onWorkletDied?: () => void, onResumed?: () =
   const wasSuspended = worklet?.suspended === true
   const wasAwayLong = awaySince !== null && Date.now() - awaySince >= RESYNC_AFTER_AWAY_MS
 
+  _suspendDeferredForBackgroundSync = false
   stopKeepAlive()
 
   if (_foregroundServiceActive) {

@@ -58,6 +58,8 @@ export function useFindInNoteBar({
   const handlePrevious = useCallback(() => editorRef.current?.findMove(-1), [editorRef])
 
   const handleDone = useCallback(() => {
+    inputRef.current?.blur()
+    Keyboard.dismiss()
     editorRef.current?.findClear()
     onDone()
   }, [editorRef, onDone])

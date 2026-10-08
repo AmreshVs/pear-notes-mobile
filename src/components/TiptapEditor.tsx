@@ -673,10 +673,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     }, [])
 
     // The open note and title are replayed into the fresh page once it initializes.
-    const recoverEditor = useCallback((reason: string, remount: boolean) => {
-      log.warn(
-        '[editor] ' + reason + (remount ? ', remounting the editor' : ', reloading the editor'),
-      )
+    const recoverEditor = useCallback((reason: string) => {
+      log.warn('[editor] ' + reason + ', remounting the editor')
       const current = currentNoteRef.current
       editorReadyRef.current = false
       editorInitializedRef.current = false
@@ -689,15 +687,13 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       setEditorState('loading')
       setLoadAttempt((n) => n + 1)
       onEditorResetRef.current?.()
-      if (remount) setWebViewKey((k) => k + 1)
-      else webViewRef.current?.reload()
+      setWebViewKey((k) => k + 1)
     }, [])
 
     const handleProcessGone = useCallback(() => {
-      recoverEditor('web content process ended', false)
+      recoverEditor('web content process ended')
     }, [recoverEditor])
 
-    // A reload that never comes back gets a new WebView, and with it a new process.
     const remountEditor = useCallback(() => {
       if (remountsRef.current >= MAX_EDITOR_REMOUNTS) {
         log.error('[editor] editor did not load after ' + MAX_EDITOR_REMOUNTS + ' remounts')
@@ -705,12 +701,17 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         return
       }
       remountsRef.current += 1
-      recoverEditor('editor did not load within ' + EDITOR_LOAD_TIMEOUT_MS + 'ms', true)
+      recoverEditor('editor did not load within ' + EDITOR_LOAD_TIMEOUT_MS + 'ms')
     }, [recoverEditor])
+
+    const renderError = useCallback(
+      () => <View style={[styles.webViewCover, backgroundColor ? { backgroundColor } : null]} />,
+      [styles.webViewCover, backgroundColor],
+    )
 
     const handleRetry = useCallback(() => {
       remountsRef.current = 0
-      recoverEditor('retry requested', true)
+      recoverEditor('retry requested')
     }, [recoverEditor])
 
     useEffect(() => {
@@ -746,7 +747,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           probeTimer = null
           if (pongSeqRef.current >= id || !editorInitializedRef.current) return
           if (AppState.currentState !== 'active') return
-          recoverEditor('editor did not answer after returning to the foreground', false)
+          recoverEditor('editor did not answer after returning to the foreground')
         }, EDITOR_PING_TIMEOUT_MS)
       })
       return () => {
@@ -934,6 +935,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             cacheEnabled
             cacheMode="LOAD_CACHE_ELSE_NETWORK"
             startInLoadingState={false}
+            renderError={renderError}
             {...iosWebViewProps}
           />
         </View>
@@ -957,6 +959,12 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     webView: {
       flex: 1,
+      backgroundColor: theme.colors.editorBackground,
+    },
+    webViewCover: {
+      ...StyleSheet.absoluteFill,
+      justifyContent: 'center',
+      alignItems: 'center',
       backgroundColor: theme.colors.editorBackground,
     },
     overlay: {
