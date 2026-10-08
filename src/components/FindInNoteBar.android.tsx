@@ -60,7 +60,7 @@ export function FindInNoteBar(props: FindInNoteBarProps) {
           value={query}
           onChangeText={handleChangeQuery}
           onSubmitEditing={handleNext}
-          submitBehavior="submit"
+          submitBehavior="blurAndSubmit"
           returnKeyType="search"
           placeholder={t('noteEditor.find.placeholder')}
           placeholderTextColor={c.onSurfaceVariant}

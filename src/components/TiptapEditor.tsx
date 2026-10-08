@@ -963,8 +963,6 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     webViewCover: {
       ...StyleSheet.absoluteFill,
-      justifyContent: 'center',
-      alignItems: 'center',
       backgroundColor: theme.colors.editorBackground,
     },
     overlay: {
