@@ -12,6 +12,7 @@ import {
   LOCAL_AI_OCR_LANGUAGES,
   LOCAL_AI_REGISTRY_MODELS,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
+import { holdAiJobs } from '@pear-notes/core/store/services/localAiJobs.js'
 import { getTranslationSteps } from '@pear-notes/core/store/services/localAiLanguage.js'
 import {
   buildNoteTaskMessages,
@@ -240,11 +241,13 @@ function releaseModelWhenIdle() {
 async function withModelWork<T>(work: () => Promise<T>): Promise<T> {
   activeModelWork += 1
   clearIdleUnload()
+  const releaseJobs = holdAiJobs()
   try {
     const result = await work()
     if (loadedModel) recordModelSuccess(loadedModel.key)
     return result
   } finally {
+    releaseJobs()
     activeModelWork = Math.max(0, activeModelWork - 1)
     if (activeModelWork === 0) {
       setActiveModel(null)

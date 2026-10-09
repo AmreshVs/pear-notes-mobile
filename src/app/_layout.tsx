@@ -76,6 +76,7 @@ import { clearStorageState } from '@/lib/clearStorageState'
 import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
 import { loadHapticsPreference } from '@/lib/haptics'
 import { localAiAdapter } from '@/lib/localAi/localAi'
+import { useAiJobConditions } from '@/lib/localAi/useAiJobConditions'
 import { useLocalAiBridge } from '@/lib/localAi/useLocalAiBridge'
 import {
   getDbEncryptionKey,
@@ -180,6 +181,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useMediaSyncAutoDetect()
   useAttachmentCachePrune()
   useLocalAiBridge()
+  const onUserTouch = useAiJobConditions()
   useNoteAutoRelock()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
@@ -416,7 +418,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   }
 
   return (
-    <GestureHandlerRootView style={gestureViewStyle}>
+    <GestureHandlerRootView style={gestureViewStyle} onTouchStart={onUserTouch}>
       <RootLayoutNav />
     </GestureHandlerRootView>
   )
