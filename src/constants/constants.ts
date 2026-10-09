@@ -32,4 +32,4 @@ export const APP_UPDATE_STORE_HOSTS: Record<string, string> = {
 
 export const BACKUP_NUDGE_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000
 
-export const BACKUP_NUDGE_GRACE_MS = 0
+export const BACKUP_NUDGE_GRACE_MS = 24 * 60 * 60 * 1000
