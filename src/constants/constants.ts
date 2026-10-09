@@ -24,3 +24,8 @@ export const APP_THEME_SETTINGS = {
 } as const
 
 export type AppThemeSetting = (typeof APP_THEME_SETTINGS)[keyof typeof APP_THEME_SETTINGS]
+
+export const APP_UPDATE_STORE_HOSTS: Record<string, string> = {
+  ios: 'apps.apple.com',
+  android: 'play.google.com',
+}

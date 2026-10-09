@@ -5,6 +5,8 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 import { APP_UPDATE_MANIFEST_URL } from '@pear-notes/core/constant.js'
 import { getUpdateStatus } from '@pear-notes/core/utils.js'
 
+import { APP_UPDATE_STORE_HOSTS } from '@/constants/constants'
+
 export type AppUpdateStatus = {
   mandatory: boolean
   updateAvailable: boolean
@@ -13,6 +15,17 @@ export type AppUpdateStatus = {
 }
 
 const APP_UPDATE_DISMISSED_VERSION_KEY = 'appUpdateDismissedVersion'
+
+function trustedStoreUrl(url: unknown, platformKey: string): string | null {
+  if (typeof url !== 'string') return null
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== 'https:') return null
+    return parsed.hostname === APP_UPDATE_STORE_HOSTS[platformKey] ? url : null
+  } catch {
+    return null
+  }
+}
 
 export async function checkAppUpdate(): Promise<AppUpdateStatus | null> {
   try {
@@ -23,6 +36,8 @@ export async function checkAppUpdate(): Promise<AppUpdateStatus | null> {
     const platformKey = Platform.OS === 'ios' ? 'ios' : 'android'
     const entry = manifest?.[platformKey]
     if (!entry) return null
+    const storeUrl = trustedStoreUrl(entry.storeUrl, platformKey)
+    if (!storeUrl) return null
 
     const currentVersion = Constants.expoConfig?.version ?? '0.0.0'
     const { mandatory, updateAvailable } = getUpdateStatus({
@@ -35,7 +50,7 @@ export async function checkAppUpdate(): Promise<AppUpdateStatus | null> {
       mandatory,
       updateAvailable,
       latestVersion: entry.latestVersion,
-      storeUrl: entry.storeUrl,
+      storeUrl,
     }
   } catch {
     return null
