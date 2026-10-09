@@ -120,7 +120,8 @@
       "general": "Customize your personal workspace experience, from aesthetics to native language supports.",
       "sync": "Manage your secure peer-to-peer network and linked devices with end-to-end encryption.",
       "backup": "Create encrypted backups of your notes and media, or restore from a previous backup file.",
-      "storage": "Monitor your notes data size, on-disk footprint, and reclaim storage by clearing unreachable media."
+      "storage": "Monitor your notes data size, on-disk footprint, and reclaim storage by clearing unreachable media.",
+      "duplicates": "Notes that say nearly the same thing. Nothing is changed for you."
     },
     "devices": {
       "rowTitle": "My devices"
@@ -903,7 +904,9 @@
       "cancelAll": "Cancel all uploads",
       "cancelItem": "Cancel upload",
       "expandQueue": "Show upload queue",
-      "collapseQueue": "Hide upload queue"
+      "collapseQueue": "Hide upload queue",
+      "yourNotes": "Your notes",
+      "possibleDuplicates": "Possible duplicates"
     },
     "menu": {
       "image": "Image",
@@ -913,6 +916,7 @@
       "saveToPhotos": "Save to Photos",
       "download": "Download",
       "noteHistory": "Note history",
+      "relatedNotes": "Related notes",
       "findInNote": "Find in note"
     },
     "emptyState": {
@@ -1022,6 +1026,7 @@
     "meaning": {
       "title": "Related by meaning",
       "indexing": "Search by meaning: indexing {{done}} of {{total}} notes",
+      "charging": "Search by meaning: {{total}} notes will be indexed while charging",
       "preparing": "Search by meaning is getting ready"
     }
   },
@@ -1033,6 +1038,7 @@
     "noteLockPassword": "Note lock password",
     "privacyAndSecurity": "Privacy & security",
     "onDeviceAi": "On-device AI",
+    "duplicates": "Possible duplicates",
     "storage": "Device storage",
     "vaultStorage": "Vault storage",
     "activity": "Activity",
@@ -1041,6 +1047,27 @@
     "debug": "Diagnostics",
     "errorLog": "Logs",
     "vaults": "Vaults"
+  },
+  "relatedNotes": {
+    "title": "Related notes",
+    "loading": "Finding related notes…",
+    "emptyTitle": "No related notes yet",
+    "emptyDescription": "Notes about the same things show up here once they're indexed.",
+    "indexing": "Still indexing your notes: {{done}} of {{total}}",
+    "failedTitle": "Related notes aren't available",
+    "failedDescription": "Try again in a moment."
+  },
+  "duplicates": {
+    "and": "and",
+    "alike": "{{percent}}% alike",
+    "notDuplicates": "Not duplicates",
+    "checking": "Checking your notes…",
+    "checked_one": "Checked {{count}} note",
+    "checked_other": "Checked {{count}} notes",
+    "emptyTitle": "No duplicates found",
+    "emptyDescription": "Notes that say nearly the same thing show up here.",
+    "failedTitle": "Couldn't check for duplicates",
+    "failedDescription": "Try again in a moment."
   },
   "noteLockPassword": {
     "createTitle": "Set note lock password",

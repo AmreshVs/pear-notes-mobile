@@ -80,6 +80,8 @@ export default function AndroidOnDeviceAiScreen() {
     isUnsupported,
     wifiOnly,
     bytesOnDisk,
+    indexEnabled,
+    duplicateCount,
     groups,
     confirm,
     notice,
@@ -351,6 +353,36 @@ export default function AndroidOnDeviceAiScreen() {
                 />
               </View>
             </View>
+
+            {indexEnabled && (
+              <>
+                <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
+                  {t('settings.onDeviceAi.yourNotes')}
+                </Text>
+                <View style={styles.groupCard}>
+                  <Pressable
+                    onPress={() => router.push('/settings/on-device-ai/duplicates' as never)}
+                    android_ripple={rippleBorderless}
+                    accessibilityRole="button"
+                    style={styles.infoRow}
+                  >
+                    <Text style={styles.infoLabel}>
+                      {t('settings.onDeviceAi.possibleDuplicates')}
+                    </Text>
+                    <View style={styles.titleRow}>
+                      {duplicateCount !== null && (
+                        <Text style={styles.infoValue}>{duplicateCount}</Text>
+                      )}
+                      <MaterialCommunityIcons
+                        name="chevron-right"
+                        size={UI_ICON_SIZE_20}
+                        color={c.onSurfaceVariant}
+                      />
+                    </View>
+                  </Pressable>
+                </View>
+              </>
+            )}
 
             <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
               {t('settings.onDeviceAi.downloads')}

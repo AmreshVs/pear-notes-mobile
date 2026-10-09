@@ -27,7 +27,10 @@ import {
   htmlToParagraphs,
   isRewriteTask,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
-import { selectIsLocalAiFeatureReady } from '@pear-notes/core/store/slices/localAiSlice.js'
+import {
+  getLocalAiIndexEnabled,
+  selectIsLocalAiFeatureReady,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   getActivityLogEnabled,
@@ -42,6 +45,7 @@ import { EdgeFade } from '@/components/EdgeFade'
 import { FindInNoteBar } from '@/components/FindInNoteBar'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
+import { RelatedNotesModal } from '@/components/localAi/RelatedNotesModal'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteBodyPlaceholder } from '@/components/NoteBodyPlaceholder'
@@ -135,6 +139,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isRecorderVisible,
     historyVisible,
     setHistoryVisible,
+    relatedVisible,
+    setRelatedVisible,
     setIsRecorderVisible,
     imageActionRect,
     setImageActionRect,
@@ -174,6 +180,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const lockMethod = useSelector(getLockMethod)
   const activityEnabled = useSelector(getActivityLogEnabled) as boolean
+  const relatedEnabled =
+    (useSelector(getLocalAiIndexEnabled) as boolean) && LOCAL_AI_ENABLED && !noteData?.locked
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
@@ -335,6 +343,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [])
 
+  const handleOpenRelatedNotes = useCallback(() => {
+    if (!noteId) return
+    setRelatedVisible(true)
+  }, [noteId])
+
+  const handleCloseRelatedNotes = useCallback(() => setRelatedVisible(false), [])
+
   const findActive = !!noteId && findNoteId === noteId && !isNoteLocked && !dictationActive
 
   const handleFindInNote = useCallback(() => {
@@ -359,6 +374,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         ...(activityEnabled
           ? [{ label: t('noteEditor.menu.noteHistory'), run: handleOpenNoteHistory }]
           : []),
+        ...(relatedEnabled
+          ? [{ label: t('noteEditor.menu.relatedNotes'), run: handleOpenRelatedNotes }]
+          : []),
         { label: t('noteCard.actions.delete'), run: handleDeleteNote },
       ]
       ActionSheetIOS.showActionSheetWithOptions(
@@ -379,7 +397,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteData?.locked,
     noteData?.pinned,
     activityEnabled,
+    relatedEnabled,
     handleOpenNoteHistory,
+    handleOpenRelatedNotes,
     handleFindInNote,
     showMoveToSheet,
     handleTogglePin,
@@ -1198,6 +1218,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                             onPress={handleOpenNoteHistory}
                           />
                         ) : null}
+                        {relatedEnabled ? (
+                          <ExpoUI.Button
+                            label={t('noteEditor.menu.relatedNotes')}
+                            systemImage="link"
+                            onPress={handleOpenRelatedNotes}
+                          />
+                        ) : null}
                         <ExpoUI.Button
                           label={t('noteCard.actions.delete')}
                           systemImage="trash"
@@ -1295,6 +1322,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               visible={historyVisible}
               noteId={noteId}
               onClose={handleCloseNoteHistory}
+            />
+          )}
+
+          {!!noteId && relatedEnabled && (
+            <RelatedNotesModal
+              visible={relatedVisible}
+              noteId={noteId}
+              onClose={handleCloseRelatedNotes}
+              onOpenNote={openNote}
             />
           )}
 

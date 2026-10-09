@@ -52,6 +52,7 @@
     "expo-audio": "~56.0.13",
     "expo-background-service": "file:modules/expo-background-service",
     "expo-background-task": "~56.0.27",
+    "expo-battery": "~56.0.4",
     "expo-blur": "~56.0.4",
     "expo-camera": "~56.0.8",
     "expo-clipboard": "~56.0.4",

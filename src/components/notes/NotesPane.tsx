@@ -161,9 +161,11 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       ? null
       : meaningNotice?.kind === 'indexing'
         ? t('search.meaning.indexing', { done: meaningNotice.done, total: meaningNotice.total })
-        : meaningNotice
-          ? t('search.meaning.preparing')
-          : null
+        : meaningNotice?.kind === 'charging'
+          ? t('search.meaning.charging', { total: meaningNotice.total })
+          : meaningNotice
+            ? t('search.meaning.preparing')
+            : null
 
   const groupedNotes = useMemo(
     () =>

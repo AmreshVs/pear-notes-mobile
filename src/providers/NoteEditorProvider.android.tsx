@@ -16,7 +16,10 @@ import {
   htmlToParagraphs,
   isRewriteTask,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
-import { selectIsLocalAiFeatureReady } from '@pear-notes/core/store/slices/localAiSlice.js'
+import {
+  getLocalAiIndexEnabled,
+  selectIsLocalAiFeatureReady,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   getActivityLogEnabled,
@@ -100,6 +103,7 @@ import { NoteEditorContext } from '@/providers/NoteEditorContext'
 
 import { NoteHistoryModal } from '../components/activity/NoteHistoryModal'
 import { AudioRecorderModal, type RecordingDoneOptions } from '../components/AudioRecorderModal'
+import { RelatedNotesModal } from '../components/localAi/RelatedNotesModal'
 import { isPdfAttachment } from '../lib/pdfTools'
 import { getAttachmentFileName, isAudioFile, isImageFile } from '../utils/media'
 
@@ -191,6 +195,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isRecorderVisible,
     historyVisible,
     setHistoryVisible,
+    relatedVisible,
+    setRelatedVisible,
     setIsRecorderVisible,
     recorderEverOpened,
     setRecorderEverOpened,
@@ -231,6 +237,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const activityEnabled = useSelector(getActivityLogEnabled) as boolean
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
+  const relatedEnabled =
+    (useSelector(getLocalAiIndexEnabled) as boolean) && LOCAL_AI_ENABLED && !noteData?.locked
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
   const aiToolsVisible = useAiToolsVisible(!!noteData?.locked)
@@ -872,6 +880,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [setHistoryVisible])
 
+  const handleCloseRelatedNotes = useCallback(() => setRelatedVisible(false), [setRelatedVisible])
+
   const handleNoteAi = useCallback(
     (mode: VoiceTypingMode) => {
       if (!noteId) return
@@ -1033,6 +1043,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         },
       })
     }
+    if (relatedEnabled) {
+      list.push({
+        icon: 'link-variant',
+        label: t('noteEditor.menu.relatedNotes'),
+        onPress: () => {
+          setMoreSheetVisible(false)
+          setRelatedVisible(true)
+        },
+      })
+    }
     list.push({
       icon: 'delete-outline',
       label: t('noteCard.actions.delete'),
@@ -1049,8 +1069,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteData?.pinned,
     noteId,
     activityEnabled,
+    relatedEnabled,
     handleFindInNote,
     setHistoryVisible,
+    setRelatedVisible,
     t,
     handleDeleteNote,
     handleToggleLock,
@@ -1442,6 +1464,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           visible={historyVisible}
           noteId={noteId}
           onClose={handleCloseNoteHistory}
+        />
+      )}
+
+      {!!noteId && relatedEnabled && (
+        <RelatedNotesModal
+          visible={relatedVisible}
+          noteId={noteId}
+          onClose={handleCloseRelatedNotes}
+          onOpenNote={openNote}
         />
       )}
 

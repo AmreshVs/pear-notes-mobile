@@ -1,6 +1,7 @@
 import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'react-native'
 import { Directory, File, Paths } from 'expo-file-system'
 
+import * as log from '@pear-notes/core/log.js'
 import { runAsk } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
   getFeatureRegistryNames,
@@ -1156,11 +1157,19 @@ export async function extractTextFromPdf(
   return joinParts(texts)
 }
 
+// Dev builds embed on CPU for the Android GPU/CPU comparison; EXPO_PUBLIC_AI_EMBED_DEVICE=gpu restores the SDK default.
+const EMBED_DEVICE_CONFIG =
+  __DEV__ && process.env.EXPO_PUBLIC_AI_EMBED_DEVICE !== 'gpu'
+    ? { device: 'cpu', gpuLayers: 0 }
+    : {}
+let embedBackendLogged = false
+
 async function embedTextsNow(texts: string[]): Promise<Float32Array[]> {
   const input = texts.map((text) => String(text ?? ''))
   if (input.length === 0) return []
   const sdk = await loadSdk()
-  const { model, modelConfig } = LOCAL_AI_EMBEDDING_MODEL
+  const { model } = LOCAL_AI_EMBEDDING_MODEL
+  const modelConfig = { ...LOCAL_AI_EMBEDDING_MODEL.modelConfig, ...EMBED_DEVICE_CONFIG }
   const key = `${model}|embed`
   if ((readModelGuard().crashes[key] ?? 0) >= MODEL_CRASH_LIMIT) {
     throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
@@ -1182,7 +1191,14 @@ async function embedTextsNow(texts: string[]): Promise<Float32Array[]> {
     const run = sdk.embed({ modelId, text: input })
     embedInFlight = run
     try {
-      const { embedding } = await run
+      const { embedding, stats } = await run
+      if (!embedBackendLogged && stats) {
+        embedBackendLogged = true
+        log.info(
+          `[ai-embed] backend ${stats.backendDevice ?? 'unknown'}, ` +
+            `${Math.round(stats.tokensPerSecond ?? 0)} tokens/s, requested ${modelConfig.device ?? 'gpu'}`,
+        )
+      }
       return embedding.map((vector) => Float32Array.from(vector))
     } catch (error) {
       if (/(batch|context) overflow/i.test(String((error as Error)?.message ?? ''))) {

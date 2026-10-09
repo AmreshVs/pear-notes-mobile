@@ -58,6 +58,8 @@ export default function OnDeviceAiScreen() {
     isUnsupported,
     wifiOnly,
     bytesOnDisk,
+    indexEnabled,
+    duplicateCount,
     groups,
     confirm,
     notice,
@@ -308,6 +310,33 @@ export default function OnDeviceAiScreen() {
                 </RNView>
               </RNView>
             </RNView>
+
+            {indexEnabled && (
+              <RNView style={styles.section}>
+                <Text style={commonThemedStyles.sectionCamelCase}>
+                  {t('settings.onDeviceAi.yourNotes')}
+                </Text>
+                <RNView style={commonThemedStyles.card}>
+                  <Pressable
+                    onPress={() => router.push('/settings/on-device-ai/duplicates' as never)}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [styles.rowLast, pressed && commonStyles.pressed]}
+                  >
+                    <Text style={styles.rowKey}>{t('settings.onDeviceAi.possibleDuplicates')}</Text>
+                    <RNView style={commonStyles.settingsRowRight}>
+                      {duplicateCount !== null && (
+                        <Text style={styles.rowValue}>{duplicateCount}</Text>
+                      )}
+                      <SymbolIcon
+                        name="chevron.forward"
+                        size={UI_ICON_SIZE_16}
+                        color={colors.textMuted}
+                      />
+                    </RNView>
+                  </Pressable>
+                </RNView>
+              </RNView>
+            )}
 
             <RNView style={styles.section}>
               <Text style={commonThemedStyles.sectionCamelCase}>

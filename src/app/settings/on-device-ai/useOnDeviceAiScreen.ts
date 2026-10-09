@@ -19,13 +19,16 @@ import {
   disableLocalAiFeature,
   downloadLocalAiModelNow,
   enableLocalAiFeature,
+  getDuplicateNotesState,
   getLocalAiState,
   initLocalAi,
+  loadDuplicateNotes,
   pauseLocalAiDownload,
   resumeLocalAiDownload,
   selectLocalAiBytesOnDisk,
   setLocalAiWifiOnly,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
+import { getDuplicatePairRows } from '@pear-notes/core/store/slices/notesSlice.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { hapticLight, hapticSelection, hapticWarning } from '@/lib/haptics'
@@ -54,6 +57,7 @@ interface LocalAiScreenState {
   }
   models: Record<string, unknown>
   notice: OnDeviceAiNotice | null
+  index: { enabled: boolean; changedAt: number }
 }
 
 export interface OnDeviceAiFeatureRow {
@@ -90,6 +94,8 @@ function useOnDeviceAiScreen() {
   const dispatch = useDispatch()
   const state = useSelector(getLocalAiState) as LocalAiScreenState
   const bytesOnDisk = (useSelector(selectLocalAiBytesOnDisk) as number) ?? 0
+  const duplicates = useSelector(getDuplicateNotesState) as { status: string }
+  const duplicatePairs = useSelector(getDuplicatePairRows) as unknown[]
   const [confirm, setConfirm] = useState<OnDeviceAiConfirm | null>(null)
 
   const send = useCallback(
@@ -101,6 +107,12 @@ function useOnDeviceAiScreen() {
   useEffect(() => {
     if (LOCAL_AI_ENABLED) dispatch(initLocalAi())
   }, [dispatch])
+
+  const indexEnabled = state.index.enabled
+  const indexChangedAt = state.index.changedAt
+  useEffect(() => {
+    if (LOCAL_AI_ENABLED && indexEnabled) dispatch(loadDuplicateNotes())
+  }, [dispatch, indexEnabled, indexChangedAt])
 
   const isUnsupported = state.device.status === LOCAL_AI_DEVICE_STATUS.UNSUPPORTED
 
@@ -269,6 +281,8 @@ function useOnDeviceAiScreen() {
     isUnsupported,
     wifiOnly: state.config.wifiOnly,
     bytesOnDisk,
+    indexEnabled,
+    duplicateCount: duplicates.status === 'done' ? duplicatePairs.length : null,
     groups,
     confirm,
     notice,
