@@ -1212,4 +1212,5 @@ export const qvacAdapter = {
   cancel,
   deleteModel,
   closeAndWipe,
+  embedTexts,
 }
