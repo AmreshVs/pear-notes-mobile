@@ -21,6 +21,7 @@ import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 type FolderEmptyStateProps = {
   containerStyle: StyleProp<ViewStyle>
   hasSearchQuery: boolean
+  meaningNotice?: string | null
   isTrash: boolean
   showOnboarding: boolean
   onCreateNote: () => void
@@ -31,6 +32,7 @@ type FolderEmptyStateProps = {
 export const FolderEmptyState = memo(function FolderEmptyState({
   containerStyle,
   hasSearchQuery,
+  meaningNotice,
   isTrash,
   showOnboarding,
   onCreateNote,
@@ -52,6 +54,7 @@ export const FolderEmptyState = memo(function FolderEmptyState({
         <Text style={commonThemedStyles.emptySubtitle}>
           {t('folderView.empty.noMatchesSubtitle')}
         </Text>
+        {meaningNotice ? <Text style={styles.meaningNotice}>{meaningNotice}</Text> : null}
       </View>
     )
   }
@@ -124,6 +127,12 @@ const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
     emptyTitle: {
       marginTop: Space.md,
+    },
+    meaningNotice: {
+      marginTop: Space.md,
+      textAlign: 'center',
+      fontSize: FontSize.body,
+      color: theme.colors.textMuted,
     },
     onboardingTitle: {
       fontSize: FontSize.title,

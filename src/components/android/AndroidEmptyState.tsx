@@ -28,6 +28,7 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 
 type EmptyStateProps = {
   hasSearch: boolean
+  meaningNotice?: string | null
   isOnboarding: boolean
   isTrash?: boolean
   onLinkDevice: () => void
@@ -38,6 +39,7 @@ type EmptyStateProps = {
 
 export const AndroidEmptyState = memo(function AndroidEmptyState({
   hasSearch,
+  meaningNotice,
   isOnboarding,
   isTrash,
   onLinkDevice,
@@ -70,6 +72,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
           <Text style={styles.subtitle}>
             {t('folderView.empty.noMatchesSubtitle')}
           </Text>
+          {meaningNotice ? <Text style={styles.meaningNotice}>{meaningNotice}</Text> : null}
         </>
       ) : isOnboarding ? (
         <>
@@ -188,6 +191,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       fontFamily: FontFamily.regular,
       lineHeight: UI_SIZE_20,
       color: c.onSurfaceVariant,
+    },
+    meaningNotice: {
+      fontSize: FontSize.body,
+      textAlign: 'center',
+      fontFamily: FontFamily.regular,
+      lineHeight: UI_SIZE_20,
+      color: c.onSurfaceVariant,
+      marginTop: UI_SIZE_12,
     },
     ctaRow: {
       flexDirection: 'row',

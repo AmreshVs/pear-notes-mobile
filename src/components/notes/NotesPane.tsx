@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import type { SearchBarCommands } from 'react-native-screens'
-import { useDispatch, useSelector } from 'react-redux'
+import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 import { router, Stack, useNavigation } from 'expo-router'
 
 import {
@@ -18,11 +18,13 @@ import {
   setSelectedFolder,
   updateFolder,
 } from '@pear-notes/core/store/slices/foldersSlice.js'
+import { getMeaningSearchNotice } from '@pear-notes/core/store/slices/localAiSlice.js'
 import {
   createNote,
   deleteNote,
   deleteNotes,
   getFilteredNotes,
+  getMeaningNotes,
   getNotes,
   getSelectedNote,
   moveNotes,
@@ -138,16 +140,49 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [allFolders, id],
   )
 
+  const meaningNotes = useSelector(getMeaningNotes) as { key: string; snippet: string }[]
+  const meaningNotice = useSelector(getMeaningSearchNotice, shallowEqual) as {
+    kind: string
+    done?: number
+    total?: number
+  } | null
+  const allNotes = useSelector(getNotes) as any[]
+  const hasSearchQuery = searchQuery.trim().length > 0
+  const meaningRows = useMemo(() => {
+    if (!hasSearchQuery || meaningNotes.length === 0) return []
+    const byKey = new Map(allNotes.map((note: any) => [note.key, note]))
+    return meaningNotes.flatMap((row) => {
+      const note = byKey.get(row.key)
+      return note ? [{ ...note, snippet: row.snippet }] : []
+    })
+  }, [hasSearchQuery, meaningNotes, allNotes])
+  const meaningNoticeText =
+    id === RECENTLY_DELETED_KEY
+      ? null
+      : meaningNotice?.kind === 'indexing'
+        ? t('search.meaning.indexing', { done: meaningNotice.done, total: meaningNotice.total })
+        : meaningNotice
+          ? t('search.meaning.preparing')
+          : null
+
   const groupedNotes = useMemo(
     () =>
-      buildNoteSections(notes, t, isTrashFolder).map((section, sectionIndex) => ({
+      [
+        ...buildNoteSections(notes, t, isTrashFolder),
+        ...(meaningRows.length > 0
+          ? [{ title: t('search.meaning.title'), data: meaningRows }]
+          : []),
+      ].map((section, sectionIndex) => ({
         ...section,
         sectionIndex,
       })),
-    [notes, t, isTrashFolder],
+    [notes, t, isTrashFolder, meaningRows],
   )
 
-  const orderedKeys = useMemo(() => notes.map((note: any) => note.key), [notes])
+  const orderedKeys = useMemo(
+    () => [...notes, ...meaningRows].map((note: any) => note.key),
+    [notes, meaningRows],
+  )
   const { onViewableItemsChanged, viewabilityConfig } = useVisibleNotes(orderedKeys)
 
   const {
@@ -439,6 +474,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           locked={isLocked}
           pinned={isPinned}
           searchHit={searchHits[note.key] ?? null}
+          meaningSnippet={note.snippet || null}
           titleHighlight={getTitleHighlight(note.value?.title, searchTerms)}
           onPress={handleSelectNote}
           onToggleSelect={handleToggleSelect}
@@ -540,7 +576,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       hideEmptyState ? null : (
         <FolderEmptyState
           containerStyle={emptyStateStyle}
-          hasSearchQuery={searchQuery.trim().length > 0}
+          hasSearchQuery={hasSearchQuery}
+          meaningNotice={meaningNoticeText}
           isTrash={isTrashFolder}
           showOnboarding={localPreferences['isSynced'] !== true && !hasAnyNotes}
           onCreateNote={handleCreateNote}
@@ -551,7 +588,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [
       hideEmptyState,
       emptyStateStyle,
-      searchQuery,
+      hasSearchQuery,
+      meaningNoticeText,
       isTrashFolder,
       localPreferences,
       hasAnyNotes,
@@ -559,6 +597,14 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       handleLinkDevice,
       handleRestoreBackup,
     ],
+  )
+
+  const listFooter = useMemo(
+    () =>
+      hasSearchQuery && notes.length > 0 && meaningRows.length === 0 && meaningNoticeText ? (
+        <Text style={styles.meaningNotice}>{meaningNoticeText}</Text>
+      ) : null,
+    [hasSearchQuery, notes.length, meaningRows.length, meaningNoticeText, styles.meaningNotice],
   )
 
   const handleSearchChange = useCallback(
@@ -673,6 +719,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={scrollContentStyle}
         {...scrollProps}
@@ -718,6 +765,12 @@ const useStyles = createThemedStylesheet((theme) => {
     retentionNotice: {
       marginHorizontal: Space.base,
       marginBottom: Space.base,
+      fontSize: FontSize.body,
+      color: theme.colors.textMuted,
+    },
+    meaningNotice: {
+      marginHorizontal: Space.base,
+      marginTop: Space.sm,
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },
