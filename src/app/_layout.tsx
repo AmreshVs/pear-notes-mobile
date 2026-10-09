@@ -73,6 +73,7 @@ import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
+import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
 import { loadHapticsPreference } from '@/lib/haptics'
 import { localAiAdapter } from '@/lib/localAi/localAi'
 import { useLocalAiBridge } from '@/lib/localAi/useLocalAiBridge'
@@ -206,6 +207,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       setFatalError(null)
       setLegacyVault(false)
       appBoot.mark('app js reached initWorklet')
+      excludeFromDeviceBackups(storage)
       await startWorklet(storage, {
         onWorkletDied: () => {
           workletRestartAttemptsRef.current += 1
