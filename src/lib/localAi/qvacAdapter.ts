@@ -26,6 +26,7 @@ import {
   NOTE_TASK,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
 import { formatOcrBlocks } from '@pear-notes/core/store/services/localAiText.js'
+import { LOCAL_AI_EMBEDDING_MODEL } from '@pear-notes/core/store/services/localAiTiers.js'
 import { getTranslationModelName } from '@pear-notes/core/store/services/localAiTranslationModels.js'
 import {
   countWords,
@@ -130,6 +131,7 @@ let modelsDirectory: string | null = null
 let appStateSubscription: NativeEventSubscription | null = null
 let memoryWarningSubscription: NativeEventSubscription | null = null
 let loadedModel: { key: string; modelId: string } | null = null
+let embedInFlight: Promise<unknown> | null = null
 let downloadCounter = 0
 const pendingDownloads = new Map<string, PendingDownload>()
 
@@ -157,6 +159,7 @@ async function writeRuntimeConfig(cacheDirectory: string) {
 }
 
 async function unloadCurrentModel(sdk: QvacSdk) {
+  await embedInFlight?.catch(() => {})
   const current = loadedModel
   loadedModel = null
   if (!current) return
@@ -238,10 +241,13 @@ function releaseModelWhenIdle() {
   sdkPromise.then(unloadCurrentModel).catch(() => {})
 }
 
-async function withModelWork<T>(work: () => Promise<T>): Promise<T> {
+async function withModelWork<T>(
+  work: () => Promise<T>,
+  { holdJobs = true }: { holdJobs?: boolean } = {},
+): Promise<T> {
   activeModelWork += 1
   clearIdleUnload()
-  const releaseJobs = holdAiJobs()
+  const releaseJobs = holdJobs ? holdAiJobs() : () => {}
   try {
     const result = await work()
     if (loadedModel) recordModelSuccess(loadedModel.key)
@@ -389,6 +395,19 @@ async function ensureModelLoaded(sdk: QvacSdk, key: string, load: () => Promise<
     throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
   }
   if (AppState.currentState === 'active') setActiveModel(key)
+  if (loadedModel?.key === key) return loadedModel.modelId
+  return withModelLock(() => switchModel(sdk, key, load))
+}
+
+let modelLock: Promise<unknown> = Promise.resolve()
+
+function withModelLock<T>(work: () => Promise<T>): Promise<T> {
+  const run = modelLock.then(work)
+  modelLock = run.catch(() => {})
+  return run
+}
+
+async function switchModel(sdk: QvacSdk, key: string, load: () => Promise<string>) {
   if (loadedModel?.key === key) return loadedModel.modelId
   await unloadCurrentModel(sdk)
   const modelId = await load()
@@ -1136,6 +1155,48 @@ export async function extractTextFromPdf(
   }
   return joinParts(texts)
 }
+
+async function embedTextsNow(texts: string[]): Promise<Float32Array[]> {
+  const input = texts.map((text) => String(text ?? ''))
+  if (input.length === 0) return []
+  const sdk = await loadSdk()
+  const { model, modelConfig } = LOCAL_AI_EMBEDDING_MODEL
+  const key = `${model}|embed`
+  if ((readModelGuard().crashes[key] ?? 0) >= MODEL_CRASH_LIMIT) {
+    throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
+  }
+  return withModelLock(async () => {
+    if (loadedModel?.key !== key) {
+      if (activeModelWork > 1) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED, 'model busy')
+      const info = await sdk.getModelInfo({ name: model }).catch(() => null)
+      if (!info?.isCached) throw new LocalAiError(LOCAL_AI_ERROR.MODEL_MISSING)
+    }
+    if (AppState.currentState === 'active') setActiveModel(key)
+    const modelId = await switchModel(sdk, key, () =>
+      loadModelWith(sdk, {
+        modelSrc: registryAsset(sdk, model),
+        modelType: 'embeddings',
+        modelConfig,
+      }),
+    )
+    const run = sdk.embed({ modelId, text: input })
+    embedInFlight = run
+    try {
+      const { embedding } = await run
+      return embedding.map((vector) => Float32Array.from(vector))
+    } catch (error) {
+      if (/(batch|context) overflow/i.test(String((error as Error)?.message ?? ''))) {
+        throw new LocalAiError(LOCAL_AI_ERROR.INPUT_TOO_LONG, (error as Error).message)
+      }
+      throw error
+    } finally {
+      if (embedInFlight === run) embedInFlight = null
+    }
+  })
+}
+
+export const embedTexts = (texts: string[]) =>
+  withModelWork(() => embedTextsNow(texts), { holdJobs: false })
 
 export async function cancelLocalAiTask() {
   if (!sdkPromise || !loadedModel) return
