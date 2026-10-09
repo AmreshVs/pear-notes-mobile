@@ -3,6 +3,7 @@ import { Linking } from 'react-native'
 
 import { useAppUpdateStatus } from '@/hooks/useAppUpdateStatus'
 import { getAppUpdateDismissedVersion, setAppUpdateDismissedVersion } from '@/lib/appUpdateCheck'
+import { setAppUpdateNoticeVisible } from '@/lib/appUpdateNoticeVisibility'
 
 export function useAppUpdateBanner() {
   const status = useAppUpdateStatus()
@@ -17,6 +18,12 @@ export function useAppUpdateBanner() {
     !status.mandatory &&
     status.updateAvailable &&
     dismissedVersion !== status.latestVersion
+
+  const isNoticeVisible = isVisible || !!status?.mandatory
+
+  useEffect(() => {
+    setAppUpdateNoticeVisible(isNoticeVisible)
+  }, [isNoticeVisible])
 
   const dismiss = () => {
     if (!status) return

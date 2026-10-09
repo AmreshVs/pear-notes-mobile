@@ -29,3 +29,7 @@ export const APP_UPDATE_STORE_HOSTS: Record<string, string> = {
   ios: 'apps.apple.com',
   android: 'play.google.com',
 }
+
+export const BACKUP_NUDGE_INTERVAL_MS = 30 * 24 * 60 * 60 * 1000
+
+export const BACKUP_NUDGE_GRACE_MS = 0

@@ -1320,6 +1320,20 @@
       "dismiss": "Dismiss"
     }
   },
+  "backupNudge": {
+    "backUpNow": "Back up now",
+    "banner": {
+      "title": "Back up your notes",
+      "description": "This is your only device. Without a backup, losing it loses your notes.",
+      "dismiss": "Dismiss"
+    },
+    "sheet": {
+      "title": "Keep a backup of your notes",
+      "description": "Your notes are only on this device. Make a backup or link another device so you can get them back if it's lost.",
+      "linkDevice": "Link another device",
+      "notNow": "Not now"
+    }
+  },
   "linkModal": {
     "addLink": "Add link",
     "linkText": "Link text",

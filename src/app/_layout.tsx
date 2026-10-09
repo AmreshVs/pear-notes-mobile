@@ -50,6 +50,7 @@ import { store } from '@pear-notes/core/store/store.js'
 import { AppUpdateBanner } from '@/components/AppUpdateBanner'
 import { AppUpdateRequiredOverlay } from '@/components/AppUpdateRequiredOverlay'
 import { BackupProgressBanner } from '@/components/backup/BackupProgressBanner'
+import { BackupNudge } from '@/components/BackupNudge'
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
@@ -538,6 +539,7 @@ function RootLayoutNav() {
               <NoteUnlockPasswordModal />
               <BackupProgressBanner />
               <AppUpdateBanner />
+              <BackupNudge />
               <AppUpdateRequiredOverlay />
             </NoteEditorProvider>
           </ToastProvider>

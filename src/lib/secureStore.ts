@@ -5,9 +5,13 @@ const DB_ENCRYPTION_KEY_NAME = 'db_encryption_key'
 const VAULT_ENTROPY_NAME = 'vault_entropy'
 
 const IOS_OPTIONS: SecureStore.SecureStoreOptions = {
-  keychainService: 'pear-notes-after-first-unlock',
-  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+  keychainService: 'pear-notes-this-device',
+  keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK_THIS_DEVICE_ONLY,
 }
+const IOS_PREVIOUS_OPTIONS: SecureStore.SecureStoreOptions[] = [
+  { keychainService: 'pear-notes-after-first-unlock' },
+  {},
+]
 const isIOS = Platform.OS === 'ios'
 
 const cache = new Map<string, string>()
@@ -16,21 +20,32 @@ export function isKeychainLockedError(e: unknown): boolean {
   return /user interaction is not allowed/i.test(e instanceof Error ? e.message : String(e))
 }
 
+async function migrateIOSSecret(name: string): Promise<string | null> {
+  for (const previous of IOS_PREVIOUS_OPTIONS) {
+    const value = await SecureStore.getItemAsync(name, previous)
+    if (!value) continue
+    await SecureStore.setItemAsync(name, value, IOS_OPTIONS)
+    if ((await SecureStore.getItemAsync(name, IOS_OPTIONS)) === value) {
+      await SecureStore.deleteItemAsync(name, previous).catch(() => {})
+    }
+    return value
+  }
+  return null
+}
+
+async function deletePreviousIOSSecrets(name: string): Promise<void> {
+  for (const previous of IOS_PREVIOUS_OPTIONS) {
+    await SecureStore.deleteItemAsync(name, previous).catch(() => {})
+  }
+}
+
 async function readSecret(name: string): Promise<string | null> {
   const cached = cache.get(name)
   if (cached) return cached
   let value: string | null
   if (isIOS) {
     value = await SecureStore.getItemAsync(name, IOS_OPTIONS)
-    if (!value) {
-      value = await SecureStore.getItemAsync(name)
-      if (value) {
-        await SecureStore.setItemAsync(name, value, IOS_OPTIONS)
-        if ((await SecureStore.getItemAsync(name, IOS_OPTIONS)) === value) {
-          await SecureStore.deleteItemAsync(name).catch(() => {})
-        }
-      }
-    }
+    if (!value) value = await migrateIOSSecret(name)
   } else {
     value = await SecureStore.getItemAsync(name)
   }
@@ -41,7 +56,7 @@ async function readSecret(name: string): Promise<string | null> {
 async function writeSecret(name: string, value: string): Promise<void> {
   if (isIOS) {
     await SecureStore.setItemAsync(name, value, IOS_OPTIONS)
-    await SecureStore.deleteItemAsync(name).catch(() => {})
+    await deletePreviousIOSSecrets(name)
   } else {
     await SecureStore.setItemAsync(name, value)
   }
@@ -50,7 +65,11 @@ async function writeSecret(name: string, value: string): Promise<void> {
 
 async function deleteSecret(name: string): Promise<void> {
   cache.delete(name)
-  if (isIOS) await SecureStore.deleteItemAsync(name, IOS_OPTIONS)
+  if (isIOS) {
+    await SecureStore.deleteItemAsync(name, IOS_OPTIONS)
+    await deletePreviousIOSSecrets(name)
+    return
+  }
   await SecureStore.deleteItemAsync(name)
 }
 

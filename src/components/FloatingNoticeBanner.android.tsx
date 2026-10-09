@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
 import { FadeInDown, FadeOutDown } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -19,7 +18,7 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
-import { useAppUpdateBanner } from './useAppUpdateBanner'
+import type { FloatingNoticeBannerProps } from './FloatingNoticeBanner.types'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -31,14 +30,19 @@ const useBannerHooks = () => ({
   insets: useSafeAreaInsets(),
 })
 
-export function AppUpdateBanner() {
-  const { t } = useTranslation()
+export function FloatingNoticeBanner({
+  icon,
+  title,
+  description,
+  descriptionLines = 1,
+  actionLabel,
+  onAction,
+  dismissLabel,
+  onDismiss,
+}: FloatingNoticeBannerProps) {
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
-  const { isVisible, latestVersion, dismiss, openStore } = useAppUpdateBanner()
-
-  if (!isVisible) return null
 
   return (
     <MotionView
@@ -49,21 +53,21 @@ export function AppUpdateBanner() {
       <RNView style={styles.banner}>
         <RNView style={styles.infoRow}>
           <RNView style={styles.iconCircle}>
-            <MaterialCommunityIcons name="download" size={UI_ICON_SIZE_20} color={c.primary} />
+            <MaterialCommunityIcons name={icon.android} size={UI_ICON_SIZE_20} color={c.primary} />
           </RNView>
 
           <RNView style={styles.textContainer}>
             <Text style={styles.title} numberOfLines={1}>
-              {t('update.banner.title')}
+              {title}
             </Text>
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {t('update.banner.description', { version: latestVersion })}
+            <Text style={styles.subtitle} numberOfLines={descriptionLines}>
+              {description}
             </Text>
           </RNView>
 
           <Pressable
-            onPress={dismiss}
-            accessibilityLabel={t('update.banner.dismiss')}
+            onPress={onDismiss}
+            accessibilityLabel={dismissLabel}
             style={({ pressed }) => [styles.dismissBtn, pressed && commonStyles.pressed]}
           >
             <MaterialCommunityIcons
@@ -75,10 +79,10 @@ export function AppUpdateBanner() {
         </RNView>
 
         <Pressable
-          onPress={openStore}
-          style={({ pressed }) => [styles.updateBtn, pressed && commonStyles.pressed]}
+          onPress={onAction}
+          style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
         >
-          <Text style={styles.updateBtnText}>{t('update.banner.updateButton')}</Text>
+          <Text style={styles.actionBtnText}>{actionLabel}</Text>
         </Pressable>
       </RNView>
     </MotionView>
@@ -133,14 +137,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       padding: Space.xs,
       marginLeft: Space.xs,
     },
-    updateBtn: {
+    actionBtn: {
       height: 40,
       borderRadius: UI_SIZE_9999,
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: c.primary,
     },
-    updateBtnText: {
+    actionBtnText: {
       fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       color: c.onPrimary,

@@ -19,7 +19,11 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 
 import { FontSize, FontWeight, UI_SIZE_8, UI_SIZE_12, UI_SIZE_20 } from '@/constants/commonStyles'
 import type { SharedParagraph } from '@/lib/shareIntake.types'
-import { EDITOR_ORIGIN_WHITELIST, shouldStartEditorLoad } from '@/lib/webViewNavigation'
+import {
+  EDITOR_ORIGIN_WHITELIST,
+  isEditorMessageSource,
+  shouldStartEditorLoad,
+} from '@/lib/webViewNavigation'
 
 import { TIPTAP_EDITOR_BUNDLE } from '../utils/tiptap-editor-bundle'
 
@@ -493,6 +497,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
     const handleMessage = useCallback(
       (event: WebViewMessageEvent) => {
+        if (!isEditorMessageSource(event.nativeEvent.url)) return
         let msg: WebViewMsg
         try {
           msg = JSON.parse(event.nativeEvent.data)
