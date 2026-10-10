@@ -53,7 +53,9 @@ import { BackupProgressBanner } from '@/components/backup/BackupProgressBanner'
 import { BackupNudge } from '@/components/BackupNudge'
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
+import { AskVaultSheet } from '@/components/localAi/AskVaultSheet'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
+import { MergeNotesBanner } from '@/components/MergeNotesBanner'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import {
@@ -67,6 +69,7 @@ import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
 import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
+import { useReminders } from '@/hooks/useReminders'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
 import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
@@ -76,6 +79,7 @@ import { clearStorageState } from '@/lib/clearStorageState'
 import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
 import { loadHapticsPreference } from '@/lib/haptics'
 import { localAiAdapter } from '@/lib/localAi/localAi'
+import { useAiJobConditions } from '@/lib/localAi/useAiJobConditions'
 import { useLocalAiBridge } from '@/lib/localAi/useLocalAiBridge'
 import {
   getDbEncryptionKey,
@@ -180,7 +184,9 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useMediaSyncAutoDetect()
   useAttachmentCachePrune()
   useLocalAiBridge()
+  const onUserTouch = useAiJobConditions()
   useNoteAutoRelock()
+  useReminders()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
   // LEGACY(hyperdb-migration): see docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8
@@ -416,7 +422,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   }
 
   return (
-    <GestureHandlerRootView style={gestureViewStyle}>
+    <GestureHandlerRootView style={gestureViewStyle} onTouchStart={onUserTouch}>
       <RootLayoutNav />
     </GestureHandlerRootView>
   )
@@ -539,8 +545,10 @@ function RootLayoutNav() {
               <ForceVaultRemovalPrompt />
               <LockUnavailableModal />
               <NoteUnlockPasswordModal />
+              {LOCAL_AI_ENABLED && <AskVaultSheet />}
               <BackupProgressBanner />
               <AppUpdateBanner />
+              <MergeNotesBanner />
               <BackupNudge />
               <AppUpdateRequiredOverlay />
             </NoteEditorProvider>

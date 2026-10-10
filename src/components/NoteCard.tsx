@@ -90,6 +90,7 @@ interface NoteCardProps {
   locked?: boolean
   pinned?: boolean
   searchHit?: NoteSearchHit | null
+  meaningSnippet?: string | null
   titleHighlight?: string
   onPress: (id: string) => void
   onDelete?: (id: string) => void
@@ -123,6 +124,7 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.locked === next.locked &&
     prev.pinned === next.pinned &&
     prev.searchHit === next.searchHit &&
+    prev.meaningSnippet === next.meaningSnippet &&
     prev.titleHighlight === next.titleHighlight &&
     prev.moveFolders === next.moveFolders &&
     prev.moveVaults === next.moveVaults &&
@@ -156,6 +158,7 @@ export const NoteCard = memo(function NoteCard({
   locked,
   pinned,
   searchHit,
+  meaningSnippet,
   titleHighlight,
   animationIndex = 0,
   onPress,
@@ -252,16 +255,16 @@ export const NoteCard = memo(function NoteCard({
     parts.push(date)
     return parts.join(', ')
   }, [displayTitle, pinned, locked, date, t])
-  const searchSnippet = !masked && searchHit?.snippet ? searchHit : null
+  const searchSnippet = !masked && !meaningSnippet && searchHit?.snippet ? searchHit : null
   const titleRanges = useMemo(() => parseHighlight(titleHighlight), [titleHighlight])
-  const showAttachment = !masked && !searchSnippet && !summary && !!attachment
+  const showAttachment = !masked && !meaningSnippet && !searchSnippet && !summary && !!attachment
   const attachmentIcon = attachment ? ATTACHMENT_ICONS[attachment.kind] : null
   const deleteLabel = onRestore
     ? t('folderView.permanentlyDeleteTitle')
     : t('noteCard.actions.delete')
   const displaySummary = masked
     ? t('noteCard.lockedSummary')
-    : summary || t('noteCard.noAdditionalText')
+    : meaningSnippet || summary || t('noteCard.noAdditionalText')
 
   const accessibilityActions = useMemo(() => {
     const actions: { name: string; label: string }[] = []

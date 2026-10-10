@@ -27,7 +27,11 @@ import {
   htmlToParagraphs,
   isRewriteTask,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
-import { selectIsLocalAiFeatureReady } from '@pear-notes/core/store/slices/localAiSlice.js'
+import {
+  getLocalAiIndexEnabled,
+  selectIsLocalAiFeatureReady,
+  selectIsTextAiAvailable,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   getActivityLogEnabled,
@@ -40,12 +44,15 @@ import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { AudioRecorderModal, type RecordingDoneOptions } from '@/components/AudioRecorderModal'
 import { EdgeFade } from '@/components/EdgeFade'
 import { FindInNoteBar } from '@/components/FindInNoteBar'
+import { GenerateNoteSheet } from '@/components/GenerateNoteSheet'
 import { GlassView } from '@/components/GlassView'
 import { EditorToolbar } from '@/components/ios/EditorToolbar'
+import { RelatedNotesModal } from '@/components/localAi/RelatedNotesModal'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteBodyPlaceholder } from '@/components/NoteBodyPlaceholder'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
+import { NoteSuggestionChips } from '@/components/NoteSuggestionChips'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
 import type { EditorSelection } from '@/components/TiptapEditor'
@@ -103,6 +110,11 @@ import ExpoNativeShareModule from '../../modules/expo-native-share'
 
 import { useNoteEditor } from './useNoteEditor'
 import { useNoteEditorActions } from './useNoteEditorActions'
+import {
+  CREATE_FROM_NOTE_TASKS,
+  RESTRUCTURE_TASKS,
+  useNoteTransformActions,
+} from './useNoteTransformActions'
 
 const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 const EDITOR_HEADER_HEIGHT = 52
@@ -135,6 +147,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     isRecorderVisible,
     historyVisible,
     setHistoryVisible,
+    relatedVisible,
+    setRelatedVisible,
     setIsRecorderVisible,
     imageActionRect,
     setImageActionRect,
@@ -174,6 +188,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const lockMethod = useSelector(getLockMethod)
   const activityEnabled = useSelector(getActivityLogEnabled) as boolean
+  const relatedEnabled =
+    (useSelector(getLocalAiIndexEnabled) as boolean) && LOCAL_AI_ENABLED && !noteData?.locked
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
@@ -187,11 +203,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS) as boolean),
   )
   const summarizeReady = useSelector(
-    (state) =>
-      aiToolsVisible &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS) as boolean),
+    (state) => aiToolsVisible && (selectIsTextAiAvailable(state) as boolean),
   )
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
+  const {
+    canSplit,
+    canReadAloud,
+    handleReadAloud,
+    canGenerate,
+    generateVisible,
+    generateTask,
+    generateKeys,
+    handleSplitNote,
+    handleGenerate,
+    handleCloseGenerate,
+  } = useNoteTransformActions({ noteId, noteData, summarizeReady, onOpenNote: openNote })
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
   const [dictationActive, setDictationActive] = useState(false)
   const [findNoteId, setFindNoteId] = useState<string | null>(null)
@@ -328,12 +354,45 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     )
   }, [moveFolders, handleMoveNote, t])
 
+  const showTaskSheet = useCallback(
+    (title: string, tasks: string[]) => {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          title,
+          options: [t('common.cancel'), ...tasks.map((task) => t(`generate.actions.${task}`))],
+          cancelButtonIndex: 0,
+        },
+        (index: number) => {
+          if (index > 0) handleGenerate(tasks[index - 1])
+        },
+      )
+    },
+    [handleGenerate, t],
+  )
+
+  const showRestructureSheet = useCallback(
+    () => showTaskSheet(t('noteEditor.contextMenu.restructureAs'), RESTRUCTURE_TASKS),
+    [showTaskSheet, t],
+  )
+
+  const showCreateFromNoteSheet = useCallback(
+    () => showTaskSheet(t('noteEditor.contextMenu.createFromNote'), CREATE_FROM_NOTE_TASKS),
+    [showTaskSheet, t],
+  )
+
   const handleOpenNoteHistory = useCallback(() => {
     if (!noteId) return
     setHistoryVisible(true)
   }, [noteId])
 
   const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [])
+
+  const handleOpenRelatedNotes = useCallback(() => {
+    if (!noteId) return
+    setRelatedVisible(true)
+  }, [noteId])
+
+  const handleCloseRelatedNotes = useCallback(() => setRelatedVisible(false), [])
 
   const findActive = !!noteId && findNoteId === noteId && !isNoteLocked && !dictationActive
 
@@ -356,8 +415,23 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         { label: pinLabel, run: handleTogglePin },
         { label: t('noteCard.actions.moveTo'), run: showMoveToSheet },
         { label: lockLabel, run: handleToggleLock },
+        ...(canSplit
+          ? [{ label: t('noteEditor.contextMenu.splitNote'), run: handleSplitNote }]
+          : []),
+        ...(canReadAloud
+          ? [{ label: t('noteEditor.contextMenu.readAloud'), run: handleReadAloud }]
+          : []),
+        ...(canGenerate
+          ? [
+              { label: t('noteEditor.contextMenu.restructureAs'), run: showRestructureSheet },
+              { label: t('noteEditor.contextMenu.createFromNote'), run: showCreateFromNoteSheet },
+            ]
+          : []),
         ...(activityEnabled
           ? [{ label: t('noteEditor.menu.noteHistory'), run: handleOpenNoteHistory }]
+          : []),
+        ...(relatedEnabled
+          ? [{ label: t('noteEditor.menu.relatedNotes'), run: handleOpenRelatedNotes }]
           : []),
         { label: t('noteCard.actions.delete'), run: handleDeleteNote },
       ]
@@ -379,7 +453,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteData?.locked,
     noteData?.pinned,
     activityEnabled,
+    relatedEnabled,
+    canSplit,
+    canGenerate,
+    handleSplitNote,
+    canReadAloud,
+    handleReadAloud,
+    showRestructureSheet,
+    showCreateFromNoteSheet,
     handleOpenNoteHistory,
+    handleOpenRelatedNotes,
     handleFindInNote,
     showMoveToSheet,
     handleTogglePin,
@@ -674,6 +757,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     openSourceSheet('extract', src, fileName, 'localAi.errors.downloadImage')
   }, [gateAiFeature, openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
 
+  const handleImageExtractDetails = useCallback(() => {
+    if (!selectedImageSrc) return
+    setIsImageActionSheetOpen(false)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.EXTRACT_TEXT)) return
+    const src = selectedImageSrc
+    const fileName = src.startsWith('data:')
+      ? `image_${Date.now()}.jpg`
+      : src.split('/').pop()?.split('?')[0] || `image_${Date.now()}.jpg`
+    openSourceSheet('details', src, fileName, 'localAi.errors.downloadImage')
+  }, [gateAiFeature, openSourceSheet, selectedImageSrc, setIsImageActionSheetOpen])
+
   const handleImageDescribe = useCallback(() => {
     if (!selectedImageSrc) return
     setIsImageActionSheetOpen(false)
@@ -830,8 +924,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             t('localAi.summarizeNote.insertTitle'),
             summary.summary ? [{ text: summary.summary }] : [],
             {
+              decisionsTitle: t('localAi.summary.decisions'),
+              decisions: summary.decisions,
               actionItemsTitle: t('localAi.summary.actionItems'),
               actionItems: summary.actionItems,
+              openQuestionsTitle: t('localAi.summary.openQuestions'),
+              openQuestions: summary.openQuestions,
             },
             selection.to,
           )
@@ -878,8 +976,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           t('localAi.summarizeNote.insertTitle'),
           summary.summary ? [{ text: summary.summary }] : [],
           {
+            decisionsTitle: t('localAi.summary.decisions'),
+            decisions: summary.decisions,
             actionItemsTitle: t('localAi.summary.actionItems'),
             actionItems: summary.actionItems,
+            openQuestionsTitle: t('localAi.summary.openQuestions'),
+            openQuestions: summary.openQuestions,
           },
         )
         return
@@ -920,8 +1022,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             ? {
                 summaryTitle: t('localAi.summary.title'),
                 summary: summary.summary,
+                decisionsTitle: t('localAi.summary.decisions'),
+                decisions: summary.decisions,
                 actionItemsTitle: t('localAi.summary.actionItems'),
                 actionItems: summary.actionItems,
+                openQuestionsTitle: t('localAi.summary.openQuestions'),
+                openQuestions: summary.openQuestions,
               }
             : undefined,
         )
@@ -1004,6 +1110,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const contextValue = useMemo(
     () => ({ openNote, closeNote, isOpen }),
     [openNote, closeNote, isOpen],
+  )
+
+  const handleAcceptSuggestedTitle = useCallback(
+    (nextTitle: string) => {
+      editorRef.current?.setTitle(nextTitle)
+      handleTitleChange(nextTitle, noteId ?? null)
+    },
+    [editorRef, handleTitleChange, noteId],
   )
 
   const toolbarBottom = useMemo(
@@ -1191,11 +1305,60 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                           systemImage={noteData?.locked ? 'lock.slash' : 'lock'}
                           onPress={handleToggleLock}
                         />
+                        {canSplit ? (
+                          <ExpoUI.Button
+                            label={t('noteEditor.contextMenu.splitNote')}
+                            systemImage="arrow.triangle.branch"
+                            onPress={handleSplitNote}
+                          />
+                        ) : null}
+                        {canReadAloud ? (
+                          <ExpoUI.Button
+                            label={t('noteEditor.contextMenu.readAloud')}
+                            systemImage="speaker.wave.2"
+                            onPress={handleReadAloud}
+                          />
+                        ) : null}
+                        {canGenerate ? (
+                          <ExpoUI.Menu
+                            label={t('noteEditor.contextMenu.restructureAs')}
+                            systemImage="doc.text"
+                          >
+                            {RESTRUCTURE_TASKS.map((task) => (
+                              <ExpoUI.Button
+                                key={task}
+                                label={t(`generate.actions.${task}`)}
+                                onPress={() => handleGenerate(task)}
+                              />
+                            ))}
+                          </ExpoUI.Menu>
+                        ) : null}
+                        {canGenerate ? (
+                          <ExpoUI.Menu
+                            label={t('noteEditor.contextMenu.createFromNote')}
+                            systemImage="sparkles"
+                          >
+                            {CREATE_FROM_NOTE_TASKS.map((task) => (
+                              <ExpoUI.Button
+                                key={task}
+                                label={t(`generate.actions.${task}`)}
+                                onPress={() => handleGenerate(task)}
+                              />
+                            ))}
+                          </ExpoUI.Menu>
+                        ) : null}
                         {activityEnabled ? (
                           <ExpoUI.Button
                             label={t('noteEditor.menu.noteHistory')}
                             systemImage="clock.arrow.circlepath"
                             onPress={handleOpenNoteHistory}
+                          />
+                        ) : null}
+                        {relatedEnabled ? (
+                          <ExpoUI.Button
+                            label={t('noteEditor.menu.relatedNotes')}
+                            systemImage="link"
+                            onPress={handleOpenRelatedNotes}
                           />
                         ) : null}
                         <ExpoUI.Button
@@ -1260,6 +1423,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
           <NoteConflictBanner noteKey={noteId} />
 
+          {LOCAL_AI_ENABLED && isOpen && !isNoteLocked && (
+            <NoteSuggestionChips
+              noteKey={noteId}
+              bottom={toolbarBottom + UI_SIZE_64 + (hasUploadQueue ? UI_SIZE_80 : 0)}
+              onAcceptTitle={handleAcceptSuggestedTitle}
+            />
+          )}
+
           <View style={bottomFadeStyle} pointerEvents="none">
             <EdgeFade color={colors.editorBackground} placement="bottom" />
           </View>
@@ -1295,6 +1466,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               visible={historyVisible}
               noteId={noteId}
               onClose={handleCloseNoteHistory}
+            />
+          )}
+
+          {!!noteId && relatedEnabled && (
+            <RelatedNotesModal
+              visible={relatedVisible}
+              noteId={noteId}
+              onClose={handleCloseRelatedNotes}
+              onOpenNote={openNote}
             />
           )}
 
@@ -1352,6 +1532,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               insertBlocked={hasNoteConflict}
               onApplyEdits={handleApplyAskEdits}
               onClose={handleCloseAsk}
+            />
+          )}
+
+          {LOCAL_AI_ENABLED && (
+            <GenerateNoteSheet
+              visible={generateVisible}
+              task={generateTask}
+              noteKeys={generateKeys}
+              onClose={handleCloseGenerate}
             />
           )}
 
@@ -1422,6 +1611,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                         label={t('localAi.extractText.menuLabel')}
                         systemImage="text.viewfinder"
                         onPress={handleImageExtractText}
+                      />
+                    )}
+                    {aiToolsVisible && (
+                      <ExpoUI.Button
+                        label={t('localAi.details.actionLabel')}
+                        systemImage="doc.text.magnifyingglass"
+                        onPress={handleImageExtractDetails}
                       />
                     )}
                     {aiToolsVisible && (

@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 
 import { LOCAL_AI_ERROR, LOCAL_AI_FEATURE } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { WORK_KIND } from '@pear-notes/core/store/services/localAiWorkProgress.js'
-import { getLocalAiFeatureConfig } from '@pear-notes/core/store/slices/localAiSlice.js'
+import {
+  getLocalAiFeatureConfig,
+  getMeaningSearchReady,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
+import { openAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
+import { Durations } from '@/constants/commonStyles'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import {
   applyEditsToText,
@@ -54,9 +59,11 @@ export function useAskNoteSheet({
   onApplyEdits,
   onClose,
 }: AskNoteSheetOptions) {
+  const dispatch = useDispatch()
   const summaryConfig = useSelector((state) =>
     getLocalAiFeatureConfig(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS),
   ) as FeatureConfig | undefined
+  const meaningReady = useSelector(getMeaningSearchReady) as boolean
   const { workView, beginWork, endWork } = useLocalAiWorkProgress()
   const [scope, setScope] = useState<AskScope>('note')
   const [texts, setTexts] = useState({ selection: '', note: '' })
@@ -179,6 +186,15 @@ export function useAskNoteSheet({
     onClose()
   }, [busy, endWork, onClose])
 
+  const handleSearchAllNotes = useCallback(
+    (askedQuestion: string) => {
+      handleClose()
+      // Let this sheet's modal leave before the Ask your notes sheet presents.
+      setTimeout(() => dispatch(openAskVault({ question: askedQuestion })), Durations.sheetClose)
+    },
+    [dispatch, handleClose],
+  )
+
   return {
     scope,
     scopeInfo,
@@ -192,10 +208,12 @@ export function useAskNoteSheet({
     droppedTurns,
     emptySource,
     copiedId,
+    meaningReady,
     handleSend,
     handleToggleScope,
     handleApply,
     handleCopy,
+    handleSearchAllNotes,
     handleClose,
   }
 }

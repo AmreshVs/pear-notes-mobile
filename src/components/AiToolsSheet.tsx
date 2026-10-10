@@ -41,6 +41,8 @@ const ICON_BY_MODE: Record<string, string> = {
   makeShorter: 'arrow.down.right.and.arrow.up.left',
   makeProfessional: 'briefcase',
   makeFriendly: 'face.smiling',
+  cleanUp: 'sparkles',
+  myStyle: 'person.text.rectangle',
   summarizeNote: 'text.alignleft',
   keyPoints: 'list.bullet',
   suggestTitle: 'textformat',

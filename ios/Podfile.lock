@@ -72,6 +72,8 @@ PODS:
     - ExpoTaskManager
   - ExpoBackupExclusion (1.0.0):
     - ExpoModulesCore
+  - ExpoBattery (56.0.4):
+    - ExpoModulesCore
   - ExpoBlur (56.0.4):
     - ExpoModulesCore
   - ExpoCamera (56.0.8):
@@ -170,6 +172,8 @@ PODS:
   - ExpoNetwork (56.0.5):
     - ExpoModulesCore
   - ExpoPdfTools (1.0.0):
+    - ExpoModulesCore
+  - ExpoReminders (1.0.0):
     - ExpoModulesCore
   - ExpoRouter (56.2.20):
     - ExpoModulesCore
@@ -2111,7 +2115,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - "react-native-bare-kit (0.15.5+e334bd)":
+  - "react-native-bare-kit (0.15.5+e413c6)":
     - boost
     - DoubleConversion
     - fast_float
@@ -3281,6 +3285,7 @@ DEPENDENCIES:
   - ExpoAudio (from `../node_modules/expo-audio/ios`)
   - ExpoBackgroundTask (from `../node_modules/expo-background-task/ios`)
   - ExpoBackupExclusion (from `../modules/expo-backup-exclusion/ios`)
+  - ExpoBattery (from `../node_modules/expo-battery/ios`)
   - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoCamera (from `../node_modules/expo-camera/ios`)
   - ExpoCameraBarcodeScanning (from `../node_modules/expo-camera/ios`)
@@ -3310,6 +3315,7 @@ DEPENDENCIES:
   - ExpoNativeShare (from `../modules/expo-native-share/ios`)
   - ExpoNetwork (from `../node_modules/expo-network/ios`)
   - ExpoPdfTools (from `../modules/expo-pdf-tools/ios`)
+  - ExpoReminders (from `../modules/expo-reminders/ios`)
   - ExpoRouter (from `../node_modules/expo-router/ios`)
   - ExpoScreenCapture (from `../node_modules/expo-screen-capture/ios`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
@@ -3444,6 +3450,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-background-task/ios"
   ExpoBackupExclusion:
     :path: "../modules/expo-backup-exclusion/ios"
+  ExpoBattery:
+    :path: "../node_modules/expo-battery/ios"
   ExpoBlur:
     :path: "../node_modules/expo-blur/ios"
   ExpoCamera:
@@ -3502,6 +3510,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-network/ios"
   ExpoPdfTools:
     :path: "../modules/expo-pdf-tools/ios"
+  ExpoReminders:
+    :path: "../modules/expo-reminders/ios"
   ExpoRouter:
     :path: "../node_modules/expo-router/ios"
   ExpoScreenCapture:
@@ -3714,6 +3724,7 @@ SPEC CHECKSUMS:
   ExpoAudio: 2970e2d332b52bfbb64d88564105df4b422c78a4
   ExpoBackgroundTask: 255f4700897df147f52f36e2f34e84c4bb1bed8f
   ExpoBackupExclusion: 0d4a2031cc4c8dcaf15cdc9c9d3ce4f94d35e62f
+  ExpoBattery: a42e918404ceee07a957db4312918ec0c52bc0d6
   ExpoBlur: 234b3c1f42a35851428e10fa9d347701ae707c4d
   ExpoCamera: 68008452cc12ad5ad5d46cc7c835073228c008da
   ExpoCameraBarcodeScanning: 2acb6385fe6aa7563da5241c775092aac40195ce
@@ -3743,6 +3754,7 @@ SPEC CHECKSUMS:
   ExpoNativeShare: 499f82374398683e7bfe0c61ee734cea56dd5895
   ExpoNetwork: 06f00de1f1d3b33327d392232b1e5dd866b05444
   ExpoPdfTools: dd0d5820874eb59f587921efd80d6203edd1b03d
+  ExpoReminders: d73a34fc486711947e967021dfb75def17f2741c
   ExpoRouter: 58319874f097ad589b691813db905812b1b7d59b
   ExpoScreenCapture: 807784aab5809f28685e0349273992ac4ad8497b
   ExpoSecureStore: f1bd083c1b7b8d4142013ffcc0082d377d9f49f4
@@ -3758,7 +3770,7 @@ SPEC CHECKSUMS:
   FBLazyVector: 473b935415b82ae4f7f9aa9d5b3378491143ccbf
   fmt: 530618a01105dae0fa3a2f27c81ae11fa8f67eac
   glog: e56ede4028c4b7418e6b1195a36b1656bb35e225
-  hermes-engine: cc5d25822ea9d9c5ae6fd059fea121d2922a86e8
+  hermes-engine: 137ed2f6c69daded30514f0cbb470d03f295b0c1
   libavif: 5f8e715bea24debec477006f21ef9e95432e254d
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
   libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
@@ -3799,7 +3811,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 3cf4ae68a4d69ca69de94385d423d57785907eb7
   React-microtasksnativemodule: 663a8165cfe10e4eb749796a53b3b8c68631b00c
   React-mutationobservernativemodule: 4f7e4c18735cfbb0f81eada4f34aa527697e8704
-  react-native-bare-kit: baa3bb453faab2a9624bd309e76bea986cf4bf73
+  react-native-bare-kit: 0bae9dc0be12246f594e1597a7883a94158edcd4
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
   react-native-slider: 4faf1b2266c73f1afb7b30cc6ebb3df238a37c0b
   react-native-vector-icons-material-design-icons: a4b6ec02814573c09203a725ee3767a7e8d5eb77

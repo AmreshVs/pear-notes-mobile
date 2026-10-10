@@ -19,11 +19,15 @@ import {
   disableLocalAiFeature,
   downloadLocalAiModelNow,
   enableLocalAiFeature,
+  getLinkedDesktopTitle,
   getLocalAiState,
   initLocalAi,
   pauseLocalAiDownload,
+  rebuildLocalAiIndex,
   resumeLocalAiDownload,
+  selectIndexCoverage,
   selectLocalAiBytesOnDisk,
+  setLocalAiOffload,
   setLocalAiWifiOnly,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
@@ -50,10 +54,18 @@ interface LocalAiScreenState {
   network: string
   config: {
     wifiOnly: boolean
+    offload?: { useMac: boolean }
     features: Record<string, { enabled: boolean } | undefined>
   }
   models: Record<string, unknown>
   notice: OnDeviceAiNotice | null
+  index: {
+    enabled: boolean
+    changedAt: number
+    status: string
+    done?: number
+    total?: number
+  }
 }
 
 export interface OnDeviceAiFeatureRow {
@@ -90,6 +102,8 @@ function useOnDeviceAiScreen() {
   const dispatch = useDispatch()
   const state = useSelector(getLocalAiState) as LocalAiScreenState
   const bytesOnDisk = (useSelector(selectLocalAiBytesOnDisk) as number) ?? 0
+  const coverage = useSelector(selectIndexCoverage) as { indexed: number; total: number } | null
+  const linkedDesktopTitle = useSelector(getLinkedDesktopTitle) as string
   const [confirm, setConfirm] = useState<OnDeviceAiConfirm | null>(null)
 
   const send = useCallback(
@@ -100,6 +114,34 @@ function useOnDeviceAiScreen() {
 
   useEffect(() => {
     if (LOCAL_AI_ENABLED) dispatch(initLocalAi())
+  }, [dispatch])
+
+  const indexEnabled = state.index.enabled
+  const indexStatus = state.index.status
+  const indexBusy = indexStatus === 'running' || indexStatus === 'waiting'
+  const indexStatusText = useMemo(() => {
+    if (indexStatus === 'running') {
+      return t('settings.onDeviceAi.index.running', {
+        done: state.index.done ?? 0,
+        total: state.index.total ?? 0,
+      })
+    }
+    if (indexStatus === 'waiting') return t('settings.onDeviceAi.index.waiting')
+    if (indexStatus === 'failed' || indexStatus === 'model-missing') {
+      return t('settings.onDeviceAi.index.failed')
+    }
+    if (!coverage) return t('settings.onDeviceAi.index.notYet')
+    return t(
+      coverage.indexed < coverage.total
+        ? 'settings.onDeviceAi.index.partial'
+        : 'settings.onDeviceAi.index.done',
+      coverage,
+    )
+  }, [t, indexStatus, state.index.done, state.index.total, coverage])
+
+  const rebuildIndex = useCallback(() => {
+    hapticLight()
+    dispatch(rebuildLocalAiIndex())
   }, [dispatch])
 
   const isUnsupported = state.device.status === LOCAL_AI_DEVICE_STATUS.UNSUPPORTED
@@ -257,6 +299,13 @@ function useOnDeviceAiScreen() {
     send(setLocalAiWifiOnly, !state.config.wifiOnly)
   }, [isUnsupported, send, state.config.wifiOnly])
 
+  const useMac = state.config.offload?.useMac ?? false
+
+  const toggleUseMac = useCallback(() => {
+    hapticSelection()
+    send(setLocalAiOffload, { useMac: !useMac })
+  }, [send, useMac])
+
   const dismissNotice = useCallback(() => {
     dispatch(clearLocalAiNotice())
   }, [dispatch])
@@ -268,7 +317,13 @@ function useOnDeviceAiScreen() {
     device: state.device,
     isUnsupported,
     wifiOnly: state.config.wifiOnly,
+    useMac,
+    linkedDesktopTitle,
     bytesOnDisk,
+    indexEnabled,
+    indexBusy,
+    indexStatusText,
+    rebuildIndex,
     groups,
     confirm,
     notice,
@@ -282,6 +337,7 @@ function useOnDeviceAiScreen() {
     downloadNow,
     cancelDownload,
     toggleWifiOnly,
+    toggleUseMac,
     dismissNotice,
   }
 }

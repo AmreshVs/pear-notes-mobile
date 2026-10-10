@@ -33,6 +33,21 @@ export default function FoldersLayout() {
       ) : (
         <Stack.Screen name="folder/[id]" options={{ headerShown: false }} />
       )}
+      {Platform.OS === 'ios' ? (
+        <Stack.Screen name="upcoming" options={{ headerLargeTitle: true }} />
+      ) : (
+        <Stack.Screen name="upcoming" options={{ headerShown: false }} />
+      )}
+      {Platform.OS === 'ios' ? (
+        <Stack.Screen name="duplicates" options={{ headerLargeTitle: true }} />
+      ) : (
+        <Stack.Screen name="duplicates" options={{ headerShown: false }} />
+      )}
+      {Platform.OS === 'ios' ? (
+        <Stack.Screen name="recap" options={{ headerLargeTitle: true }} />
+      ) : (
+        <Stack.Screen name="recap" options={{ headerShown: false }} />
+      )}
     </Stack>
   )
 }

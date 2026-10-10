@@ -50,6 +50,9 @@ type AndroidFolderAppBarProps = {
   onOpenFolderOptions: () => void
   onChangeSearch: (text: string) => void
   onClearSearch: () => void
+  onAskVault?: () => void
+  onTidyUp?: () => void
+  tidyCount?: number
 }
 
 export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
@@ -69,6 +72,9 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   onOpenFolderOptions,
   onChangeSearch,
   onClearSearch,
+  onAskVault,
+  onTidyUp,
+  tidyCount = 0,
 }: AndroidFolderAppBarProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -116,6 +122,18 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
                 size={UI_ICON_SIZE_24}
                 color={c.primary}
               />
+            </Pressable>
+          )}
+          {onTidyUp && (
+            <Pressable
+              onPress={onTidyUp}
+              android_ripple={ripple}
+              style={styles.iconBtn}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('tidyUp.button', { count: tidyCount })}
+            >
+              <MaterialCommunityIcons name="auto-fix" size={UI_ICON_SIZE_24} color={c.primary} />
             </Pressable>
           )}
           <Pressable
@@ -197,6 +215,18 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
               />
             </Pressable>
           )}
+          {onAskVault && (
+            <Pressable
+              onPress={onAskVault}
+              android_ripple={ripple}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('localAi.askVault.entry')}
+              style={styles.askButton}
+            >
+              <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_20} color={c.primary} />
+            </Pressable>
+          )}
         </View>
       </Animated.View>
     </>
@@ -253,6 +283,9 @@ const useStyles = createThemedStylesheetWithHooks(
         fontFamily: FontFamily.medium,
         paddingVertical: 0,
         color: c.onSurface,
+      },
+      askButton: {
+        marginLeft: UI_SIZE_10,
       },
     })
     return styles

@@ -17,6 +17,7 @@ export { LocalAiError, toLocalAiNetwork } from './qvacAdapter'
 export const localAiAdapter = MOCK_LOCAL_AI ? mock.mockAdapter : real.qvacAdapter
 
 export const askAboutNote = MOCK_LOCAL_AI ? mock.askAboutNote : real.askAboutNote
+export const askVault = MOCK_LOCAL_AI ? mock.askVault : real.askVault
 export const runNoteTask = MOCK_LOCAL_AI ? mock.runNoteTask : real.runNoteTask
 export const summarizeTranscript = MOCK_LOCAL_AI
   ? mock.summarizeTranscript

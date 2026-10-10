@@ -39,6 +39,8 @@ export const FOLDER_ICON_SF: Record<string, IconName> = {
   map: 'map',
   trophy: 'trophy',
   allNotes: 'doc.text',
+  duplicates: 'doc.on.doc',
+  recap: 'clock.arrow.circlepath',
   trash: 'trash',
 }
 
@@ -79,6 +81,8 @@ export const FOLDER_ICON_MATERIAL: Record<string, string> = {
   map: 'map-outline',
   trophy: 'trophy-outline',
   allNotes: 'text-box-multiple-outline',
+  duplicates: 'content-copy',
+  recap: 'history',
   trash: 'delete-outline',
 }
 

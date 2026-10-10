@@ -34,6 +34,11 @@ export default function OnDeviceAiFeatureScreen() {
   const {
     featureId,
     tiers,
+    routing,
+    advancedChoices,
+    advancedExpanded,
+    toggleAdvanced,
+    selectModel,
     languages,
     models,
     confirm,
@@ -146,7 +151,7 @@ export default function OnDeviceAiFeatureScreen() {
                           `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
                           `settings.onDeviceAi.tierDescriptions.${option.tier}`,
                         ],
-                        { size: formatBytes(option.bytes) },
+                        { size: formatBytes(option.bytes), model: option.modelLabel },
                       )}
                     </Text>
                     {!option.fits && (
@@ -162,6 +167,77 @@ export default function OnDeviceAiFeatureScreen() {
               </Fragment>
             ))}
           </RNView>
+          {routing && (
+            <Text style={styles.note}>
+              {t(`settings.onDeviceAi.features.${featureId}.bestRouting`, routing)}
+            </Text>
+          )}
+          {advancedChoices.length > 0 && (
+            <RNView style={commonThemedStyles.card}>
+              <Pressable
+                onPress={toggleAdvanced}
+                accessibilityRole="button"
+                accessibilityState={{ expanded: advancedExpanded }}
+                style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+              >
+                <Text style={styles.rowLabel}>
+                  {t(`settings.onDeviceAi.features.${featureId}.advanced`)}
+                </Text>
+                <SymbolIcon
+                  name={advancedExpanded ? 'chevron.down' : 'chevron.right'}
+                  size={UI_ICON_SIZE_16}
+                  color={colors.textMuted}
+                />
+              </Pressable>
+              {advancedExpanded &&
+                advancedChoices.map((choice) => (
+                  <Fragment key={choice.key}>
+                    <RNView style={styles.dividerWrap}>
+                      <Divider />
+                    </RNView>
+                    <Pressable
+                      onPress={() => selectModel(choice.model)}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: choice.selected }}
+                      accessibilityHint={
+                        choice.fits ? undefined : t('settings.onDeviceAi.tierNeedsMemory')
+                      }
+                      style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+                    >
+                      <RNView style={styles.rowInfo}>
+                        <Text style={styles.rowLabel}>
+                          {choice.model
+                            ? t(`settings.onDeviceAi.features.${featureId}.advancedModel`, {
+                                model: choice.modelLabel,
+                                size: formatBytes(choice.bytes),
+                              })
+                            : t(`settings.onDeviceAi.features.${featureId}.advancedAuto`, {
+                                model: choice.modelLabel,
+                              })}
+                        </Text>
+                        {choice.largeOnPhone && (
+                          <Text style={styles.rowDesc}>
+                            {t(`settings.onDeviceAi.features.${featureId}.largeOnPhoneNote`)}
+                          </Text>
+                        )}
+                        {!choice.fits && (
+                          <Text style={styles.rowWarning}>
+                            {t('settings.onDeviceAi.tierNeedsMemory')}
+                          </Text>
+                        )}
+                      </RNView>
+                      {choice.selected && (
+                        <SymbolIcon
+                          name="checkmark"
+                          size={UI_ICON_SIZE_16}
+                          color={colors.primary}
+                        />
+                      )}
+                    </Pressable>
+                  </Fragment>
+                ))}
+            </RNView>
+          )}
           <Text style={styles.note}>{t('settings.onDeviceAi.tierSwitchNote')}</Text>
         </RNView>
       )}

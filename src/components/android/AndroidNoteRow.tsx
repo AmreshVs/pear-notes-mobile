@@ -74,6 +74,7 @@ type NoteRowProps = {
   selecting?: boolean
   checked?: boolean
   searchHit?: NoteSearchHit | null
+  meaningSnippet?: string | null
   titleHighlight?: string
   onPress: (noteKey: string) => void
   onLongPress: (noteKey: string) => void
@@ -89,6 +90,7 @@ function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
     prev.selecting === next.selecting &&
     prev.checked === next.checked &&
     prev.searchHit === next.searchHit &&
+    prev.meaningSnippet === next.meaningSnippet &&
     prev.titleHighlight === next.titleHighlight &&
     prev.onPress === next.onPress &&
     prev.onLongPress === next.onLongPress
@@ -104,6 +106,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   selecting,
   checked,
   searchHit,
+  meaningSnippet,
   titleHighlight,
   onPress,
   onLongPress,
@@ -122,14 +125,16 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
 
   const title = note.value?.title || t('noteCard.untitled')
   const metadata = getNoteMetadata(note.value)
-  const previewText = masked ? t('noteCard.lockedSummary') : metadata.preview
+  const previewText = masked
+    ? t('noteCard.lockedSummary')
+    : meaningSnippet || metadata.preview
   const attachment = masked ? null : metadata.attachment
-  const searchSnippet = !masked && searchHit?.snippet ? searchHit : null
+  const searchSnippet = !masked && !meaningSnippet && searchHit?.snippet ? searchHit : null
   const titleRanges = useMemo(() => parseHighlight(titleHighlight), [titleHighlight])
   const showAttachment = !searchSnippet && !previewText && !!attachment
   const displayPreview = previewText || t('noteCard.noAdditionalText')
   const rawImageUrl = metadata.imageUrl
-  const hasChecklist = !masked && !searchSnippet && metadata.isChecklist
+  const hasChecklist = !masked && !meaningSnippet && !searchSnippet && metadata.isChecklist
   const previewContent = searchSnippet ? (
     <HighlightedText
       text={searchSnippet.snippet}

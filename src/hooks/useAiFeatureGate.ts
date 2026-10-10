@@ -5,11 +5,13 @@ import { useStore } from 'react-redux'
 
 import {
   LOCAL_AI_ENABLED,
+  LOCAL_AI_FEATURE,
   LOCAL_AI_FEATURE_STATUS,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   getLocalAiDevice,
   getLocalAiLoaded,
+  selectCanUseLinkedDesktop,
   selectLocalAiFeatureStatus,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 
@@ -39,6 +41,12 @@ export function useAiFeatureGate(): (feature: string) => boolean {
       const loaded = getLocalAiLoaded(state) as boolean
       const status = loaded ? (selectLocalAiFeatureStatus(state, feature) as string) : null
       if (status === LOCAL_AI_FEATURE_STATUS.READY) return true
+      if (
+        feature === LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS &&
+        (selectCanUseLinkedDesktop(state) as boolean)
+      ) {
+        return true
+      }
 
       const name = t(`settings.onDeviceAi.features.${feature}.title`)
       if (status === LOCAL_AI_FEATURE_STATUS.UNSUPPORTED) {

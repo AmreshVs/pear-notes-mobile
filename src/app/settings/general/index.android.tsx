@@ -44,6 +44,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import { useRemindersSetting } from '@/hooks/useReminders'
 import { AndroidColorTheme, setAndroidColorTheme } from '@/lib/androidColorTheme'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -65,6 +66,7 @@ export default function AndroidGeneralSettingsScreen() {
   const sortBy = useSelector(getSortBy)
   const androidColorTheme = useAndroidColorTheme()
   const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
+  const [reminders, toggleReminders, remindersSupported] = useRemindersSetting()
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
 
@@ -236,6 +238,19 @@ export default function AndroidGeneralSettingsScreen() {
             </View>
             <Switch value={hapticsEnabled} onValueChange={toggleHaptics} />
           </View>
+
+          {remindersSupported && (
+            <>
+              <View style={styles.groupDivider} />
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Text style={styles.rowTitle}>{t('settings.general.reminders')}</Text>
+                  <Text style={styles.rowSubtitle}>{t('settings.general.remindersDesc')}</Text>
+                </View>
+                <Switch value={reminders} onValueChange={toggleReminders} />
+              </View>
+            </>
+          )}
         </MotionView>
 
         <View>

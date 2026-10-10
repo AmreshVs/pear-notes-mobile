@@ -1,31 +1,47 @@
 import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'react-native'
 import { Directory, File, Paths } from 'expo-file-system'
 
+import * as log from '@pear-notes/core/log.js'
 import { runAsk } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
+  canRunModels,
+  configureLocalAiDevice,
   getFeatureRegistryNames,
+  getLocalAiDevice,
+  getTextAskFallback,
   LOCAL_AI_ERROR,
   LOCAL_AI_FEATURE,
   LOCAL_AI_LANGUAGE,
   LOCAL_AI_MODEL_STATUS,
   LOCAL_AI_NETWORK,
-  LOCAL_AI_OCR_LANGUAGES,
   LOCAL_AI_REGISTRY_MODELS,
+  LOCAL_AI_TEXT_TASK,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
+import { holdAiJobs } from '@pear-notes/core/store/services/localAiJobs.js'
 import { getTranslationSteps } from '@pear-notes/core/store/services/localAiLanguage.js'
+import {
+  AI_OFFLOAD_KIND,
+  cancelAiOffloadRuns,
+  withAiOffload,
+} from '@pear-notes/core/store/services/localAiOffload.js'
 import {
   buildNoteTaskMessages,
   cleanModelOutput,
   DESCRIBE_IMAGE_PROMPT,
   DESCRIBE_MAX_TOKENS,
+  EXTRACT_TEXT_MAX_TOKENS,
+  EXTRACT_TEXT_PROMPT,
   getNoteTaskGenerationParams,
   isRewriteTask,
+  isWritingNoteTask,
   LLM_CONTEXT_SIZE,
   LLM_TEMPERATURE,
   NOTE_TASK,
+  VISION_GENERATION_PARAMS,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
-import { formatOcrBlocks } from '@pear-notes/core/store/services/localAiText.js'
+import { LOCAL_AI_EMBEDDING_MODEL } from '@pear-notes/core/store/services/localAiTiers.js'
 import { getTranslationModelName } from '@pear-notes/core/store/services/localAiTranslationModels.js'
+import { runVaultAnswer } from '@pear-notes/core/store/services/localAiVaultAsk.js'
 import {
   countWords,
   WORK_EVENT,
@@ -44,7 +60,6 @@ type QvacSdk = typeof import('@qvac/sdk')
 type LoadModelInput = Record<string, unknown>
 type RegistryModels = Record<string, { bytes: number; engine: string } | undefined>
 type DownloadAssetInput = Parameters<QvacSdk['downloadAsset']>[0]
-type OcrBlock = Awaited<ReturnType<QvacSdk['ocr']>['blocks']>[number]
 
 export interface LocalAiWorkEvent {
   type: string
@@ -67,6 +82,8 @@ export type LocalAiWorkListener = (event: LocalAiWorkEvent) => void
 
 export interface LocalAiWorkOptions {
   onProgress?: LocalAiWorkListener
+  styleSamples?: string[]
+  localOnly?: boolean
 }
 
 const TRANSLATE_BATCH_PARAGRAPHS = 8
@@ -100,9 +117,6 @@ interface PendingDownload {
 const QVAC_RUNTIME_CONFIG_FILE = 'qvac.config.json'
 const PCM_FILE_PREFIX = 'local-ai-audio-'
 const PCM_FILE_EXTENSION = '.raw'
-const OCR_MAG_RATIO = 1
-const OCR_CANVAS_SIZE = 1280
-const OCR_RECOGNIZER_BATCH_SIZE = 8
 const PARAKEET_ENGINE = 'parakeet'
 const WHISPER_AUDIO_FORMAT = 's16le'
 
@@ -129,6 +143,8 @@ let modelsDirectory: string | null = null
 let appStateSubscription: NativeEventSubscription | null = null
 let memoryWarningSubscription: NativeEventSubscription | null = null
 let loadedModel: { key: string; modelId: string } | null = null
+let loadedEmbedding: { key: string; modelId: string } | null = null
+let embedInFlight: Promise<unknown> | null = null
 let downloadCounter = 0
 const pendingDownloads = new Map<string, PendingDownload>()
 
@@ -162,6 +178,30 @@ async function unloadCurrentModel(sdk: QvacSdk) {
   try {
     await sdk.unloadModel({ modelId: current.modelId })
   } catch {}
+}
+
+async function unloadEmbedding(sdk: QvacSdk) {
+  await embedInFlight?.catch(() => {})
+  const current = loadedEmbedding
+  loadedEmbedding = null
+  if (!current) return
+  try {
+    await sdk.unloadModel({ modelId: current.modelId })
+  } catch {}
+}
+
+async function unloadAllModels(sdk: QvacSdk) {
+  await unloadCurrentModel(sdk)
+  await unloadEmbedding(sdk)
+}
+
+const canKeepBoth = (modelKey: string) => {
+  const totalMemoryBytes = getLocalAiDevice().totalMemoryBytes
+  if (!totalMemoryBytes) return false
+  return canRunModels(
+    [...modelKey.split('|'), LOCAL_AI_EMBEDDING_MODEL.model],
+    totalMemoryBytes,
+  ) as boolean
 }
 
 const MODEL_GUARD_FILE = 'local-ai-model-guard.json'
@@ -230,21 +270,33 @@ function clearIdleUnload() {
   idleUnloadTimer = null
 }
 
+// Under the model lock: between two embed batches activeModelWork is briefly 0, and an
+// unlocked unload there cancelled the next batch, or broke the worker channel.
 function releaseModelWhenIdle() {
   if (activeModelWork > 0 || !sdkPromise) return
   clearIdleUnload()
-  unloadWhenIdle = false
-  sdkPromise.then(unloadCurrentModel).catch(() => {})
+  const pending = sdkPromise
+  withModelLock(async () => {
+    if (activeModelWork > 0) return
+    unloadWhenIdle = false
+    await unloadAllModels(await pending)
+  }).catch(() => {})
 }
 
-async function withModelWork<T>(work: () => Promise<T>): Promise<T> {
+async function withModelWork<T>(
+  work: () => Promise<T>,
+  { holdJobs = true }: { holdJobs?: boolean } = {},
+): Promise<T> {
   activeModelWork += 1
   clearIdleUnload()
+  const releaseJobs = holdJobs ? holdAiJobs() : () => {}
   try {
     const result = await work()
-    if (loadedModel) recordModelSuccess(loadedModel.key)
+    const ran = readModelGuard().active
+    if (ran) recordModelSuccess(ran)
     return result
   } finally {
+    releaseJobs()
     activeModelWork = Math.max(0, activeModelWork - 1)
     if (activeModelWork === 0) {
       setActiveModel(null)
@@ -255,6 +307,7 @@ async function withModelWork<T>(work: () => Promise<T>): Promise<T> {
 }
 
 function handleMemoryWarning() {
+  log.warn(`[ai-model] memory warning, unloading ${loadedModel?.key ?? 'nothing'} when idle`)
   unloadWhenIdle = true
   releaseModelWhenIdle()
 }
@@ -266,7 +319,8 @@ let wantsSuspend = false
 let usedSinceResume = false
 let lifecycleRun: Promise<void> | null = null
 
-const hasWorkToSuspend = () => usedSinceResume || !!loadedModel || pendingDownloads.size > 0
+const hasWorkToSuspend = () =>
+  usedSinceResume || !!loadedModel || !!loadedEmbedding || pendingDownloads.size > 0
 
 const lifecycleNeedsWork = () =>
   (wantsSuspend && !runtimeSuspended && hasWorkToSuspend()) || (!wantsSuspend && runtimeSuspended)
@@ -276,11 +330,14 @@ function reconcileLifecycle(sdk: QvacSdk): Promise<void> {
   const run = (async () => {
     while (lifecycleNeedsWork()) {
       if (wantsSuspend) {
-        await unloadCurrentModel(sdk)
-        try {
-          await sdk.suspend()
-        } catch {}
-        runtimeSuspended = true
+        // One lock hold, so a queued embed can't reload the model between the unload and the suspend.
+        await withModelLock(async () => {
+          await unloadAllModels(sdk)
+          try {
+            await sdk.suspend()
+          } catch {}
+          runtimeSuspended = true
+        })
         continue
       }
       try {
@@ -387,7 +444,22 @@ async function ensureModelLoaded(sdk: QvacSdk, key: string, load: () => Promise<
   }
   if (AppState.currentState === 'active') setActiveModel(key)
   if (loadedModel?.key === key) return loadedModel.modelId
+  return withModelLock(() => switchModel(sdk, key, load))
+}
+
+let modelLock: Promise<unknown> = Promise.resolve()
+
+function withModelLock<T>(work: () => Promise<T>): Promise<T> {
+  const run = modelLock.then(work)
+  modelLock = run.catch(() => {})
+  return run
+}
+
+async function switchModel(sdk: QvacSdk, key: string, load: () => Promise<string>) {
+  if (loadedModel?.key === key) return loadedModel.modelId
+  await Promise.allSettled([...completionsInFlight])
   await unloadCurrentModel(sdk)
+  if (loadedEmbedding && !canKeepBoth(key)) await unloadEmbedding(sdk)
   const modelId = await load()
   loadedModel = { key, modelId }
   return modelId
@@ -458,7 +530,7 @@ async function cancel(requestId: string, { discard = false }: CancelOptions = {}
 async function deleteModel(name: string) {
   forgetModelCrashes((key) => key.split('|').includes(name))
   const sdk = await loadSdk()
-  await unloadCurrentModel(sdk)
+  await withModelLock(() => unloadAllModels(sdk))
   const info = await sdk.getModelInfo({ name })
   for (const cacheFile of info.cacheFiles ?? []) {
     try {
@@ -479,11 +551,12 @@ async function shutDownSdk() {
   if (pendingSdk) {
     try {
       const sdk = await pendingSdk
-      await unloadCurrentModel(sdk)
+      await unloadAllModels(sdk)
       await sdk.close()
     } catch {}
   }
   loadedModel = null
+  loadedEmbedding = null
   pendingDownloads.clear()
   if (suspendTimer) clearTimeout(suspendTimer)
   suspendTimer = null
@@ -611,48 +684,38 @@ async function extractTextFromImageNow(
 ): Promise<string> {
   const sdk = await loadSdk()
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.PREPARE_PHOTO })
-  const prepared = await downscaleImage(fileUri, OCR_IMAGE_MAX_SIDE)
-  const [recognizerName, detectorName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, {})
-  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: recognizerName })
-  const modelId = await ensureModelLoaded(sdk, `${recognizerName}|${detectorName}|mobile`, () =>
-    loadModelWith(sdk, {
-      modelSrc: registryAsset(sdk, recognizerName),
-      modelType: 'ocr',
-      modelConfig: {
-        detectorModelSrc: registryAsset(sdk, detectorName),
-        langList: LOCAL_AI_OCR_LANGUAGES,
-        magRatio: OCR_MAG_RATIO,
-        canvasSize: OCR_CANVAS_SIZE,
-        defaultRotationAngles: [],
-        recognizerBatchSize: OCR_RECOGNIZER_BATCH_SIZE,
-        backendDevice: Platform.OS === 'ios' ? 'metal' : 'cpu',
-      },
-    }),
-  ).catch((error) => {
-    deleteLocalUri(prepared)
-    throw error
-  })
-  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_TEXT })
+  const prepared = await downscaleImage(fileUri, EXTRACT_IMAGE_MAX_SIDE)
   try {
-    const { blockStream } = sdk.ocr({
-      modelId,
-      image: toFilePath(prepared ?? fileUri),
-      stream: true,
-    })
-    const found: OcrBlock[] = []
-    let text = ''
-    for await (const chunk of blockStream) {
-      found.push(...chunk)
-      text = formatOcrBlocks(found)
-      onProgress({ type: WORK_EVENT.TEXT, text })
-    }
-    return text
+    const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, {})
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
+    const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.EXTRACT_TEXT)
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_TEXT })
+    const output = await runCompletion(
+      sdk,
+      {
+        modelId,
+        history: [
+          {
+            role: 'user',
+            content: EXTRACT_TEXT_PROMPT,
+            attachments: [{ path: toFilePath(prepared ?? fileUri) }],
+          },
+        ],
+        generationParams: {
+          temp: 0,
+          predict: EXTRACT_TEXT_MAX_TOKENS,
+          ...VISION_GENERATION_PARAMS,
+        },
+      },
+      (text) => onProgress({ type: WORK_EVENT.TEXT, text: cleanModelOutput(text) }),
+    )
+    return cleanModelOutput(output)
   } finally {
     deleteLocalUri(prepared)
   }
 }
 
-const OCR_IMAGE_MAX_SIDE = 1600
+const EXTRACT_IMAGE_MAX_SIDE = 1600
 const DESCRIBE_IMAGE_MAX_SIDE = 896
 const RESIZED_IMAGE_QUALITY = 0.9
 
@@ -691,36 +754,61 @@ interface CompletionRun {
   tokenStream: AsyncIterable<string>
 }
 
-async function runCompletion(
+const completionsInFlight = new Set<Promise<string>>()
+
+function runCompletion(
   sdk: QvacSdk,
   input: CompletionInput,
   onText?: (text: string) => void,
 ): Promise<string> {
-  const run = (sdk.completion as unknown as (params: CompletionInput) => CompletionRun)({
-    ...input,
-    stream: true,
-  })
-  let streamed = ''
-  for await (const token of run.tokenStream) {
-    streamed += token
-    onText?.(streamed)
-  }
-  return run.text
+  const work = (async () => {
+    const run = (sdk.completion as unknown as (params: CompletionInput) => CompletionRun)({
+      ...input,
+      stream: true,
+    })
+    let streamed = ''
+    for await (const token of run.tokenStream) {
+      streamed += token
+      onText?.(streamed)
+    }
+    return run.text
+  })()
+  completionsInFlight.add(work)
+  const forget = () => completionsInFlight.delete(work)
+  work.then(forget, forget)
+  return work
 }
 
-function loadLlmFeature(
+async function resolveTextModelName(
+  sdk: QvacSdk,
+  featureConfig: LocalAiFeatureModelConfig,
+  textTask: string | undefined,
+  modelName: string,
+) {
+  if (textTask !== LOCAL_AI_TEXT_TASK.ASK) return modelName
+  const fallback = getTextAskFallback(featureConfig) as string | null
+  if (!fallback) return modelName
+  const info = await sdk.getModelInfo({ name: modelName }).catch(() => null)
+  return info?.isCached ? modelName : fallback
+}
+
+async function loadLlmFeature(
   sdk: QvacSdk,
   feature: string,
   featureConfig: LocalAiFeatureModelConfig = {},
+  textTask?: string,
 ) {
-  const [modelName, projectionName] = getFeatureRegistryNames(feature, featureConfig)
+  const [preferredName, projectionName] = getFeatureRegistryNames(feature, featureConfig, textTask)
+  const modelName = await resolveTextModelName(sdk, featureConfig, textTask, preferredName)
   return ensureModelLoaded(sdk, [modelName, projectionName].filter(Boolean).join('|'), () =>
     loadModelWith(sdk, {
       modelSrc: registryAsset(sdk, modelName),
       modelType: 'llm',
       modelConfig: {
         ctx_size: LLM_CONTEXT_SIZE,
-        ...(projectionName ? { projectionModelSrc: registryAsset(sdk, projectionName) } : {}),
+        ...(projectionName
+          ? { projectionModelSrc: registryAsset(sdk, projectionName), ...VISION_GENERATION_PARAMS }
+          : {}),
       },
     }),
   )
@@ -749,7 +837,11 @@ async function describeImageNow(
             attachments: [{ path: toFilePath(prepared ?? fileUri) }],
           },
         ],
-        generationParams: { temp: LLM_TEMPERATURE, predict: DESCRIBE_MAX_TOKENS },
+        generationParams: {
+          temp: LLM_TEMPERATURE,
+          predict: DESCRIBE_MAX_TOKENS,
+          ...VISION_GENERATION_PARAMS,
+        },
       },
       (text) => onProgress({ type: WORK_EVENT.TEXT, text }),
     )
@@ -764,11 +856,22 @@ async function runNoteTaskNow(
   text: string,
   featureConfig: LocalAiFeatureModelConfig = {},
   onProgress: LocalAiWorkListener = () => {},
+  styleSamples: string[] = [],
 ): Promise<string> {
   const sdk = await loadSdk()
-  const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  const textTask = isWritingNoteTask(task) ? LOCAL_AI_TEXT_TASK.WRITE : LOCAL_AI_TEXT_TASK.ASK
+  const [modelName] = getFeatureRegistryNames(
+    LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+    featureConfig,
+    textTask,
+  )
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
-  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  const modelId = await loadLlmFeature(
+    sdk,
+    LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+    featureConfig,
+    textTask,
+  )
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
   if (isRewriteTask(task)) {
     return runNoteRewrite({
@@ -777,6 +880,7 @@ async function runNoteTaskNow(
       complete: (params: CompletionInput, onText?: (partial: string) => void) =>
         runCompletion(sdk, { modelId, ...params }, onText),
       onText: (partial: string) => onProgress({ type: WORK_EVENT.TEXT, text: partial }),
+      styleSamples,
     })
   }
   const output = await runCompletion(
@@ -804,9 +908,18 @@ async function askAboutNoteNow(
   onProgress: LocalAiWorkListener = () => {},
 ): Promise<string> {
   const sdk = await loadSdk()
-  const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  const [modelName] = getFeatureRegistryNames(
+    LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+    featureConfig,
+    LOCAL_AI_TEXT_TASK.ASK,
+  )
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
-  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  const modelId = await loadLlmFeature(
+    sdk,
+    LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+    featureConfig,
+    LOCAL_AI_TEXT_TASK.ASK,
+  )
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
   return runAsk({
     note,
@@ -824,7 +937,73 @@ export const askAboutNote = (
   question: string,
   featureConfig: LocalAiFeatureModelConfig = {},
   { onProgress }: LocalAiWorkOptions = {},
-) => withModelWork(() => askAboutNoteNow(note, turns, question, featureConfig, onProgress))
+) =>
+  withAiOffload({
+    kind: AI_OFFLOAD_KIND.ASK_NOTE,
+    payload: { note, turns, question },
+    onProgress,
+    local: () =>
+      withModelWork(() => askAboutNoteNow(note, turns, question, featureConfig, onProgress)),
+  })
+
+export interface VaultSource {
+  n: number
+  noteKey: string
+  title: string
+  heading: string
+  text: string
+  score: number | null
+}
+
+async function askVaultNow(
+  question: string,
+  sources: VaultSource[],
+  turns: { question: string; result?: unknown }[],
+  featureConfig: LocalAiFeatureModelConfig = {},
+  onProgress: LocalAiWorkListener = () => {},
+): Promise<string> {
+  const sdk = await loadSdk()
+  const [modelName] = getFeatureRegistryNames(
+    LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+    featureConfig,
+    LOCAL_AI_TEXT_TASK.ASK,
+  )
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
+  const modelId = await loadLlmFeature(
+    sdk,
+    LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+    featureConfig,
+    LOCAL_AI_TEXT_TASK.ASK,
+  )
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
+  return runVaultAnswer({
+    question,
+    sources,
+    turns,
+    complete: (params: CompletionInput, onText?: (text: string) => void) =>
+      runCompletion(sdk, { modelId, ...params }, onText),
+    onText: (answer: string) => onProgress({ type: WORK_EVENT.TEXT, text: answer }),
+  })
+}
+
+/** The answer half of Ask your vault; retrieval runs in the app through the backend. */
+export const askVault = (
+  question: string,
+  sources: VaultSource[],
+  turns: { question: string; result?: unknown }[],
+  featureConfig: LocalAiFeatureModelConfig = {},
+  { onProgress, localOnly }: LocalAiWorkOptions = {},
+) => {
+  const local = () =>
+    withModelWork(() => askVaultNow(question, sources, turns, featureConfig, onProgress))
+  if (localOnly) return local()
+  return withAiOffload({
+    kind: AI_OFFLOAD_KIND.VAULT_ANSWER,
+    payload: { question, sources, turns },
+    onProgress,
+    local,
+  })
+}
 
 export const transcribeAudioFile = (
   fileUri: string,
@@ -843,8 +1022,24 @@ export const runNoteTask = (
   task: string,
   text: string,
   featureConfig: LocalAiFeatureModelConfig = {},
-  { onProgress }: LocalAiWorkOptions = {},
-) => withModelWork(() => runNoteTaskNow(task, text, featureConfig, onProgress))
+  { onProgress, styleSamples = [] }: LocalAiWorkOptions = {},
+) => {
+  const local = () =>
+    withModelWork(() => runNoteTaskNow(task, text, featureConfig, onProgress, styleSamples))
+  return withAiOffload({
+    kind: AI_OFFLOAD_KIND.NOTE_TASK,
+    payload: { task, text, styleSamples },
+    onProgress,
+    local,
+    localFirst: isWritingNoteTask(task),
+  })
+}
+
+export const runNoteTaskInBackground = (
+  task: string,
+  text: string,
+  featureConfig: LocalAiFeatureModelConfig = {},
+) => withModelWork(() => runNoteTaskNow(task, text, featureConfig), { holdJobs: false })
 
 export const translateParagraphs = (
   paragraphs: string[],
@@ -1134,18 +1329,84 @@ export async function extractTextFromPdf(
   return joinParts(texts)
 }
 
+let embedBackendLogged = false
+
+async function embedTextsNow(texts: string[]): Promise<Float32Array[]> {
+  const input = texts.map((text) => String(text ?? ''))
+  if (input.length === 0) return []
+  const sdk = await loadSdk()
+  const { model, modelConfig } = LOCAL_AI_EMBEDDING_MODEL
+  const key = `${model}|embed`
+  if ((readModelGuard().crashes[key] ?? 0) >= MODEL_CRASH_LIMIT) {
+    throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
+  }
+  return withModelLock(async () => {
+    if (runtimeSuspended) throw new LocalAiError(LOCAL_AI_ERROR.INTERRUPTED)
+    if (AppState.currentState === 'active' && activeModelWork <= 1) setActiveModel(key)
+    if (loadedEmbedding?.key !== key) {
+      const info = await sdk.getModelInfo({ name: model }).catch(() => null)
+      if (!info?.isCached) throw new LocalAiError(LOCAL_AI_ERROR.MODEL_MISSING)
+      if (loadedModel && !canKeepBoth(loadedModel.key)) {
+        if (activeModelWork > 1) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED, 'model busy')
+        await unloadCurrentModel(sdk)
+      }
+      const embeddingId = await loadModelWith(sdk, {
+        modelSrc: registryAsset(sdk, model),
+        modelType: 'embeddings',
+        modelConfig,
+      })
+      loadedEmbedding = { key, modelId: embeddingId }
+    }
+    const { modelId } = loadedEmbedding
+    const run = sdk.embed({ modelId, text: input })
+    embedInFlight = run
+    try {
+      const { embedding, stats } = await run
+      if (!embedBackendLogged && stats) {
+        embedBackendLogged = true
+        log.info(
+          `[ai-embed] backend ${stats.backendDevice ?? 'unknown'}, ` +
+            `${Math.round(stats.tokensPerSecond ?? 0)} tokens/s`,
+        )
+      }
+      return embedding.map((vector) => Float32Array.from(vector))
+    } catch (error) {
+      if (/(batch|context) overflow/i.test(String((error as Error)?.message ?? ''))) {
+        throw new LocalAiError(LOCAL_AI_ERROR.INPUT_TOO_LONG, (error as Error).message)
+      }
+      throw error
+    } finally {
+      if (embedInFlight === run) embedInFlight = null
+    }
+  })
+}
+
+export const embedTexts = (texts: string[]) =>
+  withModelWork(() => embedTextsNow(texts), { holdJobs: false })
+
 export async function cancelLocalAiTask() {
+  cancelAiOffloadRuns()
   if (!sdkPromise || !loadedModel) return
   const sdk = await sdkPromise
   await sdk.cancel({ modelId: loadedModel.modelId })
 }
 
+async function getDeviceSupport() {
+  const support = await getLocalAiDeviceSupport()
+  const platform = Platform.OS
+  configureLocalAiDevice({ platform, totalMemoryBytes: support.totalMemoryBytes })
+  return { ...support, platform }
+}
+
 export const qvacAdapter = {
-  getDeviceSupport: getLocalAiDeviceSupport,
+  getDeviceSupport,
   getNetworkKind,
   getDiskSpace: getLocalAiDiskSpace,
   download,
   cancel,
   deleteModel,
   closeAndWipe,
+  embedTexts,
+  runNoteTaskInBackground,
+  cancelTask: cancelLocalAiTask,
 }

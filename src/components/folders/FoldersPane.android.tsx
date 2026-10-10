@@ -66,7 +66,9 @@ import {
   UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { TOOL_ROW_ROUTE } from '@/constants/constants'
 import { FALLBACK_FOLDER_MATERIAL, FOLDER_ICON_MATERIAL } from '@/constants/folderIcons'
+import { useToolRows } from '@/hooks/useToolRows'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -106,10 +108,11 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
   const styles = useStyles()
 
   const folders = useSelector(getFolders) as Folder[]
-  const noteCounts = useSelector(getNoteCountsPerFolder) as Record<string, number>
+  const folderCounts = useSelector(getNoteCountsPerFolder) as Record<string, number>
   const selectedNote = useSelector(getSelectedNote) as string | null
 
   const [searchQuery, setSearchQuery] = useState('')
+  const toolRows = useToolRows(searchQuery)
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
   const [iconPickerFolderId, setIconPickerFolderId] = useState<string | null>(null)
@@ -159,6 +162,11 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
   const handleSelectFolder = useCallback(
     (folderId: string) => {
+      const toolRoute = TOOL_ROW_ROUTE[folderId]
+      if (toolRoute) {
+        router.push(toolRoute as Href)
+        return
+      }
       dispatch(setSelectedFolder(folderId))
       if (onSelectFolder) {
         onSelectFolder(folderId)
@@ -405,7 +413,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
               icon={folder.icon}
               isAll={folder.isAll}
               isTrash={folder.isTrash}
-              count={noteCounts[folder.id || folder.key!] ?? 0}
+              count={folderCounts[folder.id || folder.key!] ?? 0}
               isLast={index === topFolders.length - 1}
               selected={(folder.id || folder.key) === selectedFolderId}
               colors={c}
@@ -435,9 +443,32 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
                   icon={folder.icon}
                   isAll={folder.isAll}
                   isTrash={folder.isTrash}
-                  count={noteCounts[folder.id || folder.key!] ?? 0}
+                  count={folderCounts[folder.id || folder.key!] ?? 0}
                   isLast={index === archiveFolders.length - 1}
                   selected={(folder.id || folder.key) === selectedFolderId}
+                  colors={c}
+                  onPress={handleSelectFolder}
+                  onLongPress={handleFolderLongPress}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
+        {toolRows.length > 0 && (
+          <View style={styles.archiveSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('tools.header')}</Text>
+            </View>
+            <View style={styles.listCard}>
+              {toolRows.map((tool, index) => (
+                <VaultFolderRow
+                  key={tool.id}
+                  id={tool.id}
+                  name={tool.name}
+                  icon={tool.icon}
+                  count={tool.count}
+                  isLast={index === toolRows.length - 1}
                   colors={c}
                   onPress={handleSelectFolder}
                   onLongPress={handleFolderLongPress}

@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import type { SearchBarCommands } from 'react-native-screens'
-import { useDispatch, useSelector } from 'react-redux'
+import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 import { router, Stack, useNavigation } from 'expo-router'
 
 import {
@@ -12,6 +12,7 @@ import {
   SEARCH_QUERY_MAX_LENGTH,
   TRASH_RETENTION_DAYS,
 } from '@pear-notes/core/constant.js'
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   deleteFolder,
   getFolders,
@@ -19,10 +20,17 @@ import {
   updateFolder,
 } from '@pear-notes/core/store/slices/foldersSlice.js'
 import {
+  getMeaningSearchNotice,
+  getMeaningSearchReady,
+  selectIsTextAiAvailable,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
+import * as notesSlice from '@pear-notes/core/store/slices/notesSlice.js'
+import {
   createNote,
   deleteNote,
   deleteNotes,
   getFilteredNotes,
+  getMeaningNotes,
   getNotes,
   getSelectedNote,
   moveNotes,
@@ -35,18 +43,24 @@ import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
-import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import {
+  getSearchQuery,
+  openAskVault,
+  setSearchQuery,
+} from '@pear-notes/core/store/slices/uiSlice.js'
 import { getOtherVaults, moveToVault } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { formatDate, validateFolderName } from '@pear-notes/core/utils.js'
 
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderEmptyState } from '@/components/FolderEmptyState'
+import { GenerateNoteSheet } from '@/components/GenerateNoteSheet'
 import { LockNowButton } from '@/components/LockNowButton'
 import { NoteCard } from '@/components/NoteCard'
 import { SearchScopeChips } from '@/components/notes/SearchScopeChips'
 import { NoteSelectionToolbar } from '@/components/NoteSelectionToolbar'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
+import { TidyUpSheet } from '@/components/TidyUpSheet'
 import {
   commonStyles,
   FontSize,
@@ -64,6 +78,7 @@ import {
 import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 import { useNoteSearch } from '@/hooks/useNoteSearch'
 import { useNoteSelection } from '@/hooks/useNoteSelection'
+import { useTidyMoves } from '@/hooks/useTidyMoves'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -76,6 +91,10 @@ import { getNoteMetadata } from '@/utils/noteMetadata'
 import { buildNoteSections } from '@/utils/noteSections'
 
 import { NotesPaneProps } from './types'
+
+const { mergeNotes } = notesSlice as unknown as {
+  mergeNotes: (payload: { keys: string[]; untitled: string }) => { type: string }
+}
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
 
@@ -111,6 +130,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const localPreferences = useSelector(getLocalPreferences)
   const hasAnyNotes = useSelector((state: any) => (getNotes(state) as any[]).length > 0)
   const isTrashFolder = id === RECENTLY_DELETED_KEY
+  const textAiAvailable = useSelector(selectIsTextAiAvailable) as boolean
+  const meaningReady = useSelector(getMeaningSearchReady) as boolean
+  const tidyMoves = useTidyMoves(LOCAL_AI_ENABLED && id === ALL_NOTES_KEY && meaningReady)
+  const [tidyVisible, setTidyVisible] = useState(false)
+  const [generateVisible, setGenerateVisible] = useState(false)
+  const [generateTask, setGenerateTask] = useState<string | null>(null)
+  const [generateKeys, setGenerateKeys] = useState<string[]>([])
   const { searchHits, searchTerms, searchScope, hideEmptyState, showSearchScope, showFolderNames } =
     useNoteSearch(id)
   const creatingNoteRef = useRef(false)
@@ -138,16 +164,51 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [allFolders, id],
   )
 
+  const meaningNotes = useSelector(getMeaningNotes) as { key: string; snippet: string }[]
+  const meaningNotice = useSelector(getMeaningSearchNotice, shallowEqual) as {
+    kind: string
+    done?: number
+    total?: number
+  } | null
+  const allNotes = useSelector(getNotes) as any[]
+  const hasSearchQuery = searchQuery.trim().length > 0
+  const meaningRows = useMemo(() => {
+    if (!hasSearchQuery || meaningNotes.length === 0) return []
+    const byKey = new Map(allNotes.map((note: any) => [note.key, note]))
+    return meaningNotes.flatMap((row) => {
+      const note = byKey.get(row.key)
+      return note ? [{ ...note, snippet: row.snippet }] : []
+    })
+  }, [hasSearchQuery, meaningNotes, allNotes])
+  const meaningNoticeText =
+    id === RECENTLY_DELETED_KEY
+      ? null
+      : meaningNotice?.kind === 'indexing'
+        ? t('search.meaning.indexing', { done: meaningNotice.done, total: meaningNotice.total })
+        : meaningNotice?.kind === 'charging'
+          ? t('search.meaning.charging', { total: meaningNotice.total })
+          : meaningNotice
+            ? t('search.meaning.preparing')
+            : null
+
   const groupedNotes = useMemo(
     () =>
-      buildNoteSections(notes, t, isTrashFolder).map((section, sectionIndex) => ({
+      [
+        ...buildNoteSections(notes, t, isTrashFolder),
+        ...(meaningRows.length > 0
+          ? [{ title: t('search.meaning.title'), data: meaningRows }]
+          : []),
+      ].map((section, sectionIndex) => ({
         ...section,
         sectionIndex,
       })),
-    [notes, t, isTrashFolder],
+    [notes, t, isTrashFolder, meaningRows],
   )
 
-  const orderedKeys = useMemo(() => notes.map((note: any) => note.key), [notes])
+  const orderedKeys = useMemo(
+    () => [...notes, ...meaningRows].map((note: any) => note.key),
+    [notes, meaningRows],
+  )
   const { onViewableItemsChanged, viewabilityConfig } = useVisibleNotes(orderedKeys)
 
   const {
@@ -201,6 +262,45 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     dispatch(restoreNotes(selectedKeys as any))
     exitSelection()
   }, [dispatch, selectedKeys, exitSelection])
+
+  const handleBulkMerge = useCallback(() => {
+    const count = selectedKeys.length
+    if (count < 2 || isTrashFolder) return
+    Alert.alert(t('notesList.merge.action'), t('notesList.merge.confirm', { count }), [
+      { text: t('folders.buttons.cancel'), style: 'cancel' },
+      {
+        text: t('notesList.merge.action'),
+        onPress: () => {
+          hapticSuccess()
+          const selected = new Set(selectedKeys)
+          const keys = orderedKeys.filter((key: string) => selected.has(key))
+          dispatch(mergeNotes({ keys, untitled: t('noteCard.untitled') }))
+          exitSelection()
+        },
+      },
+    ])
+  }, [dispatch, selectedKeys, orderedKeys, isTrashFolder, exitSelection, t])
+
+  const handleBulkCreate = useCallback(
+    (task: string) => {
+      if (selectedKeys.length === 0 || isTrashFolder) return
+      hapticLight()
+      const selected = new Set(selectedKeys)
+      setGenerateKeys(orderedKeys.filter((key: string) => selected.has(key)))
+      setGenerateTask(task)
+      setGenerateVisible(true)
+      exitSelection()
+    },
+    [selectedKeys, orderedKeys, isTrashFolder, exitSelection],
+  )
+
+  const handleOpenTidyUp = useCallback(() => {
+    hapticLight()
+    setTidyVisible(true)
+  }, [])
+
+  const handleCloseTidyUp = useCallback(() => setTidyVisible(false), [])
+  const handleCloseGenerate = useCallback(() => setGenerateVisible(false), [])
 
   const handleBulkDelete = useCallback(() => {
     const count = selectedKeys.length
@@ -439,6 +539,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           locked={isLocked}
           pinned={isPinned}
           searchHit={searchHits[note.key] ?? null}
+          meaningSnippet={note.snippet || null}
           titleHighlight={getTitleHighlight(note.value?.title, searchTerms)}
           onPress={handleSelectNote}
           onToggleSelect={handleToggleSelect}
@@ -540,7 +641,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       hideEmptyState ? null : (
         <FolderEmptyState
           containerStyle={emptyStateStyle}
-          hasSearchQuery={searchQuery.trim().length > 0}
+          hasSearchQuery={hasSearchQuery}
+          meaningNotice={meaningNoticeText}
           isTrash={isTrashFolder}
           showOnboarding={localPreferences['isSynced'] !== true && !hasAnyNotes}
           onCreateNote={handleCreateNote}
@@ -551,7 +653,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [
       hideEmptyState,
       emptyStateStyle,
-      searchQuery,
+      hasSearchQuery,
+      meaningNoticeText,
       isTrashFolder,
       localPreferences,
       hasAnyNotes,
@@ -561,6 +664,14 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     ],
   )
 
+  const listFooter = useMemo(
+    () =>
+      hasSearchQuery && notes.length > 0 && meaningRows.length === 0 && meaningNoticeText ? (
+        <Text style={styles.meaningNotice}>{meaningNoticeText}</Text>
+      ) : null,
+    [hasSearchQuery, notes.length, meaningRows.length, meaningNoticeText, styles.meaningNotice],
+  )
+
   const handleSearchChange = useCallback(
     (event: { nativeEvent: { text: string } }) =>
       dispatch(setSearchQuery(event.nativeEvent.text.slice(0, SEARCH_QUERY_MAX_LENGTH) as any)),
@@ -568,6 +679,11 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   )
 
   const handleSearchFocus = useCallback(() => dispatch(prewarmSearch()), [dispatch])
+
+  const handleAskVault = useCallback(
+    () => dispatch(openAskVault({ question: searchQuery.trim() })),
+    [dispatch, searchQuery],
+  )
 
   const headerTitle = useCallback(
     () => (
@@ -626,6 +742,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           onDone={exitSelection}
           onMoveTo={handleBulkMove}
           onRestore={handleBulkRestore}
+          onMerge={handleBulkMerge}
+          canCreate={LOCAL_AI_ENABLED && textAiAvailable}
+          onCreate={handleBulkCreate}
           onDelete={handleBulkDelete}
         />
       ) : (
@@ -641,6 +760,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
                 </Stack.Toolbar.MenuAction>
               </Stack.Toolbar.Menu>
             )}
+            {tidyMoves.length > 0 && (
+              <Stack.Toolbar.Button
+                icon="wand.and.stars"
+                accessibilityLabel={t('tidyUp.button', { count: tidyMoves.length })}
+                onPress={handleOpenTidyUp}
+              />
+            )}
             <Stack.Toolbar.Button
               icon="checkmark.circle"
               accessibilityLabel={t('folderView.selection.select')}
@@ -651,6 +777,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           {(!isTrashFolder || SUPPORTS_TOOLBAR_SEARCH) && (
             <Stack.Toolbar placement="bottom">
               <Stack.Toolbar.SearchBarSlot />
+              {LOCAL_AI_ENABLED && (
+                <Stack.Toolbar.Button
+                  icon="sparkles"
+                  accessibilityLabel={t('localAi.askVault.entry')}
+                  onPress={handleAskVault}
+                />
+              )}
               <Stack.Toolbar.Spacer />
               {!isTrashFolder && (
                 <Stack.Toolbar.Button
@@ -673,6 +806,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
+        ListFooterComponent={listFooter}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={scrollContentStyle}
         {...scrollProps}
@@ -683,6 +817,17 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         windowSize={LIST_WINDOW_SIZE}
       />
       <ScreenEdgeFades />
+      {LOCAL_AI_ENABLED && (
+        <TidyUpSheet visible={tidyVisible} moves={tidyMoves} onClose={handleCloseTidyUp} />
+      )}
+      {LOCAL_AI_ENABLED && (
+        <GenerateNoteSheet
+          visible={generateVisible}
+          task={generateTask}
+          noteKeys={generateKeys}
+          onClose={handleCloseGenerate}
+        />
+      )}
     </View>
   )
 }
@@ -718,6 +863,12 @@ const useStyles = createThemedStylesheet((theme) => {
     retentionNotice: {
       marginHorizontal: Space.base,
       marginBottom: Space.base,
+      fontSize: FontSize.body,
+      color: theme.colors.textMuted,
+    },
+    meaningNotice: {
+      marginHorizontal: Space.base,
+      marginTop: Space.sm,
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
     },

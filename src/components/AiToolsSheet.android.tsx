@@ -61,6 +61,8 @@ const ICON_BY_MODE: Record<string, string> = {
   makeShorter: 'arrow-collapse-vertical',
   makeProfessional: 'briefcase-outline',
   makeFriendly: 'emoticon-happy-outline',
+  cleanUp: 'broom',
+  myStyle: 'account-edit-outline',
   summarizeNote: 'text-short',
   keyPoints: 'format-list-bulleted',
   suggestTitle: 'format-title',

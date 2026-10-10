@@ -2,9 +2,11 @@ import { Directory, File } from 'expo-file-system'
 
 import {
   classifyVaultStorageEntry,
+  countDerivedAsAi,
   DEVICE_STORAGE,
   isOldVaultEntry,
   summarizeDeviceStorage,
+  VAULT_DERIVED_DIR,
 } from '@pear-notes/core/store/services/deviceStorage.js'
 
 import { ATTACHMENT_THUMBNAIL_CACHE_DIR } from '@/constants/constants'
@@ -73,15 +75,26 @@ export async function measureDeviceStorage(): Promise<DeviceStorageSummary | nul
     const shared = await list(roots.shared)
     for (const entry of shared) items.push({ category: DEVICE_STORAGE.OTHER, bytes: entry.bytes })
   }
-  return summarizeDeviceStorage(items) as DeviceStorageSummary
+  const { derived } = await measureVaults(roots.documents)
+  return countDerivedAsAi(summarizeDeviceStorage(items), derived) as DeviceStorageSummary
+}
+
+async function measureVaults(documents: string) {
+  const sizes: Record<string, number> = {}
+  let derived = 0
+  for (const entry of await list(join(documents, VAULTS_DIR))) {
+    const inside = await list(join(join(documents, VAULTS_DIR), entry.name))
+    const index = inside.find((child) => child.name === VAULT_DERIVED_DIR)?.bytes ?? 0
+    sizes[entry.name] = Math.max(0, entry.bytes - index)
+    derived += index
+  }
+  return { sizes, derived }
 }
 
 export async function measureVaultSizes(): Promise<Record<string, number>> {
   if (!ExpoLocalAi?.getStorageRoots) return {}
   const { documents } = await ExpoLocalAi.getStorageRoots()
-  const sizes: Record<string, number> = {}
-  for (const entry of await list(join(documents, VAULTS_DIR))) sizes[entry.name] = entry.bytes
-  return sizes
+  return (await measureVaults(documents)).sizes
 }
 
 export async function deleteOldVaults(): Promise<void> {
