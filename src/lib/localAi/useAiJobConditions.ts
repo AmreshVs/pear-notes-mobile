@@ -67,12 +67,12 @@ export function useAiJobConditions() {
     if (__DEV__ && process.env.EXPO_PUBLIC_AI_SCHEDULER_PROBE === '1') {
       dispatch(runLocalAiSchedulerProbe())
     }
-    // Dev builds embed every note again on each launch, to measure a full index; EXPO_PUBLIC_AI_INDEX_REBUILD=0 turns it off.
+    // Dev only: EXPO_PUBLIC_AI_INDEX_REBUILD=1 embeds every note again, to measure a full index.
     dispatch({
       type: enableLocalAiIndex.type,
       payload: {
         waitForCharging: true,
-        rebuild: __DEV__ && process.env.EXPO_PUBLIC_AI_INDEX_REBUILD !== '0',
+        rebuild: __DEV__ && process.env.EXPO_PUBLIC_AI_INDEX_REBUILD === '1',
       },
     })
     return () => {

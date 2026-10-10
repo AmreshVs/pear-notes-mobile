@@ -1167,19 +1167,13 @@ export async function extractTextFromPdf(
   return joinParts(texts)
 }
 
-// Dev builds embed on CPU for the Android GPU/CPU comparison; EXPO_PUBLIC_AI_EMBED_DEVICE=gpu restores the SDK default.
-const EMBED_DEVICE_CONFIG =
-  __DEV__ && process.env.EXPO_PUBLIC_AI_EMBED_DEVICE !== 'gpu'
-    ? { device: 'cpu', gpuLayers: 0 }
-    : {}
 let embedBackendLogged = false
 
 async function embedTextsNow(texts: string[]): Promise<Float32Array[]> {
   const input = texts.map((text) => String(text ?? ''))
   if (input.length === 0) return []
   const sdk = await loadSdk()
-  const { model } = LOCAL_AI_EMBEDDING_MODEL
-  const modelConfig = { ...LOCAL_AI_EMBEDDING_MODEL.modelConfig, ...EMBED_DEVICE_CONFIG }
+  const { model, modelConfig } = LOCAL_AI_EMBEDDING_MODEL
   const key = `${model}|embed`
   if ((readModelGuard().crashes[key] ?? 0) >= MODEL_CRASH_LIMIT) {
     throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
@@ -1207,7 +1201,7 @@ async function embedTextsNow(texts: string[]): Promise<Float32Array[]> {
         embedBackendLogged = true
         log.info(
           `[ai-embed] backend ${stats.backendDevice ?? 'unknown'}, ` +
-            `${Math.round(stats.tokensPerSecond ?? 0)} tokens/s, requested ${modelConfig.device ?? 'gpu'}`,
+            `${Math.round(stats.tokensPerSecond ?? 0)} tokens/s`,
         )
       }
       return embedding.map((vector) => Float32Array.from(vector))
