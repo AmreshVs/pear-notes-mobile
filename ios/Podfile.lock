@@ -72,6 +72,8 @@ PODS:
     - ExpoTaskManager
   - ExpoBackupExclusion (1.0.0):
     - ExpoModulesCore
+  - ExpoBattery (56.0.4):
+    - ExpoModulesCore
   - ExpoBlur (56.0.4):
     - ExpoModulesCore
   - ExpoCamera (56.0.8):
@@ -3281,6 +3283,7 @@ DEPENDENCIES:
   - ExpoAudio (from `../node_modules/expo-audio/ios`)
   - ExpoBackgroundTask (from `../node_modules/expo-background-task/ios`)
   - ExpoBackupExclusion (from `../modules/expo-backup-exclusion/ios`)
+  - ExpoBattery (from `../node_modules/expo-battery/ios`)
   - ExpoBlur (from `../node_modules/expo-blur/ios`)
   - ExpoCamera (from `../node_modules/expo-camera/ios`)
   - ExpoCameraBarcodeScanning (from `../node_modules/expo-camera/ios`)
@@ -3444,6 +3447,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-background-task/ios"
   ExpoBackupExclusion:
     :path: "../modules/expo-backup-exclusion/ios"
+  ExpoBattery:
+    :path: "../node_modules/expo-battery/ios"
   ExpoBlur:
     :path: "../node_modules/expo-blur/ios"
   ExpoCamera:
@@ -3714,6 +3719,7 @@ SPEC CHECKSUMS:
   ExpoAudio: 2970e2d332b52bfbb64d88564105df4b422c78a4
   ExpoBackgroundTask: 255f4700897df147f52f36e2f34e84c4bb1bed8f
   ExpoBackupExclusion: 0d4a2031cc4c8dcaf15cdc9c9d3ce4f94d35e62f
+  ExpoBattery: a42e918404ceee07a957db4312918ec0c52bc0d6
   ExpoBlur: 234b3c1f42a35851428e10fa9d347701ae707c4d
   ExpoCamera: 68008452cc12ad5ad5d46cc7c835073228c008da
   ExpoCameraBarcodeScanning: 2acb6385fe6aa7563da5241c775092aac40195ce

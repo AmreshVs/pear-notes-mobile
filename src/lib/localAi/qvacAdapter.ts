@@ -235,11 +235,17 @@ function clearIdleUnload() {
   idleUnloadTimer = null
 }
 
+// Under the model lock: between two embed batches activeModelWork is briefly 0, and an
+// unlocked unload there cancelled the next batch, or broke the worker channel.
 function releaseModelWhenIdle() {
   if (activeModelWork > 0 || !sdkPromise) return
   clearIdleUnload()
-  unloadWhenIdle = false
-  sdkPromise.then(unloadCurrentModel).catch(() => {})
+  const pending = sdkPromise
+  withModelLock(async () => {
+    if (activeModelWork > 0) return
+    unloadWhenIdle = false
+    await unloadCurrentModel(await pending)
+  }).catch(() => {})
 }
 
 async function withModelWork<T>(
@@ -265,6 +271,7 @@ async function withModelWork<T>(
 }
 
 function handleMemoryWarning() {
+  log.warn(`[ai-model] memory warning, unloading ${loadedModel?.key ?? 'nothing'} when idle`)
   unloadWhenIdle = true
   releaseModelWhenIdle()
 }
