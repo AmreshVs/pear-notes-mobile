@@ -80,10 +80,12 @@ export function AskNoteSheet({
     droppedTurns,
     emptySource,
     copiedId,
+    meaningReady,
     handleSend,
     handleToggleScope,
     handleApply,
     handleCopy,
+    handleSearchAllNotes,
     handleClose,
   } = useAskNoteSheet({ visible, selectionText, noteText, onApplyEdits, onClose })
   const threadStyle = useMemo(
@@ -175,6 +177,24 @@ export function AskNoteSheet({
           <Text style={[styles.answerText, notFound && styles.answerTextMuted]} selectable>
             {answer}
           </Text>
+          {notFound && meaningReady && (
+            <Pressable
+              onPress={() => handleSearchAllNotes(turn.question)}
+              hitSlop={8}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.copyButton, pressed && commonStyles.pressed]}
+            >
+              <SymbolView
+                name="magnifyingglass"
+                size={UI_ICON_SIZE_14}
+                tintColor={colors.primary}
+                weight="semibold"
+              />
+              <Text style={[styles.copyText, styles.searchAllText]}>
+                {t('localAi.askVault.searchAllNotes')}
+              </Text>
+            </Pressable>
+          )}
           {!notFound && !!turn.answer && (
             <Pressable
               onPress={() => handleCopy(turn.id)}
@@ -206,7 +226,9 @@ export function AskNoteSheet({
       diffHeight,
       handleApply,
       handleCopy,
+      handleSearchAllNotes,
       insertBlocked,
+      meaningReady,
       styles,
       t,
       workView,
@@ -392,6 +414,9 @@ const useStyles = createThemedStylesheet((theme) => {
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
       color: theme.colors.textSecondary,
+    },
+    searchAllText: {
+      color: theme.colors.primary,
     },
     editsBlock: {
       gap: UI_SIZE_10,

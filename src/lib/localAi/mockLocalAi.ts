@@ -157,6 +157,18 @@ export const askAboutNote = async (
   return buildAskReply(note, question)
 }
 
+export const askVault = async (
+  _question: string,
+  sources: { n: number; text: string }[],
+  _turns: unknown[],
+  _featureConfig: LocalAiFeatureModelConfig = {},
+  { onProgress }: LocalAiWorkOptions = {},
+): Promise<string> => {
+  await emitWork(onProgress)
+  const first = sources[0]
+  return first ? `${first.text.split('\n')[0]} [${first.n}]` : 'NOT_FOUND'
+}
+
 export const runNoteTask = async (
   task: string,
   text: string,

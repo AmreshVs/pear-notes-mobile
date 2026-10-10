@@ -96,10 +96,12 @@ export function AskNoteSheet({
     droppedTurns,
     emptySource,
     copiedId,
+    meaningReady,
     handleSend,
     handleToggleScope,
     handleApply,
     handleCopy,
+    handleSearchAllNotes,
     handleClose,
   } = useAskNoteSheet({ visible, selectionText, noteText, onApplyEdits, onClose })
   const threadStyle = useMemo(
@@ -184,6 +186,19 @@ export function AskNoteSheet({
           <Text style={[styles.answerText, notFound && styles.answerTextMuted]} selectable>
             {answer}
           </Text>
+          {notFound && meaningReady && (
+            <Pressable
+              onPress={() => handleSearchAllNotes(turn.question)}
+              hitSlop={8}
+              accessibilityRole="button"
+              style={styles.copyButton}
+            >
+              <MaterialCommunityIcons name="magnify" size={UI_ICON_SIZE_16} color={c.primary} />
+              <Text style={[styles.copyText, styles.searchAllText]}>
+                {t('localAi.askVault.searchAllNotes')}
+              </Text>
+            </Pressable>
+          )}
           {!notFound && !!turn.answer && (
             <Pressable
               onPress={() => handleCopy(turn.id)}
@@ -213,7 +228,9 @@ export function AskNoteSheet({
       diffHeight,
       handleApply,
       handleCopy,
+      handleSearchAllNotes,
       insertBlocked,
+      meaningReady,
       mutedColor,
       scope,
       ripple,
@@ -452,6 +469,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       fontSize: FontSize.caption,
       fontFamily: FontFamily.medium,
       color: c.onSurfaceVariant,
+    },
+    searchAllText: {
+      color: c.primary,
     },
     editsBlock: {
       gap: UI_SIZE_12,

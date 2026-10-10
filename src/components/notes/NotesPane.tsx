@@ -12,6 +12,7 @@ import {
   SEARCH_QUERY_MAX_LENGTH,
   TRASH_RETENTION_DAYS,
 } from '@pear-notes/core/constant.js'
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   deleteFolder,
   getFolders,
@@ -37,7 +38,11 @@ import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
-import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import {
+  getSearchQuery,
+  openAskVault,
+  setSearchQuery,
+} from '@pear-notes/core/store/slices/uiSlice.js'
 import { getOtherVaults, moveToVault } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { formatDate, validateFolderName } from '@pear-notes/core/utils.js'
 
@@ -617,6 +622,11 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const handleSearchFocus = useCallback(() => dispatch(prewarmSearch()), [dispatch])
 
+  const handleAskVault = useCallback(
+    () => dispatch(openAskVault({ question: searchQuery.trim() })),
+    [dispatch, searchQuery],
+  )
+
   const headerTitle = useCallback(
     () => (
       <CollapsedNavTitle
@@ -699,6 +709,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           {(!isTrashFolder || SUPPORTS_TOOLBAR_SEARCH) && (
             <Stack.Toolbar placement="bottom">
               <Stack.Toolbar.SearchBarSlot />
+              {LOCAL_AI_ENABLED && (
+                <Stack.Toolbar.Button
+                  icon="sparkles"
+                  accessibilityLabel={t('localAi.askVault.entry')}
+                  onPress={handleAskVault}
+                />
+              )}
               <Stack.Toolbar.Spacer />
               {!isTrashFolder && (
                 <Stack.Toolbar.Button

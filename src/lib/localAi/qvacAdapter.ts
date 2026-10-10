@@ -3,6 +3,7 @@ import { Directory, File, Paths } from 'expo-file-system'
 
 import * as log from '@pear-notes/core/log.js'
 import { runAsk } from '@pear-notes/core/store/services/localAiAsk.js'
+import { runVaultAnswer } from '@pear-notes/core/store/services/localAiVaultAsk.js'
 import {
   getFeatureRegistryNames,
   LOCAL_AI_ERROR,
@@ -858,6 +859,46 @@ export const askAboutNote = (
   featureConfig: LocalAiFeatureModelConfig = {},
   { onProgress }: LocalAiWorkOptions = {},
 ) => withModelWork(() => askAboutNoteNow(note, turns, question, featureConfig, onProgress))
+
+export interface VaultSource {
+  n: number
+  noteKey: string
+  title: string
+  heading: string
+  text: string
+  score: number | null
+}
+
+async function askVaultNow(
+  question: string,
+  sources: VaultSource[],
+  turns: { question: string; result?: unknown }[],
+  featureConfig: LocalAiFeatureModelConfig = {},
+  onProgress: LocalAiWorkListener = () => {},
+): Promise<string> {
+  const sdk = await loadSdk()
+  const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
+  const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS, featureConfig)
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_NOTE })
+  return runVaultAnswer({
+    question,
+    sources,
+    turns,
+    complete: (params: CompletionInput, onText?: (text: string) => void) =>
+      runCompletion(sdk, { modelId, ...params }, onText),
+    onText: (answer: string) => onProgress({ type: WORK_EVENT.TEXT, text: answer }),
+  })
+}
+
+/** The answer half of Ask your vault; retrieval runs in the app through the backend. */
+export const askVault = (
+  question: string,
+  sources: VaultSource[],
+  turns: { question: string; result?: unknown }[],
+  featureConfig: LocalAiFeatureModelConfig = {},
+  { onProgress }: LocalAiWorkOptions = {},
+) => withModelWork(() => askVaultNow(question, sources, turns, featureConfig, onProgress))
 
 export const transcribeAudioFile = (
   fileUri: string,

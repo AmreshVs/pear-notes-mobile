@@ -27,6 +27,7 @@ import {
   RECENTLY_DELETED_KEY,
   TRASH_RETENTION_DAYS,
 } from '@pear-notes/core/constant.js'
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   deleteFolder,
   getFolders,
@@ -52,7 +53,11 @@ import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
-import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
+import {
+  getSearchQuery,
+  openAskVault,
+  setSearchQuery,
+} from '@pear-notes/core/store/slices/uiSlice.js'
 import { getHasMultipleVaults } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { validateFolderName } from '@pear-notes/core/utils.js'
 
@@ -743,6 +748,11 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     dispatch(setSearchQuery(''))
   }, [dispatch])
 
+  const handleAskVault = useCallback(
+    () => dispatch(openAskVault({ question: searchQuery.trim() })),
+    [dispatch, searchQuery],
+  )
+
   const handleChangeSearch = useCallback(
     (text: string) => {
       dispatch(setSearchQuery(text))
@@ -835,6 +845,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
             onOpenFolderOptions={handleOpenFolderOptions}
             onChangeSearch={handleChangeSearch}
             onClearSearch={handleClearSearch}
+            onAskVault={LOCAL_AI_ENABLED ? handleAskVault : undefined}
           />
         )}
       </View>
