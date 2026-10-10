@@ -519,6 +519,8 @@
       },
       "storageRow": "On-device AI",
       "storageRowDesc": "Models and the search index. Not included in backups or sync.",
+      "yourNotes": "Your notes",
+      "possibleDuplicates": "Possible duplicates",
       "noLanguagesYet": "No languages yet. A language downloads the first time you translate into it.",
       "limitations": "Limitations",
       "tierNeedsMemory": "Needs more memory than this device has — may be slow or close the app",
@@ -1514,6 +1516,12 @@
     "yesterdayAt": "Yesterday at {{time}}"
   },
   "activity": {
+    "discarded": {
+      "explanation": "This edit arrived after another device had already changed the note, so it was not applied. Recover it to append the text below to the note.",
+      "recover": "Recover",
+      "recovering": "Recovering…",
+      "recovered": "Recovered into the note"
+    },
     "timeline": "Timeline",
     "noteHistory": "Note history",
     "today": "Today",
