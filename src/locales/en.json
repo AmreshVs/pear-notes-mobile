@@ -517,8 +517,8 @@
         "title": "Delete all AI models?",
         "message": "This frees {{size}} and turns off every AI feature on this device. Your notes aren't affected."
       },
-      "storageRow": "On-device AI models",
-      "storageRowDesc": "Not included in backups or sync.",
+      "storageRow": "On-device AI",
+      "storageRowDesc": "Models and the search index. Not included in backups or sync.",
       "noLanguagesYet": "No languages yet. A language downloads the first time you translate into it.",
       "limitations": "Limitations",
       "tierNeedsMemory": "Needs more memory than this device has — may be slow or close the app",
