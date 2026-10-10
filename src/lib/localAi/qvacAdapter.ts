@@ -293,11 +293,14 @@ function reconcileLifecycle(sdk: QvacSdk): Promise<void> {
   const run = (async () => {
     while (lifecycleNeedsWork()) {
       if (wantsSuspend) {
-        await unloadCurrentModel(sdk)
-        try {
-          await sdk.suspend()
-        } catch {}
-        runtimeSuspended = true
+        // One lock hold, so a queued embed can't reload the model between the unload and the suspend.
+        await withModelLock(async () => {
+          await unloadCurrentModel(sdk)
+          try {
+            await sdk.suspend()
+          } catch {}
+          runtimeSuspended = true
+        })
         continue
       }
       try {
@@ -488,7 +491,7 @@ async function cancel(requestId: string, { discard = false }: CancelOptions = {}
 async function deleteModel(name: string) {
   forgetModelCrashes((key) => key.split('|').includes(name))
   const sdk = await loadSdk()
-  await unloadCurrentModel(sdk)
+  await withModelLock(() => unloadCurrentModel(sdk))
   const info = await sdk.getModelInfo({ name })
   for (const cacheFile of info.cacheFiles ?? []) {
     try {
@@ -1182,6 +1185,7 @@ async function embedTextsNow(texts: string[]): Promise<Float32Array[]> {
     throw new LocalAiError(LOCAL_AI_ERROR.MODEL_UNSTABLE)
   }
   return withModelLock(async () => {
+    if (runtimeSuspended) throw new LocalAiError(LOCAL_AI_ERROR.INTERRUPTED)
     if (loadedModel?.key !== key) {
       if (activeModelWork > 1) throw new LocalAiError(LOCAL_AI_ERROR.TASK_FAILED, 'model busy')
       const info = await sdk.getModelInfo({ name: model }).catch(() => null)
