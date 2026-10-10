@@ -1,6 +1,6 @@
 import { memo, type RefObject, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { ViewStyle } from 'react-native'
+import type { LayoutChangeEvent, ViewStyle } from 'react-native'
 import { Pressable, StyleSheet, TextInput, View } from 'react-native'
 import Animated, { type AnimatedStyle } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -53,6 +53,7 @@ type AndroidFolderAppBarProps = {
   onAskVault?: () => void
   onTidyUp?: () => void
   tidyCount?: number
+  onAppBarLayout?: (event: LayoutChangeEvent) => void
 }
 
 export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
@@ -75,6 +76,7 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   onAskVault,
   onTidyUp,
   tidyCount = 0,
+  onAppBarLayout,
 }: AndroidFolderAppBarProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -87,7 +89,7 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
 
   return (
     <>
-      <View style={styles.appBar}>
+      <View style={styles.appBar} onLayout={onAppBarLayout}>
         <View style={styles.appBarLeft}>
           {showBack && (
             <Pressable

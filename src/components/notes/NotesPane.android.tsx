@@ -912,7 +912,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     <View style={styles.root}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
 
-      <View style={styles.headerOverlay} onLayout={handleHeaderLayout} pointerEvents="box-none">
+      <View style={styles.headerOverlay} pointerEvents="box-none">
         <EdgeFade color={c.background} />
         {isSelecting ? (
           <AndroidSelectionAppBar
@@ -950,6 +950,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
             onAskVault={LOCAL_AI_ENABLED ? handleAskVault : undefined}
             tidyCount={tidyMoves.length}
             onTidyUp={tidyMoves.length > 0 ? handleOpenTidyUp : undefined}
+            onAppBarLayout={handleHeaderLayout}
           />
         )}
       </View>

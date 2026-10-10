@@ -429,6 +429,29 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           )}
         </MotionView>
 
+        {toolRows.length > 0 && (
+          <View style={styles.archiveSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('tools.header')}</Text>
+            </View>
+            <View style={styles.listCard}>
+              {toolRows.map((tool, index) => (
+                <VaultFolderRow
+                  key={tool.id}
+                  id={tool.id}
+                  name={tool.name}
+                  icon={tool.icon}
+                  count={tool.count}
+                  isLast={index === toolRows.length - 1}
+                  colors={c}
+                  onPress={handleSelectFolder}
+                  onLongPress={handleFolderLongPress}
+                />
+              ))}
+            </View>
+          </View>
+        )}
+
         {archiveFolders.length > 0 && (
           <View style={styles.archiveSection}>
             <View style={styles.sectionHeader}>
@@ -446,29 +469,6 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
                   count={folderCounts[folder.id || folder.key!] ?? 0}
                   isLast={index === archiveFolders.length - 1}
                   selected={(folder.id || folder.key) === selectedFolderId}
-                  colors={c}
-                  onPress={handleSelectFolder}
-                  onLongPress={handleFolderLongPress}
-                />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {toolRows.length > 0 && (
-          <View style={styles.archiveSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('tools.header')}</Text>
-            </View>
-            <View style={styles.listCard}>
-              {toolRows.map((tool, index) => (
-                <VaultFolderRow
-                  key={tool.id}
-                  id={tool.id}
-                  name={tool.name}
-                  icon={tool.icon}
-                  count={tool.count}
-                  isLast={index === toolRows.length - 1}
                   colors={c}
                   onPress={handleSelectFolder}
                   onLongPress={handleFolderLongPress}

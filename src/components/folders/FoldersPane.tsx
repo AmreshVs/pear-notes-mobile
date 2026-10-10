@@ -409,24 +409,24 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           <Text style={styles.emptyText}>{t('folders.noFoldersFound')}</Text>
         )}
 
-        {archiveFolders.length > 0 && (
-          <View style={styles.archiveSection}>
-            <Text style={[commonThemedStyles.sectionCamelCase, styles.sectionHeaderMargin]}>
-              {t('folders.archiveHeader')}
-            </Text>
-            <View style={[commonThemedStyles.card, styles.group]}>
-              {renderFolders(archiveFolders, topFolders.length)}
-            </View>
-          </View>
-        )}
-
         {toolRows.length > 0 && (
           <View style={styles.archiveSection}>
             <Text style={[commonThemedStyles.sectionCamelCase, styles.sectionHeaderMargin]}>
               {t('tools.header')}
             </Text>
             <View style={[commonThemedStyles.card, styles.group]}>
-              {renderTools(topFolders.length + archiveFolders.length)}
+              {renderTools(topFolders.length)}
+            </View>
+          </View>
+        )}
+
+        {archiveFolders.length > 0 && (
+          <View style={styles.archiveSection}>
+            <Text style={[commonThemedStyles.sectionCamelCase, styles.sectionHeaderMargin]}>
+              {t('folders.archiveHeader')}
+            </Text>
+            <View style={[commonThemedStyles.card, styles.group]}>
+              {renderFolders(archiveFolders, topFolders.length + toolRows.length)}
             </View>
           </View>
         )}
