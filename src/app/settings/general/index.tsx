@@ -35,6 +35,7 @@ import {
   UI_SIZE_60,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { useRemindersSetting } from '@/hooks/useReminders'
 import { hapticSelection } from '@/lib/haptics'
 import { getFontOptions, getSortOptions, showPicker } from '@/utils/settingsUtils'
 
@@ -50,6 +51,7 @@ export default function GeneralSettingsScreen() {
   const editorFontSize = useSelector(getEditorFontSize)
   const sortBy = useSelector(getSortBy)
   const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
+  const [reminders, toggleReminders, remindersSupported] = useRemindersSetting()
 
   const trackColor = useMemo(
     () => ({ false: colors.controlBackground, true: colors.primary }),
@@ -148,6 +150,25 @@ export default function GeneralSettingsScreen() {
                 thumbColor={colors.white}
               />
             </RNView>
+            {remindersSupported && (
+              <>
+                <RNView style={styles.dividerWrap}>
+                  <Divider />
+                </RNView>
+                <RNView style={styles.toggleRow}>
+                  <RNView style={styles.toggleInfo}>
+                    <Text style={styles.rowLabel}>{t('settings.general.reminders')}</Text>
+                    <Text style={styles.rowDesc}>{t('settings.general.remindersDesc')}</Text>
+                  </RNView>
+                  <Switch
+                    value={reminders}
+                    onValueChange={toggleReminders}
+                    trackColor={trackColor}
+                    thumbColor={colors.white}
+                  />
+                </RNView>
+              </>
+            )}
           </RNView>
         </MotionView>
 

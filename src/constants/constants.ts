@@ -17,6 +17,18 @@ export const SCROLL_EVENT_THROTTLE = 16
 
 export const ANDROID_APP_BAR_HEIGHT = 44
 
+export const TOOL_ROW = {
+  upcoming: 'tool-upcoming',
+  duplicates: 'tool-duplicates',
+  recap: 'tool-recap',
+} as const
+
+export const TOOL_ROW_ROUTE: Record<string, string> = {
+  [TOOL_ROW.upcoming]: '/upcoming',
+  [TOOL_ROW.duplicates]: '/duplicates',
+  [TOOL_ROW.recap]: '/recap',
+}
+
 export const APP_THEME_SETTINGS = {
   system: 'system',
   light: 'light',

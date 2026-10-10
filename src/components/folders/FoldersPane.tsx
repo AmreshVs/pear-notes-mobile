@@ -39,7 +39,9 @@ import {
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { TOOL_ROW_ROUTE } from '@/constants/constants'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
+import { useToolRows } from '@/hooks/useToolRows'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
@@ -55,7 +57,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
   const insets = useSafeAreaInsets()
   const { openNote } = useNoteEditor()
   const folders = useSelector(getFolders)
-  const noteCounts = useSelector(getNoteCountsPerFolder) as Record<string, number>
+  const folderCounts = useSelector(getNoteCountsPerFolder) as Record<string, number>
   const selectedNote = useSelector(getSelectedNote)
 
   const creatingNoteRef = useRef(false)
@@ -63,6 +65,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
   const isInitialMount = useRef(true)
 
   const [searchQuery, setSearchQuery] = useState('')
+  const toolRows = useToolRows(searchQuery)
   const [iconPickerFolderId, setIconPickerFolderId] = useState<string | null>(null)
 
   const matchesSearch = useCallback(
@@ -110,6 +113,11 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
   const handleSelectFolder = useCallback(
     (folderId: string) => {
+      const toolRoute = TOOL_ROW_ROUTE[folderId]
+      if (toolRoute) {
+        router.push(toolRoute as any)
+        return
+      }
       dispatch(setSelectedFolder(folderId as any))
       if (onSelectFolder) {
         onSelectFolder(folderId)
@@ -256,7 +264,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           key={folder.id || folder.key}
           id={folder.id || folder.key}
           name={folder.name}
-          count={noteCounts[folder.id || folder.key] ?? 0}
+          count={folderCounts[folder.id || folder.key] ?? 0}
           icon={folder.icon}
           isSystem={folder.isSystem}
           animationIndex={startIndex + index}
@@ -270,13 +278,32 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
         />
       )),
     [
-      noteCounts,
+      folderCounts,
       selectedFolderId,
       handleSelectFolder,
       handleRenameFolder,
       handleChangeFolderIcon,
       handleDeleteFolder,
     ],
+  )
+
+  const renderTools = useCallback(
+    (startIndex: number) =>
+      toolRows.map((tool, index) => (
+        <FolderRow
+          key={tool.id}
+          id={tool.id}
+          name={tool.name}
+          count={tool.count}
+          icon={tool.icon}
+          isSystem
+          animationIndex={startIndex + index}
+          grouped
+          isLast={index === toolRows.length - 1}
+          onPress={handleSelectFolder}
+        />
+      )),
+    [toolRows, handleSelectFolder],
   )
 
   const handleSearchChange = useCallback(
@@ -378,7 +405,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           <View style={[commonThemedStyles.card, styles.group]}>{renderFolders(topFolders)}</View>
         )}
 
-        {topFolders.length === 0 && archiveFolders.length === 0 && (
+        {topFolders.length === 0 && archiveFolders.length === 0 && toolRows.length === 0 && (
           <Text style={styles.emptyText}>{t('folders.noFoldersFound')}</Text>
         )}
 
@@ -389,6 +416,17 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
             </Text>
             <View style={[commonThemedStyles.card, styles.group]}>
               {renderFolders(archiveFolders, topFolders.length)}
+            </View>
+          </View>
+        )}
+
+        {toolRows.length > 0 && (
+          <View style={styles.archiveSection}>
+            <Text style={[commonThemedStyles.sectionCamelCase, styles.sectionHeaderMargin]}>
+              {t('tools.header')}
+            </Text>
+            <View style={[commonThemedStyles.card, styles.group]}>
+              {renderTools(topFolders.length + archiveFolders.length)}
             </View>
           </View>
         )}

@@ -50,6 +50,11 @@ export default function AndroidOnDeviceAiFeatureScreen() {
   const {
     featureId,
     tiers,
+    routing,
+    advancedChoices,
+    advancedExpanded,
+    toggleAdvanced,
+    selectModel,
     languages,
     models,
     confirm,
@@ -165,7 +170,7 @@ export default function AndroidOnDeviceAiFeatureScreen() {
                             `settings.onDeviceAi.features.${featureId}.tierDescriptions.${option.tier}`,
                             `settings.onDeviceAi.tierDescriptions.${option.tier}`,
                           ],
-                          { size: formatBytes(option.bytes) },
+                          { size: formatBytes(option.bytes), model: option.modelLabel },
                         )}
                       </Text>
                       {!option.fits && (
@@ -184,6 +189,77 @@ export default function AndroidOnDeviceAiFeatureScreen() {
                   </Pressable>
                 ))}
               </View>
+              {routing && (
+                <Text style={styles.note}>
+                  {t(`settings.onDeviceAi.features.${featureId}.bestRouting`, routing)}
+                </Text>
+              )}
+              {advancedChoices.length > 0 && (
+                <View style={styles.advancedCard}>
+                  <Pressable
+                    onPress={toggleAdvanced}
+                    android_ripple={ripple}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: advancedExpanded }}
+                    style={advancedExpanded ? styles.rowDivider : styles.row}
+                  >
+                    <View style={styles.rowInfo}>
+                      <Text style={styles.rowLabel}>
+                        {t(`settings.onDeviceAi.features.${featureId}.advanced`)}
+                      </Text>
+                    </View>
+                    <MaterialCommunityIcons
+                      name={advancedExpanded ? 'chevron-down' : 'chevron-right'}
+                      size={UI_ICON_SIZE_20}
+                      color={c.onSurfaceVariant}
+                    />
+                  </Pressable>
+                  {advancedExpanded &&
+                    advancedChoices.map((choice, index) => (
+                      <Pressable
+                        key={choice.key}
+                        onPress={() => selectModel(choice.model)}
+                        android_ripple={ripple}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: choice.selected }}
+                        accessibilityHint={
+                          choice.fits ? undefined : t('settings.onDeviceAi.tierNeedsMemory')
+                        }
+                        style={index < advancedChoices.length - 1 ? styles.rowDivider : styles.row}
+                      >
+                        <View style={styles.rowInfo}>
+                          <Text style={styles.rowLabel}>
+                            {choice.model
+                              ? t(`settings.onDeviceAi.features.${featureId}.advancedModel`, {
+                                  model: choice.modelLabel,
+                                  size: formatBytes(choice.bytes),
+                                })
+                              : t(`settings.onDeviceAi.features.${featureId}.advancedAuto`, {
+                                  model: choice.modelLabel,
+                                })}
+                          </Text>
+                          {choice.largeOnPhone && (
+                            <Text style={styles.rowDesc}>
+                              {t(`settings.onDeviceAi.features.${featureId}.largeOnPhoneNote`)}
+                            </Text>
+                          )}
+                          {!choice.fits && (
+                            <Text style={styles.rowWarning}>
+                              {t('settings.onDeviceAi.tierNeedsMemory')}
+                            </Text>
+                          )}
+                        </View>
+                        {choice.selected && (
+                          <MaterialCommunityIcons
+                            name="check"
+                            size={UI_ICON_SIZE_20}
+                            color={c.primary}
+                          />
+                        )}
+                      </Pressable>
+                    ))}
+                </View>
+              )}
               <Text style={styles.note}>{t('settings.onDeviceAi.tierSwitchNote')}</Text>
             </>
           )}
@@ -310,6 +386,12 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
       overflow: 'hidden',
+    },
+    advancedCard: {
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+      borderRadius: UI_SIZE_28,
+      overflow: 'hidden',
+      marginTop: UI_SIZE_8,
     },
     row: {
       ...commonStyles.row,

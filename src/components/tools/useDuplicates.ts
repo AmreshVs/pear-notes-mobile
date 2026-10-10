@@ -25,7 +25,7 @@ export type DuplicatePairRow = {
   folderName: string | null
 }
 
-export function useDuplicatesScreen() {
+export function useDuplicates() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -71,9 +71,8 @@ export function useDuplicatesScreen() {
     [dispatch],
   )
 
-  const openNoteFromSettings = useCallback(
+  const openFromPane = useCallback(
     (key: string) => {
-      if (router.canDismiss()) router.dismissAll()
       if (Platform.OS === 'ios') openNote(key)
       else router.push(`/note/${key}`)
     },
@@ -89,6 +88,6 @@ export function useDuplicatesScreen() {
     failed,
     checkedCount: index.lastRun?.total ?? 0,
     dismissPair,
-    openNote: openNoteFromSettings,
+    openNote: openFromPane,
   }
 }

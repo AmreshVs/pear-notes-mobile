@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Linking } from 'react-native'
 import { Easing, runOnJS, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useDispatch, useSelector, useStore } from 'react-redux'
@@ -13,12 +14,18 @@ import * as Clipboard from 'expo-clipboard'
 import { File } from 'expo-file-system'
 import * as Localization from 'expo-localization'
 
+import { backendApi } from '@pear-notes/core/backend/api.js'
+import {
+  formatImageDetails,
+  imageDetailsFromText,
+} from '@pear-notes/core/store/services/imageDetails.js'
 import {
   LOCAL_AI_ERROR,
   LOCAL_AI_FEATURE,
   LOCAL_AI_MODEL_STATUS,
   LOCAL_AI_NOTICE,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
+import { isIndexable } from '@pear-notes/core/store/services/localAiIndex.js'
 import {
   detectTextLanguage,
   getTranslationModelNames,
@@ -27,6 +34,7 @@ import {
   TRANSLATION_ALL_LANGUAGES,
 } from '@pear-notes/core/store/services/localAiLanguage.js'
 import {
+  htmlToNoteText,
   isRewriteTask,
   NOTE_TASK,
   NOTE_TASK_MIN_CHARS,
@@ -37,6 +45,7 @@ import {
 } from '@pear-notes/core/store/services/localAiPrompts.js'
 import { TRANSLATION_SOURCE_LANGUAGE } from '@pear-notes/core/store/services/localAiTranslationModels.js'
 import { WORK_KIND } from '@pear-notes/core/store/services/localAiWorkProgress.js'
+import { collectStyleSamples } from '@pear-notes/core/store/services/localAiWritingTools.js'
 import {
   clearLocalAiNotice,
   downloadLocalAiModelNow,
@@ -47,6 +56,7 @@ import {
   selectLocalAiModelsStatus,
   setLocalAiTranslationTarget,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
+import { getNotesData, getSelectedNote } from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { RECORDING_BARS, sampleAmp } from '@/components/useAudioRecorderModal'
 import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
@@ -73,14 +83,17 @@ import ExpoLocalAi from '../../modules/expo-local-ai'
 export type NoteTaskMode = 'summarizeNote' | 'suggestTitle' | 'keyPoints'
 export type RewriteMode =
   | 'fixGrammar'
+  | 'cleanUp'
   | 'rewrite'
   | 'makeShorter'
   | 'makeProfessional'
   | 'makeFriendly'
+  | 'myStyle'
 export type VoiceTypingMode =
   | 'dictate'
   | 'transcribe'
   | 'extract'
+  | 'details'
   | 'describe'
   | 'translate'
   | NoteTaskMode
@@ -90,10 +103,12 @@ export type ApplyAction = 'insert' | 'replace'
 
 export const REWRITE_MODES: RewriteMode[] = [
   'fixGrammar',
+  'cleanUp',
   'rewrite',
   'makeShorter',
   'makeProfessional',
   'makeFriendly',
+  'myStyle',
 ]
 
 export interface InsertMeta {
@@ -125,7 +140,9 @@ export type SummaryPhase = 'idle' | 'working' | 'failed'
 
 export interface TranscriptSummary {
   summary: string
+  decisions?: string[]
   actionItems: string[]
+  openQuestions?: string[]
 }
 
 export interface DownloadProgress {
@@ -162,10 +179,12 @@ const NOTE_TASK_BY_MODE: Record<NoteTaskMode | RewriteMode, string> = {
   suggestTitle: NOTE_TASK.TITLE,
   keyPoints: NOTE_TASK.KEY_POINTS,
   fixGrammar: NOTE_TASK.FIX_GRAMMAR,
+  cleanUp: NOTE_TASK.CLEAN_UP,
   rewrite: NOTE_TASK.REWRITE,
   makeShorter: NOTE_TASK.MAKE_SHORTER,
   makeProfessional: NOTE_TASK.MAKE_PROFESSIONAL,
   makeFriendly: NOTE_TASK.MAKE_FRIENDLY,
+  myStyle: NOTE_TASK.MY_STYLE,
 }
 
 export const isNoteTaskMode = (mode: VoiceTypingMode): mode is NoteTaskMode | RewriteMode =>
@@ -178,16 +197,45 @@ const FEATURE_BY_MODE: Record<VoiceTypingMode, string> = {
   dictate: LOCAL_AI_FEATURE.VOICE_TYPING,
   transcribe: LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS,
   extract: LOCAL_AI_FEATURE.EXTRACT_TEXT,
+  details: LOCAL_AI_FEATURE.EXTRACT_TEXT,
   describe: LOCAL_AI_FEATURE.DESCRIBE_IMAGES,
   translate: LOCAL_AI_FEATURE.TRANSLATE_NOTES,
   summarizeNote: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
   suggestTitle: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
   keyPoints: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
   fixGrammar: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+  cleanUp: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
   rewrite: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
   makeShorter: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
   makeProfessional: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
   makeFriendly: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+  myStyle: LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS,
+}
+
+const STYLE_NOTE_LIMIT = 8
+
+type StoredNote = {
+  note?: string
+  bodyOmitted?: boolean
+  locked?: boolean
+  folderKey?: string
+  updatedAt?: number
+}
+
+async function loadStyleSamples(state: unknown): Promise<string[]> {
+  const excludeKey = getSelectedNote(state) as string | null
+  const notes = Object.entries((getNotesData(state) ?? {}) as Record<string, StoredNote>)
+    .filter(([key, note]) => key !== excludeKey && isIndexable(note))
+    .sort(([, a], [, b]) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0))
+    .slice(0, STYLE_NOTE_LIMIT)
+  const texts: string[] = []
+  for (const [key, note] of notes) {
+    const body = note.bodyOmitted
+      ? ((await backendApi.getSingleNote({ key }).catch(() => null)) as any)?.data?.note
+      : note.note
+    texts.push(htmlToNoteText(String(body ?? '')) as string)
+  }
+  return collectStyleSamples(texts) as string[]
 }
 
 interface VoiceTypingSheetOptions {
@@ -246,6 +294,7 @@ export function useVoiceTypingSheet({
   const paragraphs = sourceParagraphs ?? EMPTY_PARAGRAPHS
   const dispatch = useDispatch()
   const store = useStore()
+  const { t } = useTranslation()
   const featureConfig = useSelector((state) => getLocalAiFeatureConfig(state, feature)) as
     | FeatureConfig
     | undefined
@@ -394,7 +443,7 @@ export function useVoiceTypingSheet({
       const onProgress = beginWork(
         mode === 'describe'
           ? WORK_KIND.DESCRIBE
-          : mode !== 'extract'
+          : mode !== 'extract' && mode !== 'details'
             ? WORK_KIND.TRANSCRIBE
             : isPdf
               ? WORK_KIND.EXTRACT_PDF
@@ -405,11 +454,19 @@ export function useVoiceTypingSheet({
         const result =
           mode === 'describe'
             ? await describeImage(uri, { onProgress })
-            : mode !== 'extract'
-              ? await transcribeAudioFile(uri, feature, featureConfig ?? {}, { onProgress })
-              : isPdf
-                ? await extractTextFromPdf(uri, { signal: controller.signal, onProgress })
-                : await extractTextFromImage(uri, { onProgress })
+            : mode === 'details'
+              ? formatImageDetails(
+                  imageDetailsFromText(await extractTextFromImage(uri, { onProgress })),
+                  {
+                    types: t('localAi.details.types', { returnObjects: true }),
+                    ...t('localAi.details.fields', { returnObjects: true }),
+                  },
+                )
+              : mode !== 'extract'
+                ? await transcribeAudioFile(uri, feature, featureConfig ?? {}, { onProgress })
+                : isPdf
+                  ? await extractTextFromPdf(uri, { signal: controller.signal, onProgress })
+                  : await extractTextFromImage(uri, { onProgress })
         if (runId !== runIdRef.current) return
         if (!result) {
           failWith('empty')
@@ -425,7 +482,7 @@ export function useVoiceTypingSheet({
         if (deleteAfter) deleteLocalFile(uri)
       }
     },
-    [beginWork, failWith, feature, featureConfig, mode, resetSummary, updatePhase],
+    [beginWork, failWith, feature, featureConfig, mode, resetSummary, t, updatePhase],
   )
 
   const runTranslation = useCallback(async () => {
@@ -552,14 +609,24 @@ export function useVoiceTypingSheet({
     })
     updatePhase('transcribing')
     try {
-      const output = await runNoteTask(task, input, summaryConfig ?? {}, { onProgress })
+      const styleSamples =
+        task === NOTE_TASK.MY_STYLE ? await loadStyleSamples(store.getState()) : undefined
+      if (runId !== runIdRef.current) return
+      const output = await runNoteTask(task, input, summaryConfig ?? {}, {
+        onProgress,
+        styleSamples,
+      })
       if (runId !== runIdRef.current) return
       let result = ''
       if (mode === 'summarizeNote') {
         const parsed = parseSummaryOutput(output) as TranscriptSummary
-        if (parsed.summary || parsed.actionItems.length > 0) {
+        const sections = [parsed.decisions, parsed.actionItems, parsed.openQuestions]
+        if (parsed.summary || sections.some((items) => items?.length)) {
           setSummary(parsed)
-          result = [parsed.summary, ...parsed.actionItems.map((item) => `• ${item}`)]
+          result = [
+            parsed.summary,
+            ...sections.flatMap((items) => (items ?? []).map((item) => `• ${item}`)),
+          ]
             .filter(Boolean)
             .join('\n')
         }
@@ -583,7 +650,17 @@ export function useVoiceTypingSheet({
       if (runId !== runIdRef.current) return
       failWith('failed', error)
     }
-  }, [beginWork, failWith, mode, paragraphs, resetSummary, scope, summaryConfig, updatePhase])
+  }, [
+    beginWork,
+    failWith,
+    mode,
+    paragraphs,
+    resetSummary,
+    scope,
+    store,
+    summaryConfig,
+    updatePhase,
+  ])
 
   const startBars = useCallback(
     (sample: () => number) => {
@@ -867,9 +944,16 @@ export function useVoiceTypingSheet({
     const runId = runIdRef.current
     updateSummaryPhase('working')
     try {
-      const parsed = parseSummaryOutput(await summarizeTranscript(text, summaryConfig ?? {}))
+      const parsed = parseSummaryOutput(
+        await summarizeTranscript(text, summaryConfig ?? {}),
+      ) as TranscriptSummary
       if (runId !== runIdRef.current) return
-      if (!parsed.summary && parsed.actionItems.length === 0) {
+      if (
+        !parsed.summary &&
+        !parsed.decisions?.length &&
+        !parsed.actionItems.length &&
+        !parsed.openQuestions?.length
+      ) {
         hapticWarning()
         updateSummaryPhase('failed')
         return

@@ -27,10 +27,12 @@ export const AI_TOOL_GROUPS: { id: AiToolGroup; labelKey: string }[] = [
 
 const REWRITE_TOOL_MODES: VoiceTypingMode[] = [
   'fixGrammar',
+  'cleanUp',
   'rewrite',
   'makeShorter',
   'makeProfessional',
   'makeFriendly',
+  'myStyle',
 ]
 
 const WRITING = LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS as string

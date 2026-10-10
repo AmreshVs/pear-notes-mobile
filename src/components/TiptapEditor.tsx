@@ -32,8 +32,12 @@ import { createThemedStylesheet, useFontScale, useTheme } from './Themed'
 export interface TranscriptSummaryBlock {
   summaryTitle?: string
   summary?: string
+  decisionsTitle?: string
+  decisions?: string[]
   actionItemsTitle?: string
   actionItems?: string[]
+  openQuestionsTitle?: string
+  openQuestions?: string[]
   bullets?: string[]
 }
 

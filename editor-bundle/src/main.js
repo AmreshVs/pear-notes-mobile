@@ -1816,13 +1816,17 @@ window.editorBridge = {
           })),
         })
         const summaryText = typeof msg.summary === 'string' ? msg.summary.trim() : ''
+        const decisions = cleanList(msg.decisions)
         const actionItems = cleanList(msg.actionItems)
+        const openQuestions = cleanList(msg.openQuestions)
         const bullets = cleanList(msg.bullets)
         if (
           lines.length === 0 &&
           bullets.length === 0 &&
           !summaryText &&
-          actionItems.length === 0
+          decisions.length === 0 &&
+          actionItems.length === 0 &&
+          openQuestions.length === 0
         ) {
           break
         }
@@ -1838,8 +1842,14 @@ window.editorBridge = {
                   { type: 'paragraph', content: [{ type: 'text', text: summaryText }] },
                 ]
               : []),
+            ...(decisions.length > 0
+              ? [heading(msg.decisionsTitle || 'Decisions'), bulletList(decisions)]
+              : []),
             ...(actionItems.length > 0
               ? [heading(msg.actionItemsTitle || 'Action items'), bulletList(actionItems)]
+              : []),
+            ...(openQuestions.length > 0
+              ? [heading(msg.openQuestionsTitle || 'Open questions'), bulletList(openQuestions)]
               : []),
           ],
         }

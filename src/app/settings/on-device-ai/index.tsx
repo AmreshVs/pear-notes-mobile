@@ -57,9 +57,13 @@ export default function OnDeviceAiScreen() {
     device,
     isUnsupported,
     wifiOnly,
+    useMac,
+    linkedDesktopTitle,
     bytesOnDisk,
     indexEnabled,
-    duplicateCount,
+    indexBusy,
+    indexStatusText,
+    rebuildIndex,
     groups,
     confirm,
     notice,
@@ -73,6 +77,7 @@ export default function OnDeviceAiScreen() {
     downloadNow,
     cancelDownload,
     toggleWifiOnly,
+    toggleUseMac,
     dismissNotice,
   } = useOnDeviceAiScreen()
 
@@ -317,23 +322,29 @@ export default function OnDeviceAiScreen() {
                   {t('settings.onDeviceAi.yourNotes')}
                 </Text>
                 <RNView style={commonThemedStyles.card}>
-                  <Pressable
-                    onPress={() => router.push('/settings/on-device-ai/duplicates' as never)}
-                    accessibilityRole="button"
-                    style={({ pressed }) => [styles.rowLast, pressed && commonStyles.pressed]}
-                  >
-                    <Text style={styles.rowKey}>{t('settings.onDeviceAi.possibleDuplicates')}</Text>
-                    <RNView style={commonStyles.settingsRowRight}>
-                      {duplicateCount !== null && (
-                        <Text style={styles.rowValue}>{duplicateCount}</Text>
-                      )}
-                      <SymbolIcon
-                        name="chevron.forward"
-                        size={UI_ICON_SIZE_16}
-                        color={colors.textMuted}
-                      />
+                  <RNView style={styles.indexRow}>
+                    <RNView style={styles.toggleInfo}>
+                      <Text style={styles.rowTitle}>{t('settings.onDeviceAi.index.title')}</Text>
+                      <Text style={styles.rowDesc} accessibilityLiveRegion="polite">
+                        {indexStatusText}
+                      </Text>
                     </RNView>
-                  </Pressable>
+                    <Pressable
+                      onPress={rebuildIndex}
+                      disabled={indexBusy}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: indexBusy }}
+                      style={({ pressed }) => [
+                        styles.indexButton,
+                        indexBusy && commonStyles.disabled,
+                        pressed && commonStyles.pressed,
+                      ]}
+                    >
+                      <Text style={styles.indexButtonText}>
+                        {t('settings.onDeviceAi.index.rebuild')}
+                      </Text>
+                    </Pressable>
+                  </RNView>
                 </RNView>
               </RNView>
             )}
@@ -356,6 +367,33 @@ export default function OnDeviceAiScreen() {
                     thumbColor={colors.white}
                   />
                 </RNView>
+              </RNView>
+            </RNView>
+
+            <RNView style={styles.section}>
+              <Text style={commonThemedStyles.sectionCamelCase}>
+                {t('settings.onDeviceAi.otherDevices')}
+              </Text>
+              <RNView style={commonThemedStyles.card}>
+                <RNView style={styles.toggleRow}>
+                  <RNView style={styles.toggleInfo}>
+                    <Text style={styles.rowTitle}>{t('settings.onDeviceAi.useMyMac')}</Text>
+                    <Text style={styles.rowDesc}>{t('settings.onDeviceAi.useMyMacDesc')}</Text>
+                  </RNView>
+                  <Switch
+                    value={useMac}
+                    onValueChange={toggleUseMac}
+                    trackColor={trackColor}
+                    thumbColor={colors.white}
+                  />
+                </RNView>
+                {useMac && (
+                  <Text style={styles.offloadStatus}>
+                    {linkedDesktopTitle
+                      ? t('settings.onDeviceAi.offload.connectedTo', { device: linkedDesktopTitle })
+                      : t('settings.onDeviceAi.offload.notConnected')}
+                  </Text>
+                )}
               </RNView>
             </RNView>
 
@@ -565,6 +603,28 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
+    },
+    indexRow: {
+      ...commonStyles.rowBetween,
+      gap: Space.base,
+      padding: Space.lg,
+    },
+    indexButton: {
+      paddingVertical: Space.sm,
+      paddingHorizontal: Space.md,
+      borderRadius: Radii.pill,
+      backgroundColor: theme.colors.controlBackground,
+    },
+    indexButtonText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.primary,
+    },
+    offloadStatus: {
+      fontSize: FontSize.body,
+      color: theme.colors.textMuted,
+      paddingHorizontal: Space.lg,
+      paddingBottom: Space.base,
     },
     rowDesc: {
       fontSize: FontSize.body,

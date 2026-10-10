@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
-import { Stack } from 'expo-router'
 
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -21,25 +20,23 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
-import { useDuplicatesScreen } from './useDuplicatesScreen'
+import { useDuplicates } from './useDuplicates'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
   onSurfaceVariant?: string
 }
 
-export default function DuplicatesScreenAndroid() {
+export function DuplicatesPane() {
   const { t } = useTranslation()
   const styles = useStyles()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
-  const { rows, checking, failed, checkedCount, dismissPair, openNote } = useDuplicatesScreen()
+  const { rows, checking, failed, checkedCount, dismissPair, openNote } = useDuplicates()
 
   return (
     <View style={styles.root}>
-      <Stack.Screen options={{ headerShown: false }} />
-
-      <AndroidSettingsAppBar title={t('layouts.duplicates')} />
+      <AndroidSettingsAppBar title={t('tools.duplicates')} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.description}>{t('settings.descriptions.duplicates')}</Text>

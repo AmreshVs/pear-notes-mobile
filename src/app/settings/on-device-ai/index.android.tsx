@@ -79,9 +79,13 @@ export default function AndroidOnDeviceAiScreen() {
     device,
     isUnsupported,
     wifiOnly,
+    useMac,
+    linkedDesktopTitle,
     bytesOnDisk,
     indexEnabled,
-    duplicateCount,
+    indexBusy,
+    indexStatusText,
+    rebuildIndex,
     groups,
     confirm,
     notice,
@@ -95,6 +99,7 @@ export default function AndroidOnDeviceAiScreen() {
     downloadNow,
     cancelDownload,
     toggleWifiOnly,
+    toggleUseMac,
     dismissNotice,
   } = useOnDeviceAiScreen()
 
@@ -360,26 +365,26 @@ export default function AndroidOnDeviceAiScreen() {
                   {t('settings.onDeviceAi.yourNotes')}
                 </Text>
                 <View style={styles.groupCard}>
-                  <Pressable
-                    onPress={() => router.push('/settings/on-device-ai/duplicates' as never)}
-                    android_ripple={rippleBorderless}
-                    accessibilityRole="button"
-                    style={styles.infoRow}
-                  >
-                    <Text style={styles.infoLabel}>
-                      {t('settings.onDeviceAi.possibleDuplicates')}
-                    </Text>
-                    <View style={styles.titleRow}>
-                      {duplicateCount !== null && (
-                        <Text style={styles.infoValue}>{duplicateCount}</Text>
-                      )}
-                      <MaterialCommunityIcons
-                        name="chevron-right"
-                        size={UI_ICON_SIZE_20}
-                        color={c.onSurfaceVariant}
-                      />
+                  <View style={styles.toggleRow}>
+                    <View style={styles.toggleInfo}>
+                      <Text style={styles.rowTitle}>{t('settings.onDeviceAi.index.title')}</Text>
+                      <Text style={styles.rowSubtitle} accessibilityLiveRegion="polite">
+                        {indexStatusText}
+                      </Text>
                     </View>
-                  </Pressable>
+                    <Pressable
+                      onPress={rebuildIndex}
+                      disabled={indexBusy}
+                      android_ripple={rippleBorderless}
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: indexBusy }}
+                      style={[styles.indexButton, indexBusy && commonStyles.disabled]}
+                    >
+                      <Text style={styles.indexButtonText}>
+                        {t('settings.onDeviceAi.index.rebuild')}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               </>
             )}
@@ -395,6 +400,26 @@ export default function AndroidOnDeviceAiScreen() {
                 </View>
                 <Switch value={wifiOnly} onValueChange={toggleWifiOnly} disabled={isUnsupported} />
               </View>
+            </View>
+
+            <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
+              {t('settings.onDeviceAi.otherDevices')}
+            </Text>
+            <View style={styles.groupCard}>
+              <View style={styles.toggleRow}>
+                <View style={styles.toggleInfo}>
+                  <Text style={styles.rowTitle}>{t('settings.onDeviceAi.useMyMac')}</Text>
+                  <Text style={styles.rowSubtitle}>{t('settings.onDeviceAi.useMyMacDesc')}</Text>
+                </View>
+                <Switch value={useMac} onValueChange={toggleUseMac} />
+              </View>
+              {useMac && (
+                <Text style={styles.offloadStatus}>
+                  {linkedDesktopTitle
+                    ? t('settings.onDeviceAi.offload.connectedTo', { device: linkedDesktopTitle })
+                    : t('settings.onDeviceAi.offload.notConnected')}
+                </Text>
+              )}
             </View>
 
             {groups.map((group) => (
@@ -605,6 +630,28 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontSize: FontSize.body,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
+    },
+    indexButton: {
+      overflow: 'hidden',
+      paddingHorizontal: Space.base,
+      height: UI_SIZE_40,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
+      ...commonStyles.centered,
+    },
+    indexButtonText: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.primary,
+    },
+    offloadStatus: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+      lineHeight: 20,
+      paddingHorizontal: Space.base,
+      paddingBottom: Space.base,
     },
     rowSubtitle: {
       fontSize: FontSize.caption,

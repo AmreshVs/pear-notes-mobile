@@ -82,6 +82,7 @@ export function AskVaultSheet() {
     workView,
     busy,
     ready,
+    desktopTitle,
     meaningReady,
     canSend,
     copiedId,
@@ -97,6 +98,11 @@ export function AskVaultSheet() {
     initialQuestion: askVault?.question ?? '',
     onClose: handleDismissed,
   })
+  const subtitle = desktopTitle
+    ? t('localAi.askVault.onMac', { device: desktopTitle })
+    : busy
+      ? t('localAi.work.onDevice')
+      : t('localAi.askVault.subtitle')
   const threadStyle = useMemo(
     () => ({ maxHeight: windowHeight * THREAD_MAX_HEIGHT_RATIO }),
     [windowHeight],
@@ -197,6 +203,11 @@ export function AskVaultSheet() {
           {!turn.result.verified && (
             <Text style={styles.note}>{t('localAi.askVault.unverified')}</Text>
           )}
+          {!!turn.answeredOn && (
+            <Text style={styles.note}>
+              {t('localAi.askVault.answeredOn', { device: turn.answeredOn })}
+            </Text>
+          )}
           {renderSources(turn)}
           <View style={styles.actions}>
             <Pressable
@@ -272,9 +283,7 @@ export function AskVaultSheet() {
         </View>
         <View style={styles.headerText}>
           <Text style={styles.title}>{t('localAi.askVault.title')}</Text>
-          <Text style={styles.subtitle}>
-            {busy ? t('localAi.work.onDevice') : t('localAi.askVault.subtitle')}
-          </Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
         <Pressable
           hitSlop={12}

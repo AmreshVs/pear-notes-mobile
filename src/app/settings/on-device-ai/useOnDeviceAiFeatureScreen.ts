@@ -3,19 +3,29 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import {
   canRunFeature,
+  canRunModels,
+  getAskModelChoices,
   getFeatureLanguages,
   getFeatureRegistryNames,
   getFeatureTiers,
   getOnDemandModelNames,
   getRegistryNamesBytes,
+  getTextModelLabel,
+  getTextTaskModel,
+  isDesktopPlatform,
   LOCAL_AI_ENABLED,
+  LOCAL_AI_FEATURE,
   LOCAL_AI_FEATURE_IDS,
+  LOCAL_AI_REGISTRY_MODELS,
+  LOCAL_AI_TEXT_TASK,
+  LOCAL_AI_TIER,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   deleteLocalAiModel,
   getLocalAiState,
   initLocalAi,
   setLocalAiFeatureLanguage,
+  setLocalAiFeatureModel,
   setLocalAiFeatureTier,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 
@@ -30,8 +40,24 @@ import {
 export interface OnDeviceAiTierOption {
   tier: string
   bytes: number
+  modelLabel: string
   selected: boolean
   fits: boolean
+}
+
+export interface OnDeviceAiAdvancedChoice {
+  key: string
+  model: string | null
+  modelLabel: string
+  bytes: number
+  selected: boolean
+  fits: boolean
+  largeOnPhone: boolean
+}
+
+export type OnDeviceAiRouting = {
+  ask: string
+  write: string
 }
 
 export interface OnDeviceAiLanguageOption {
@@ -55,9 +81,17 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
   }, [dispatch, state.loaded])
 
   const featureId = feature && (LOCAL_AI_FEATURE_IDS as string[]).includes(feature) ? feature : null
-  const featureConfig = featureId ? state.config.features[featureId] : undefined
-  const totalMemoryBytes =
-    (state as { device?: { totalMemoryBytes?: number } }).device?.totalMemoryBytes ?? 0
+  const featureConfig = (featureId ? state.config.features[featureId] : undefined) as
+    | { tier?: string; language?: string; model?: string | null }
+    | undefined
+  const [advancedOpen, setAdvancedOpen] = useState<boolean | null>(null)
+  const device = (state as { device?: { totalMemoryBytes?: number; platform?: string } }).device
+  const totalMemoryBytes = device?.totalMemoryBytes ?? 0
+  const platform = device?.platform ?? ''
+  const textDevice = useMemo(() => ({ platform, totalMemoryBytes }), [platform, totalMemoryBytes])
+  const isTextFeature = featureId === LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS
+  const modelChosen = Boolean(featureConfig?.model)
+  const advancedExpanded = advancedOpen ?? modelChosen
 
   const tiers = useMemo<OnDeviceAiTierOption[]>(() => {
     if (!featureId) return []
@@ -66,16 +100,61 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
     return available.map((tier) => ({
       tier,
       bytes: getRegistryNamesBytes(
-        getFeatureRegistryNames(featureId, { tier, language: featureConfig?.language }),
+        getFeatureRegistryNames(featureId, { ...featureConfig, tier }),
       ) as number,
+      modelLabel: isTextFeature
+        ? (getTextModelLabel(
+            getTextTaskModel({ ...featureConfig, tier }, LOCAL_AI_TEXT_TASK.ASK, textDevice),
+          ) as string)
+        : '',
       selected: featureConfig?.tier === tier,
-      fits: canRunFeature(
-        featureId,
-        { tier, language: featureConfig?.language },
-        totalMemoryBytes,
-      ) as boolean,
+      fits: canRunFeature(featureId, { ...featureConfig, tier }, totalMemoryBytes) as boolean,
     }))
-  }, [featureConfig?.language, featureConfig?.tier, featureId, totalMemoryBytes])
+  }, [featureConfig, featureId, isTextFeature, textDevice, totalMemoryBytes])
+
+  const routing = useMemo<OnDeviceAiRouting | null>(() => {
+    if (!isTextFeature || featureConfig?.tier !== LOCAL_AI_TIER.BEST) return null
+    return {
+      ask: getTextModelLabel(
+        getTextTaskModel(featureConfig, LOCAL_AI_TEXT_TASK.ASK, textDevice),
+      ) as string,
+      write: getTextModelLabel(
+        getTextTaskModel(featureConfig, LOCAL_AI_TEXT_TASK.WRITE, textDevice),
+      ) as string,
+    }
+  }, [featureConfig, isTextFeature, textDevice])
+
+  const advancedChoices = useMemo<OnDeviceAiAdvancedChoice[]>(() => {
+    if (!isTextFeature) return []
+    const onBest = featureConfig?.tier === LOCAL_AI_TIER.BEST
+    const autoModel = getTextTaskModel(
+      { ...featureConfig, tier: LOCAL_AI_TIER.BEST, model: null },
+      LOCAL_AI_TEXT_TASK.ASK,
+      textDevice,
+    ) as string
+    return [
+      {
+        key: 'auto',
+        model: null,
+        modelLabel: getTextModelLabel(autoModel) as string,
+        bytes: 0,
+        selected: onBest && !featureConfig?.model,
+        fits: true,
+        largeOnPhone: false,
+      },
+      ...(getAskModelChoices(textDevice) as string[]).map((model) => ({
+        key: model,
+        model,
+        modelLabel: getTextModelLabel(model) as string,
+        bytes:
+          (LOCAL_AI_REGISTRY_MODELS as Record<string, { bytes: number } | undefined>)[model]
+            ?.bytes ?? 0,
+        selected: onBest && featureConfig?.model === model,
+        fits: canRunModels([model], totalMemoryBytes) as boolean,
+        largeOnPhone: !isDesktopPlatform(platform) && model.startsWith('QWEN3_4B'),
+      })),
+    ]
+  }, [featureConfig, isTextFeature, platform, textDevice, totalMemoryBytes])
 
   const languages = useMemo<OnDeviceAiLanguageOption[]>(() => {
     if (!featureId) return []
@@ -102,6 +181,23 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
       send(setLocalAiFeatureTier, { feature: featureId, tier })
     },
     [featureConfig, featureId, send],
+  )
+
+  const toggleAdvanced = useCallback(() => {
+    hapticSelection()
+    setAdvancedOpen(!advancedExpanded)
+  }, [advancedExpanded])
+
+  const selectModel = useCallback(
+    (model: string | null) => {
+      if (!featureId) return
+      hapticSelection()
+      send(setLocalAiFeatureModel, { feature: featureId, model })
+      if (featureConfig?.tier !== LOCAL_AI_TIER.BEST) {
+        send(setLocalAiFeatureTier, { feature: featureId, tier: LOCAL_AI_TIER.BEST })
+      }
+    },
+    [featureConfig?.tier, featureId, send],
   )
 
   const selectLanguage = useCallback(
@@ -132,6 +228,11 @@ function useOnDeviceAiFeatureScreen(feature: string | undefined) {
   return {
     featureId,
     tiers,
+    routing,
+    advancedChoices,
+    advancedExpanded,
+    toggleAdvanced,
+    selectModel,
     languages,
     models,
     confirm,

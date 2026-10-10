@@ -55,6 +55,7 @@ import { ErrorScreen } from '@/components/ErrorScreen'
 import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
 import { AskVaultSheet } from '@/components/localAi/AskVaultSheet'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
+import { MergeNotesBanner } from '@/components/MergeNotesBanner'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import {
@@ -68,6 +69,7 @@ import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
 import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
+import { useReminders } from '@/hooks/useReminders'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
 import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
@@ -184,6 +186,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useLocalAiBridge()
   const onUserTouch = useAiJobConditions()
   useNoteAutoRelock()
+  useReminders()
 
   const [fatalError, setFatalError] = useState<string | null>(null)
   // LEGACY(hyperdb-migration): see docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8
@@ -545,6 +548,7 @@ function RootLayoutNav() {
               {LOCAL_AI_ENABLED && <AskVaultSheet />}
               <BackupProgressBanner />
               <AppUpdateBanner />
+              <MergeNotesBanner />
               <BackupNudge />
               <AppUpdateRequiredOverlay />
             </NoteEditorProvider>

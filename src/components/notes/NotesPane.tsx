@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, Platform, SectionList, StyleSheet, useWindowDimensions } from 'react-native'
 import type { SearchBarCommands } from 'react-native-screens'
@@ -19,7 +19,12 @@ import {
   setSelectedFolder,
   updateFolder,
 } from '@pear-notes/core/store/slices/foldersSlice.js'
-import { getMeaningSearchNotice } from '@pear-notes/core/store/slices/localAiSlice.js'
+import {
+  getMeaningSearchNotice,
+  getMeaningSearchReady,
+  selectIsTextAiAvailable,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
+import * as notesSlice from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   createNote,
   deleteNote,
@@ -48,12 +53,14 @@ import { formatDate, validateFolderName } from '@pear-notes/core/utils.js'
 
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderEmptyState } from '@/components/FolderEmptyState'
+import { GenerateNoteSheet } from '@/components/GenerateNoteSheet'
 import { LockNowButton } from '@/components/LockNowButton'
 import { NoteCard } from '@/components/NoteCard'
 import { SearchScopeChips } from '@/components/notes/SearchScopeChips'
 import { NoteSelectionToolbar } from '@/components/NoteSelectionToolbar'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
+import { TidyUpSheet } from '@/components/TidyUpSheet'
 import {
   commonStyles,
   FontSize,
@@ -71,6 +78,7 @@ import {
 import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 import { useNoteSearch } from '@/hooks/useNoteSearch'
 import { useNoteSelection } from '@/hooks/useNoteSelection'
+import { useTidyMoves } from '@/hooks/useTidyMoves'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -83,6 +91,10 @@ import { getNoteMetadata } from '@/utils/noteMetadata'
 import { buildNoteSections } from '@/utils/noteSections'
 
 import { NotesPaneProps } from './types'
+
+const { mergeNotes } = notesSlice as unknown as {
+  mergeNotes: (payload: { keys: string[]; untitled: string }) => { type: string }
+}
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
 
@@ -118,6 +130,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const localPreferences = useSelector(getLocalPreferences)
   const hasAnyNotes = useSelector((state: any) => (getNotes(state) as any[]).length > 0)
   const isTrashFolder = id === RECENTLY_DELETED_KEY
+  const textAiAvailable = useSelector(selectIsTextAiAvailable) as boolean
+  const meaningReady = useSelector(getMeaningSearchReady) as boolean
+  const tidyMoves = useTidyMoves(LOCAL_AI_ENABLED && id === ALL_NOTES_KEY && meaningReady)
+  const [tidyVisible, setTidyVisible] = useState(false)
+  const [generateVisible, setGenerateVisible] = useState(false)
+  const [generateTask, setGenerateTask] = useState<string | null>(null)
+  const [generateKeys, setGenerateKeys] = useState<string[]>([])
   const { searchHits, searchTerms, searchScope, hideEmptyState, showSearchScope, showFolderNames } =
     useNoteSearch(id)
   const creatingNoteRef = useRef(false)
@@ -243,6 +262,45 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     dispatch(restoreNotes(selectedKeys as any))
     exitSelection()
   }, [dispatch, selectedKeys, exitSelection])
+
+  const handleBulkMerge = useCallback(() => {
+    const count = selectedKeys.length
+    if (count < 2 || isTrashFolder) return
+    Alert.alert(t('notesList.merge.action'), t('notesList.merge.confirm', { count }), [
+      { text: t('folders.buttons.cancel'), style: 'cancel' },
+      {
+        text: t('notesList.merge.action'),
+        onPress: () => {
+          hapticSuccess()
+          const selected = new Set(selectedKeys)
+          const keys = orderedKeys.filter((key: string) => selected.has(key))
+          dispatch(mergeNotes({ keys, untitled: t('noteCard.untitled') }))
+          exitSelection()
+        },
+      },
+    ])
+  }, [dispatch, selectedKeys, orderedKeys, isTrashFolder, exitSelection, t])
+
+  const handleBulkCreate = useCallback(
+    (task: string) => {
+      if (selectedKeys.length === 0 || isTrashFolder) return
+      hapticLight()
+      const selected = new Set(selectedKeys)
+      setGenerateKeys(orderedKeys.filter((key: string) => selected.has(key)))
+      setGenerateTask(task)
+      setGenerateVisible(true)
+      exitSelection()
+    },
+    [selectedKeys, orderedKeys, isTrashFolder, exitSelection],
+  )
+
+  const handleOpenTidyUp = useCallback(() => {
+    hapticLight()
+    setTidyVisible(true)
+  }, [])
+
+  const handleCloseTidyUp = useCallback(() => setTidyVisible(false), [])
+  const handleCloseGenerate = useCallback(() => setGenerateVisible(false), [])
 
   const handleBulkDelete = useCallback(() => {
     const count = selectedKeys.length
@@ -684,6 +742,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           onDone={exitSelection}
           onMoveTo={handleBulkMove}
           onRestore={handleBulkRestore}
+          onMerge={handleBulkMerge}
+          canCreate={LOCAL_AI_ENABLED && textAiAvailable}
+          onCreate={handleBulkCreate}
           onDelete={handleBulkDelete}
         />
       ) : (
@@ -698,6 +759,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
                   {t('folders.deleteTitle')}
                 </Stack.Toolbar.MenuAction>
               </Stack.Toolbar.Menu>
+            )}
+            {tidyMoves.length > 0 && (
+              <Stack.Toolbar.Button
+                icon="wand.and.stars"
+                accessibilityLabel={t('tidyUp.button', { count: tidyMoves.length })}
+                onPress={handleOpenTidyUp}
+              />
             )}
             <Stack.Toolbar.Button
               icon="checkmark.circle"
@@ -749,6 +817,17 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         windowSize={LIST_WINDOW_SIZE}
       />
       <ScreenEdgeFades />
+      {LOCAL_AI_ENABLED && (
+        <TidyUpSheet visible={tidyVisible} moves={tidyMoves} onClose={handleCloseTidyUp} />
+      )}
+      {LOCAL_AI_ENABLED && (
+        <GenerateNoteSheet
+          visible={generateVisible}
+          task={generateTask}
+          noteKeys={generateKeys}
+          onClose={handleCloseGenerate}
+        />
+      )}
     </View>
   )
 }

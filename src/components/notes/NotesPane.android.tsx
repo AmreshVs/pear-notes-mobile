@@ -28,13 +28,19 @@ import {
   TRASH_RETENTION_DAYS,
 } from '@pear-notes/core/constant.js'
 import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
+import { GENERATE_TASKS } from '@pear-notes/core/store/services/localAiPrompts.js'
 import {
   deleteFolder,
   getFolders,
   setSelectedFolder,
   updateFolder,
 } from '@pear-notes/core/store/slices/foldersSlice.js'
-import { getMeaningSearchNotice } from '@pear-notes/core/store/slices/localAiSlice.js'
+import {
+  getMeaningSearchNotice,
+  getMeaningSearchReady,
+  selectIsTextAiAvailable,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
+import * as notesSlice from '@pear-notes/core/store/slices/notesSlice.js'
 import {
   createNote,
   deleteNote,
@@ -68,9 +74,11 @@ import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { MoveToVaultBottomSheet } from '@/components/bottomsheet/MoveToVaultBottomSheet'
 import { EdgeFade } from '@/components/EdgeFade'
+import { GenerateNoteSheet } from '@/components/GenerateNoteSheet'
 import { LockNowButton } from '@/components/LockNowButton'
 import { SearchScopeChips } from '@/components/notes/SearchScopeChips'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import { TidyUpSheet } from '@/components/TidyUpSheet'
 import {
   commonStyles,
   FontFamily,
@@ -96,6 +104,7 @@ import {
 } from '@/constants/constants'
 import { useNoteSearch } from '@/hooks/useNoteSearch'
 import { useNoteSelection } from '@/hooks/useNoteSelection'
+import { useTidyMoves } from '@/hooks/useTidyMoves'
 import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { androidRipple } from '@/lib/androidRipple'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -108,7 +117,17 @@ function noteKey(note: any): string {
   return note.key
 }
 
+const { mergeNotes } = notesSlice as unknown as {
+  mergeNotes: (payload: { keys: string[]; untitled: string }) => { type: string }
+}
+
 const MIN_NOTES_FOR_MULTI_SELECT = 2
+const GENERATE_TASK_ICONS: Record<string, string> = {
+  report: 'file-document-outline',
+  itinerary: 'map-outline',
+  flashcards: 'card-multiple-outline',
+  actionList: 'format-list-checks',
+}
 
 export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps) {
   const { t } = useTranslation()
@@ -136,7 +155,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const localPreferences = useSelector(getLocalPreferences) as any
   const hasAnyNotes = useSelector((state: any) => (getNotes(state) as any[]).length > 0)
 
-  const [searchVisible, setSearchVisible] = useState(false)
+  const [searchVisible, setSearchVisible] = useState(true)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [noteSheetVisible, setNoteSheetVisible] = useState(false)
   const [vaultMoveKeys, setVaultMoveKeys] = useState<string[]>([])
@@ -149,14 +168,23 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const [deleteConfirmNote, setDeleteConfirmNote] = useState<string | null>(null)
   const [showFolderDeleteConfirm, setShowFolderDeleteConfirm] = useState(false)
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
+  const [showBulkMergeConfirm, setShowBulkMergeConfirm] = useState(false)
   const [bulkFolderPickerVisible, setBulkFolderPickerVisible] = useState(false)
+  const [createKindVisible, setCreateKindVisible] = useState(false)
+  const [tidyVisible, setTidyVisible] = useState(false)
+  const [generateVisible, setGenerateVisible] = useState(false)
+  const [generateTask, setGenerateTask] = useState<string | null>(null)
+  const [generateKeys, setGenerateKeys] = useState<string[]>([])
+  const textAiAvailable = useSelector(selectIsTextAiAvailable) as boolean
+  const meaningReady = useSelector(getMeaningSearchReady) as boolean
+  const tidyMoves = useTidyMoves(LOCAL_AI_ENABLED && id === ALL_NOTES_KEY && meaningReady)
 
   const creatingNoteRef = useRef(false)
   const lastSelectedNoteRef = useRef<string | null>(selectedNote)
   const searchInputRef = useRef<TextInput>(null)
 
-  const searchBarHeight = useSharedValue(0)
-  const searchBarOpacity = useSharedValue(0)
+  const searchBarHeight = useSharedValue(64)
+  const searchBarOpacity = useSharedValue(1)
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
@@ -201,6 +229,10 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       setTimeout(() => searchInputRef.current?.focus(), 150)
     }
   }, [searchVisible, searchBarHeight, searchBarOpacity, dispatch])
+
+  useEffect(() => {
+    dispatch(prewarmSearch())
+  }, [dispatch])
 
   const searchBarAnimStyle = useAnimatedStyle(() => ({
     height: searchBarHeight.value,
@@ -335,6 +367,52 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     dispatch(restoreNotes(selectedKeys as any))
     exitSelection()
   }, [dispatch, selectedKeys, exitSelection])
+
+  const handleOpenBulkMerge = useCallback(() => {
+    if (selectedKeys.length < 2 || isTrashFolder) return
+    setShowBulkMergeConfirm(true)
+  }, [selectedKeys.length, isTrashFolder])
+
+  const handleCloseBulkMerge = useCallback(() => {
+    setShowBulkMergeConfirm(false)
+  }, [])
+
+  const handleConfirmBulkMerge = useCallback(() => {
+    hapticSuccess()
+    const selected = new Set(selectedKeys)
+    const keys = orderedKeys.filter((key: string) => selected.has(key))
+    dispatch(mergeNotes({ keys, untitled: t('noteCard.untitled') }))
+    setShowBulkMergeConfirm(false)
+    exitSelection()
+  }, [dispatch, selectedKeys, orderedKeys, exitSelection, t])
+
+  const handleOpenCreateKind = useCallback(() => {
+    if (selectedKeys.length === 0 || isTrashFolder) return
+    setCreateKindVisible(true)
+  }, [selectedKeys.length, isTrashFolder])
+
+  const handleCloseCreateKind = useCallback(() => setCreateKindVisible(false), [])
+
+  const handleCreateKind = useCallback(
+    (task: string) => {
+      hapticLight()
+      const selected = new Set(selectedKeys)
+      setGenerateKeys(orderedKeys.filter((key: string) => selected.has(key)))
+      setGenerateTask(task)
+      setCreateKindVisible(false)
+      setGenerateVisible(true)
+      exitSelection()
+    },
+    [selectedKeys, orderedKeys, exitSelection],
+  )
+
+  const handleOpenTidyUp = useCallback(() => {
+    hapticLight()
+    setTidyVisible(true)
+  }, [])
+
+  const handleCloseTidyUp = useCallback(() => setTidyVisible(false), [])
+  const handleCloseGenerate = useCallback(() => setGenerateVisible(false), [])
 
   const handleOpenBulkDelete = useCallback(() => {
     setShowBulkDeleteConfirm(true)
@@ -797,6 +875,27 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [handleConfirmBulkDelete, t],
   )
 
+  const createKindActions = useMemo(
+    () =>
+      (GENERATE_TASKS as string[]).map((task) => ({
+        icon: GENERATE_TASK_ICONS[task] ?? 'creation',
+        label: t(`generate.actions.${task}`),
+        onPress: () => handleCreateKind(task),
+      })),
+    [handleCreateKind, t],
+  )
+
+  const bulkMergeConfirmActions = useMemo(
+    () => [
+      {
+        icon: 'call-merge',
+        label: t('notesList.merge.action'),
+        onPress: handleConfirmBulkMerge,
+      },
+    ],
+    [handleConfirmBulkMerge, t],
+  )
+
   const deleteFolderConfirmActions = useMemo(
     () => [
       {
@@ -825,6 +924,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
             onToggleSelectAll={handleToggleSelectAll}
             onMove={handleOpenBulkMove}
             onRestore={handleBulkRestore}
+            onMerge={handleOpenBulkMerge}
+            canCreate={LOCAL_AI_ENABLED && textAiAvailable}
+            onCreate={handleOpenCreateKind}
             onDelete={handleOpenBulkDelete}
           />
         ) : (
@@ -846,6 +948,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
             onChangeSearch={handleChangeSearch}
             onClearSearch={handleClearSearch}
             onAskVault={LOCAL_AI_ENABLED ? handleAskVault : undefined}
+            tidyCount={tidyMoves.length}
+            onTidyUp={tidyMoves.length > 0 ? handleOpenTidyUp : undefined}
           />
         )}
       </View>
@@ -983,6 +1087,36 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         }
         showHeader
         actions={bulkDeleteConfirmActions}
+      />
+
+      <BottomActionSheet
+        visible={createKindVisible}
+        onDismiss={handleCloseCreateKind}
+        title={t('generate.create')}
+        subtitle={t('generate.fromCount', { count: selectedCount })}
+        showHeader
+        actions={createKindActions}
+      />
+
+      {LOCAL_AI_ENABLED && (
+        <TidyUpSheet visible={tidyVisible} moves={tidyMoves} onClose={handleCloseTidyUp} />
+      )}
+      {LOCAL_AI_ENABLED && (
+        <GenerateNoteSheet
+          visible={generateVisible}
+          task={generateTask}
+          noteKeys={generateKeys}
+          onClose={handleCloseGenerate}
+        />
+      )}
+
+      <BottomActionSheet
+        visible={showBulkMergeConfirm}
+        onDismiss={handleCloseBulkMerge}
+        title={t('notesList.merge.action')}
+        subtitle={t('notesList.merge.confirm', { count: selectedCount })}
+        showHeader
+        actions={bulkMergeConfirmActions}
       />
 
       <BottomActionSheet

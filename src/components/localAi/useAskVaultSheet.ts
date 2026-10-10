@@ -9,6 +9,7 @@ import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
 import { getLocalAiAdapter } from '@pear-notes/core/store/services/localAiAdapter.js'
 import { LOCAL_AI_ERROR, LOCAL_AI_FEATURE } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { isIndexable } from '@pear-notes/core/store/services/localAiIndex.js'
+import { askYourVaultViaDesktop } from '@pear-notes/core/store/services/localAiOffload.js'
 import {
   askYourVault,
   createVaultTurn,
@@ -17,8 +18,10 @@ import {
 } from '@pear-notes/core/store/services/localAiVaultAsk.js'
 import { WORK_KIND } from '@pear-notes/core/store/services/localAiWorkProgress.js'
 import {
+  getLinkedDesktopTitle,
   getLocalAiFeatureConfig,
   getMeaningSearchReady,
+  selectCanUseLinkedDesktop,
   selectIsLocalAiFeatureReady,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { createNote, getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
@@ -55,6 +58,7 @@ export interface VaultTurnView {
   result: VaultResultView | null
   sources: VaultSourceView[]
   error?: VaultError
+  answeredOn?: string
 }
 
 interface FeatureConfig {
@@ -152,7 +156,10 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
   const notesRef = useRef(notesData)
   notesRef.current = notesData
 
-  const ready = meaningReady && askReady
+  const desktopReady = useSelector(selectCanUseLinkedDesktop) as boolean
+  const desktopTitle = useSelector(getLinkedDesktopTitle) as string
+  const localReady = meaningReady && askReady
+  const ready = localReady || desktopReady
   const busy = turns.some((turn) => turn.status === 'working')
   const canSend = ready && question.trim().length > 0 && !busy
 
@@ -190,26 +197,48 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
     const onProgress = beginWork(WORK_KIND.NOTE_TASK, { input: asked })
     const noteOf = (key: string) => notesRef.current?.[key]
     try {
-      const result = await askYourVault({
-        question: asked,
-        turns: previous,
-        retrieve: (query: string, history: { question: string }[]) =>
-          retrieveVaultSources({
-            api: backendApi,
-            embed,
-            question: query,
-            turns: history,
-            searchSubstring: substringKeys,
-            isAllowed: (key: string) => isIndexable(noteOf(key)),
-            titleOf: (key: string) => noteOf(key)?.title ?? '',
-            updatedAtOf: (key: string) => noteOf(key)?.updatedAt ?? 0,
-          }),
-        answer: (sources: unknown[], history: unknown[]) =>
-          askVault(asked, sources as never, history as never, summaryConfig ?? {}, { onProgress }),
-      })
+      const askHere = (localOnly = false) =>
+        askYourVault({
+          question: asked,
+          turns: previous,
+          retrieve: (query: string, history: { question: string }[]) =>
+            retrieveVaultSources({
+              api: backendApi,
+              embed,
+              question: query,
+              turns: history,
+              searchSubstring: substringKeys,
+              isAllowed: (key: string) => isIndexable(noteOf(key)),
+              titleOf: (key: string) => noteOf(key)?.title ?? '',
+              updatedAtOf: (key: string) => noteOf(key)?.updatedAt ?? 0,
+            }),
+          answer: (sources: unknown[], history: unknown[]) =>
+            askVault(asked, sources as never, history as never, summaryConfig ?? {}, {
+              onProgress,
+              localOnly,
+            }),
+        })
+      let viaDesktop = desktopReady
+      const result = desktopReady
+        ? await askYourVaultViaDesktop({ question: asked, turns: previous, onProgress }).catch(
+            (cause: { started?: boolean; code?: string }) => {
+              if (cause?.code !== 'cancelled' && localReady && !cause?.started) {
+                viaDesktop = false
+                return askHere(true)
+              }
+              throw cause
+            },
+          )
+        : await askHere()
       if (runId !== runIdRef.current) return
       hapticSuccess()
-      updateTurn(id, (turn) => ({ ...turn, status: 'done', result, sources: result.sources }))
+      updateTurn(id, (turn) => ({
+        ...turn,
+        status: 'done',
+        result,
+        sources: result.sources,
+        answeredOn: viaDesktop && desktopTitle ? desktopTitle : undefined,
+      }))
     } catch (cause) {
       if (runId !== runIdRef.current) return
       hapticWarning()
@@ -217,7 +246,19 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
     } finally {
       if (runId === runIdRef.current) endWork()
     }
-  }, [beginWork, busy, endWork, question, ready, summaryConfig, turns, updateTurn])
+  }, [
+    beginWork,
+    busy,
+    desktopReady,
+    desktopTitle,
+    endWork,
+    localReady,
+    question,
+    ready,
+    summaryConfig,
+    turns,
+    updateTurn,
+  ])
 
   const handleCopy = useCallback(
     async (id: number) => {
@@ -276,6 +317,7 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
     workView,
     busy,
     ready,
+    desktopTitle,
     meaningReady,
     canSend,
     copiedId,

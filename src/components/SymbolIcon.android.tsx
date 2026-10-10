@@ -54,6 +54,8 @@ const MATERIAL_EQUIVALENT: Record<string, MaterialIconName> = {
   'square.and.pencil': 'square-edit-outline',
   'wifi.slash': 'wifi-off',
   gearshape: 'cog-outline',
+  sparkles: 'creation',
+  at: 'at',
 }
 
 const FALLBACK_ICON: MaterialIconName = 'help-circle-outline'

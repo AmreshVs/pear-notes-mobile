@@ -33,6 +33,9 @@ type AndroidSelectionAppBarProps = {
   onToggleSelectAll: () => void
   onMove: () => void
   onRestore: () => void
+  onMerge: () => void
+  canCreate: boolean
+  onCreate: () => void
   onDelete: () => void
 }
 
@@ -45,6 +48,9 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
   onToggleSelectAll,
   onMove,
   onRestore,
+  onMerge,
+  canCreate,
+  onCreate,
   onDelete,
 }: AndroidSelectionAppBarProps) {
   const { t } = useTranslation()
@@ -136,6 +142,38 @@ export const AndroidSelectionAppBar = memo(function AndroidSelectionAppBar({
               />
             </Pressable>
           )
+        )}
+
+        {!isTrash && (
+          <Pressable
+            onPress={onMerge}
+            android_ripple={ripple}
+            style={styles.iconBtn}
+            disabled={selectedCount < 2}
+            hitSlop={UI_SIZE_8}
+            accessibilityRole="button"
+            accessibilityLabel={t('notesList.merge.action')}
+          >
+            <MaterialCommunityIcons
+              name="call-merge"
+              size={UI_ICON_SIZE_24}
+              color={selectedCount >= 2 ? c.primary : c.onSurfaceVariant}
+            />
+          </Pressable>
+        )}
+
+        {!isTrash && canCreate && (
+          <Pressable
+            onPress={onCreate}
+            android_ripple={ripple}
+            style={styles.iconBtn}
+            disabled={!hasSelection}
+            hitSlop={UI_SIZE_8}
+            accessibilityRole="button"
+            accessibilityLabel={t('generate.create')}
+          >
+            <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_24} color={actionColor} />
+          </Pressable>
         )}
 
         <Pressable

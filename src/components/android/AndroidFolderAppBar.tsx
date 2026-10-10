@@ -51,6 +51,8 @@ type AndroidFolderAppBarProps = {
   onChangeSearch: (text: string) => void
   onClearSearch: () => void
   onAskVault?: () => void
+  onTidyUp?: () => void
+  tidyCount?: number
 }
 
 export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
@@ -71,6 +73,8 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   onChangeSearch,
   onClearSearch,
   onAskVault,
+  onTidyUp,
+  tidyCount = 0,
 }: AndroidFolderAppBarProps) {
   const { t } = useTranslation()
   const styles = useStyles()
@@ -118,6 +122,18 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
                 size={UI_ICON_SIZE_24}
                 color={c.primary}
               />
+            </Pressable>
+          )}
+          {onTidyUp && (
+            <Pressable
+              onPress={onTidyUp}
+              android_ripple={ripple}
+              style={styles.iconBtn}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('tidyUp.button', { count: tidyCount })}
+            >
+              <MaterialCommunityIcons name="auto-fix" size={UI_ICON_SIZE_24} color={c.primary} />
             </Pressable>
           )}
           <Pressable

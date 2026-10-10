@@ -19,6 +19,7 @@ import {
 import {
   getLocalAiIndexEnabled,
   selectIsLocalAiFeatureReady,
+  selectIsTextAiAvailable,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
@@ -36,10 +37,12 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { EdgeFade } from '@/components/EdgeFade'
 import { FindInNoteBar } from '@/components/FindInNoteBar'
+import { GenerateNoteSheet } from '@/components/GenerateNoteSheet'
 import { LockedContentShield } from '@/components/LockedContentShield'
 import { LockedNoteView } from '@/components/LockedNoteView'
 import { NoteBodyPlaceholder } from '@/components/NoteBodyPlaceholder'
 import { NoteConflictBanner } from '@/components/NoteConflictBanner'
+import { NoteSuggestionChips } from '@/components/NoteSuggestionChips'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { EditorSelection } from '@/components/TiptapEditor'
@@ -110,6 +113,11 @@ import { getAttachmentFileName, isAudioFile, isImageFile } from '../utils/media'
 import { useToast } from './ToastProvider'
 import { useNoteEditor } from './useNoteEditor'
 import { useNoteEditorActions } from './useNoteEditorActions'
+import {
+  CREATE_FROM_NOTE_TASKS,
+  RESTRUCTURE_TASKS,
+  useNoteTransformActions,
+} from './useNoteTransformActions'
 
 const MIME_TYPES: Record<string, string> = {
   jpg: 'image/jpeg',
@@ -249,11 +257,22 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.TRANSCRIBE_RECORDINGS) as boolean),
   )
   const summarizeReady = useSelector(
-    (state) =>
-      aiToolsVisible &&
-      (selectIsLocalAiFeatureReady(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS) as boolean),
+    (state) => aiToolsVisible && (selectIsTextAiAvailable(state) as boolean),
   )
   const { isVisible: hasNoteConflict } = useNoteConflict(noteId)
+  const {
+    canSplit,
+    canReadAloud,
+    handleReadAloud,
+    canGenerate,
+    generateVisible,
+    generateTask,
+    generateKeys,
+    handleSplitNote,
+    handleGenerate,
+    handleCloseGenerate,
+  } = useNoteTransformActions({ noteId, noteData, summarizeReady, onOpenNote: openNote })
+  const [taskSheet, setTaskSheet] = useState<'restructure' | 'create' | null>(null)
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
   const [dictationActive, setDictationActive] = useState(false)
   const [findNoteId, setFindNoteId] = useState<string | null>(null)
@@ -610,6 +629,20 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     )
   }, [gateAiFeature, openSourceSheet, selectedImageSrc, setImageSheetVisible, setSelectedImageSrc])
 
+  const handleImageMenuExtractDetails = useCallback(() => {
+    if (!selectedImageSrc) return
+    setImageSheetVisible(false)
+    const src = selectedImageSrc
+    setSelectedImageSrc(null)
+    if (!gateAiFeature(LOCAL_AI_FEATURE.EXTRACT_TEXT)) return
+    openSourceSheet(
+      'details',
+      src,
+      getAttachmentFileName(src, FALLBACK_IMAGE_FILE_NAME),
+      'localAi.errors.downloadImage',
+    )
+  }, [gateAiFeature, openSourceSheet, selectedImageSrc, setImageSheetVisible, setSelectedImageSrc])
+
   const handleImageMenuDescribe = useCallback(() => {
     if (!selectedImageSrc) return
     setImageSheetVisible(false)
@@ -662,8 +695,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             t('localAi.summarizeNote.insertTitle'),
             summary.summary ? [{ text: summary.summary }] : [],
             {
+              decisionsTitle: t('localAi.summary.decisions'),
+              decisions: summary.decisions,
               actionItemsTitle: t('localAi.summary.actionItems'),
               actionItems: summary.actionItems,
+              openQuestionsTitle: t('localAi.summary.openQuestions'),
+              openQuestions: summary.openQuestions,
             },
             selection.to,
           )
@@ -710,8 +747,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           t('localAi.summarizeNote.insertTitle'),
           summary.summary ? [{ text: summary.summary }] : [],
           {
+            decisionsTitle: t('localAi.summary.decisions'),
+            decisions: summary.decisions,
             actionItemsTitle: t('localAi.summary.actionItems'),
             actionItems: summary.actionItems,
+            openQuestionsTitle: t('localAi.summary.openQuestions'),
+            openQuestions: summary.openQuestions,
           },
         )
         return
@@ -752,8 +793,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             ? {
                 summaryTitle: t('localAi.summary.title'),
                 summary: summary.summary,
+                decisionsTitle: t('localAi.summary.decisions'),
+                decisions: summary.decisions,
                 actionItemsTitle: t('localAi.summary.actionItems'),
                 actionItems: summary.actionItems,
+                openQuestionsTitle: t('localAi.summary.openQuestions'),
+                openQuestions: summary.openQuestions,
               }
             : undefined,
         )
@@ -1033,6 +1078,44 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       label: noteData?.locked ? t('noteCard.actions.unlock') : t('noteCard.actions.lock'),
       onPress: handleToggleLock,
     })
+    if (canSplit) {
+      list.push({
+        icon: 'call-split',
+        label: t('noteEditor.contextMenu.splitNote'),
+        onPress: () => {
+          setMoreSheetVisible(false)
+          handleSplitNote()
+        },
+      })
+    }
+    if (canReadAloud) {
+      list.push({
+        icon: 'volume-high',
+        label: t('noteEditor.contextMenu.readAloud'),
+        onPress: () => {
+          setMoreSheetVisible(false)
+          handleReadAloud()
+        },
+      })
+    }
+    if (canGenerate) {
+      list.push({
+        icon: 'file-document-edit-outline',
+        label: t('noteEditor.contextMenu.restructureAs'),
+        onPress: () => {
+          setMoreSheetVisible(false)
+          setTaskSheet('restructure')
+        },
+      })
+      list.push({
+        icon: 'creation',
+        label: t('noteEditor.contextMenu.createFromNote'),
+        onPress: () => {
+          setMoreSheetVisible(false)
+          setTaskSheet('create')
+        },
+      })
+    }
     if (activityEnabled) {
       list.push({
         icon: 'history',
@@ -1070,6 +1153,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteId,
     activityEnabled,
     relatedEnabled,
+    canSplit,
+    canGenerate,
+    canReadAloud,
+    handleSplitNote,
+    handleReadAloud,
     handleFindInNote,
     setHistoryVisible,
     setRelatedVisible,
@@ -1080,6 +1168,19 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setMoreSheetVisible,
     setMoveDialogVisible,
   ])
+
+  const taskSheetActions = useMemo(
+    () =>
+      (taskSheet === 'create' ? CREATE_FROM_NOTE_TASKS : RESTRUCTURE_TASKS).map((task) => ({
+        icon: taskSheet === 'create' ? 'creation' : 'file-document-edit-outline',
+        label: t(`generate.actions.${task}`),
+        onPress: () => {
+          setTaskSheet(null)
+          handleGenerate(task)
+        },
+      })),
+    [handleGenerate, t, taskSheet],
+  )
 
   const handleShare = useCallback(async () => {
     if (isSharing) return
@@ -1098,6 +1199,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       setIsSharing(false)
     }
   }, [isSharing, setIsSharing, resolveHyperdriveUrl, t])
+
+  const handleAcceptSuggestedTitle = useCallback(
+    (nextTitle: string) => {
+      editorRef.current?.setTitle(nextTitle)
+      handleTitleChange(nextTitle, noteId ?? null)
+    },
+    [editorRef, handleTitleChange, noteId],
+  )
 
   const aboveToolbar =
     (keyboardHeight > 0 ? keyboardHeight + UI_SIZE_42 : insets.bottom + UI_SIZE_12) + UI_SIZE_72
@@ -1159,6 +1268,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         )}
 
         <NoteConflictBanner noteKey={noteId} />
+
+        {LOCAL_AI_ENABLED && isOpen && !isNoteLocked && (
+          <NoteSuggestionChips
+            noteKey={noteId}
+            bottom={uploadBannerBottom + (hasUploadQueue ? UI_SIZE_80 : 0)}
+            onAcceptTitle={handleAcceptSuggestedTitle}
+          />
+        )}
 
         {isNoteLocked && (
           <View style={styles.lockOverlay}>
@@ -1402,6 +1519,15 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           ...(aiToolsVisible
             ? [
                 {
+                  icon: 'text-box-search-outline',
+                  label: t('localAi.details.actionLabel'),
+                  onPress: handleImageMenuExtractDetails,
+                },
+              ]
+            : []),
+          ...(aiToolsVisible
+            ? [
+                {
                   icon: 'image-search-outline',
                   label: t('localAi.describeImage.menuLabel'),
                   onPress: handleImageMenuDescribe,
@@ -1517,6 +1643,26 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           insertBlocked={hasNoteConflict}
           onApplyEdits={handleApplyAskEdits}
           onClose={handleCloseAsk}
+        />
+      )}
+
+      <BottomActionSheet
+        visible={taskSheet !== null}
+        onDismiss={() => setTaskSheet(null)}
+        title={t(
+          taskSheet === 'create'
+            ? 'noteEditor.contextMenu.createFromNote'
+            : 'noteEditor.contextMenu.restructureAs',
+        )}
+        actions={taskSheetActions}
+      />
+
+      {LOCAL_AI_ENABLED && (
+        <GenerateNoteSheet
+          visible={generateVisible}
+          task={generateTask}
+          noteKeys={generateKeys}
+          onClose={handleCloseGenerate}
         />
       )}
 

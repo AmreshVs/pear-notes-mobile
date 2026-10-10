@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Fragment, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Modal, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import Animated, { useAnimatedStyle } from 'react-native-reanimated'
@@ -72,6 +72,7 @@ const HERO_BASE_BY_MODE: Record<VoiceTypingMode, string> = {
   dictate: 'localAi.voiceTyping',
   transcribe: 'localAi.transcribe',
   extract: 'localAi.extractText',
+  details: 'localAi.details',
   describe: 'localAi.describeImage',
   translate: 'localAi.translateNote',
   summarizeNote: 'localAi.summarizeNote',
@@ -82,6 +83,8 @@ const HERO_BASE_BY_MODE: Record<VoiceTypingMode, string> = {
   makeShorter: 'localAi.makeShorter',
   makeProfessional: 'localAi.makeProfessional',
   makeFriendly: 'localAi.makeFriendly',
+  cleanUp: 'localAi.cleanUp',
+  myStyle: 'localAi.myStyle',
 }
 
 const SELECTION_HERO_BASE: Partial<Record<VoiceTypingMode, string>> = {
@@ -96,6 +99,9 @@ const SELECTION_ERRORS: Partial<Record<VoiceTypingError, string>> = {
 }
 
 const ICON_BY_MODE: Record<VoiceTypingMode, string> = {
+  cleanUp: 'sparkles',
+  myStyle: 'person.text.rectangle',
+  details: 'doc.text.magnifyingglass',
   fixGrammar: 'checkmark.circle',
   rewrite: 'wand.and.stars',
   makeShorter: 'arrow.down.right.and.arrow.up.left',
@@ -120,6 +126,7 @@ const ERROR_KEY_OVERRIDES: Partial<
   Record<VoiceTypingMode, Partial<Record<VoiceTypingError, string>>>
 > = {
   extract: { empty: 'emptyImage', failed: 'failedExtract' },
+  details: { empty: 'emptyImage', failed: 'failedExtract' },
   describe: { empty: 'emptyDescribe', failed: 'failedDescribe' },
   translate: {
     empty: 'emptyTranslate',
@@ -135,6 +142,8 @@ const ERROR_KEY_OVERRIDES: Partial<
   makeShorter: NOTE_TASK_ERRORS,
   makeProfessional: NOTE_TASK_ERRORS,
   makeFriendly: NOTE_TASK_ERRORS,
+  cleanUp: NOTE_TASK_ERRORS,
+  myStyle: NOTE_TASK_ERRORS,
 }
 
 function heroKeys(
@@ -477,15 +486,23 @@ export function VoiceTypingSheet({
                   </Text>
                 </>
               )}
-              {summary.actionItems.length > 0 && (
-                <>
-                  <Text style={styles.summaryHeading}>{t('localAi.summary.actionItems')}</Text>
-                  {summary.actionItems.map((item, index) => (
-                    <Text key={index} style={styles.previewText} selectable>
-                      {`• ${item}`}
-                    </Text>
-                  ))}
-                </>
+              {(
+                [
+                  ['decisions', summary.decisions],
+                  ['actionItems', summary.actionItems],
+                  ['openQuestions', summary.openQuestions],
+                ] as const
+              ).map(([section, items]) =>
+                items?.length ? (
+                  <Fragment key={section}>
+                    <Text style={styles.summaryHeading}>{t(`localAi.summary.${section}`)}</Text>
+                    {items.map((item, index) => (
+                      <Text key={index} style={styles.previewText} selectable>
+                        {`• ${item}`}
+                      </Text>
+                    ))}
+                  </Fragment>
+                ) : null,
               )}
             </View>
           )}

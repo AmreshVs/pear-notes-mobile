@@ -2,6 +2,8 @@ import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Stack } from 'expo-router'
 
+import { GENERATE_TASKS } from '@pear-notes/core/store/services/localAiPrompts.js'
+
 import { useTheme } from '@/components/Themed'
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 
@@ -21,6 +23,9 @@ type NoteSelectionToolbarProps = {
   onDone: () => void
   onMoveTo: (folderId: string) => void
   onRestore: () => void
+  onMerge: () => void
+  canCreate: boolean
+  onCreate: (task: string) => void
   onDelete: () => void
 }
 
@@ -34,6 +39,9 @@ export const NoteSelectionToolbar = memo(function NoteSelectionToolbar({
   onDone,
   onMoveTo,
   onRestore,
+  onMerge,
+  canCreate,
+  onCreate,
   onDelete,
 }: NoteSelectionToolbarProps) {
   const { t } = useTranslation()
@@ -89,6 +97,27 @@ export const NoteSelectionToolbar = memo(function NoteSelectionToolbar({
             accessibilityLabel={t('folderView.selection.move')}
           >
             {moveActions}
+          </Stack.Toolbar.Menu>
+        )}
+        {!isTrash && (
+          <Stack.Toolbar.Button
+            icon="arrow.triangle.merge"
+            disabled={selectedCount < 2}
+            accessibilityLabel={t('notesList.merge.action')}
+            onPress={onMerge}
+          />
+        )}
+        {!isTrash && canCreate && (
+          <Stack.Toolbar.Menu
+            icon="sparkles"
+            disabled={!hasSelection}
+            accessibilityLabel={t('generate.create')}
+          >
+            {(GENERATE_TASKS as string[]).map((task) => (
+              <Stack.Toolbar.MenuAction key={task} onPress={() => onCreate(task)}>
+                {t(`generate.actions.${task}`)}
+              </Stack.Toolbar.MenuAction>
+            ))}
           </Stack.Toolbar.Menu>
         )}
         <Stack.Toolbar.Button

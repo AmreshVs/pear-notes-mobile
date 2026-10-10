@@ -173,6 +173,8 @@ PODS:
     - ExpoModulesCore
   - ExpoPdfTools (1.0.0):
     - ExpoModulesCore
+  - ExpoReminders (1.0.0):
+    - ExpoModulesCore
   - ExpoRouter (56.2.20):
     - ExpoModulesCore
     - RNScreens
@@ -2113,7 +2115,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - "react-native-bare-kit (0.15.5+e334bd)":
+  - "react-native-bare-kit (0.15.5+e413c6)":
     - boost
     - DoubleConversion
     - fast_float
@@ -3313,6 +3315,7 @@ DEPENDENCIES:
   - ExpoNativeShare (from `../modules/expo-native-share/ios`)
   - ExpoNetwork (from `../node_modules/expo-network/ios`)
   - ExpoPdfTools (from `../modules/expo-pdf-tools/ios`)
+  - ExpoReminders (from `../modules/expo-reminders/ios`)
   - ExpoRouter (from `../node_modules/expo-router/ios`)
   - ExpoScreenCapture (from `../node_modules/expo-screen-capture/ios`)
   - ExpoSecureStore (from `../node_modules/expo-secure-store/ios`)
@@ -3507,6 +3510,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-network/ios"
   ExpoPdfTools:
     :path: "../modules/expo-pdf-tools/ios"
+  ExpoReminders:
+    :path: "../modules/expo-reminders/ios"
   ExpoRouter:
     :path: "../node_modules/expo-router/ios"
   ExpoScreenCapture:
@@ -3749,6 +3754,7 @@ SPEC CHECKSUMS:
   ExpoNativeShare: 499f82374398683e7bfe0c61ee734cea56dd5895
   ExpoNetwork: 06f00de1f1d3b33327d392232b1e5dd866b05444
   ExpoPdfTools: dd0d5820874eb59f587921efd80d6203edd1b03d
+  ExpoReminders: d73a34fc486711947e967021dfb75def17f2741c
   ExpoRouter: 58319874f097ad589b691813db905812b1b7d59b
   ExpoScreenCapture: 807784aab5809f28685e0349273992ac4ad8497b
   ExpoSecureStore: f1bd083c1b7b8d4142013ffcc0082d377d9f49f4
@@ -3805,7 +3811,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 3cf4ae68a4d69ca69de94385d423d57785907eb7
   React-microtasksnativemodule: 663a8165cfe10e4eb749796a53b3b8c68631b00c
   React-mutationobservernativemodule: 4f7e4c18735cfbb0f81eada4f34aa527697e8704
-  react-native-bare-kit: baa3bb453faab2a9624bd309e76bea986cf4bf73
+  react-native-bare-kit: 0bae9dc0be12246f594e1597a7883a94158edcd4
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
   react-native-slider: 4faf1b2266c73f1afb7b30cc6ebb3df238a37c0b
   react-native-vector-icons-material-design-icons: a4b6ec02814573c09203a725ee3767a7e8d5eb77
