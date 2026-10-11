@@ -1,9 +1,11 @@
 import { type ReactNode, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { KeyboardAvoidingView, Modal, Pressable, StyleSheet, View } from 'react-native'
+import { Modal, Pressable, StyleSheet, View } from 'react-native'
 import Animated, {
   Easing,
+  KeyboardState,
   runOnJS,
+  useAnimatedKeyboard,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -63,6 +65,18 @@ export function AiBottomSheet({
   const insets = useSafeAreaInsets()
   const [isPresented, setIsPresented] = useState(visible)
   const sheetProgress = useSharedValue(visible ? 1 : 0)
+  const keyboard = useAnimatedKeyboard()
+  const restingBottom = Math.max(insets.bottom, UI_SIZE_12)
+
+  const bottomSpacerStyle = useAnimatedStyle(() => {
+    const state = keyboard.state.value
+    const onScreen =
+      state === KeyboardState.OPENING ||
+      state === KeyboardState.OPEN ||
+      state === KeyboardState.CLOSING
+    if (!avoidKeyboard || !onScreen || keyboard.height.value <= 0) return { height: restingBottom }
+    return { height: Math.max(keyboard.height.value + UI_SIZE_12, restingBottom) }
+  })
 
   const backdropAnimatedStyle = useAnimatedStyle(() => ({ opacity: sheetProgress.value }))
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
@@ -151,7 +165,7 @@ export function AiBottomSheet({
 
       {children(dismissThen)}
 
-      <View style={{ height: Math.max(insets.bottom, UI_SIZE_12) }} />
+      <Animated.View style={bottomSpacerStyle} />
     </>
   )
 
@@ -170,12 +184,7 @@ export function AiBottomSheet({
         >
           <Pressable style={StyleSheet.absoluteFill} onPress={handleClose} />
         </Animated.View>
-        <KeyboardAvoidingView
-          style={styles.keyboardArea}
-          behavior="padding"
-          enabled={avoidKeyboard}
-          pointerEvents="box-none"
-        >
+        <View style={styles.keyboardArea} pointerEvents="box-none">
           <Animated.View
             style={[styles.sheetWrap, sheetAnimatedStyle]}
             pointerEvents={visible ? 'auto' : 'none'}
@@ -194,7 +203,7 @@ export function AiBottomSheet({
               )}
             </View>
           </Animated.View>
-        </KeyboardAvoidingView>
+        </View>
       </View>
     </Modal>
   )

@@ -31,7 +31,7 @@ export const UpcomingNextCard = memo(function UpcomingNextCard({
       accessibilityRole="button"
     >
       <Text style={styles.caption}>
-        {t('upcoming.next', { when: formatUpcomingWhen(task, language) })}
+        {t('upcoming.next', { when: formatUpcomingWhen(task, t, language) })}
       </Text>
       <Text style={styles.taskText} numberOfLines={2}>
         {task.text}

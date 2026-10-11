@@ -40,7 +40,7 @@ export function useDuplicates() {
   const index = useSelector(getLocalAiIndex) as { changedAt: number; lastRun?: { total?: number } }
 
   useEffect(() => {
-    dispatch(loadDuplicateNotes())
+    dispatch({ type: loadDuplicateNotes.type, payload: { force: true } })
   }, [dispatch, index.changedAt])
 
   const rows = useMemo<DuplicatePairRow[]>(

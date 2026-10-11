@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFocusEffect } from 'expo-router'
+import type { TFunction } from 'i18next'
 
 import {
   countOpenUpcoming,
@@ -52,17 +53,24 @@ const taskDate = (task: UpcomingTask, withTime: boolean) => {
   return new Date(year, month - 1, day, hour, minute)
 }
 
-export function formatUpcomingWhen(task: UpcomingTask, language: string, now = Date.now()) {
-  const relative = new Intl.RelativeTimeFormat(language, { numeric: 'auto' })
+export function formatUpcomingWhen(
+  task: UpcomingTask,
+  t: TFunction,
+  language: string,
+  now = Date.now(),
+): string {
   const days = Math.round(
     (taskDate(task, false).getTime() - new Date(now).setHours(0, 0, 0, 0)) / DAY_MS,
   )
   if (task.time && days === 0) {
     const diff = taskDate(task, true).getTime() - now
-    if (diff < HOUR_MS) return relative.format(Math.max(1, Math.round(diff / MINUTE_MS)), 'minute')
-    return relative.format(Math.round(diff / HOUR_MS), 'hour')
+    if (diff < HOUR_MS) {
+      return t('upcoming.when.inMinutes', { count: Math.max(1, Math.round(diff / MINUTE_MS)) })
+    }
+    return t('upcoming.when.inHours', { count: Math.round(diff / HOUR_MS) })
   }
-  if (days <= 1) return relative.format(days, 'day')
+  if (days <= 0) return t('upcoming.when.today')
+  if (days === 1) return t('upcoming.when.tomorrow')
   return formatUpcomingDue({ ...task, time: null }, language)
 }
 
