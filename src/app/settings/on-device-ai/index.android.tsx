@@ -25,6 +25,9 @@ import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBa
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { AnswersSection } from '@/components/settings/onDeviceAi/AnswersSection'
+import { IndexSection } from '@/components/settings/onDeviceAi/IndexSection'
+import { SuggestionsSection } from '@/components/settings/onDeviceAi/SuggestionsSection'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -360,34 +363,14 @@ export default function AndroidOnDeviceAiScreen() {
             </View>
 
             {indexEnabled && (
-              <>
-                <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
-                  {t('settings.onDeviceAi.yourNotes')}
-                </Text>
-                <View style={styles.groupCard}>
-                  <View style={styles.toggleRow}>
-                    <View style={styles.toggleInfo}>
-                      <Text style={styles.rowTitle}>{t('settings.onDeviceAi.index.title')}</Text>
-                      <Text style={styles.rowSubtitle} accessibilityLiveRegion="polite">
-                        {indexStatusText}
-                      </Text>
-                    </View>
-                    <Pressable
-                      onPress={rebuildIndex}
-                      disabled={indexBusy}
-                      android_ripple={rippleBorderless}
-                      accessibilityRole="button"
-                      accessibilityState={{ disabled: indexBusy }}
-                      style={[styles.indexButton, indexBusy && commonStyles.disabled]}
-                    >
-                      <Text style={styles.indexButtonText}>
-                        {t('settings.onDeviceAi.index.rebuild')}
-                      </Text>
-                    </Pressable>
-                  </View>
-                </View>
-              </>
+              <IndexSection
+                statusText={indexStatusText}
+                busy={indexBusy}
+                onRebuild={rebuildIndex}
+              />
             )}
+
+            <SuggestionsSection />
 
             <Text style={[md3Styles.settingsSectionCamelCase, commonStyles.sectionHeader]}>
               {t('settings.onDeviceAi.downloads')}
@@ -421,6 +404,8 @@ export default function AndroidOnDeviceAiScreen() {
                 </Text>
               )}
             </View>
+
+            <AnswersSection />
 
             {groups.map((group) => (
               <Fragment key={group.id}>
@@ -630,20 +615,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontSize: FontSize.body,
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
-    },
-    indexButton: {
-      overflow: 'hidden',
-      paddingHorizontal: Space.base,
-      height: UI_SIZE_40,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: hexWithAlpha(c.onSurface, 0.08),
-      ...commonStyles.centered,
-    },
-    indexButtonText: {
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
-      color: c.primary,
     },
     offloadStatus: {
       fontSize: FontSize.caption,

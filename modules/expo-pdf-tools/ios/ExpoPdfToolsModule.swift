@@ -104,6 +104,30 @@ public class ExpoPdfToolsModule: Module {
       ])
     }
 
+    AsyncFunction("getPdfText") { (options: [String: Any], promise: Promise) in
+      guard let url = options["url"] as? String else {
+        promise.reject(Exception(name: "InvalidArguments", description: "url is required."))
+        return
+      }
+      let maxPages = max(1, options["maxPages"] as? Int ?? 20)
+      let maxChars = max(1, options["maxChars"] as? Int ?? 20000)
+      guard let document = PDFDocument(url: URL(fileURLWithPath: normalizedPath(url))) else {
+        promise.reject(Exception(name: "UnreadablePdf", description: "The PDF could not be opened."))
+        return
+      }
+      var text = ""
+      for index in 0..<min(document.pageCount, maxPages) {
+        if text.count >= maxChars { break }
+        if let pageText = document.page(at: index)?.string, !pageText.isEmpty {
+          text += pageText + "\n"
+        }
+      }
+      promise.resolve([
+        "text": String(text.prefix(maxChars)),
+        "pageCount": document.pageCount
+      ])
+    }
+
     AsyncFunction("getPdfThumbnail") { (options: [String: Any], promise: Promise) in
       guard let url = options["url"] as? String,
             let outputPath = options["outputPath"] as? String

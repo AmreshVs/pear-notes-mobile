@@ -18,6 +18,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import * as FileSystem from 'expo-file-system'
 import { SymbolView } from 'expo-symbols'
 
+import { AI_SUGGESTION } from '@pear-notes/core/store/services/aiSuggestionPrefs.js'
 import {
   LOCAL_AI_ENABLED,
   LOCAL_AI_FEATURE,
@@ -85,6 +86,7 @@ import {
 } from '@/constants/commonStyles'
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 import { useAiFeatureGate, useAiToolsVisible } from '@/hooks/useAiFeatureGate'
+import { useAiSuggestionOn } from '@/hooks/useAiSuggestionOn'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
 import { useLockedNoteScreenProtection } from '@/hooks/useLockedNoteScreenProtection'
 import { useShareIntakeController } from '@/hooks/useShareIntakeController'
@@ -189,8 +191,12 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const lockMethod = useSelector(getLockMethod)
   const activityEnabled = useSelector(getActivityLogEnabled) as boolean
+  const relatedOn = useAiSuggestionOn(AI_SUGGESTION.RELATED)
   const relatedEnabled =
-    (useSelector(getLocalAiIndexEnabled) as boolean) && LOCAL_AI_ENABLED && !noteData?.locked
+    (useSelector(getLocalAiIndexEnabled) as boolean) &&
+    LOCAL_AI_ENABLED &&
+    relatedOn &&
+    !noteData?.locked
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const protectLockedNote = isOpen && !!noteData?.locked
@@ -249,6 +255,8 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       uploadFailedScan: t('noteEditor.upload.failedScan'),
       unlockReason: t('noteCard.unlockReason'),
       lockReason: t('noteCard.lockReason'),
+      shareSummaryLabel: t('shareIntake.summary.summaryLabel'),
+      shareKeyPointsLabel: t('shareIntake.summary.keyPointsLabel'),
       pageCountLabel: (count: number) => t('noteEditor.upload.pageCount', { count }),
     }),
     [t],

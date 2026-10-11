@@ -17,6 +17,7 @@ export interface VoiceTypingBarOptions {
 export interface VoiceTypingBarProps extends VoiceTypingBarOptions {
   toolbarBottom?: number
   keyboardAnchored?: boolean
+  inline?: boolean
 }
 
 const ERROR_KEYS: Record<VoiceTypingError, string> = {

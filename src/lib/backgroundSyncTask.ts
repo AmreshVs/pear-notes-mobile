@@ -19,6 +19,7 @@ import {
   EXTENDED_BACKGROUND_WAKEUP_DEADLINE_MS,
   isActiveWorkletSuspended,
   isBackendReady,
+  isOtherBackgroundWindowOpen,
   setBackgroundSyncWindowActive,
   suspendActiveWorklet,
   suspendIfDeferredForBackgroundSync,
@@ -108,6 +109,11 @@ async function resuspendIfTaskWokeIt(wokeFromSuspended: boolean): Promise<void> 
 
   if (isForeground()) {
     log.info(BACKGROUND_SYNC_LOG_PREFIX + ' app came to foreground, leaving it running')
+    return
+  }
+
+  if (isOtherBackgroundWindowOpen()) {
+    log.info(BACKGROUND_SYNC_LOG_PREFIX + ' another background task is running, leaving it awake')
     return
   }
 
@@ -232,6 +238,7 @@ log.info(
 TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
   log.info(BACKGROUND_SYNC_LOG_PREFIX + ' task fired at ' + new Date().toISOString())
   let coldStartedWorklet: any = null
+  let windowHeld = false
   const backendWasReady = isBackendReady()
   const stopKeepingAwake = keepWorkletAwake()
   try {
@@ -246,6 +253,7 @@ TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
     }
 
     setBackgroundSyncWindowActive(true)
+    windowHeld = true
     if (!coldStartedWorklet && !backendWasReady) {
       const readyStartedAt = Date.now()
       const ready = await waitForBackendReady(BACKEND_READY_WAIT_MS)
@@ -275,7 +283,7 @@ TaskManager.defineTask(BACKGROUND_SYNC_TASK_NAME, async () => {
     return BackgroundTaskResult.Failed
   } finally {
     stopKeepingAwake()
-    setBackgroundSyncWindowActive(false)
+    if (windowHeld) setBackgroundSyncWindowActive(false)
     if (coldStartedWorklet) await tearDownColdStartedWorklet(coldStartedWorklet)
     suspendIfDeferredForBackgroundSync()
   }

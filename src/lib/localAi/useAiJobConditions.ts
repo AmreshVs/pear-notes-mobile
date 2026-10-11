@@ -1,33 +1,20 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { AppState } from 'react-native'
-import { useDispatch } from 'react-redux'
+import { useDispatch, useSelector } from 'react-redux'
 
 import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   enableLocalAiIndex,
+  getLocalAiIndex,
   localAiConditionsChanged,
   localAiUserActivity,
   runLocalAiSchedulerProbe,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 
+import { applyBackgroundIndex, loadIndexOnlyWhileCharging } from '@/lib/backgroundIndexTask'
+import { isPluggedInState, loadBattery } from '@/lib/battery'
+
 const ACTIVITY_THROTTLE_MS = 5000
-
-type BatteryModule = typeof import('expo-battery')
-
-// A dev client built before expo-battery was added has no native module; charging then stays unknown.
-function loadBattery(): BatteryModule | null {
-  try {
-    return require('expo-battery') as BatteryModule
-  } catch {
-    return null
-  }
-}
-
-// NOT_CHARGING is Android's plugged in but held (battery protection), which still costs no battery.
-const isPluggedIn = (battery: BatteryModule, state: number) =>
-  state === battery.BatteryState.CHARGING ||
-  state === battery.BatteryState.FULL ||
-  state === battery.BatteryState.NOT_CHARGING
 
 export function useAiJobConditions() {
   const dispatch = useDispatch()
@@ -54,7 +41,7 @@ export function useAiJobConditions() {
     const reportCharging = (state: number) =>
       dispatch({
         type: localAiConditionsChanged.type,
-        payload: { charging: !!battery && isPluggedIn(battery, state) },
+        payload: { charging: !!battery && isPluggedInState(battery, state) },
       })
     let active = true
     battery
@@ -68,12 +55,15 @@ export function useAiJobConditions() {
       dispatch(runLocalAiSchedulerProbe())
     }
     // Dev only: EXPO_PUBLIC_AI_INDEX_REBUILD=1 embeds every note again, to measure a full index.
-    dispatch({
-      type: enableLocalAiIndex.type,
-      payload: {
-        waitForCharging: true,
-        rebuild: __DEV__ && process.env.EXPO_PUBLIC_AI_INDEX_REBUILD === '1',
-      },
+    loadIndexOnlyWhileCharging().then((waitForCharging) => {
+      if (!active) return
+      dispatch({
+        type: enableLocalAiIndex.type,
+        payload: {
+          waitForCharging,
+          rebuild: __DEV__ && process.env.EXPO_PUBLIC_AI_INDEX_REBUILD === '1',
+        },
+      })
     })
     return () => {
       active = false
@@ -81,6 +71,11 @@ export function useAiJobConditions() {
       batterySubscription?.remove()
     }
   }, [dispatch])
+
+  const indexEnabled = (useSelector(getLocalAiIndex) as { enabled: boolean }).enabled
+  useEffect(() => {
+    if (LOCAL_AI_ENABLED) applyBackgroundIndex(indexEnabled)
+  }, [indexEnabled])
 
   return onUserTouch
 }

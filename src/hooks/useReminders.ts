@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, AppState, DeviceEventEmitter, Linking } from 'react-native'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import { AI_SUGGESTION } from '@pear-notes/core/store/services/aiSuggestionPrefs.js'
 import { buildReminderItems } from '@pear-notes/core/store/services/noteTasks.js'
 import {
   isRemindersEnabled,
@@ -10,6 +11,7 @@ import {
 } from '@pear-notes/core/store/services/reminders.js'
 import { loadDoneIds, loadReminderPrefs } from '@pear-notes/core/store/services/upcomingTasks.js'
 
+import { useAiSuggestionOn } from '@/hooks/useAiSuggestionOn'
 import { REMINDERS_CHANGED_EVENT } from '@/hooks/useReminderPrefs'
 
 import ExpoReminders from '../../modules/expo-reminders'
@@ -34,6 +36,7 @@ const asGranted = (result: unknown) =>
 export function useReminders() {
   const { t, i18n } = useTranslation()
   const syncing = useRef(false)
+  const tasksOn = useAiSuggestionOn(AI_SUGGESTION.TASKS)
 
   useEffect(() => {
     if (!ExpoReminders) return
@@ -43,7 +46,7 @@ export function useReminders() {
       if (syncing.current) return
       syncing.current = true
       try {
-        if (!(await isRemindersEnabled(backendApi))) {
+        if (!tasksOn || !(await isRemindersEnabled(backendApi))) {
           await ExpoReminders?.cancelAll().catch(() => {})
           return
         }
@@ -88,7 +91,7 @@ export function useReminders() {
       appState.remove()
       changed.remove()
     }
-  }, [i18n.language, t])
+  }, [i18n.language, t, tasksOn])
 }
 
 export function useRemindersSetting(): [boolean, () => void, boolean] {

@@ -8,6 +8,7 @@ import {
   readShareInbox,
 } from '@/lib/shareInbox'
 import type { ShareIntakeSnapshot, SharePayload } from '@/lib/shareIntake.types'
+import { clearShareSummary } from '@/lib/shareSummaryState'
 
 const EMPTY_SNAPSHOT: ShareIntakeSnapshot = { payloads: [], items: [], preparing: false }
 
@@ -69,6 +70,7 @@ export function refreshShareIntake(): Promise<SharePayload[]> {
 }
 
 export async function discardAllSharedItems() {
+  clearShareSummary()
   await discardSharePayloads(retireVisiblePayloads())
 }
 

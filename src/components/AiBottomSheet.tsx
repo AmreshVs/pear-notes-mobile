@@ -44,6 +44,7 @@ interface AiBottomSheetProps {
   subtitle?: string
   subtitleLines?: number
   avoidKeyboard?: boolean
+  headerAccessory?: ReactNode
   onClose: () => void
   children: (dismissThen: DismissThen) => ReactNode
 }
@@ -56,6 +57,7 @@ export function AiBottomSheet({
   subtitle,
   subtitleLines,
   avoidKeyboard = false,
+  headerAccessory,
   onClose,
   children,
 }: AiBottomSheetProps) {
@@ -147,6 +149,7 @@ export function AiBottomSheet({
             </Text>
           )}
         </View>
+        {headerAccessory}
         <Pressable
           hitSlop={12}
           onPress={handleClose}

@@ -155,3 +155,36 @@ export async function getPdfThumbnail(url: string, fileName: string): Promise<Pd
   if (!base64) return null
   return { dataUri: `data:image/jpeg;base64,${base64}`, pageCount: file.pageCount }
 }
+
+const PDF_TEXT_MAX_PAGES = 20
+const PDF_TEXT_MAX_CHARS = 20000
+const PDF_TEXT_CACHE_LIMIT = 64
+export const PDF_TEXT_MAX_BYTES = 25 * 1024 * 1024
+const pdfTextCache = new Map<string, string>()
+
+export async function readLocalPdfText(localPdfUri: string): Promise<string> {
+  const pdfTools = await loadPdfTools()
+  if (!pdfTools?.getPdfText) return ''
+  const { text } = await pdfTools.getPdfText({
+    url: toBackendPath(localPdfUri),
+    maxPages: PDF_TEXT_MAX_PAGES,
+    maxChars: PDF_TEXT_MAX_CHARS,
+  })
+  return String(text ?? '').trim()
+}
+
+export async function readPdfText(url: string, fileName: string): Promise<string> {
+  const cached = pdfTextCache.get(url)
+  if (cached !== undefined) return cached
+  const localPdfUri = await downloadToCache(url, fileName)
+  try {
+    const text = await readLocalPdfText(localPdfUri)
+    pdfTextCache.set(url, text)
+    if (pdfTextCache.size > PDF_TEXT_CACHE_LIMIT) {
+      pdfTextCache.delete(pdfTextCache.keys().next().value as string)
+    }
+    return text
+  } finally {
+    await cleanupCachedAttachment(localPdfUri)
+  }
+}

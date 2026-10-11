@@ -55,7 +55,9 @@ export function VoiceTypingBar(props: VoiceTypingBarProps) {
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
   return (
-    <Animated.View style={[styles.row, containerStyle]}>
+    <Animated.View
+      style={props.inline ? [styles.row, styles.rowInline] : [styles.row, containerStyle]}
+    >
       <View style={styles.container}>
         <Pressable
           onPress={handleClose}
@@ -145,6 +147,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, isDark }) => {
       flexDirection: 'row',
       alignItems: 'center',
       zIndex: 10,
+    },
+    rowInline: {
+      position: 'relative',
+      left: 0,
+      right: 0,
     },
     container: {
       flex: 1,

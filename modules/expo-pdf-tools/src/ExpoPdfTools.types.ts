@@ -22,3 +22,14 @@ export interface PdfThumbnailResult {
   height: number
   pageCount: number
 }
+
+export type PdfTextOptions = {
+  url: string
+  maxPages?: number
+  maxChars?: number
+}
+
+export type PdfTextResult = {
+  text: string
+  pageCount: number
+}

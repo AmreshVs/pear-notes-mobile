@@ -11,7 +11,6 @@ import {
 import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
-import { toMeaningSnippet } from '@pear-notes/core/store/services/localAiSearch.js'
 import { VAULT_ASK_KIND } from '@pear-notes/core/store/services/localAiVaultAsk.js'
 import { closeAskVault, getAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
@@ -20,16 +19,15 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { SHEET_ICON_CHIP_ALPHA } from '@/components/android/useSheetStyles'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
+import { VoiceTypingBar } from '@/components/VoiceTypingBar'
 import {
   commonStyles,
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_SIZE_2,
-  UI_SIZE_4,
   UI_SIZE_6,
   UI_SIZE_8,
   UI_SIZE_12,
@@ -46,8 +44,16 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 import { ASK_QUESTION_MAX_CHARS } from '@/lib/localAi/askNote'
 import { askIndexNoticeText } from '@/utils/askIndexNotice'
 
+import { AskVaultAnswerActions } from './AskVaultAnswerActions'
+import { AskVaultDraftActions } from './AskVaultDraftActions'
+import { AskVaultDraftCard } from './AskVaultDraftCard'
+import { AskVaultRecent } from './AskVaultRecent'
+import { AskVaultReminderAction } from './AskVaultReminderAction'
+import { AskVaultScopePill } from './AskVaultScopePill'
+import { AskVaultSources } from './AskVaultSources'
+import { AskVaultSuggestions } from './AskVaultSuggestions'
 import {
-  getShownSources,
+  getTurnDraft,
   splitAnswerCitations,
   useAskVaultSheet,
   type VaultTurnView,
@@ -89,9 +95,31 @@ export function AskVaultSheet() {
     canSend,
     copiedId,
     savedId,
+    notesData,
+    draftDone,
+    currentFolder,
+    scopeName,
+    suggestions,
+    threads,
+    openThread,
+    deleteThread,
+    remindersOn,
+    voiceReady,
+    dictating,
+    toggleReminders,
+    toggleScope,
+    reminderFor,
+    sourceMeta,
+    draftTargetOf,
     handleSend,
     handleCopy,
     handleSave,
+    handleSaveDraft,
+    handleAddDraft,
+    handleStartDictation,
+    handleDictationText,
+    handleDictationCommit,
+    handleDictationCancel,
     handleClose,
     handleOpenNote,
     handleOpenSettings,
@@ -108,6 +136,18 @@ export function AskVaultSheet() {
   const threadStyle = useMemo(
     () => ({ maxHeight: windowHeight * THREAD_MAX_HEIGHT_RATIO }),
     [windowHeight],
+  )
+
+  const footerPlace = useMemo(
+    () =>
+      [...turns].reverse().find((turn) => turn.status === 'done' && turn.answeredOn)?.answeredOn ||
+      t('localAi.askVault.thisPhone'),
+    [t, turns],
+  )
+
+  const titleOf = useCallback(
+    (key: string) => notesData?.[key]?.title?.trim() || t('activity.untitledNote'),
+    [notesData, t],
   )
 
   const scrollToEnd = useCallback(() => threadRef.current?.scrollToEnd({ animated: true }), [])
@@ -130,38 +170,6 @@ export function AskVaultSheet() {
         ),
       ),
     [handleOpenNote, styles.chip, t],
-  )
-
-  const renderSources = useCallback(
-    (turn: VaultTurnView) => {
-      const { isCited, shown } = getShownSources(turn)
-      if (!shown.length) return null
-      return (
-        <View style={styles.sources}>
-          <Text style={styles.sourcesTitle}>
-            {t(isCited ? 'localAi.askVault.sources' : 'localAi.askVault.relatedNotes')}
-          </Text>
-          {shown.map((source) => (
-            <Pressable
-              key={`${turn.id}-${source.n}`}
-              onPress={() => handleOpenNote(source.noteKey)}
-              android_ripple={ripple}
-              accessibilityRole="button"
-              style={styles.sourceRow}
-            >
-              <Text style={styles.sourceTitle} numberOfLines={1}>
-                {isCited ? `[${source.n}] ` : ''}
-                {source.title || t('activity.untitledNote')}
-              </Text>
-              <Text style={styles.sourceSnippet} numberOfLines={2}>
-                {toMeaningSnippet(source.text)}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )
-    },
-    [handleOpenNote, ripple, styles, t],
   )
 
   const renderResult = useCallback(
@@ -196,76 +204,82 @@ export function AskVaultSheet() {
                 {t('localAi.askVault.indexNotice.notFoundHint')}
               </Text>
             )}
-            {renderSources(turn)}
+            <AskVaultSources turn={turn} sourceMeta={sourceMeta} onOpenNote={handleOpenNote} />
           </View>
         )
       }
       const copied = copiedId === turn.id
       const saved = savedId === turn.id
+      const draft = getTurnDraft(turn)
+      const done = draftDone[turn.id]
+      const target = draft ? draftTargetOf(draft) : null
+      const reminderDate = draft ? null : reminderFor(turn)
       return (
         <View style={styles.answerCard}>
-          <Text style={styles.answerText} selectable>
-            {renderAnswerText(turn)}
-          </Text>
+          {draft ? (
+            <AskVaultDraftCard turn={turn} draft={draft} onOpenNote={handleOpenNote} />
+          ) : (
+            <Text style={styles.answerText} selectable>
+              {renderAnswerText(turn)}
+            </Text>
+          )}
           {!turn.result.verified && (
             <Text style={styles.note}>{t('localAi.askVault.unverified')}</Text>
           )}
           {!!turn.answeredOn && (
             <Text style={styles.note}>
-              {t('localAi.askVault.answeredOn', { device: turn.answeredOn })}
+              {t('localAi.askVault.answeredBy', { device: turn.answeredOn })}
             </Text>
           )}
-          {renderSources(turn)}
-          <View style={styles.actions}>
-            <Pressable
-              onPress={() => handleCopy(turn.id)}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel={t(copied ? 'localAi.actions.copied' : 'localAi.actions.copy')}
-              style={styles.actionButton}
-            >
-              <MaterialCommunityIcons
-                name={copied ? 'check' : 'content-copy'}
-                size={UI_ICON_SIZE_16}
-                color={copied ? c.primary : mutedColor}
-              />
-              <Text style={styles.actionText}>
-                {t(copied ? 'localAi.actions.copied' : 'localAi.actions.copy')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => handleSave(turn.id)}
-              disabled={saved}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: saved }}
-              style={styles.actionButton}
-            >
-              <MaterialCommunityIcons
-                name={saved ? 'check-circle' : 'file-plus-outline'}
-                size={UI_ICON_SIZE_16}
-                color={saved ? c.primary : mutedColor}
-              />
-              <Text style={[styles.actionText, saved && styles.actionTextDone]}>
-                {t(saved ? 'localAi.askVault.saved' : 'localAi.askVault.saveAsNote')}
-              </Text>
-            </Pressable>
-          </View>
+          <AskVaultSources turn={turn} sourceMeta={sourceMeta} onOpenNote={handleOpenNote} />
+          {draft && (
+            <AskVaultDraftActions
+              turnId={turn.id}
+              done={done}
+              target={target}
+              titleOf={titleOf}
+              onSave={handleSaveDraft}
+              onAdd={handleAddDraft}
+            />
+          )}
+          {!!reminderDate && (
+            <AskVaultReminderAction
+              date={reminderDate}
+              enabled={remindersOn}
+              onToggle={toggleReminders}
+            />
+          )}
+          <AskVaultAnswerActions
+            turnId={turn.id}
+            copied={copied}
+            saved={saved}
+            canSave={!draft}
+            onCopy={handleCopy}
+            onSave={handleSave}
+          />
         </View>
       )
     },
     [
       c.error,
-      c.primary,
       copiedId,
+      draftDone,
+      draftTargetOf,
+      handleAddDraft,
       handleCopy,
+      handleOpenNote,
       handleSave,
-      mutedColor,
+      handleSaveDraft,
+      indexNotice,
+      reminderFor,
+      remindersOn,
       renderAnswerText,
-      renderSources,
       savedId,
+      sourceMeta,
       styles,
       t,
+      titleOf,
+      toggleReminders,
       workView,
     ],
   )
@@ -292,6 +306,9 @@ export function AskVaultSheet() {
           <Text style={styles.title}>{t('localAi.askVault.title')}</Text>
           <Text style={styles.subtitle}>{subtitle}</Text>
         </View>
+        {!!currentFolder && (
+          <AskVaultScopePill scopeName={scopeName} disabled={busy} onToggle={toggleScope} />
+        )}
         <Pressable
           hitSlop={12}
           onPress={handleClose}
@@ -336,6 +353,24 @@ export function AskVaultSheet() {
         </ScrollView>
       )}
 
+      {ready && turns.length === 0 && suggestions.length > 0 && (
+        <AskVaultSuggestions suggestions={suggestions} onSelect={handleSend} />
+      )}
+
+      {ready && turns.length === 0 && threads.length > 0 && (
+        <AskVaultRecent threads={threads} onOpen={openThread} onDelete={deleteThread} />
+      )}
+
+      {dictating && (
+        <VoiceTypingBar
+          visible={dictating}
+          inline
+          onLiveText={handleDictationText}
+          onCommit={handleDictationCommit}
+          onCancel={handleDictationCancel}
+        />
+      )}
+
       <View style={styles.inputRow}>
         <TextInput
           value={question}
@@ -349,10 +384,27 @@ export function AskVaultSheet() {
           multiline
           maxLength={ASK_QUESTION_MAX_CHARS}
           autoFocus
-          editable={!busy && ready}
+          editable={!busy && ready && !dictating}
           style={styles.input}
           accessibilityLabel={t('localAi.askVault.inputLabel')}
         />
+        {voiceReady && !dictating && (
+          <Pressable
+            onPress={handleStartDictation}
+            disabled={busy || !ready}
+            android_ripple={ripple}
+            accessibilityRole="button"
+            accessibilityLabel={t('localAi.askVault.dictate')}
+            accessibilityState={{ disabled: busy || !ready }}
+            style={[styles.micButton, (busy || !ready) && commonStyles.disabled]}
+          >
+            <MaterialCommunityIcons
+              name="microphone-outline"
+              size={UI_ICON_SIZE_20}
+              color={mutedColor}
+            />
+          </Pressable>
+        )}
         <Pressable
           onPress={handleSend}
           disabled={!canSend}
@@ -365,6 +417,7 @@ export function AskVaultSheet() {
           <MaterialCommunityIcons name="send" size={UI_ICON_SIZE_20} color={c.onPrimary} />
         </Pressable>
       </View>
+      <Text style={styles.footer}>{t('localAi.askVault.footer', { place: footerPlace })}</Text>
     </KeyboardSheetShell>
   )
 }
@@ -461,46 +514,18 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       color: c.onSecondaryContainer,
       backgroundColor: c.secondaryContainer,
     },
-    sources: {
-      gap: UI_SIZE_4,
+    micButton: {
+      ...commonStyles.centered,
+      width: UI_SIZE_48,
+      height: UI_SIZE_48,
+      borderRadius: UI_SIZE_9999,
+      overflow: 'hidden',
     },
-    sourcesTitle: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.bold,
-      fontWeight: FontWeight.bold,
-      color: c.onSurfaceVariant,
-      textTransform: 'uppercase',
-    },
-    sourceRow: {
-      gap: UI_SIZE_2,
-      paddingVertical: UI_SIZE_6,
-    },
-    sourceTitle: {
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
-      color: c.onSurface,
-    },
-    sourceSnippet: {
+    footer: {
+      textAlign: 'center',
       fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
-    },
-    actions: {
-      ...commonStyles.row,
-      gap: UI_SIZE_16,
-    },
-    actionButton: {
-      ...commonStyles.row,
-      gap: UI_SIZE_6,
-    },
-    actionText: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.medium,
-      color: c.onSurfaceVariant,
-    },
-    actionTextDone: {
-      color: c.primary,
     },
     notReady: {
       gap: UI_SIZE_8,

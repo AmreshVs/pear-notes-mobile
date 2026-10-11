@@ -44,7 +44,7 @@ let _appStateSubscription: ReturnType<typeof AppState.addEventListener> | null =
 let _foregroundServiceActive = false
 let _keepAliveTimer: ReturnType<typeof setInterval> | null = null
 let _notificationStrings = { title: '', message: '' }
-let _backgroundSyncWindowActive = false
+let _backgroundWindowHolds = 0
 let _suspendDeferredForBackgroundSync = false
 let _awaySince: number | null = null
 let _serviceStoppedSubscription: { remove: () => void } | null = null
@@ -114,7 +114,7 @@ function handleBackground(worklet: any) {
 }
 
 function suspendForBackground(worklet: any) {
-  if (_backgroundSyncWindowActive) {
+  if (_backgroundWindowHolds > 0) {
     _suspendDeferredForBackgroundSync = true
     logLifecycle('background -> background sync in flight, staying awake', workletState(worklet))
     try {
@@ -202,12 +202,16 @@ export function isActiveWorkletSuspended(): boolean {
 }
 
 export function setBackgroundSyncWindowActive(active: boolean): void {
-  _backgroundSyncWindowActive = active
-  if (active) _suspendDeferredForBackgroundSync = false
+  if (active && _backgroundWindowHolds === 0) _suspendDeferredForBackgroundSync = false
+  _backgroundWindowHolds = Math.max(0, _backgroundWindowHolds + (active ? 1 : -1))
+}
+
+export function isOtherBackgroundWindowOpen(): boolean {
+  return _backgroundWindowHolds > 1
 }
 
 export function suspendIfDeferredForBackgroundSync(): boolean {
-  if (!_suspendDeferredForBackgroundSync) return false
+  if (_backgroundWindowHolds > 0 || !_suspendDeferredForBackgroundSync) return false
   _suspendDeferredForBackgroundSync = false
   if (AppState.currentState === 'active') return false
 

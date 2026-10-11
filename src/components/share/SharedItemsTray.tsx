@@ -11,6 +11,7 @@ import { Image } from 'expo-image'
 import { SymbolView, SymbolViewProps } from 'expo-symbols'
 
 import { GlassView } from '@/components/GlassView'
+import { SharedSummaryPanel } from '@/components/share/SharedSummaryPanel'
 import { type SharedItemPreview, useSharedItemsTray } from '@/components/share/useSharedItemsTray'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
 import {
@@ -149,6 +150,8 @@ export function SharedItemsTray({
             </Pressable>
           )}
         </RNView>
+
+        <SharedSummaryPanel model={tray.shareSummary} isNoteOpen={isNoteOpen} />
 
         {tray.showAddAction ? (
           <Pressable onPress={onAddToNote} accessibilityRole="button" style={getAddStyle}>

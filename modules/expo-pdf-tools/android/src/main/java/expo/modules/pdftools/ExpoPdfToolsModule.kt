@@ -5,7 +5,9 @@ import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.graphics.pdf.PdfRenderer
 import android.net.Uri
+import android.os.Build
 import android.os.ParcelFileDescriptor
+import android.os.ext.SdkExtensions
 import androidx.exifinterface.media.ExifInterface
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -148,6 +150,22 @@ class ExpoPdfToolsModule : Module() {
       )
     }
 
+    AsyncFunction("getPdfText") { options: Map<String, Any?> ->
+      val url = options["url"] as? String ?: throw IllegalArgumentException("url is required.")
+      val maxPages = max(1, (options["maxPages"] as? Number)?.toInt() ?: 20)
+      val maxChars = max(1, (options["maxChars"] as? Number)?.toInt() ?: 20000)
+      val source = File(normalizedPath(url))
+      if (!source.isFile) throw IllegalStateException("The PDF could not be opened.")
+      ParcelFileDescriptor.open(source, ParcelFileDescriptor.MODE_READ_ONLY).use { descriptor ->
+        PdfRenderer(descriptor).use { renderer ->
+          mapOf(
+            "text" to if (canReadPdfText()) readPdfText(renderer, maxPages, maxChars) else "",
+            "pageCount" to renderer.pageCount
+          )
+        }
+      }
+    }
+
     AsyncFunction("getPdfThumbnail") { options: Map<String, Any?> ->
       val url = options["url"] as? String ?: throw IllegalArgumentException("url is required.")
       val outputPath = options["outputPath"] as? String
@@ -187,5 +205,23 @@ class ExpoPdfToolsModule : Module() {
         }
       }
     }
+  }
+
+  private fun canReadPdfText(): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
+      SdkExtensions.getExtensionVersion(Build.VERSION_CODES.S) >= 13
+
+  @Suppress("NewApi")
+  private fun readPdfText(renderer: PdfRenderer, maxPages: Int, maxChars: Int): String {
+    val text = StringBuilder()
+    for (index in 0 until min(renderer.pageCount, maxPages)) {
+      if (text.length >= maxChars) break
+      renderer.openPage(index).use { page ->
+        for (content in page.textContents) {
+          text.append(content.text).append('\n')
+        }
+      }
+    }
+    return text.take(maxChars).toString()
   }
 }

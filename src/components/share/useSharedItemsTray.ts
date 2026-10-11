@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { usePathname } from 'expo-router'
 
+import { useShareSummary } from '@/components/share/useShareSummary'
 import { hapticLight } from '@/lib/haptics'
 import {
   countSharedItemCategories,
@@ -33,6 +34,7 @@ export function useSharedItemsTray({ isNoteOpen, canAddToNote }: UseSharedItemsT
   const pathname = usePathname()
   const { items, preparing } = useShareIntakeSnapshot()
 
+  const shareSummary = useShareSummary(items)
   const itemCount = items.length
   const hasItems = itemCount > 0
   const isHiddenRoute = pathname.startsWith(HIDDEN_ROUTE_PREFIX)
@@ -58,6 +60,7 @@ export function useSharedItemsTray({ isNoteOpen, canAddToNote }: UseSharedItemsT
     itemCount,
     categoryCounts,
     previews,
+    shareSummary,
     handleDiscard,
   }
 }

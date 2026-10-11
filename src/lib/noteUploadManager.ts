@@ -90,25 +90,26 @@ function buildAttachmentHtml(link: string, attachment: StoredAttachment, fileNam
   return `<div data-file-attachment="" url="${url}" fileName="${escapeHtml(fileName)}" fileSize="${attachment.fileSize || 0}" fileType="${escapeHtml(attachment.fileType || '')}"></div>`
 }
 
-export async function appendHtmlToStoredNote(noteId: string, html: string) {
-  if (!html) return
+export async function appendHtmlToStoredNote(noteId: string, html: string): Promise<boolean> {
+  if (!html) return false
   let note = getNoteData(noteId)(store.getState()) as
     | { title?: string; note?: string; bodyOmitted?: boolean }
     | undefined
-  if (!note) return
+  if (!note) return false
   if (note.bodyOmitted) {
     const response = (await backendApi.getSingleNote({ key: noteId })) as {
       data?: { title?: string; note?: string; folderKey?: string }
     } | null
     if (!response?.data?.folderKey) {
       log.error('appendHtmlToStoredNote: could not read the note to append to', { noteId })
-      return
+      return false
     }
     note = response.data
   }
   store.dispatch(
     updateNote({ key: noteId, title: note.title || '', note: `${note.note || ''}${html}` } as any),
   )
+  return true
 }
 
 function appendAttachmentToStoredNote(

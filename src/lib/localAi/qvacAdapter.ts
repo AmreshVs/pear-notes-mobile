@@ -2,6 +2,7 @@ import { AppState, AppStateStatus, NativeEventSubscription, Platform } from 'rea
 import { Directory, File, Paths } from 'expo-file-system'
 
 import * as log from '@pear-notes/core/log.js'
+import { noteAttachmentText } from '@pear-notes/core/store/services/attachmentText.js'
 import { runAsk } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
   canRunModels,
@@ -53,6 +54,7 @@ import { store } from '@pear-notes/core/store/store.js'
 
 import { getLocalAiDeviceSupport, getLocalAiDiskSpace } from '@/lib/localAi/deviceSupport'
 import { ConnectionKind, getConnectionKind } from '@/lib/networkState'
+import { PDF_TEXT_MAX_BYTES, readPdfText } from '@/lib/pdfTools'
 
 import ExpoLocalAi from '../../../modules/expo-local-ai'
 
@@ -1398,6 +1400,11 @@ async function getDeviceSupport() {
   return { ...support, platform }
 }
 
+const attachmentText = (
+  value: unknown,
+  { resolveUrl }: { resolveUrl: (url: string) => string | null },
+) => noteAttachmentText(value, { resolveUrl, readPdf: readPdfText, maxBytes: PDF_TEXT_MAX_BYTES })
+
 export const qvacAdapter = {
   getDeviceSupport,
   getNetworkKind,
@@ -1407,6 +1414,7 @@ export const qvacAdapter = {
   deleteModel,
   closeAndWipe,
   embedTexts,
+  attachmentText,
   runNoteTaskInBackground,
   cancelTask: cancelLocalAiTask,
 }

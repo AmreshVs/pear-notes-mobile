@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react'
 import { useSelector, useStore } from 'react-redux'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import { AI_SUGGESTION } from '@pear-notes/core/store/services/aiSuggestionPrefs.js'
 import { suggestFolderMoves } from '@pear-notes/core/store/services/noteTidy.js'
 import { getFoldersData } from '@pear-notes/core/store/slices/foldersSlice.js'
 import { getLocalAiIndex } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
+
+import { useAiSuggestionOn } from '@/hooks/useAiSuggestionOn'
 
 export interface TidyMove {
   key: string
@@ -15,7 +18,9 @@ export interface TidyMove {
 
 const NO_MOVES: TidyMove[] = []
 
-export function useTidyMoves(enabled: boolean): TidyMove[] {
+export function useTidyMoves(wanted: boolean): TidyMove[] {
+  const foldersOn = useAiSuggestionOn(AI_SUGGESTION.FOLDERS)
+  const enabled = wanted && foldersOn
   const store = useStore()
   const changedAt = useSelector(
     (state) => (getLocalAiIndex(state) as { changedAt?: number }).changedAt,

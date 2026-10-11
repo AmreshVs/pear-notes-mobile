@@ -551,11 +551,40 @@
         "partial": "{{indexed}} of {{total}} notes indexed · the rest wait for charging",
         "done": "{{indexed}} of {{total}} notes indexed",
         "notYet": "Not indexed yet",
-        "rebuild": "Rebuild index"
+        "rebuild": "Rebuild index",
+        "percent": "{{percent}}%",
+        "lessThanMinute": "less than a minute left",
+        "minutesLeft_one": "about {{count}} minute left",
+        "minutesLeft_other": "about {{count}} minutes left",
+        "size": "Index size {{size}}",
+        "onlyWhileCharging": "Index only while charging",
+        "onlyWhileChargingDesc": "On battery, only new and edited notes are indexed. The rest waits until this device is plugged in."
       },
       "offload": {
         "connectedTo": "Connected to {{device}}",
         "notConnected": "Your Mac isn't answering right now. Open Pear Notes on it and turn on Answer for my other devices."
+      },
+      "suggestions": {
+        "title": "Suggestions",
+        "tasks": "Tasks and dates",
+        "tasksDesc": "Find dates and to-dos in your notes for Upcoming and reminders",
+        "titles": "Titles for untitled notes",
+        "titlesDesc": "Suggest a title once an untitled note has some text",
+        "folders": "Folders",
+        "foldersDesc": "Suggest a folder for notes in Untitled, and Tidy up",
+        "related": "Related notes and duplicates",
+        "relatedDesc": "Show notes like this one and notes that repeat each other",
+        "synced": "These choices apply on all your devices.",
+        "reminders": "Reminders",
+        "remindersDesc": "Get a notification for dated tasks"
+      },
+      "answers": {
+        "title": "Answers",
+        "onThisDevice": "On this device",
+        "notReady": "Not downloaded",
+        "macRow": "{{device}}",
+        "macAvailable": "Available",
+        "macUnavailable": "Not connected"
       }
     }
   },
@@ -1793,6 +1822,16 @@
       "link_other": "{{count}} links",
       "text_one": "{{count}} text snippet",
       "text_other": "{{count}} text snippets"
+    },
+    "summary": {
+      "summarize": "Summarize",
+      "working": "Summarizing…",
+      "failed": "Couldn't summarize this",
+      "summaryLabel": "Summary",
+      "keyPointsLabel": "Key points",
+      "suggestedFolder": "Fits in {{folder}}",
+      "openFolder": "Open {{folder}}",
+      "includeSummary": "The summary is added with the items"
     }
   },
   "localAi": {
@@ -2174,7 +2213,34 @@
         "busy": "On-device AI is busy with another task. Try again in a moment."
       },
       "onMac": "Answered on {{device}}. Your notes stay on your devices.",
-      "answeredOn": "Answered on {{device}}"
+      "answeredOn": "Answered on {{device}}",
+      "scopeLabel": "Notes to use",
+      "scopeAll": "All notes",
+      "tryAsking": "Try asking",
+      "suggest": {
+        "note": "What did I write in “{{title}}”?",
+        "keyPoints": "What are the key points of “{{title}}”?",
+        "folder": "What's still open in my {{folder}} notes?"
+      },
+      "fromYourNotes": "From your notes",
+      "editedToday": "edited today",
+      "editedYesterday": "edited yesterday",
+      "editedOn": "edited {{date}}",
+      "addReminder": "Add reminder for {{date}}",
+      "reminderOn": "You'll be reminded on {{date}}",
+      "answeredBy": "Answered by {{device}}",
+      "dictate": "Dictate a question",
+      "footerPrivate": "Runs on your devices only. Can be wrong, check the sources.",
+      "footer": "Answered on {{place}} · can be wrong, check the sources",
+      "thisPhone": "this phone",
+      "draft": {
+        "saveNew": "Save as new note",
+        "addTo": "Add to “{{title}}”",
+        "saved": "Saved as a new note",
+        "added": "Added to “{{title}}”"
+      },
+      "recent": "Recent",
+      "deleteThread": "Remove from recent"
     },
     "ask": {
       "group": "Ask",

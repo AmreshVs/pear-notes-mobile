@@ -2,6 +2,7 @@ import { useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 
+import { AI_SUGGESTION } from '@pear-notes/core/store/services/aiSuggestionPrefs.js'
 import {
   closeRelatedNotes,
   getLocalAiIndex,
@@ -12,9 +13,13 @@ import {
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { getNotesData, getRelatedNoteRows } from '@pear-notes/core/store/slices/notesSlice.js'
 
+import { useAiSuggestionOn } from '@/hooks/useAiSuggestionOn'
+
 type RelatedRow = { key: string; title: string; snippet: string }
 
-export function useRelatedNotes(noteId: string, visible: boolean) {
+export function useRelatedNotes(noteId: string, shown: boolean) {
+  const relatedOn = useAiSuggestionOn(AI_SUGGESTION.RELATED)
+  const visible = shown && relatedOn
   const { t } = useTranslation()
   const dispatch = useDispatch()
 

@@ -6,6 +6,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { Image } from 'expo-image'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { SharedSummaryPanel } from '@/components/share/SharedSummaryPanel'
 import { type SharedItemPreview, useSharedItemsTray } from '@/components/share/useSharedItemsTray'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import {
@@ -126,6 +127,8 @@ export function SharedItemsTray({
             </Pressable>
           )}
         </View>
+
+        <SharedSummaryPanel model={tray.shareSummary} isNoteOpen={isNoteOpen} />
 
         {tray.showAddAction ? (
           <Pressable

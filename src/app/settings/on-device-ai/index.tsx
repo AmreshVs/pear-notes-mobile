@@ -20,6 +20,9 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { Divider } from '@/components/Divider'
 import { OnDeviceAiConfirmSheet } from '@/components/OnDeviceAiConfirmSheet'
+import { AnswersSection } from '@/components/settings/onDeviceAi/AnswersSection'
+import { IndexSection } from '@/components/settings/onDeviceAi/IndexSection'
+import { SuggestionsSection } from '@/components/settings/onDeviceAi/SuggestionsSection'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -317,37 +320,14 @@ export default function OnDeviceAiScreen() {
             </RNView>
 
             {indexEnabled && (
-              <RNView style={styles.section}>
-                <Text style={commonThemedStyles.sectionCamelCase}>
-                  {t('settings.onDeviceAi.yourNotes')}
-                </Text>
-                <RNView style={commonThemedStyles.card}>
-                  <RNView style={styles.indexRow}>
-                    <RNView style={styles.toggleInfo}>
-                      <Text style={styles.rowTitle}>{t('settings.onDeviceAi.index.title')}</Text>
-                      <Text style={styles.rowDesc} accessibilityLiveRegion="polite">
-                        {indexStatusText}
-                      </Text>
-                    </RNView>
-                    <Pressable
-                      onPress={rebuildIndex}
-                      disabled={indexBusy}
-                      accessibilityRole="button"
-                      accessibilityState={{ disabled: indexBusy }}
-                      style={({ pressed }) => [
-                        styles.indexButton,
-                        indexBusy && commonStyles.disabled,
-                        pressed && commonStyles.pressed,
-                      ]}
-                    >
-                      <Text style={styles.indexButtonText}>
-                        {t('settings.onDeviceAi.index.rebuild')}
-                      </Text>
-                    </Pressable>
-                  </RNView>
-                </RNView>
-              </RNView>
+              <IndexSection
+                statusText={indexStatusText}
+                busy={indexBusy}
+                onRebuild={rebuildIndex}
+              />
             )}
+
+            <SuggestionsSection />
 
             <RNView style={styles.section}>
               <Text style={commonThemedStyles.sectionCamelCase}>
@@ -396,6 +376,8 @@ export default function OnDeviceAiScreen() {
                 )}
               </RNView>
             </RNView>
+
+            <AnswersSection />
 
             {groups.map((group) => (
               <RNView key={group.id} style={styles.section}>
@@ -603,22 +585,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
-    },
-    indexRow: {
-      ...commonStyles.rowBetween,
-      gap: Space.base,
-      padding: Space.lg,
-    },
-    indexButton: {
-      paddingVertical: Space.sm,
-      paddingHorizontal: Space.md,
-      borderRadius: Radii.pill,
-      backgroundColor: theme.colors.controlBackground,
-    },
-    indexButtonText: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.bold,
-      color: theme.colors.primary,
     },
     offloadStatus: {
       fontSize: FontSize.body,

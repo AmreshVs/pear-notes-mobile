@@ -41,6 +41,8 @@ import {
 import { discardSharePayloads } from '@/lib/shareInbox'
 import type { SharedParagraph } from '@/lib/shareIntake.types'
 import { takeSharedPayloadsForNote } from '@/lib/shareIntakeState'
+import { buildSharedSummaryParagraphs } from '@/lib/shareSummary'
+import { clearShareSummary, getShareSummary, shareSummaryKey } from '@/lib/shareSummaryState'
 import { deleteThumbnail } from '@/lib/thumbnailCache'
 import {
   clearNoteUploadQueue,
@@ -78,6 +80,8 @@ export type NoteEditorActionLabels = {
   uploadFailedScan: string
   unlockReason: string
   lockReason: string
+  shareSummaryLabel: string
+  shareKeyPointsLabel: string
   pageCountLabel: (count: number) => string
 }
 
@@ -470,6 +474,12 @@ export function useNoteEditorActions({
     hapticMedium()
 
     const items = payloads.flatMap((payload) => payload.items)
+    const summaryParagraphs = buildSharedSummaryParagraphs(
+      getShareSummary(),
+      shareSummaryKey(items),
+      { summaryLabel: labels.shareSummaryLabel, keyPointsLabel: labels.shareKeyPointsLabel },
+    )
+    clearShareSummary()
     const queued = items
       .filter(isSharedFileItem)
       .map((file) => ({ id: nextUploadItemId(), fileName: file.name, file }))
@@ -477,7 +487,7 @@ export function useNoteEditorActions({
 
     try {
       await waitForIdleFrame()
-      insertSharedParagraphs(targetNoteId, buildSharedParagraphs(items))
+      insertSharedParagraphs(targetNoteId, [...summaryParagraphs, ...buildSharedParagraphs(items)])
       for (const entry of queued) {
         if (isNoteUploadItemCancelled(entry.id)) continue
         const prepared = await prepareSharedFileForUpload(entry.file)
@@ -487,7 +497,7 @@ export function useNoteEditorActions({
       if (queued.length > 0) clearNoteUploadQueue(targetNoteId)
       await discardSharePayloads(payloads)
     }
-  }, [noteId, insertSharedParagraphs, processDocumentAsset])
+  }, [noteId, insertSharedParagraphs, processDocumentAsset, labels])
 
   const handleRequestPdfThumbnail = useCallback(
     async (url: string, fileName: string, attachmentId: string) => {
