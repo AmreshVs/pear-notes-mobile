@@ -21,6 +21,7 @@ import {
   getLinkedDesktopTitle,
   getLocalAiFeatureConfig,
   getMeaningSearchReady,
+  selectAskIndexNotice,
   selectCanUseLinkedDesktop,
   selectIsLocalAiFeatureReady,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
@@ -31,6 +32,7 @@ import { Durations } from '@/constants/commonStyles'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { askVault, cancelLocalAiTask } from '@/lib/localAi/localAi'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+import type { AskIndexNotice } from '@/utils/askIndexNotice'
 
 const COPIED_RESET_MS = 2000
 
@@ -159,6 +161,8 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
   const desktopReady = useSelector(selectCanUseLinkedDesktop) as boolean
   const desktopTitle = useSelector(getLinkedDesktopTitle) as string
   const localReady = meaningReady && askReady
+  const localIndexNotice = useSelector(selectAskIndexNotice) as AskIndexNotice | null
+  const indexNotice = desktopReady ? null : localIndexNotice
   const ready = localReady || desktopReady
   const busy = turns.some((turn) => turn.status === 'working')
   const canSend = ready && question.trim().length > 0 && !busy
@@ -319,6 +323,7 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
     ready,
     desktopTitle,
     meaningReady,
+    indexNotice,
     canSend,
     copiedId,
     savedId,

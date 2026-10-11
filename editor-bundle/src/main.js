@@ -585,6 +585,7 @@ function getCaretRect() {
 
 function scrollDocumentToTop() {
   programmaticScrollUntil = Date.now() + PROGRAMMATIC_SCROLL_GRACE_MS
+  resetScrollJump()
   caretAutoscrollSuspended = false
   window.scrollTo(0, 0)
   if (document.scrollingElement) document.scrollingElement.scrollTop = 0
@@ -721,6 +722,58 @@ window.addEventListener(
   },
   { passive: true, capture: true },
 )
+
+const SCROLL_JUMP_LONG_VIEWPORTS = 2.5
+const SCROLL_JUMP_MIN_DELTA = 6
+const SCROLL_JUMP_HIDE_MS = 1800
+let scrollJumpLastTop = 0
+let scrollJumpDirection = null
+let scrollJumpTimer = null
+
+function setScrollJump(next) {
+  if (next === scrollJumpDirection) return
+  scrollJumpDirection = next
+  sendToRN({ type: 'scrollJump', direction: next })
+}
+
+function resetScrollJump() {
+  clearTimeout(scrollJumpTimer)
+  scrollJumpLastTop = 0
+  setScrollJump(null)
+}
+
+function isTyping() {
+  return !!editor?.isFocused || document.activeElement?.id === 'note-title'
+}
+
+window.addEventListener(
+  'scroll',
+  () => {
+    const scroller = document.scrollingElement || document.documentElement
+    const top = scroller.scrollTop
+    const delta = top - scrollJumpLastTop
+    if (Math.abs(delta) < SCROLL_JUMP_MIN_DELTA) return
+    scrollJumpLastTop = top
+    const viewport = window.innerHeight
+    const long = scroller.scrollHeight > viewport * SCROLL_JUMP_LONG_VIEWPORTS
+    const next = delta > 0 ? 'down' : 'up'
+    const nearEnd = next === 'down' ? scroller.scrollHeight - top - viewport < viewport : top < viewport
+    setScrollJump(long && !nearEnd && !isTyping() ? next : null)
+    clearTimeout(scrollJumpTimer)
+    scrollJumpTimer = setTimeout(() => setScrollJump(null), SCROLL_JUMP_HIDE_MS)
+  },
+  { passive: true },
+)
+
+function scrollDocumentToEnd(direction) {
+  const scroller = document.scrollingElement || document.documentElement
+  const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  resetScrollJump()
+  window.scrollTo({
+    top: direction === 'down' ? scroller.scrollHeight : 0,
+    behavior: reduced ? 'auto' : 'smooth',
+  })
+}
 
 let styleTimer = null
 let lastStyleJSON = ''
@@ -1673,6 +1726,10 @@ window.editorBridge = {
 
       case 'scrollToTop':
         scrollDocumentToTop()
+        break
+
+      case 'scrollJump':
+        scrollDocumentToEnd(msg.direction)
         break
 
       case 'toggleBold':

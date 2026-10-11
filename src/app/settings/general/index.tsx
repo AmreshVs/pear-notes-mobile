@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, Switch, View as RNView } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
@@ -15,6 +15,7 @@ import {
   updateSetting,
 } from '@pear-notes/core/store/slices/settingsSlice.js'
 
+import { ReminderSettingsBottomSheet } from '@/components/bottomsheet/ReminderSettingsBottomSheet'
 import { Divider } from '@/components/Divider'
 import { MotionView } from '@/components/MotionView'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
@@ -36,6 +37,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { useRemindersSetting } from '@/hooks/useReminders'
+import { useTipsEnabled } from '@/hooks/useTips'
 import { hapticSelection } from '@/lib/haptics'
 import { getFontOptions, getSortOptions, showPicker } from '@/utils/settingsUtils'
 
@@ -52,6 +54,10 @@ export default function GeneralSettingsScreen() {
   const sortBy = useSelector(getSortBy)
   const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
   const [reminders, toggleReminders, remindersSupported] = useRemindersSetting()
+  const [tipsEnabled, toggleTips] = useTipsEnabled()
+  const [reminderSheetVisible, setReminderSheetVisible] = useState(false)
+  const handleOpenReminderSheet = useCallback(() => setReminderSheetVisible(true), [])
+  const handleCloseReminderSheet = useCallback(() => setReminderSheetVisible(false), [])
 
   const trackColor = useMemo(
     () => ({ false: colors.controlBackground, true: colors.primary }),
@@ -167,8 +173,40 @@ export default function GeneralSettingsScreen() {
                     thumbColor={colors.white}
                   />
                 </RNView>
+                <RNView style={styles.dividerWrap}>
+                  <Divider />
+                </RNView>
+                <Pressable
+                  onPress={handleOpenReminderSheet}
+                  style={({ pressed }) => [
+                    commonStyles.settingsRow,
+                    pressed && commonStyles.pressed,
+                  ]}
+                >
+                  <Text style={styles.rowLabel}>{t('upcoming.reminders.open')}</Text>
+                  <SymbolIcon
+                    name="chevron.forward"
+                    size={UI_ICON_SIZE_15}
+                    color={colors.textMuted}
+                  />
+                </Pressable>
               </>
             )}
+            <RNView style={styles.dividerWrap}>
+              <Divider />
+            </RNView>
+            <RNView style={styles.toggleRow}>
+              <RNView style={styles.toggleInfo}>
+                <Text style={styles.rowLabel}>{t('tips.showTips')}</Text>
+                <Text style={styles.rowDesc}>{t('tips.showTipsDesc')}</Text>
+              </RNView>
+              <Switch
+                value={tipsEnabled}
+                onValueChange={toggleTips}
+                trackColor={trackColor}
+                thumbColor={colors.white}
+              />
+            </RNView>
           </RNView>
         </MotionView>
 
@@ -254,6 +292,10 @@ export default function GeneralSettingsScreen() {
           </RNView>
         </MotionView>
       </ScrollView>
+      <ReminderSettingsBottomSheet
+        visible={reminderSheetVisible}
+        onClose={handleCloseReminderSheet}
+      />
     </RNView>
   )
 }

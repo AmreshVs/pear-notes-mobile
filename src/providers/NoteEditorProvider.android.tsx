@@ -36,6 +36,7 @@ import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { EdgeFade } from '@/components/EdgeFade'
+import { ScrollJumpButton } from '@/components/editor/ScrollJumpButton'
 import { FindInNoteBar } from '@/components/FindInNoteBar'
 import { GenerateNoteSheet } from '@/components/GenerateNoteSheet'
 import { LockedContentShield } from '@/components/LockedContentShield'
@@ -45,7 +46,7 @@ import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { NoteSuggestionChips } from '@/components/NoteSuggestionChips'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
-import type { EditorSelection } from '@/components/TiptapEditor'
+import type { EditorSelection, ScrollJumpDirection } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import { EMPTY_FIND_STATE, type FindInNoteState } from '@/components/useFindInNoteBar'
@@ -277,6 +278,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [dictationActive, setDictationActive] = useState(false)
   const [findNoteId, setFindNoteId] = useState<string | null>(null)
   const [findState, setFindState] = useState<FindInNoteState>(EMPTY_FIND_STATE)
+  const [scrollJumpDirection, setScrollJumpDirection] = useState<ScrollJumpDirection | null>(null)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
   const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
   const [voiceParagraphs, setVoiceParagraphs] = useState<string[] | null>(null)
@@ -1036,6 +1038,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [editorRef])
 
   const findActive = !!noteId && findNoteId === noteId && !isNoteLocked && !dictationActive
+  const scrollJumpBottom = uploadBannerBottom + (hasUploadQueue ? UI_SIZE_80 : 0)
+  const handleScrollJump = useCallback(() => {
+    if (scrollJumpDirection) editorRef.current?.scrollJump(scrollJumpDirection)
+  }, [editorRef, scrollJumpDirection])
 
   const handleFindInNote = useCallback(() => {
     if (!noteId) return
@@ -1255,6 +1261,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             onAttachmentLongPress={handleAttachmentLongPress}
             onNoteLoaded={handleNoteLoaded}
             onFindState={setFindState}
+            onScrollJump={setScrollJumpDirection}
             onEditorReset={handleEditorReset}
           />
         )}
@@ -1264,6 +1271,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             key={noteId}
             noteValue={noteData}
             topInset={insets.top + EDITOR_HEADER_HEIGHT}
+          />
+        )}
+
+        {isOpen && !isNoteLocked && !isEditing && !findActive && !dictationActive && (
+          <ScrollJumpButton
+            direction={scrollJumpDirection}
+            bottom={scrollJumpBottom}
+            onJump={handleScrollJump}
           />
         )}
 

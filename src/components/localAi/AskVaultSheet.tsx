@@ -37,6 +37,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { ASK_QUESTION_MAX_CHARS } from '@/lib/localAi/askNote'
+import { askIndexNoticeText } from '@/utils/askIndexNotice'
 
 import {
   getShownSources,
@@ -68,6 +69,7 @@ export function AskVaultSheet() {
     ready,
     desktopTitle,
     meaningReady,
+    indexNotice,
     canSend,
     copiedId,
     savedId,
@@ -173,6 +175,11 @@ export function AskVaultSheet() {
             <Text style={[styles.answerText, styles.answerTextMuted]}>
               {t('localAi.askVault.notFound')}
             </Text>
+            {indexNotice && (
+              <Text style={styles.indexNotice}>
+                {t('localAi.askVault.indexNotice.notFoundHint')}
+              </Text>
+            )}
             {renderSources(turn)}
           </View>
         )
@@ -285,6 +292,12 @@ export function AskVaultSheet() {
             </View>
           )}
 
+          {ready && indexNotice && (
+            <Text style={styles.indexNotice} accessibilityRole="text">
+              {askIndexNoticeText(t, indexNotice)}
+            </Text>
+          )}
+
           {turns.length > 0 && (
             <ScrollView
               ref={threadRef}
@@ -378,6 +391,11 @@ const useStyles = createThemedStylesheet((theme) => {
       lineHeight: 24,
       fontFamily: FontFamily.regular,
       color: theme.colors.text,
+    },
+    indexNotice: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textSecondary,
     },
     answerTextMuted: {
       fontSize: FontSize.subtitle,

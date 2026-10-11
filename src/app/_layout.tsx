@@ -64,6 +64,7 @@ import {
   useReduceMotion,
   useResolvedColorScheme,
 } from '@/components/Themed'
+import { TipBanner } from '@/components/tips/TipBanner'
 import { VaultChangeOverlay } from '@/components/VaultChangeOverlay'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
@@ -548,6 +549,7 @@ function RootLayoutNav() {
               {LOCAL_AI_ENABLED && <AskVaultSheet />}
               <BackupProgressBanner />
               <AppUpdateBanner />
+              <TipBanner />
               <MergeNotesBanner />
               <BackupNudge />
               <AppUpdateRequiredOverlay />

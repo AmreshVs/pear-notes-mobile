@@ -8,11 +8,14 @@ import {
   isRemindersEnabled,
   setRemindersEnabled,
 } from '@pear-notes/core/store/services/reminders.js'
+import { loadDoneIds, loadReminderPrefs } from '@pear-notes/core/store/services/upcomingTasks.js'
+
+import { REMINDERS_CHANGED_EVENT } from '@/hooks/useReminderPrefs'
 
 import ExpoReminders from '../../modules/expo-reminders'
 
 const CHECK_MS = 30 * 60 * 1000
-const CHANGED_EVENT = 'pear-notes:reminders-changed'
+const CHANGED_EVENT = REMINDERS_CHANGED_EVENT
 
 type UpcomingTask = {
   noteKey: string
@@ -44,11 +47,23 @@ export function useReminders() {
           await ExpoReminders?.cancelAll().catch(() => {})
           return
         }
-        const tasks = (await backendApi.getUpcomingTasks().catch(() => [])) as UpcomingTask[]
+        const [tasks, prefs, doneIds] = await Promise.all([
+          backendApi.getUpcomingTasks().catch(() => []) as Promise<UpcomingTask[]>,
+          loadReminderPrefs().catch(() => undefined),
+          loadDoneIds().catch(() => null),
+        ])
         const items = buildReminderItems(tasks, {
+          prefs,
+          doneIds,
           linkFor: (task: UpcomingTask) => `pearnotes://note/${task.noteKey}`,
-          bodyFor: (task: UpcomingTask) => {
+          bodyFor: (task: UpcomingTask, offset: number) => {
             const title = task.title || t('noteCard.untitled')
+            if (offset) {
+              return t('upcoming.reminderBody', {
+                lead: t(`upcoming.reminderLead.${offset}`),
+                title,
+              })
+            }
             if (!task.time) return title
             const [hour, minute] = task.time.split(':').map(Number)
             const at = new Date()

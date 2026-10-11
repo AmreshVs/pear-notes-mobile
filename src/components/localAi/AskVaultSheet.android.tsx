@@ -44,6 +44,7 @@ import {
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { ASK_QUESTION_MAX_CHARS } from '@/lib/localAi/askNote'
+import { askIndexNoticeText } from '@/utils/askIndexNotice'
 
 import {
   getShownSources,
@@ -84,6 +85,7 @@ export function AskVaultSheet() {
     ready,
     desktopTitle,
     meaningReady,
+    indexNotice,
     canSend,
     copiedId,
     savedId,
@@ -189,6 +191,11 @@ export function AskVaultSheet() {
             <Text style={[styles.answerText, styles.answerTextMuted]}>
               {t('localAi.askVault.notFound')}
             </Text>
+            {indexNotice && (
+              <Text style={styles.indexNotice}>
+                {t('localAi.askVault.indexNotice.notFoundHint')}
+              </Text>
+            )}
             {renderSources(turn)}
           </View>
         )
@@ -311,6 +318,12 @@ export function AskVaultSheet() {
         </View>
       )}
 
+      {ready && indexNotice && (
+        <Text style={styles.indexNotice} accessibilityRole="text">
+          {askIndexNoticeText(t, indexNotice)}
+        </Text>
+      )}
+
       {turns.length > 0 && (
         <ScrollView
           ref={threadRef}
@@ -429,6 +442,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       lineHeight: 24,
       fontFamily: FontFamily.regular,
       color: c.onSurface,
+    },
+    indexNotice: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
     },
     answerTextMuted: {
       fontSize: FontSize.subtitle,

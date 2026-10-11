@@ -25,6 +25,8 @@ export function FloatingNoticeBanner({
   descriptionLines = 1,
   actionLabel,
   onAction,
+  secondaryLabel,
+  onSecondary,
   dismissLabel,
   onDismiss,
 }: FloatingNoticeBannerProps) {
@@ -61,12 +63,22 @@ export function FloatingNoticeBanner({
           </Pressable>
         </RNView>
 
-        <Pressable
-          onPress={onAction}
-          style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
-        >
-          <Text style={styles.actionBtnText}>{actionLabel}</Text>
-        </Pressable>
+        <RNView style={styles.actions}>
+          <Pressable
+            onPress={onAction}
+            style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
+          >
+            <Text style={styles.actionBtnText}>{actionLabel}</Text>
+          </Pressable>
+          {secondaryLabel && onSecondary && (
+            <Pressable
+              onPress={onSecondary}
+              style={({ pressed }) => [styles.secondaryBtn, pressed && commonStyles.pressed]}
+            >
+              <Text style={styles.secondaryBtnText}>{secondaryLabel}</Text>
+            </Pressable>
+          )}
+        </RNView>
       </RNView>
     </MotionView>
   )
@@ -120,7 +132,12 @@ const useStyles = createThemedStylesheetWithHooks(
         padding: Space.xs,
         marginLeft: Space.xs,
       },
+      actions: {
+        flexDirection: 'row',
+        gap: Space.sm,
+      },
       actionBtn: {
+        flex: 1,
         height: 40,
         borderRadius: Radii.md,
         alignItems: 'center',
@@ -131,6 +148,19 @@ const useStyles = createThemedStylesheetWithHooks(
         fontSize: FontSize.body,
         fontWeight: FontWeight.bold,
         color: theme.colors.onPrimary,
+      },
+      secondaryBtn: {
+        flex: 1,
+        height: 40,
+        borderRadius: Radii.md,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: theme.colors.controlBackground,
+      },
+      secondaryBtnText: {
+        fontSize: FontSize.body,
+        fontWeight: FontWeight.bold,
+        color: theme.colors.text,
       },
     })
     return styles

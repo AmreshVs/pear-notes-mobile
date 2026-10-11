@@ -1,12 +1,16 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, RefreshControl, SectionList, StyleSheet } from 'react-native'
+import { RefreshControl, SectionList, StyleSheet } from 'react-native'
 import { Stack } from 'expo-router'
 
+import { ReminderSettingsBottomSheet } from '@/components/bottomsheet/ReminderSettingsBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { Divider } from '@/components/Divider'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
-import { createThemedStylesheet, Text, View } from '@/components/Themed'
+import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
+import { UpcomingFoldHeader } from '@/components/upcoming/UpcomingFoldHeader'
+import { UpcomingNextCard } from '@/components/upcoming/UpcomingNextCard'
+import { UpcomingTaskRow } from '@/components/upcoming/UpcomingTaskRow'
 import {
   commonStyles,
   FontSize,
@@ -22,29 +26,51 @@ import {
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
 import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
+import { useRemindersSetting } from '@/hooks/useReminders'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import {
-  formatUpcomingDue,
   type UpcomingSection,
   type UpcomingTask,
   upcomingTaskKey,
   useUpcomingTasks,
 } from '@/hooks/useUpcomingTasks'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+import { isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
 
 export function UpcomingPane() {
   const { t, i18n } = useTranslation()
+  const { colors } = useTheme()
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const { openNote } = useNoteEditor()
-  const { sections, count, loaded, refreshing, refresh } = useUpcomingTasks()
+  const {
+    sections,
+    count,
+    overdue,
+    next,
+    loaded,
+    refreshing,
+    refresh,
+    toggleDone,
+    isPending,
+    openFolds,
+    toggleFold,
+  } = useUpcomingTasks()
+  const [remindersOn] = useRemindersSetting()
+  const [settingsVisible, setSettingsVisible] = useState(false)
   const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
+  const status = overdue
+    ? t('upcoming.countWithOverdue', { count, overdue })
+    : t('upcoming.count', { count })
+
+  const handleOpenTask = useCallback((task: UpcomingTask) => openNote(task.noteKey), [openNote])
+  const handleOpenSettings = useCallback(() => setSettingsVisible(true), [])
+  const handleCloseSettings = useCallback(() => setSettingsVisible(false), [])
+
   const headerTitle = useCallback(
-    () => (
-      <CollapsedNavTitle title={t('upcoming.title')} subtitle={t('upcoming.count', { count })} />
-    ),
-    [t, count],
+    () => <CollapsedNavTitle title={t('upcoming.title')} subtitle={status} />,
+    [t, status],
   )
 
   const screenOptions = useMemo(
@@ -60,18 +86,14 @@ export function UpcomingPane() {
   const renderItem = useCallback(
     ({ item, index, section }: { item: UpcomingTask; index: number; section: UpcomingSection }) => (
       <View>
-        <Pressable
-          onPress={() => openNote(item.noteKey)}
-          style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
-          accessibilityRole="button"
-        >
-          <Text style={styles.taskText} numberOfLines={2}>
-            {item.text}
-          </Text>
-          <Text style={styles.meta} numberOfLines={1}>
-            {formatUpcomingDue(item, i18n.language)} • {item.title || t('noteCard.untitled')}
-          </Text>
-        </Pressable>
+        <UpcomingTaskRow
+          task={item}
+          language={i18n.language}
+          remind={showsReminderBell(item, section.group, remindersOn)}
+          pending={isPending(item)}
+          onOpen={handleOpenTask}
+          onToggleDone={toggleDone}
+        />
         {index < section.data.length - 1 && (
           <View style={styles.divider}>
             <Divider />
@@ -79,16 +101,37 @@ export function UpcomingPane() {
         )}
       </View>
     ),
-    [openNote, i18n.language, t, styles.row, styles.taskText, styles.meta, styles.divider],
+    [i18n.language, remindersOn, isPending, handleOpenTask, toggleDone, styles.divider],
   )
 
   const renderSectionHeader = useCallback(
-    ({ section }: { section: UpcomingSection }) => (
-      <View style={styles.sectionHeader}>
-        <Text style={commonThemedStyles.sectionCamelCase}>{section.title}</Text>
-      </View>
-    ),
-    [styles.sectionHeader, commonThemedStyles.sectionCamelCase],
+    ({ section }: { section: UpcomingSection }) =>
+      section.folded ? (
+        <UpcomingFoldHeader
+          group={section.group}
+          title={section.title}
+          expanded={openFolds.has(section.group)}
+          onToggle={toggleFold}
+        />
+      ) : (
+        <View style={styles.sectionHeader}>
+          <Text
+            style={[
+              commonThemedStyles.sectionCamelCase,
+              isOverdueGroup(section.group) && styles.overdueHeader,
+            ]}
+          >
+            {section.title}
+          </Text>
+        </View>
+      ),
+    [
+      openFolds,
+      toggleFold,
+      styles.sectionHeader,
+      styles.overdueHeader,
+      commonThemedStyles.sectionCamelCase,
+    ],
   )
 
   const listHeader = useMemo(
@@ -100,17 +143,21 @@ export function UpcomingPane() {
           </Text>
           <View style={styles.headerInfo}>
             <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
-              {t('upcoming.count', { count })}
+              {status}
             </Text>
           </View>
         </View>
         <Text style={styles.hint}>{t('upcoming.hint')}</Text>
+        {next && <UpcomingNextCard task={next} language={i18n.language} onOpen={handleOpenTask} />}
       </>
     ),
     [
       handleTitleBlockLayout,
       t,
-      count,
+      status,
+      next,
+      i18n.language,
+      handleOpenTask,
       styles.pageTitle,
       styles.headerInfo,
       styles.hint,
@@ -137,6 +184,14 @@ export function UpcomingPane() {
   return (
     <View style={styles.container}>
       <Stack.Screen options={screenOptions} />
+      <Stack.Toolbar placement="right">
+        <Stack.Toolbar.Button
+          icon={remindersOn ? 'bell.fill' : 'bell'}
+          tintColor={remindersOn ? colors.primary : undefined}
+          accessibilityLabel={t('upcoming.reminders.title')}
+          onPress={handleOpenSettings}
+        />
+      </Stack.Toolbar>
       <SectionList
         sections={sections}
         keyExtractor={upcomingTaskKey}
@@ -155,6 +210,7 @@ export function UpcomingPane() {
         windowSize={LIST_WINDOW_SIZE}
       />
       <ScreenEdgeFades />
+      <ReminderSettingsBottomSheet visible={settingsVisible} onClose={handleCloseSettings} />
     </View>
   )
 }
@@ -196,19 +252,8 @@ const useStyles = createThemedStylesheet((theme) => {
       marginLeft: Space.base,
       marginTop: Space.base,
     },
-    row: {
-      paddingVertical: Space.md,
-      paddingHorizontal: Space.base,
-      gap: Space.xs,
-    },
-    taskText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
-      color: theme.colors.text,
-    },
-    meta: {
-      fontSize: FontSize.caption,
-      color: theme.colors.textSecondary,
+    overdueHeader: {
+      color: theme.colors.error,
     },
     divider: {
       marginHorizontal: Space.base,

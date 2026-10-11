@@ -14,8 +14,12 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { router } from 'expo-router'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { ReminderSettingsBottomSheet } from '@/components/bottomsheet/ReminderSettingsBottomSheet'
 import { EdgeFade } from '@/components/EdgeFade'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import { UpcomingFoldHeader } from '@/components/upcoming/UpcomingFoldHeader'
+import { UpcomingNextCard } from '@/components/upcoming/UpcomingNextCard'
+import { UpcomingTaskRow } from '@/components/upcoming/UpcomingTaskRow'
 import {
   commonStyles,
   FontFamily,
@@ -38,8 +42,8 @@ import {
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
+import { useRemindersSetting } from '@/hooks/useReminders'
 import {
-  formatUpcomingDue,
   type UpcomingSection,
   type UpcomingTask,
   upcomingTaskKey,
@@ -47,6 +51,7 @@ import {
 } from '@/hooks/useUpcomingTasks'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
 
 export function UpcomingPane() {
   const { t, i18n } = useTranslation()
@@ -56,10 +61,34 @@ export function UpcomingPane() {
   const insets = useSafeAreaInsets()
   const styles = useStyles()
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const { sections, count, loaded, refreshing, refresh } = useUpcomingTasks()
+  const {
+    sections,
+    count,
+    overdue,
+    next,
+    loaded,
+    refreshing,
+    refresh,
+    toggleDone,
+    isPending,
+    openFolds,
+    toggleFold,
+  } = useUpcomingTasks()
+  const [remindersOn] = useRemindersSetting()
+  const [settingsVisible, setSettingsVisible] = useState(false)
   const [headerHeight, setHeaderHeight] = useState(0)
 
+  const status = overdue
+    ? t('upcoming.countWithOverdue', { count, overdue })
+    : t('upcoming.count', { count })
+
   const handleBack = useCallback(() => router.back(), [])
+  const handleOpenTask = useCallback(
+    (task: UpcomingTask) => router.push(`/note/${task.noteKey}`),
+    [],
+  )
+  const handleOpenSettings = useCallback(() => setSettingsVisible(true), [])
+  const handleCloseSettings = useCallback(() => setSettingsVisible(false), [])
 
   const handleHeaderLayout = useCallback((event: LayoutChangeEvent) => {
     const next = event.nativeEvent.layout.height
@@ -77,30 +106,35 @@ export function UpcomingPane() {
   const renderItem = useCallback(
     ({ item, index, section }: { item: UpcomingTask; index: number; section: UpcomingSection }) => (
       <View>
-        <Pressable
-          onPress={() => router.push(`/note/${item.noteKey}`)}
-          android_ripple={ripple}
-          style={styles.row}
-          accessibilityRole="button"
-        >
-          <Text style={styles.taskText} numberOfLines={2}>
-            {item.text}
-          </Text>
-          <Text style={styles.meta} numberOfLines={1}>
-            {formatUpcomingDue(item, i18n.language)} • {item.title || t('noteCard.untitled')}
-          </Text>
-        </Pressable>
+        <UpcomingTaskRow
+          task={item}
+          language={i18n.language}
+          remind={showsReminderBell(item, section.group, remindersOn)}
+          pending={isPending(item)}
+          onOpen={handleOpenTask}
+          onToggleDone={toggleDone}
+        />
         {index < section.data.length - 1 && <View style={styles.rowDivider} />}
       </View>
     ),
-    [ripple, i18n.language, t, styles.row, styles.taskText, styles.meta, styles.rowDivider],
+    [i18n.language, remindersOn, isPending, handleOpenTask, toggleDone, styles.rowDivider],
   )
 
   const renderSectionHeader = useCallback(
-    ({ section }: { section: UpcomingSection }) => (
-      <Text style={styles.sectionCap}>{section.title}</Text>
-    ),
-    [styles.sectionCap],
+    ({ section }: { section: UpcomingSection }) =>
+      section.folded ? (
+        <UpcomingFoldHeader
+          group={section.group}
+          title={section.title}
+          expanded={openFolds.has(section.group)}
+          onToggle={toggleFold}
+        />
+      ) : (
+        <Text style={isOverdueGroup(section.group) ? styles.sectionCapOverdue : styles.sectionCap}>
+          {section.title}
+        </Text>
+      ),
+    [openFolds, toggleFold, styles.sectionCap, styles.sectionCapOverdue],
   )
 
   const listHeader = useMemo(
@@ -110,12 +144,22 @@ export function UpcomingPane() {
           {t('upcoming.title')}
         </Text>
         <Text style={styles.pageCount} accessibilityLiveRegion="polite">
-          {t('upcoming.count', { count })}
+          {status}
         </Text>
         <Text style={styles.hint}>{t('upcoming.hint')}</Text>
+        {next && <UpcomingNextCard task={next} language={i18n.language} onOpen={handleOpenTask} />}
       </View>
     ),
-    [t, count, styles.pageTitle, styles.pageCount, styles.hint],
+    [
+      t,
+      status,
+      next,
+      i18n.language,
+      handleOpenTask,
+      styles.pageTitle,
+      styles.pageCount,
+      styles.hint,
+    ],
   )
 
   const listEmpty = useMemo(
@@ -151,6 +195,20 @@ export function UpcomingPane() {
           >
             <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.primary} />
           </Pressable>
+          <Pressable
+            onPress={handleOpenSettings}
+            android_ripple={ripple}
+            style={remindersOn ? styles.iconBtnActive : styles.iconBtn}
+            hitSlop={UI_SIZE_8}
+            accessibilityRole="button"
+            accessibilityLabel={t('upcoming.reminders.title')}
+          >
+            <MaterialCommunityIcons
+              name={remindersOn ? 'bell' : 'bell-outline'}
+              size={UI_ICON_SIZE_24}
+              color={remindersOn ? c.primary : c.onSurfaceVariant}
+            />
+          </Pressable>
         </View>
       </View>
 
@@ -175,6 +233,8 @@ export function UpcomingPane() {
       <View style={styles.bottomFade} pointerEvents="none">
         <EdgeFade color={c.background} placement="bottom" />
       </View>
+
+      <ReminderSettingsBottomSheet visible={settingsVisible} onClose={handleCloseSettings} />
     </View>
   )
 }
@@ -212,7 +272,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       zIndex: 5,
     },
     appBar: {
-      ...commonStyles.row,
+      ...commonStyles.rowBetween,
       paddingHorizontal: UI_SIZE_8,
       paddingTop: insets.top + UI_SIZE_4,
     },
@@ -220,6 +280,12 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       overflow: 'hidden',
       padding: UI_SIZE_8,
       borderRadius: UI_SIZE_9999,
+    },
+    iconBtnActive: {
+      overflow: 'hidden',
+      padding: UI_SIZE_8,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.3),
     },
     pageTitle: {
       fontSize: FontSize.heading,
@@ -253,20 +319,13 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       marginTop: UI_SIZE_12,
       marginBottom: UI_SIZE_8,
     },
-    row: {
-      paddingVertical: UI_SIZE_12,
-      gap: UI_SIZE_4,
-    },
-    taskText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-    },
-    meta: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.medium,
-      color: c.onSurfaceVariant,
+    sectionCapOverdue: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.heavy,
+      fontFamily: FontFamily.extraBold,
+      color: c.error,
+      marginTop: UI_SIZE_12,
+      marginBottom: UI_SIZE_8,
     },
     rowDivider: {
       height: StyleSheet.hairlineWidth,

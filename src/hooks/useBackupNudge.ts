@@ -19,6 +19,7 @@ import {
   snoozeBackupNudge,
 } from '@/lib/backupNudge'
 import type { BackupNudgeState } from '@/lib/backupNudge.types'
+import { setBackupNudgeVisible } from '@/lib/backupNudgeVisibility'
 
 const BACKUP_ROUTE = '/settings/backup'
 const DEVICES_ROUTE = '/settings/devices'
@@ -86,6 +87,11 @@ export function useBackupNudge() {
     !sheetVisible &&
     (!usesSheet || state.sheetSeen) &&
     !isWithinNudgeInterval(state.dismissedAt, now)
+
+  const nudgeVisible = sheetVisible || bannerVisible
+  useEffect(() => {
+    setBackupNudgeVisible(nudgeVisible)
+  }, [nudgeVisible])
 
   const snooze = useCallback(() => {
     const at = Date.now()

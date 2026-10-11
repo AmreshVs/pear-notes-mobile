@@ -37,6 +37,8 @@ export function FloatingNoticeBanner({
   descriptionLines = 1,
   actionLabel,
   onAction,
+  secondaryLabel,
+  onSecondary,
   dismissLabel,
   onDismiss,
 }: FloatingNoticeBannerProps) {
@@ -78,12 +80,22 @@ export function FloatingNoticeBanner({
           </Pressable>
         </RNView>
 
-        <Pressable
-          onPress={onAction}
-          style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
-        >
-          <Text style={styles.actionBtnText}>{actionLabel}</Text>
-        </Pressable>
+        <RNView style={styles.actions}>
+          <Pressable
+            onPress={onAction}
+            style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
+          >
+            <Text style={styles.actionBtnText}>{actionLabel}</Text>
+          </Pressable>
+          {secondaryLabel && onSecondary && (
+            <Pressable
+              onPress={onSecondary}
+              style={({ pressed }) => [styles.secondaryBtn, pressed && commonStyles.pressed]}
+            >
+              <Text style={styles.secondaryBtnText}>{secondaryLabel}</Text>
+            </Pressable>
+          )}
+        </RNView>
       </RNView>
     </MotionView>
   )
@@ -137,7 +149,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       padding: Space.xs,
       marginLeft: Space.xs,
     },
+    actions: {
+      flexDirection: 'row',
+      gap: Space.sm,
+    },
     actionBtn: {
+      flex: 1,
       height: 40,
       borderRadius: UI_SIZE_9999,
       alignItems: 'center',
@@ -148,6 +165,19 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontSize: FontSize.body,
       fontWeight: FontWeight.bold,
       color: c.onPrimary,
+    },
+    secondaryBtn: {
+      flex: 1,
+      height: 40,
+      borderRadius: UI_SIZE_9999,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: c.secondaryContainer,
+    },
+    secondaryBtnText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.bold,
+      color: c.onSecondaryContainer,
     },
   })
   return styles

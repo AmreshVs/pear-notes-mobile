@@ -43,6 +43,7 @@ import { AiToolsSheet } from '@/components/AiToolsSheet'
 import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { AudioRecorderModal, type RecordingDoneOptions } from '@/components/AudioRecorderModal'
 import { EdgeFade } from '@/components/EdgeFade'
+import { ScrollJumpButton } from '@/components/editor/ScrollJumpButton'
 import { FindInNoteBar } from '@/components/FindInNoteBar'
 import { GenerateNoteSheet } from '@/components/GenerateNoteSheet'
 import { GlassView } from '@/components/GlassView'
@@ -55,7 +56,7 @@ import { NoteConflictBanner } from '@/components/NoteConflictBanner'
 import { NoteSuggestionChips } from '@/components/NoteSuggestionChips'
 import { SharedItemsTray } from '@/components/share/SharedItemsTray'
 import { createThemedStylesheet, useTheme } from '@/components/Themed'
-import type { EditorSelection } from '@/components/TiptapEditor'
+import type { EditorSelection, ScrollJumpDirection } from '@/components/TiptapEditor'
 import { TiptapEditor } from '@/components/TiptapEditor'
 import { UploadQueueBanner } from '@/components/upload/UploadQueueBanner'
 import { EMPTY_FIND_STATE, type FindInNoteState } from '@/components/useFindInNoteBar'
@@ -222,6 +223,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [dictationActive, setDictationActive] = useState(false)
   const [findNoteId, setFindNoteId] = useState<string | null>(null)
   const [findState, setFindState] = useState<FindInNoteState>(EMPTY_FIND_STATE)
+  const [scrollJumpDirection, setScrollJumpDirection] = useState<ScrollJumpDirection | null>(null)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
   const [voiceSourceUri, setVoiceSourceUri] = useState<string | null>(null)
   const [voiceParagraphs, setVoiceParagraphs] = useState<string[] | null>(null)
@@ -1132,6 +1134,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   }, [isOpen, toolbarBottom])
 
   const hasUploadQueue = useNoteUploadQueue(noteId).items.length > 0
+  const scrollJumpBottom = toolbarBottom + UI_SIZE_64 + (hasUploadQueue ? UI_SIZE_80 : 0)
+  const handleScrollJump = useCallback(() => {
+    if (scrollJumpDirection) editorRef.current?.scrollJump(scrollJumpDirection)
+  }, [editorRef, scrollJumpDirection])
   const canAddSharedItems = isOpen && !!noteId && !isNoteLocked
   const sharedTrayBottom = useMemo(() => {
     if (!isOpen) return insets.bottom + UI_SIZE_56
@@ -1413,12 +1419,21 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onKeptSelectionCleared={handleKeptSelectionCleared}
               onNoteLoaded={handleNoteLoaded}
               onFindState={setFindState}
+              onScrollJump={setScrollJumpDirection}
               onEditorReset={handleEditorReset}
             />
           )}
 
           {isOpen && showBodyPlaceholder && !isNoteLocked && (
             <NoteBodyPlaceholder key={noteId} noteValue={noteData} topInset={contentTop} />
+          )}
+
+          {isOpen && !isNoteLocked && !isEditing && !findActive && !dictationActive && (
+            <ScrollJumpButton
+              direction={scrollJumpDirection}
+              bottom={scrollJumpBottom}
+              onJump={handleScrollJump}
+            />
           )}
 
           <NoteConflictBanner noteKey={noteId} />

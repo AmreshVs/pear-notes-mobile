@@ -22,6 +22,7 @@ import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBa
 import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { ReminderSettingsBottomSheet } from '@/components/bottomsheet/ReminderSettingsBottomSheet'
 import { MotionView } from '@/components/MotionView'
 import { useHapticsPreference } from '@/components/settings/useHapticsPreference'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -45,6 +46,7 @@ import {
 } from '@/constants/commonStyles'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
 import { useRemindersSetting } from '@/hooks/useReminders'
+import { useTipsEnabled } from '@/hooks/useTips'
 import { AndroidColorTheme, setAndroidColorTheme } from '@/lib/androidColorTheme'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -67,6 +69,10 @@ export default function AndroidGeneralSettingsScreen() {
   const androidColorTheme = useAndroidColorTheme()
   const { hapticsEnabled, toggleHaptics } = useHapticsPreference()
   const [reminders, toggleReminders, remindersSupported] = useRemindersSetting()
+  const [tipsEnabled, toggleTips] = useTipsEnabled()
+  const [reminderSheetVisible, setReminderSheetVisible] = React.useState(false)
+  const handleOpenReminderSheet = useCallback(() => setReminderSheetVisible(true), [])
+  const handleCloseReminderSheet = useCallback(() => setReminderSheetVisible(false), [])
 
   const [sortBySheetVisible, setSortBySheetVisible] = React.useState(false)
 
@@ -249,8 +255,32 @@ export default function AndroidGeneralSettingsScreen() {
                 </View>
                 <Switch value={reminders} onValueChange={toggleReminders} />
               </View>
+              <View style={styles.groupDivider} />
+              <Pressable
+                onPress={handleOpenReminderSheet}
+                android_ripple={ripple}
+                style={styles.groupPressRow}
+              >
+                <View style={commonStyles.flex1}>
+                  <Text style={styles.rowTitle}>{t('upcoming.reminders.open')}</Text>
+                </View>
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={UI_ICON_SIZE_20}
+                  color={c.onSurfaceVariant}
+                />
+              </Pressable>
             </>
           )}
+
+          <View style={styles.groupDivider} />
+          <View style={styles.toggleRow}>
+            <View style={styles.toggleInfo}>
+              <Text style={styles.rowTitle}>{t('tips.showTips')}</Text>
+              <Text style={styles.rowSubtitle}>{t('tips.showTipsDesc')}</Text>
+            </View>
+            <Switch value={tipsEnabled} onValueChange={toggleTips} />
+          </View>
         </MotionView>
 
         <View>
@@ -346,6 +376,11 @@ export default function AndroidGeneralSettingsScreen() {
           </View>
         </MotionView>
       </ScrollView>
+
+      <ReminderSettingsBottomSheet
+        visible={reminderSheetVisible}
+        onClose={handleCloseReminderSheet}
+      />
 
       <BottomActionSheet
         visible={sortBySheetVisible}

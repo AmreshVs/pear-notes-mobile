@@ -10,6 +10,8 @@ export type FloatingNoticeBannerProps = {
   descriptionLines?: number
   actionLabel: string
   onAction: () => void
+  secondaryLabel?: string
+  onSecondary?: () => void
   dismissLabel: string
   onDismiss: () => void
 }

@@ -1,8 +1,13 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFocusEffect } from 'expo-router'
 
-import { loadUpcomingGroups } from '@pear-notes/core/store/services/upcomingTasks.js'
+import {
+  countOpenUpcoming,
+  isFoldedGroup,
+  UPCOMING_GROUP,
+} from '@pear-notes/core/store/services/noteTasks.js'
+import { loadUpcomingGroups, setTaskDone } from '@pear-notes/core/store/services/upcomingTasks.js'
 
 export type UpcomingTask = {
   noteKey: string
@@ -11,6 +16,9 @@ export type UpcomingTask = {
   date: string
   time: string | null
   checklist: boolean
+  yearly?: boolean
+  sinceYear?: number | null
+  done?: boolean
 }
 
 export type UpcomingGroup = {
@@ -21,7 +29,45 @@ export type UpcomingGroup = {
 export type UpcomingSection = {
   group: string
   title: string
+  folded: boolean
   data: UpcomingTask[]
+}
+
+const NEXT_GROUPS: string[] = [
+  UPCOMING_GROUP.TODAY,
+  UPCOMING_GROUP.TOMORROW,
+  UPCOMING_GROUP.THIS_WEEK,
+  UPCOMING_GROUP.LATER,
+]
+
+const pendingId = (task: UpcomingTask) => `${task.noteKey}|${task.date}|${task.text}`
+
+const MINUTE_MS = 60 * 1000
+const HOUR_MS = 60 * MINUTE_MS
+const DAY_MS = 24 * HOUR_MS
+
+const taskDate = (task: UpcomingTask, withTime: boolean) => {
+  const [year, month, day] = task.date.split('-').map(Number)
+  const [hour, minute] = (withTime && task.time ? task.time : '00:00').split(':').map(Number)
+  return new Date(year, month - 1, day, hour, minute)
+}
+
+export function formatUpcomingWhen(task: UpcomingTask, language: string, now = Date.now()) {
+  const relative = new Intl.RelativeTimeFormat(language, { numeric: 'auto' })
+  const days = Math.round(
+    (taskDate(task, false).getTime() - new Date(now).setHours(0, 0, 0, 0)) / DAY_MS,
+  )
+  if (task.time && days === 0) {
+    const diff = taskDate(task, true).getTime() - now
+    if (diff < HOUR_MS) return relative.format(Math.max(1, Math.round(diff / MINUTE_MS)), 'minute')
+    return relative.format(Math.round(diff / HOUR_MS), 'hour')
+  }
+  if (days <= 1) return relative.format(days, 'day')
+  return formatUpcomingDue({ ...task, time: null }, language)
+}
+
+export function upcomingAge(task: UpcomingTask): number {
+  return task.yearly && task.sinceYear ? Number(task.date.slice(0, 4)) - task.sinceYear : 0
 }
 
 export function formatUpcomingDue(task: UpcomingTask, language: string): string {
@@ -46,6 +92,16 @@ export function useUpcomingTasks() {
   const { t } = useTranslation()
   const [groups, setGroups] = useState<UpcomingGroup[] | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [pending, setPending] = useState<Set<string>>(() => new Set())
+  const [openFolds, setOpenFolds] = useState<Set<string>>(() => new Set())
+  const mountedRef = useRef(true)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   const load = useCallback(async () => {
     try {
@@ -69,20 +125,76 @@ export function useUpcomingTasks() {
 
   const sections = useMemo<UpcomingSection[]>(
     () =>
-      (groups ?? []).map(({ group, items }) => ({
-        group,
-        title: t(`upcoming.groups.${group}`),
-        data: items,
-      })),
-    [groups, t],
+      (groups ?? []).map(({ group, items }) => {
+        const folded = isFoldedGroup(group)
+        return {
+          group,
+          folded,
+          title: folded
+            ? t(`upcoming.folds.${group}`, { count: items.length })
+            : t(`upcoming.groups.${group}`),
+          data: folded && !openFolds.has(group) ? [] : items,
+        }
+      }),
+    [groups, openFolds, t],
   )
 
-  const count = useMemo(
-    () => (groups ?? []).reduce((sum, group) => sum + group.items.length, 0),
+  const next = useMemo(
+    () => (groups ?? []).find(({ group }) => NEXT_GROUPS.includes(group))?.items[0] ?? null,
     [groups],
   )
 
-  return { sections, count, loaded: groups !== null, refreshing, refresh }
+  const overdue = useMemo(
+    () => (groups ?? []).find(({ group }) => group === UPCOMING_GROUP.OVERDUE)?.items.length ?? 0,
+    [groups],
+  )
+
+  const toggleFold = useCallback((group: string) => {
+    setOpenFolds((current) => {
+      const nextFolds = new Set(current)
+      if (!nextFolds.delete(group)) nextFolds.add(group)
+      return nextFolds
+    })
+  }, [])
+
+  const toggleDone = useCallback(
+    async (task: UpcomingTask) => {
+      const id = pendingId(task)
+      setPending((current) => new Set(current).add(id))
+      try {
+        await setTaskDone(task, !task.done)
+      } catch {
+      } finally {
+        if (mountedRef.current) {
+          setPending((current) => {
+            const nextPending = new Set(current)
+            nextPending.delete(id)
+            return nextPending
+          })
+          load()
+        }
+      }
+    },
+    [load],
+  )
+
+  const isPending = useCallback((task: UpcomingTask) => pending.has(pendingId(task)), [pending])
+
+  const count = useMemo(() => countOpenUpcoming(groups ?? []), [groups])
+
+  return {
+    sections,
+    count,
+    overdue,
+    next,
+    loaded: groups !== null,
+    refreshing,
+    refresh,
+    toggleDone,
+    isPending,
+    openFolds,
+    toggleFold,
+  }
 }
 
 const UPCOMING_COUNT_REFRESH_MS = 60 * 1000
@@ -91,9 +203,7 @@ export function useUpcomingCount(): number {
   const [count, setCount] = useState(0)
   const refresh = useCallback(() => {
     loadUpcomingGroups()
-      .then((groups: UpcomingGroup[]) =>
-        setCount(groups.reduce((sum, group) => sum + group.items.length, 0)),
-      )
+      .then((groups: UpcomingGroup[]) => setCount(countOpenUpcoming(groups)))
       .catch(() => {})
   }, [])
   useFocusEffect(

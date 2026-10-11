@@ -79,6 +79,8 @@ export interface TiptapStyleState {
   hasSelection: { isActive: boolean }
 }
 
+export type ScrollJumpDirection = 'up' | 'down'
+
 type EditorSnapshot = { html: string; noteId: string | null; changed: boolean }
 
 export interface TiptapEditorHandle {
@@ -141,6 +143,7 @@ export interface TiptapEditorHandle {
   clearNote: () => void
   setTitle: (title: string) => void
   scrollToTop: () => void
+  scrollJump: (direction: ScrollJumpDirection) => void
   revealLastInsert: (url?: string) => void
   setKeyboardInset: (height: number, scrollToCursor?: boolean) => void
   setBottomInset: (keyboardHeight: number, toolbarHeight: number) => void
@@ -180,6 +183,7 @@ export interface TiptapEditorProps {
   onKeptSelectionCleared?: () => void
   onNoteLoaded?: (noteId: string) => void
   onFindState?: (state: { count: number; active: number }) => void
+  onScrollJump?: (direction: ScrollJumpDirection | null) => void
   onEditorReset?: () => void
   onOpenAttachment?: (url: string, fileName: string) => void
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
@@ -217,6 +221,7 @@ type WebViewMsg =
   | { type: 'keptSelectionCleared' }
   | { type: 'noteLoaded'; noteId: string }
   | { type: 'findState'; count: number; active: number }
+  | { type: 'scrollJump'; direction: ScrollJumpDirection | null }
   | { type: 'pong'; id: number }
   | { type: 'openAttachment'; url: string; fileName: string }
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
@@ -323,6 +328,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onKeptSelectionCleared,
       onNoteLoaded,
       onFindState,
+      onScrollJump,
       onEditorReset,
       onOpenAttachment,
       onPreviewAttachment,
@@ -355,6 +361,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onKeptSelectionClearedRef = useRef(onKeptSelectionCleared)
     const onNoteLoadedRef = useRef(onNoteLoaded)
     const onFindStateRef = useRef(onFindState)
+    const onScrollJumpRef = useRef(onScrollJump)
     const onEditorResetRef = useRef(onEditorReset)
     const onOpenAttachmentRef = useRef(onOpenAttachment)
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
@@ -371,6 +378,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onKeptSelectionClearedRef.current = onKeptSelectionCleared
     onNoteLoadedRef.current = onNoteLoaded
     onFindStateRef.current = onFindState
+    onScrollJumpRef.current = onScrollJump
     onEditorResetRef.current = onEditorReset
     onOpenAttachmentRef.current = onOpenAttachment
     onPreviewAttachmentRef.current = onPreviewAttachment
@@ -596,6 +604,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
           case 'findState':
             onFindStateRef.current?.({ count: msg.count, active: msg.active })
+            break
+
+          case 'scrollJump':
+            onScrollJumpRef.current?.(msg.direction)
             break
 
           case 'pong':
@@ -882,6 +894,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }
         },
         scrollToTop: () => sendCommand({ type: 'scrollToTop' }),
+        scrollJump: (direction: ScrollJumpDirection) =>
+          sendCommand({ type: 'scrollJump', direction }),
         setBottomInset: (keyboardHeight, toolbarHeight) =>
           sendCommand({ type: 'setBottomInset', keyboardHeight, toolbarHeight }),
         setAttachmentLoading: (url, loading, attachmentId, progress) =>
