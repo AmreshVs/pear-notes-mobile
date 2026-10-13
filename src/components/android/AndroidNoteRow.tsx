@@ -13,6 +13,7 @@ import { formatDate } from '@pear-notes/core/utils.js'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { HighlightedText } from '@/components/HighlightedText'
 import { MotionView } from '@/components/MotionView'
+import { type MatchReason, MatchReasonBadge } from '@/components/search/MatchReasonBadge'
 import { createThemedStylesheetWithHooks, Text, useFontScale } from '@/components/Themed'
 import {
   commonStyles,
@@ -75,6 +76,7 @@ type NoteRowProps = {
   checked?: boolean
   searchHit?: NoteSearchHit | null
   meaningSnippet?: string | null
+  matchReason?: MatchReason | null
   titleHighlight?: string
   onPress: (noteKey: string) => void
   onLongPress: (noteKey: string) => void
@@ -91,6 +93,7 @@ function areNoteRowPropsEqual(prev: NoteRowProps, next: NoteRowProps) {
     prev.checked === next.checked &&
     prev.searchHit === next.searchHit &&
     prev.meaningSnippet === next.meaningSnippet &&
+    prev.matchReason === next.matchReason &&
     prev.titleHighlight === next.titleHighlight &&
     prev.onPress === next.onPress &&
     prev.onLongPress === next.onLongPress
@@ -107,6 +110,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   checked,
   searchHit,
   meaningSnippet,
+  matchReason,
   titleHighlight,
   onPress,
   onLongPress,
@@ -283,6 +287,8 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
               {previewContent}
             </Text>
           )}
+
+          {matchReason && <MatchReasonBadge reason={matchReason} />}
 
           {upload && (
             <View style={styles.uploadRow}>

@@ -55,6 +55,7 @@ import { ErrorScreen } from '@/components/ErrorScreen'
 import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
 import { AskVaultSheet } from '@/components/localAi/AskVaultSheet'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
+import { MergePreviewModal } from '@/components/merge/MergePreviewModal'
 import { MergeNotesBanner } from '@/components/MergeNotesBanner'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
@@ -551,6 +552,7 @@ function RootLayoutNav() {
               <AppUpdateBanner />
               <TipBanner />
               <MergeNotesBanner />
+              <MergePreviewModal />
               <BackupNudge />
               <AppUpdateRequiredOverlay />
             </NoteEditorProvider>

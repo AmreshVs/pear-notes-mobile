@@ -59,6 +59,7 @@ import { NoteCard } from '@/components/NoteCard'
 import { SearchScopeChips } from '@/components/notes/SearchScopeChips'
 import { NoteSelectionToolbar } from '@/components/NoteSelectionToolbar'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
+import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import { TidyUpSheet } from '@/components/TidyUpSheet'
 import {
@@ -67,6 +68,8 @@ import {
   FontWeight,
   LetterSpacing,
   Space,
+  UI_ICON_SIZE_13,
+  UI_SIZE_6,
   UI_SIZE_42,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -88,12 +91,12 @@ import { confirmVaultMove } from '@/lib/vaultMove'
 import type { Vault } from '@/lib/vaults.types'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { getNoteMetadata } from '@/utils/noteMetadata'
-import { buildNoteSections } from '@/utils/noteSections'
+import { buildNoteSections, buildSearchSections } from '@/utils/noteSections'
 
 import { NotesPaneProps } from './types'
 
-const { mergeNotes } = notesSlice as unknown as {
-  mergeNotes: (payload: { keys: string[]; untitled: string }) => { type: string }
+const { previewMergeNotes } = notesSlice as unknown as {
+  previewMergeNotes: (payload: { keys: string[] }) => { type: string }
 }
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
@@ -193,16 +196,14 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const groupedNotes = useMemo(
     () =>
-      [
-        ...buildNoteSections(notes, t, isTrashFolder),
-        ...(meaningRows.length > 0
-          ? [{ title: t('search.meaning.title'), data: meaningRows }]
-          : []),
-      ].map((section, sectionIndex) => ({
+      (hasSearchQuery
+        ? buildSearchSections(notes, meaningRows, t)
+        : buildNoteSections(notes, t, isTrashFolder)
+      ).map((section, sectionIndex) => ({
         ...section,
         sectionIndex,
       })),
-    [notes, t, isTrashFolder, meaningRows],
+    [notes, t, isTrashFolder, meaningRows, hasSearchQuery],
   )
 
   const orderedKeys = useMemo(
@@ -266,20 +267,10 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const handleBulkMerge = useCallback(() => {
     const count = selectedKeys.length
     if (count < 2 || isTrashFolder) return
-    Alert.alert(t('notesList.merge.action'), t('notesList.merge.confirm', { count }), [
-      { text: t('folders.buttons.cancel'), style: 'cancel' },
-      {
-        text: t('notesList.merge.action'),
-        onPress: () => {
-          hapticSuccess()
-          const selected = new Set(selectedKeys)
-          const keys = orderedKeys.filter((key: string) => selected.has(key))
-          dispatch(mergeNotes({ keys, untitled: t('noteCard.untitled') }))
-          exitSelection()
-        },
-      },
-    ])
-  }, [dispatch, selectedKeys, orderedKeys, isTrashFolder, exitSelection, t])
+    const selected = new Set(selectedKeys)
+    dispatch(previewMergeNotes({ keys: orderedKeys.filter((key: string) => selected.has(key)) }))
+    exitSelection()
+  }, [dispatch, selectedKeys, orderedKeys, isTrashFolder, exitSelection])
 
   const handleBulkCreate = useCallback(
     (task: string) => {
@@ -540,6 +531,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           pinned={isPinned}
           searchHit={searchHits[note.key] ?? null}
           meaningSnippet={note.snippet || null}
+          matchReason={note.matchReason ?? null}
           titleHighlight={getTitleHighlight(note.value?.title, searchTerms)}
           onPress={handleSelectNote}
           onToggleSelect={handleToggleSelect}
@@ -584,10 +576,21 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const renderSectionHeader = useCallback(
     ({ section }: any) => (
       <View style={section.sectionIndex === 0 ? styles.sectionHeader : styles.sectionHeaderSpaced}>
-        <Text style={commonThemedStyles.sectionCamelCase}>{section.title}</Text>
+        <View style={styles.sectionTitleRow}>
+          {section.meaning && (
+            <SymbolIcon name="sparkles" size={UI_ICON_SIZE_13} color={colors.primary} />
+          )}
+          <Text style={commonThemedStyles.sectionCamelCase}>{section.title}</Text>
+        </View>
       </View>
     ),
-    [styles.sectionHeader, styles.sectionHeaderSpaced, commonThemedStyles.sectionCamelCase],
+    [
+      styles.sectionHeader,
+      styles.sectionHeaderSpaced,
+      styles.sectionTitleRow,
+      commonThemedStyles.sectionCamelCase,
+      colors.primary,
+    ],
   )
 
   const noteKey = useCallback((item: any) => item.key, [])
@@ -666,10 +669,23 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const listFooter = useMemo(
     () =>
-      hasSearchQuery && notes.length > 0 && meaningRows.length === 0 && meaningNoticeText ? (
-        <Text style={styles.meaningNotice}>{meaningNoticeText}</Text>
+      hasSearchQuery && notes.length + meaningRows.length > 0 ? (
+        <>
+          {meaningRows.length === 0 && meaningNoticeText && (
+            <Text style={styles.meaningNotice}>{meaningNoticeText}</Text>
+          )}
+          <Text style={styles.searchFooter}>{t('search.footer')}</Text>
+        </>
       ) : null,
-    [hasSearchQuery, notes.length, meaningRows.length, meaningNoticeText, styles.meaningNotice],
+    [
+      hasSearchQuery,
+      notes.length,
+      meaningRows.length,
+      meaningNoticeText,
+      styles.meaningNotice,
+      styles.searchFooter,
+      t,
+    ],
   )
 
   const handleSearchChange = useCallback(
@@ -871,6 +887,16 @@ const useStyles = createThemedStylesheet((theme) => {
       marginTop: Space.sm,
       fontSize: FontSize.body,
       color: theme.colors.textMuted,
+    },
+    searchFooter: {
+      marginHorizontal: Space.lg,
+      marginTop: Space.md,
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+    },
+    sectionTitleRow: {
+      ...commonStyles.row,
+      gap: UI_SIZE_6,
     },
     sectionHeader: {
       marginLeft: Space.base,

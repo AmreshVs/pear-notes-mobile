@@ -14,8 +14,9 @@ import {
 import { getNotesData, getRelatedNoteRows } from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { useAiSuggestionOn } from '@/hooks/useAiSuggestionOn'
+import { shortDate } from '@/utils/noteDates'
 
-type RelatedRow = { key: string; title: string; snippet: string }
+export type RelatedRow = { key: string; title: string; snippet: string; date: string }
 
 export function useRelatedNotes(noteId: string, shown: boolean) {
   const relatedOn = useAiSuggestionOn(AI_SUGGESTION.RELATED)
@@ -29,7 +30,10 @@ export function useRelatedNotes(noteId: string, shown: boolean) {
     forKey: string | null
   }
   const rawRows = useSelector(getRelatedNoteRows) as { key: string; snippet: string }[]
-  const notesData = useSelector(getNotesData) as Record<string, { title?: string } | undefined>
+  const notesData = useSelector(getNotesData) as Record<
+    string,
+    { title?: string; updatedAt?: number } | undefined
+  >
   const notice = useSelector(getMeaningSearchNotice, shallowEqual) as {
     kind: string
     done?: number
@@ -56,6 +60,7 @@ export function useRelatedNotes(noteId: string, shown: boolean) {
         key: row.key,
         title: notesData[row.key]?.title || t('activity.untitledNote'),
         snippet: row.snippet,
+        date: shortDate(notesData[row.key]?.updatedAt ?? 0),
       })),
     [rawRows, notesData, t],
   )

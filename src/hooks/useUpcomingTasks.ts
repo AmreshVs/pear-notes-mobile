@@ -92,6 +92,26 @@ export function formatUpcomingDue(task: UpcomingTask, language: string): string 
   return `${label} · ${date.toLocaleTimeString(language, { hour: 'numeric', minute: '2-digit' })}`
 }
 
+export function formatUpcomingWhenShort(
+  task: UpcomingTask,
+  language: string,
+  now = Date.now(),
+): string {
+  const date = taskDate(task, true)
+  const days = Math.round(
+    (taskDate(task, false).getTime() - new Date(now).setHours(0, 0, 0, 0)) / DAY_MS,
+  )
+  const time = task.time
+    ? date.toLocaleTimeString(language, { hour: 'numeric', minute: '2-digit' })
+    : ''
+  if (days === 0) return time
+  const day =
+    days > 0 && days < 7
+      ? date.toLocaleDateString(language, { weekday: 'short' })
+      : date.toLocaleDateString(language, { month: 'short', day: 'numeric' })
+  return time ? `${day} ${time}` : day
+}
+
 export function upcomingTaskKey(task: UpcomingTask, index: number): string {
   return `${task.noteKey}-${index}-${task.text}`
 }

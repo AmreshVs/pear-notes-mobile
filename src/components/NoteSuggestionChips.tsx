@@ -13,7 +13,9 @@ import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
+  FontFamily,
   FontSize,
+  FontWeight,
   Radii,
   Space,
   UI_ICON_SIZE_14,
@@ -32,8 +34,8 @@ type Suggestions = {
 }
 
 type ChipProps = {
-  icon: 'sparkles' | 'folder'
   label: string
+  action: string
   hint: string
   dismissLabel: string
   onAccept: () => void
@@ -54,17 +56,21 @@ function folderChipLabel(
   folder: FolderSuggestion | null | undefined,
   folders: Record<string, { title?: string }> | undefined,
   t: TFunction,
-): string | null {
+): { label: string; action: string } | null {
   if (folder?.folderKey) {
     const name = folders?.[folder.folderKey]?.title
-    return name ? t('suggestions.moveTo', { folder: name }) : null
+    return name
+      ? { label: t('suggestions.moveTo', { folder: name }), action: t('suggestions.move') }
+      : null
   }
-  return folder?.name ? t('suggestions.newFolder', { name: folder.name }) : null
+  return folder?.name
+    ? { label: t('suggestions.newFolder', { name: folder.name }), action: t('suggestions.create') }
+    : null
 }
 
 const SuggestionChip = memo(function SuggestionChip({
-  icon,
   label,
+  action,
   hint,
   dismissLabel,
   onAccept,
@@ -75,16 +81,16 @@ const SuggestionChip = memo(function SuggestionChip({
   return (
     <RNView style={styles.chipShell}>
       <RNView style={styles.chip}>
+        <Text style={styles.chipLabel} numberOfLines={1}>
+          {label}
+        </Text>
         <Pressable
           onPress={onAccept}
           accessibilityRole="button"
           accessibilityHint={hint}
           style={({ pressed }) => [styles.action, pressed && commonStyles.pressed]}
         >
-          <SymbolIcon name={icon} size={UI_ICON_SIZE_14} color={colors.primary} />
-          <Text style={styles.chipLabel} numberOfLines={1}>
-            {label}
-          </Text>
+          <Text style={styles.actionText}>{action}</Text>
         </Pressable>
         <Pressable
           onPress={onDismiss}
@@ -115,6 +121,7 @@ export const NoteSuggestionChips = memo(function NoteSuggestionChips({
   onAcceptTitle,
 }: NoteSuggestionChipsProps) {
   const { t } = useTranslation()
+  const { colors } = useTheme()
   const styles = useStyles()
   const dispatch = useDispatch()
   const suggestions = useSelector(getNoteSuggestions)
@@ -127,7 +134,7 @@ export const NoteSuggestionChips = memo(function NoteSuggestionChips({
   const current = !!noteKey && suggestions.noteKey === noteKey
   const suggestedTitle =
     current && !String(savedTitle ?? '').trim() ? (suggestions.title ?? null) : null
-  const folderLabel = current ? folderChipLabel(suggestions.folder, folders, t) : null
+  const folderChip = current ? folderChipLabel(suggestions.folder, folders, t) : null
 
   const dismissTitle = useCallback(() => {
     hapticLight()
@@ -151,24 +158,28 @@ export const NoteSuggestionChips = memo(function NoteSuggestionChips({
     dispatch(acceptFolderSuggestion({ noteKey }))
   }, [dispatch, noteKey])
 
-  if (!suggestedTitle && !folderLabel) return null
+  if (!suggestedTitle && !folderChip) return null
 
   return (
     <RNView style={[styles.container, containerStyle.position]} pointerEvents="box-none">
+      <RNView style={styles.caption} pointerEvents="none">
+        <SymbolIcon name="sparkles" size={UI_ICON_SIZE_14} color={colors.primary} />
+        <Text style={styles.captionText}>{t('suggestions.label')}</Text>
+      </RNView>
       {suggestedTitle && (
         <SuggestionChip
-          icon="sparkles"
           label={t('suggestions.title', { title: suggestedTitle })}
+          action={t('suggestions.use')}
           hint={t('suggestions.useTitleHint')}
           dismissLabel={t('suggestions.dismiss')}
           onAccept={acceptTitle}
           onDismiss={dismissTitle}
         />
       )}
-      {folderLabel && (
+      {folderChip && (
         <SuggestionChip
-          icon="folder"
-          label={folderLabel}
+          label={folderChip.label}
+          action={folderChip.action}
           hint={t('suggestions.useFolderHint')}
           dismissLabel={t('suggestions.dismissFolder')}
           onAccept={acceptFolder}
@@ -212,11 +223,27 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
     },
     action: {
-      flexShrink: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: Space.sm,
+      paddingHorizontal: Space.md,
       paddingVertical: UI_SIZE_4,
+      borderRadius: Radii.pill,
+      backgroundColor: theme.colors.primary,
+    },
+    actionText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.onPrimary,
+    },
+    caption: {
+      ...commonStyles.row,
+      gap: UI_SIZE_4,
+      paddingHorizontal: UI_SIZE_4,
+    },
+    captionText: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.textSecondary,
     },
     dismiss: {
       padding: UI_SIZE_6,

@@ -1,6 +1,30 @@
 type TranslateFn = (key: string) => string
 
-export type NoteSection = { title: string; data: any[] }
+export type NoteSection = { title: string; data: any[]; meaning?: boolean }
+
+type CountTranslateFn = (key: string, options: { count: number }) => string
+
+export function buildSearchSections(
+  notes: any[],
+  meaningRows: any[],
+  t: CountTranslateFn,
+): NoteSection[] {
+  const sections: NoteSection[] = []
+  if (notes.length > 0) {
+    sections.push({
+      title: t('search.sections.words', { count: notes.length }),
+      data: notes.map((note) => ({ ...note, matchReason: 'exact' })),
+    })
+  }
+  if (meaningRows.length > 0) {
+    sections.push({
+      title: t('search.sections.meaning', { count: meaningRows.length }),
+      data: meaningRows.map((note) => ({ ...note, matchReason: 'meaning' })),
+      meaning: true,
+    })
+  }
+  return sections
+}
 
 const DAY_MS = 86_400_000
 

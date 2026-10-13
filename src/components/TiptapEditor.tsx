@@ -122,13 +122,16 @@ export interface TiptapEditorHandle {
     expected: string,
     text: string,
     mode?: 'rewrite' | 'ask' | 'plain',
+    originalTitle?: string,
   ) => void
   applyEdits: (edits: NoteTextEdit[], range?: { from: number; to: number } | null) => void
   insertParagraphsAfter: (pos: number, text: string) => void
+  makeTasks: (texts: string[]) => void
   startDictation: () => void
   updateDictation: (text: string) => void
   endDictation: (commit: boolean) => void
   insertCaption: (src: string | null, text: string) => void
+  insertImageDetails: (src: string | null, blocks: object[], keepImage: boolean) => void
   updateImageSrc: (oldSrc: string, newSrc: string) => void
   focus: () => void
   focusTitle: () => void
@@ -817,8 +820,9 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             ...(summary ?? {}),
           }),
         getSelection: getSelectionAsync,
-        replaceRange: (from, to, expected, text, mode = 'plain') =>
-          sendCommand({ type: 'replaceRange', from, to, expected, text, mode }),
+        replaceRange: (from, to, expected, text, mode = 'plain', originalTitle) =>
+          sendCommand({ type: 'replaceRange', from, to, expected, text, mode, originalTitle }),
+        makeTasks: (texts) => sendCommand({ type: 'makeTasks', texts }),
         applyEdits: (edits, range) =>
           sendCommand({ type: 'applyEdits', edits, from: range?.from, to: range?.to }),
         insertParagraphsAfter: (pos, text) =>
@@ -827,6 +831,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
         updateDictation: (text) => sendCommand({ type: 'dictationUpdate', text }),
         endDictation: (commit) => sendCommand({ type: 'dictationEnd', commit }),
         insertCaption: (src, text) => sendCommand({ type: 'insertCaption', src, text }),
+        insertImageDetails: (src, blocks, keepImage) =>
+          sendCommand({ type: 'insertImageDetails', src, blocks, keepImage }),
         updateImageSrc: (oldSrc, newSrc) => sendCommand({ type: 'updateImageSrc', oldSrc, newSrc }),
         focus: () => {
           requestNativeWebViewFocus()

@@ -37,7 +37,9 @@ export interface AskTurnView {
   editedText: string | null
   applied: boolean
   error: AskError | null
-  reply: string
+  reply?: string
+  scope?: AskScope
+  readOnly?: boolean
 }
 
 export interface AskScopeInfo {
@@ -55,6 +57,7 @@ export interface AskApplyRequest {
 
 export interface AskNoteSheetProps {
   visible: boolean
+  noteKey: string | null
   selectionText: string
   noteText: string
   insertBlocked: boolean
@@ -75,8 +78,13 @@ export function replaceOnce(text: string, find: string, replace: string) {
 export const ASK_MAX_CHARACTERS = SUMMARY_MAX_TRANSCRIPT_CHARS as number
 export const ASK_QUESTION_MAX_CHARS = CORE_ASK_QUESTION_MAX_CHARS as number
 
-export const createWorkingTurn = (id: number, question: string) =>
-  createAskTurn(id, question) as AskTurnView
+export const createWorkingTurn = (id: number, question: string, scope: AskScope) => ({
+  ...(createAskTurn(id, question) as AskTurnView),
+  scope,
+})
+
+export const isEarlierChange = (turn: AskTurnView) =>
+  !!turn.readOnly && (turn.kind === ASK_KINDS.EDITS || turn.kind === ASK_KINDS.REWRITE)
 
 export const resolveAskTurn = (turn: AskTurnView, sourceText: string, raw: string) =>
   resolveCoreAskTurn(turn, sourceText, raw) as AskTurnView

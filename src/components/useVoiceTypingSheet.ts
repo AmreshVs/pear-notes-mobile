@@ -16,6 +16,7 @@ import * as Localization from 'expo-localization'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import {
+  canInsertImageDetailsTable,
   formatImageDetails,
   imageDetailsFromText,
 } from '@pear-notes/core/store/services/imageDetails.js'
@@ -77,6 +78,7 @@ import {
 } from '@/lib/localAi/localAi'
 import { getRewriteDiff } from '@/lib/localAi/rewriteChanges'
 import { SHORTER_TARGET_RATIO } from '@/lib/localAi/workProgress'
+import { imageDetailsLabels } from '@/utils/imageDetailsLabels'
 
 import ExpoLocalAi from '../../modules/expo-local-ai'
 
@@ -111,10 +113,15 @@ export const REWRITE_MODES: RewriteMode[] = [
   'myStyle',
 ]
 
+export type ImageDetails = ReturnType<typeof imageDetailsFromText>
+
 export interface InsertMeta {
   language: string | null
   bullets: string[]
   action: ApplyAction
+  details?: ImageDetails | null
+  table?: boolean
+  keepPhoto?: boolean
 }
 export type VoiceTypingPhase =
   | 'idle'
@@ -318,6 +325,8 @@ export function useVoiceTypingSheet({
   const [isPresented, setIsPresented] = useState(visible)
   const { workView, beginWork, endWork } = useLocalAiWorkProgress()
   const [summary, setSummary] = useState<TranscriptSummary | null>(null)
+  const [details, setDetails] = useState<ImageDetails | null>(null)
+  const [keepPhoto, setKeepPhoto] = useState(true)
   const [summaryPhase, setSummaryPhase] = useState<SummaryPhase>('idle')
   const [keyPoints, setKeyPoints] = useState<string[]>([])
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null)
@@ -439,6 +448,8 @@ export function useVoiceTypingSheet({
       abortRef.current = controller
       setError(null)
       resetSummary()
+      setDetails(null)
+      setKeepPhoto(true)
       const isPdf = uri.toLowerCase().endsWith('.pdf')
       const onProgress = beginWork(
         mode === 'describe'
@@ -449,19 +460,18 @@ export function useVoiceTypingSheet({
               ? WORK_KIND.EXTRACT_PDF
               : WORK_KIND.EXTRACT_IMAGE,
       )
+      const readImageDetails = async () => {
+        const found = imageDetailsFromText(await extractTextFromImage(uri, { onProgress }))
+        if (runId === runIdRef.current) setDetails(found)
+        return formatImageDetails(found, imageDetailsLabels(t))
+      }
       updatePhase('transcribing')
       try {
         const result =
           mode === 'describe'
             ? await describeImage(uri, { onProgress })
             : mode === 'details'
-              ? formatImageDetails(
-                  imageDetailsFromText(await extractTextFromImage(uri, { onProgress })),
-                  {
-                    types: t('localAi.details.types', { returnObjects: true }),
-                    ...t('localAi.details.fields', { returnObjects: true }),
-                  },
-                )
+              ? await readImageDetails()
               : mode !== 'extract'
                 ? await transcribeAudioFile(uri, feature, featureConfig ?? {}, { onProgress })
                 : isPdf
@@ -1011,7 +1021,7 @@ export function useVoiceTypingSheet({
   ])
 
   const handleInsert = useCallback(
-    (action: ApplyAction = 'insert') => {
+    (action: ApplyAction = 'insert', table = false) => {
       if (phaseRef.current !== 'preview' || !text || summaryPhaseRef.current === 'working') return
       hapticSuccess()
       if (usesSource) deleteLocalFile(sourceUri)
@@ -1020,9 +1030,34 @@ export function useVoiceTypingSheet({
         language: mode === 'translate' ? targetLanguage : null,
         bullets: mode === 'keyPoints' ? keyPoints : [],
         action,
+        details: mode === 'details' ? details : null,
+        table,
+        keepPhoto,
       })
     },
-    [keyPoints, mode, onInsert, sourceUri, summary, targetLanguage, text, updatePhase, usesSource],
+    [
+      details,
+      keepPhoto,
+      keyPoints,
+      mode,
+      onInsert,
+      sourceUri,
+      summary,
+      targetLanguage,
+      text,
+      updatePhase,
+      usesSource,
+    ],
+  )
+
+  const handleToggleKeepPhoto = useCallback(() => {
+    hapticSelection()
+    setKeepPhoto((value) => !value)
+  }, [])
+
+  const handleInsertDetails = useCallback(
+    (table: boolean) => handleInsert('insert', table),
+    [handleInsert],
   )
 
   useEffect(() => {
@@ -1041,10 +1076,17 @@ export function useVoiceTypingSheet({
     Linking.openSettings().catch(() => {})
   }, [])
 
+  const showDetails = mode === 'details' && phase === 'preview' && !!details
+
   return {
     phase,
     elapsed,
     text,
+    details: showDetails ? details : null,
+    detailsTable: showDetails && canInsertImageDetailsTable(details),
+    keepPhoto,
+    handleToggleKeepPhoto,
+    handleInsertDetails,
     liveText,
     isLive,
     error,

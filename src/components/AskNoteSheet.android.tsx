@@ -13,6 +13,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { KeyboardSheetShell } from '@/components/android/KeyboardSheetShell'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { SHEET_ICON_CHIP_ALPHA } from '@/components/android/useSheetStyles'
+import { AskNoteClearButton, AskNoteEarlier } from '@/components/AskNoteEarlier'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { RewriteChanges } from '@/components/RewriteChanges'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -47,6 +48,7 @@ import {
   type AskNoteSheetProps,
   type AskTurnView,
   canApplyAskTurn,
+  isEarlierChange,
 } from '@/lib/localAi/askNote'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -69,6 +71,7 @@ const noopLanguageName = (code: string | null) => code ?? ''
 
 export function AskNoteSheet({
   visible,
+  noteKey,
   selectionText,
   noteText,
   insertBlocked,
@@ -90,6 +93,7 @@ export function AskNoteSheet({
     question,
     setQuestion,
     turns,
+    earlier,
     workView,
     busy,
     canSend,
@@ -101,9 +105,11 @@ export function AskNoteSheet({
     handleToggleScope,
     handleApply,
     handleCopy,
+    handleClear,
     handleSearchAllNotes,
     handleClose,
-  } = useAskNoteSheet({ visible, selectionText, noteText, onApplyEdits, onClose })
+  } = useAskNoteSheet({ visible, noteKey, selectionText, noteText, onApplyEdits, onClose })
+  const hasThread = earlier.length > 0 || turns.length > 0
   const threadStyle = useMemo(
     () => ({ maxHeight: windowHeight * THREAD_MAX_HEIGHT_RATIO }),
     [windowHeight],
@@ -114,6 +120,13 @@ export function AskNoteSheet({
 
   const renderResult = useCallback(
     (turn: AskTurnView) => {
+      if (isEarlierChange(turn)) {
+        return (
+          <Text style={styles.note}>
+            {t(turn.applied ? 'localAi.ask.earlierChangeApplied' : 'localAi.ask.earlierChange')}
+          </Text>
+        )
+      }
       if (turn.status === 'working') {
         return workView ? (
           <LocalAiWorkProgress view={workView} languageName={noopLanguageName} />
@@ -282,6 +295,7 @@ export function AskNoteSheet({
                 )}
           </Text>
         </View>
+        {hasThread && <AskNoteClearButton disabled={busy} onPress={handleClear} />}
         <Pressable
           hitSlop={12}
           onPress={handleClose}
@@ -316,7 +330,7 @@ export function AskNoteSheet({
         )}
       </Pressable>
 
-      {turns.length > 0 && (
+      {hasThread && (
         <ScrollView
           ref={threadRef}
           style={threadStyle}
@@ -324,6 +338,7 @@ export function AskNoteSheet({
           onContentSizeChange={scrollToEnd}
           keyboardShouldPersistTaps="handled"
         >
+          <AskNoteEarlier turns={earlier} hasLive={turns.length > 0} renderTurn={renderTurn} />
           {turns.map(renderTurn)}
         </ScrollView>
       )}

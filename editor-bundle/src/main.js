@@ -19,7 +19,9 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { Plugin, PluginKey, Selection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import {
+  buildImageDetailsTransaction,
   buildLineRewriteTransaction,
+  buildMakeTasksTransaction,
   buildNoteEditsTransaction,
 } from '@pear-notes/core/store/services/localAiNoteEdits.js'
 import langBash from 'highlight.js/lib/languages/bash'
@@ -1980,6 +1982,22 @@ window.editorBridge = {
             ? buildLineRewriteTransaction(editor.state, { from, to }, msg.expected, msg.text)
             : null
         if (inPlace) {
+          const original = textLines(msg.expected)
+          if (inPlace.applied > 0 && msg.originalTitle && original.length > 0) {
+            const { tr } = inPlace
+            const below = blockEndAfter(tr.doc, tr.mapping.map(to))
+            const quote = {
+              type: 'blockquote',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [{ type: 'text', text: msg.originalTitle, marks: [{ type: 'bold' }] }],
+                },
+                ...paragraphNodes(original),
+              ],
+            }
+            tr.insert(below, editor.schema.nodeFromJSON(quote))
+          }
           if (inPlace.applied > 0) editor.view.dispatch(inPlace.tr)
         } else if (unchanged && msg.mode !== 'rewrite') {
           const content =
@@ -1988,6 +2006,14 @@ window.editorBridge = {
         } else {
           editor.chain().insertContentAt(blockEndAfter(doc, to), paragraphNodes(lines)).run()
         }
+        flushContentChange(editor.getHTML())
+        break
+      }
+
+      case 'makeTasks': {
+        const made = buildMakeTasksTransaction(editor.state, msg.texts)
+        if (!made) break
+        editor.view.dispatch(made.tr)
         flushContentChange(editor.getHTML())
         break
       }
@@ -2083,6 +2109,18 @@ window.editorBridge = {
             content: [{ type: 'text', text: captionText, marks: [{ type: 'italic' }] }],
           })
           .run()
+        flushContentChange(editor.getHTML())
+        break
+      }
+
+      case 'insertImageDetails': {
+        const made = buildImageDetailsTransaction(editor.state, {
+          src: msg.src,
+          blocks: msg.blocks,
+          keepImage: msg.keepImage !== false,
+        })
+        if (!made) break
+        editor.view.dispatch(made.tr)
         flushContentChange(editor.getHTML())
         break
       }

@@ -18,6 +18,7 @@ import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { shallowEqual, useDispatch, useSelector } from 'react-redux'
+import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router } from 'expo-router'
 
 import {
@@ -84,7 +85,9 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  UI_ICON_SIZE_14,
   UI_SIZE_4,
+  UI_SIZE_6,
   UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
@@ -109,7 +112,7 @@ import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { androidRipple } from '@/lib/androidRipple'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { toggleNoteLock } from '@/lib/noteLockActions'
-import { buildNoteSections } from '@/utils/noteSections'
+import { buildNoteSections, buildSearchSections } from '@/utils/noteSections'
 
 import { NotesPaneProps } from './types'
 
@@ -117,8 +120,8 @@ function noteKey(note: any): string {
   return note.key
 }
 
-const { mergeNotes } = notesSlice as unknown as {
-  mergeNotes: (payload: { keys: string[]; untitled: string }) => { type: string }
+const { previewMergeNotes } = notesSlice as unknown as {
+  previewMergeNotes: (payload: { keys: string[] }) => { type: string }
 }
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
@@ -168,7 +171,6 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const [deleteConfirmNote, setDeleteConfirmNote] = useState<string | null>(null)
   const [showFolderDeleteConfirm, setShowFolderDeleteConfirm] = useState(false)
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false)
-  const [showBulkMergeConfirm, setShowBulkMergeConfirm] = useState(false)
   const [bulkFolderPickerVisible, setBulkFolderPickerVisible] = useState(false)
   const [createKindVisible, setCreateKindVisible] = useState(false)
   const [tidyVisible, setTidyVisible] = useState(false)
@@ -370,21 +372,10 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const handleOpenBulkMerge = useCallback(() => {
     if (selectedKeys.length < 2 || isTrashFolder) return
-    setShowBulkMergeConfirm(true)
-  }, [selectedKeys.length, isTrashFolder])
-
-  const handleCloseBulkMerge = useCallback(() => {
-    setShowBulkMergeConfirm(false)
-  }, [])
-
-  const handleConfirmBulkMerge = useCallback(() => {
-    hapticSuccess()
     const selected = new Set(selectedKeys)
-    const keys = orderedKeys.filter((key: string) => selected.has(key))
-    dispatch(mergeNotes({ keys, untitled: t('noteCard.untitled') }))
-    setShowBulkMergeConfirm(false)
+    dispatch(previewMergeNotes({ keys: orderedKeys.filter((key: string) => selected.has(key)) }))
     exitSelection()
-  }, [dispatch, selectedKeys, orderedKeys, exitSelection, t])
+  }, [dispatch, selectedKeys, orderedKeys, isTrashFolder, exitSelection])
 
   const handleOpenCreateKind = useCallback(() => {
     if (selectedKeys.length === 0 || isTrashFolder) return
@@ -607,11 +598,11 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   }, [])
 
   const sections = useMemo(
-    () => [
-      ...buildNoteSections(notes, t, isTrashFolder),
-      ...(meaningRows.length > 0 ? [{ title: t('search.meaning.title'), data: meaningRows }] : []),
-    ],
-    [notes, t, isTrashFolder, meaningRows],
+    () =>
+      hasSearchQuery
+        ? buildSearchSections(notes, meaningRows, t)
+        : buildNoteSections(notes, t, isTrashFolder),
+    [notes, t, isTrashFolder, meaningRows, hasSearchQuery],
   )
 
   const renderNote = useCallback(
@@ -624,6 +615,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         folderIconToken={showFolderNames ? folderIconMap[note.value?.folderKey] : undefined}
         searchHit={searchHits[note.key] ?? null}
         meaningSnippet={note.snippet || null}
+        matchReason={note.matchReason ?? null}
         titleHighlight={getTitleHighlight(note.value?.title, searchTerms)}
         sectionTitle={section.title}
         selecting={isSelecting}
@@ -730,16 +722,36 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const listFooter = useMemo(
     () =>
-      hasSearchQuery && notes.length > 0 && meaningRows.length === 0 && meaningNoticeText ? (
-        <Text style={styles.meaningNotice}>{meaningNoticeText}</Text>
+      hasSearchQuery && notes.length + meaningRows.length > 0 ? (
+        <>
+          {meaningRows.length === 0 && meaningNoticeText && (
+            <Text style={styles.meaningNotice}>{meaningNoticeText}</Text>
+          )}
+          <Text style={styles.searchFooter}>{t('search.footer')}</Text>
+        </>
       ) : null,
-    [hasSearchQuery, notes.length, meaningRows.length, meaningNoticeText, styles.meaningNotice],
+    [
+      hasSearchQuery,
+      notes.length,
+      meaningRows.length,
+      meaningNoticeText,
+      styles.meaningNotice,
+      styles.searchFooter,
+      t,
+    ],
   )
 
   const renderSectionHeader = useCallback(
     ({ section }: { section: SectionListData<any> }) =>
-      section.title ? <Text style={styles.sectionCap}>{section.title}</Text> : null,
-    [styles.sectionCap],
+      section.title ? (
+        <View style={styles.sectionTitleRow}>
+          {section.meaning && (
+            <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_14} color={c.primary} />
+          )}
+          <Text style={styles.sectionCap}>{section.title}</Text>
+        </View>
+      ) : null,
+    [styles.sectionCap, styles.sectionTitleRow, c.primary],
   )
 
   const trashNoteSheetActions = useMemo(
@@ -883,17 +895,6 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         onPress: () => handleCreateKind(task),
       })),
     [handleCreateKind, t],
-  )
-
-  const bulkMergeConfirmActions = useMemo(
-    () => [
-      {
-        icon: 'call-merge',
-        label: t('notesList.merge.action'),
-        onPress: handleConfirmBulkMerge,
-      },
-    ],
-    [handleConfirmBulkMerge, t],
   )
 
   const deleteFolderConfirmActions = useMemo(
@@ -1112,15 +1113,6 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       )}
 
       <BottomActionSheet
-        visible={showBulkMergeConfirm}
-        onDismiss={handleCloseBulkMerge}
-        title={t('notesList.merge.action')}
-        subtitle={t('notesList.merge.confirm', { count: selectedCount })}
-        showHeader
-        actions={bulkMergeConfirmActions}
-      />
-
-      <BottomActionSheet
         visible={!!deleteConfirmNote}
         onDismiss={() => setDeleteConfirmNote(null)}
         title={t('folderView.permanentlyDeleteTitle')}
@@ -1208,6 +1200,16 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       fontWeight: FontWeight.medium,
       color: c.onSurfaceVariant,
       marginTop: UI_SIZE_8,
+    },
+    searchFooter: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+      marginTop: UI_SIZE_12,
+    },
+    sectionTitleRow: {
+      ...commonStyles.row,
+      gap: UI_SIZE_6,
     },
     sectionCap: {
       fontSize: FontSize.body,

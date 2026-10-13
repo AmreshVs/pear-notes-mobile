@@ -10,8 +10,11 @@ import {
   View,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { router } from 'expo-router'
+
+import * as notesSlice from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { ReminderSettingsBottomSheet } from '@/components/bottomsheet/ReminderSettingsBottomSheet'
@@ -19,6 +22,7 @@ import { EdgeFade } from '@/components/EdgeFade'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import { UpcomingFoldHeader } from '@/components/upcoming/UpcomingFoldHeader'
 import { UpcomingNextCard } from '@/components/upcoming/UpcomingNextCard'
+import { UpcomingSuggestions } from '@/components/upcoming/UpcomingSuggestions'
 import { UpcomingTaskRow } from '@/components/upcoming/UpcomingTaskRow'
 import {
   commonStyles,
@@ -53,6 +57,10 @@ import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
 
+const { getListedNoteCount } = notesSlice as unknown as {
+  getListedNoteCount: (state: unknown) => number
+}
+
 export function UpcomingPane() {
   const { t, i18n } = useTranslation()
   const theme = useTheme()
@@ -63,8 +71,6 @@ export function UpcomingPane() {
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const {
     sections,
-    count,
-    overdue,
     next,
     loaded,
     refreshing,
@@ -75,12 +81,18 @@ export function UpcomingPane() {
     toggleFold,
   } = useUpcomingTasks()
   const [remindersOn] = useRemindersSetting()
+  const noteCount = useSelector(getListedNoteCount)
   const [settingsVisible, setSettingsVisible] = useState(false)
   const [headerHeight, setHeaderHeight] = useState(0)
 
-  const status = overdue
-    ? t('upcoming.countWithOverdue', { count, overdue })
-    : t('upcoming.count', { count })
+  const status = t('upcoming.subtitle', {
+    date: new Date().toLocaleDateString(i18n.language, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    }),
+    count: noteCount,
+  })
 
   const handleBack = useCallback(() => router.back(), [])
   const handleOpenTask = useCallback(
@@ -220,6 +232,7 @@ export function UpcomingPane() {
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
+        ListFooterComponent={UpcomingSuggestions}
         refreshControl={refreshControl}
         contentContainerStyle={listContentStyle}
         showsVerticalScrollIndicator={false}

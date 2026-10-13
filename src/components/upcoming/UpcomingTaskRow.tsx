@@ -2,6 +2,8 @@ import { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
 
+import { isAppointment } from '@pear-notes/core/store/services/noteTasks.js'
+
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import type { UpcomingTaskRowProps } from '@/components/upcoming/UpcomingTaskRow.types'
@@ -17,7 +19,7 @@ import {
   UI_SIZE_6,
   UI_SIZE_22,
 } from '@/constants/commonStyles'
-import { formatUpcomingDue } from '@/hooks/useUpcomingTasks'
+import { formatUpcomingWhenShort } from '@/hooks/useUpcomingTasks'
 import { upcomingNoteLine } from '@/utils/upcomingFormat'
 
 export const UpcomingTaskRow = memo(function UpcomingTaskRow({
@@ -41,43 +43,47 @@ export const UpcomingTaskRow = memo(function UpcomingTaskRow({
       style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
       accessibilityRole="button"
     >
-      <Pressable
-        onPress={handleToggle}
-        disabled={pending}
-        hitSlop={Space.sm}
-        accessibilityRole="button"
-        accessibilityLabel={doneLabel}
-        style={[
-          styles.doneBtn,
-          task.checklist ? styles.doneSquare : styles.doneCircle,
-          task.done && styles.doneFilled,
-          pending && commonStyles.disabled,
-        ]}
-      >
-        {task.done && (
-          <SymbolIcon
-            name="checkmark"
-            size={UI_ICON_SIZE_12}
-            color={colors.onPrimary}
-            weight="semibold"
-          />
-        )}
-      </Pressable>
+      {isAppointment(task) ? (
+        <SymbolIcon name="calendar" size={UI_SIZE_22} color={colors.primary} />
+      ) : (
+        <Pressable
+          onPress={handleToggle}
+          disabled={pending}
+          hitSlop={Space.sm}
+          accessibilityRole="button"
+          accessibilityLabel={doneLabel}
+          style={[
+            styles.doneBtn,
+            task.checklist ? styles.doneSquare : styles.doneCircle,
+            task.done && styles.doneFilled,
+            pending && commonStyles.disabled,
+          ]}
+        >
+          {task.done && (
+            <SymbolIcon
+              name="checkmark"
+              size={UI_ICON_SIZE_12}
+              color={colors.onPrimary}
+              weight="semibold"
+            />
+          )}
+        </Pressable>
+      )}
       <RNView style={styles.body}>
         <Text style={task.done ? styles.taskTextDone : styles.taskText} numberOfLines={2}>
           {task.text}
         </Text>
-        <RNView style={styles.metaRow}>
-          <Text style={styles.meta}>{formatUpcomingDue(task, language)}</Text>
-          {remind && <SymbolIcon name="bell" size={UI_ICON_SIZE_12} color={colors.primary} />}
-          <Text style={styles.metaNote} numberOfLines={1}>
-            {`· ${upcomingNoteLine(task, t)}`}
-          </Text>
-        </RNView>
+        <Text style={styles.metaNote} numberOfLines={1}>
+          {upcomingNoteLine(task, t)}
+        </Text>
       </RNView>
-      {task.yearly && (
-        <SymbolIcon name="birthday.cake" size={UI_ICON_SIZE_16} color={colors.primary} />
-      )}
+      <RNView style={styles.whenRow}>
+        {remind && <SymbolIcon name="bell" size={UI_ICON_SIZE_12} color={colors.primary} />}
+        {task.yearly && (
+          <SymbolIcon name="birthday.cake" size={UI_ICON_SIZE_16} color={colors.primary} />
+        )}
+        <Text style={styles.when}>{formatUpcomingWhenShort(task, language)}</Text>
+      </RNView>
     </Pressable>
   )
 })
@@ -125,18 +131,20 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
       textDecorationLine: 'line-through',
     },
-    metaRow: {
+    metaNote: {
+      fontSize: FontSize.caption,
+      color: theme.colors.textSecondary,
+    },
+    whenRow: {
       ...commonStyles.row,
       gap: Space.xs,
+      marginTop: UI_SIZE_2,
     },
-    meta: {
+    when: {
       fontSize: FontSize.caption,
-      color: theme.colors.textSecondary,
-    },
-    metaNote: {
-      ...commonStyles.flex1,
-      fontSize: FontSize.caption,
-      color: theme.colors.textSecondary,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.primary,
+      fontVariant: ['tabular-nums'],
     },
   })
   return styles

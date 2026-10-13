@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, Text, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
+import { isAppointment } from '@pear-notes/core/store/services/noteTasks.js'
+
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks } from '@/components/Themed'
 import type { UpcomingTaskRowProps } from '@/components/upcoming/UpcomingTaskRow.types'
@@ -20,7 +22,7 @@ import {
   UI_SIZE_22,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { formatUpcomingDue } from '@/hooks/useUpcomingTasks'
+import { formatUpcomingWhenShort } from '@/hooks/useUpcomingTasks'
 import { androidRipple } from '@/lib/androidRipple'
 import { upcomingNoteLine } from '@/utils/upcomingFormat'
 
@@ -47,48 +49,56 @@ export const UpcomingTaskRow = memo(function UpcomingTaskRow({
       style={styles.row}
       accessibilityRole="button"
     >
-      <Pressable
-        onPress={handleToggle}
-        disabled={pending}
-        hitSlop={UI_SIZE_12}
-        accessibilityRole="button"
-        accessibilityLabel={doneLabel}
-        style={[
-          styles.doneBtn,
-          task.checklist ? styles.doneSquare : styles.doneCircle,
-          task.done && styles.doneFilled,
-          pending && commonStyles.disabled,
-        ]}
-      >
-        {task.done && (
-          <MaterialCommunityIcons name="check" size={UI_ICON_SIZE_16} color={colors.onPrimary} />
-        )}
-      </Pressable>
+      {isAppointment(task) ? (
+        <MaterialCommunityIcons
+          name="calendar-blank-outline"
+          size={UI_SIZE_22}
+          color={colors.primary}
+        />
+      ) : (
+        <Pressable
+          onPress={handleToggle}
+          disabled={pending}
+          hitSlop={UI_SIZE_12}
+          accessibilityRole="button"
+          accessibilityLabel={doneLabel}
+          style={[
+            styles.doneBtn,
+            task.checklist ? styles.doneSquare : styles.doneCircle,
+            task.done && styles.doneFilled,
+            pending && commonStyles.disabled,
+          ]}
+        >
+          {task.done && (
+            <MaterialCommunityIcons name="check" size={UI_ICON_SIZE_16} color={colors.onPrimary} />
+          )}
+        </Pressable>
+      )}
       <View style={styles.body}>
         <Text style={task.done ? styles.taskTextDone : styles.taskText} numberOfLines={2}>
           {task.text}
         </Text>
-        <View style={styles.metaRow}>
-          <Text style={styles.meta}>{formatUpcomingDue(task, language)}</Text>
-          {remind && (
-            <MaterialCommunityIcons
-              name="bell-outline"
-              size={UI_ICON_SIZE_12}
-              color={colors.primary}
-            />
-          )}
-          <Text style={styles.metaNote} numberOfLines={1}>
-            {`· ${upcomingNoteLine(task, t)}`}
-          </Text>
-        </View>
+        <Text style={styles.metaNote} numberOfLines={1}>
+          {upcomingNoteLine(task, t)}
+        </Text>
       </View>
-      {task.yearly && (
-        <MaterialCommunityIcons
-          name="cake-variant-outline"
-          size={UI_ICON_SIZE_16}
-          color={colors.primary}
-        />
-      )}
+      <View style={styles.whenRow}>
+        {remind && (
+          <MaterialCommunityIcons
+            name="bell-outline"
+            size={UI_ICON_SIZE_12}
+            color={colors.primary}
+          />
+        )}
+        {task.yearly && (
+          <MaterialCommunityIcons
+            name="cake-variant-outline"
+            size={UI_ICON_SIZE_16}
+            color={colors.primary}
+          />
+        )}
+        <Text style={styles.when}>{formatUpcomingWhenShort(task, language)}</Text>
+      </View>
     </Pressable>
   )
 })
@@ -137,20 +147,22 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
       color: c.onSurfaceVariant,
       textDecorationLine: 'line-through',
     },
-    metaRow: {
+    metaNote: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.medium,
+      color: c.onSurfaceVariant,
+    },
+    whenRow: {
       ...commonStyles.row,
       gap: UI_SIZE_4,
+      marginTop: UI_SIZE_2,
     },
-    meta: {
+    when: {
       fontSize: FontSize.caption,
-      fontFamily: FontFamily.medium,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
       color: c.onSurfaceVariant,
-    },
-    metaNote: {
-      ...commonStyles.flex1,
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.medium,
-      color: c.onSurfaceVariant,
+      fontVariant: ['tabular-nums'],
     },
   })
   return styles

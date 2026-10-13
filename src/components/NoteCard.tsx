@@ -16,6 +16,7 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 
 import { HighlightedText } from '@/components/HighlightedText'
 import { MotionView } from '@/components/MotionView'
+import { type MatchReason, MatchReasonBadge } from '@/components/search/MatchReasonBadge'
 import { type IconName, SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
@@ -91,6 +92,7 @@ interface NoteCardProps {
   pinned?: boolean
   searchHit?: NoteSearchHit | null
   meaningSnippet?: string | null
+  matchReason?: MatchReason | null
   titleHighlight?: string
   onPress: (id: string) => void
   onDelete?: (id: string) => void
@@ -125,6 +127,7 @@ function areNoteCardPropsEqual(prev: NoteCardProps, next: NoteCardProps) {
     prev.pinned === next.pinned &&
     prev.searchHit === next.searchHit &&
     prev.meaningSnippet === next.meaningSnippet &&
+    prev.matchReason === next.matchReason &&
     prev.titleHighlight === next.titleHighlight &&
     prev.moveFolders === next.moveFolders &&
     prev.moveVaults === next.moveVaults &&
@@ -159,6 +162,7 @@ export const NoteCard = memo(function NoteCard({
   pinned,
   searchHit,
   meaningSnippet,
+  matchReason,
   titleHighlight,
   animationIndex = 0,
   onPress,
@@ -423,6 +427,8 @@ export const NoteCard = memo(function NoteCard({
             )}
           </Text>
         )}
+
+        {matchReason && <MatchReasonBadge reason={matchReason} />}
 
         {upload && (
           <RNView style={styles.uploadRow}>

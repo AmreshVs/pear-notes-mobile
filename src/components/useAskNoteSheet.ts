@@ -2,12 +2,21 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 
+import { backendApi } from '@pear-notes/core/backend/api.js'
+import {
+  askNoteThreadFromTurns,
+  clearAskNoteThread,
+  loadAskNoteThread,
+  saveAskNoteThread,
+  savedAskNoteTurns,
+} from '@pear-notes/core/store/services/askThreads.js'
 import { LOCAL_AI_ERROR, LOCAL_AI_FEATURE } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { WORK_KIND } from '@pear-notes/core/store/services/localAiWorkProgress.js'
 import {
   getLocalAiFeatureConfig,
   getMeaningSearchReady,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
+import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { openAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
@@ -39,6 +48,7 @@ interface FeatureConfig {
 
 interface AskNoteSheetOptions {
   visible: boolean
+  noteKey: string | null
   selectionText: string
   noteText: string
   onApplyEdits: (request: AskApplyRequest) => void
@@ -52,8 +62,12 @@ function errorFromCause(cause: unknown): AskError {
   return 'failed'
 }
 
+const asEarlier = (saved: AskTurnView[]) =>
+  saved.map((turn, index) => ({ ...turn, id: index - saved.length }))
+
 export function useAskNoteSheet({
   visible,
+  noteKey,
   selectionText,
   noteText,
   onApplyEdits,
@@ -64,11 +78,17 @@ export function useAskNoteSheet({
     getLocalAiFeatureConfig(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS),
   ) as FeatureConfig | undefined
   const meaningReady = useSelector(getMeaningSearchReady) as boolean
+  const notesData = useSelector(getNotesData) as Record<string, { locked?: boolean }> | null
+  const notesRef = useRef(notesData)
+  notesRef.current = notesData
   const { workView, beginWork, endWork } = useLocalAiWorkProgress()
   const [scope, setScope] = useState<AskScope>('note')
   const [texts, setTexts] = useState({ selection: '', note: '' })
   const [question, setQuestion] = useState('')
   const [turns, setTurns] = useState<AskTurnView[]>([])
+  const [earlier, setEarlier] = useState<AskTurnView[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [threadKey, setThreadKey] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const turnIdRef = useRef(0)
   const runIdRef = useRef(0)
@@ -81,6 +101,7 @@ export function useAskNoteSheet({
   const droppedTurns = useMemo(() => hasDroppedTurns(turns, sourceText), [turns, sourceText])
   const emptySource = sourceText.trim().length === 0
   const canSend = question.trim().length > 0 && !busy && !emptySource
+  const isLocked = useCallback((key: string) => notesRef.current?.[key]?.locked === true, [])
 
   useEffect(() => {
     if (!visible) return
@@ -90,8 +111,31 @@ export function useAskNoteSheet({
     setScope(initialSelection ? 'selection' : 'note')
     setQuestion('')
     setTurns([])
+    setEarlier([])
+    setLoaded(false)
+    setThreadKey(noteKey)
     endWork()
+    let live = true
+    loadAskNoteThread(backendApi, noteKey, isLocked)
+      .then((saved: AskTurnView[]) => {
+        if (live) setEarlier(asEarlier(saved))
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (live) setLoaded(true)
+      })
+    return () => {
+      live = false
+    }
   }, [visible])
+
+  useEffect(() => {
+    if (!loaded || !threadKey || !turns.length || turns.some((turn) => turn.status === 'working')) {
+      return
+    }
+    const thread = askNoteThreadFromTurns({ noteKey: threadKey, turns: [...earlier, ...turns] })
+    if (thread) saveAskNoteThread(backendApi, thread, isLocked).catch(() => {})
+  }, [earlier, isLocked, loaded, threadKey, turns])
 
   useEffect(
     () => () => {
@@ -114,7 +158,7 @@ export function useAskNoteSheet({
     const history = getAskHistory(turns)
     const text = sourceText
     setQuestion('')
-    setTurns((current) => [...current, createWorkingTurn(id, asked)])
+    setTurns((current) => [...current, createWorkingTurn(id, asked, scope)])
     const onProgress = beginWork(WORK_KIND.NOTE_TASK, { input: text })
     try {
       const raw = await askAboutNote(text, history, asked, summaryConfig ?? {}, { onProgress })
@@ -128,15 +172,25 @@ export function useAskNoteSheet({
     } finally {
       if (runId === runIdRef.current) endWork()
     }
-  }, [beginWork, busy, endWork, question, sourceText, summaryConfig, turns, updateTurn])
+  }, [beginWork, busy, endWork, question, scope, sourceText, summaryConfig, turns, updateTurn])
 
   const handleToggleScope = useCallback(() => {
     if (busy || !hasSelection) return
     hapticLight()
     runIdRef.current += 1
     setScope((current) => (current === 'selection' ? 'note' : 'selection'))
+    setEarlier((current) => asEarlier(savedAskNoteTurns([...current, ...turns]) as AskTurnView[]))
     setTurns([])
-  }, [busy, hasSelection])
+  }, [busy, hasSelection, turns])
+
+  const handleClear = useCallback(() => {
+    if (busy) return
+    hapticLight()
+    runIdRef.current += 1
+    setEarlier([])
+    setTurns([])
+    if (threadKey) clearAskNoteThread(backendApi, threadKey).catch(() => {})
+  }, [busy, threadKey])
 
   const handleApply = useCallback(
     (id: number) => {
@@ -168,7 +222,7 @@ export function useAskNoteSheet({
 
   const handleCopy = useCallback(
     async (id: number) => {
-      const turn = turns.find((item) => item.id === id)
+      const turn = [...earlier, ...turns].find((item) => item.id === id)
       if (!turn?.answer) return
       await Clipboard.setStringAsync(turn.answer)
       hapticSuccess()
@@ -176,7 +230,7 @@ export function useAskNoteSheet({
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current)
       copiedTimerRef.current = setTimeout(() => setCopiedId(null), COPIED_RESET_MS)
     },
-    [turns],
+    [earlier, turns],
   )
 
   const handleClose = useCallback(() => {
@@ -202,6 +256,7 @@ export function useAskNoteSheet({
     question,
     setQuestion,
     turns,
+    earlier,
     workView,
     busy,
     canSend,
@@ -213,6 +268,7 @@ export function useAskNoteSheet({
     handleToggleScope,
     handleApply,
     handleCopy,
+    handleClear,
     handleSearchAllNotes,
     handleClose,
   }

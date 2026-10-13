@@ -8,6 +8,7 @@ import { SymbolView } from 'expo-symbols'
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { GlassView } from '@/components/GlassView'
+import { ImageDetailsPreview } from '@/components/ImageDetailsPreview'
 import { LocalAiProcessing } from '@/components/LocalAiProcessing'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { RecordingWaveBar } from '@/components/RecordingWaveBar'
@@ -218,6 +219,11 @@ export function VoiceTypingSheet({
     handleSummarize,
     handleClose,
     handleInsert,
+    details,
+    detailsTable,
+    keepPhoto,
+    handleToggleKeepPhoto,
+    handleInsertDetails,
     handleOpenSettings,
     hasSavedAudio,
     canAttachAudio,
@@ -253,7 +259,12 @@ export function VoiceTypingSheet({
     percent: downloadProgress.percent,
     size: formatBytes(phase === 'error' ? noSpaceBytes : downloadProgress.missingBytes),
   }
-  const keys = heroKeys(mode, phase, error, scope)
+  const keys = details
+    ? {
+        title: `localAi.details.preview.${details.type}.title`,
+        subtitle: `localAi.details.preview.${details.type}.subtitle`,
+      }
+    : heroKeys(mode, phase, error, scope)
   const canInsert = phase === 'preview' && !insertBlocked && summaryPhase !== 'working'
   const isRecording = phase === 'recording'
   const isError = phase === 'error'
@@ -461,7 +472,17 @@ export function VoiceTypingSheet({
         />
       )}
 
-      {phase === 'preview' && !rewriteDiff && (
+      {!!details && (
+        <ImageDetailsPreview
+          details={details}
+          imageUri={sourceUri}
+          keepPhoto={keepPhoto}
+          maxHeight={windowHeight * PREVIEW_MAX_HEIGHT_RATIO}
+          onToggleKeepPhoto={handleToggleKeepPhoto}
+        />
+      )}
+
+      {phase === 'preview' && !rewriteDiff && !details && (
         <ScrollView
           style={[styles.previewCard, { maxHeight: windowHeight * PREVIEW_MAX_HEIGHT_RATIO }]}
           contentContainerStyle={styles.previewContent}
@@ -602,6 +623,35 @@ export function VoiceTypingSheet({
             >
               <Text style={styles.primaryButtonText}>{t('common.done')}</Text>
             </Pressable>
+          ) : detailsTable ? (
+            <>
+              <Pressable
+                disabled={!canInsert}
+                onPress={() => handleInsertDetails(false)}
+                style={({ pressed }) => [
+                  styles.secondaryButton,
+                  !canInsert && styles.buttonDisabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.secondaryButtonText} numberOfLines={1}>
+                  {t('localAi.details.insertText')}
+                </Text>
+              </Pressable>
+              <Pressable
+                disabled={!canInsert}
+                onPress={() => handleInsertDetails(true)}
+                style={({ pressed }) => [
+                  styles.primaryButton,
+                  !canInsert && styles.buttonDisabled,
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text style={styles.primaryButtonText} numberOfLines={1}>
+                  {t('localAi.details.insertTable')}
+                </Text>
+              </Pressable>
+            </>
           ) : phase === 'preview' && canReplace ? (
             <>
               <Pressable
@@ -666,7 +716,7 @@ export function VoiceTypingSheet({
                   )}
                 </Text>
               </Pressable>
-              {phase === 'preview' && (
+              {phase === 'preview' && !details && (
                 <Pressable
                   onPress={handleCopy}
                   accessibilityRole="button"

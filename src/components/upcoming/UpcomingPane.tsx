@@ -1,7 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RefreshControl, SectionList, StyleSheet } from 'react-native'
+import { useSelector } from 'react-redux'
 import { Stack } from 'expo-router'
+
+import * as notesSlice from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { ReminderSettingsBottomSheet } from '@/components/bottomsheet/ReminderSettingsBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
@@ -10,6 +13,7 @@ import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
 import { UpcomingFoldHeader } from '@/components/upcoming/UpcomingFoldHeader'
 import { UpcomingNextCard } from '@/components/upcoming/UpcomingNextCard'
+import { UpcomingSuggestions } from '@/components/upcoming/UpcomingSuggestions'
 import { UpcomingTaskRow } from '@/components/upcoming/UpcomingTaskRow'
 import {
   commonStyles,
@@ -37,6 +41,10 @@ import {
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
 
+const { getListedNoteCount } = notesSlice as unknown as {
+  getListedNoteCount: (state: unknown) => number
+}
+
 export function UpcomingPane() {
   const { t, i18n } = useTranslation()
   const { colors } = useTheme()
@@ -45,8 +53,6 @@ export function UpcomingPane() {
   const { openNote } = useNoteEditor()
   const {
     sections,
-    count,
-    overdue,
     next,
     loaded,
     refreshing,
@@ -57,12 +63,18 @@ export function UpcomingPane() {
     toggleFold,
   } = useUpcomingTasks()
   const [remindersOn] = useRemindersSetting()
+  const noteCount = useSelector(getListedNoteCount)
   const [settingsVisible, setSettingsVisible] = useState(false)
   const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
-  const status = overdue
-    ? t('upcoming.countWithOverdue', { count, overdue })
-    : t('upcoming.count', { count })
+  const status = t('upcoming.subtitle', {
+    date: new Date().toLocaleDateString(i18n.language, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    }),
+    count: noteCount,
+  })
 
   const handleOpenTask = useCallback((task: UpcomingTask) => openNote(task.noteKey), [openNote])
   const handleOpenSettings = useCallback(() => setSettingsVisible(true), [])
@@ -200,6 +212,7 @@ export function UpcomingPane() {
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
+        ListFooterComponent={UpcomingSuggestions}
         refreshControl={refreshControl}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}

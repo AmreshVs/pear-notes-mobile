@@ -16,6 +16,7 @@ import {
   htmlToNoteText,
   htmlToParagraphs,
   isRewriteTask,
+  keepsOriginalText,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
 import {
   getLocalAiIndexEnabled,
@@ -106,6 +107,7 @@ import { buildNoteSharePayload } from '@/lib/noteShare'
 import { setToastBottomOffset } from '@/lib/toastOffset'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
+import { imageDetailsBlocks } from '@/utils/imageDetailsLabels'
 
 import { NoteHistoryModal } from '../components/activity/NoteHistoryModal'
 import { AudioRecorderModal, type RecordingDoneOptions } from '../components/AudioRecorderModal'
@@ -249,11 +251,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
   const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
   const relatedOn = useAiSuggestionOn(AI_SUGGESTION.RELATED)
+  const tasksOn = useAiSuggestionOn(AI_SUGGESTION.TASKS)
   const relatedEnabled =
     (useSelector(getLocalAiIndexEnabled) as boolean) &&
     LOCAL_AI_ENABLED &&
     relatedOn &&
     !noteData?.locked
+  const findingsEnabled = LOCAL_AI_ENABLED && tasksOn && !noteData?.locked
+  const inThisNoteEnabled = relatedEnabled || findingsEnabled
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
   const aiToolsVisible = useAiToolsVisible(!!noteData?.locked)
@@ -645,6 +650,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     const src = selectedImageSrc
     setSelectedImageSrc(null)
     if (!gateAiFeature(LOCAL_AI_FEATURE.EXTRACT_TEXT)) return
+    captionTargetRef.current = src
     openSourceSheet(
       'details',
       src,
@@ -733,6 +739,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             selection.text,
             text,
             isRewriteTask(voiceMode) ? 'rewrite' : 'plain',
+            keepsOriginalText(voiceMode) ? t('localAi.cleanUp.original') : undefined,
           )
         } else {
           editorRef.current?.insertParagraphsAfter(selection.to, text)
@@ -741,6 +748,14 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       }
       if (voiceMode === 'describe') {
         editorRef.current?.insertCaption(captionTarget, text.trim())
+        return
+      }
+      if (voiceMode === 'details' && meta?.details) {
+        editorRef.current?.insertImageDetails(
+          captionTarget,
+          imageDetailsBlocks(meta.details, t, meta.table === true),
+          meta.keepPhoto !== false,
+        )
         return
       }
       if (voiceMode === 'suggestTitle') {
@@ -936,6 +951,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const handleCloseNoteHistory = useCallback(() => setHistoryVisible(false), [setHistoryVisible])
 
   const handleCloseRelatedNotes = useCallback(() => setRelatedVisible(false), [setRelatedVisible])
+
+  const getNoteHtml = useCallback(() => noteContentRef.current || '', [noteContentRef])
+
+  const handleMakeTasks = useCallback(
+    (texts: string[]) => editorRef.current?.makeTasks(texts),
+    [editorRef],
+  )
 
   const handleNoteAi = useCallback(
     (mode: VoiceTypingMode) => {
@@ -1140,7 +1162,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         },
       })
     }
-    if (relatedEnabled) {
+    if (inThisNoteEnabled) {
       list.push({
         icon: 'link-variant',
         label: t('noteEditor.menu.relatedNotes'),
@@ -1166,7 +1188,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     noteData?.pinned,
     noteId,
     activityEnabled,
-    relatedEnabled,
+    inThisNoteEnabled,
     canSplit,
     canGenerate,
     canReadAloud,
@@ -1616,10 +1638,16 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         />
       )}
 
-      {!!noteId && relatedEnabled && (
+      {!!noteId && inThisNoteEnabled && (
         <RelatedNotesModal
           visible={relatedVisible}
           noteId={noteId}
+          anchor={noteData?.updatedAt}
+          showFindings={findingsEnabled}
+          showRelated={relatedEnabled}
+          addDisabled={hasNoteConflict}
+          getNoteHtml={getNoteHtml}
+          onMakeTasks={handleMakeTasks}
           onClose={handleCloseRelatedNotes}
           onOpenNote={openNote}
         />
@@ -1661,6 +1689,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
       {LOCAL_AI_ENABLED && (
         <AskNoteSheet
           visible={!!askTarget}
+          noteKey={noteId ?? null}
           selectionText={askTarget?.selectionText ?? ''}
           noteText={askTarget?.noteText ?? ''}
           insertBlocked={hasNoteConflict}
