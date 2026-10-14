@@ -37,6 +37,7 @@ export const startLiveTranscription = MOCK_LOCAL_AI
   ? mock.startLiveTranscription
   : real.startLiveTranscription
 export const cancelLocalAiTask = MOCK_LOCAL_AI ? mock.cancelLocalAiTask : real.cancelLocalAiTask
+export const clearAskCache = MOCK_LOCAL_AI ? mock.clearAskCache : real.clearAskCache
 export const resetLocalAiModelHealth = MOCK_LOCAL_AI
   ? mock.resetLocalAiModelHealth
   : real.resetLocalAiModelHealth

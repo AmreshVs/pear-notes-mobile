@@ -10,6 +10,7 @@ import {
   saveAskNoteThread,
   savedAskNoteTurns,
 } from '@pear-notes/core/store/services/askThreads.js'
+import { ASK_KV_CACHE_ENABLED } from '@pear-notes/core/store/services/localAiAsk.js'
 import { LOCAL_AI_ERROR, LOCAL_AI_FEATURE } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { WORK_KIND } from '@pear-notes/core/store/services/localAiWorkProgress.js'
 import {
@@ -37,7 +38,7 @@ import {
   replaceOnce,
   resolveAskTurn,
 } from '@/lib/localAi/askNote'
-import { askAboutNote, cancelLocalAiTask } from '@/lib/localAi/localAi'
+import { askAboutNote, cancelLocalAiTask, clearAskCache } from '@/lib/localAi/localAi'
 
 const COPIED_RESET_MS = 2000
 
@@ -161,7 +162,11 @@ export function useAskNoteSheet({
     setTurns((current) => [...current, createWorkingTurn(id, asked, scope)])
     const onProgress = beginWork(WORK_KIND.NOTE_TASK, { input: text })
     try {
-      const raw = await askAboutNote(text, history, asked, summaryConfig ?? {}, { onProgress })
+      const cache = ASK_KV_CACHE_ENABLED && threadKey !== null && !isLocked(threadKey)
+      const raw = await askAboutNote(text, history, asked, summaryConfig ?? {}, {
+        onProgress,
+        cache,
+      })
       if (runId !== runIdRef.current) return
       hapticSuccess()
       updateTurn(id, (turn) => resolveAskTurn(turn, text, raw))
@@ -172,7 +177,19 @@ export function useAskNoteSheet({
     } finally {
       if (runId === runIdRef.current) endWork()
     }
-  }, [beginWork, busy, endWork, question, scope, sourceText, summaryConfig, turns, updateTurn])
+  }, [
+    beginWork,
+    busy,
+    endWork,
+    isLocked,
+    question,
+    scope,
+    sourceText,
+    summaryConfig,
+    threadKey,
+    turns,
+    updateTurn,
+  ])
 
   const handleToggleScope = useCallback(() => {
     if (busy || !hasSelection) return
@@ -189,6 +206,7 @@ export function useAskNoteSheet({
     runIdRef.current += 1
     setEarlier([])
     setTurns([])
+    clearAskCache().catch(() => {})
     if (threadKey) clearAskNoteThread(backendApi, threadKey).catch(() => {})
   }, [busy, threadKey])
 

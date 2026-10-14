@@ -104,6 +104,7 @@ export const mockAdapter = {
   download,
   cancel: async () => {},
   deleteModel: async () => {},
+  clearAskCache: async () => {},
   closeAndWipe: async () => {},
 }
 
@@ -145,6 +146,8 @@ function buildAskReply(note: string, question: string): string {
   }
   return JSON.stringify({ kind: ASK_KIND.ANSWER, answer: MOCK_SAMPLES.askAnswer, edits: [] })
 }
+
+export const clearAskCache = async () => {}
 
 export const askAboutNote = async (
   note: string,

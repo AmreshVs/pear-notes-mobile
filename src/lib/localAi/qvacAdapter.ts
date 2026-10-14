@@ -53,6 +53,7 @@ import { runNoteRewrite } from '@pear-notes/core/store/services/localAiWritingTo
 import { getLocalAiLoaded, getLocalAiModels } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
+import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
 import { getLocalAiDeviceSupport, getLocalAiDiskSpace } from '@/lib/localAi/deviceSupport'
 import { ConnectionKind, getConnectionKind } from '@/lib/networkState'
 import { PDF_TEXT_MAX_BYTES, readPdfText } from '@/lib/pdfTools'
@@ -87,6 +88,7 @@ export interface LocalAiWorkOptions {
   onProgress?: LocalAiWorkListener
   styleSamples?: string[]
   localOnly?: boolean
+  cache?: boolean
 }
 
 const TRANSLATE_BATCH_PARAGRAPHS = 8
@@ -181,6 +183,7 @@ async function unloadCurrentModel(sdk: QvacSdk) {
   try {
     await sdk.unloadModel({ modelId: current.modelId })
   } catch {}
+  removeAskCacheFiles()
 }
 
 async function unloadEmbedding(sdk: QvacSdk) {
@@ -393,6 +396,32 @@ function hasPartialDownload(): boolean {
 }
 
 const registryBlockCacheDir = () => new Directory(Paths.document, '.qvac', 'registry-corestore')
+const qvacHomeDir = () => new Directory(Paths.document, '.qvac')
+const askCacheDir = () => new Directory(Paths.document, '.qvac', 'kv-cache')
+
+function removeAskCacheFiles() {
+  try {
+    const dir = askCacheDir()
+    if (dir.exists) dir.delete()
+  } catch {}
+}
+
+async function excludeQvacHomeFromBackups() {
+  try {
+    const dir = qvacHomeDir()
+    if (!dir.exists) dir.create({ intermediates: true })
+    await excludeFromDeviceBackups(dir.uri.replace('file://', ''))
+  } catch {}
+}
+
+export async function clearAskCache(): Promise<void> {
+  await Promise.allSettled([...completionsInFlight])
+  if (loadedModel && sdkPromise) {
+    const sdk = await sdkPromise.catch(() => null)
+    await sdk?.deleteCache({ all: true }).catch(() => {})
+  }
+  removeAskCacheFiles()
+}
 
 function sweepRegistryBlockCache() {
   if (registryCacheSwept || hasPartialDownload()) return
@@ -416,6 +445,8 @@ function loadSdk(): Promise<QvacSdk> {
   if (!sdkPromise) {
     const pending = (async () => {
       sweepRegistryBlockCache()
+      removeAskCacheFiles()
+      await excludeQvacHomeFromBackups()
       const directory = await ensureModelsDirectory()
       removeRetiredModelFiles(directory)
       await writeRuntimeConfig(directory)
@@ -583,6 +614,7 @@ async function closeAndWipe() {
   modelGuard = { active: null, crashes: {} }
   writeModelGuard()
   await shutDownSdk()
+  removeAskCacheFiles()
   if (ExpoLocalAi) await ExpoLocalAi.deleteModelsDirectory()
   modelsDirectory = null
 }
@@ -920,6 +952,7 @@ async function askAboutNoteNow(
   question: string,
   featureConfig: LocalAiFeatureModelConfig = {},
   onProgress: LocalAiWorkListener = () => {},
+  cache = false,
 ): Promise<string> {
   const sdk = await loadSdk()
   const [modelName] = getFeatureRegistryNames(
@@ -942,6 +975,7 @@ async function askAboutNoteNow(
     complete: (params: CompletionInput, onText?: (text: string) => void) =>
       runCompletion(sdk, { modelId, ...params }, onText),
     onText: (answer: string) => onProgress({ type: WORK_EVENT.TEXT, text: answer }),
+    cache,
   })
 }
 
@@ -950,14 +984,14 @@ export const askAboutNote = (
   turns: AskTurn[],
   question: string,
   featureConfig: LocalAiFeatureModelConfig = {},
-  { onProgress }: LocalAiWorkOptions = {},
+  { onProgress, cache = false }: LocalAiWorkOptions = {},
 ) =>
   withAiOffload({
     kind: AI_OFFLOAD_KIND.ASK_NOTE,
     payload: { note, turns, question },
     onProgress,
     local: () =>
-      withModelWork(() => askAboutNoteNow(note, turns, question, featureConfig, onProgress)),
+      withModelWork(() => askAboutNoteNow(note, turns, question, featureConfig, onProgress, cache)),
   })
 
 export interface VaultSource {
@@ -1425,6 +1459,7 @@ export const qvacAdapter = {
   cancel,
   deleteModel,
   closeAndWipe,
+  clearAskCache,
   embedTexts,
   attachmentText,
   runNoteTaskInBackground,
