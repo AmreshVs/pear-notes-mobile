@@ -647,7 +647,7 @@ export function useVoiceTypingSheet({
       } else if (isRewriteTask(task)) {
         result = output
       } else {
-        result = parseTitleOutput(output) as string
+        result = parseTitleOutput(output, input) as string
       }
       if (!result) {
         failWith('failed')
