@@ -21,3 +21,14 @@ export type UpcomingFoldHeaderProps = {
   expanded: boolean
   onToggle: (group: string) => void
 }
+
+export type UpcomingBirthdayRowProps = {
+  task: UpcomingTask
+  language: string
+  onOpen: (task: UpcomingTask) => void
+}
+
+export type UpcomingAllBirthdaysRowProps = {
+  count: number
+  onPress: () => void
+}

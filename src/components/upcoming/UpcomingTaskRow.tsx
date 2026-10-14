@@ -20,7 +20,7 @@ import {
   UI_SIZE_22,
 } from '@/constants/commonStyles'
 import { formatUpcomingWhenShort } from '@/hooks/useUpcomingTasks'
-import { upcomingNoteLine } from '@/utils/upcomingFormat'
+import { upcomingNoteLine, upcomingText } from '@/utils/upcomingFormat'
 
 export const UpcomingTaskRow = memo(function UpcomingTaskRow({
   task,
@@ -71,7 +71,7 @@ export const UpcomingTaskRow = memo(function UpcomingTaskRow({
       )}
       <RNView style={styles.body}>
         <Text style={task.done ? styles.taskTextDone : styles.taskText} numberOfLines={2}>
-          {task.text}
+          {upcomingText(task)}
         </Text>
         <Text style={styles.metaNote} numberOfLines={1}>
           {upcomingNoteLine(task, t)}

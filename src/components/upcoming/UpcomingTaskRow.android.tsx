@@ -19,12 +19,13 @@ import {
   UI_SIZE_4,
   UI_SIZE_6,
   UI_SIZE_12,
+  UI_SIZE_16,
   UI_SIZE_22,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { formatUpcomingWhenShort } from '@/hooks/useUpcomingTasks'
 import { androidRipple } from '@/lib/androidRipple'
-import { upcomingNoteLine } from '@/utils/upcomingFormat'
+import { upcomingNoteLine, upcomingText } from '@/utils/upcomingFormat'
 
 export const UpcomingTaskRow = memo(function UpcomingTaskRow({
   task,
@@ -76,7 +77,7 @@ export const UpcomingTaskRow = memo(function UpcomingTaskRow({
       )}
       <View style={styles.body}>
         <Text style={task.done ? styles.taskTextDone : styles.taskText} numberOfLines={2}>
-          {task.text}
+          {upcomingText(task)}
         </Text>
         <Text style={styles.metaNote} numberOfLines={1}>
           {upcomingNoteLine(task, t)}
@@ -116,6 +117,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
       alignItems: 'flex-start',
       gap: UI_SIZE_12,
       paddingVertical: UI_SIZE_12,
+      paddingHorizontal: UI_SIZE_16,
     },
     doneBtn: {
       ...commonStyles.centered,

@@ -20,6 +20,10 @@ import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { ReminderSettingsBottomSheet } from '@/components/bottomsheet/ReminderSettingsBottomSheet'
 import { EdgeFade } from '@/components/EdgeFade'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import {
+  UpcomingAllBirthdaysRow,
+  UpcomingBirthdayRow,
+} from '@/components/upcoming/UpcomingBirthdayRow'
 import { UpcomingFoldHeader } from '@/components/upcoming/UpcomingFoldHeader'
 import { UpcomingNextCard } from '@/components/upcoming/UpcomingNextCard'
 import { UpcomingSuggestions } from '@/components/upcoming/UpcomingSuggestions'
@@ -30,12 +34,14 @@ import {
   FontSize,
   FontWeight,
   UI_ICON_SIZE_24,
+  UI_SIZE_2,
   UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_20,
+  UI_SIZE_24,
   UI_SIZE_40,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
@@ -55,7 +61,7 @@ import {
 } from '@/hooks/useUpcomingTasks'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
+import { isBirthdaysGroup, isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
 
 const { getListedNoteCount } = notesSlice as unknown as {
   getListedNoteCount: (state: unknown) => number
@@ -71,6 +77,7 @@ export function UpcomingPane() {
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const {
     sections,
+    yearly,
     next,
     loaded,
     refreshing,
@@ -99,6 +106,7 @@ export function UpcomingPane() {
     (task: UpcomingTask) => router.push(`/note/${task.noteKey}`),
     [],
   )
+  const handleOpenBirthdays = useCallback(() => router.push('/birthdays'), [])
   const handleOpenSettings = useCallback(() => setSettingsVisible(true), [])
   const handleCloseSettings = useCallback(() => setSettingsVisible(false), [])
 
@@ -116,20 +124,46 @@ export function UpcomingPane() {
   )
 
   const renderItem = useCallback(
-    ({ item, index, section }: { item: UpcomingTask; index: number; section: UpcomingSection }) => (
-      <View>
-        <UpcomingTaskRow
-          task={item}
-          language={i18n.language}
-          remind={showsReminderBell(item, section.group, remindersOn)}
-          pending={isPending(item)}
-          onOpen={handleOpenTask}
-          onToggleDone={toggleDone}
-        />
-        {index < section.data.length - 1 && <View style={styles.rowDivider} />}
-      </View>
-    ),
-    [i18n.language, remindersOn, isPending, handleOpenTask, toggleDone, styles.rowDivider],
+    ({ item, index, section }: { item: UpcomingTask; index: number; section: UpcomingSection }) => {
+      const birthdays = isBirthdaysGroup(section.group)
+      const last = !birthdays && index === section.data.length - 1
+      return (
+        <View style={[styles.tile, index === 0 && styles.tileTop, last && styles.tileBottom]}>
+          {birthdays ? (
+            <UpcomingBirthdayRow task={item} language={i18n.language} onOpen={handleOpenTask} />
+          ) : (
+            <UpcomingTaskRow
+              task={item}
+              language={i18n.language}
+              remind={showsReminderBell(item, section.group, remindersOn)}
+              pending={isPending(item)}
+              onOpen={handleOpenTask}
+              onToggleDone={toggleDone}
+            />
+          )}
+        </View>
+      )
+    },
+    [
+      i18n.language,
+      remindersOn,
+      isPending,
+      handleOpenTask,
+      toggleDone,
+      styles.tile,
+      styles.tileTop,
+      styles.tileBottom,
+    ],
+  )
+
+  const renderSectionFooter = useCallback(
+    ({ section }: { section: UpcomingSection }) =>
+      isBirthdaysGroup(section.group) ? (
+        <View style={[styles.tile, styles.tileBottom, section.data.length === 0 && styles.tileTop]}>
+          <UpcomingAllBirthdaysRow count={yearly.length} onPress={handleOpenBirthdays} />
+        </View>
+      ) : null,
+    [yearly.length, handleOpenBirthdays, styles.tile, styles.tileTop, styles.tileBottom],
   )
 
   const renderSectionHeader = useCallback(
@@ -142,11 +176,26 @@ export function UpcomingPane() {
           onToggle={toggleFold}
         />
       ) : (
-        <Text style={isOverdueGroup(section.group) ? styles.sectionCapOverdue : styles.sectionCap}>
-          {section.title}
-        </Text>
+        <View style={styles.sectionHeader}>
+          <Text
+            style={isOverdueGroup(section.group) ? styles.sectionCapOverdue : styles.sectionCap}
+          >
+            {section.title}
+          </Text>
+          {isBirthdaysGroup(section.group) && (
+            <Text style={styles.sectionNote}>{t('upcoming.next30Days')}</Text>
+          )}
+        </View>
       ),
-    [openFolds, toggleFold, styles.sectionCap, styles.sectionCapOverdue],
+    [
+      openFolds,
+      toggleFold,
+      t,
+      styles.sectionHeader,
+      styles.sectionNote,
+      styles.sectionCap,
+      styles.sectionCapOverdue,
+    ],
   )
 
   const listHeader = useMemo(
@@ -229,6 +278,7 @@ export function UpcomingPane() {
         keyExtractor={upcomingTaskKey}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
+        renderSectionFooter={renderSectionFooter}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
@@ -258,8 +308,10 @@ const useUpcomingHooks = () => {
   return { md3, insets }
 }
 
+type TileColors = ReturnType<typeof useMD3Theme>['colors'] & { surfaceContainerHigh?: string }
+
 const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
-  const c = md3.colors
+  const c = md3.colors as TileColors
   const styles = StyleSheet.create({
     root: {
       ...commonStyles.flex1,
@@ -324,25 +376,44 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       marginTop: UI_SIZE_8,
       marginBottom: UI_SIZE_12,
     },
+    sectionHeader: {
+      ...commonStyles.rowBetween,
+      alignItems: 'baseline',
+      marginTop: UI_SIZE_20,
+      marginBottom: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_16,
+    },
     sectionCap: {
       fontSize: FontSize.body,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
-      color: c.onSurface,
-      marginTop: UI_SIZE_12,
-      marginBottom: UI_SIZE_8,
+      color: c.primary,
     },
     sectionCapOverdue: {
       fontSize: FontSize.body,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
       color: c.error,
-      marginTop: UI_SIZE_12,
-      marginBottom: UI_SIZE_8,
     },
-    rowDivider: {
-      height: StyleSheet.hairlineWidth,
-      backgroundColor: hexWithAlpha(c.outlineVariant, 0.2),
+    sectionNote: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurfaceVariant,
+    },
+    tile: {
+      overflow: 'hidden',
+      marginBottom: UI_SIZE_2,
+      borderRadius: UI_SIZE_4,
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
+    tileTop: {
+      borderTopLeftRadius: UI_SIZE_24,
+      borderTopRightRadius: UI_SIZE_24,
+    },
+    tileBottom: {
+      borderBottomLeftRadius: UI_SIZE_24,
+      borderBottomRightRadius: UI_SIZE_24,
     },
     empty: {
       ...commonStyles.centered,

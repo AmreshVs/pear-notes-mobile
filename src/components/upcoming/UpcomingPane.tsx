@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { RefreshControl, SectionList, StyleSheet } from 'react-native'
+import { RefreshControl, SectionList, StyleSheet, View as RNView } from 'react-native'
 import { useSelector } from 'react-redux'
-import { Stack } from 'expo-router'
+import { router, Stack } from 'expo-router'
 
 import * as notesSlice from '@pear-notes/core/store/slices/notesSlice.js'
 
@@ -11,6 +11,10 @@ import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { Divider } from '@/components/Divider'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
+import {
+  UpcomingAllBirthdaysRow,
+  UpcomingBirthdayRow,
+} from '@/components/upcoming/UpcomingBirthdayRow'
 import { UpcomingFoldHeader } from '@/components/upcoming/UpcomingFoldHeader'
 import { UpcomingNextCard } from '@/components/upcoming/UpcomingNextCard'
 import { UpcomingSuggestions } from '@/components/upcoming/UpcomingSuggestions'
@@ -20,6 +24,7 @@ import {
   FontSize,
   FontWeight,
   LetterSpacing,
+  Radii,
   Space,
   UI_SIZE_42,
 } from '@/constants/commonStyles'
@@ -39,7 +44,7 @@ import {
   useUpcomingTasks,
 } from '@/hooks/useUpcomingTasks'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
-import { isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
+import { isBirthdaysGroup, isOverdueGroup, showsReminderBell } from '@/utils/upcomingFormat'
 
 const { getListedNoteCount } = notesSlice as unknown as {
   getListedNoteCount: (state: unknown) => number
@@ -53,6 +58,7 @@ export function UpcomingPane() {
   const { openNote } = useNoteEditor()
   const {
     sections,
+    yearly,
     next,
     loaded,
     refreshing,
@@ -77,6 +83,7 @@ export function UpcomingPane() {
   })
 
   const handleOpenTask = useCallback((task: UpcomingTask) => openNote(task.noteKey), [openNote])
+  const handleOpenBirthdays = useCallback(() => router.push('/birthdays'), [])
   const handleOpenSettings = useCallback(() => setSettingsVisible(true), [])
   const handleCloseSettings = useCallback(() => setSettingsVisible(false), [])
 
@@ -96,24 +103,66 @@ export function UpcomingPane() {
   )
 
   const renderItem = useCallback(
-    ({ item, index, section }: { item: UpcomingTask; index: number; section: UpcomingSection }) => (
-      <View>
-        <UpcomingTaskRow
-          task={item}
-          language={i18n.language}
-          remind={showsReminderBell(item, section.group, remindersOn)}
-          pending={isPending(item)}
-          onOpen={handleOpenTask}
-          onToggleDone={toggleDone}
-        />
-        {index < section.data.length - 1 && (
-          <View style={styles.divider}>
-            <Divider />
-          </View>
-        )}
-      </View>
-    ),
-    [i18n.language, remindersOn, isPending, handleOpenTask, toggleDone, styles.divider],
+    ({ item, index, section }: { item: UpcomingTask; index: number; section: UpcomingSection }) => {
+      const birthdays = isBirthdaysGroup(section.group)
+      const last = !birthdays && index === section.data.length - 1
+      return (
+        <View style={[styles.cardRow, index === 0 && styles.cardTop, last && styles.cardBottom]}>
+          {index > 0 && (
+            <RNView style={styles.divider}>
+              <Divider />
+            </RNView>
+          )}
+          {birthdays ? (
+            <UpcomingBirthdayRow task={item} language={i18n.language} onOpen={handleOpenTask} />
+          ) : (
+            <UpcomingTaskRow
+              task={item}
+              language={i18n.language}
+              remind={showsReminderBell(item, section.group, remindersOn)}
+              pending={isPending(item)}
+              onOpen={handleOpenTask}
+              onToggleDone={toggleDone}
+            />
+          )}
+        </View>
+      )
+    },
+    [
+      i18n.language,
+      remindersOn,
+      isPending,
+      handleOpenTask,
+      toggleDone,
+      styles.cardRow,
+      styles.cardTop,
+      styles.cardBottom,
+      styles.divider,
+    ],
+  )
+
+  const renderSectionFooter = useCallback(
+    ({ section }: { section: UpcomingSection }) =>
+      isBirthdaysGroup(section.group) ? (
+        <View
+          style={[styles.cardRow, styles.cardBottom, section.data.length === 0 && styles.cardTop]}
+        >
+          {section.data.length > 0 && (
+            <RNView style={styles.divider}>
+              <Divider />
+            </RNView>
+          )}
+          <UpcomingAllBirthdaysRow count={yearly.length} onPress={handleOpenBirthdays} />
+        </View>
+      ) : null,
+    [
+      yearly.length,
+      handleOpenBirthdays,
+      styles.cardRow,
+      styles.cardTop,
+      styles.cardBottom,
+      styles.divider,
+    ],
   )
 
   const renderSectionHeader = useCallback(
@@ -135,12 +184,17 @@ export function UpcomingPane() {
           >
             {section.title}
           </Text>
+          {isBirthdaysGroup(section.group) && (
+            <Text style={styles.sectionNote}>{t('upcoming.next30Days')}</Text>
+          )}
         </View>
       ),
     [
       openFolds,
       toggleFold,
+      t,
       styles.sectionHeader,
+      styles.sectionNote,
       styles.overdueHeader,
       commonThemedStyles.sectionCamelCase,
     ],
@@ -209,6 +263,7 @@ export function UpcomingPane() {
         keyExtractor={upcomingTaskKey}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
+        renderSectionFooter={renderSectionFooter}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
@@ -262,14 +317,34 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.textMuted,
     },
     sectionHeader: {
-      marginLeft: Space.base,
-      marginTop: Space.base,
+      ...commonStyles.rowBetween,
+      alignItems: 'baseline',
+      marginHorizontal: Space.base,
+      marginTop: Space.lg,
+    },
+    sectionNote: {
+      fontSize: FontSize.caption,
+      color: theme.colors.textMuted,
+    },
+    cardRow: {
+      marginHorizontal: Space.base,
+      backgroundColor: theme.colors.cardSurface,
+    },
+    cardTop: {
+      borderTopLeftRadius: Radii.card,
+      borderTopRightRadius: Radii.card,
+      borderCurve: 'continuous',
+    },
+    cardBottom: {
+      borderBottomLeftRadius: Radii.card,
+      borderBottomRightRadius: Radii.card,
+      borderCurve: 'continuous',
     },
     overdueHeader: {
       color: theme.colors.error,
     },
     divider: {
-      marginHorizontal: Space.base,
+      marginLeft: Space.base,
     },
     empty: {
       alignItems: 'center',

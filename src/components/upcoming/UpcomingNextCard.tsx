@@ -13,7 +13,7 @@ import {
   Space,
 } from '@/constants/commonStyles'
 import { formatUpcomingWhen } from '@/hooks/useUpcomingTasks'
-import { upcomingNoteLine } from '@/utils/upcomingFormat'
+import { upcomingNoteLine, upcomingText } from '@/utils/upcomingFormat'
 
 export const UpcomingNextCard = memo(function UpcomingNextCard({
   task,
@@ -34,7 +34,7 @@ export const UpcomingNextCard = memo(function UpcomingNextCard({
         {t('upcoming.next', { when: formatUpcomingWhen(task, t, language) })}
       </Text>
       <Text style={styles.taskText} numberOfLines={2}>
-        {task.text}
+        {upcomingText(task)}
       </Text>
       <Text style={styles.meta} numberOfLines={1}>
         {upcomingNoteLine(task, t)}

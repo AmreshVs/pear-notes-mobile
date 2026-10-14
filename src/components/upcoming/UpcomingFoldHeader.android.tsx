@@ -13,6 +13,7 @@ import {
   UI_ICON_SIZE_20,
   UI_SIZE_8,
   UI_SIZE_12,
+  UI_SIZE_16,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 
@@ -57,6 +58,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
       overflow: 'hidden',
       marginTop: UI_SIZE_8,
       paddingVertical: UI_SIZE_12,
+      paddingHorizontal: UI_SIZE_16,
     },
     title: {
       fontSize: FontSize.body,

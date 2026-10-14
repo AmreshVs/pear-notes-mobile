@@ -6,6 +6,7 @@ import type { TFunction } from 'i18next'
 import {
   countOpenUpcoming,
   isFoldedGroup,
+  splitYearly,
   UPCOMING_GROUP,
 } from '@pear-notes/core/store/services/noteTasks.js'
 import { loadUpcomingGroups, setTaskDone } from '@pear-notes/core/store/services/upcomingTasks.js'
@@ -19,6 +20,8 @@ export type UpcomingTask = {
   checklist: boolean
   yearly?: boolean
   sinceYear?: number | null
+  name?: string
+  beyondWindow?: boolean
   done?: boolean
 }
 
@@ -72,6 +75,10 @@ export function formatUpcomingWhen(
   if (days <= 0) return t('upcoming.when.today')
   if (days === 1) return t('upcoming.when.tomorrow')
   return formatUpcomingDue({ ...task, time: null }, language)
+}
+
+export function upcomingDaysAway(task: UpcomingTask, now = Date.now()): number {
+  return Math.round((taskDate(task, false).getTime() - new Date(now).setHours(0, 0, 0, 0)) / DAY_MS)
 }
 
 export function upcomingAge(task: UpcomingTask): number {
@@ -151,9 +158,14 @@ export function useUpcomingTasks() {
     setRefreshing(false)
   }, [load])
 
+  const split = useMemo(
+    () => splitYearly(groups ?? []) as { groups: UpcomingGroup[]; yearly: UpcomingTask[] },
+    [groups],
+  )
+
   const sections = useMemo<UpcomingSection[]>(
     () =>
-      (groups ?? []).map(({ group, items }) => {
+      split.groups.map(({ group, items }) => {
         const folded = isFoldedGroup(group)
         return {
           group,
@@ -164,7 +176,7 @@ export function useUpcomingTasks() {
           data: folded && !openFolds.has(group) ? [] : items,
         }
       }),
-    [groups, openFolds, t],
+    [split, openFolds, t],
   )
 
   const next = useMemo(
@@ -212,6 +224,7 @@ export function useUpcomingTasks() {
 
   return {
     sections,
+    yearly: split.yearly,
     count,
     overdue,
     next,
