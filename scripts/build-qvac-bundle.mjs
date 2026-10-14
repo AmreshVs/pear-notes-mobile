@@ -15,22 +15,31 @@ const generatedBundle = path.join(outputDir, 'worker.bundle.js')
 const manifestPath = path.join(outputDir, 'addons.manifest.json')
 const importsMapPath = path.join(outputDir, 'bare-imports.json')
 const decoderStubPath = path.join(outputDir, 'decoder-audio-stub.mjs')
+const spawnStubPath = path.join(outputDir, 'bare-runtime-spawn-stub.mjs')
 const installedBundle = path.join(sdkDir, 'dist', 'worker.mobile.bundle.js')
 
 const MOBILE_HOSTS = ['android-arm64', 'ios-arm64', 'ios-arm64-simulator']
 const DEFERRED_MODULES = [
   'expo-file-system',
   'react-native-bare-kit',
-  'bare-runtime/spawn',
   '@qvac/model-fit/process',
   '@qvac/sdk/worker.mobile.bundle',
 ]
-const STUBBED_MODULES = { '@qvac/decoder-audio': decoderStubPath }
+const STUBBED_MODULES = {
+  '@qvac/decoder-audio': decoderStubPath,
+  'bare-runtime/spawn': spawnStubPath,
+}
 const DECODER_STUB_SOURCE = [
   'export class FFmpegDecoder {',
   '  constructor() {',
   "    throw new Error('Audio decoding is not bundled in Pear Notes. Pass 16 kHz mono PCM instead.')",
   '  }',
+  '}',
+  '',
+].join('\n')
+const SPAWN_STUB_SOURCE = [
+  'export default function spawnBare() {',
+  "  throw new Error('Spawning a Bare process is not available on mobile.')",
   '}',
   '',
 ].join('\n')
@@ -163,6 +172,7 @@ const { bundleEntry } = generateWorkerEntries(
 
 fs.mkdirSync(outputDir, { recursive: true })
 fs.writeFileSync(decoderStubPath, DECODER_STUB_SOURCE)
+fs.writeFileSync(spawnStubPath, SPAWN_STUB_SOURCE)
 
 const importsMap = { ...(readManifestFile(path.join(sdkDir, 'bare-imports.json')) ?? {}) }
 for (const [specifier, target] of Object.entries(STUBBED_MODULES)) {

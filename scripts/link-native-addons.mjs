@@ -2,12 +2,24 @@ import link from 'bare-link'
 import { Buffer } from 'buffer'
 import fs from 'fs'
 import path from 'path'
-import { fileURLToPath, URL } from 'url'
+import { fileURLToPath, pathToFileURL, URL } from 'url'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const manifestPath = path.join(projectRoot, 'qvac', 'addons.manifest.json')
 const qvacConfigPath = path.join(projectRoot, 'qvac.config.json')
 const backendBundlePath = path.join(projectRoot, 'src', 'backend', 'backend.bundle.js')
+const platformAddonsResolverPath = path.join(
+  projectRoot,
+  'node_modules',
+  '@qvac',
+  'sdk',
+  'dist',
+  'src',
+  'expo',
+  'plugins',
+  'patches',
+  'qvac-platform-addons.js',
+)
 const EXCLUDED_DEPENDENCIES = ['@qvac/sdk']
 const EXCLUDED_LIBRARIES = [/ggml-vulkan/]
 // bare-link names an addon after the package and the version Bare resolves it
@@ -45,14 +57,30 @@ function readManifestAddons() {
 
 // The backend bundle records the exact addon each `require.addon()` resolves
 // to, so it is the authoritative list of what the notes worklet needs.
-export function readBackendBundleAddons() {
+function readBackendBundleHeaderAddons() {
   const source = fs.readFileSync(backendBundlePath, 'utf8')
   const bundle = Buffer.from(JSON.parse(source.slice(source.indexOf('=') + 1).trim()))
   const newline = bundle.indexOf(0x0a)
   const headerLength = Number.parseInt(bundle.subarray(0, newline).toString(), 10)
   const header = JSON.parse(bundle.subarray(newline + 1, newline + headerLength).toString())
+  return header.addons ?? []
+}
+
+function artifactId(fileName) {
+  return fileName.replace(/^lib/, '').replace(/\.(?:xcframework|framework|so)$/, '')
+}
+
+function readBackendBundleArtifacts(hosts) {
+  const ios = hosts.some((host) => host.startsWith('ios'))
+  return readBackendBundleHeaderAddons()
+    .map((addon) => addon.replace(/^linked:/, '').split('/')[0])
+    .filter((entry) => (ios ? entry.endsWith('.framework') : entry.endsWith('.so')))
+    .map(artifactId)
+}
+
+export function readBackendBundleAddons() {
   const names = new Set()
-  for (const addon of header.addons ?? []) {
+  for (const addon of readBackendBundleHeaderAddons()) {
     const artifact = addon
       .replace(/^linked:/, '')
       .split('/')
@@ -109,17 +137,29 @@ function pruneAddons(directory, allowed, pruned = []) {
   return pruned
 }
 
-function collectLinkedAddons(directory, found = new Set()) {
-  if (!fs.existsSync(directory)) return found
+function collectLinkedAddons(directory, found = new Set(), artifacts = new Set()) {
+  if (!fs.existsSync(directory)) return { names: found, artifacts }
   for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
     if (entry.isDirectory() && !XCFRAMEWORK.test(entry.name)) {
-      collectLinkedAddons(path.join(directory, entry.name), found)
+      collectLinkedAddons(path.join(directory, entry.name), found, artifacts)
       continue
     }
     const name = addonNameFromArtifact(entry.name)
-    if (name) found.add(name)
+    if (!name) continue
+    found.add(name)
+    artifacts.add(artifactId(entry.name))
   }
-  return found
+  return { names: found, artifacts }
+}
+
+async function resolveSplitAddons(hosts) {
+  const addonNames = readManifestAddons()
+  if (addonNames.length === 0) return []
+  const { resolvePlatformAddonRoots } = await import(pathToFileURL(platformAddonsResolverPath).href)
+  const platforms = [...new Set(hosts.map((host) => host.split('-')[0]))]
+  return platforms.flatMap((platform) =>
+    resolvePlatformAddonRoots(projectRoot, addonNames, platform),
+  )
 }
 
 export async function linkNativeAddons({ hosts, out }) {
@@ -129,17 +169,27 @@ export async function linkNativeAddons({ hosts, out }) {
   for await (const resource of link(projectRoot, { hosts, out: outDir }, createLinkPackage())) {
     written.push(resource)
   }
+  for (const addon of await resolveSplitAddons(hosts)) {
+    for await (const resource of link(addon.dir, { hosts, out: outDir }, addon.pkg)) {
+      written.push(resource)
+    }
+  }
 
   const pruned = pruneAddons(outDir, allowedAddonNames())
 
-  const linked = collectLinkedAddons(outDir)
-  const missing = readBackendBundleAddons()
-    .map(normalizeAddonName)
-    .filter((name) => !linked.has(name))
+  const { names: linked, artifacts: linkedArtifacts } = collectLinkedAddons(outDir)
+  const missing = readBackendBundleArtifacts(hosts).filter((id) => !linkedArtifacts.has(id))
   if (missing.length) {
     throw new Error(
       `The backend worklet needs native addons that were not linked: ${missing.join(', ')}. ` +
-        'The app would abort at launch, so refusing to build.',
+        'The app would abort at launch, so refusing to build. If only the version differs, rebuild the backend bundle (`npm run bare-bundle`).',
+    )
+  }
+  const missingAi = readManifestAddons().filter((name) => !linked.has(normalizeAddonName(name)))
+  if (missingAi.length) {
+    throw new Error(
+      `The on-device AI worker needs native addons that were not linked: ${missingAi.join(', ')}. ` +
+        'A split addon also needs its platform package (for example @qvac/fabric-ios) in package.json.',
     )
   }
 

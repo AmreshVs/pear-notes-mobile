@@ -16,6 +16,7 @@ import {
   LOCAL_AI_MODEL_STATUS,
   LOCAL_AI_NETWORK,
   LOCAL_AI_REGISTRY_MODELS,
+  LOCAL_AI_RETIRED_MODEL_FILES,
   LOCAL_AI_TEXT_TASK,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
 import { holdAiJobs } from '@pear-notes/core/store/services/localAiJobs.js'
@@ -402,11 +403,21 @@ function sweepRegistryBlockCache() {
   } catch {}
 }
 
+function removeRetiredModelFiles(directory: string) {
+  for (const { file } of LOCAL_AI_RETIRED_MODEL_FILES) {
+    try {
+      const retired = new File(toFileUri(`${directory}/${file}`))
+      if (retired.exists) retired.delete()
+    } catch {}
+  }
+}
+
 function loadSdk(): Promise<QvacSdk> {
   if (!sdkPromise) {
     const pending = (async () => {
       sweepRegistryBlockCache()
       const directory = await ensureModelsDirectory()
+      removeRetiredModelFiles(directory)
       await writeRuntimeConfig(directory)
       const sdk = await import('@qvac/sdk')
       appStateSubscription?.remove()
@@ -752,8 +763,8 @@ async function downscaleImage(fileUri: string, maxSide: number): Promise<string 
 type CompletionInput = Record<string, unknown>
 
 interface CompletionRun {
-  text: Promise<string>
-  tokenStream: AsyncIterable<string>
+  events: AsyncIterable<{ type: string; text?: string }>
+  final: Promise<{ contentText: string }>
 }
 
 const completionsInFlight = new Set<Promise<string>>()
@@ -769,11 +780,12 @@ function runCompletion(
       stream: true,
     })
     let streamed = ''
-    for await (const token of run.tokenStream) {
-      streamed += token
+    for await (const event of run.events) {
+      if (event.type !== 'contentDelta') continue
+      streamed += event.text ?? ''
       onText?.(streamed)
     }
-    return run.text
+    return (await run.final).contentText
   })()
   completionsInFlight.add(work)
   const forget = () => completionsInFlight.delete(work)
