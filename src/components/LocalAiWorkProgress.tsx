@@ -21,6 +21,8 @@ import {
   formatWorkStepLabel,
   getActiveWorkStep,
   type LocalAiWorkProgressProps,
+  WORK_PREVIEW_LINE_HEIGHT,
+  WORK_PREVIEW_VISIBLE_LINES,
 } from '@/lib/localAi/workProgress'
 
 export function LocalAiWorkProgress({ view, languageName }: LocalAiWorkProgressProps) {
@@ -67,7 +69,9 @@ export function LocalAiWorkProgress({ view, languageName }: LocalAiWorkProgressP
 
       {view.preview ? (
         <View style={styles.previewCard} accessibilityLabel={t('localAi.work.previewLabel')}>
-          <Text style={styles.previewText}>{view.preview}</Text>
+          <View style={styles.previewWindow}>
+            <Text style={styles.previewText}>{view.preview}</Text>
+          </View>
         </View>
       ) : (
         <LocalAiProcessing color={colors.primary} captionColor={colors.textSecondary} />
@@ -122,9 +126,14 @@ const useStyles = createThemedStylesheet((theme) => {
       borderCurve: 'continuous',
       backgroundColor: theme.colors.cardSurface,
     },
+    previewWindow: {
+      maxHeight: WORK_PREVIEW_LINE_HEIGHT * WORK_PREVIEW_VISIBLE_LINES,
+      overflow: 'hidden',
+      justifyContent: 'flex-end',
+    },
     previewText: {
       fontSize: FontSize.subtitle,
-      lineHeight: 24,
+      lineHeight: WORK_PREVIEW_LINE_HEIGHT,
       fontFamily: FontFamily.regular,
       color: theme.colors.textMuted,
     },

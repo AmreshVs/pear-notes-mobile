@@ -42,6 +42,11 @@ export interface BeginWorkOptions {
 const TRANSLATION_MODEL_PREFIX = 'BERGAMOT_'
 const NUMBER_FORMAT = new Intl.NumberFormat()
 
+// The streaming preview shows a fixed window of its last lines, so the card
+// stops growing and new text lands on a stable baseline instead of reflowing.
+export const WORK_PREVIEW_LINE_HEIGHT = 24
+export const WORK_PREVIEW_VISIBLE_LINES = 6
+
 export const SHORTER_TARGET_RATIO = WORK_SHORTER_TARGET_RATIO as number
 
 export function formatWorkStepLabel(step: WorkStepView, t: TFunction) {
