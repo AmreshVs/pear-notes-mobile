@@ -16,6 +16,7 @@ import {
 } from '@/constants/commonStyles'
 import { formatUpcomingWhen } from '@/hooks/useUpcomingTasks'
 import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 import { upcomingNoteLine, upcomingText } from '@/utils/upcomingFormat'
 
 export const UpcomingNextCard = memo(function UpcomingNextCard({
@@ -26,10 +27,7 @@ export const UpcomingNextCard = memo(function UpcomingNextCard({
   const { t } = useTranslation()
   const { colors } = useMD3Theme()
   const styles = useStyles()
-  const ripple = useMemo(
-    () => androidRipple(colors.onPrimaryContainer),
-    [colors.onPrimaryContainer],
-  )
+  const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
   const handleOpen = useCallback(() => onOpen(task), [onOpen, task])
 
   return (
@@ -52,8 +50,9 @@ export const UpcomingNextCard = memo(function UpcomingNextCard({
   )
 })
 
-const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
+const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
   const c = md3.colors
+  const isDark = theme.isDark
   const styles = StyleSheet.create({
     card: {
       overflow: 'hidden',
@@ -61,24 +60,26 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
       padding: UI_SIZE_16,
       gap: UI_SIZE_4,
       borderRadius: UI_SIZE_28,
-      backgroundColor: c.primaryContainer,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: hexWithAlpha(c.primary, 0.22),
+      backgroundColor: hexWithAlpha(c.primaryContainer, isDark ? 0.18 : 0.22),
     },
     caption: {
       fontSize: FontSize.caption,
       fontWeight: FontWeight.heavy,
       fontFamily: FontFamily.extraBold,
-      color: c.onPrimaryContainer,
+      color: c.onSurfaceVariant,
     },
     taskText: {
       fontSize: FontSize.subtitle,
       fontWeight: FontWeight.bold,
       fontFamily: FontFamily.bold,
-      color: c.onPrimaryContainer,
+      color: c.onSurface,
     },
     meta: {
       fontSize: FontSize.caption,
       fontFamily: FontFamily.medium,
-      color: c.onPrimaryContainer,
+      color: c.onSurfaceVariant,
     },
   })
   return styles
