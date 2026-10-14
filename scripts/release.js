@@ -21,6 +21,7 @@ const ANDROID_PACKAGES = ['aab', 'apk', 'both']
 
 const cleanups = []
 let viaEas = false
+let parallel = false
 
 function parseArgs(argv) {
   const args = {
@@ -32,6 +33,7 @@ function parseArgs(argv) {
     viaEas: false,
     autoSubmit: false,
     cloud: false,
+    parallel: false,
     androidPackage: 'aab',
     bump: false,
     commit: true,
@@ -50,6 +52,7 @@ function parseArgs(argv) {
     else if (arg === '--submit-only') args.submitOnly = true
     else if (arg === '--via-eas') args.viaEas = true
     else if (arg === '--cloud') args.cloud = true
+    else if (arg === '--parallel') args.parallel = true
     else if (arg === '--auto-submit') args.autoSubmit = true
     else if (arg === '--android-package') args.androidPackage = argv[++i]
   }
@@ -87,18 +90,39 @@ function abort(message) {
   process.exit(1)
 }
 
+function outputPrefix(platform) {
+  return parallel ? `[${platform}] ` : null
+}
+
+function pipeWithPrefix(source, target, prefix) {
+  let carry = ''
+  source.setEncoding('utf8')
+  source.on('data', (chunk) => {
+    const lines = (carry + chunk).split('\n')
+    carry = lines.pop() ?? ''
+    for (const line of lines) target.write(`${prefix}${line}\n`)
+  })
+  source.on('end', () => {
+    if (carry) target.write(`${prefix}${carry}\n`)
+  })
+}
+
 function sh(command, description, options = {}) {
-  heading(description ?? command)
+  heading(options.prefix ? `${options.prefix}${description ?? command}` : (description ?? command))
   const started = Date.now()
   const stop = options.heartbeat ? startHeartbeat(options.heartbeat, started) : null
 
   return new Promise((resolve) => {
     const child = spawn(command, {
       cwd: ROOT,
-      stdio: 'inherit',
+      stdio: options.prefix ? ['ignore', 'pipe', 'pipe'] : 'inherit',
       shell: true,
       env: { ...process.env, ...(options.env ?? {}) },
     })
+    if (options.prefix) {
+      pipeWithPrefix(child.stdout, process.stdout, options.prefix)
+      pipeWithPrefix(child.stderr, process.stderr, options.prefix)
+    }
 
     const finish = (status) => {
       if (stop) stop()
@@ -361,6 +385,7 @@ async function buildLocally(platform, profile, version, buildNumber, extension =
     {
       heartbeat: `still building ${platform}`,
       allowFailure: true,
+      prefix: outputPrefix(platform),
       env: platform === 'ios' ? appleEnv(profile) : {},
     },
   )
@@ -391,6 +416,7 @@ async function submitIosThroughEas(artifact, config) {
     {
       heartbeat: 'still uploading ios',
       allowFailure: true,
+      prefix: outputPrefix('ios'),
       env: {
         ASC_API_KEY_PATH: asc.privateKeyPath(config.ASC_KEY_ID),
         ASC_KEY_ID: config.ASC_KEY_ID,
@@ -419,7 +445,7 @@ async function submitIos(artifact) {
   const { failure } = await sh(
     `xcrun altool --upload-app -f "${artifact}" -t ios --apiKey ${config.ASC_KEY_ID} --apiIssuer ${config.ASC_ISSUER_ID}`,
     'Uploading ios build to App Store Connect',
-    { heartbeat: 'still uploading ios', allowFailure: true },
+    { heartbeat: 'still uploading ios', allowFailure: true, prefix: outputPrefix('ios') },
   )
 
   if (!failure) {
@@ -523,7 +549,12 @@ async function submit(platform, profile, artifact, version, buildNumber) {
     const { failure } = await sh(
       `eas submit --non-interactive --platform ${platform} --profile ${profile} --path "${artifact}"`,
       `Submitting ${platform} build to the store`,
-      { env, heartbeat: `still uploading ${platform}`, allowFailure: true },
+      {
+        env,
+        heartbeat: `still uploading ${platform}`,
+        allowFailure: true,
+        prefix: outputPrefix(platform),
+      },
     )
     return { skipped: false, failure }
   } finally {
@@ -664,6 +695,7 @@ async function main() {
   const started = Date.now()
 
   viaEas = args.viaEas
+  parallel = args.parallel && platforms.length > 1 && !args.submitOnly
 
   if (!ANDROID_PACKAGES.includes(args.androidPackage)) {
     abort(`--android-package must be one of ${ANDROID_PACKAGES.join(', ')}`)
@@ -747,8 +779,10 @@ async function main() {
 
   const release = (platform) => releaseTargets(platform, args, version, buildNumber)
   const outcomes = []
-  if (args.cloud && platforms.length > 1) {
-    heading(`Building ${platforms.join(' and ')} on EAS at the same time`)
+  if (platforms.length > 1 && (args.cloud || parallel)) {
+    heading(
+      `Building ${platforms.join(' and ')} ${args.cloud ? 'on EAS' : 'locally'} at the same time`,
+    )
     outcomes.push(...(await Promise.all(platforms.map(release))).flat())
   } else {
     for (const platform of platforms) outcomes.push(...(await release(platform)))
