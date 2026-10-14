@@ -7,7 +7,7 @@ const play = require('./playCredentials')
 const playUpload = require('./playUpload')
 const { formatDuration, startHeartbeat } = require('./progress')
 const { storeBuild } = require('./store-build')
-const { findIosXcode, MAX_IOS_SDK_MAJOR } = require('./xcode')
+const { findIosXcode, macSdkPath, MAX_IOS_SDK_MAJOR } = require('./xcode')
 
 const ROOT = path.resolve(__dirname, '..')
 const ARTIFACT_DIR = path.join(ROOT, 'build')
@@ -179,6 +179,7 @@ function appleEnv(profile) {
     EXPO_APPLE_TEAM_ID: appleTeamId,
     EXPO_APPLE_TEAM_TYPE: process.env.EXPO_APPLE_TEAM_TYPE ?? 'INDIVIDUAL',
     DEVELOPER_DIR: xcode.developerDir,
+    SDKROOT: macSdkPath(xcode.developerDir) ?? undefined,
   }
 }
 

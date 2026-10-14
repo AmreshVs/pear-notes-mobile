@@ -17,6 +17,19 @@ function iosSdkVersion(developerDir) {
   }
 }
 
+function macSdkPath(developerDir) {
+  try {
+    return execSync('xcrun --sdk macosx --show-sdk-path', {
+      env: { ...process.env, DEVELOPER_DIR: developerDir },
+      stdio: ['ignore', 'pipe', 'ignore'],
+    })
+      .toString()
+      .trim()
+  } catch {
+    return null
+  }
+}
+
 function selectedDeveloperDir() {
   if (process.env.DEVELOPER_DIR) return process.env.DEVELOPER_DIR
   try {
@@ -59,4 +72,4 @@ function findIosXcode() {
   return fallback ? { ...fallback, selected: false } : { ...current, usable: false }
 }
 
-module.exports = { findIosXcode, MAX_IOS_SDK_MAJOR }
+module.exports = { findIosXcode, macSdkPath, MAX_IOS_SDK_MAJOR }
