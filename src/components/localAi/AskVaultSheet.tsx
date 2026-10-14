@@ -14,7 +14,7 @@ import { SymbolView } from 'expo-symbols'
 import { VAULT_ASK_KIND } from '@pear-notes/core/store/services/localAiVaultAsk.js'
 import { closeAskVault, getAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
-import { AiBottomSheet } from '@/components/AiBottomSheet'
+import { AI_SHEET_GUTTER, AiBottomSheet } from '@/components/AiBottomSheet'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import { VoiceTypingBar } from '@/components/VoiceTypingBar'
@@ -324,7 +324,7 @@ export function AskVaultSheet() {
           {turns.length > 0 && (
             <ScrollView
               ref={threadRef}
-              style={threadStyle}
+              style={[styles.threadScroll, threadStyle]}
               contentContainerStyle={styles.thread}
               onContentSizeChange={scrollToEnd}
               keyboardShouldPersistTaps="handled"
@@ -418,8 +418,12 @@ export function AskVaultSheet() {
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
+    threadScroll: {
+      marginHorizontal: -AI_SHEET_GUTTER,
+    },
     thread: {
       gap: UI_SIZE_14,
+      paddingHorizontal: AI_SHEET_GUTTER,
     },
     turn: {
       gap: UI_SIZE_10,

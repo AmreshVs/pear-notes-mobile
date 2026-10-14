@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { SymbolView } from 'expo-symbols'
 
-import { AiBottomSheet } from '@/components/AiBottomSheet'
+import { AI_SHEET_GUTTER, AiBottomSheet } from '@/components/AiBottomSheet'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import { useTidyUpSheet } from '@/components/useTidyUpSheet'
 import {
@@ -58,7 +58,7 @@ export function TidyUpSheet({ visible, moves, onClose }: TidyUpSheetProps) {
       {() => (
         <>
           {moves.length > 0 && (
-            <ScrollView style={listStyle} contentContainerStyle={styles.list}>
+            <ScrollView style={[styles.listScroll, listStyle]} contentContainerStyle={styles.list}>
               {moves.map((move) => {
                 const on = !skipped.has(move.key)
                 return (
@@ -115,8 +115,12 @@ export function TidyUpSheet({ visible, moves, onClose }: TidyUpSheetProps) {
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
+    listScroll: {
+      marginHorizontal: -AI_SHEET_GUTTER,
+    },
     list: {
       gap: UI_SIZE_2,
+      paddingHorizontal: AI_SHEET_GUTTER,
     },
     row: {
       ...commonStyles.row,

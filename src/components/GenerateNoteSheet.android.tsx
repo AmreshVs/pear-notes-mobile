@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
-import { KeyboardSheetShell } from '@/components/android/KeyboardSheetShell'
+import { KeyboardSheetShell, SHEET_GUTTER } from '@/components/android/KeyboardSheetShell'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { SHEET_ICON_CHIP_ALPHA } from '@/components/android/useSheetStyles'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
@@ -95,7 +95,10 @@ export function GenerateNoteSheet({ visible, task, noteKeys, onClose }: Generate
         </View>
       )}
       {lines.length > 0 && (
-        <ScrollView style={resultStyle} contentContainerStyle={styles.result}>
+        <ScrollView
+          style={[styles.resultScroll, resultStyle]}
+          contentContainerStyle={styles.result}
+        >
           <View style={styles.answerCard}>
             {lines.map((line, index) => (
               <Text
@@ -190,8 +193,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       marginTop: -UI_SIZE_6,
       marginRight: -UI_SIZE_8,
     },
+    resultScroll: {
+      marginHorizontal: -SHEET_GUTTER,
+    },
     result: {
       gap: UI_SIZE_12,
+      paddingHorizontal: SHEET_GUTTER,
     },
     answerCard: {
       gap: UI_SIZE_8,

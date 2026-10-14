@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import { SymbolView } from 'expo-symbols'
 
-import { AiBottomSheet } from '@/components/AiBottomSheet'
+import { AI_SHEET_GUTTER, AiBottomSheet } from '@/components/AiBottomSheet'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import { useGenerateNoteSheet } from '@/components/useGenerateNoteSheet'
@@ -74,7 +74,10 @@ export function GenerateNoteSheet({ visible, task, noteKeys, onClose }: Generate
             </View>
           )}
           {lines.length > 0 && (
-            <ScrollView style={resultStyle} contentContainerStyle={styles.result}>
+            <ScrollView
+              style={[styles.resultScroll, resultStyle]}
+              contentContainerStyle={styles.result}
+            >
               <View style={styles.answerCard}>
                 {lines.map((line, index) => (
                   <Text
@@ -144,8 +147,12 @@ export function GenerateNoteSheet({ visible, task, noteKeys, onClose }: Generate
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
+    resultScroll: {
+      marginHorizontal: -AI_SHEET_GUTTER,
+    },
     result: {
       gap: UI_SIZE_10,
+      paddingHorizontal: AI_SHEET_GUTTER,
     },
     answerCard: {
       gap: UI_SIZE_8,

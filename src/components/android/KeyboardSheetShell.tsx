@@ -28,6 +28,10 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 const SHEET_TRAVEL = 700
 
+// Horizontal inset of the sheet body; scroll views bleed past it so their
+// indicator sits at the sheet edge.
+export const SHEET_GUTTER = UI_SIZE_20
+
 interface KeyboardSheetShellProps {
   visible: boolean
   onClose: () => void
@@ -153,7 +157,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       alignSelf: 'center',
       borderTopLeftRadius: UI_SIZE_28,
       borderTopRightRadius: UI_SIZE_28,
-      paddingHorizontal: UI_SIZE_20,
+      paddingHorizontal: SHEET_GUTTER,
       paddingTop: UI_SIZE_12,
       gap: UI_SIZE_14,
       elevation: 24,

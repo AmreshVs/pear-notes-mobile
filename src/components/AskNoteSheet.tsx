@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { SymbolView } from 'expo-symbols'
 
-import { AiBottomSheet } from '@/components/AiBottomSheet'
+import { AI_SHEET_GUTTER, AiBottomSheet } from '@/components/AiBottomSheet'
 import { AskNoteClearButton, AskNoteEarlier } from '@/components/AskNoteEarlier'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { RewriteChanges } from '@/components/RewriteChanges'
@@ -305,7 +305,7 @@ export function AskNoteSheet({
           {hasThread && (
             <ScrollView
               ref={threadRef}
-              style={threadStyle}
+              style={[styles.threadScroll, threadStyle]}
               contentContainerStyle={styles.thread}
               onContentSizeChange={scrollToEnd}
               keyboardShouldPersistTaps="handled"
@@ -381,8 +381,12 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.semibold,
       color: theme.colors.textSecondary,
     },
+    threadScroll: {
+      marginHorizontal: -AI_SHEET_GUTTER,
+    },
     thread: {
       gap: UI_SIZE_14,
+      paddingHorizontal: AI_SHEET_GUTTER,
     },
     turn: {
       gap: UI_SIZE_10,

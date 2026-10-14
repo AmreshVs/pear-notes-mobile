@@ -14,7 +14,7 @@ import MaterialCommunityIcons from '@react-native-vector-icons/material-design-i
 import { VAULT_ASK_KIND } from '@pear-notes/core/store/services/localAiVaultAsk.js'
 import { closeAskVault, getAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
-import { KeyboardSheetShell } from '@/components/android/KeyboardSheetShell'
+import { KeyboardSheetShell, SHEET_GUTTER } from '@/components/android/KeyboardSheetShell'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { SHEET_ICON_CHIP_ALPHA } from '@/components/android/useSheetStyles'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
@@ -344,7 +344,7 @@ export function AskVaultSheet() {
       {turns.length > 0 && (
         <ScrollView
           ref={threadRef}
-          style={threadStyle}
+          style={[styles.threadScroll, threadStyle]}
           contentContainerStyle={styles.thread}
           onContentSizeChange={scrollToEnd}
           keyboardShouldPersistTaps="handled"
@@ -461,8 +461,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       marginTop: -UI_SIZE_6,
       marginRight: -UI_SIZE_8,
     },
+    threadScroll: {
+      marginHorizontal: -SHEET_GUTTER,
+    },
     thread: {
       gap: UI_SIZE_16,
+      paddingHorizontal: SHEET_GUTTER,
     },
     turn: {
       gap: UI_SIZE_12,
