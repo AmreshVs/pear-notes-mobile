@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
-import { KeyboardSheetShell } from '@/components/android/KeyboardSheetShell'
+import { KeyboardSheetShell, SHEET_GUTTER } from '@/components/android/KeyboardSheetShell'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { SHEET_ICON_CHIP_ALPHA } from '@/components/android/useSheetStyles'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -78,7 +78,7 @@ export function TidyUpSheet({ visible, moves, onClose }: TidyUpSheetProps) {
         </Pressable>
       </View>
       {moves.length > 0 && (
-        <ScrollView style={listStyle} contentContainerStyle={styles.list}>
+        <ScrollView style={[styles.listScroll, listStyle]} contentContainerStyle={styles.list}>
           {moves.map((move) => {
             const on = !skipped.has(move.key)
             return (
@@ -161,8 +161,12 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3Theme) => {
       marginTop: -UI_SIZE_6,
       marginRight: -UI_SIZE_8,
     },
+    listScroll: {
+      marginHorizontal: -SHEET_GUTTER,
+    },
     list: {
       gap: UI_SIZE_2,
+      paddingHorizontal: SHEET_GUTTER,
     },
     row: {
       ...commonStyles.row,

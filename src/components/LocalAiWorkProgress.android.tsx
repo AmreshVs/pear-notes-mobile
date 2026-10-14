@@ -22,6 +22,8 @@ import {
   formatWorkStepLabel,
   getActiveWorkStep,
   type LocalAiWorkProgressProps,
+  WORK_PREVIEW_LINE_HEIGHT,
+  WORK_PREVIEW_VISIBLE_LINES,
 } from '@/lib/localAi/workProgress'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -74,7 +76,9 @@ export function LocalAiWorkProgress({ view, languageName }: LocalAiWorkProgressP
 
       {view.preview ? (
         <View style={styles.previewCard} accessibilityLabel={t('localAi.work.previewLabel')}>
-          <Text style={styles.previewText}>{view.preview}</Text>
+          <View style={styles.previewWindow}>
+            <Text style={styles.previewText}>{view.preview}</Text>
+          </View>
         </View>
       ) : (
         <LocalAiProcessing color={c.primary} captionColor={c.onSurfaceVariant ?? c.onSurface} />
@@ -129,9 +133,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       borderRadius: UI_SIZE_20,
       backgroundColor: c.surfaceContainerHigh ?? theme.colors.cardSurface,
     },
+    previewWindow: {
+      maxHeight: WORK_PREVIEW_LINE_HEIGHT * WORK_PREVIEW_VISIBLE_LINES,
+      overflow: 'hidden',
+      justifyContent: 'flex-end',
+    },
     previewText: {
       fontSize: FontSize.subtitle,
-      lineHeight: 24,
+      lineHeight: WORK_PREVIEW_LINE_HEIGHT,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
     },

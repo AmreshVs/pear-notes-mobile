@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
-import { KeyboardSheetShell } from '@/components/android/KeyboardSheetShell'
+import { KeyboardSheetShell, SHEET_GUTTER } from '@/components/android/KeyboardSheetShell'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { SHEET_ICON_CHIP_ALPHA } from '@/components/android/useSheetStyles'
 import { AskNoteClearButton, AskNoteEarlier } from '@/components/AskNoteEarlier'
@@ -333,7 +333,7 @@ export function AskNoteSheet({
       {hasThread && (
         <ScrollView
           ref={threadRef}
-          style={threadStyle}
+          style={[styles.threadScroll, threadStyle]}
           contentContainerStyle={styles.thread}
           onContentSizeChange={scrollToEnd}
           keyboardShouldPersistTaps="handled"
@@ -437,8 +437,12 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       fontFamily: FontFamily.medium,
       color: c.onSecondaryContainer,
     },
+    threadScroll: {
+      marginHorizontal: -SHEET_GUTTER,
+    },
     thread: {
       gap: UI_SIZE_16,
+      paddingHorizontal: SHEET_GUTTER,
     },
     turn: {
       gap: UI_SIZE_12,

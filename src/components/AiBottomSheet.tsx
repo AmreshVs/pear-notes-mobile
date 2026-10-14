@@ -34,6 +34,10 @@ import {
   UI_SIZE_40,
 } from '@/constants/commonStyles'
 
+// Horizontal inset of the sheet body; scroll views bleed past it so their
+// indicator sits at the sheet edge.
+export const AI_SHEET_GUTTER = UI_SIZE_18
+
 export type DismissThen = (after: () => void) => void
 
 interface AiBottomSheetProps {
@@ -235,7 +239,7 @@ const useStyles = createThemedStylesheet((theme) => {
       alignSelf: 'center',
     },
     sheet: {
-      paddingHorizontal: UI_SIZE_18,
+      paddingHorizontal: AI_SHEET_GUTTER,
       paddingTop: UI_SIZE_10,
       gap: UI_SIZE_18,
       borderCurve: 'continuous',

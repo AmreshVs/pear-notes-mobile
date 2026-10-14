@@ -24,6 +24,7 @@ import {
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 import { birthdayMeta, birthdayTile, upcomingText } from '@/utils/upcomingFormat'
 
 export const UpcomingBirthdayRow = memo(function UpcomingBirthdayRow({
@@ -90,8 +91,9 @@ export const UpcomingAllBirthdaysRow = memo(function UpcomingAllBirthdaysRow({
   )
 })
 
-const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
+const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
   const c = md3.colors
+  const isDark = theme.isDark
   const styles = StyleSheet.create({
     row: {
       ...commonStyles.row,
@@ -104,20 +106,20 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
       width: UI_SIZE_40,
       height: UI_SIZE_44,
       borderRadius: UI_SIZE_14,
-      backgroundColor: c.primaryContainer,
+      backgroundColor: hexWithAlpha(c.primaryContainer, isDark ? 0.18 : 0.22),
     },
     tileMonth: {
       fontSize: UI_SIZE_10,
       fontFamily: FontFamily.extraBold,
       fontWeight: FontWeight.heavy,
       textTransform: 'uppercase',
-      color: c.onPrimaryContainer,
+      color: c.primary,
     },
     tileDay: {
       fontSize: FontSize.subtitle,
       fontFamily: FontFamily.extraBold,
       fontWeight: FontWeight.heavy,
-      color: c.onPrimaryContainer,
+      color: c.onSurface,
       fontVariant: ['tabular-nums'],
     },
     body: {
