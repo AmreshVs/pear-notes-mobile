@@ -18,19 +18,27 @@ import { isRecapEmpty } from '@pear-notes/core/store/services/recap.js'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { EdgeFade } from '@/components/EdgeFade'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
+import { RecapWeek } from '@/components/tools/RecapWeek'
 import {
   commonStyles,
   FontFamily,
   FontSize,
   FontWeight,
+  UI_ICON_SIZE_14,
+  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
   UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_16,
+  UI_SIZE_18,
   UI_SIZE_20,
+  UI_SIZE_24,
+  UI_SIZE_32,
   UI_SIZE_40,
+  UI_SIZE_56,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import {
@@ -40,8 +48,14 @@ import {
   LIST_INITIAL_RENDER_COUNT,
   LIST_WINDOW_SIZE,
 } from '@/constants/constants'
-import { type RecapRow, type RecapSection, recapSections, useRecap } from '@/hooks/useRecap'
-import { formatUpcomingDue } from '@/hooks/useUpcomingTasks'
+import {
+  formatRecapDay,
+  formatRecapRange,
+  type RecapNote,
+  type RecapSection,
+  recapSections,
+  useRecap,
+} from '@/hooks/useRecap'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
@@ -74,69 +88,83 @@ export function RecapPane() {
   )
 
   const renderItem = useCallback(
-    ({ item, index, section }: { item: RecapRow; index: number; section: RecapSection }) => (
-      <View>
-        <Pressable
-          onPress={() =>
-            router.push(`/note/${item.kind === 'task' ? item.task.noteKey : item.note.key}`)
-          }
-          android_ripple={ripple}
-          style={styles.row}
-          accessibilityRole="button"
-        >
-          {item.kind === 'task' ? (
-            <>
-              <Text style={styles.taskText} numberOfLines={2}>
-                {item.task.text}
-              </Text>
-              <Text style={styles.meta} numberOfLines={1}>
-                {formatUpcomingDue(item.task, i18n.language)} •{' '}
-                {item.task.title || t('noteCard.untitled')}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.taskText} numberOfLines={1}>
-                {item.note.title || t('noteCard.untitled')}
-              </Text>
-              <Text style={styles.meta} numberOfLines={1}>
-                {new Date(item.note.updatedAt).toLocaleDateString(i18n.language, {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </Text>
-            </>
-          )}
-        </Pressable>
-        {index < section.data.length - 1 && <View style={styles.rowDivider} />}
-      </View>
-    ),
-    [ripple, i18n.language, t, styles.row, styles.taskText, styles.meta, styles.rowDivider],
+    ({ item, index, section }: { item: RecapNote; index: number; section: RecapSection }) => {
+      const first = index === 0
+      const last = index === section.data.length - 1
+      return (
+        <View style={[styles.rowCard, first && styles.rowFirst, last && styles.rowLast]}>
+          {!first && <View style={styles.rowDivider} />}
+          <Pressable
+            onPress={() => router.push(`/note/${item.key}`)}
+            android_ripple={ripple}
+            style={styles.row}
+            accessibilityRole="button"
+          >
+            <View style={styles.rowIcon}>
+              <MaterialCommunityIcons
+                name="file-document-outline"
+                size={UI_ICON_SIZE_16}
+                color={c.onSurfaceVariant}
+              />
+            </View>
+            <Text style={styles.rowTitle} numberOfLines={1}>
+              {item.title || t('noteCard.untitled')}
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={UI_ICON_SIZE_20}
+              color={c.onSurfaceVariant}
+            />
+          </Pressable>
+        </View>
+      )
+    },
+    [ripple, t, c.onSurfaceVariant, styles],
   )
 
   const renderSectionHeader = useCallback(
-    ({ section }: { section: RecapSection }) => (
-      <Text style={styles.sectionCap}>
-        {section.id === 'edited'
-          ? t('recap.edited', { count: recap?.editedCount ?? 0 })
-          : t(`recap.${section.id}`)}
-      </Text>
-    ),
-    [styles.sectionCap, t, recap?.editedCount],
+    ({ section }: { section: RecapSection }) =>
+      recap ? (
+        <Text style={styles.dayLabel}>
+          {formatRecapDay(section.start, recap, t, i18n.language)}
+        </Text>
+      ) : null,
+    [recap, t, i18n.language, styles.dayLabel],
   )
 
   const listHeader = useMemo(
     () => (
       <View>
+        {recap && (
+          <Text style={styles.range}>
+            {t('recap.thisWeek', { range: formatRecapRange(recap, i18n.language) })}
+          </Text>
+        )}
         <Text style={styles.pageTitle} numberOfLines={2}>
           {t('tools.recap')}
         </Text>
-        <Text style={styles.hint}>{t('recap.hint')}</Text>
+        <View style={styles.privacy}>
+          <MaterialCommunityIcons
+            name="lock-outline"
+            size={UI_ICON_SIZE_14}
+            color={c.onSurfaceVariant}
+          />
+          <Text style={styles.privacyText}>{t('recap.privacy')}</Text>
+        </View>
+        {recap && !isRecapEmpty(recap) && (
+          <>
+            <RecapWeek recap={recap} />
+            <View style={styles.editedHeader}>
+              <Text style={styles.editedTitle}>{t('recap.editedTitle')}</Text>
+              <Text style={styles.editedCount}>
+                {t('recap.noteCount', { count: recap.editedCount })}
+              </Text>
+            </View>
+          </>
+        )}
       </View>
     ),
-    [t, styles.pageTitle, styles.hint],
+    [recap, t, i18n.language, c.onSurfaceVariant, styles],
   )
 
   const listEmpty = useMemo(
@@ -177,7 +205,7 @@ export function RecapPane() {
 
       <SectionList
         sections={sections}
-        keyExtractor={(item: RecapRow) => item.id}
+        keyExtractor={(item: RecapNote) => item.key}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled={false}
@@ -200,6 +228,10 @@ export function RecapPane() {
   )
 }
 
+type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
+  surfaceContainerHigh?: string
+}
+
 const useRecapHooks = () => {
   const md3 = useMD3Theme()
   const insets = useSafeAreaInsets()
@@ -207,7 +239,7 @@ const useRecapHooks = () => {
 }
 
 const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
-  const c = md3.colors
+  const c = md3.colors as ExtendedColors
   const styles = StyleSheet.create({
     root: {
       ...commonStyles.flex1,
@@ -242,6 +274,15 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       padding: UI_SIZE_8,
       borderRadius: UI_SIZE_9999,
     },
+    range: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      color: c.primary,
+      marginBottom: UI_SIZE_4,
+    },
     pageTitle: {
       fontSize: FontSize.heading,
       fontWeight: FontWeight.heavy,
@@ -250,40 +291,79 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       color: c.onSurface,
       paddingRight: UI_SIZE_16,
     },
-    hint: {
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.medium,
-      fontWeight: FontWeight.medium,
-      color: c.onSurfaceVariant,
+    privacy: {
+      ...commonStyles.row,
+      gap: UI_SIZE_8,
       marginTop: UI_SIZE_8,
-      marginBottom: UI_SIZE_12,
+      marginBottom: UI_SIZE_24,
     },
-    sectionCap: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.heavy,
-      fontFamily: FontFamily.extraBold,
-      color: c.onSurface,
-      marginTop: UI_SIZE_12,
-      marginBottom: UI_SIZE_8,
-    },
-    row: {
-      paddingVertical: UI_SIZE_12,
-      gap: UI_SIZE_4,
-    },
-    taskText: {
-      fontSize: FontSize.subtitle,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onSurface,
-    },
-    meta: {
+    privacyText: {
+      ...commonStyles.flex1,
       fontSize: FontSize.caption,
       fontFamily: FontFamily.medium,
       color: c.onSurfaceVariant,
     },
+    editedHeader: {
+      ...commonStyles.rowBetween,
+      alignItems: 'baseline',
+    },
+    editedTitle: {
+      fontSize: FontSize.title,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      color: c.onSurface,
+    },
+    editedCount: {
+      fontSize: FontSize.body,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurfaceVariant,
+    },
+    dayLabel: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.bold,
+      fontWeight: FontWeight.bold,
+      color: c.onSurfaceVariant,
+      marginTop: UI_SIZE_20,
+      marginBottom: UI_SIZE_8,
+      marginHorizontal: UI_SIZE_4,
+    },
+    rowCard: {
+      overflow: 'hidden',
+      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
+    },
+    rowFirst: {
+      borderTopLeftRadius: UI_SIZE_18,
+      borderTopRightRadius: UI_SIZE_18,
+    },
+    rowLast: {
+      borderBottomLeftRadius: UI_SIZE_18,
+      borderBottomRightRadius: UI_SIZE_18,
+    },
+    row: {
+      ...commonStyles.row,
+      gap: UI_SIZE_12,
+      minHeight: UI_SIZE_56,
+      paddingHorizontal: UI_SIZE_16,
+    },
     rowDivider: {
       height: StyleSheet.hairlineWidth,
+      marginHorizontal: UI_SIZE_16,
+      backgroundColor: hexWithAlpha(c.outlineVariant, 0.3),
+    },
+    rowIcon: {
+      ...commonStyles.centered,
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
+      borderRadius: UI_SIZE_9999,
       backgroundColor: hexWithAlpha(c.outlineVariant, 0.2),
+    },
+    rowTitle: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.subtitle,
+      fontFamily: FontFamily.semiBold,
+      fontWeight: FontWeight.semibold,
+      color: c.onSurface,
     },
     empty: {
       ...commonStyles.centered,
