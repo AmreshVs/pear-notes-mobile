@@ -1,5 +1,6 @@
 import link from 'bare-link'
 import { Buffer } from 'buffer'
+import { execFileSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath, pathToFileURL, URL } from 'url'
@@ -152,6 +153,72 @@ function collectLinkedAddons(directory, found = new Set(), artifacts = new Set()
   return { names: found, artifacts }
 }
 
+function compareVersions(a, b) {
+  const left = a.split('.').map(Number)
+  const right = b.split('.').map(Number)
+  for (let i = 0; i < Math.max(left.length, right.length); i += 1) {
+    const diff = (left[i] ?? 0) - (right[i] ?? 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}
+
+function readPlistValue(plist, key) {
+  try {
+    return execFileSync('plutil', ['-extract', key, 'raw', plist], { encoding: 'utf8' }).trim()
+  } catch {
+    return null
+  }
+}
+
+function binaryMinimumOs(binary) {
+  const output = execFileSync('xcrun', ['vtool', '-show-build', binary], { encoding: 'utf8' })
+  const versions = [...output.matchAll(/^\s*minos\s+(\S+)/gm)].map((match) => match[1])
+  return versions.sort(compareVersions).at(-1) ?? null
+}
+
+function adHocSign(resource) {
+  execFileSync('codesign', ['--timestamp=none', '--force', '--sign', '-', resource])
+}
+
+function raiseFrameworkMinimumOs(framework) {
+  const plist = path.join(framework, 'Info.plist')
+  const declared = readPlistValue(plist, 'MinimumOSVersion')
+  const executable = readPlistValue(plist, 'CFBundleExecutable')
+  if (!declared || !executable) return null
+  const required = binaryMinimumOs(path.join(framework, executable))
+  if (!required || compareVersions(required, declared) <= 0) return null
+  execFileSync('plutil', ['-replace', 'MinimumOSVersion', '-string', required, plist])
+  adHocSign(framework)
+  return `${path.basename(framework)} ${declared} -> ${required}`
+}
+
+function alignMinimumOsVersions(directory, raised = []) {
+  if (!fs.existsSync(directory)) return raised
+  for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const entryPath = path.join(directory, entry.name)
+    if (!XCFRAMEWORK.test(entry.name)) {
+      alignMinimumOsVersions(entryPath, raised)
+      continue
+    }
+    let changed = false
+    for (const slice of fs.readdirSync(entryPath, { withFileTypes: true })) {
+      if (!slice.isDirectory() || slice.name.startsWith('_')) continue
+      const slicePath = path.join(entryPath, slice.name)
+      for (const framework of fs.readdirSync(slicePath)) {
+        if (!framework.endsWith('.framework')) continue
+        const change = raiseFrameworkMinimumOs(path.join(slicePath, framework))
+        if (!change) continue
+        changed = true
+        if (!raised.includes(change)) raised.push(change)
+      }
+    }
+    if (changed) adHocSign(entryPath)
+  }
+  return raised
+}
+
 async function resolveSplitAddons(hosts) {
   const addonNames = readManifestAddons()
   if (addonNames.length === 0) return []
@@ -176,6 +243,7 @@ export async function linkNativeAddons({ hosts, out }) {
   }
 
   const pruned = pruneAddons(outDir, allowedAddonNames())
+  const raised = hosts.some((host) => host.startsWith('ios')) ? alignMinimumOsVersions(outDir) : []
 
   const { names: linked, artifacts: linkedArtifacts } = collectLinkedAddons(outDir)
   const missing = readBackendBundleArtifacts(hosts).filter((id) => !linkedArtifacts.has(id))
@@ -194,6 +262,9 @@ export async function linkNativeAddons({ hosts, out }) {
   }
 
   console.log(`Linked ${linked.size} native addons`)
+  if (raised.length) {
+    console.log(`Raised MinimumOSVersion to match the binary: ${raised.join(', ')}`)
+  }
   if (pruned.length) {
     console.log(`Skipped ${pruned.length} addons no bundle asks for: ${pruned.join(', ')}`)
   }
