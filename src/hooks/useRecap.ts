@@ -1,12 +1,10 @@
 import { useCallback, useState } from 'react'
 import { useStore } from 'react-redux'
 import { useFocusEffect } from 'expo-router'
+import type { TFunction } from 'i18next'
 
 import { buildRecap } from '@pear-notes/core/store/services/recap.js'
-import { loadUpcomingGroups } from '@pear-notes/core/store/services/upcomingTasks.js'
 import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
-
-import type { UpcomingGroup, UpcomingTask } from '@/hooks/useUpcomingTasks'
 
 export type RecapNote = {
   key: string
@@ -14,43 +12,57 @@ export type RecapNote = {
   updatedAt: number
 }
 
-export type Recap = {
-  comingUp: UpcomingTask[]
-  edited: RecapNote[]
-  editedCount: number
-  yearAgo: RecapNote[]
+export type RecapDay = {
+  start: number
+  notes: RecapNote[]
 }
 
-export type RecapRow =
-  | { kind: 'task'; id: string; task: UpcomingTask }
-  | { kind: 'note'; id: string; note: RecapNote }
+export type Recap = {
+  from: number
+  days: RecapDay[]
+  editedCount: number
+}
 
 export type RecapSection = {
-  id: 'comingUp' | 'edited' | 'yearAgo'
-  data: RecapRow[]
+  id: string
+  start: number
+  data: RecapNote[]
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+const RANGE_FORMAT: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
+
+/** Days with edits, newest first, as list sections. */
 export function recapSections(recap: Recap | null): RecapSection[] {
   if (!recap) return []
-  const sections: RecapSection[] = [
-    {
-      id: 'comingUp',
-      data: recap.comingUp.map((task, index) => ({
-        kind: 'task',
-        id: `${task.noteKey}-${index}-${task.text}`,
-        task,
-      })),
-    },
-    {
-      id: 'edited',
-      data: recap.edited.map((note) => ({ kind: 'note', id: `edited-${note.key}`, note })),
-    },
-    {
-      id: 'yearAgo',
-      data: recap.yearAgo.map((note) => ({ kind: 'note', id: `yearAgo-${note.key}`, note })),
-    },
-  ]
-  return sections.filter((section) => section.data.length > 0)
+  return recap.days
+    .filter((day) => day.notes.length > 0)
+    .reverse()
+    .map((day) => ({ id: String(day.start), start: day.start, data: day.notes }))
+}
+
+/** "Oct 8 – 14", or "Sep 29 – Oct 5" across a month. */
+export function formatRecapRange(recap: Recap, language: string) {
+  const first = new Date(recap.from)
+  const last = new Date(recap.days[recap.days.length - 1].start)
+  const end =
+    first.getMonth() === last.getMonth()
+      ? last.toLocaleDateString(language, { day: 'numeric' })
+      : last.toLocaleDateString(language, RANGE_FORMAT)
+  return `${first.toLocaleDateString(language, RANGE_FORMAT)} – ${end}`
+}
+
+/** "Today", "Yesterday", else "Monday, Oct 12". */
+export function formatRecapDay(start: number, recap: Recap, t: TFunction, language: string) {
+  const today = recap.days[recap.days.length - 1].start
+  if (start === today) return t('recap.today')
+  // Day starts can be 23 or 25 hours apart across DST, so round.
+  if (Math.round((today - start) / DAY_MS) === 1) return t('recap.yesterday')
+  return new Date(start).toLocaleDateString(language, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 export function useRecap() {
@@ -58,23 +70,18 @@ export function useRecap() {
   const [recap, setRecap] = useState<Recap | null>(null)
   const [refreshing, setRefreshing] = useState(false)
 
-  const load = useCallback(async () => {
+  const load = useCallback(() => {
     const notes = Object.entries(
       (getNotesData(store.getState()) ?? {}) as Record<string, Record<string, unknown>>,
     ).map(([key, value]) => ({ key, ...value }))
-    const groups = (await loadUpcomingGroups().catch(() => [])) as UpcomingGroup[]
-    setRecap(buildRecap({ groups, notes }) as Recap)
+    setRecap(buildRecap({ notes }) as Recap)
   }, [store])
 
-  useFocusEffect(
-    useCallback(() => {
-      load()
-    }, [load]),
-  )
+  useFocusEffect(load)
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(() => {
     setRefreshing(true)
-    await load()
+    load()
     setRefreshing(false)
   }, [load])
 

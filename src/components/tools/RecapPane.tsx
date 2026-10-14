@@ -6,18 +6,24 @@ import { Stack } from 'expo-router'
 import { isRecapEmpty } from '@pear-notes/core/store/services/recap.js'
 
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
-import { Divider } from '@/components/Divider'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
-import { createThemedStylesheet, Text, View } from '@/components/Themed'
+import { SymbolIcon } from '@/components/SymbolIcon'
+import { createThemedStylesheet, Text, useTheme, View } from '@/components/Themed'
+import { RecapWeek } from '@/components/tools/RecapWeek'
 import {
   commonStyles,
   FontSize,
   FontWeight,
   LetterSpacing,
+  Radii,
   Space,
+  UI_ICON_SIZE_12,
+  UI_ICON_SIZE_14,
+  UI_SIZE_32,
   UI_SIZE_42,
+  UI_SIZE_56,
+  UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import {
   LIST_BATCH_RENDER_COUNT,
   LIST_INITIAL_RENDER_COUNT,
@@ -25,26 +31,26 @@ import {
 } from '@/constants/constants'
 import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 import {
-  type Recap,
-  type RecapRow,
+  formatRecapDay,
+  formatRecapRange,
+  type RecapNote,
   type RecapSection,
   recapSections,
   useRecap,
 } from '@/hooks/useRecap'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
-import { formatUpcomingDue } from '@/hooks/useUpcomingTasks'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 export function RecapPane() {
   const { t, i18n } = useTranslation()
+  const { colors } = useTheme()
   const styles = useStyles()
-  const commonThemedStyles = useCommonThemedStyles()
   const { openNote } = useNoteEditor()
   const { recap, loaded, refreshing, refresh } = useRecap()
   const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
   const sections = useMemo(() => recapSections(recap), [recap])
-  const empty = loaded && isRecapEmpty(recap as Recap)
+  const empty = loaded && !!recap && isRecapEmpty(recap)
 
   const headerTitle = useCallback(() => <CollapsedNavTitle title={t('tools.recap')} />, [t])
 
@@ -59,74 +65,81 @@ export function RecapPane() {
   )
 
   const renderItem = useCallback(
-    ({ item, index, section }: { item: RecapRow; index: number; section: RecapSection }) => (
-      <View>
+    ({ item, index, section }: { item: RecapNote; index: number; section: RecapSection }) => {
+      const first = index === 0
+      const last = index === section.data.length - 1
+      return (
         <Pressable
-          onPress={() => openNote(item.kind === 'task' ? item.task.noteKey : item.note.key)}
-          style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+          onPress={() => openNote(item.key)}
+          style={({ pressed }) => [
+            styles.row,
+            first && styles.rowFirst,
+            last && styles.rowLast,
+            pressed && commonStyles.pressed,
+          ]}
           accessibilityRole="button"
         >
-          {item.kind === 'task' ? (
-            <>
-              <Text style={styles.rowTitle} numberOfLines={2}>
-                {item.task.text}
-              </Text>
-              <Text style={styles.meta} numberOfLines={1}>
-                {formatUpcomingDue(item.task, i18n.language)} •{' '}
-                {item.task.title || t('noteCard.untitled')}
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={styles.rowTitle} numberOfLines={1}>
-                {item.note.title || t('noteCard.untitled')}
-              </Text>
-              <Text style={styles.meta} numberOfLines={1}>
-                {new Date(item.note.updatedAt).toLocaleDateString(i18n.language, {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </Text>
-            </>
-          )}
-        </Pressable>
-        {index < section.data.length - 1 && (
-          <View style={styles.divider}>
-            <Divider />
+          <View style={[styles.rowInner, !first && styles.rowDivider]}>
+            <View style={styles.rowIcon}>
+              <SymbolIcon name="doc.text" size={UI_ICON_SIZE_14} color={colors.textSecondary} />
+            </View>
+            <Text style={styles.rowTitle} numberOfLines={1}>
+              {item.title || t('noteCard.untitled')}
+            </Text>
+            <SymbolIcon
+              name="chevron.right"
+              size={UI_ICON_SIZE_12}
+              color={colors.textMuted}
+              weight="semibold"
+            />
           </View>
-        )}
-      </View>
-    ),
-    [openNote, i18n.language, t, styles.row, styles.rowTitle, styles.meta, styles.divider],
+        </Pressable>
+      )
+    },
+    [openNote, t, colors.textSecondary, colors.textMuted, styles],
   )
 
   const renderSectionHeader = useCallback(
-    ({ section }: { section: RecapSection }) => (
-      <View style={styles.sectionHeader}>
-        <Text style={commonThemedStyles.sectionCamelCase}>
-          {section.id === 'edited'
-            ? t('recap.edited', { count: recap?.editedCount ?? 0 })
-            : t(`recap.${section.id}`)}
+    ({ section }: { section: RecapSection }) =>
+      recap ? (
+        <Text style={styles.dayLabel}>
+          {formatRecapDay(section.start, recap, t, i18n.language)}
         </Text>
-      </View>
-    ),
-    [styles.sectionHeader, commonThemedStyles.sectionCamelCase, t, recap?.editedCount],
+      ) : null,
+    [recap, t, i18n.language, styles.dayLabel],
   )
 
   const listHeader = useMemo(
     () => (
       <>
+        {recap && (
+          <Text style={styles.range}>
+            {t('recap.thisWeek', { range: formatRecapRange(recap, i18n.language) })}
+          </Text>
+        )}
         <View onLayout={handleTitleBlockLayout}>
           <Text style={styles.pageTitle} numberOfLines={2}>
             {t('tools.recap')}
           </Text>
         </View>
-        <Text style={styles.hint}>{t('recap.hint')}</Text>
+        <View style={styles.privacy}>
+          <SymbolIcon name="lock" size={UI_ICON_SIZE_12} color={colors.textMuted} />
+          <Text style={styles.privacyText}>{t('recap.privacy')}</Text>
+        </View>
+        {recap && !isRecapEmpty(recap) && (
+          <>
+            <RecapWeek recap={recap} />
+            <View style={styles.editedHeader}>
+              <Text style={styles.editedTitle}>{t('recap.editedTitle')}</Text>
+              <Text style={styles.editedCount}>
+                {t('recap.noteCount', { count: recap.editedCount })}
+              </Text>
+            </View>
+          </>
+        )}
       </>
     ),
-    [handleTitleBlockLayout, t, styles.pageTitle, styles.hint],
+    [recap, handleTitleBlockLayout, t, i18n.language, colors.textMuted, styles],
   )
 
   const listEmpty = useMemo(
@@ -150,7 +163,7 @@ export function RecapPane() {
       <Stack.Screen options={screenOptions} />
       <SectionList
         sections={sections}
-        keyExtractor={(item: RecapRow) => item.id}
+        keyExtractor={(item: RecapNote) => item.key}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
         stickySectionHeadersEnabled={false}
@@ -181,6 +194,15 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingTop: Space.sm,
       paddingBottom: Space.scrollBottom,
     },
+    range: {
+      marginHorizontal: Space.base,
+      marginBottom: Space.xs,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      letterSpacing: 0.6,
+      textTransform: 'uppercase',
+      color: theme.colors.primary,
+    },
     pageTitle: {
       fontSize: FontSize.hero,
       lineHeight: UI_SIZE_42,
@@ -189,34 +211,79 @@ const useStyles = createThemedStylesheet((theme) => {
       color: theme.colors.text,
       marginLeft: Space.base,
       paddingRight: Space.base,
-      marginBottom: Space.sm,
+      marginBottom: Space.xs,
     },
-    hint: {
+    privacy: {
+      ...commonStyles.row,
+      gap: Space.xs + 2,
       marginHorizontal: Space.base,
-      marginBottom: Space.base,
-      fontSize: FontSize.body,
+      marginBottom: Space.xl,
+    },
+    privacyText: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.caption,
       color: theme.colors.textMuted,
     },
-    sectionHeader: {
-      marginLeft: Space.base,
-      marginTop: Space.base,
+    editedHeader: {
+      ...commonStyles.rowBetween,
+      alignItems: 'baseline',
+      marginHorizontal: Space.base,
     },
-    row: {
-      paddingVertical: Space.md,
-      paddingHorizontal: Space.base,
-      gap: Space.xs,
-    },
-    rowTitle: {
-      fontSize: FontSize.subtitle,
+    editedTitle: {
+      fontSize: FontSize.title,
       fontWeight: FontWeight.bold,
       color: theme.colors.text,
     },
-    meta: {
-      fontSize: FontSize.caption,
-      color: theme.colors.textSecondary,
+    editedCount: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.textMuted,
     },
-    divider: {
+    dayLabel: {
+      marginHorizontal: Space.base + Space.xs,
+      marginTop: Space.lg,
+      marginBottom: Space.sm,
+      fontSize: FontSize.caption,
+      fontWeight: FontWeight.bold,
+      color: theme.colors.textMuted,
+    },
+    row: {
       marginHorizontal: Space.base,
+      paddingHorizontal: Space.md + 2,
+      backgroundColor: theme.colors.cardSurface,
+    },
+    rowFirst: {
+      borderTopLeftRadius: Radii.lg + 2,
+      borderTopRightRadius: Radii.lg + 2,
+      borderCurve: 'continuous',
+    },
+    rowLast: {
+      borderBottomLeftRadius: Radii.lg + 2,
+      borderBottomRightRadius: Radii.lg + 2,
+      borderCurve: 'continuous',
+    },
+    rowInner: {
+      ...commonStyles.row,
+      gap: Space.md,
+      minHeight: UI_SIZE_56,
+      backgroundColor: 'transparent',
+    },
+    rowDivider: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.colors.separator,
+    },
+    rowIcon: {
+      ...commonStyles.centered,
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
+      borderRadius: UI_SIZE_9999,
+      backgroundColor: theme.colors.separator,
+    },
+    rowTitle: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.subtitle,
+      fontWeight: FontWeight.semibold,
+      color: theme.colors.text,
     },
     empty: {
       alignItems: 'center',
