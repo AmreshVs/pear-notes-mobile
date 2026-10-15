@@ -28,9 +28,13 @@ import {
 } from '@pear-notes/core/store/services/localAiOffload.js'
 import {
   buildNoteTaskMessages,
+  cleanImageDescription,
   cleanModelOutput,
+  DESCRIBE_IMAGE_MAX_SIDE,
   DESCRIBE_IMAGE_PROMPT,
   DESCRIBE_MAX_TOKENS,
+  EXTRACT_IMAGE_MAX_SIDE,
+  EXTRACT_SLICE_MAX_SIDE,
   EXTRACT_TEXT_MAX_TOKENS,
   EXTRACT_TEXT_PROMPT,
   getNoteTaskGenerationParams,
@@ -39,6 +43,8 @@ import {
   LLM_CONTEXT_SIZE,
   LLM_TEMPERATURE,
   NOTE_TASK,
+  planTextSlices,
+  readImageTextSlices,
   VISION_GENERATION_PARAMS,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
 import { LOCAL_AI_EMBEDDING_MODEL } from '@pear-notes/core/store/services/localAiTiers.js'
@@ -729,39 +735,43 @@ async function extractTextFromImageNow(
 ): Promise<string> {
   const sdk = await loadSdk()
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.PREPARE_PHOTO })
-  const prepared = await downscaleImage(fileUri, EXTRACT_IMAGE_MAX_SIDE)
+  const slices = await sliceImageForText(fileUri)
   try {
     const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, {})
     onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
     const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.EXTRACT_TEXT)
     onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_TEXT })
-    const output = await runCompletion(
-      sdk,
-      {
-        modelId,
-        history: [
+    return await readImageTextSlices(
+      slices.map((slice) => slice ?? fileUri),
+      (uri: string, params: Record<string, unknown>, onStreamed: (text: string) => boolean) =>
+        runCompletion(
+          sdk,
           {
-            role: 'user',
-            content: EXTRACT_TEXT_PROMPT,
-            attachments: [{ path: toFilePath(prepared ?? fileUri) }],
+            modelId,
+            history: [
+              {
+                role: 'user',
+                content: EXTRACT_TEXT_PROMPT,
+                attachments: [{ path: toFilePath(uri) }],
+              },
+            ],
+            generationParams: {
+              temp: 0,
+              predict: EXTRACT_TEXT_MAX_TOKENS,
+              ...VISION_GENERATION_PARAMS,
+              ...params,
+            },
           },
-        ],
-        generationParams: {
-          temp: 0,
-          predict: EXTRACT_TEXT_MAX_TOKENS,
-          ...VISION_GENERATION_PARAMS,
-        },
-      },
-      (text) => onProgress({ type: WORK_EVENT.TEXT, text: cleanModelOutput(text) }),
+          undefined,
+          onStreamed,
+        ),
+      (text: string) => onProgress({ type: WORK_EVENT.TEXT, text }),
     )
-    return cleanModelOutput(output)
   } finally {
-    deleteLocalUri(prepared)
+    slices.forEach(deleteLocalUri)
   }
 }
 
-const EXTRACT_IMAGE_MAX_SIDE = 1600
-const DESCRIBE_IMAGE_MAX_SIDE = 896
 const RESIZED_IMAGE_QUALITY = 0.9
 
 function deleteLocalUri(uri: string | null) {
@@ -770,6 +780,40 @@ function deleteLocalUri(uri: string | null) {
     const file = new File(uri)
     if (file.exists) file.delete()
   } catch {}
+}
+
+async function sliceImageForText(fileUri: string): Promise<(string | null)[]> {
+  try {
+    const manipulator = await import('expo-image-manipulator')
+    const original = await manipulator.ImageManipulator.manipulate(fileUri).renderAsync()
+    const slices = planTextSlices(original.width, original.height)
+    if (slices.length === 1) return [await downscaleImage(fileUri, EXTRACT_IMAGE_MAX_SIDE)]
+    const saved: string[] = []
+    try {
+      for (const slice of slices) {
+        const context = manipulator.ImageManipulator.manipulate(original).crop(slice)
+        if (Math.max(slice.width, slice.height) > EXTRACT_SLICE_MAX_SIDE) {
+          context.resize(
+            slice.width >= slice.height
+              ? { width: EXTRACT_SLICE_MAX_SIDE }
+              : { height: EXTRACT_SLICE_MAX_SIDE },
+          )
+        }
+        const rendered = await context.renderAsync()
+        const file = await rendered.saveAsync({
+          compress: RESIZED_IMAGE_QUALITY,
+          format: manipulator.SaveFormat.JPEG,
+        })
+        saved.push(file.uri)
+      }
+    } catch (error) {
+      saved.forEach(deleteLocalUri)
+      throw error
+    }
+    return saved
+  } catch {
+    return [await downscaleImage(fileUri, EXTRACT_IMAGE_MAX_SIDE)]
+  }
 }
 
 async function downscaleImage(fileUri: string, maxSide: number): Promise<string | null> {
@@ -795,6 +839,7 @@ async function downscaleImage(fileUri: string, maxSide: number): Promise<string 
 type CompletionInput = Record<string, unknown>
 
 interface CompletionRun {
+  requestId: string
   events: AsyncIterable<{ type: string; text?: string }>
   final: Promise<{ contentText: string }>
 }
@@ -805,6 +850,7 @@ function runCompletion(
   sdk: QvacSdk,
   input: CompletionInput,
   onText?: (text: string) => void,
+  stopWhen?: (text: string) => boolean,
 ): Promise<string> {
   const work = (async () => {
     const run = (sdk.completion as unknown as (params: CompletionInput) => CompletionRun)({
@@ -816,6 +862,11 @@ function runCompletion(
       if (event.type !== 'contentDelta') continue
       streamed += event.text ?? ''
       onText?.(streamed)
+      if (stopWhen?.(streamed)) {
+        await sdk.cancel({ requestId: run.requestId }).catch(() => {})
+        await run.final.catch(() => {})
+        return streamed
+      }
     }
     return (await run.final).contentText
   })()
@@ -889,9 +940,9 @@ async function describeImageNow(
           ...VISION_GENERATION_PARAMS,
         },
       },
-      (text) => onProgress({ type: WORK_EVENT.TEXT, text }),
+      (text) => onProgress({ type: WORK_EVENT.TEXT, text: cleanImageDescription(text) }),
     )
-    return cleanModelOutput(output)
+    return cleanImageDescription(output)
   } finally {
     deleteLocalUri(prepared)
   }
