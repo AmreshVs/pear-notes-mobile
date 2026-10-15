@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DeviceEventEmitter } from 'react-native'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { AppState, DeviceEventEmitter, Platform } from 'react-native'
 import { useSelector } from 'react-redux'
 import { usePathname } from 'expo-router'
 
@@ -7,6 +7,11 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 import { reminderAt } from '@pear-notes/core/store/services/noteTasks.js'
 import { isRemindersEnabled } from '@pear-notes/core/store/services/reminders.js'
 import {
+  addCatchUpDay,
+  answerDeviceTip,
+  backgroundSyncTips,
+  CATCH_UP_WINDOW_MS,
+  isDeviceTip,
   loadTipRecords,
   pickTip,
   saveTipAnswer,
@@ -16,15 +21,44 @@ import {
   tipRecord,
 } from '@pear-notes/core/store/services/tips.js'
 import { getLocalAiIndex } from '@pear-notes/core/store/slices/localAiSlice.js'
-import { getRemoteSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import {
+  getHasLinkedDevices,
+  getRemoteSyncedDevices,
+  getSyncedDevices,
+} from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
+import { getSyncStatusSnapshot } from '@pear-notes/core/utils.js'
 
 import { REMINDERS_CHANGED_EVENT } from '@/hooks/useReminderPrefs'
 import { useAppUpdateNoticeVisible } from '@/lib/appUpdateNoticeVisibility'
+import {
+  getBackgroundSyncMode,
+  getBackgroundSyncModeSince,
+  getCachedBackgroundSyncMode,
+  subscribeBackgroundSyncMode,
+} from '@/lib/backgroundSync'
 import { useBackupNudgeVisible } from '@/lib/backupNudgeVisibility'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
-type TipLocal = { firstSeenAt?: number; lastShownAt?: number; currentTip?: string | null }
+import {
+  isBackgroundRefreshAllowed,
+  isIgnoringBatteryOptimizations,
+} from '../../modules/expo-background-service/src'
+
+type TipLocal = {
+  firstSeenAt?: number
+  lastShownAt?: number
+  currentTip?: string | null
+  records?: Record<string, unknown>
+  catchUpDays?: number[]
+}
 type TipRecords = { records: Record<string, unknown>; enabled: boolean }
+type SyncSnapshot = { lastSyncAt: number; lastWakeAt: number; serviceFailedAt: number }
+type SyncInputs = {
+  backgroundAllowed: boolean
+  batteryRestricted: boolean
+  snapshot: SyncSnapshot
+  modeSince: number
+}
 type RemoteDevice = { title?: string; platform?: string; isOnline?: boolean }
 type Task = { date: string; time: string | null; done?: boolean; yearly?: boolean }
 
@@ -42,6 +76,30 @@ const readLocal = async (): Promise<TipLocal> => {
 
 const writeLocal = (value: TipLocal) =>
   backendApi.updatePreference({ key: LOCAL_KEY, value }).catch(() => {})
+
+const readSyncInputs = async (): Promise<SyncInputs> => {
+  const [backgroundAllowed, snapshot, modeSince] = await Promise.all([
+    isBackgroundRefreshAllowed(),
+    getSyncStatusSnapshot() as Promise<SyncSnapshot>,
+    getBackgroundSyncModeSince(),
+    getBackgroundSyncMode(),
+  ])
+  return {
+    backgroundAllowed,
+    batteryRestricted: !isIgnoringBatteryOptimizations(),
+    snapshot,
+    modeSince,
+  }
+}
+
+const recordCatchUpIfBehind = async (openedAt: number): Promise<number[] | null> => {
+  const snapshot = (await getSyncStatusSnapshot()) as SyncSnapshot
+  if (snapshot.lastSyncAt < openedAt) return null
+  const stored = await readLocal()
+  const catchUpDays = addCatchUpDay(stored.catchUpDays ?? [], openedAt) as number[]
+  await writeLocal({ ...stored, catchUpDays })
+  return catchUpDays
+}
 
 function taskTips(tasks: Task[], remindersOn: boolean, now: number): string[] {
   const tips: string[] = []
@@ -89,6 +147,10 @@ export function useTips() {
   const [loaded, setLoaded] = useState<TipRecords | null>(null)
   const [local, setLocal] = useState<TipLocal | null>(null)
   const [now, setNow] = useState(() => Date.now())
+  const [syncInputs, setSyncInputs] = useState<SyncInputs | null>(null)
+  const hasLinkedDevices = useSelector(getHasLinkedDevices) as boolean
+  const allDevices = useSelector(getSyncedDevices) as unknown[]
+  const syncMode = useSyncExternalStore(subscribeBackgroundSyncMode, getCachedBackgroundSyncMode)
 
   const refresh = useCallback(() => {
     Promise.all([
@@ -96,18 +158,49 @@ export function useTips() {
       isRemindersEnabled(backendApi).catch(() => true) as Promise<boolean>,
       loadTipRecords() as Promise<TipRecords>,
       readLocal(),
+      readSyncInputs(),
     ])
-      .then(([nextTasks, reminders, records, stored]) => {
+      .then(([nextTasks, reminders, records, stored, sync]) => {
         const nextLocal = stored.firstSeenAt ? stored : { ...stored, firstSeenAt: Date.now() }
         if (!stored.firstSeenAt) writeLocal(nextLocal)
         setTasks(nextTasks)
         setRemindersOn(reminders)
         setLoaded(records)
         setLocal(nextLocal)
+        setSyncInputs(sync)
         setNow(Date.now())
       })
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    let catchUpTimer: ReturnType<typeof setTimeout> | null = null
+    const watchOpen = () => {
+      const openedAt = Date.now()
+      if (catchUpTimer) clearTimeout(catchUpTimer)
+      catchUpTimer = setTimeout(() => {
+        recordCatchUpIfBehind(openedAt)
+          .then((catchUpDays) => {
+            if (catchUpDays) setLocal((prev) => (prev ? { ...prev, catchUpDays } : prev))
+          })
+          .catch(() => {})
+      }, CATCH_UP_WINDOW_MS)
+    }
+    watchOpen()
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        watchOpen()
+        refresh()
+      } else if (catchUpTimer) {
+        clearTimeout(catchUpTimer)
+        catchUpTimer = null
+      }
+    })
+    return () => {
+      subscription.remove()
+      if (catchUpTimer) clearTimeout(catchUpTimer)
+    }
+  }, [refresh])
 
   useEffect(() => {
     refresh()
@@ -124,30 +217,50 @@ export function useTips() {
   const onMainScreen = !HIDDEN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   const canShow = onMainScreen && !noteOpen && !updateNoticeVisible && !backupNudgeVisible
 
+  const syncTips = useMemo(
+    () =>
+      syncInputs
+        ? (backgroundSyncTips({
+            ...syncInputs,
+            platform: Platform.OS,
+            mode: syncMode,
+            hasLinkedDevices,
+            devices: allDevices,
+            catchUpDays: local?.catchUpDays,
+            now,
+          }) as string[])
+        : [],
+    [syncInputs, syncMode, hasLinkedDevices, allDevices, local?.catchUpDays, now],
+  )
+
   const tip = useMemo(() => {
     if (!loaded || !local || !canShow) return null
     return pickTip({
-      eligible: [...storeTips, ...taskTips(tasks, remindersOn, now)],
+      eligible: [...syncTips, ...storeTips, ...taskTips(tasks, remindersOn, now)],
       records: loaded.records,
       local,
       now,
       enabled: loaded.enabled,
     }) as string | null
-  }, [loaded, local, canShow, storeTips, tasks, remindersOn, now])
+  }, [loaded, local, canShow, syncTips, storeTips, tasks, remindersOn, now])
 
   useEffect(() => {
     if (!tip || !local || local.currentTip === tip) return
     const next = { ...local, currentTip: tip, lastShownAt: Date.now() }
+    setLocal(next)
     writeLocal(next)
   }, [tip, local])
 
   const answer = useCallback(
     async (action: string) => {
       if (!tip || !loaded || !local) return
-      const next = { ...local, currentTip: null }
+      const cleared = { ...local, currentTip: null }
+      const next = isDeviceTip(tip) ? answerDeviceTip(cleared, tip, action) : cleared
       setLocal(next)
       await writeLocal(next)
-      await saveTipAnswer(tip, tipRecord(loaded.records, tip), action).catch(() => {})
+      if (!isDeviceTip(tip)) {
+        await saveTipAnswer(tip, tipRecord(loaded.records, tip), action).catch(() => {})
+      }
       DeviceEventEmitter.emit(TIPS_CHANGED_EVENT)
     },
     [tip, loaded, local],

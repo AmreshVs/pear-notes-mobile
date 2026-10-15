@@ -2870,6 +2870,28 @@
     "dismiss": "Don't show this tip again",
     "showTips": "Show tips",
     "showTipsDesc": "Short suggestions based on how you use Pear Notes, like using your Mac for AI. At most one a day.",
+    "syncBlocked": {
+      "ios": {
+        "title": "Background App Refresh is off",
+        "body": "Periodic sync can't run while Background App Refresh is off for Pear Notes. Turn it on in Settings to keep notes up to date.",
+        "action": "Open Settings"
+      },
+      "android": {
+        "title": "Android is stopping background sync",
+        "body": "Battery optimisation stopped Pear Notes syncing in the background. Allow unrestricted battery use to keep it running.",
+        "action": "Open battery settings"
+      }
+    },
+    "alwaysOnSync": {
+      "title": "Make this phone your always-on sync device",
+      "body": "No computer is linked, so your other devices sync through this phone. Always on keeps it reachable, with a small notification.",
+      "action": "Turn on"
+    },
+    "backgroundSync": {
+      "title": "Keep notes up to date in the background",
+      "body": "Changes from your other devices were still arriving when you opened Pear Notes. Periodic sync lets this phone fetch them now and then.",
+      "action": "Turn on"
+    },
     "indexCharging": {
       "title": "Index your notes now",
       "body": "{{count}} notes are waiting until this phone charges. Until then, Ask and Search by meaning can miss them.",

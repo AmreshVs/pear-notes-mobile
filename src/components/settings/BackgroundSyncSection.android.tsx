@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AppState, PermissionsAndroid, Pressable, StyleSheet, View } from 'react-native'
+import { AppState, Pressable, StyleSheet, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
@@ -21,6 +21,7 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { BackgroundSyncMode } from '@/lib/backgroundSync'
+import { requestAlwaysOnNotificationPermission } from '@/lib/backgroundSyncMode'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 import {
@@ -60,28 +61,7 @@ export function BackgroundSyncSection() {
   const handleSelect = useCallback(
     async (next: BackgroundSyncMode) => {
       if (next === mode || !hasLinkedDevices) return
-
-      if (next === 'always-on') {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
-            {
-              title: t('sync.backgroundSync.permissionTitle'),
-              message: t('sync.backgroundSync.permissionDescription'),
-              buttonNeutral: t('backup.notificationPermissionAskMeLater'),
-              buttonNegative: t('backup.notificationPermissionCancel'),
-              buttonPositive: t('backup.notificationPermissionOK'),
-            },
-          )
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            commitMode(next)
-          }
-        } catch (err) {
-          console.warn(err)
-        }
-        return
-      }
-
+      if (next === 'always-on' && !(await requestAlwaysOnNotificationPermission(t))) return
       commitMode(next)
     },
     [mode, hasLinkedDevices, t, commitMode],

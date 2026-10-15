@@ -3,6 +3,7 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 export type BackgroundSyncMode = 'off' | 'periodic' | 'always-on'
 
 export const BACKGROUND_SYNC_MODE_KEY = 'backgroundSyncMode'
+const BACKGROUND_SYNC_MODE_SINCE_KEY = 'backgroundSyncModeSince'
 const DEFAULT_MODE: BackgroundSyncMode = 'off'
 
 let cachedMode: BackgroundSyncMode = DEFAULT_MODE
@@ -47,5 +48,18 @@ export async function setBackgroundSyncMode(mode: BackgroundSyncMode): Promise<v
   publishMode(mode)
   try {
     await backendApi.updatePreference({ key: BACKGROUND_SYNC_MODE_KEY, value: mode })
+    await backendApi.updatePreference({ key: BACKGROUND_SYNC_MODE_SINCE_KEY, value: Date.now() })
   } catch {}
+}
+
+export async function getBackgroundSyncModeSince(): Promise<number> {
+  try {
+    const value = Number(await backendApi.getPreference({ key: BACKGROUND_SYNC_MODE_SINCE_KEY }))
+    if (value > 0) return value
+    const now = Date.now()
+    await backendApi.updatePreference({ key: BACKGROUND_SYNC_MODE_SINCE_KEY, value: now })
+    return now
+  } catch {
+    return 0
+  }
 }

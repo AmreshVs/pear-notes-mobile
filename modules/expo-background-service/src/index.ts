@@ -1,8 +1,15 @@
 import { Platform } from 'react-native'
-import { requireNativeModule } from 'expo-modules-core'
+import { requireNativeModule, requireOptionalNativeModule } from 'expo-modules-core'
 
 const ExpoBackgroundService =
   Platform.OS === 'android' ? requireNativeModule('ExpoBackgroundService') : {}
+
+const IosBackgroundRefresh =
+  Platform.OS === 'ios'
+    ? requireOptionalNativeModule<{ isBackgroundRefreshAllowed(): Promise<boolean> }>(
+        'ExpoBackgroundService',
+      )
+    : null
 
 export function startService(title: string, message: string, maxProgress: number): void {
   ExpoBackgroundService.start(title, message, maxProgress)
@@ -46,4 +53,13 @@ export function openBatteryOptimizationSettings(): void {
   try {
     ExpoBackgroundService.openBatteryOptimizationSettings()
   } catch {}
+}
+
+export async function isBackgroundRefreshAllowed(): Promise<boolean> {
+  if (!IosBackgroundRefresh) return true
+  try {
+    return (await IosBackgroundRefresh.isBackgroundRefreshAllowed()) !== false
+  } catch {
+    return true
+  }
 }

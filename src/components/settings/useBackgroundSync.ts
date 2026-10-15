@@ -7,10 +7,9 @@ import {
   BackgroundSyncMode,
   getBackgroundSyncMode,
   getCachedBackgroundSyncMode,
-  setBackgroundSyncMode,
   subscribeBackgroundSyncMode,
 } from '@/lib/backgroundSync'
-import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
+import { switchBackgroundSyncMode } from '@/lib/backgroundSyncMode'
 import { hapticSelection } from '@/lib/haptics'
 
 export const BACKGROUND_SYNC_MODE_LOCALE_KEY: Record<BackgroundSyncMode, string> = {
@@ -29,14 +28,12 @@ export function useBackgroundSync() {
 
   useEffect(() => {
     if (hasLinkedDevices || mode === 'off') return
-    setBackgroundSyncMode('off')
-    applyBackgroundSyncMode('off')
+    switchBackgroundSyncMode('off')
   }, [hasLinkedDevices, mode])
 
   const commitMode = useCallback((next: BackgroundSyncMode) => {
     hapticSelection()
-    setBackgroundSyncMode(next)
-    applyBackgroundSyncMode(next)
+    switchBackgroundSyncMode(next)
   }, [])
 
   return { mode, hasLinkedDevices, commitMode }
