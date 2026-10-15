@@ -574,9 +574,7 @@
         "foldersDesc": "Suggest a folder for notes in Untitled, and Tidy up",
         "related": "Related notes and duplicates",
         "relatedDesc": "Show notes like this one and notes that repeat each other",
-        "synced": "These choices apply on all your devices.",
-        "reminders": "Reminders",
-        "remindersDesc": "Get a notification for dated tasks"
+        "synced": "These choices apply on all your devices."
       },
       "answers": {
         "title": "Answers",

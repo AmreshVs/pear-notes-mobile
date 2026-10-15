@@ -1,19 +1,14 @@
-import { Fragment, useCallback, useMemo } from 'react'
+import { Fragment, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, Switch, View } from 'react-native'
-import { router } from 'expo-router'
+import { Switch, View } from 'react-native'
 
 import { Divider } from '@/components/Divider'
-import { SymbolIcon } from '@/components/SymbolIcon'
 import { Text, useTheme } from '@/components/Themed'
-import { commonStyles, UI_ICON_SIZE_14 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
 import { SUGGESTION_KINDS } from './onDeviceAiExtrasUtils'
 import { useExtrasStyles } from './onDeviceAiStyles'
 import { useSuggestionPrefs } from './useOnDeviceAiExtras'
-
-const REMINDERS_ROUTE = '/settings/general'
 
 export function SuggestionsSection() {
   const { t } = useTranslation()
@@ -25,7 +20,6 @@ export function SuggestionsSection() {
     () => ({ false: colors.controlBackground, true: colors.primary }),
     [colors.controlBackground, colors.primary],
   )
-  const handleOpenReminders = useCallback(() => router.push(REMINDERS_ROUTE as never), [])
 
   const renderRow = (kind: string, index: number) => (
     <Fragment key={kind}>
@@ -54,23 +48,7 @@ export function SuggestionsSection() {
       <Text style={commonThemedStyles.sectionCamelCase}>
         {t('settings.onDeviceAi.suggestions.title')}
       </Text>
-      <View style={commonThemedStyles.card}>
-        {SUGGESTION_KINDS.map(renderRow)}
-        <View style={styles.dividerWrap}>
-          <Divider />
-        </View>
-        <Pressable
-          onPress={handleOpenReminders}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.toggleRow, pressed && commonStyles.pressed]}
-        >
-          <View style={styles.toggleInfo}>
-            <Text style={styles.rowTitle}>{t('settings.onDeviceAi.suggestions.reminders')}</Text>
-            <Text style={styles.rowDesc}>{t('settings.onDeviceAi.suggestions.remindersDesc')}</Text>
-          </View>
-          <SymbolIcon name="chevron.forward" size={UI_ICON_SIZE_14} color={colors.textMuted} />
-        </Pressable>
-      </View>
+      <View style={commonThemedStyles.card}>{SUGGESTION_KINDS.map(renderRow)}</View>
       <Text style={styles.footnote}>{t('settings.onDeviceAi.suggestions.synced')}</Text>
     </View>
   )
