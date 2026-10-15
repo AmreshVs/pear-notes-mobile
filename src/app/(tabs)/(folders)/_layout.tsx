@@ -44,6 +44,11 @@ export default function FoldersLayout() {
         <Stack.Screen name="birthdays" options={{ headerShown: false }} />
       )}
       {Platform.OS === 'ios' ? (
+        <Stack.Screen name="attachments" options={{ headerLargeTitle: true }} />
+      ) : (
+        <Stack.Screen name="attachments" options={{ headerShown: false }} />
+      )}
+      {Platform.OS === 'ios' ? (
         <Stack.Screen name="duplicates" options={{ headerLargeTitle: true }} />
       ) : (
         <Stack.Screen name="duplicates" options={{ headerShown: false }} />

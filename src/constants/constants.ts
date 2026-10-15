@@ -19,12 +19,14 @@ export const ANDROID_APP_BAR_HEIGHT = 44
 
 export const TOOL_ROW = {
   upcoming: 'tool-upcoming',
+  attachments: 'tool-attachments',
   duplicates: 'tool-duplicates',
   recap: 'tool-recap',
 } as const
 
 export const TOOL_ROW_ROUTE: Record<string, string> = {
   [TOOL_ROW.upcoming]: '/upcoming',
+  [TOOL_ROW.attachments]: '/attachments',
   [TOOL_ROW.duplicates]: '/duplicates',
   [TOOL_ROW.recap]: '/recap',
 }

@@ -9,6 +9,7 @@ import { getDuplicatePairRows } from '@pear-notes/core/store/slices/notesSlice.j
 
 import { TOOL_ROW } from '@/constants/constants'
 import { useAiSuggestionOn } from '@/hooks/useAiSuggestionOn'
+import { useAttachmentCount } from '@/hooks/useAttachments'
 import { useUpcomingCount } from '@/hooks/useUpcomingTasks'
 
 export type ToolRow = {
@@ -22,6 +23,7 @@ export function useToolRows(query: string): ToolRow[] {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const upcomingCount = useUpcomingCount()
+  const attachmentCount = useAttachmentCount()
   const tasksOn = useAiSuggestionOn(AI_SUGGESTION.TASKS)
   const relatedOn = useAiSuggestionOn(AI_SUGGESTION.RELATED)
   const index = useSelector(getLocalAiIndex) as { enabled: boolean; changedAt?: number }
@@ -43,6 +45,14 @@ export function useToolRows(query: string): ToolRow[] {
         count: upcomingCount,
       })
     }
+    if (attachmentCount > 0) {
+      rows.push({
+        id: TOOL_ROW.attachments,
+        name: t('tools.attachments'),
+        icon: 'attachments',
+        count: attachmentCount,
+      })
+    }
     if (showDuplicates) {
       rows.push({
         id: TOOL_ROW.duplicates,
@@ -54,5 +64,5 @@ export function useToolRows(query: string): ToolRow[] {
     rows.push({ id: TOOL_ROW.recap, name: t('tools.recap'), icon: 'recap', count: 0 })
     const needle = query.trim().toLowerCase()
     return needle ? rows.filter((row) => row.name.toLowerCase().includes(needle)) : rows
-  }, [t, tasksOn, upcomingCount, showDuplicates, duplicateCount, query])
+  }, [t, tasksOn, upcomingCount, attachmentCount, showDuplicates, duplicateCount, query])
 }
