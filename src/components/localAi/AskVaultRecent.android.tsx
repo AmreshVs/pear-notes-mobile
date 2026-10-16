@@ -109,7 +109,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3Theme) => {
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       color: c.onSurfaceVariant,
-      textTransform: 'uppercase',
     },
     row: {
       ...commonStyles.row,

@@ -1,23 +1,23 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  Keyboard,
+  type LayoutChangeEvent,
   Pressable,
   ScrollView,
   StyleSheet,
-  TextInput,
-  useWindowDimensions,
+  type TextInput,
   View,
 } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { router, Stack, useLocalSearchParams } from 'expo-router'
+import { useHeaderHeight } from 'expo-router/react-navigation'
 import { SymbolView } from 'expo-symbols'
 
 import { VAULT_ASK_KIND } from '@pear-notes/core/store/services/localAiVaultAsk.js'
-import { closeAskVault, getAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
-import { AI_SHEET_GUTTER, AiBottomSheet } from '@/components/AiBottomSheet'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
-import { VoiceTypingBar } from '@/components/VoiceTypingBar'
 import {
   commonStyles,
   FontFamily,
@@ -26,48 +26,58 @@ import {
   Radii,
   UI_ICON_SIZE_12,
   UI_ICON_SIZE_14,
-  UI_ICON_SIZE_16,
+  UI_ICON_SIZE_18,
   UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_10,
   UI_SIZE_12,
   UI_SIZE_14,
+  UI_SIZE_16,
+  UI_SIZE_20,
   UI_SIZE_36,
-  UI_SIZE_52,
-  UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { ASK_QUESTION_MAX_CHARS } from '@/lib/localAi/askNote'
+import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
+import { useFocusAfterTransition } from '@/hooks/useFocusAfterTransition'
 import { askIndexNoticeText } from '@/utils/askIndexNotice'
 
 import { AskVaultAnswerActions } from './AskVaultAnswerActions'
+import { AskVaultComposer } from './AskVaultComposer'
 import { AskVaultDraftActions } from './AskVaultDraftActions'
 import { AskVaultDraftCard } from './AskVaultDraftCard'
+import { AskVaultHero } from './AskVaultHero'
 import { AskVaultRecent } from './AskVaultRecent'
+import { AskVaultRecentNotes } from './AskVaultRecentNotes'
 import { AskVaultReminderAction } from './AskVaultReminderAction'
 import { AskVaultScopePill } from './AskVaultScopePill'
 import { AskVaultSources } from './AskVaultSources'
 import { AskVaultSuggestions } from './AskVaultSuggestions'
 import {
+  type AskThreadView,
   getTurnDraft,
+  type RecentNoteView,
   splitAnswerCitations,
   useAskVaultSheet,
   type VaultTurnView,
 } from './useAskVaultSheet'
 
-const THREAD_MAX_HEIGHT_RATIO = 0.5
-const INPUT_MAX_LINES_HEIGHT = 110
+const INLINE_RECENT_QUESTIONS = 3
 
 const noopLanguageName = (code: string | null) => code ?? ''
 
-export function AskVaultSheet() {
+export function AskVaultScreen() {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const styles = useStyles()
-  const dispatch = useDispatch()
-  const { height: windowHeight } = useWindowDimensions()
   const threadRef = useRef<ScrollView>(null)
-  const askVault = useSelector(getAskVault) as { question: string } | null
-  const handleDismissed = useCallback(() => dispatch(closeAskVault()), [dispatch])
+  const inputRef = useRef<TextInput>(null)
+  useFocusAfterTransition(inputRef)
+  const params = useLocalSearchParams<{ question?: string }>()
+  const [showRecent, setShowRecent] = useState(false)
+  const [composerHeight, setComposerHeight] = useState(0)
+  const headerHeight = useHeaderHeight()
+  const insets = useSafeAreaInsets()
+  const viewportHeightRef = useRef(0)
+  const handleDismissed = useCallback(() => router.back(), [])
   const {
     question,
     setQuestion,
@@ -86,6 +96,7 @@ export function AskVaultSheet() {
     currentFolder,
     scopeName,
     suggestions,
+    recentNotes,
     threads,
     openThread,
     deleteThread,
@@ -106,22 +117,98 @@ export function AskVaultSheet() {
     handleDictationText,
     handleDictationCommit,
     handleDictationCancel,
-    handleClose,
     handleOpenNote,
     handleOpenSettings,
   } = useAskVaultSheet({
-    visible: !!askVault,
-    initialQuestion: askVault?.question ?? '',
+    initialQuestion: typeof params.question === 'string' ? params.question : '',
     onClose: handleDismissed,
   })
-  const subtitle = desktopTitle
-    ? t('localAi.askVault.onMac', { device: desktopTitle })
-    : busy
-      ? t('localAi.work.onDevice')
-      : t('localAi.askVault.subtitle')
-  const threadStyle = useMemo(
-    () => ({ maxHeight: windowHeight * THREAD_MAX_HEIGHT_RATIO }),
-    [windowHeight],
+  const heroSubtitle = indexNotice
+    ? askIndexNoticeText(t, indexNotice)
+    : desktopTitle
+      ? t('localAi.askVault.onMac', { device: desktopTitle })
+      : t('localAi.askVault.footerPrivate')
+  const isEmpty = turns.length === 0
+  const canShowRecent = ready && isEmpty && threads.length > 0
+  const recentOpen = showRecent && canShowRecent
+  const contentStyle = useMemo(
+    () => ({ paddingTop: UI_SIZE_8, paddingBottom: composerHeight + UI_SIZE_20 }),
+    [composerHeight],
+  )
+
+  const handleComposerLayout = useCallback(
+    (event: LayoutChangeEvent) => setComposerHeight(event.nativeEvent.layout.height),
+    [],
+  )
+
+  const toggleRecent = useCallback(() => setShowRecent((current) => !current), [])
+
+  const inlineThreads = useMemo(() => threads.slice(0, INLINE_RECENT_QUESTIONS), [threads])
+
+  const handleAskAboutNote = useCallback(
+    (note: RecentNoteView) => {
+      setQuestion(t('localAi.askVault.aboutNote', { title: note.title }))
+      inputRef.current?.focus()
+    },
+    [setQuestion, t],
+  )
+
+  const handleOpenThread = useCallback(
+    (thread: AskThreadView) => {
+      setShowRecent(false)
+      openThread(thread)
+    },
+    [openThread],
+  )
+
+  const renderScopeTitle = useCallback(
+    () => <AskVaultScopePill scopeName={scopeName} disabled={busy} onToggle={toggleScope} />,
+    [busy, scopeName, toggleScope],
+  )
+
+  const renderRecentButton = useCallback(
+    () => (
+      <Pressable
+        onPress={toggleRecent}
+        hitSlop={UI_SIZE_8}
+        accessibilityRole="button"
+        accessibilityLabel={t('localAi.askVault.recentQuestions')}
+        accessibilityState={{ selected: recentOpen }}
+        style={({ pressed }) => [styles.headerButton, pressed && commonStyles.pressed]}
+      >
+        <SymbolView
+          name={recentOpen ? 'xmark' : 'clock.arrow.circlepath'}
+          size={UI_ICON_SIZE_18}
+          tintColor={colors.text}
+          weight="semibold"
+        />
+      </Pressable>
+    ),
+    [colors.text, recentOpen, styles.headerButton, t, toggleRecent],
+  )
+
+  const screenOptions = useMemo(
+    () => ({
+      headerShown: true,
+      headerTransparent: true,
+      headerShadowVisible: false,
+      headerBackButtonDisplayMode: 'minimal' as const,
+      headerTintColor: colors.primary,
+      headerTitleStyle: styles.headerTitle,
+      scrollEdgeEffects: HIDDEN_SCROLL_EDGE_EFFECTS,
+      title: t('localAi.askVault.title'),
+      headerTitle: currentFolder ? renderScopeTitle : undefined,
+      headerRight: canShowRecent ? renderRecentButton : undefined,
+    }),
+    [
+      canShowRecent,
+      colors.primary,
+      currentFolder,
+      renderRecentButton,
+      renderScopeTitle,
+      styles.headerTitle,
+      t,
+    ],
   )
 
   const titleOf = useCallback(
@@ -129,7 +216,19 @@ export function AskVaultSheet() {
     [notesData, t],
   )
 
-  const scrollToEnd = useCallback(() => threadRef.current?.scrollToEnd({ animated: true }), [])
+  const handleViewportLayout = useCallback((event: LayoutChangeEvent) => {
+    viewportHeightRef.current = event.nativeEvent.layout.height
+  }, [])
+
+  const scrollToLatest = useCallback(
+    (_width: number, contentHeight: number) => {
+      const keyboardHeight = Keyboard.isVisible() ? (Keyboard.metrics()?.height ?? 0) : 0
+      const bottomInset = Math.max(keyboardHeight, insets.bottom)
+      const y = Math.max(contentHeight - viewportHeightRef.current + bottomInset, -headerHeight)
+      threadRef.current?.scrollTo({ y, animated: true })
+    },
+    [headerHeight, insets.bottom],
+  )
 
   const renderAnswerText = useCallback(
     (turn: VaultTurnView) =>
@@ -284,146 +383,101 @@ export function AskVaultSheet() {
     [renderResult, styles],
   )
 
-  return (
-    <AiBottomSheet
-      visible={!!askVault}
-      icon="sparkles"
-      title={t('localAi.askVault.title')}
-      subtitle={subtitle}
-      avoidKeyboard
-      headerAccessory={
-        currentFolder ? (
-          <AskVaultScopePill scopeName={scopeName} disabled={busy} onToggle={toggleScope} />
-        ) : undefined
-      }
-      onClose={handleClose}
-    >
-      {() => (
-        <>
-          {!ready && (
-            <View style={styles.notReady}>
-              <Text style={styles.answerTextMuted}>
-                {t(meaningReady ? 'localAi.askVault.askNotReady' : 'localAi.askVault.notReady')}
-              </Text>
-              <Pressable
-                onPress={handleOpenSettings}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.linkButton, pressed && commonStyles.pressed]}
-              >
-                <Text style={styles.linkText}>{t('localAi.askVault.openSettings')}</Text>
-              </Pressable>
-            </View>
-          )}
-
-          {ready && indexNotice && (
-            <Text style={styles.indexNotice} accessibilityRole="text">
-              {askIndexNoticeText(t, indexNotice)}
-            </Text>
-          )}
-
-          {turns.length > 0 && (
-            <ScrollView
-              ref={threadRef}
-              style={[styles.threadScroll, threadStyle]}
-              contentContainerStyle={styles.thread}
-              onContentSizeChange={scrollToEnd}
-              keyboardShouldPersistTaps="handled"
-            >
-              {turns.map(renderTurn)}
-            </ScrollView>
-          )}
-
-          {ready && turns.length === 0 && suggestions.length > 0 && (
-            <AskVaultSuggestions suggestions={suggestions} onSelect={handleSend} />
-          )}
-
-          {ready && turns.length === 0 && threads.length > 0 && (
-            <AskVaultRecent threads={threads} onOpen={openThread} onDelete={deleteThread} />
-          )}
-
-          {dictating && (
-            <View style={styles.dictationSlot}>
-              <VoiceTypingBar
-                visible={dictating}
-                onLiveText={handleDictationText}
-                onCommit={handleDictationCommit}
-                onCancel={handleDictationCancel}
-              />
-            </View>
-          )}
-
-          <View style={styles.inputRow}>
-            <TextInput
-              value={question}
-              onChangeText={setQuestion}
-              placeholder={t(
-                turns.length > 0
-                  ? 'localAi.askVault.followUpPlaceholder'
-                  : 'localAi.askVault.placeholder',
-              )}
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={ASK_QUESTION_MAX_CHARS}
-              autoFocus
-              editable={!busy && ready && !dictating}
-              style={styles.input}
-              accessibilityLabel={t('localAi.askVault.inputLabel')}
-            />
-            {voiceReady && !dictating && (
-              <Pressable
-                onPress={handleStartDictation}
-                disabled={busy || !ready}
-                accessibilityRole="button"
-                accessibilityLabel={t('localAi.askVault.dictate')}
-                style={({ pressed }) => [
-                  styles.micButton,
-                  (busy || !ready) && commonStyles.disabled,
-                  pressed && commonStyles.pressed,
-                ]}
-              >
-                <SymbolView
-                  name="mic"
-                  size={UI_ICON_SIZE_16}
-                  tintColor={colors.textSecondary}
-                  weight="semibold"
-                />
-              </Pressable>
-            )}
-            <Pressable
-              onPress={handleSend}
-              disabled={!canSend}
-              accessibilityRole="button"
-              accessibilityLabel={t('localAi.askVault.send')}
-              accessibilityState={{ disabled: !canSend }}
-              style={({ pressed }) => [
-                styles.sendButton,
-                !canSend && commonStyles.disabled,
-                pressed && commonStyles.pressed,
-              ]}
-            >
-              <SymbolView
-                name="arrow.up"
-                size={UI_ICON_SIZE_16}
-                tintColor={colors.onPrimary}
-                weight="bold"
-              />
-            </Pressable>
-          </View>
-          <Text style={styles.footer}>{t('localAi.askVault.footerPrivate')}</Text>
-        </>
+  const renderEmpty = () => (
+    <>
+      <AskVaultHero subtitle={heroSubtitle} />
+      {!ready && (
+        <View style={styles.notReady}>
+          <Text style={styles.answerTextMuted}>
+            {t(meaningReady ? 'localAi.askVault.askNotReady' : 'localAi.askVault.notReady')}
+          </Text>
+          <Pressable
+            onPress={handleOpenSettings}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.linkButton, pressed && commonStyles.pressed]}
+          >
+            <Text style={styles.linkText}>{t('localAi.askVault.openSettings')}</Text>
+          </Pressable>
+        </View>
       )}
-    </AiBottomSheet>
+      {ready && suggestions.length > 0 && (
+        <AskVaultSuggestions suggestions={suggestions} onSelect={handleSend} />
+      )}
+      {ready && recentNotes.length > 0 && (
+        <AskVaultRecentNotes
+          notes={recentNotes}
+          metaOf={sourceMeta}
+          onSelect={handleAskAboutNote}
+        />
+      )}
+      {ready && inlineThreads.length > 0 && (
+        <AskVaultRecent threads={inlineThreads} onOpen={handleOpenThread} onDelete={deleteThread} />
+      )}
+    </>
+  )
+
+  return (
+    <View style={styles.screen}>
+      <Stack.Screen options={screenOptions} />
+      <ScrollView
+        ref={threadRef}
+        contentInsetAdjustmentBehavior="automatic"
+        automaticallyAdjustKeyboardInsets
+        onLayout={handleViewportLayout}
+        contentContainerStyle={[styles.content, contentStyle]}
+        onContentSizeChange={isEmpty ? undefined : scrollToLatest}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        {recentOpen ? (
+          <AskVaultRecent threads={threads} onOpen={handleOpenThread} onDelete={deleteThread} />
+        ) : isEmpty ? (
+          renderEmpty()
+        ) : (
+          turns.map(renderTurn)
+        )}
+      </ScrollView>
+
+      <AskVaultComposer
+        question={question}
+        isEmpty={isEmpty}
+        busy={busy}
+        ready={ready}
+        canSend={canSend}
+        voiceReady={voiceReady}
+        dictating={dictating}
+        onChangeQuestion={setQuestion}
+        onSend={handleSend}
+        onStartDictation={handleStartDictation}
+        onDictationText={handleDictationText}
+        onDictationCommit={handleDictationCommit}
+        onDictationCancel={handleDictationCancel}
+        onLayout={handleComposerLayout}
+        inputRef={inputRef}
+      />
+    </View>
   )
 }
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
-    threadScroll: {
-      marginHorizontal: -AI_SHEET_GUTTER,
+    screen: {
+      ...commonStyles.flex1,
+      backgroundColor: theme.colors.background,
     },
-    thread: {
-      gap: UI_SIZE_14,
-      paddingHorizontal: AI_SHEET_GUTTER,
+    content: {
+      gap: UI_SIZE_16,
+      paddingHorizontal: UI_SIZE_16,
+    },
+    headerTitle: {
+      color: theme.colors.text,
+      fontWeight: FontWeight.bold,
+      fontSize: FontSize.subtitle,
+    },
+    headerButton: {
+      ...commonStyles.centered,
+      width: UI_SIZE_36,
+      height: UI_SIZE_36,
     },
     turn: {
       gap: UI_SIZE_10,
@@ -481,22 +535,6 @@ const useStyles = createThemedStylesheet((theme) => {
       ...commonStyles.row,
       gap: UI_SIZE_4,
     },
-    dictationSlot: {
-      height: UI_SIZE_52,
-    },
-    micButton: {
-      ...commonStyles.centered,
-      width: UI_SIZE_36,
-      height: UI_SIZE_36,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: theme.colors.controlBackground,
-    },
-    footer: {
-      textAlign: 'center',
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.regular,
-      color: theme.colors.textMuted,
-    },
     notReady: {
       gap: UI_SIZE_8,
       padding: UI_SIZE_14,
@@ -527,33 +565,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: theme.colors.textMuted,
-    },
-    inputRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: UI_SIZE_8,
-    },
-    input: {
-      ...commonStyles.flex1,
-      maxHeight: INPUT_MAX_LINES_HEIGHT,
-      paddingHorizontal: UI_SIZE_14,
-      paddingTop: UI_SIZE_10,
-      paddingBottom: UI_SIZE_10,
-      borderRadius: Radii.lg,
-      borderCurve: 'continuous',
-      borderWidth: StyleSheet.hairlineWidth,
-      borderColor: theme.colors.inputBorder,
-      backgroundColor: theme.colors.inputBackground,
-      fontSize: FontSize.subtitle,
-      fontFamily: FontFamily.regular,
-      color: theme.colors.text,
-    },
-    sendButton: {
-      ...commonStyles.centered,
-      width: UI_SIZE_36,
-      height: UI_SIZE_36,
-      borderRadius: UI_SIZE_9999,
-      backgroundColor: theme.colors.primary,
     },
   })
   return styles

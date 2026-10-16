@@ -60,11 +60,7 @@ import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
-import {
-  getSearchQuery,
-  openAskVault,
-  setSearchQuery,
-} from '@pear-notes/core/store/slices/uiSlice.js'
+import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
 import { getHasMultipleVaults } from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { validateFolderName } from '@pear-notes/core/utils.js'
 
@@ -111,6 +107,7 @@ import { useTidyMoves } from '@/hooks/useTidyMoves'
 import { useVisibleNotes } from '@/hooks/useVisibleNotes'
 import { androidRipple } from '@/lib/androidRipple'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
+import { openAskVaultScreen } from '@/lib/localAi/openAskVaultScreen'
 import { toggleNoteLock } from '@/lib/noteLockActions'
 import { buildNoteSections, buildSearchSections } from '@/utils/noteSections'
 
@@ -838,10 +835,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     dispatch(setSearchQuery(''))
   }, [dispatch])
 
-  const handleAskVault = useCallback(
-    () => dispatch(openAskVault({ question: searchQuery.trim() })),
-    [dispatch, searchQuery],
-  )
+  const handleAskVault = useCallback(() => openAskVaultScreen(searchQuery.trim()), [searchQuery])
 
   const handleChangeSearch = useCallback(
     (text: string) => {

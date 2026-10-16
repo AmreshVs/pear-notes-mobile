@@ -49,7 +49,6 @@ import {
 } from '@pear-notes/core/store/slices/notesSlice.js'
 
 import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
-import { Durations } from '@/constants/commonStyles'
 import { useRemindersSetting } from '@/hooks/useReminders'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
 import { askVault, cancelLocalAiTask } from '@/lib/localAi/localAi'
@@ -98,9 +97,18 @@ interface FeatureConfig {
 }
 
 interface AskVaultSheetOptions {
-  visible: boolean
   initialQuestion: string
   onClose: () => void
+}
+
+export interface VaultSuggestionView {
+  kind: string
+  text: string
+}
+
+export interface RecentNoteView {
+  key: string
+  title: string
 }
 
 type NoteRecord = { title?: string; updatedAt?: number; folderKey?: string } | undefined
@@ -139,6 +147,8 @@ function embed(texts: string[]) {
 
 const CITATION = /\[(\d{1,2})\]/g
 const RELATED_SOURCES_SHOWN = 3
+const RECENT_NOTES_SHOWN = 3
+const SUGGESTION_TITLE_MATCH_CHARS = 20
 
 export type AnswerPart = { text: string } | { n: number; source: VaultSourceView; text: string }
 
@@ -180,8 +190,8 @@ export function getTurnDraft(turn: VaultTurnView): VaultDraftView | null {
   return getVaultDraft({ question: turn.question, result: turn.result }) as VaultDraftView | null
 }
 
-/** Ask your notes: one thread per open of the sheet. */
-export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVaultSheetOptions) {
+/** Ask your notes: one thread per open of the screen. */
+export function useAskVaultSheet({ initialQuestion, onClose }: AskVaultSheetOptions) {
   const { t, i18n } = useTranslation()
   const dispatch = useDispatch()
   const { openNote } = useNoteEditor()
@@ -228,6 +238,8 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
   const indexNotice = desktopReady ? null : localIndexNotice
   const ready = localReady || desktopReady
   const busy = turns.some((turn) => turn.status === 'working')
+  const busyRef = useRef(busy)
+  busyRef.current = busy
   const canSend = ready && question.trim().length > 0 && !busy
 
   const folderById = useMemo(
@@ -246,7 +258,7 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
     () => getVaultScopeNotes(notesData, scopeKey).length,
     [notesData, scopeKey],
   )
-  const suggestions = useMemo(
+  const suggestions = useMemo<VaultSuggestionView[]>(
     () =>
       (
         getVaultAskSuggestions({ notes: notesData, folders, scope: scopeKey }) as {
@@ -254,22 +266,32 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
           title?: string
           folder?: string
         }[]
-      ).map((suggestion) => t(`localAi.askVault.suggest.${suggestion.kind}`, suggestion)),
+      ).map((suggestion) => ({
+        kind: suggestion.kind,
+        text: t(`localAi.askVault.suggest.${suggestion.kind}`, suggestion),
+      })),
     [folders, notesData, scopeKey, t],
   )
+  const recentNotes = useMemo<RecentNoteView[]>(() => {
+    const suggestedText = suggestions.map((suggestion) => suggestion.text).join('\n')
+    return (getVaultScopeNotes(notesData, scopeKey) as [string, NoteRecord][])
+      .map(([key, note]) => ({
+        key,
+        title: note?.title?.trim() ?? '',
+        updatedAt: note?.updatedAt ?? 0,
+      }))
+      .filter(
+        (note) =>
+          note.title &&
+          !suggestedText.includes(`“${note.title.slice(0, SUGGESTION_TITLE_MATCH_CHARS)}`),
+      )
+      .sort((a, b) => b.updatedAt - a.updatedAt)
+      .slice(0, RECENT_NOTES_SHOWN)
+      .map(({ key, title }) => ({ key, title }))
+  }, [notesData, scopeKey, suggestions])
 
   useEffect(() => {
-    if (!visible) return
-    runIdRef.current += 1
     setQuestion(initialQuestion)
-    setTurns([])
-    threadIdRef.current = null
-    setCopiedId(null)
-    setSavedId(null)
-    setDraftDone({})
-    setScope(ALL_NOTES_KEY)
-    setDictating(false)
-    endWork()
     let live = true
     loadVisibleAskThreads(
       backendApi,
@@ -290,8 +312,11 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
       .catch(() => {})
     return () => {
       live = false
+      runIdRef.current += 1
+      if (busyRef.current) cancelLocalAiTask().catch(() => {})
+      endWork()
     }
-  }, [visible])
+  }, [])
 
   useEffect(
     () => () => {
@@ -562,12 +587,9 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
   }, [])
 
   const handleClose = useCallback(() => {
-    runIdRef.current += 1
-    if (busy) cancelLocalAiTask().catch(() => {})
-    endWork()
     setDictating(false)
     onClose()
-  }, [busy, endWork, onClose])
+  }, [onClose])
 
   const handleOpenNote = useCallback(
     (noteKey: string) => {
@@ -578,10 +600,8 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
   )
 
   const handleOpenSettings = useCallback(() => {
-    handleClose()
-    // The settings screen is a native modal; wait for the sheet's own modal to leave first.
-    setTimeout(() => router.push('/settings/on-device-ai' as never), Durations.sheetClose)
-  }, [handleClose])
+    router.push('/settings/on-device-ai' as never)
+  }, [])
 
   return {
     question,
@@ -603,6 +623,7 @@ export function useAskVaultSheet({ visible, initialQuestion, onClose }: AskVault
     scopeName,
     scopedCount,
     suggestions,
+    recentNotes,
     threads,
     openThread,
     deleteThread,

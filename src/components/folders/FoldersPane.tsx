@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import { router, Stack } from 'expo-router'
 
 import { ALL_NOTES_KEY, DEFAULT_FOLDER_ICON, FOLDER_ERROR } from '@pear-notes/core/constant.js'
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   createFolder,
   deleteFolder,
@@ -45,6 +46,7 @@ import { useSmartViewsCollapsed } from '@/hooks/useSmartViewsCollapsed'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { useToolRows } from '@/hooks/useToolRows'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
+import { openAskVaultScreen } from '@/lib/localAi/openAskVaultScreen'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 
 import { FoldersPaneProps } from './types'
@@ -310,6 +312,8 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
     [toolRows, handleSelectFolder],
   )
 
+  const handleAskVault = useCallback(() => openAskVaultScreen(searchQuery.trim()), [searchQuery])
+
   const handleSearchChange = useCallback(
     (event: { nativeEvent: { text: string } }) => setSearchQuery(event.nativeEvent.text),
     [],
@@ -385,6 +389,13 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           </Stack.Toolbar>
           <Stack.Toolbar placement="bottom">
             <Stack.Toolbar.SearchBarSlot />
+            {LOCAL_AI_ENABLED && (
+              <Stack.Toolbar.Button
+                icon="sparkles"
+                accessibilityLabel={t('localAi.askVault.entry')}
+                onPress={handleAskVault}
+              />
+            )}
             <Stack.Toolbar.Spacer />
             <Stack.Toolbar.Button
               icon="folder.badge.plus"

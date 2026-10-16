@@ -53,7 +53,6 @@ import { BackupProgressBanner } from '@/components/backup/BackupProgressBanner'
 import { BackupNudge } from '@/components/BackupNudge'
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
-import { AskVaultSheet } from '@/components/localAi/AskVaultSheet'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
 import { MergePreviewModal } from '@/components/merge/MergePreviewModal'
 import { MergeNotesBanner } from '@/components/MergeNotesBanner'
@@ -540,6 +539,7 @@ function RootLayoutNav() {
                   }}
                 />
                 <Stack.Screen name="settings" options={settingsOptions} />
+                <Stack.Screen name="ask" redirect={!LOCAL_AI_ENABLED} />
               </Stack>
 
               <PairingOverlay />
@@ -547,7 +547,6 @@ function RootLayoutNav() {
               <ForceVaultRemovalPrompt />
               <LockUnavailableModal />
               <NoteUnlockPasswordModal />
-              {LOCAL_AI_ENABLED && <AskVaultSheet />}
               <BackupProgressBanner />
               <AppUpdateBanner />
               <TipBanner />

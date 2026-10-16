@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import * as Clipboard from 'expo-clipboard'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
@@ -18,7 +18,6 @@ import {
   getMeaningSearchReady,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
-import { openAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import { useLocalAiWorkProgress } from '@/components/useLocalAiWorkProgress'
 import { Durations } from '@/constants/commonStyles'
@@ -39,6 +38,7 @@ import {
   resolveAskTurn,
 } from '@/lib/localAi/askNote'
 import { askAboutNote, cancelLocalAiTask, clearAskCache } from '@/lib/localAi/localAi'
+import { openAskVaultScreen } from '@/lib/localAi/openAskVaultScreen'
 
 const COPIED_RESET_MS = 2000
 
@@ -74,7 +74,6 @@ export function useAskNoteSheet({
   onApplyEdits,
   onClose,
 }: AskNoteSheetOptions) {
-  const dispatch = useDispatch()
   const summaryConfig = useSelector((state) =>
     getLocalAiFeatureConfig(state, LOCAL_AI_FEATURE.SUMMARIZE_RECORDINGS),
   ) as FeatureConfig | undefined
@@ -261,10 +260,10 @@ export function useAskNoteSheet({
   const handleSearchAllNotes = useCallback(
     (askedQuestion: string) => {
       handleClose()
-      // Let this sheet's modal leave before the Ask your notes sheet presents.
-      setTimeout(() => dispatch(openAskVault({ question: askedQuestion })), Durations.sheetClose)
+      // Let this sheet's modal leave before the Ask your notes screen is pushed.
+      setTimeout(() => openAskVaultScreen(askedQuestion), Durations.sheetClose)
     },
-    [dispatch, handleClose],
+    [handleClose],
   )
 
   return {

@@ -24,6 +24,7 @@ import {
   FOLDER_NAME_MAX_LENGTH,
   SEARCH_QUERY_MAX_LENGTH,
 } from '@pear-notes/core/constant.js'
+import { LOCAL_AI_ENABLED } from '@pear-notes/core/store/services/localAiCatalog.js'
 import {
   createFolder,
   deleteFolder,
@@ -74,6 +75,7 @@ import { useToolRows } from '@/hooks/useToolRows'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticLight, hapticMedium, hapticSuccess, hapticWarning } from '@/lib/haptics'
+import { openAskVaultScreen } from '@/lib/localAi/openAskVaultScreen'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { MAX_FONT_SCALE_CHROME } from '@/utils/dynamicType'
 
@@ -115,6 +117,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
   const [searchQuery, setSearchQuery] = useState('')
   const toolRows = useToolRows(searchQuery)
+  const handleAskVault = useCallback(() => openAskVaultScreen(searchQuery.trim()), [searchQuery])
   const [smartViewsCollapsed, toggleSmartViews] = useSmartViewsCollapsed()
   const smartViewsOpen = !smartViewsCollapsed || searchQuery.length > 0
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
@@ -402,6 +405,18 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
               maxLength={SEARCH_QUERY_MAX_LENGTH}
               returnKeyType="search"
             />
+            {LOCAL_AI_ENABLED && (
+              <Pressable
+                onPress={handleAskVault}
+                android_ripple={screenRippleBorderless}
+                hitSlop={UI_SIZE_8}
+                accessibilityRole="button"
+                accessibilityLabel={t('localAi.askVault.entry')}
+                style={styles.askButton}
+              >
+                <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_20} color={c.primary} />
+              </Pressable>
+            )}
           </View>
         </View>
 
@@ -731,6 +746,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, dims })
     },
     searchIcon: {
       marginRight: UI_SIZE_10,
+    },
+    askButton: {
+      marginLeft: UI_SIZE_10,
     },
     searchInput: {
       flex: 1,

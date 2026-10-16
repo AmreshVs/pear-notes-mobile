@@ -1,87 +1,108 @@
-import { memo, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
+import { memo, useCallback, useMemo } from 'react'
 import { Pressable, StyleSheet, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
-  commonStyles,
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_16,
-  UI_SIZE_2,
+  UI_ICON_SIZE_20,
   UI_SIZE_8,
+  UI_SIZE_10,
+  UI_SIZE_16,
+  UI_SIZE_20,
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
+
+import type { VaultSuggestionView } from './useAskVaultSheet'
+
+const SUGGESTION_ICONS: Record<string, string> = {
+  note: 'file-document-outline',
+  keyPoints: 'format-list-bulleted',
+  folder: 'folder-outline',
+}
+const DEFAULT_SUGGESTION_ICON = 'creation'
+const CARD_BASIS = '46%'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
-  onSurfaceVariant?: string
+  surfaceContainerHigh?: string
 }
 
 interface AskVaultSuggestionsProps {
-  suggestions: string[]
+  suggestions: VaultSuggestionView[]
   onSelect: (suggestion: string) => void
 }
+
+interface SuggestionCardProps {
+  suggestion: VaultSuggestionView
+  onSelect: (suggestion: string) => void
+}
+
+const SuggestionCard = memo(function SuggestionCard({ suggestion, onSelect }: SuggestionCardProps) {
+  const md3 = useMD3Theme()
+  const c = md3.colors
+  const styles = useStyles()
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
+  const handlePress = useCallback(() => onSelect(suggestion.text), [onSelect, suggestion.text])
+  return (
+    <Pressable
+      onPress={handlePress}
+      android_ripple={ripple}
+      accessibilityRole="button"
+      style={styles.card}
+    >
+      <MaterialCommunityIcons
+        name={(SUGGESTION_ICONS[suggestion.kind] ?? DEFAULT_SUGGESTION_ICON) as never}
+        size={UI_ICON_SIZE_20}
+        color={c.primary}
+      />
+      <Text style={styles.text} numberOfLines={3}>
+        {suggestion.text}
+      </Text>
+    </Pressable>
+  )
+})
 
 export const AskVaultSuggestions = memo(function AskVaultSuggestions({
   suggestions,
   onSelect,
 }: AskVaultSuggestionsProps) {
-  const { t } = useTranslation()
-  const md3 = useMD3Theme()
-  const c = md3.colors as ExtendedColors
   const styles = useStyles()
-  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  return (
-    <View style={styles.suggestions}>
-      <Text style={styles.title}>{t('localAi.askVault.tryAsking')}</Text>
-      {suggestions.map((suggestion) => (
-        <Pressable
-          key={suggestion}
-          onPress={() => onSelect(suggestion)}
-          android_ripple={ripple}
-          accessibilityRole="button"
-          style={styles.suggestionRow}
-        >
-          <MaterialCommunityIcons
-            name="arrow-right"
-            size={UI_ICON_SIZE_16}
-            color={c.onSurfaceVariant ?? c.onSurface}
-          />
-          <Text style={styles.suggestionText} numberOfLines={1}>
-            {suggestion}
-          </Text>
-        </Pressable>
-      ))}
-    </View>
+  const renderCard = useCallback(
+    (suggestion: VaultSuggestionView) => (
+      <SuggestionCard key={suggestion.text} suggestion={suggestion} onSelect={onSelect} />
+    ),
+    [onSelect],
   )
+  return <View style={styles.grid}>{suggestions.map(renderCard)}</View>
 })
 
-const useStyles = createThemedStylesheetWithHooks((_theme, md3Theme) => {
+const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
   const c = md3Theme.colors as ExtendedColors
   const styles = StyleSheet.create({
-    suggestions: {
-      gap: UI_SIZE_2,
+    grid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: UI_SIZE_10,
     },
-    title: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.bold,
-      fontWeight: FontWeight.bold,
-      color: c.onSurfaceVariant,
-      textTransform: 'uppercase',
-    },
-    suggestionRow: {
-      ...commonStyles.row,
+    card: {
+      flexGrow: 1,
+      flexBasis: CARD_BASIS,
       gap: UI_SIZE_8,
-      paddingVertical: UI_SIZE_8,
+      overflow: 'hidden',
+      padding: UI_SIZE_16,
+      borderRadius: UI_SIZE_20,
+      backgroundColor: c.surfaceContainerHigh ?? hexWithAlpha(c.onSurface, 0.06),
     },
-    suggestionText: {
-      ...commonStyles.flex1,
+    text: {
       fontSize: FontSize.body,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
+      lineHeight: 19,
+      fontFamily: FontFamily.medium,
+      fontWeight: FontWeight.medium,
+      color: c.onSurface,
     },
   })
   return styles

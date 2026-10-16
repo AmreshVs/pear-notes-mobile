@@ -61,7 +61,6 @@ const useStyles = createThemedStylesheet((theme) => {
       ...commonStyles.row,
       maxWidth: SCOPE_PILL_MAX_WIDTH,
       gap: UI_SIZE_4,
-      marginTop: UI_SIZE_6,
       paddingHorizontal: UI_SIZE_10,
       paddingVertical: UI_SIZE_6,
       borderRadius: UI_SIZE_9999,

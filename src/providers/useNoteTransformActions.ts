@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert } from 'react-native'
 import { useDispatch, useSelector } from 'react-redux'
 
+import { isReadAloudEnabled } from '@pear-notes/core/constant.js'
 import { detectTextLanguage } from '@pear-notes/core/store/services/localAiLanguage.js'
 import {
   htmlToNoteText,
@@ -87,7 +88,7 @@ export function useNoteTransformActions({
     if (next && lastMerge.originals?.includes(noteId)) onOpenNote(next)
   }, [lastMerge, noteId, onOpenNote])
 
-  const canReadAloud = !!ExpoReminders && !isLocked && !!noteId
+  const canReadAloud = isReadAloudEnabled() && !!ExpoReminders && !isLocked && !!noteId
   const handleReadAloud = useCallback(() => {
     if (!ExpoReminders) return
     if (ExpoReminders.isSpeaking()) {

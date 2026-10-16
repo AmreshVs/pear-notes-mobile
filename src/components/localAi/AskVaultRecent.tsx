@@ -100,7 +100,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontFamily: FontFamily.bold,
       fontWeight: FontWeight.bold,
       color: theme.colors.textMuted,
-      textTransform: 'uppercase',
     },
     row: {
       ...commonStyles.row,

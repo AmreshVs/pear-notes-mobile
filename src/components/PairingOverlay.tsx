@@ -31,6 +31,11 @@ import {
   setShowPairingInput,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
+import {
+  getCurrentVault,
+  getHasMultipleVaults,
+  removeVault,
+} from '@pear-notes/core/store/slices/vaultsSlice.js'
 import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { MotionView } from '@/components/MotionView'
@@ -57,6 +62,7 @@ import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticError, hapticMedium, hapticSuccess } from '@/lib/haptics'
 import { clearVaultSecrets } from '@/lib/secureStore'
+import { getVaultLabel } from '@/lib/vaultLabels'
 import { getRelativeTime } from '@/utils/relativeTime'
 
 import { GlassView } from './GlassView'
@@ -81,6 +87,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const receiverStatus = useSelector(getReceiverStatus)
   const showPairingInput = useSelector(getShowPairingInput)
   const deviceRemoved = useSelector(getDeviceRemoved)
+  const currentVault = useSelector(getCurrentVault)
+  const hasOtherVaults = useSelector(getHasMultipleVaults) && !!currentVault
 
   const isInviterActive = inviterStatus.step !== 'idle'
   const isReceiverActive = receiverStatus.step !== 'idle'
@@ -91,10 +99,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const { step, progress, userData, localKey, data, requestedAt } = activeStatus
 
   useEffect(() => {
-    if (deviceRemoved) {
-      router.dismissAll()
-    }
-  }, [])
+    if (deviceRemoved && router.canDismiss()) router.dismissAll()
+  }, [deviceRemoved])
 
   useEffect(() => {
     if (step !== 'confirmation') return
@@ -118,6 +124,17 @@ export const PairingOverlay = memo(function PairingOverlay() {
     else dispatch(setShowPairingInput(false))
     setIsScanning(false)
   }, [dispatch, isInviter, isReceiverActive, deviceRemoved])
+
+  const handleRemovedOkay = useCallback(() => {
+    dispatch(setDeviceRemoved(false))
+    if (hasOtherVaults && currentVault) {
+      dispatch(removeVault({ id: currentVault.id }))
+      return
+    }
+    clearStorageState.setClearing(true)
+    clearVaultSecrets().catch(console.error)
+    dispatch(clearStorage())
+  }, [dispatch, hasOtherVaults, currentVault])
 
   const handleReject = useCallback(() => {
     dispatch(rejectPairing())
@@ -301,16 +318,14 @@ export const PairingOverlay = memo(function PairingOverlay() {
             />
           </View>
           <Text style={styles.title}>{t('pairing.overlay.deviceRemovedTitle')}</Text>
-          <Text style={styles.sub}>{t('pairing.overlay.deviceRemovedDesc')}</Text>
-          <Pressable
-            onPress={() => {
-              clearStorageState.setClearing(true)
-              clearVaultSecrets().catch(console.error)
-              dispatch(clearStorage())
-              dispatch(setDeviceRemoved(false))
-            }}
-            style={[styles.btn, styles.errorBtn]}
-          >
+          <Text style={styles.sub}>
+            {hasOtherVaults
+              ? t('pairing.overlay.deviceRemovedVaultDesc', {
+                  name: getVaultLabel(currentVault, t),
+                })
+              : t('pairing.overlay.deviceRemovedDesc')}
+          </Text>
+          <Pressable onPress={handleRemovedOkay} style={[styles.btn, styles.errorBtn]}>
             <Text style={styles.errorBtnText}>{t('pairing.overlay.okay')}</Text>
           </Pressable>
         </View>
@@ -534,6 +549,9 @@ export const PairingOverlay = memo(function PairingOverlay() {
     styles,
     deviceRemoved,
     handleOpenScanner,
+    hasOtherVaults,
+    currentVault,
+    handleRemovedOkay,
   ])
 
   if (!isVisible) return null

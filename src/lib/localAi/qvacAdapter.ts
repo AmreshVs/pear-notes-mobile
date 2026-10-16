@@ -10,11 +10,13 @@ import {
   getFeatureRegistryNames,
   getLocalAiDevice,
   getTextAskFallback,
+  isOcrModel,
   LOCAL_AI_ERROR,
   LOCAL_AI_FEATURE,
   LOCAL_AI_LANGUAGE,
   LOCAL_AI_MODEL_STATUS,
   LOCAL_AI_NETWORK,
+  LOCAL_AI_OCR_LANGUAGES,
   LOCAL_AI_REGISTRY_MODELS,
   LOCAL_AI_RETIRED_MODEL_FILES,
   LOCAL_AI_TEXT_TASK,
@@ -47,6 +49,7 @@ import {
   readImageTextSlices,
   VISION_GENERATION_PARAMS,
 } from '@pear-notes/core/store/services/localAiPrompts.js'
+import { formatOcrBlocks } from '@pear-notes/core/store/services/localAiText.js'
 import { LOCAL_AI_EMBEDDING_MODEL } from '@pear-notes/core/store/services/localAiTiers.js'
 import { getTranslationModelName } from '@pear-notes/core/store/services/localAiTranslationModels.js'
 import { runVaultAnswer } from '@pear-notes/core/store/services/localAiVaultAsk.js'
@@ -56,7 +59,11 @@ import {
   WORK_STEP,
 } from '@pear-notes/core/store/services/localAiWorkProgress.js'
 import { runNoteRewrite } from '@pear-notes/core/store/services/localAiWritingTools.js'
-import { getLocalAiLoaded, getLocalAiModels } from '@pear-notes/core/store/slices/localAiSlice.js'
+import {
+  getLocalAiFeatureConfig,
+  getLocalAiLoaded,
+  getLocalAiModels,
+} from '@pear-notes/core/store/slices/localAiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
 import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
@@ -70,6 +77,7 @@ type QvacSdk = typeof import('@qvac/sdk')
 type LoadModelInput = Record<string, unknown>
 type RegistryModels = Record<string, { bytes: number; engine: string } | undefined>
 type DownloadAssetInput = Parameters<QvacSdk['downloadAsset']>[0]
+type OcrBlock = Awaited<ReturnType<QvacSdk['ocr']>['blocks']>[number]
 
 export interface LocalAiWorkEvent {
   type: string
@@ -733,13 +741,70 @@ async function extractTextFromImageNow(
   fileUri: string,
   onProgress: LocalAiWorkListener = () => {},
 ): Promise<string> {
+  const featureConfig =
+    getLocalAiFeatureConfig(store.getState(), LOCAL_AI_FEATURE.EXTRACT_TEXT) ?? {}
+  const names = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, featureConfig)
+  return isOcrModel(names[0])
+    ? ocrImageText(fileUri, names, onProgress)
+    : readImageTextWithVision(fileUri, featureConfig, onProgress)
+}
+
+async function ocrImageText(
+  fileUri: string,
+  [recognizerName, detectorName]: string[],
+  onProgress: LocalAiWorkListener,
+): Promise<string> {
+  const sdk = await loadSdk()
+  onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.PREPARE_PHOTO })
+  const prepared = await downscaleImage(fileUri, EXTRACT_IMAGE_MAX_SIDE)
+  try {
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: recognizerName })
+    const modelId = await ensureModelLoaded(sdk, `${recognizerName}|${detectorName}|mobile`, () =>
+      loadModelWith(sdk, {
+        modelSrc: registryAsset(sdk, recognizerName),
+        modelType: 'ocr',
+        modelConfig: {
+          detectorModelSrc: registryAsset(sdk, detectorName),
+          langList: LOCAL_AI_OCR_LANGUAGES,
+          magRatio: OCR_MAG_RATIO,
+          canvasSize: OCR_CANVAS_SIZE,
+          defaultRotationAngles: [],
+          recognizerBatchSize: OCR_RECOGNIZER_BATCH_SIZE,
+          backendDevice: Platform.OS === 'ios' ? 'metal' : 'cpu',
+        },
+      }),
+    )
+    onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_TEXT })
+    const { blockStream } = sdk.ocr({
+      modelId,
+      image: toFilePath(prepared ?? fileUri),
+      stream: true,
+    })
+    const found: OcrBlock[] = []
+    let text = ''
+    for await (const chunk of blockStream) {
+      found.push(...chunk)
+      text = formatOcrBlocks(found)
+      onProgress({ type: WORK_EVENT.TEXT, text })
+    }
+    return text
+  } finally {
+    deleteLocalUri(prepared)
+  }
+}
+
+async function readImageTextWithVision(
+  fileUri: string,
+  featureConfig: LocalAiFeatureModelConfig,
+  onProgress: LocalAiWorkListener,
+): Promise<string> {
   const sdk = await loadSdk()
   onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.PREPARE_PHOTO })
   const slices = await sliceImageForText(fileUri)
   try {
-    const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, {})
+    const [modelName] = getFeatureRegistryNames(LOCAL_AI_FEATURE.EXTRACT_TEXT, featureConfig)
     onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.LOAD_MODEL, model: modelName })
-    const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.EXTRACT_TEXT)
+    const modelId = await loadLlmFeature(sdk, LOCAL_AI_FEATURE.EXTRACT_TEXT, featureConfig)
     onProgress({ type: WORK_EVENT.STEP, step: WORK_STEP.READ_TEXT })
     return await readImageTextSlices(
       slices.map((slice) => slice ?? fileUri),
@@ -772,6 +837,9 @@ async function extractTextFromImageNow(
   }
 }
 
+const OCR_MAG_RATIO = 1
+const OCR_CANVAS_SIZE = 1280
+const OCR_RECOGNIZER_BATCH_SIZE = 8
 const RESIZED_IMAGE_QUALITY = 0.9
 
 function deleteLocalUri(uri: string | null) {

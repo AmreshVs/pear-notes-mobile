@@ -1,25 +1,23 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
+  type LayoutChangeEvent,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
-  TextInput,
-  useWindowDimensions,
+  type TextInput,
   View,
 } from 'react-native'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import { router, useLocalSearchParams } from 'expo-router'
 
 import { VAULT_ASK_KIND } from '@pear-notes/core/store/services/localAiVaultAsk.js'
-import { closeAskVault, getAskVault } from '@pear-notes/core/store/slices/uiSlice.js'
 
-import { KeyboardSheetShell, SHEET_GUTTER } from '@/components/android/KeyboardSheetShell'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import { SHEET_ICON_CHIP_ALPHA } from '@/components/android/useSheetStyles'
 import { LocalAiWorkProgress } from '@/components/LocalAiWorkProgress'
-import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
-import { VoiceTypingBar } from '@/components/VoiceTypingBar'
+import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   FontFamily,
@@ -27,8 +25,6 @@ import {
   FontWeight,
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_24,
-  UI_SIZE_2,
-  UI_SIZE_6,
   UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_14,
@@ -36,24 +32,28 @@ import {
   UI_SIZE_18,
   UI_SIZE_20,
   UI_SIZE_40,
-  UI_SIZE_48,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useFocusAfterTransition } from '@/hooks/useFocusAfterTransition'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { ASK_QUESTION_MAX_CHARS } from '@/lib/localAi/askNote'
 import { askIndexNoticeText } from '@/utils/askIndexNotice'
 
 import { AskVaultAnswerActions } from './AskVaultAnswerActions'
+import { AskVaultComposer } from './AskVaultComposer'
 import { AskVaultDraftActions } from './AskVaultDraftActions'
 import { AskVaultDraftCard } from './AskVaultDraftCard'
+import { AskVaultHero } from './AskVaultHero'
 import { AskVaultRecent } from './AskVaultRecent'
+import { AskVaultRecentNotes } from './AskVaultRecentNotes'
 import { AskVaultReminderAction } from './AskVaultReminderAction'
 import { AskVaultScopePill } from './AskVaultScopePill'
 import { AskVaultSources } from './AskVaultSources'
 import { AskVaultSuggestions } from './AskVaultSuggestions'
 import {
+  type AskThreadView,
   getTurnDraft,
+  type RecentNoteView,
   splitAnswerCitations,
   useAskVaultSheet,
   type VaultTurnView,
@@ -61,27 +61,31 @@ import {
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
-  surfaceContainerHighest?: string
   onSurfaceVariant?: string
 }
 
-const THREAD_MAX_HEIGHT_RATIO = 0.5
-const INPUT_MAX_LINES_HEIGHT = 120
+const MUTED_FILL_ALPHA = 0.06
+
+const INLINE_RECENT_QUESTIONS = 3
 
 const noopLanguageName = (code: string | null) => code ?? ''
 
-export function AskVaultSheet() {
+export function AskVaultScreen() {
   const { t } = useTranslation()
+  const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
-  const dispatch = useDispatch()
-  const { height: windowHeight } = useWindowDimensions()
+  const insets = useSafeAreaInsets()
   const threadRef = useRef<ScrollView>(null)
+  const inputRef = useRef<TextInput>(null)
+  useFocusAfterTransition(inputRef)
+  const params = useLocalSearchParams<{ question?: string }>()
+  const [showRecent, setShowRecent] = useState(false)
+  const [composerHeight, setComposerHeight] = useState(0)
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const mutedColor = c.onSurfaceVariant ?? c.onSurface
-  const askVault = useSelector(getAskVault) as { question: string } | null
-  const handleDismissed = useCallback(() => dispatch(closeAskVault()), [dispatch])
+  const handleDismissed = useCallback(() => router.back(), [])
   const {
     question,
     setQuestion,
@@ -100,6 +104,7 @@ export function AskVaultSheet() {
     currentFolder,
     scopeName,
     suggestions,
+    recentNotes,
     threads,
     openThread,
     deleteThread,
@@ -120,29 +125,52 @@ export function AskVaultSheet() {
     handleDictationText,
     handleDictationCommit,
     handleDictationCancel,
-    handleClose,
     handleOpenNote,
     handleOpenSettings,
   } = useAskVaultSheet({
-    visible: !!askVault,
-    initialQuestion: askVault?.question ?? '',
+    initialQuestion: typeof params.question === 'string' ? params.question : '',
     onClose: handleDismissed,
   })
-  const subtitle = desktopTitle
-    ? t('localAi.askVault.onMac', { device: desktopTitle })
-    : busy
-      ? t('localAi.work.onDevice')
-      : t('localAi.askVault.subtitle')
-  const threadStyle = useMemo(
-    () => ({ maxHeight: windowHeight * THREAD_MAX_HEIGHT_RATIO }),
-    [windowHeight],
+  const heroSubtitle = indexNotice
+    ? askIndexNoticeText(t, indexNotice)
+    : desktopTitle
+      ? t('localAi.askVault.onMac', { device: desktopTitle })
+      : t('localAi.askVault.footerPrivate')
+  const isEmpty = turns.length === 0
+  const canShowRecent = ready && isEmpty && threads.length > 0
+  const recentOpen = showRecent && canShowRecent
+  const headerStyle = useMemo(
+    () => [styles.header, { paddingTop: insets.top }],
+    [insets.top, styles],
+  )
+  const contentStyle = useMemo(
+    () => [styles.content, { paddingBottom: composerHeight + UI_SIZE_20 }],
+    [composerHeight, styles.content],
   )
 
-  const footerPlace = useMemo(
-    () =>
-      [...turns].reverse().find((turn) => turn.status === 'done' && turn.answeredOn)?.answeredOn ||
-      t('localAi.askVault.thisPhone'),
-    [t, turns],
+  const handleComposerLayout = useCallback(
+    (event: LayoutChangeEvent) => setComposerHeight(event.nativeEvent.layout.height),
+    [],
+  )
+
+  const toggleRecent = useCallback(() => setShowRecent((current) => !current), [])
+
+  const inlineThreads = useMemo(() => threads.slice(0, INLINE_RECENT_QUESTIONS), [threads])
+
+  const handleAskAboutNote = useCallback(
+    (note: RecentNoteView) => {
+      setQuestion(t('localAi.askVault.aboutNote', { title: note.title }))
+      inputRef.current?.focus()
+    },
+    [setQuestion, t],
+  )
+
+  const handleOpenThread = useCallback(
+    (thread: AskThreadView) => {
+      setShowRecent(false)
+      openThread(thread)
+    },
+    [openThread],
   )
 
   const titleOf = useCallback(
@@ -296,30 +324,9 @@ export function AskVaultSheet() {
     [renderResult, styles],
   )
 
-  return (
-    <KeyboardSheetShell visible={!!askVault} onClose={handleClose}>
-      <View style={styles.header}>
-        <View style={styles.badge}>
-          <MaterialCommunityIcons name="creation" size={UI_ICON_SIZE_20} color={c.primary} />
-        </View>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>{t('localAi.askVault.title')}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
-        </View>
-        {!!currentFolder && (
-          <AskVaultScopePill scopeName={scopeName} disabled={busy} onToggle={toggleScope} />
-        )}
-        <Pressable
-          hitSlop={12}
-          onPress={handleClose}
-          accessibilityRole="button"
-          accessibilityLabel={t('common.close')}
-          style={styles.closeButton}
-        >
-          <MaterialCommunityIcons name="close" size={UI_ICON_SIZE_24} color={mutedColor} />
-        </Pressable>
-      </View>
-
+  const renderEmpty = () => (
+    <>
+      <AskVaultHero subtitle={heroSubtitle} />
       {!ready && (
         <View style={styles.notReady}>
           <Text style={styles.answerTextMuted}>
@@ -334,112 +341,130 @@ export function AskVaultSheet() {
           </Pressable>
         </View>
       )}
-
-      {ready && indexNotice && (
-        <Text style={styles.indexNotice} accessibilityRole="text">
-          {askIndexNoticeText(t, indexNotice)}
-        </Text>
-      )}
-
-      {turns.length > 0 && (
-        <ScrollView
-          ref={threadRef}
-          style={[styles.threadScroll, threadStyle]}
-          contentContainerStyle={styles.thread}
-          onContentSizeChange={scrollToEnd}
-          keyboardShouldPersistTaps="handled"
-        >
-          {turns.map(renderTurn)}
-        </ScrollView>
-      )}
-
-      {ready && turns.length === 0 && suggestions.length > 0 && (
+      {ready && suggestions.length > 0 && (
         <AskVaultSuggestions suggestions={suggestions} onSelect={handleSend} />
       )}
-
-      {ready && turns.length === 0 && threads.length > 0 && (
-        <AskVaultRecent threads={threads} onOpen={openThread} onDelete={deleteThread} />
-      )}
-
-      {dictating && (
-        <VoiceTypingBar
-          visible={dictating}
-          inline
-          onLiveText={handleDictationText}
-          onCommit={handleDictationCommit}
-          onCancel={handleDictationCancel}
+      {ready && recentNotes.length > 0 && (
+        <AskVaultRecentNotes
+          notes={recentNotes}
+          metaOf={sourceMeta}
+          onSelect={handleAskAboutNote}
         />
       )}
+      {ready && inlineThreads.length > 0 && (
+        <AskVaultRecent threads={inlineThreads} onOpen={handleOpenThread} onDelete={deleteThread} />
+      )}
+    </>
+  )
 
-      <View style={styles.inputRow}>
-        <TextInput
-          value={question}
-          onChangeText={setQuestion}
-          placeholder={t(
-            turns.length > 0
-              ? 'localAi.askVault.followUpPlaceholder'
-              : 'localAi.askVault.placeholder',
-          )}
-          placeholderTextColor={mutedColor}
-          multiline
-          maxLength={ASK_QUESTION_MAX_CHARS}
-          autoFocus
-          editable={!busy && ready && !dictating}
-          style={styles.input}
-          accessibilityLabel={t('localAi.askVault.inputLabel')}
-        />
-        {voiceReady && !dictating && (
-          <Pressable
-            onPress={handleStartDictation}
-            disabled={busy || !ready}
-            android_ripple={ripple}
-            accessibilityRole="button"
-            accessibilityLabel={t('localAi.askVault.dictate')}
-            accessibilityState={{ disabled: busy || !ready }}
-            style={[styles.micButton, (busy || !ready) && commonStyles.disabled]}
-          >
-            <MaterialCommunityIcons
-              name="microphone-outline"
-              size={UI_ICON_SIZE_20}
-              color={mutedColor}
-            />
-          </Pressable>
-        )}
+  const renderBody = () => {
+    if (recentOpen) {
+      return <AskVaultRecent threads={threads} onOpen={handleOpenThread} onDelete={deleteThread} />
+    }
+    return isEmpty ? renderEmpty() : turns.map(renderTurn)
+  }
+
+  return (
+    <View style={styles.screen}>
+      <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
+      <View style={headerStyle}>
         <Pressable
-          onPress={handleSend}
-          disabled={!canSend}
+          onPress={handleDismissed}
           android_ripple={ripple}
+          hitSlop={UI_SIZE_12}
           accessibilityRole="button"
-          accessibilityLabel={t('localAi.askVault.send')}
-          accessibilityState={{ disabled: !canSend }}
-          style={[styles.sendButton, !canSend && commonStyles.disabled]}
+          accessibilityLabel={t('common.back')}
+          style={styles.iconButton}
         >
-          <MaterialCommunityIcons name="send" size={UI_ICON_SIZE_20} color={c.onPrimary} />
+          <MaterialCommunityIcons name="arrow-left" size={UI_ICON_SIZE_24} color={c.onSurface} />
         </Pressable>
+        <View style={styles.headerCenter}>
+          {currentFolder ? (
+            <AskVaultScopePill scopeName={scopeName} disabled={busy} onToggle={toggleScope} />
+          ) : (
+            <Text style={styles.title} numberOfLines={1} accessibilityRole="header">
+              {t('localAi.askVault.title')}
+            </Text>
+          )}
+        </View>
+        <View style={styles.headerEnd}>
+          {canShowRecent && (
+            <Pressable
+              onPress={toggleRecent}
+              android_ripple={ripple}
+              hitSlop={UI_SIZE_8}
+              accessibilityRole="button"
+              accessibilityLabel={t('localAi.askVault.recentQuestions')}
+              accessibilityState={{ selected: recentOpen }}
+              style={styles.iconButton}
+            >
+              <MaterialCommunityIcons
+                name={recentOpen ? 'close' : 'history'}
+                size={UI_ICON_SIZE_24}
+                color={mutedColor}
+              />
+            </Pressable>
+          )}
+        </View>
       </View>
-      <Text style={styles.footer}>{t('localAi.askVault.footer', { place: footerPlace })}</Text>
-    </KeyboardSheetShell>
+      <ScrollView
+        ref={threadRef}
+        contentContainerStyle={contentStyle}
+        onContentSizeChange={isEmpty ? undefined : scrollToEnd}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+      >
+        {renderBody()}
+      </ScrollView>
+
+      <AskVaultComposer
+        question={question}
+        isEmpty={isEmpty}
+        busy={busy}
+        ready={ready}
+        canSend={canSend}
+        voiceReady={voiceReady}
+        dictating={dictating}
+        onChangeQuestion={setQuestion}
+        onSend={handleSend}
+        onStartDictation={handleStartDictation}
+        onDictationText={handleDictationText}
+        onDictationCommit={handleDictationCommit}
+        onDictationCancel={handleDictationCancel}
+        onLayout={handleComposerLayout}
+        inputRef={inputRef}
+      />
+    </View>
   )
 }
 
 const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
   const c = md3Theme.colors as ExtendedColors
   const styles = StyleSheet.create({
-    header: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: UI_SIZE_12,
+    screen: {
+      ...commonStyles.flex1,
+      backgroundColor: c.background,
     },
-    badge: {
+    header: {
+      ...commonStyles.row,
+      gap: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_8,
+      paddingBottom: UI_SIZE_8,
+    },
+    headerCenter: {
+      ...commonStyles.flex1,
+      alignItems: 'center',
+    },
+    headerEnd: {
+      width: UI_SIZE_40,
+      alignItems: 'flex-end',
+    },
+    iconButton: {
       ...commonStyles.centered,
       width: UI_SIZE_40,
       height: UI_SIZE_40,
-      borderRadius: UI_SIZE_12,
-      backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, SHEET_ICON_CHIP_ALPHA),
-    },
-    headerText: {
-      flex: 1,
-      gap: UI_SIZE_2,
+      borderRadius: UI_SIZE_9999,
+      overflow: 'hidden',
     },
     title: {
       fontSize: FontSize.title,
@@ -448,25 +473,9 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       fontWeight: FontWeight.bold,
       color: c.onSurface,
     },
-    subtitle: {
-      fontSize: FontSize.body,
-      lineHeight: 20,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
-    },
-    closeButton: {
-      ...commonStyles.centered,
-      width: UI_SIZE_40,
-      height: UI_SIZE_40,
-      marginTop: -UI_SIZE_6,
-      marginRight: -UI_SIZE_8,
-    },
-    threadScroll: {
-      marginHorizontal: -SHEET_GUTTER,
-    },
-    thread: {
+    content: {
       gap: UI_SIZE_16,
-      paddingHorizontal: SHEET_GUTTER,
+      paddingHorizontal: UI_SIZE_16,
     },
     turn: {
       gap: UI_SIZE_12,
@@ -492,7 +501,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       backgroundColor: c.surfaceContainerHigh ?? theme.colors.cardSurface,
     },
     answerCardMuted: {
-      backgroundColor: hexWithAlpha(c.onSurface, 0.06),
+      backgroundColor: hexWithAlpha(c.onSurface, MUTED_FILL_ALPHA),
     },
     answerText: {
       fontSize: FontSize.subtitle,
@@ -518,24 +527,11 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       color: c.onSecondaryContainer,
       backgroundColor: c.secondaryContainer,
     },
-    micButton: {
-      ...commonStyles.centered,
-      width: UI_SIZE_48,
-      height: UI_SIZE_48,
-      borderRadius: UI_SIZE_9999,
-      overflow: 'hidden',
-    },
-    footer: {
-      textAlign: 'center',
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.regular,
-      color: c.onSurfaceVariant,
-    },
     notReady: {
       gap: UI_SIZE_8,
       padding: UI_SIZE_16,
       borderRadius: UI_SIZE_20,
-      backgroundColor: hexWithAlpha(c.onSurface, 0.06),
+      backgroundColor: hexWithAlpha(c.onSurface, MUTED_FILL_ALPHA),
     },
     linkButton: {
       alignSelf: 'flex-start',
@@ -553,6 +549,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
     errorText: {
       ...commonStyles.flex1,
       fontSize: FontSize.body,
+      lineHeight: 20,
       fontFamily: FontFamily.regular,
       color: c.error,
     },
@@ -560,30 +557,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
       fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
-    },
-    inputRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: UI_SIZE_8,
-    },
-    input: {
-      ...commonStyles.flex1,
-      maxHeight: INPUT_MAX_LINES_HEIGHT,
-      paddingHorizontal: UI_SIZE_16,
-      paddingVertical: UI_SIZE_12,
-      borderRadius: UI_SIZE_20,
-      backgroundColor: c.surfaceContainerHighest ?? hexWithAlpha(c.onSurface, 0.06),
-      fontSize: FontSize.subtitle,
-      fontFamily: FontFamily.regular,
-      color: c.onSurface,
-    },
-    sendButton: {
-      ...commonStyles.centered,
-      width: UI_SIZE_48,
-      height: UI_SIZE_48,
-      borderRadius: UI_SIZE_9999,
-      overflow: 'hidden',
-      backgroundColor: c.primary,
     },
   })
   return styles
