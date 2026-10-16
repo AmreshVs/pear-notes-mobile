@@ -12,6 +12,7 @@ import {
 } from '@/lib/attachmentActions'
 import { hapticLight, hapticSuccess } from '@/lib/haptics'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
+import { attachmentKey } from '@/utils/attachmentRows'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 
 export const ATTACHMENT_MENU = {
@@ -26,10 +27,8 @@ const downloadName = (item: AttachmentItem) => item.fileName || `${item.kind}-${
 export function useAttachmentActions(onError: () => void) {
   const { openNote } = useNoteEditor()
   const serverAddress = useSelector(getHyperdriveServerAddress)
-  const [selected, setSelected] = useState<AttachmentItem | null>(null)
-  const [progress, setProgress] = useState<number | null>(null)
+  const [opening, setOpening] = useState<string | null>(null)
   const busyRef = useRef(false)
-  const pendingNoteRef = useRef<string | null>(null)
 
   const run = useCallback(
     async (item: AttachmentItem, work: (url: string, name: string) => Promise<unknown>) => {
@@ -42,7 +41,7 @@ export function useAttachmentActions(onError: () => void) {
         onError()
       } finally {
         busyRef.current = false
-        setProgress(null)
+        setOpening(null)
       }
     },
     [serverAddress, onError],
@@ -50,9 +49,10 @@ export function useAttachmentActions(onError: () => void) {
 
   const preview = useCallback(
     (item: AttachmentItem) => {
+      if (busyRef.current) return
       hapticLight()
-      setProgress(0)
-      return run(item, (url, name) => previewAttachmentFile(url, name, setProgress))
+      setOpening(attachmentKey(item))
+      return run(item, (url, name) => previewAttachmentFile(url, name, () => setOpening(null)))
     },
     [run],
   )
@@ -75,26 +75,7 @@ export function useAttachmentActions(onError: () => void) {
     if (item.fileName) Clipboard.setStringAsync(item.fileName)
   }, [])
 
-  const openNoteFor = useCallback(
-    (item: AttachmentItem) => {
-      setSelected(null)
-      openNote(item.noteKey)
-    },
-    [openNote],
-  )
-
-  const openNoteFromSheet = useCallback((item: AttachmentItem) => {
-    pendingNoteRef.current = item.noteKey
-    setSelected(null)
-  }, [])
-
-  const handleSheetDismissed = useCallback(() => {
-    const noteKey = pendingNoteRef.current
-    pendingNoteRef.current = null
-    if (noteKey) openNote(noteKey)
-  }, [openNote])
-
-  const closeSheet = useCallback(() => setSelected(null), [])
+  const openNoteFor = useCallback((item: AttachmentItem) => openNote(item.noteKey), [openNote])
 
   const handleMenu = useCallback(
     (item: AttachmentItem, id: string) => {
@@ -107,16 +88,8 @@ export function useAttachmentActions(onError: () => void) {
   )
 
   return {
-    selected,
-    select: setSelected,
-    closeSheet,
-    progress,
+    opening,
     preview,
-    share,
-    save,
-    openNoteFor,
-    openNoteFromSheet,
-    handleSheetDismissed,
     handleMenu,
   }
 }

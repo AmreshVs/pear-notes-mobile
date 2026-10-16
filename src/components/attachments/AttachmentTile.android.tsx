@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from 'react'
-import { Pressable, StyleSheet, View, type ViewStyle } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
 
@@ -17,14 +17,18 @@ import {
 } from '@/constants/commonStyles'
 import { useAttachmentThumbnail } from '@/hooks/useAttachmentThumbnail'
 import { androidRipple } from '@/lib/androidRipple'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 type Props = {
   item: AttachmentItem
   label: string
   sizeStyle: ViewStyle
+  busy: boolean
   onPress: (item: AttachmentItem) => void
   onLongPress: (item: AttachmentItem) => void
 }
+
+const BUSY_ALPHA = 0.7
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
@@ -34,6 +38,7 @@ export const AttachmentTile = memo(function AttachmentTile({
   item,
   label,
   sizeStyle,
+  busy,
   onPress,
   onLongPress,
 }: Props) {
@@ -81,6 +86,11 @@ export const AttachmentTile = memo(function AttachmentTile({
           />
         </View>
       )}
+      {busy && (
+        <View style={styles.busy}>
+          <ActivityIndicator size="small" color={colors.primary} />
+        </View>
+      )}
     </Pressable>
   )
 })
@@ -96,6 +106,11 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
     placeholder: {
       ...commonStyles.flex1,
       ...commonStyles.centered,
+    },
+    busy: {
+      ...StyleSheet.absoluteFill,
+      ...commonStyles.centered,
+      backgroundColor: hexWithAlpha(c.surface, BUSY_ALPHA),
     },
     cloud: {
       position: 'absolute',

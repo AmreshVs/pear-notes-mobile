@@ -14,18 +14,17 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { BottomActionSheet, type SheetAction } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
-import type { AttachmentItem, AttachmentSection } from '@/components/attachments/attachments.types'
-import {
-  AttachmentSectionView,
-  COLLAPSED_PHOTOS,
-  PHOTO_GAP,
-} from '@/components/attachments/AttachmentSectionView.android'
+import { AttachmentListItem, PHOTO_GAP } from '@/components/attachments/AttachmentListItem.android'
+import type {
+  AttachmentItem,
+  AttachmentListRow,
+  AttachmentSection,
+} from '@/components/attachments/attachments.types'
 import { AttachmentsFilters } from '@/components/attachments/AttachmentsFilters.android'
 import {
   ATTACHMENT_MENU,
   useAttachmentActions,
 } from '@/components/attachments/useAttachmentActions'
-import { AttachmentBottomSheet } from '@/components/bottomsheet/AttachmentBottomSheet.android'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
@@ -45,10 +44,11 @@ import {
 } from '@/constants/constants'
 import { useAttachmentsView } from '@/hooks/useAttachments'
 import { attachmentSectionLabel } from '@/utils/attachmentFormat'
+import { PHOTO_COLUMNS } from '@/utils/attachmentRows'
 
 const SCROLL_BOTTOM_PADDING = 120
 
-const sectionKey = (section: AttachmentSection) => section.key || 'unfiled'
+const rowKey = (row: AttachmentListRow) => row.key
 
 export function AttachmentsPane() {
   const { t, i18n } = useTranslation()
@@ -66,7 +66,7 @@ export function AttachmentsPane() {
   const { handleMenu } = actions
 
   const tileStyle = useMemo(() => {
-    const size = (width - UI_SIZE_16 * 2 - PHOTO_GAP * (COLLAPSED_PHOTOS - 1)) / COLLAPSED_PHOTOS
+    const size = (width - UI_SIZE_16 * 2 - PHOTO_GAP * (PHOTO_COLUMNS - 1)) / PHOTO_COLUMNS
     return { width: Math.floor(size), height: Math.floor(size) }
   }, [width])
 
@@ -115,28 +115,25 @@ export function AttachmentsPane() {
 
   const hasItems = !!view.items && view.items.length > 0
 
-  const renderSection = useCallback(
-    ({ item: section }: { item: AttachmentSection }) => (
-      <AttachmentSectionView
-        section={section}
-        label={attachmentSectionLabel(section, view.by, view.folderNames, t, i18n.language)}
-        expanded={view.expanded.has(section.key)}
+  const sectionLabel = useCallback(
+    (section: AttachmentSection) =>
+      attachmentSectionLabel(section, view.by, view.folderNames, t, i18n.language),
+    [view.by, view.folderNames, t, i18n.language],
+  )
+
+  const renderRow = useCallback(
+    ({ item: row }: { item: AttachmentListRow }) => (
+      <AttachmentListItem
+        row={row}
+        opening={actions.opening}
         tileStyle={tileStyle}
+        sectionLabel={sectionLabel}
         onToggle={view.toggleSection}
-        onPress={actions.select}
+        onPress={actions.preview}
         onLongPress={setMenuItem}
       />
     ),
-    [
-      view.by,
-      view.folderNames,
-      view.expanded,
-      view.toggleSection,
-      t,
-      i18n.language,
-      tileStyle,
-      actions.select,
-    ],
+    [actions.opening, tileStyle, sectionLabel, view.toggleSection, actions.preview],
   )
 
   const listHeader = useMemo(
@@ -204,9 +201,10 @@ export function AttachmentsPane() {
     <View style={styles.root}>
       <AndroidSettingsAppBar title={t('tools.attachments')} showBack />
       <FlatList
-        data={view.grouped.sections}
-        keyExtractor={sectionKey}
-        renderItem={renderSection}
+        data={view.rows}
+        keyExtractor={rowKey}
+        renderItem={renderRow}
+        extraData={actions.opening}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         refreshControl={refreshControl}
@@ -218,15 +216,6 @@ export function AttachmentsPane() {
         maxToRenderPerBatch={LIST_BATCH_RENDER_COUNT}
         windowSize={LIST_WINDOW_SIZE}
         updateCellsBatchingPeriod={LIST_BATCHING_PERIOD_MS}
-      />
-      <AttachmentBottomSheet
-        item={actions.selected}
-        progress={actions.progress}
-        onClose={actions.closeSheet}
-        onPreview={actions.preview}
-        onOpenNote={actions.openNoteFor}
-        onShare={actions.share}
-        onSave={actions.save}
       />
       <BottomActionSheet
         visible={!!menuItem}

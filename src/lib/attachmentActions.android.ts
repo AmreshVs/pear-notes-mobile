@@ -34,12 +34,9 @@ function applyDownloadedExtension(fileName: string, localPath: string): string {
   return `${fileName}.${localName.split('.').pop()}`
 }
 
-export async function previewAttachmentFile(
-  url: string,
-  fileName: string,
-  onProgress: (progress: number) => void,
-) {
-  const localUri = await downloadToCache(url, fileName, onProgress)
+export async function previewAttachmentFile(url: string, fileName: string, onReady: () => void) {
+  const localUri = await downloadToCache(url, fileName)
+  onReady()
   await ExpoNativeShareModule.preview({ url: localUri })
 }
 

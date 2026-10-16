@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react'
-import { Pressable, StyleSheet, View as RNView } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View as RNView } from 'react-native'
 import { Image } from 'expo-image'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
@@ -31,6 +31,7 @@ type Props = {
   detail: string
   first: boolean
   last: boolean
+  busy: boolean
   menuItems: ContextMenuItem[]
   onPress: (item: AttachmentItem) => void
   onMenu: (item: AttachmentItem, id: string) => void
@@ -50,6 +51,7 @@ export const AttachmentRow = memo(function AttachmentRow({
   detail,
   first,
   last,
+  busy,
   menuItems,
   onPress,
   onMenu,
@@ -99,6 +101,11 @@ export const AttachmentRow = memo(function AttachmentRow({
                 size={UI_ICON_SIZE_16}
                 color={isPdf ? colors.primary : colors.textSecondary}
               />
+            )}
+            {busy && (
+              <RNView style={styles.busy}>
+                <ActivityIndicator size="small" color={colors.white} />
+              </RNView>
             )}
           </RNView>
           <RNView style={styles.text}>
@@ -163,6 +170,11 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     iconPdf: {
       backgroundColor: theme.colors.cardSelected,
+    },
+    busy: {
+      ...StyleSheet.absoluteFill,
+      ...commonStyles.centered,
+      backgroundColor: theme.colors.scrim,
     },
     thumbnail: {
       width: UI_SIZE_36,

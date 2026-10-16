@@ -12,6 +12,25 @@ import {
 // kilobytes against the megabytes of the original — the point of the exercise.
 const IMAGE_THUMBNAIL_MAX_WIDTH = 256
 const IMAGE_THUMBNAIL_QUALITY = 0.7
+const BACKFILL_CONCURRENCY = 2
+
+let backfillsRunning = 0
+const backfillQueue: (() => void)[] = []
+
+async function withBackfillSlot<T>(work: () => Promise<T>): Promise<T> {
+  if (backfillsRunning >= BACKFILL_CONCURRENCY) {
+    await new Promise<void>((resolve) => backfillQueue.push(resolve))
+  } else {
+    backfillsRunning++
+  }
+  try {
+    return await work()
+  } finally {
+    const next = backfillQueue.pop()
+    if (next) next()
+    else backfillsRunning--
+  }
+}
 
 let manipulatorModule: typeof import('expo-image-manipulator') | null | undefined
 
@@ -79,12 +98,14 @@ export async function warmImageThumbnail(url: string, localUri: string): Promise
  */
 export async function ensureImageThumbnail(url: string, fileName: string): Promise<void> {
   if (!url) return
-  await requestThumbnail(url, true, async ({ dir, key, identity }) => {
-    const localUri = await downloadToCache(url, fileName || `image-${key.slice(0, 8)}.jpg`)
-    try {
-      return await renderImageThumbnail(identity, localUri, dir, key)
-    } finally {
-      await cleanupCachedAttachment(localUri)
-    }
-  }).catch(() => null)
+  await requestThumbnail(url, true, ({ dir, key, identity }) =>
+    withBackfillSlot(async () => {
+      const localUri = await downloadToCache(url, fileName || `image-${key.slice(0, 8)}.jpg`)
+      try {
+        return await renderImageThumbnail(identity, localUri, dir, key)
+      } finally {
+        await cleanupCachedAttachment(localUri)
+      }
+    }),
+  ).catch(() => null)
 }

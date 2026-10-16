@@ -32,3 +32,29 @@ export type GroupedAttachments = {
   counts: Record<AttachmentFilter, number>
   sections: AttachmentSection[]
 }
+
+export type AttachmentHeaderRow = {
+  type: 'header'
+  key: string
+  section: AttachmentSection
+  expanded: boolean
+  collapsible: boolean
+}
+
+export type AttachmentPhotosRow = {
+  type: 'photos'
+  key: string
+  items: AttachmentItem[]
+  last: boolean
+  filesFollow: boolean
+}
+
+export type AttachmentFileRow = {
+  type: 'file'
+  key: string
+  item: AttachmentItem
+  first: boolean
+  last: boolean
+}
+
+export type AttachmentListRow = AttachmentHeaderRow | AttachmentPhotosRow | AttachmentFileRow

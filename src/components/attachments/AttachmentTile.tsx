@@ -1,5 +1,11 @@
 import { memo, useCallback } from 'react'
-import { Pressable, StyleSheet, View as RNView, type ViewStyle } from 'react-native'
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  View as RNView,
+  type ViewStyle,
+} from 'react-native'
 import { Image } from 'expo-image'
 
 import type { AttachmentItem } from '@/components/attachments/attachments.types'
@@ -22,6 +28,7 @@ type Props = {
   item: AttachmentItem
   label: string
   sizeStyle: ViewStyle
+  busy: boolean
   menuItems: ContextMenuItem[]
   onPress: (item: AttachmentItem) => void
   onMenu: (item: AttachmentItem, id: string) => void
@@ -33,6 +40,7 @@ export const AttachmentTile = memo(function AttachmentTile({
   item,
   label,
   sizeStyle,
+  busy,
   menuItems,
   onPress,
   onMenu,
@@ -76,6 +84,11 @@ export const AttachmentTile = memo(function AttachmentTile({
             <SymbolIcon name="icloud" size={UI_ICON_SIZE_12} color={colors.white} />
           </RNView>
         )}
+        {busy && (
+          <RNView style={styles.busy}>
+            <ActivityIndicator size="small" color={colors.white} />
+          </RNView>
+        )}
       </ContextMenuView>
     </Pressable>
   )
@@ -95,6 +108,11 @@ const useStyles = createThemedStylesheet((theme) => {
     placeholder: {
       ...commonStyles.flex1,
       ...commonStyles.centered,
+    },
+    busy: {
+      ...StyleSheet.absoluteFill,
+      ...commonStyles.centered,
+      backgroundColor: theme.colors.scrim,
     },
     cloud: {
       position: 'absolute',

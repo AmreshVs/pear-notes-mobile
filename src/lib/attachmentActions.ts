@@ -9,12 +9,9 @@ import {
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
-export async function previewAttachmentFile(
-  url: string,
-  fileName: string,
-  onProgress: (progress: number) => void,
-) {
-  const localUri = await downloadToCache(url, fileName, onProgress)
+export async function previewAttachmentFile(url: string, fileName: string, onReady: () => void) {
+  const localUri = await downloadToCache(url, fileName)
+  onReady()
   try {
     await ExpoNativeShareModule.preview({ url: localUri })
   } finally {

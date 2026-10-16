@@ -98,6 +98,18 @@ export function AttachmentsFilters({
     [kind, counts],
   )
 
+  const renderGroupOption = useCallback(
+    (value: AttachmentGroupBy) => (
+      <ExpoUI.Button
+        key={value}
+        label={t(`attachmentsView.group.${value}`)}
+        systemImage={value === by ? 'checkmark' : undefined}
+        onPress={() => onByChange(value)}
+      />
+    ),
+    [t, by, onByChange],
+  )
+
   const renderChip = useCallback(
     (value: AttachmentFilter) => (
       <FilterChip
@@ -150,14 +162,7 @@ export function AttachmentsFilters({
               </ExpoUI.RNHostView>
             }
           >
-            {GROUPS.map((value) => (
-              <ExpoUI.Button
-                key={value}
-                label={t(`attachmentsView.group.${value}`)}
-                systemImage={value === by ? 'checkmark' : undefined}
-                onPress={() => onByChange(value)}
-              />
-            ))}
+            {GROUPS.map(renderGroupOption)}
           </ExpoUI.Menu>
         </ExpoUI.Host>
       </RNView>

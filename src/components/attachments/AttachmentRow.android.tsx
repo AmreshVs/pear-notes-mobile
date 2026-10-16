@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo } from 'react'
-import { Pressable, StyleSheet, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
 
@@ -32,6 +32,7 @@ type Props = {
   name: string
   detail: string
   first: boolean
+  busy: boolean
   onPress: (item: AttachmentItem) => void
   onLongPress: (item: AttachmentItem) => void
 }
@@ -49,12 +50,14 @@ const KIND_ICONS: Record<string, string> = {
 
 const DIVIDER_ALPHA = 0.12
 const ICON_BG_ALPHA = 0.15
+const BUSY_ALPHA = 0.7
 
 export const AttachmentRow = memo(function AttachmentRow({
   item,
   name,
   detail,
   first,
+  busy,
   onPress,
   onLongPress,
 }: Props) {
@@ -95,6 +98,11 @@ export const AttachmentRow = memo(function AttachmentRow({
               size={UI_ICON_SIZE_20}
               color={isPdf ? colors.primary : colors.onSurfaceVariant}
             />
+          )}
+          {busy && (
+            <View style={styles.busy}>
+              <ActivityIndicator size="small" color={colors.primary} />
+            </View>
           )}
         </View>
         <View style={styles.text}>
@@ -147,6 +155,11 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
     },
     iconPdf: {
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, ICON_BG_ALPHA),
+    },
+    busy: {
+      ...StyleSheet.absoluteFill,
+      ...commonStyles.centered,
+      backgroundColor: hexWithAlpha(c.surface, BUSY_ALPHA),
     },
     thumbnail: {
       width: UI_SIZE_44,

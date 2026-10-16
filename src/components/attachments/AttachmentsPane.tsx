@@ -5,18 +5,17 @@ import { Stack } from 'expo-router'
 
 import { formatBytes } from '@pear-notes/core/utils.js'
 
-import type { AttachmentItem, AttachmentSection } from '@/components/attachments/attachments.types'
-import {
-  AttachmentSectionView,
-  COLLAPSED_PHOTOS,
-  PHOTO_GAP,
-} from '@/components/attachments/AttachmentSectionView'
+import { AttachmentListItem, PHOTO_GAP } from '@/components/attachments/AttachmentListItem'
+import type {
+  AttachmentItem,
+  AttachmentListRow,
+  AttachmentSection,
+} from '@/components/attachments/attachments.types'
 import { AttachmentsFilters } from '@/components/attachments/AttachmentsFilters'
 import {
   ATTACHMENT_MENU,
   useAttachmentActions,
 } from '@/components/attachments/useAttachmentActions'
-import { AttachmentBottomSheet } from '@/components/bottomsheet/AttachmentBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, View } from '@/components/Themed'
@@ -37,10 +36,11 @@ import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
 import { useAttachmentsView } from '@/hooks/useAttachments'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { attachmentSectionLabel } from '@/utils/attachmentFormat'
+import { PHOTO_COLUMNS } from '@/utils/attachmentRows'
 
 import type { ContextMenuItem } from '../../../modules/expo-context-menu'
 
-const sectionKey = (section: AttachmentSection) => section.key || 'unfiled'
+const rowKey = (row: AttachmentListRow) => row.key
 
 export function AttachmentsPane() {
   const { t, i18n } = useTranslation()
@@ -56,7 +56,7 @@ export function AttachmentsPane() {
   const actions = useAttachmentActions(showError)
 
   const tileStyle = useMemo(() => {
-    const size = (width - Space.base * 2 - PHOTO_GAP * (COLLAPSED_PHOTOS - 1)) / COLLAPSED_PHOTOS
+    const size = (width - Space.base * 2 - PHOTO_GAP * (PHOTO_COLUMNS - 1)) / PHOTO_COLUMNS
     return { width: Math.floor(size), height: Math.floor(size) }
   }, [width])
 
@@ -109,29 +109,32 @@ export function AttachmentsPane() {
 
   const hasItems = !!view.items && view.items.length > 0
 
-  const renderSection = useCallback(
-    ({ item: section }: { item: AttachmentSection }) => (
-      <AttachmentSectionView
-        section={section}
-        label={attachmentSectionLabel(section, view.by, view.folderNames, t, i18n.language)}
-        expanded={view.expanded.has(section.key)}
+  const sectionLabel = useCallback(
+    (section: AttachmentSection) =>
+      attachmentSectionLabel(section, view.by, view.folderNames, t, i18n.language),
+    [view.by, view.folderNames, t, i18n.language],
+  )
+
+  const renderRow = useCallback(
+    ({ item: row }: { item: AttachmentListRow }) => (
+      <AttachmentListItem
+        row={row}
+        opening={actions.opening}
         tileStyle={tileStyle}
+        sectionLabel={sectionLabel}
         menuItemsFor={menuItemsFor}
         onToggle={view.toggleSection}
-        onPress={actions.select}
+        onPress={actions.preview}
         onMenu={actions.handleMenu}
       />
     ),
     [
-      view.by,
-      view.folderNames,
-      view.expanded,
-      view.toggleSection,
-      t,
-      i18n.language,
+      actions.opening,
       tileStyle,
+      sectionLabel,
       menuItemsFor,
-      actions.select,
+      view.toggleSection,
+      actions.preview,
       actions.handleMenu,
     ],
   )
@@ -202,9 +205,10 @@ export function AttachmentsPane() {
     <View style={styles.container}>
       <Stack.Screen options={screenOptions} />
       <FlatList
-        data={view.grouped.sections}
-        keyExtractor={sectionKey}
-        renderItem={renderSection}
+        data={view.rows}
+        keyExtractor={rowKey}
+        renderItem={renderRow}
+        extraData={actions.opening}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
         refreshControl={refreshControl}
@@ -219,16 +223,6 @@ export function AttachmentsPane() {
         windowSize={LIST_WINDOW_SIZE}
       />
       <ScreenEdgeFades />
-      <AttachmentBottomSheet
-        item={actions.selected}
-        progress={actions.progress}
-        onClose={actions.closeSheet}
-        onDismiss={actions.handleSheetDismissed}
-        onPreview={actions.preview}
-        onOpenNote={actions.openNoteFromSheet}
-        onShare={actions.share}
-        onSave={actions.save}
-      />
     </View>
   )
 }

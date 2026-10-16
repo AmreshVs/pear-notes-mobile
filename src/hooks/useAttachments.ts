@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { useFocusEffect } from 'expo-router'
 
@@ -17,6 +17,7 @@ import type {
   AttachmentItem,
   GroupedAttachments,
 } from '@/components/attachments/attachments.types'
+import { buildAttachmentRows } from '@/utils/attachmentRows'
 
 const ATTACHMENT_COUNT_REFRESH_MS = 60 * 1000
 
@@ -84,16 +85,23 @@ export function useAttachmentsView() {
     [folders],
   )
 
+  const deferredQuery = useDeferredValue(query)
+
   const grouped = useMemo(
     () =>
       groupAttachments(items ?? [], {
         by,
         kind,
-        query,
+        query: deferredQuery,
         folders: [...folderNames.keys()],
         allNotesKey: ALL_NOTES_KEY,
       }) as GroupedAttachments,
-    [items, by, kind, query, folderNames],
+    [items, by, kind, deferredQuery, folderNames],
+  )
+
+  const rows = useMemo(
+    () => buildAttachmentRows(grouped.sections, expanded),
+    [grouped.sections, expanded],
   )
 
   const toggleSection = useCallback((key: string) => {
@@ -118,6 +126,7 @@ export function useAttachmentsView() {
     expanded,
     toggleSection,
     grouped,
+    rows,
     folderNames,
   }
 }
