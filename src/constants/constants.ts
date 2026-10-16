@@ -17,6 +17,8 @@ export const SCROLL_EVENT_THROTTLE = 16
 
 export const ANDROID_APP_BAR_HEIGHT = 44
 
+export const FAQ_URL = 'https://amreshvs.github.io/pear-notes/faq/'
+
 export const TOOL_ROW = {
   upcoming: 'tool-upcoming',
   attachments: 'tool-attachments',

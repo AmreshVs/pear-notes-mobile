@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import { Linking, Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -27,6 +27,7 @@ import {
   UI_SIZE_40,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { FAQ_URL } from '@/constants/constants'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
 import { type SettingsSection, useSettingsSectionGroups } from '@/hooks/useSettingsSections'
 import { androidRipple } from '@/lib/androidRipple'
@@ -104,8 +105,15 @@ export default function AndroidSettingsScreen() {
           {sectionGroups.map(renderGroup)}
         </View>
         <View style={styles.footerContainer}>
-          <Text style={styles.footerText}>{t('settings.footer')}</Text>
           <Text style={styles.versionText}>{getAppVersionLabel()}</Text>
+          <Pressable
+            onPress={() => Linking.openURL(FAQ_URL).catch(() => {})}
+            android_ripple={ripple}
+            accessibilityRole="link"
+            style={styles.faqLink}
+          >
+            <Text style={styles.faqLabel}>{t('settings.helpAndFaq')}</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
@@ -174,18 +182,24 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       fontFamily: FontFamily.semiBold,
       color: c.onSurface,
     },
-    footerText: {
-      textAlign: 'center',
-      fontSize: FontSize.caption,
-      fontStyle: 'italic',
-      color: c.onSurfaceVariant,
-      marginTop: UI_SIZE_20,
-    },
     versionText: {
       textAlign: 'center',
       fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
+      marginTop: UI_SIZE_20,
+    },
+    faqLink: {
+      alignSelf: 'center',
       marginTop: UI_SIZE_8,
+      paddingHorizontal: UI_SIZE_12,
+      paddingVertical: UI_SIZE_8,
+      borderRadius: UI_SIZE_9999,
+      overflow: 'hidden',
+    },
+    faqLabel: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      color: c.primary,
     },
   })
   return styles

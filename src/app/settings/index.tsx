@@ -1,6 +1,6 @@
 import { Fragment, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
+import { Linking, Pressable, ScrollView, StyleSheet, View as RNView, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, Stack, usePathname } from 'expo-router'
@@ -23,6 +23,7 @@ import {
   UI_SIZE_44,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { FAQ_URL } from '@/constants/constants'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
 import { type SettingsSection, useSettingsSectionGroups } from '@/hooks/useSettingsSections'
 import { getAppVersionLabel } from '@/lib/appVersion'
@@ -112,8 +113,15 @@ export default function SettingsScreen() {
           </MotionView>
         </View>
         <RNView style={styles.footerContainer}>
-          <Text style={styles.footer}>{t('settings.footer')}</Text>
           <Text style={styles.version}>{getAppVersionLabel()}</Text>
+          <Pressable
+            onPress={() => Linking.openURL(FAQ_URL).catch(() => {})}
+            hitSlop={UI_SIZE_8}
+            accessibilityRole="link"
+            style={({ pressed }) => [styles.faqLink, pressed && commonStyles.pressed]}
+          >
+            <Text style={styles.faqLabel}>{t('settings.helpAndFaq')}</Text>
+          </Pressable>
         </RNView>
       </ScrollView>
     </RNView>
@@ -144,17 +152,19 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       fontWeight: FontWeight.semibold,
       color: theme.colors.text,
     },
-    footer: {
-      textAlign: 'center',
-      fontSize: FontSize.caption,
-      fontStyle: 'italic',
-      color: theme.colors.textMuted,
-    },
     version: {
       textAlign: 'center',
       fontSize: FontSize.caption,
-      marginTop: UI_SIZE_8,
       color: theme.colors.textMuted,
+    },
+    faqLink: {
+      alignSelf: 'center',
+      marginTop: UI_SIZE_12,
+    },
+    faqLabel: {
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.semiBold,
+      color: theme.colors.primary,
     },
     closeBtn: {
       ...commonStyles.centered,
