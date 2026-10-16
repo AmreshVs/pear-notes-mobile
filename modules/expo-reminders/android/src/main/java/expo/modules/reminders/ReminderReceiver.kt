@@ -43,7 +43,7 @@ class ReminderReceiver : BroadcastReceiver() {
       PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
     val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-      .setSmallIcon(context.applicationInfo.icon)
+      .setSmallIcon(R.drawable.pearnotes_notification)
       .setContentTitle(intent.getStringExtra(EXTRA_TITLE) ?: "")
       .setContentText(intent.getStringExtra(EXTRA_BODY) ?: "")
       .setAutoCancel(true)

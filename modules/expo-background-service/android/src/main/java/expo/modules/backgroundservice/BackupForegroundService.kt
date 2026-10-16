@@ -41,6 +41,11 @@ class BackupForegroundService : Service() {
     private var currentTitle: String = "Backup in progress"
     private var wakeLock: PowerManager.WakeLock? = null
 
+    private val notificationIcon: Int by lazy {
+        resources.getIdentifier("pearnotes_notification", "drawable", packageName)
+            .takeIf { it != 0 } ?: applicationInfo.icon
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val action = intent?.action ?: return START_NOT_STICKY
 
@@ -138,13 +143,10 @@ class BackupForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Try to find default app icon, or use a fallback
-        val iconRes = applicationInfo.icon
-
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
-            .setSmallIcon(iconRes)
+            .setSmallIcon(notificationIcon)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
 
@@ -169,12 +171,10 @@ class BackupForegroundService : Service() {
         )
 
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val iconRes = applicationInfo.icon
-
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
-            .setSmallIcon(iconRes)
+            .setSmallIcon(notificationIcon)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
@@ -198,7 +198,7 @@ class BackupForegroundService : Service() {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(message)
-            .setSmallIcon(applicationInfo.icon)
+            .setSmallIcon(notificationIcon)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)
 
