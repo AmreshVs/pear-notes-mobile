@@ -11,6 +11,7 @@ import {
   LetterSpacing,
   Radii,
   Space,
+  UI_SIZE_42,
 } from '@/constants/commonStyles'
 import type { Recap } from '@/hooks/useRecap'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -75,6 +76,7 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     total: {
       fontSize: FontSize.hero,
+      lineHeight: UI_SIZE_42,
       fontWeight: FontWeight.heavy,
       letterSpacing: LetterSpacing.tight,
       color: theme.colors.text,

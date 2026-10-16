@@ -142,7 +142,7 @@ export function AttachmentsFilters({
       </RNView>
       <RNView style={styles.row}>
         <RNView style={styles.chips}>{visibleFilters.map(renderChip)}</RNView>
-        <ExpoUI.Host matchContents>
+        <ExpoUI.Host matchContents ignoreSafeArea="all">
           <ExpoUI.Menu
             label={
               <ExpoUI.RNHostView matchContents>

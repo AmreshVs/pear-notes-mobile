@@ -14,6 +14,7 @@ import {
   UI_SIZE_16,
   UI_SIZE_18,
   UI_SIZE_24,
+  UI_SIZE_42,
 } from '@/constants/commonStyles'
 import type { Recap } from '@/hooks/useRecap'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -81,6 +82,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3) => {
     },
     total: {
       fontSize: FontSize.hero,
+      lineHeight: UI_SIZE_42,
       fontFamily: FontFamily.extraBold,
       fontWeight: FontWeight.heavy,
       letterSpacing: -0.5,
