@@ -95,7 +95,7 @@ export const AttachmentSectionView = memo(function AttachmentSectionView({
         )}
       </RNView>
       {photos.length > 0 && <RNView style={styles.grid}>{photos.map(renderPhoto)}</RNView>}
-      {files.map(renderFile)}
+      {files.length > 0 && <RNView>{files.map(renderFile)}</RNView>}
     </RNView>
   )
 })

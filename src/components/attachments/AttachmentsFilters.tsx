@@ -1,6 +1,6 @@
 import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
+import { Platform, Pressable, StyleSheet, TextInput, View as RNView } from 'react-native'
 
 import type {
   AttachmentFilter,
@@ -19,7 +19,8 @@ import {
   UI_ICON_SIZE_15,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
-import { showPicker } from '@/utils/settingsUtils'
+
+const ExpoUI: any = Platform.OS === 'ios' ? require('@expo/ui/swift-ui') : null
 
 type Props = {
   query: string
@@ -97,23 +98,6 @@ export function AttachmentsFilters({
     [kind, counts],
   )
 
-  const groupOptions = useMemo(
-    () => GROUPS.map((value) => ({ value, label: t(`attachmentsView.group.${value}`) })),
-    [t],
-  )
-
-  const handleGroupPress = useCallback(
-    () =>
-      showPicker(
-        t('attachmentsView.groupBy'),
-        groupOptions,
-        by,
-        (value) => onByChange(value as AttachmentGroupBy),
-        t('common.cancel'),
-      ),
-    [t, groupOptions, by, onByChange],
-  )
-
   const renderChip = useCallback(
     (value: AttachmentFilter) => (
       <FilterChip
@@ -146,21 +130,36 @@ export function AttachmentsFilters({
       </RNView>
       <RNView style={styles.row}>
         <RNView style={styles.chips}>{visibleFilters.map(renderChip)}</RNView>
-        <Pressable
-          onPress={handleGroupPress}
-          hitSlop={Space.sm}
-          accessibilityRole="button"
-          accessibilityHint={t('attachmentsView.groupBy')}
-          style={({ pressed }) => [styles.group, pressed && commonStyles.pressed]}
-        >
-          <Text style={styles.groupText}>{t(`attachmentsView.byGroup.${by}`)}</Text>
-          <SymbolIcon
-            name="chevron.down"
-            size={UI_ICON_SIZE_12}
-            color={colors.textSecondary}
-            weight="semibold"
-          />
-        </Pressable>
+        <ExpoUI.Host matchContents>
+          <ExpoUI.Menu
+            label={
+              <ExpoUI.RNHostView matchContents>
+                <RNView
+                  style={styles.group}
+                  accessibilityRole="button"
+                  accessibilityHint={t('attachmentsView.groupBy')}
+                >
+                  <Text style={styles.groupText}>{t(`attachmentsView.byGroup.${by}`)}</Text>
+                  <SymbolIcon
+                    name="chevron.down"
+                    size={UI_ICON_SIZE_12}
+                    color={colors.textSecondary}
+                    weight="semibold"
+                  />
+                </RNView>
+              </ExpoUI.RNHostView>
+            }
+          >
+            {GROUPS.map((value) => (
+              <ExpoUI.Button
+                key={value}
+                label={t(`attachmentsView.group.${value}`)}
+                systemImage={value === by ? 'checkmark' : undefined}
+                onPress={() => onByChange(value)}
+              />
+            ))}
+          </ExpoUI.Menu>
+        </ExpoUI.Host>
       </RNView>
     </RNView>
   )
