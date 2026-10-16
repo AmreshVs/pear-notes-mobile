@@ -76,6 +76,7 @@ import {
   transcribeAudioFile,
   translateParagraphs,
 } from '@/lib/localAi/localAi'
+import { openReportProblem } from '@/lib/localAi/reportProblem'
 import { getRewriteDiff } from '@/lib/localAi/rewriteChanges'
 import { SHORTER_TARGET_RATIO } from '@/lib/localAi/workProgress'
 import { imageDetailsLabels } from '@/utils/imageDetailsLabels'
@@ -168,7 +169,6 @@ interface LocalAiNotice {
 }
 
 const COPIED_RESET_MS = 2000
-const REPORT_EMAIL = 'vsamreshpro@gmail.com'
 const TIMER_TICK_MS = 50
 const BAR_SAMPLE_MS = 90
 const RESTING_BAR = 0.16
@@ -914,9 +914,7 @@ export function useVoiceTypingSheet({
     }
   }, [dispatch])
 
-  const handleReportProblem = useCallback((subject: string) => {
-    Linking.openURL(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(subject)}`).catch(() => {})
-  }, [])
+  const handleReportProblem = useCallback((subject: string) => openReportProblem(subject), [])
 
   const handleAgain = useCallback(() => {
     if (error === 'unstable') resetLocalAiModelHealth()
