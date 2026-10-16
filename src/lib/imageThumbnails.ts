@@ -96,9 +96,12 @@ export async function warmImageThumbnail(url: string, localUri: string): Promise
  * row is about to load and decode the full image anyway, so this pulls the same bytes once and
  * leaves a small file behind — every later render reads tens of kilobytes instead of megabytes.
  */
-export async function ensureImageThumbnail(url: string, fileName: string): Promise<void> {
-  if (!url) return
-  await requestThumbnail(url, true, ({ dir, key, identity }) =>
+export async function ensureImageThumbnail(
+  url: string,
+  fileName: string,
+): Promise<ThumbnailFile | null> {
+  if (!url) return null
+  return requestThumbnail(url, true, ({ dir, key, identity }) =>
     withBackfillSlot(async () => {
       const localUri = await downloadToCache(url, fileName || `image-${key.slice(0, 8)}.jpg`)
       try {

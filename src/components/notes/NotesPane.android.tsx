@@ -15,7 +15,12 @@ import {
   View,
 } from 'react-native'
 import { FAB, TextInput as PaperTextInput } from 'react-native-paper'
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
+import Animated, {
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { shallowEqual, useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -122,6 +127,9 @@ const { previewMergeNotes } = notesSlice as unknown as {
 }
 
 const MIN_NOTES_FOR_MULTI_SELECT = 2
+const HEADER_SCROLL_THRESHOLD = 4
+const HEADER_HIDE_DURATION_MS = 200
+const AnimatedSectionList = Animated.createAnimatedComponent(SectionList<any>)
 const GENERATE_TASK_ICONS: Record<string, string> = {
   report: 'file-document-outline',
   itinerary: 'map-outline',
@@ -155,7 +163,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const localPreferences = useSelector(getLocalPreferences) as any
   const hasAnyNotes = useSelector((state: any) => (getNotes(state) as any[]).length > 0)
 
-  const [searchVisible, setSearchVisible] = useState(true)
+  const [searchBarHeight, setSearchBarHeight] = useState(0)
   const [activeNoteId, setActiveNoteId] = useState<string | null>(null)
   const [noteSheetVisible, setNoteSheetVisible] = useState(false)
   const [vaultMoveKeys, setVaultMoveKeys] = useState<string[]>([])
@@ -182,8 +190,11 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const lastSelectedNoteRef = useRef<string | null>(selectedNote)
   const searchInputRef = useRef<TextInput>(null)
 
-  const searchBarHeight = useSharedValue(64)
-  const searchBarOpacity = useSharedValue(1)
+  const headerOffset = useSharedValue(0)
+  const headerOverlayHeight = useSharedValue(0)
+  const headerHidden = useSharedValue(false)
+  const lastScrollY = useSharedValue(0)
+  const headerPinned = useSharedValue(false)
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
@@ -217,31 +228,18 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     return map
   }, [allFolders])
 
-  const toggleSearch = useCallback(() => {
-    const next = !searchVisible
-    setSearchVisible(next)
-    searchBarHeight.value = withTiming(next ? 64 : 0, { duration: 220 })
-    searchBarOpacity.value = withTiming(next ? 1 : 0, { duration: 180 })
-    if (!next) dispatch(setSearchQuery(''))
-    else {
-      dispatch(prewarmSearch())
-      setTimeout(() => searchInputRef.current?.focus(), 150)
-    }
-  }, [searchVisible, searchBarHeight, searchBarOpacity, dispatch])
-
   useEffect(() => {
     dispatch(prewarmSearch())
   }, [dispatch])
 
-  const searchBarAnimStyle = useAnimatedStyle(() => ({
-    height: searchBarHeight.value,
-    opacity: searchBarOpacity.value,
-    overflow: 'hidden',
-  }))
+  const handleSearchBarLayout = useCallback((event: LayoutChangeEvent) => {
+    setSearchBarHeight(event.nativeEvent.layout.height)
+  }, [])
 
-  const searchSpacerStyle = useAnimatedStyle(() => ({
-    height: searchBarHeight.value,
-  }))
+  const searchSpacerStyle = useMemo(
+    () => ({ height: Math.max(0, searchBarHeight - UI_SIZE_4) }),
+    [searchBarHeight],
+  )
 
   useEffect(() => {
     return () => {
@@ -312,7 +310,6 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   } = useNoteSelection(id as string, orderedKeys)
 
   const canMultiSelect = orderedKeys.length >= MIN_NOTES_FOR_MULTI_SELECT
-  const canSearch = searchVisible || orderedKeys.length > 0
 
   const handleSelectNote = useCallback(
     (noteId: string) => {
@@ -642,6 +639,41 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     setHeaderHeight((prev) => (prev === 0 ? next : Math.min(prev, next)))
   }, [])
 
+  const handleOverlayLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      headerOverlayHeight.value = event.nativeEvent.layout.height
+    },
+    [headerOverlayHeight],
+  )
+
+  useEffect(() => {
+    headerPinned.value = isSelecting
+    if (isSelecting) {
+      headerHidden.value = false
+      headerOffset.value = withTiming(0, { duration: HEADER_HIDE_DURATION_MS })
+    }
+  }, [isSelecting, headerPinned, headerHidden, headerOffset])
+
+  const handleListScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      const y = event.contentOffset.y
+      const dy = y - lastScrollY.value
+      lastScrollY.value = y
+      const height = headerOverlayHeight.value
+      let hide = headerHidden.value
+      if (headerPinned.value || y <= height) hide = false
+      else if (dy > HEADER_SCROLL_THRESHOLD) hide = true
+      else if (dy < -HEADER_SCROLL_THRESHOLD) hide = false
+      if (hide === headerHidden.value) return
+      headerHidden.value = hide
+      headerOffset.value = withTiming(hide ? -height : 0, { duration: HEADER_HIDE_DURATION_MS })
+    },
+  })
+
+  const headerHideStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: headerOffset.value }],
+  }))
+
   const listContentStyle = useMemo(
     () => [
       styles.listContent,
@@ -653,7 +685,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const listHeader = useMemo(
     () => (
       <View>
-        {!isSelecting && <Animated.View style={searchSpacerStyle} />}
+        {!isSelecting && <View style={searchSpacerStyle} />}
         <Text style={styles.pageTitle} numberOfLines={2}>
           {folder?.name || t('folders.untitled')}
         </Text>
@@ -907,7 +939,15 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     <View style={styles.root}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
 
-      <View style={styles.headerOverlay} pointerEvents="box-none">
+      <View style={styles.statusBarFade} pointerEvents="none">
+        <EdgeFade color={c.background} />
+      </View>
+
+      <Animated.View
+        style={[styles.headerOverlay, headerHideStyle]}
+        pointerEvents="box-none"
+        onLayout={handleOverlayLayout}
+      >
         <EdgeFade color={c.background} />
         {isSelecting ? (
           <AndroidSelectionAppBar
@@ -926,19 +966,16 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           />
         ) : (
           <AndroidFolderAppBar
-            searchVisible={searchVisible}
             searchQuery={searchQuery}
             showFolderOptions={!folder?.isSystem}
             canMultiSelect={canMultiSelect}
-            canSearch={canSearch}
             searchInputRef={searchInputRef}
-            searchBarStyle={searchBarAnimStyle}
+            onSearchBarLayout={handleSearchBarLayout}
             onBack={closePane}
             showBack={!embedded}
             showCreateNote={embedded && !isTrashFolder}
             onCreateNote={handleCreateNote}
             onStartSelecting={handleStartSelecting}
-            onToggleSearch={toggleSearch}
             onOpenFolderOptions={handleOpenFolderOptions}
             onChangeSearch={handleChangeSearch}
             onClearSearch={handleClearSearch}
@@ -948,9 +985,11 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
             onAppBarLayout={handleHeaderLayout}
           />
         )}
-      </View>
+      </Animated.View>
 
-      <SectionList
+      <AnimatedSectionList
+        onScroll={handleListScroll}
+        scrollEventThrottle={16}
         sections={sections}
         keyExtractor={noteKey}
         renderItem={renderNote}
@@ -1151,6 +1190,14 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       left: 0,
       right: 0,
       zIndex: 10,
+    },
+    statusBarFade: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: insets.top + UI_SIZE_24,
+      zIndex: 9,
     },
     bottomFade: {
       position: 'absolute',

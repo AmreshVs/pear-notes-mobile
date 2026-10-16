@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
+import { AppState } from 'react-native'
 
 import { ensureImageThumbnail, getCachedImageThumbnail } from '@/lib/imageThumbnails'
+import { waitForBlobServer } from '@/lib/noteUploadManager'
 import { subscribeThumbnailWrites, thumbnailIdentity } from '@/lib/thumbnailCache'
+
+const BACKFILL_RETRY_DELAYS_MS = [2000, 5000]
 
 type ResolvedThumbnail = {
   url: string
@@ -26,16 +30,39 @@ export function useCachedImageThumbnail(serverUrl: string | null | undefined, en
     if (!enabled || !url) return
 
     let active = true
+    let found = false
+    let attempt = 0
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
 
     const read = () =>
       getCachedImageThumbnail(url).then((thumbnail) => {
+        if (thumbnail) found = true
         if (active && thumbnail) setResolved({ url, fileUri: thumbnail.fileUri })
         return thumbnail
       })
 
-    read().then((thumbnail) => {
-      // Nothing cached yet: build one from the bytes this row is about to load anyway.
-      if (!thumbnail && active) ensureImageThumbnail(url, '')
+    const backfill = async () => {
+      if (!active || AppState.currentState !== 'active') return
+      const thumbnail = await ensureImageThumbnail(url, '')
+      if (!active || thumbnail) return
+      const delay = BACKFILL_RETRY_DELAYS_MS[attempt++]
+      if (delay !== undefined) retryTimer = setTimeout(backfill, delay)
+    }
+
+    const readOrBackfill = () =>
+      read().then((thumbnail) => {
+        if (!thumbnail && active) backfill()
+      })
+
+    readOrBackfill()
+
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state !== 'active' || !active || found) return
+      clearTimeout(retryTimer)
+      attempt = 0
+      waitForBlobServer().then(() => {
+        if (active) readOrBackfill()
+      })
     })
 
     const target = thumbnailIdentity(url)
@@ -45,6 +72,8 @@ export function useCachedImageThumbnail(serverUrl: string | null | undefined, en
 
     return () => {
       active = false
+      clearTimeout(retryTimer)
+      appStateSub.remove()
       unsubscribe()
     }
   }, [enabled, url])

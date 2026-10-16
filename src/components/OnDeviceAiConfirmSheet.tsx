@@ -174,9 +174,7 @@ const useStyles = createThemedStylesheet((theme) => {
       minHeight: UI_SIZE_54,
       borderRadius: 999,
       borderCurve: 'continuous',
-      backgroundColor: theme.isDark
-        ? theme.colors.surfaceSecondary
-        : theme.colors.sheetCancelBackground,
+      backgroundColor: theme.colors.cardSurface,
     },
     secondaryButtonText: {
       fontSize: FontSize.subtitle,

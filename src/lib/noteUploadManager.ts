@@ -121,8 +121,19 @@ function appendAttachmentToStoredNote(
   appendHtmlToStoredNote(noteId, buildAttachmentHtml(link, attachment, fileName))
 }
 
-async function waitForBlobServer(): Promise<string | null> {
-  if (AppState.currentState !== 'active') return null
+let blobServerWait: Promise<string | null> | null = null
+
+export function waitForBlobServer(): Promise<string | null> {
+  if (AppState.currentState !== 'active') return Promise.resolve(null)
+  if (!blobServerWait) {
+    blobServerWait = settleBlobServer().finally(() => {
+      blobServerWait = null
+    })
+  }
+  return blobServerWait
+}
+
+async function settleBlobServer(): Promise<string | null> {
   const timeout = new Promise<null>((resolve) =>
     setTimeout(() => resolve(null), BLOB_SERVER_READY_TIMEOUT_MS),
   )

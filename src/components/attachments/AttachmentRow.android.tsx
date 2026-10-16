@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
@@ -64,6 +64,8 @@ export const AttachmentRow = memo(function AttachmentRow({
   const styles = useStyles()
   const { colors } = useMD3Theme()
   const thumbnail = useAttachmentThumbnail(item)
+  const [failedSource, setFailedSource] = useState<string | null>(null)
+  const handleImageError = useCallback(() => setFailedSource(thumbnail), [thumbnail])
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
   const handlePress = useCallback(() => onPress(item), [onPress, item])
   const handleLongPress = useCallback(() => onLongPress(item), [onLongPress, item])
@@ -82,7 +84,7 @@ export const AttachmentRow = memo(function AttachmentRow({
         style={styles.row}
       >
         <View style={[styles.icon, isAudio && styles.iconRound, isPdf && styles.iconPdf]}>
-          {thumbnail ? (
+          {thumbnail && thumbnail !== failedSource ? (
             <Image
               source={thumbnail}
               style={styles.thumbnail}
@@ -91,6 +93,7 @@ export const AttachmentRow = memo(function AttachmentRow({
               cachePolicy="memory"
               recyclingKey={item.url}
               transition={0}
+              onError={handleImageError}
             />
           ) : (
             <MaterialCommunityIcons

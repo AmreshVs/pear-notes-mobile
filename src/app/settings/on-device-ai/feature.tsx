@@ -173,7 +173,7 @@ export default function OnDeviceAiFeatureScreen() {
             </Text>
           )}
           {advancedChoices.length > 0 && (
-            <RNView style={commonThemedStyles.card}>
+            <RNView style={[commonThemedStyles.card, styles.advancedCard]}>
               <Pressable
                 onPress={toggleAdvanced}
                 accessibilityRole="button"
@@ -348,6 +348,9 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     section: {
       marginTop: Space.lg,
+    },
+    advancedCard: {
+      marginTop: Space.md,
     },
     row: {
       ...commonStyles.row,

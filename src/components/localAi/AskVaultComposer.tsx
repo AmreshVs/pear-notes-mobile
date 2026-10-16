@@ -17,7 +17,6 @@ import {
   UI_SIZE_14,
   UI_SIZE_16,
   UI_SIZE_36,
-  UI_SIZE_52,
   UI_SIZE_400,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
@@ -70,14 +69,13 @@ export const AskVaultComposer = memo(function AskVaultComposer({
     <Animated.View style={[styles.composer, position]} onLayout={onLayout}>
       <View style={styles.underlay} />
       {dictating && (
-        <View style={styles.dictationSlot}>
-          <VoiceTypingBar
-            visible={dictating}
-            onLiveText={onDictationText}
-            onCommit={onDictationCommit}
-            onCancel={onDictationCancel}
-          />
-        </View>
+        <VoiceTypingBar
+          visible={dictating}
+          inline
+          onLiveText={onDictationText}
+          onCommit={onDictationCommit}
+          onCancel={onDictationCancel}
+        />
       )}
       <View style={styles.inputRow}>
         <TextInput
@@ -148,9 +146,6 @@ const useStyles = createThemedStylesheet((theme) => {
       paddingHorizontal: UI_SIZE_16,
       paddingTop: UI_SIZE_8,
       backgroundColor: theme.colors.background,
-    },
-    dictationSlot: {
-      height: UI_SIZE_52,
     },
     micButton: {
       ...commonStyles.centered,

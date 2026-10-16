@@ -1,6 +1,6 @@
 import { memo, type RefObject, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { type LayoutChangeEvent, Pressable, StyleSheet, TextInput, View } from 'react-native'
+import { type LayoutChangeEvent, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 import Animated from 'react-native-reanimated'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 
@@ -89,20 +89,28 @@ export const AskVaultComposer = memo(function AskVaultComposer({
         />
       )}
       <View style={styles.inputRow}>
-        <TextInput
-          ref={inputRef}
-          value={question}
-          onChangeText={onChangeQuestion}
-          placeholder={t(
-            isEmpty ? 'localAi.askVault.placeholder' : 'localAi.askVault.followUpPlaceholder',
+        <View style={styles.inputWrap}>
+          <TextInput
+            ref={inputRef}
+            value={question}
+            onChangeText={onChangeQuestion}
+            multiline
+            maxLength={ASK_QUESTION_MAX_CHARS}
+            editable={!busy && ready && !dictating}
+            style={styles.input}
+            accessibilityLabel={t('localAi.askVault.inputLabel')}
+          />
+          {question.length === 0 && (
+            <Text
+              numberOfLines={1}
+              pointerEvents="none"
+              importantForAccessibility="no"
+              style={[styles.input, styles.placeholder]}
+            >
+              {t(isEmpty ? 'localAi.askVault.placeholder' : 'localAi.askVault.followUpPlaceholder')}
+            </Text>
           )}
-          placeholderTextColor={mutedColor}
-          multiline
-          maxLength={ASK_QUESTION_MAX_CHARS}
-          editable={!busy && ready && !dictating}
-          style={styles.input}
-          accessibilityLabel={t('localAi.askVault.inputLabel')}
-        />
+        </View>
         {voiceReady && !dictating && (
           <Pressable
             onPress={onStartDictation}
@@ -165,8 +173,10 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3Theme) => {
       alignItems: 'flex-end',
       gap: UI_SIZE_8,
     },
-    input: {
+    inputWrap: {
       ...commonStyles.flex1,
+    },
+    input: {
       maxHeight: INPUT_MAX_LINES_HEIGHT,
       paddingHorizontal: UI_SIZE_16,
       paddingVertical: UI_SIZE_12,
@@ -175,6 +185,14 @@ const useStyles = createThemedStylesheetWithHooks((_theme, md3Theme) => {
       fontSize: FontSize.subtitle,
       fontFamily: FontFamily.regular,
       color: c.onSurface,
+    },
+    placeholder: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      backgroundColor: 'transparent',
+      color: c.onSurfaceVariant ?? c.onSurface,
     },
     micButton: {
       ...commonStyles.centered,

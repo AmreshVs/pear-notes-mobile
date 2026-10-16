@@ -1,4 +1,4 @@
-import { memo, useCallback, useMemo } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Image } from 'expo-image'
@@ -45,6 +45,8 @@ export const AttachmentTile = memo(function AttachmentTile({
   const styles = useStyles()
   const { colors } = useMD3Theme()
   const thumbnail = useAttachmentThumbnail(item)
+  const [failedSource, setFailedSource] = useState<string | null>(null)
+  const handleImageError = useCallback(() => setFailedSource(thumbnail), [thumbnail])
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
   const handlePress = useCallback(() => onPress(item), [onPress, item])
   const handleLongPress = useCallback(() => onLongPress(item), [onLongPress, item])
@@ -59,7 +61,7 @@ export const AttachmentTile = memo(function AttachmentTile({
       accessibilityLabel={label}
       style={tileStyle}
     >
-      {thumbnail ? (
+      {thumbnail && thumbnail !== failedSource ? (
         <Image
           source={thumbnail}
           style={commonStyles.flex1}
@@ -67,6 +69,7 @@ export const AttachmentTile = memo(function AttachmentTile({
           cachePolicy="memory"
           recyclingKey={item.url}
           transition={0}
+          onError={handleImageError}
         />
       ) : (
         <View style={styles.placeholder}>

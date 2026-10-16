@@ -20,7 +20,7 @@ import {
   UI_SIZE_64,
 } from '@/constants/commonStyles'
 
-export function VoiceTypingBar({ toolbarBottom = 0, ...options }: VoiceTypingBarProps) {
+export function VoiceTypingBar({ toolbarBottom = 0, inline, ...options }: VoiceTypingBarProps) {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const styles = useStyles()
@@ -42,8 +42,8 @@ export function VoiceTypingBar({ toolbarBottom = 0, ...options }: VoiceTypingBar
   } = useVoiceTypingBar(options)
 
   const wrapStyle = useMemo(
-    () => [styles.wrap, { bottom: toolbarBottom }],
-    [styles.wrap, toolbarBottom],
+    () => (inline ? styles.wrapInline : [styles.wrap, { bottom: toolbarBottom }]),
+    [inline, styles.wrap, styles.wrapInline, toolbarBottom],
   )
 
   return (
@@ -141,6 +141,9 @@ const useStyles = createThemedStylesheet((theme) => {
       position: 'absolute',
       left: Space.base,
       right: Space.base,
+      alignItems: 'center',
+    },
+    wrapInline: {
       alignItems: 'center',
     },
     bar: {

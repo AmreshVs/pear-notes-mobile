@@ -453,7 +453,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3Theme) => {
     },
     headerCenter: {
       ...commonStyles.flex1,
-      alignItems: 'center',
+      alignItems: 'flex-start',
     },
     headerEnd: {
       width: UI_SIZE_40,
