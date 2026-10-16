@@ -41,6 +41,7 @@ import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { EdgeFade } from '@/components/EdgeFade'
+import { SmartViewsHeader } from '@/components/folders/SmartViewsHeader'
 import { VaultTitle } from '@/components/folders/VaultTitle'
 import { MotionView } from '@/components/MotionView'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
@@ -68,6 +69,7 @@ import {
 } from '@/constants/commonStyles'
 import { TOOL_ROW_ROUTE } from '@/constants/constants'
 import { FALLBACK_FOLDER_MATERIAL, FOLDER_ICON_MATERIAL } from '@/constants/folderIcons'
+import { useSmartViewsCollapsed } from '@/hooks/useSmartViewsCollapsed'
 import { useToolRows } from '@/hooks/useToolRows'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -113,6 +115,8 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
   const [searchQuery, setSearchQuery] = useState('')
   const toolRows = useToolRows(searchQuery)
+  const [smartViewsCollapsed, toggleSmartViews] = useSmartViewsCollapsed()
+  const smartViewsOpen = !smartViewsCollapsed || searchQuery.length > 0
   const [deleteConfirmFolder, setDeleteConfirmFolder] = useState<string | null>(null)
   const [folderSheet, setFolderSheet] = useState<string | null>(null)
   const [iconPickerFolderId, setIconPickerFolderId] = useState<string | null>(null)
@@ -431,24 +435,28 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
         {toolRows.length > 0 && (
           <View style={styles.archiveSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('tools.header')}</Text>
-            </View>
-            <View style={styles.listCard}>
-              {toolRows.map((tool, index) => (
-                <VaultFolderRow
-                  key={tool.id}
-                  id={tool.id}
-                  name={tool.name}
-                  icon={tool.icon}
-                  count={tool.count}
-                  isLast={index === toolRows.length - 1}
-                  colors={c}
-                  onPress={handleSelectFolder}
-                  onLongPress={handleFolderLongPress}
-                />
-              ))}
-            </View>
+            <SmartViewsHeader
+              title={t('tools.header')}
+              expanded={smartViewsOpen}
+              onToggle={toggleSmartViews}
+            />
+            {smartViewsOpen && (
+              <View style={styles.listCard}>
+                {toolRows.map((tool, index) => (
+                  <VaultFolderRow
+                    key={tool.id}
+                    id={tool.id}
+                    name={tool.name}
+                    icon={tool.icon}
+                    count={tool.count}
+                    isLast={index === toolRows.length - 1}
+                    colors={c}
+                    onPress={handleSelectFolder}
+                    onLongPress={handleFolderLongPress}
+                  />
+                ))}
+              </View>
+            )}
           </View>
         )}
 

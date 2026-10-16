@@ -3,3 +3,9 @@ export type FoldersPaneProps = {
   selectedFolderId?: string
   onSelectFolder?: (folderId: string) => void
 }
+
+export type SmartViewsHeaderProps = {
+  title: string
+  expanded: boolean
+  onToggle: () => void
+}

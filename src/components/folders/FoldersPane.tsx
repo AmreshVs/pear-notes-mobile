@@ -23,6 +23,7 @@ import { validateFolderName } from '@pear-notes/core/utils.js'
 import { FolderIconBottomSheet } from '@/components/bottomsheet/FolderIconBottomSheet'
 import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { FolderRow } from '@/components/FolderRow'
+import { SmartViewsHeader } from '@/components/folders/SmartViewsHeader'
 import { VaultTitle } from '@/components/folders/VaultTitle'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -40,6 +41,7 @@ import {
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { TOOL_ROW_ROUTE } from '@/constants/constants'
+import { useSmartViewsCollapsed } from '@/hooks/useSmartViewsCollapsed'
 import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { useToolRows } from '@/hooks/useToolRows'
 import { hapticLight, hapticSuccess, hapticWarning } from '@/lib/haptics'
@@ -66,6 +68,8 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
   const [searchQuery, setSearchQuery] = useState('')
   const toolRows = useToolRows(searchQuery)
+  const [smartViewsCollapsed, toggleSmartViews] = useSmartViewsCollapsed()
+  const smartViewsOpen = !smartViewsCollapsed || searchQuery.length > 0
   const [iconPickerFolderId, setIconPickerFolderId] = useState<string | null>(null)
 
   const matchesSearch = useCallback(
@@ -411,12 +415,16 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
 
         {toolRows.length > 0 && (
           <View style={styles.archiveSection}>
-            <Text style={[commonThemedStyles.sectionCamelCase, styles.sectionHeaderMargin]}>
-              {t('tools.header')}
-            </Text>
-            <View style={[commonThemedStyles.card, styles.group]}>
-              {renderTools(topFolders.length)}
-            </View>
+            <SmartViewsHeader
+              title={t('tools.header')}
+              expanded={smartViewsOpen}
+              onToggle={toggleSmartViews}
+            />
+            {smartViewsOpen && (
+              <View style={[commonThemedStyles.card, styles.group]}>
+                {renderTools(topFolders.length)}
+              </View>
+            )}
           </View>
         )}
 
