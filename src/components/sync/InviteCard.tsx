@@ -18,6 +18,7 @@ import {
   UI_ICON_SIZE_14,
   UI_ICON_SIZE_16,
   UI_ICON_SIZE_44,
+  UI_SIZE_28,
   UI_SIZE_36,
   UI_SIZE_120,
   UI_SIZE_180,
@@ -101,16 +102,41 @@ export function InviteCard({ invite, copy, idleIcon, idleBadgeIcon }: Props) {
       </RNView>
 
       <Text style={styles.heroTitle}>{copy.readyTitle}</Text>
-      <RNView style={[styles.countdownPill, expiringSoon && styles.countdownPillUrgent]}>
-        <SymbolIcon
-          name="timer"
-          size={UI_ICON_SIZE_13}
-          color={expiringSoon ? colors.error : colors.primary}
-          weight="semibold"
-        />
-        <Text style={[styles.countdownText, expiringSoon && styles.countdownTextUrgent]}>
-          {t('sync.invite.expiresIn', { countdown: formatInviteCountdown(invite.remainingMs) })}
-        </Text>
+      <RNView style={styles.countdownRow}>
+        <RNView style={[styles.countdownPill, expiringSoon && styles.countdownPillUrgent]}>
+          <SymbolIcon
+            name="timer"
+            size={UI_ICON_SIZE_13}
+            color={expiringSoon ? colors.error : colors.primary}
+            weight="semibold"
+          />
+          <Text style={[styles.countdownText, expiringSoon && styles.countdownTextUrgent]}>
+            {t('sync.invite.expiresIn', { countdown: formatInviteCountdown(invite.remainingMs) })}
+          </Text>
+        </RNView>
+        <Pressable
+          onPress={invite.regenerate}
+          disabled={isLoading}
+          accessibilityRole="button"
+          accessibilityLabel={t('sync.invite.regenerateBtn')}
+          hitSlop={Space.sm}
+          style={({ pressed }) => [
+            styles.regenerateBtn,
+            isLoading && commonStyles.disabled,
+            pressed && commonStyles.pressed,
+          ]}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <SymbolIcon
+              name="arrow.clockwise"
+              size={UI_ICON_SIZE_13}
+              color={colors.primary}
+              weight="semibold"
+            />
+          )}
+        </Pressable>
       </RNView>
 
       <RNView style={styles.qrSection}>
@@ -266,14 +292,26 @@ const useStyles = createThemedStylesheet((theme) => {
     btnTextCopied: {
       color: theme.colors.white,
     },
-    countdownPill: {
+    countdownRow: {
       ...commonStyles.row,
       alignSelf: 'center',
+      gap: Space.sm,
+      marginBottom: Space.lg,
+    },
+    countdownPill: {
+      ...commonStyles.row,
       gap: Space.xs,
       paddingVertical: Space.xs,
       paddingHorizontal: Space.md,
       borderRadius: Radii.pill,
-      marginBottom: Space.lg,
+      backgroundColor: hexWithAlpha(theme.colors.primary, 0.12),
+    },
+    regenerateBtn: {
+      width: UI_SIZE_28,
+      height: UI_SIZE_28,
+      borderRadius: Radii.pill,
+      alignItems: 'center',
+      justifyContent: 'center',
       backgroundColor: hexWithAlpha(theme.colors.primary, 0.12),
     },
     countdownPillUrgent: {

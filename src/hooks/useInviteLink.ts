@@ -9,6 +9,7 @@ import {
   getInviterStatus,
   getReceiverStatus,
   getSyncIsLoading,
+  regenerateInvite,
   resetInvite,
 } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getInviteRemainingMs } from '@pear-notes/core/utils.js'
@@ -74,6 +75,11 @@ export function useInviteLink(format: (invite: string) => string) {
     dispatch(createInvite())
   }, [dispatch])
 
+  const regenerate = useCallback(() => {
+    hapticLight()
+    dispatch(regenerateInvite())
+  }, [dispatch])
+
   const copy = useCallback(async () => {
     if (!link) return
     await Clipboard.setStringAsync(link)
@@ -117,6 +123,7 @@ export function useInviteLink(format: (invite: string) => string) {
     copied,
     isSharingQr,
     generate,
+    regenerate,
     copy,
     shareQr,
     handleQrRef,

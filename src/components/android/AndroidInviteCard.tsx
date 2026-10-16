@@ -124,15 +124,32 @@ export function AndroidInviteCard({ invite, copy, idleIcon, idleBadgeIcon }: Pro
       </View>
 
       <Text style={styles.heroTitle}>{copy.readyTitle}</Text>
-      <View style={[styles.countdownPill, expiringSoon && styles.countdownPillUrgent]}>
-        <MaterialCommunityIcons
-          name="timer-outline"
-          size={UI_ICON_SIZE_14}
-          color={expiringSoon ? c.error : c.primary}
-        />
-        <Text style={[styles.countdownText, expiringSoon && styles.countdownTextUrgent]}>
-          {t('sync.invite.expiresIn', { countdown: formatInviteCountdown(invite.remainingMs) })}
-        </Text>
+      <View style={styles.countdownRow}>
+        <View style={[styles.countdownPill, expiringSoon && styles.countdownPillUrgent]}>
+          <MaterialCommunityIcons
+            name="timer-outline"
+            size={UI_ICON_SIZE_14}
+            color={expiringSoon ? c.error : c.primary}
+          />
+          <Text style={[styles.countdownText, expiringSoon && styles.countdownTextUrgent]}>
+            {t('sync.invite.expiresIn', { countdown: formatInviteCountdown(invite.remainingMs) })}
+          </Text>
+        </View>
+        <Pressable
+          onPress={invite.regenerate}
+          disabled={isLoading}
+          accessibilityRole="button"
+          accessibilityLabel={t('sync.invite.regenerateBtn')}
+          hitSlop={UI_SIZE_8}
+          android_ripple={ripple}
+          style={[styles.regenerateBtn, isLoading && styles.btnDisabled]}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color={c.primary} />
+          ) : (
+            <MaterialCommunityIcons name="refresh" size={UI_ICON_SIZE_18} color={c.primary} />
+          )}
+        </Pressable>
       </View>
 
       <View style={styles.qrWrap}>
@@ -312,14 +329,27 @@ const useStyles = createThemedStylesheetWithHooks(
         fontFamily: FontFamily.bold,
         color: c.primary,
       },
-      countdownPill: {
+      countdownRow: {
         ...commonStyles.row,
         alignSelf: 'center',
+        gap: UI_SIZE_8,
+        marginBottom: UI_SIZE_32,
+      },
+      countdownPill: {
+        ...commonStyles.row,
         gap: UI_SIZE_6,
         paddingVertical: UI_SIZE_6,
         paddingHorizontal: UI_SIZE_12,
         borderRadius: UI_SIZE_9999,
-        marginBottom: UI_SIZE_32,
+        backgroundColor: hexWithAlpha(c.primary, 0.12),
+      },
+      regenerateBtn: {
+        overflow: 'hidden',
+        width: UI_SIZE_32,
+        height: UI_SIZE_32,
+        borderRadius: UI_SIZE_9999,
+        alignItems: 'center',
+        justifyContent: 'center',
         backgroundColor: hexWithAlpha(c.primary, 0.12),
       },
       countdownPillUrgent: {
