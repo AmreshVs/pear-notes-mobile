@@ -34,7 +34,10 @@ const loadAttachments = async (): Promise<AttachmentItem[]> => {
 export function useAttachmentCount(): number {
   const [count, setCount] = useState(0)
   const refresh = useCallback(() => {
-    loadAttachments().then((items) => setCount(items.length))
+    backendApi
+      .getAttachmentCount()
+      .then(setCount)
+      .catch(() => {})
   }, [])
   useFocusEffect(
     useCallback(() => {
