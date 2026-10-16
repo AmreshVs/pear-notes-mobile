@@ -61,7 +61,6 @@ export default function SettingsLayout() {
       <Stack.Screen name="privacy" options={{ title: t('layouts.privacyAndSecurity') }} />
       <Stack.Screen name="on-device-ai" options={{ title: t('layouts.onDeviceAi') }} />
       <Stack.Screen name="on-device-ai/feature" options={{ title: t('layouts.onDeviceAi') }} />
-      <Stack.Screen name="on-device-ai/duplicates" options={{ title: t('layouts.duplicates') }} />
       <Stack.Screen
         name="on-device-ai/models"
         options={{ title: t('settings.onDeviceAi.modelsTitle') }}
