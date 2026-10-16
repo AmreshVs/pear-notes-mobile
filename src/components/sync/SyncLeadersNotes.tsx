@@ -7,6 +7,7 @@ import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { SyncIndexerModal } from '@/components/sync/SyncIndexerModal'
+import { syncLeaderLine } from '@/components/sync/syncLeaderLine'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -32,25 +33,21 @@ export function SyncLeadersNotes({ showSuggestion = true }: Props) {
   const suggestedFlow = useDeviceIndexer(suggested)
   const offlineNames = plan.offlineLeaders.map(getDeviceDisplayName).join(', ')
   const suggestedName = suggested ? getDeviceDisplayName(suggested) : ''
+  const leaderLine = syncLeaderLine(plan, t)
 
   return (
     <>
-      <RNView style={styles.row}>
-        <SymbolIcon
-          name="crown"
-          size={UI_ICON_SIZE_13}
-          color={colors.primary}
-          style={styles.icon}
-        />
-        <RNView style={commonStyles.flex1}>
-          <Text style={styles.summary}>
-            {t('sync.devices.leadersSummary', { count: plan.leaderCount, max: plan.max })}
-            {' · '}
-            {t('sync.devices.leadersRecommended', { count: plan.recommended })}
-          </Text>
-          <Text style={styles.explain}>{t('sync.devices.indexerExplain')}</Text>
+      {!!leaderLine && (
+        <RNView style={styles.row}>
+          <SymbolIcon
+            name="crown"
+            size={UI_ICON_SIZE_13}
+            color={colors.primary}
+            style={styles.icon}
+          />
+          <Text style={styles.note}>{leaderLine}</Text>
         </RNView>
-      </RNView>
+      )}
 
       {plan.needsBothOnline && (
         <RNView style={styles.row}>
@@ -117,21 +114,9 @@ const useStyles = createThemedStylesheet((theme) => {
     icon: {
       marginTop: 1,
     },
-    summary: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      lineHeight: 20,
-      marginBottom: Space.xs,
-      color: theme.colors.text,
-    },
     note: {
       fontSize: FontSize.body,
       flex: 1,
-      lineHeight: 20,
-      color: theme.colors.textMuted,
-    },
-    explain: {
-      fontSize: FontSize.body,
       lineHeight: 20,
       color: theme.colors.textMuted,
     },

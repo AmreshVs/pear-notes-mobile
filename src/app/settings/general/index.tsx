@@ -26,6 +26,7 @@ import {
   FontSize,
   FontWeight,
   Space,
+  UI_ICON_SIZE_14,
   UI_ICON_SIZE_15,
   UI_SIZE_4,
   UI_SIZE_8,
@@ -162,10 +163,22 @@ export default function GeneralSettingsScreen() {
                   <Divider />
                 </RNView>
                 <RNView style={styles.toggleRow}>
-                  <RNView style={styles.toggleInfo}>
-                    <Text style={styles.rowLabel}>{t('settings.general.reminders')}</Text>
+                  <Pressable
+                    onPress={handleOpenReminderSheet}
+                    accessibilityRole="button"
+                    accessibilityHint={t('upcoming.reminders.open')}
+                    style={({ pressed }) => [styles.toggleInfo, pressed && commonStyles.pressed]}
+                  >
+                    <RNView style={styles.titleRow}>
+                      <Text style={styles.rowLabel}>{t('settings.general.reminders')}</Text>
+                      <SymbolIcon
+                        name="chevron.forward"
+                        size={UI_ICON_SIZE_14}
+                        color={colors.textMuted}
+                      />
+                    </RNView>
                     <Text style={styles.rowDesc}>{t('settings.general.remindersDesc')}</Text>
-                  </RNView>
+                  </Pressable>
                   <Switch
                     value={reminders}
                     onValueChange={toggleReminders}
@@ -173,23 +186,6 @@ export default function GeneralSettingsScreen() {
                     thumbColor={colors.white}
                   />
                 </RNView>
-                <RNView style={styles.dividerWrap}>
-                  <Divider />
-                </RNView>
-                <Pressable
-                  onPress={handleOpenReminderSheet}
-                  style={({ pressed }) => [
-                    commonStyles.settingsRow,
-                    pressed && commonStyles.pressed,
-                  ]}
-                >
-                  <Text style={styles.rowLabel}>{t('upcoming.reminders.open')}</Text>
-                  <SymbolIcon
-                    name="chevron.forward"
-                    size={UI_ICON_SIZE_15}
-                    color={colors.textMuted}
-                  />
-                </Pressable>
               </>
             )}
             <RNView style={styles.dividerWrap}>
@@ -333,6 +329,10 @@ const useStyles = createThemedStylesheet((theme) => {
     toggleInfo: {
       ...commonStyles.flex1,
       gap: UI_SIZE_4,
+    },
+    titleRow: {
+      ...commonStyles.row,
+      gap: Space.xs,
     },
     rowDesc: {
       fontSize: FontSize.body,

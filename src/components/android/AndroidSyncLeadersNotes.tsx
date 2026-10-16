@@ -9,6 +9,7 @@ import { getDeviceDisplayName } from '@pear-notes/core/utils.js'
 
 import { AndroidIndexerDialog } from '@/components/android/AndroidIndexerDialog'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { syncLeaderLine } from '@/components/sync/syncLeaderLine'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
 import {
   commonStyles,
@@ -42,25 +43,21 @@ export function AndroidSyncLeadersNotes() {
   const suggestedFlow = useDeviceIndexer(suggested)
   const offlineNames = plan.offlineLeaders.map(getDeviceDisplayName).join(', ')
   const suggestedName = suggested ? getDeviceDisplayName(suggested) : ''
+  const leaderLine = syncLeaderLine(plan, t)
 
   return (
     <>
-      <View style={styles.row}>
-        <MaterialCommunityIcons
-          name="crown-outline"
-          size={UI_ICON_SIZE_12}
-          color={c.primary}
-          style={styles.icon}
-        />
-        <View style={commonStyles.flex1}>
-          <Text style={styles.summary}>
-            {t('sync.devices.leadersSummary', { count: plan.leaderCount, max: plan.max })}
-            {' · '}
-            {t('sync.devices.leadersRecommended', { count: plan.recommended })}
-          </Text>
-          <Text style={styles.note}>{t('sync.devices.indexerExplain')}</Text>
+      {!!leaderLine && (
+        <View style={styles.row}>
+          <MaterialCommunityIcons
+            name="crown-outline"
+            size={UI_ICON_SIZE_12}
+            color={c.primary}
+            style={styles.icon}
+          />
+          <Text style={[styles.note, commonStyles.flex1]}>{leaderLine}</Text>
         </View>
-      </View>
+      )}
 
       {plan.needsBothOnline && (
         <View style={styles.row}>
@@ -132,13 +129,6 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
     },
     icon: {
       marginTop: UI_SIZE_2,
-    },
-    summary: {
-      fontSize: FontSize.caption,
-      lineHeight: UI_SIZE_17,
-      fontFamily: FontFamily.medium,
-      marginBottom: UI_SIZE_2,
-      color: c.onSurface,
     },
     note: {
       fontSize: FontSize.caption,

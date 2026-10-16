@@ -346,7 +346,7 @@ const useStyles = createThemedStylesheet((theme) => {
       ...commonStyles.centered,
       minHeight: UI_SIZE_52,
       borderRadius: Radii.btn,
-      backgroundColor: theme.colors.sheetCancelBackground,
+      backgroundColor: theme.colors.cardSurface,
       borderColor: theme.colors.borderSecondary,
     },
     cancelBtnText: {

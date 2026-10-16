@@ -106,7 +106,7 @@ export const createThemedStyles = (theme: Theme) => {
       borderRadius: Radii.md,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)',
+      backgroundColor: theme.colors.cardSurface,
       borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
     },
     inputLabel: {

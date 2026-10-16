@@ -249,27 +249,25 @@ export default function AndroidGeneralSettingsScreen() {
             <>
               <View style={styles.groupDivider} />
               <View style={styles.toggleRow}>
-                <View style={styles.toggleInfo}>
-                  <Text style={styles.rowTitle}>{t('settings.general.reminders')}</Text>
+                <Pressable
+                  onPress={handleOpenReminderSheet}
+                  android_ripple={ripple}
+                  accessibilityRole="button"
+                  accessibilityHint={t('upcoming.reminders.open')}
+                  style={styles.toggleInfo}
+                >
+                  <View style={styles.titleRow}>
+                    <Text style={styles.rowTitle}>{t('settings.general.reminders')}</Text>
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={UI_ICON_SIZE_20}
+                      color={c.onSurfaceVariant}
+                    />
+                  </View>
                   <Text style={styles.rowSubtitle}>{t('settings.general.remindersDesc')}</Text>
-                </View>
+                </Pressable>
                 <Switch value={reminders} onValueChange={toggleReminders} />
               </View>
-              <View style={styles.groupDivider} />
-              <Pressable
-                onPress={handleOpenReminderSheet}
-                android_ripple={ripple}
-                style={styles.groupPressRow}
-              >
-                <View style={commonStyles.flex1}>
-                  <Text style={styles.rowTitle}>{t('upcoming.reminders.open')}</Text>
-                </View>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={UI_ICON_SIZE_20}
-                  color={c.onSurfaceVariant}
-                />
-              </Pressable>
             </>
           )}
 
@@ -434,6 +432,10 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets }) => {
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_18,
       gap: UI_SIZE_16,
+    },
+    titleRow: {
+      ...commonStyles.row,
+      gap: UI_SIZE_4,
     },
     toggleInfo: {
       ...commonStyles.flex1,

@@ -323,7 +323,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { insets }) => {
       borderRadius: Radii.btn,
     },
     cancelButton: {
-      backgroundColor: theme.colors.controlBackground,
+      backgroundColor: theme.colors.cardSurface,
     },
     mergeButton: {
       backgroundColor: theme.colors.primary,

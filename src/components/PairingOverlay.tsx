@@ -962,7 +962,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
         ? theme.isDark
           ? hexWithAlpha(theme.colors.white, 0.08)
           : hexWithAlpha(theme.colors.black, 0.05)
-        : theme.colors.cardPressed,
+        : theme.colors.cardSurface,
       borderColor: theme.colors.borderSecondary,
     },
     cancelBtnText: {
