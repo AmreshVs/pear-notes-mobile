@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StatusBar, StyleSheet, View } from 'react-native'
+import { ScrollView, StatusBar, StyleSheet, View } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
@@ -13,27 +13,23 @@ import { BottomActionSheet } from '@/components/android/BottomActionSheet'
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { MotionView } from '@/components/MotionView'
+import { AddDeviceRow } from '@/components/sync/AddDeviceRow'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
   FontFamily,
   FontSize,
-  FontWeight,
   UI_ICON_SIZE_12,
-  UI_ICON_SIZE_18,
-  UI_ICON_SIZE_30,
   UI_SIZE_2,
+  UI_SIZE_4,
   UI_SIZE_8,
   UI_SIZE_12,
   UI_SIZE_16,
   UI_SIZE_17,
   UI_SIZE_24,
   UI_SIZE_40,
-  UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { ADD_DEVICE_ROUTE } from '@/hooks/useVaultSwitcher'
-import { androidRipple } from '@/lib/androidRipple'
-import { hexWithAlpha } from '@/lib/backupUtils'
 import { getVaultLabel } from '@/lib/vaultLabels'
 
 import useDevicesScreen from './useDevicesScreen'
@@ -50,7 +46,6 @@ export default function AndroidDevicesScreen() {
   const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
-  const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const styles = useStyles()
   const md3Styles = useMD3CommonStyles()
 
@@ -144,16 +139,6 @@ export default function AndroidDevicesScreen() {
             {t('sync.devices.screenDesc', { name: vaultName })}
           </Text>
 
-          <Pressable
-            onPress={handleAddDevice}
-            android_ripple={ripplePrimary}
-            accessibilityRole="button"
-            style={styles.addBtn}
-          >
-            <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_18} color={c.onPrimary} />
-            <Text style={styles.addBtnText}>{t('sync.add.button')}</Text>
-          </Pressable>
-
           {localDevices.length > 0 && (
             <>
               <Text style={md3Styles.settingsSectionCamelCase}>{t('sync.devices.thisDevice')}</Text>
@@ -171,17 +156,12 @@ export default function AndroidDevicesScreen() {
             {t('sync.devices.otherDevices')}
           </Text>
 
-          {otherDevices.length > 0 ? (
-            <View style={styles.deviceList}>{otherDevices.map(renderOtherDeviceCard)}</View>
-          ) : (
-            <View style={styles.emptyCard}>
-              <MaterialCommunityIcons
-                name="cellphone-link"
-                size={UI_ICON_SIZE_30}
-                color={c.onSurfaceVariant}
-              />
-              <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
-            </View>
+          <View style={styles.deviceList}>
+            {otherDevices.map(renderOtherDeviceCard)}
+            <AddDeviceRow label={t('sync.add.button')} onPress={handleAddDevice} />
+          </View>
+          {otherDevices.length === 0 && (
+            <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
           )}
 
           <AndroidSyncLeadersNotes />
@@ -234,23 +214,7 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       fontSize: FontSize.body,
       fontFamily: FontFamily.regular,
       color: c.onSurfaceVariant,
-      marginBottom: UI_SIZE_16,
-    },
-    addBtn: {
-      ...commonStyles.row,
-      ...commonStyles.centered,
-      overflow: 'hidden',
-      gap: UI_SIZE_8,
-      borderRadius: UI_SIZE_9999,
-      paddingVertical: UI_SIZE_12,
       marginBottom: UI_SIZE_24,
-      backgroundColor: c.primary,
-    },
-    addBtnText: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-      color: c.onPrimary,
     },
     warningIconMargin: {
       marginTop: UI_SIZE_2,
@@ -271,17 +235,11 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     deviceList: {
       gap: UI_SIZE_12,
     },
-    emptyCard: {
-      borderStyle: 'dashed',
-      borderRadius: UI_SIZE_24,
-      paddingVertical: UI_SIZE_40,
-      ...commonStyles.centered,
-      gap: UI_SIZE_12,
-      borderColor: hexWithAlpha(c.outlineVariant, 0.15),
-    },
     emptyText: {
-      fontSize: FontSize.body,
+      fontSize: FontSize.caption,
       fontFamily: FontFamily.regular,
+      marginTop: UI_SIZE_8,
+      marginHorizontal: UI_SIZE_4,
       color: c.onSurfaceVariant,
     },
   })

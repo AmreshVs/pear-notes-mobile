@@ -1,27 +1,18 @@
 import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, ScrollView, StyleSheet, View as RNView } from 'react-native'
+import { ScrollView, StyleSheet, View as RNView } from 'react-native'
 import { Easing, LinearTransition } from 'react-native-reanimated'
 import { router, Stack } from 'expo-router'
 
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
+import { AddDeviceRow } from '@/components/sync/AddDeviceRow'
 import { SyncDeviceCard } from '@/components/sync/SyncDeviceCard'
 import { SyncLeadersNotes } from '@/components/sync/SyncLeadersNotes'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
-import {
-  commonStyles,
-  FontSize,
-  FontWeight,
-  Radii,
-  Space,
-  UI_ICON_SIZE_13,
-  UI_ICON_SIZE_16,
-  UI_ICON_SIZE_22,
-} from '@/constants/commonStyles'
+import { commonStyles, FontSize, Radii, Space, UI_ICON_SIZE_13 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { ADD_DEVICE_ROUTE } from '@/hooks/useVaultSwitcher'
-import { hexWithAlpha } from '@/lib/backupUtils'
 import { getVaultLabel } from '@/lib/vaultLabels'
 
 import useDevicesScreen from './useDevicesScreen'
@@ -57,12 +48,12 @@ export default function DevicesScreen() {
   const renderOtherDevices = useCallback(() => {
     return (syncedDevices as any[])
       .filter((d) => !d.isLocal)
-      .map((device, index, arr) => (
+      .map((device, index) => (
         <SyncDeviceCard
           key={device.key}
           device={device}
           isOther
-          showSep={index < arr.length - 1}
+          showSep
           animationIndex={index + 1}
         />
       ))
@@ -84,15 +75,6 @@ export default function DevicesScreen() {
       >
         <Text style={styles.description}>{t('sync.devices.screenDesc', { name: vaultName })}</Text>
 
-        <Pressable
-          onPress={handleAddDevice}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.addBtn, pressed && commonStyles.pressed]}
-        >
-          <SymbolIcon name="plus" size={UI_ICON_SIZE_16} color={colors.onPrimary} />
-          <Text style={styles.addBtnText}>{t('sync.add.button')}</Text>
-        </Pressable>
-
         <RNView>
           <Text style={commonThemedStyles.sectionCamelCase}>{t('sync.devices.thisDevice')}</Text>
         </RNView>
@@ -110,18 +92,15 @@ export default function DevicesScreen() {
           </Text>
         </MotionView>
 
-        {otherDevices.length > 0 ? (
-          <MotionView
-            layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-            style={styles.deviceGroup}
-          >
-            {renderOtherDevices()}
-          </MotionView>
-        ) : (
-          <RNView style={styles.emptyCard}>
-            <SymbolIcon name="iphone" size={UI_ICON_SIZE_22} color={colors.textMuted} />
-            <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
-          </RNView>
+        <MotionView
+          layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
+          style={styles.deviceGroup}
+        >
+          {renderOtherDevices()}
+          <AddDeviceRow label={t('sync.add.button')} onPress={handleAddDevice} />
+        </MotionView>
+        {otherDevices.length === 0 && (
+          <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
         )}
 
         <SyncLeadersNotes />
@@ -141,8 +120,6 @@ export default function DevicesScreen() {
 }
 
 const useStyles = createThemedStylesheet((theme) => {
-  const isDark = theme.isDark
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -158,21 +135,7 @@ const useStyles = createThemedStylesheet((theme) => {
     description: {
       fontSize: FontSize.body,
       color: theme.colors.textSecondary,
-      marginBottom: Space.base,
-    },
-    addBtn: {
-      ...commonStyles.row,
-      ...commonStyles.centered,
-      gap: Space.sm,
-      borderRadius: Space.md,
-      paddingVertical: Space.md,
       marginBottom: Space.xl,
-      backgroundColor: theme.colors.primary,
-    },
-    addBtnText: {
-      color: theme.colors.onPrimary,
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.bold,
     },
     footNoteRow: {
       flexDirection: 'row',
@@ -192,19 +155,10 @@ const useStyles = createThemedStylesheet((theme) => {
       backgroundColor: theme.colors.cardSurface,
       borderColor: theme.colors.borderSecondary,
     },
-    emptyCard: {
-      borderStyle: 'dashed',
-      borderRadius: Radii.card,
-      paddingVertical: 36,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderColor: isDark
-        ? hexWithAlpha(theme.colors.white, 0.08)
-        : hexWithAlpha(theme.colors.black, 0.08),
-    },
     emptyText: {
       fontSize: FontSize.caption,
-      marginTop: Space.md,
+      marginTop: Space.sm,
+      marginHorizontal: Space.xs,
       color: theme.colors.textMuted,
     },
     iconTopFix: {
