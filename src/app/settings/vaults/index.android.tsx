@@ -26,7 +26,7 @@ import {
   UI_SIZE_56,
 } from '@/constants/commonStyles'
 import { useVaultsScreen } from '@/hooks/useVaultsScreen'
-import { INVITE_VAULT_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
+import { DEVICES_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getVaultErrorKey, getVaultLabel } from '@/lib/vaultLabels'
@@ -62,7 +62,7 @@ export default function AndroidVaultsScreen() {
   )
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
   const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
-  const handleInvite = useCallback(() => router.push(INVITE_VAULT_ROUTE as never), [])
+  const handleDevices = useCallback(() => router.push(DEVICES_ROUTE as never), [])
   const currentLabel = getVaultLabel(
     vaults.find((vault) => vault.current),
     t,
@@ -172,19 +172,15 @@ export default function AndroidVaultsScreen() {
         )}
         <View style={styles.card}>
           <Pressable
-            onPress={handleInvite}
+            onPress={handleDevices}
             disabled={busy}
             android_ripple={ripple}
             accessibilityRole="button"
-            style={canAdd ? styles.rowDivider : styles.row}
+            style={styles.row}
           >
-            <MaterialCommunityIcons
-              name="account-plus-outline"
-              size={UI_ICON_SIZE_20}
-              color={c.primary}
-            />
+            <MaterialCommunityIcons name="devices" size={UI_ICON_SIZE_20} color={c.primary} />
             <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
-              {t('vaults.invite.title', { name: currentLabel })}
+              {t('sync.devicesIn', { name: currentLabel })}
             </Text>
             <MaterialCommunityIcons
               name="chevron-right"
@@ -192,48 +188,44 @@ export default function AndroidVaultsScreen() {
               color={c.onSurfaceVariant}
             />
           </Pressable>
+        </View>
+        <View style={styles.card}>
           {canAdd && (
-            <>
-              <Pressable
-                onPress={handleCreate}
-                disabled={busy}
-                android_ripple={ripple}
-                accessibilityRole="button"
-                style={styles.rowDivider}
-              >
-                <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_20} color={c.primary} />
-                <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
-                  {t('vaults.newVault')}
-                </Text>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={UI_ICON_SIZE_20}
-                  color={c.onSurfaceVariant}
-                />
-              </Pressable>
-              <Pressable
-                onPress={handleJoin}
-                disabled={busy}
-                android_ripple={ripple}
-                accessibilityRole="button"
-                style={styles.row}
-              >
-                <MaterialCommunityIcons
-                  name="qrcode-scan"
-                  size={UI_ICON_SIZE_20}
-                  color={c.primary}
-                />
-                <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
-                  {t('vaults.join.sectionTitle')}
-                </Text>
-                <MaterialCommunityIcons
-                  name="chevron-right"
-                  size={UI_ICON_SIZE_20}
-                  color={c.onSurfaceVariant}
-                />
-              </Pressable>
-            </>
+            <Pressable
+              onPress={handleCreate}
+              disabled={busy}
+              android_ripple={ripple}
+              accessibilityRole="button"
+              style={styles.rowDivider}
+            >
+              <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_20} color={c.primary} />
+              <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
+                {t('vaults.newVault')}
+              </Text>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={UI_ICON_SIZE_20}
+                color={c.onSurfaceVariant}
+              />
+            </Pressable>
           )}
+          <Pressable
+            onPress={handleJoin}
+            disabled={busy}
+            android_ripple={ripple}
+            accessibilityRole="button"
+            style={styles.row}
+          >
+            <MaterialCommunityIcons name="qrcode-scan" size={UI_ICON_SIZE_20} color={c.primary} />
+            <Text style={[styles.rowLabel, commonStyles.flex1]} numberOfLines={1}>
+              {t('vaults.join.sectionTitle')}
+            </Text>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={UI_ICON_SIZE_20}
+              color={c.onSurfaceVariant}
+            />
+          </Pressable>
         </View>
         {!canAdd && (
           <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>

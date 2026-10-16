@@ -6,16 +6,16 @@ import { Stack } from 'expo-router'
 import { InviteCard } from '@/components/sync/InviteCard'
 import { createThemedStylesheet } from '@/components/Themed'
 import { Space } from '@/constants/commonStyles'
-import { buildVaultInviteCopy } from '@/utils/inviteCopy'
+import { buildAddDeviceCopy } from '@/utils/inviteCopy'
 
-import { useVaultInviteScreen } from './useVaultInviteScreen'
+import { useAddDeviceScreen } from './useAddDeviceScreen'
 
-export default function VaultInviteScreen() {
+export default function AddDeviceScreen() {
   const styles = useStyles()
   const { t } = useTranslation()
-  const { name, invite } = useVaultInviteScreen(t('vaults.defaultName'))
-  const copy = useMemo(() => buildVaultInviteCopy(t, name), [name, t])
-  const title = t('vaults.invite.title', { name })
+  const { name, invite } = useAddDeviceScreen(t('vaults.defaultName'))
+  const copy = useMemo(() => buildAddDeviceCopy(t, name), [name, t])
+  const title = t('sync.add.title')
 
   return (
     <ScrollView
@@ -24,7 +24,7 @@ export default function VaultInviteScreen() {
       showsVerticalScrollIndicator={false}
     >
       <Stack.Screen options={{ title }} />
-      <InviteCard invite={invite} copy={copy} idleIcon="person.badge.plus" />
+      <InviteCard invite={invite} copy={copy} idleIcon="laptopcomputer.and.iphone" />
     </ScrollView>
   )
 }

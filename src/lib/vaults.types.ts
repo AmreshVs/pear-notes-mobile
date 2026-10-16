@@ -6,3 +6,5 @@ export type Vault = {
 }
 
 export type VaultAction = 'create' | 'switch' | 'rename' | 'remove' | 'move'
+
+export type JoinChoice = 'separate' | 'combine'

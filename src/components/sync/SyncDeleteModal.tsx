@@ -17,7 +17,9 @@ import {
   UI_SIZE_50,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { useOpenVault } from '@/hooks/useOpenVault'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getVaultLabel } from '@/lib/vaultLabels'
 
 type Props = {
   visible: boolean
@@ -32,6 +34,8 @@ export function SyncDeleteModal({ visible, opacity, onCancel, onConfirm }: Props
   const styles = useStyles()
   const commonThemedStyles = useCommonThemedStyles()
   const { t } = useTranslation()
+  const { openVault } = useOpenVault()
+  const vaultName = getVaultLabel(openVault, t)
 
   return (
     <Modal
@@ -58,8 +62,10 @@ export function SyncDeleteModal({ visible, opacity, onCancel, onConfirm }: Props
                 />
               </RNView>
 
-              <Text style={styles.modalTitle}>{t('sync.delete.title')}</Text>
-              <Text style={styles.modalSub}>{t('sync.delete.description')}</Text>
+              <Text style={styles.modalTitle}>{t('sync.delete.title', { name: vaultName })}</Text>
+              <Text style={styles.modalSub}>
+                {t('sync.delete.description', { name: vaultName })}
+              </Text>
 
               <RNView style={styles.modalRow}>
                 <Pressable

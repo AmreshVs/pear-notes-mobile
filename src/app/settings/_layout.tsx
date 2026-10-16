@@ -76,12 +76,8 @@ export default function SettingsLayout() {
         redirect={!isMultiVaultEnabled()}
         options={{ title: t('vaults.join.sectionTitle') }}
       />
-      <Stack.Screen
-        name="vaults/invite"
-        redirect={!isMultiVaultEnabled()}
-        options={{ title: t('vaults.invite.short') }}
-      />
       <Stack.Screen name="devices" options={{ title: t('layouts.linkDevices') }} />
+      <Stack.Screen name="devices/add" options={{ title: t('sync.add.title') }} />
       <Stack.Screen name="sync" options={{ title: t('layouts.sync') }} />
       <Stack.Screen name="backup" options={{ title: t('layouts.backupRestore') }} />
       <Stack.Screen name="backup-password" options={{ title: t('layouts.backupPassword') }} />

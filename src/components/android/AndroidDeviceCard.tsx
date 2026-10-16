@@ -35,8 +35,10 @@ import {
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
 import { useDeviceIndexer } from '@/hooks/useDeviceIndexer'
+import { useOpenVault } from '@/hooks/useOpenVault'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getVaultLabel } from '@/lib/vaultLabels'
 import { getDeviceActionFlags } from '@/utils/deviceCardMenu'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -70,6 +72,8 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
   onDelete,
 }: DeviceCardProps) {
   const { t } = useTranslation()
+  const { openVault } = useOpenVault()
+  const vaultName = getVaultLabel(openVault, t)
   const dispatch = useDispatch()
   const styles = useStyles()
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
@@ -201,7 +205,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
     if (actionFlags.canRemove) {
       actions.push({
         icon: 'delete-outline',
-        label: t('sync.delete.remove'),
+        label: t('sync.delete.menu', { name: vaultName }),
         onPress: handleSheetRemove,
         destructive: true,
       })
@@ -214,6 +218,7 @@ export const AndroidDeviceCard = memo(function AndroidDeviceCard({
     handleSheetRemoveIndexer,
     handleSheetRemove,
     t,
+    vaultName,
   ])
 
   const entering = useMemo(

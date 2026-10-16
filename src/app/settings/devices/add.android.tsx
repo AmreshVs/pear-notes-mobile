@@ -9,17 +9,17 @@ import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBa
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, useTheme } from '@/components/Themed'
 import { commonStyles, UI_SIZE_16, UI_SIZE_40 } from '@/constants/commonStyles'
-import { buildVaultInviteCopy } from '@/utils/inviteCopy'
+import { buildAddDeviceCopy } from '@/utils/inviteCopy'
 
-import { useVaultInviteScreen } from './useVaultInviteScreen'
+import { useAddDeviceScreen } from './useAddDeviceScreen'
 
-export default function AndroidVaultInviteScreen() {
+export default function AndroidAddDeviceScreen() {
   const theme = useTheme()
   const styles = useStyles()
   const { t } = useTranslation()
-  const { name, invite } = useVaultInviteScreen(t('vaults.defaultName'))
-  const copy = useMemo(() => buildVaultInviteCopy(t, name), [name, t])
-  const title = t('vaults.invite.title', { name })
+  const { name, invite } = useAddDeviceScreen(t('vaults.defaultName'))
+  const copy = useMemo(() => buildAddDeviceCopy(t, name), [name, t])
+  const title = t('sync.add.title')
 
   return (
     <View style={styles.root}>
@@ -27,13 +27,13 @@ export default function AndroidVaultInviteScreen() {
       <Stack.Screen options={{ headerShown: false }} />
       <AndroidSettingsAppBar title={title} />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <AndroidInviteCard invite={invite} copy={copy} idleIcon="account-plus-outline" />
+        <AndroidInviteCard invite={invite} copy={copy} idleIcon="devices" />
       </ScrollView>
     </View>
   )
 }
 
-const useInviteHooks = () => {
+const useAddDeviceHooks = () => {
   const md3 = useMD3Theme()
   const insets = useSafeAreaInsets()
   return { md3, insets }
@@ -52,4 +52,4 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
     },
   })
   return styles
-}, useInviteHooks)
+}, useAddDeviceHooks)

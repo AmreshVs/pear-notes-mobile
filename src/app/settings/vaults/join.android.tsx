@@ -13,11 +13,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
 import { Stack } from 'expo-router'
 
-import { VAULT_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
+import { MAX_VAULTS, VAULT_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
 
 import { AndroidScannerModal } from '@/components/android/AndroidScannerModal'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { JoinChoiceCard } from '@/components/sync/JoinChoiceCard'
 import { createThemedStylesheetWithHooks, Text, useTheme } from '@/components/Themed'
 import {
   commonStyles,
@@ -34,6 +35,7 @@ import {
 } from '@/constants/commonStyles'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getVaultLabel } from '@/lib/vaultLabels'
 
 import { useJoinVaultScreen } from './useJoinVaultScreen'
 
@@ -48,17 +50,23 @@ export default function AndroidJoinVaultScreen() {
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
   const {
+    openVault,
     vaultName,
     setVaultName,
     code,
     setCode,
     showCodeHint,
-    isDeviceLink,
     nameFromInvite,
+    hasNotes,
+    canAdd,
+    choice,
+    setChoice,
+    keepsSeparate,
     canJoin,
     join,
     scanner,
   } = useJoinVaultScreen()
+  const openVaultName = getVaultLabel(openVault, t)
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
 
@@ -112,27 +120,38 @@ export default function AndroidJoinVaultScreen() {
             placeholder={t('vaults.join.linkPlaceholder')}
             autoCapitalize="none"
             autoCorrect={false}
-            error={showCodeHint || isDeviceLink}
+            error={showCodeHint}
           />
           {!scanner.scannerVisible && !!scanner.scanError && (
             <Text style={styles.error}>{t(scanner.scanError)}</Text>
-          )}
-          {!scanner.scanError && isDeviceLink && (
-            <Text style={styles.error}>{t('vaults.join.deviceLinkError')}</Text>
           )}
           {!scanner.scanError && showCodeHint && (
             <Text style={styles.hint}>{t('sync.paste.hintInvalid')}</Text>
           )}
 
-          <PaperTextInput
-            mode="outlined"
-            value={vaultName}
-            onChangeText={setVaultName}
-            maxLength={VAULT_NAME_MAX_LENGTH}
-            label={t('vaults.nameLabel')}
-            placeholder={t('vaults.namePlaceholder')}
-          />
-          {nameFromInvite && <Text style={styles.hint}>{t('vaults.join.nameFromInvite')}</Text>}
+          {hasNotes && (
+            <JoinChoiceCard
+              vaultName={openVaultName}
+              choice={choice}
+              canKeepSeparate={canAdd}
+              maxVaults={MAX_VAULTS}
+              onSelect={setChoice}
+            />
+          )}
+
+          {keepsSeparate && (
+            <PaperTextInput
+              mode="outlined"
+              value={vaultName}
+              onChangeText={setVaultName}
+              maxLength={VAULT_NAME_MAX_LENGTH}
+              label={t('vaults.nameLabel')}
+              placeholder={t('vaults.namePlaceholder')}
+            />
+          )}
+          {keepsSeparate && nameFromInvite && (
+            <Text style={styles.hint}>{t('vaults.join.nameFromInvite')}</Text>
+          )}
 
           <Pressable
             onPress={join}

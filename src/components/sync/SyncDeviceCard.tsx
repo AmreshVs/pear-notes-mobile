@@ -33,7 +33,9 @@ import {
 } from '@/constants/commonStyles'
 import { DEVICE_ACTION } from '@/constants/deviceActions'
 import { useDeviceIndexer } from '@/hooks/useDeviceIndexer'
+import { useOpenVault } from '@/hooks/useOpenVault'
 import { hexWithAlpha } from '@/lib/backupUtils'
+import { getVaultLabel } from '@/lib/vaultLabels'
 import { buildDeviceCardMenu, getDeviceActionFlags } from '@/utils/deviceCardMenu'
 import { getPlatformNames } from '@/utils/settingsUtils'
 
@@ -60,6 +62,8 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
   const styles = useStyles()
   const dispatch = useDispatch()
   const { t } = useTranslation()
+  const { openVault } = useOpenVault()
+  const vaultName = getVaultLabel(openVault, t)
   const iconName: IconName = device.deviceType === 'desktop' ? 'desktopcomputer' : 'iphone'
 
   const [isEditing, setIsEditing] = useState(false)
@@ -133,9 +137,9 @@ export const SyncDeviceCard = memo(function SyncDeviceCard({
         rename: t('sync.devices.rename'),
         makeIndexer: t('sync.devices.makeIndexer'),
         removeIndexer: t('sync.devices.removeIndexer'),
-        remove: t('sync.delete.remove'),
+        remove: t('sync.delete.menu', { name: vaultName }),
       }),
-    [actionFlags, t],
+    [actionFlags, t, vaultName],
   )
 
   const handleMenuSelect = useCallback(

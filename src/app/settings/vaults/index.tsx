@@ -14,6 +14,7 @@ import {
   FontSize,
   Radii,
   Space,
+  UI_ICON_SIZE_14,
   UI_ICON_SIZE_20,
   UI_SIZE_36,
   UI_SIZE_44,
@@ -21,7 +22,7 @@ import {
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { VAULT_ACTION } from '@/constants/vaultActions'
 import { useVaultsScreen } from '@/hooks/useVaultsScreen'
-import { INVITE_VAULT_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
+import { DEVICES_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { hapticSelection } from '@/lib/haptics'
 import { getVaultErrorKey, getVaultInitial, getVaultLabel } from '@/lib/vaultLabels'
 import type { Vault } from '@/lib/vaults.types'
@@ -96,7 +97,7 @@ export default function VaultsScreen() {
 
   const handleCreate = useCallback(() => setNameDialog({ mode: 'create' }), [setNameDialog])
   const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
-  const handleInvite = useCallback(() => router.push(INVITE_VAULT_ROUTE as never), [])
+  const handleDevices = useCallback(() => router.push(DEVICES_ROUTE as never), [])
   const currentLabel = getVaultLabel(
     vaults.find((vault) => vault.current),
     t,
@@ -179,19 +180,23 @@ export default function VaultsScreen() {
       )}
       <RNView style={commonThemedStyles.card}>
         <Pressable
-          onPress={handleInvite}
+          onPress={handleDevices}
           disabled={busy}
           accessibilityRole="button"
           style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
         >
-          <SymbolIcon name="person.badge.plus" size={UI_ICON_SIZE_20} color={colors.primary} />
-          <Text style={styles.addLabel}>{t('vaults.invite.title', { name: currentLabel })}</Text>
+          <SymbolIcon
+            name="laptopcomputer.and.iphone"
+            size={UI_ICON_SIZE_20}
+            color={colors.primary}
+          />
+          <Text style={styles.navLabel}>{t('sync.devicesIn', { name: currentLabel })}</Text>
+          <SymbolIcon name="chevron.right" size={UI_ICON_SIZE_14} color={colors.textMuted} />
         </Pressable>
+      </RNView>
+      <RNView style={commonThemedStyles.card}>
         {canAdd && (
           <>
-            <RNView style={styles.dividerWrap}>
-              <Divider />
-            </RNView>
             <Pressable
               onPress={handleCreate}
               disabled={busy}
@@ -204,17 +209,17 @@ export default function VaultsScreen() {
             <RNView style={styles.dividerWrap}>
               <Divider />
             </RNView>
-            <Pressable
-              onPress={handleJoin}
-              disabled={busy}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
-            >
-              <SymbolIcon name="qrcode.viewfinder" size={UI_ICON_SIZE_20} color={colors.primary} />
-              <Text style={styles.addLabel}>{t('vaults.join.sectionTitle')}</Text>
-            </Pressable>
           </>
         )}
+        <Pressable
+          onPress={handleJoin}
+          disabled={busy}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
+        >
+          <SymbolIcon name="qrcode.viewfinder" size={UI_ICON_SIZE_20} color={colors.primary} />
+          <Text style={styles.addLabel}>{t('vaults.join.sectionTitle')}</Text>
+        </Pressable>
       </RNView>
       {!canAdd && <Text style={styles.note}>{t('vaults.limitReached', { max: MAX_VAULTS })}</Text>}
     </ScrollView>
@@ -277,6 +282,11 @@ const useStyles = createThemedStylesheet((theme) => {
     addLabel: {
       fontSize: FontSize.subtitle,
       color: theme.colors.primary,
+    },
+    navLabel: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.subtitle,
+      color: theme.colors.text,
     },
     note: {
       fontSize: FontSize.caption,

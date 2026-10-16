@@ -17,7 +17,6 @@ import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { router } from 'expo-router'
 
-import { INVITE_KIND } from '@pear-notes/core/constant.js'
 import {
   clearStorage,
   confirmPairing,
@@ -32,12 +31,7 @@ import {
   setShowPairingInput,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
-import {
-  extractInvite,
-  getFingerprint,
-  isInviteForOtherKind,
-  isValidInvite,
-} from '@pear-notes/core/utils.js'
+import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -62,7 +56,6 @@ import {
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { hapticError, hapticMedium, hapticSuccess } from '@/lib/haptics'
-import { pendingInviteState } from '@/lib/pendingInviteState'
 import { clearVaultSecrets } from '@/lib/secureStore'
 import { getRelativeTime } from '@/utils/relativeTime'
 
@@ -79,17 +72,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
   const colors = useColors()
   const theme = useTheme()
   const [pasteCode, setPasteCode] = useState('')
-  const [pendingInvite, setPendingInvite] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(false)
   const [hasScanned, setHasScanned] = useState(false)
   const [presenceNow, setPresenceNow] = useState(() => Date.now())
   const [cameraPermission, requestCameraPermission] = useCameraPermissions()
-
-  useEffect(() => {
-    return pendingInviteState.subscribe((invite) => {
-      setPendingInvite(invite)
-    })
-  }, [])
 
   const inviterStatus = useSelector(getInviterStatus)
   const receiverStatus = useSelector(getReceiverStatus)
@@ -98,8 +84,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   const isInviterActive = inviterStatus.step !== 'idle'
   const isReceiverActive = receiverStatus.step !== 'idle'
-  const isVisible =
-    isInviterActive || isReceiverActive || showPairingInput || deviceRemoved || !!pendingInvite
+  const isVisible = isInviterActive || isReceiverActive || showPairingInput || deviceRemoved
 
   const activeStatus = isInviterActive ? inviterStatus : receiverStatus
   const isInviter = isInviterActive
@@ -131,7 +116,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
     if (isInviter) dispatch(resetInvite())
     else if (isReceiverActive) dispatch(resetReceiverStatus())
     else dispatch(setShowPairingInput(false))
-    setPendingInvite(null)
     setIsScanning(false)
   }, [dispatch, isInviter, isReceiverActive, deviceRemoved])
 
@@ -147,26 +131,19 @@ export const PairingOverlay = memo(function PairingOverlay() {
     dispatch(resetReceiverStatus())
   }, [dispatch])
 
-  const handleConnect = useCallback(() => {
-    if (isValidInvite(pasteCode, INVITE_KIND.DEVICE)) {
-      setPendingInvite(extractInvite(pasteCode))
+  const joinWithInvite = useCallback(
+    (code: string) => {
+      dispatch(subscribePairUser({ invite: extractInvite(code) }))
+      dispatch(setShowPairingInput(false))
       setIsScanning(false)
-    }
-  }, [pasteCode])
+      setPasteCode('')
+    },
+    [dispatch],
+  )
 
-  const handleConfirmMerge = useCallback(() => {
-    if (!pendingInvite) return
-    dispatch(subscribePairUser({ invite: pendingInvite }))
-    dispatch(setShowPairingInput(false))
-    setPendingInvite(null)
-    pendingInviteState.setPendingInvite(null)
-    setPasteCode('')
-  }, [dispatch, pendingInvite])
-
-  const handleCancelMerge = useCallback(() => {
-    setPendingInvite(null)
-    pendingInviteState.setPendingInvite(null)
-  }, [])
+  const handleConnect = useCallback(() => {
+    if (isValidInvite(pasteCode)) joinWithInvite(pasteCode)
+  }, [joinWithInvite, pasteCode])
 
   const handleOpenScanner = useCallback(async () => {
     if (!cameraPermission?.granted) {
@@ -194,16 +171,15 @@ export const PairingOverlay = memo(function PairingOverlay() {
       if (!data || hasScanned) return
       hapticMedium()
       setHasScanned(true)
-      if (isValidInvite(data, INVITE_KIND.DEVICE)) {
-        setPendingInvite(extractInvite(data))
-        setIsScanning(false)
+      if (isValidInvite(data)) {
+        joinWithInvite(data)
       } else {
         setPasteCode(data.trim())
         setIsScanning(false)
       }
       setTimeout(() => setHasScanned(false), 1000)
     },
-    [hasScanned],
+    [hasScanned, joinWithInvite],
   )
 
   const renderIcon = useCallback(() => {
@@ -416,26 +392,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
       )
     }
 
-    if (pendingInvite) {
-      return (
-        <View style={styles.cardInner}>
-          <View style={styles.iconGold}>
-            <SymbolIcon name="link" size={UI_ICON_SIZE_40} color={colors.primary} />
-          </View>
-          <Text style={styles.title}>{t('pairing.overlay.mergeTitle')}</Text>
-          <Text style={styles.sub}>{t('pairing.overlay.mergeDesc')}</Text>
-          <View style={styles.row}>
-            <Pressable onPress={handleCancelMerge} style={styles.cancelPressable}>
-              <Text style={styles.cancelBtnText}>{t('common.cancel')}</Text>
-            </Pressable>
-            <Pressable onPress={handleConfirmMerge} style={[styles.btn, styles.confirmBtn]}>
-              <Text style={styles.confirmBtnText}>{t('pairing.overlay.mergeConfirm')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )
-    }
-
     if (showPairingInput) {
       return (
         <View style={styles.cardInner}>
@@ -464,13 +420,8 @@ export const PairingOverlay = memo(function PairingOverlay() {
               autoCapitalize="none"
               autoCorrect={false}
             />
-            {isInviteForOtherKind(pasteCode, INVITE_KIND.DEVICE) ? (
-              <Text style={styles.inputError}>{t('sync.paste.vaultLinkError')}</Text>
-            ) : (
-              pasteCode.trim().length > 0 &&
-              !isValidInvite(pasteCode) && (
-                <Text style={styles.inputHint}>{t('sync.paste.hintInvalid')}</Text>
-              )
+            {pasteCode.trim().length > 0 && !isValidInvite(pasteCode) && (
+              <Text style={styles.inputHint}>{t('sync.paste.hintInvalid')}</Text>
             )}
           </View>
           <View style={styles.row}>
@@ -479,11 +430,11 @@ export const PairingOverlay = memo(function PairingOverlay() {
             </Pressable>
             <Pressable
               onPress={handleConnect}
-              disabled={!isValidInvite(pasteCode, INVITE_KIND.DEVICE)}
+              disabled={!isValidInvite(pasteCode)}
               style={[
                 styles.btn,
                 styles.confirmBtn,
-                !isValidInvite(pasteCode, INVITE_KIND.DEVICE) && styles.confirmBtnDisabled,
+                !isValidInvite(pasteCode) && styles.confirmBtnDisabled,
               ]}
             >
               <Text style={styles.confirmBtnText}>{t('pairing.overlay.connectBtn')}</Text>
@@ -583,9 +534,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
     styles,
     deviceRemoved,
     handleOpenScanner,
-    pendingInvite,
-    handleConfirmMerge,
-    handleCancelMerge,
   ])
 
   if (!isVisible) return null
@@ -612,7 +560,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
         pointerEvents="box-none"
       >
         <Reanimated.View
-          key={`${step}-${pendingInvite ? 'merge' : showPairingInput ? 'input' : 'flow'}`}
+          key={`${step}-${showPairingInput ? 'input' : 'flow'}`}
           entering={FadeInDown.duration(Durations.slide)}
         >
           <Reanimated.View
@@ -1084,13 +1032,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, insets) => {
       fontWeight: FontWeight.medium,
       textAlign: 'center',
       color: theme.colors.textSecondary,
-    },
-    inputError: {
-      marginTop: Space.sm,
-      fontSize: FontSize.caption,
-      fontWeight: FontWeight.semibold,
-      textAlign: 'center',
-      color: theme.colors.error,
     },
     requestedAtText: {
       fontSize: FontSize.caption,
