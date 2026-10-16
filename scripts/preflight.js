@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 
 const play = require('./playCredentials')
-const { compareInstalledCore } = require('./coreInstall')
+const { checkCorePinRef, compareInstalledCore } = require('./coreInstall')
 const { storeBuild } = require('./store-build')
 const { findIosXcode, MAX_IOS_SDK_MAJOR } = require('./xcode')
 
@@ -88,9 +88,6 @@ function checkLockfiles() {
 }
 
 function checkCorePinned() {
-  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'))
-  const spec = pkg.dependencies['@pear-notes/core'] ?? ''
-
   const lockPath = path.join(ROOT, 'package-lock.json')
   const lock = fs.existsSync(lockPath) ? fs.readFileSync(lockPath, 'utf8') : ''
   const lockedSha = lock.match(/pear-notes-core(?:\.git)?#([0-9a-f]{40})/)?.[1]
@@ -102,21 +99,9 @@ function checkCorePinned() {
     )
   }
 
-  const declaredRef = spec.includes('#') ? spec.split('#')[1] : null
-  const declaredShaIsCommit = declaredRef !== null && /^[0-9a-f]{7,40}$/.test(declaredRef)
-
-  if (declaredRef !== null && !declaredShaIsCommit) {
-    warn(
-      'core',
-      `package.json pins the mutable ref "${declaredRef}" - only a commit sha is reproducible, ` +
-        'a force-push or a new commit on that ref silently changes what ships',
-    )
-  } else if (declaredShaIsCommit && !lockedSha.startsWith(declaredRef)) {
-    return fail(
-      'core',
-      `package.json pins ${declaredRef.slice(0, 12)} but the lock resolves ${lockedSha.slice(0, 12)} - run npm install`,
-    )
-  }
+  const pin = checkCorePinRef(ROOT)
+  if (pin.level === 'fail') return fail('core', pin.detail)
+  if (pin.level === 'warn') warn('core', pin.detail)
 
   if (IS_CI) {
     return pass('core', `lock pins ${lockedSha.slice(0, 12)}, installed from that commit by setup`)
@@ -163,13 +148,6 @@ function checkCorePinned() {
       'core',
       `core ${coreHead.slice(0, 12)} is not on any remote branch - EAS resolves the dependency ` +
         'over the network and the install will fail. Push pear-notes-core first.',
-    )
-  }
-
-  if (declaredRef === null) {
-    warn(
-      'core',
-      `package.json is unpinned - a future npm install will silently jump to the core default branch`,
     )
   }
 
