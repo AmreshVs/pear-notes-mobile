@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Pressable, Switch, View } from 'react-native'
+import { Pressable, View } from 'react-native'
+import { Switch } from 'react-native-paper'
 
 import { useMD3CommonStyles } from '@/components/android/useMD3CommonStyles'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
@@ -25,10 +26,6 @@ export function IndexSection({ statusText, busy, onRebuild }: IndexSectionProps)
   const md3 = useMD3Theme()
   const ripple = useMemo(() => androidRipple(md3.colors.onSurface), [md3.colors.onSurface])
   const charging = useIndexOnlyWhileCharging()
-  const trackColor = useMemo(
-    () => ({ false: md3.colors.surfaceVariant, true: md3.colors.primary }),
-    [md3.colors.surfaceVariant, md3.colors.primary],
-  )
   const { progress, bytes } = useIndexProgress()
   const { progressText, sizeText } = getIndexCaption(t, progress, bytes)
   const fillStyle = useMemo(() => ({ width: `${progress.percent}%` as const }), [progress.percent])
@@ -81,7 +78,7 @@ export function IndexSection({ statusText, busy, onRebuild }: IndexSectionProps)
               {t('settings.onDeviceAi.index.onlyWhileChargingDesc')}
             </Text>
           </View>
-          <Switch value={charging.on} onValueChange={charging.toggle} trackColor={trackColor} />
+          <Switch value={charging.on} onValueChange={charging.toggle} />
         </View>
       </View>
     </>
