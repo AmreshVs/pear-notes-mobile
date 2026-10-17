@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
-  Keyboard,
   type LayoutChangeEvent,
   Pressable,
   ScrollView,
@@ -9,9 +8,7 @@ import {
   type TextInput,
   View,
 } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { router, Stack, useLocalSearchParams } from 'expo-router'
-import { useHeaderHeight } from 'expo-router/react-navigation'
 import { SymbolView } from 'expo-symbols'
 
 import { VAULT_ASK_KIND } from '@pear-notes/core/store/services/localAiVaultAsk.js'
@@ -51,6 +48,7 @@ import { AskVaultReminderAction } from './AskVaultReminderAction'
 import { AskVaultScopePill } from './AskVaultScopePill'
 import { AskVaultSources } from './AskVaultSources'
 import { AskVaultSuggestions } from './AskVaultSuggestions'
+import { useAskThreadScroll } from './useAskThreadScroll'
 import {
   type AskThreadView,
   getTurnDraft,
@@ -68,15 +66,11 @@ export function AskVaultScreen() {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const styles = useStyles()
-  const threadRef = useRef<ScrollView>(null)
   const inputRef = useRef<TextInput>(null)
   useFocusAfterTransition(inputRef)
   const params = useLocalSearchParams<{ question?: string }>()
   const [showRecent, setShowRecent] = useState(false)
   const [composerHeight, setComposerHeight] = useState(0)
-  const headerHeight = useHeaderHeight()
-  const insets = useSafeAreaInsets()
-  const viewportHeightRef = useRef(0)
   const handleDismissed = useCallback(() => router.back(), [])
   const {
     question,
@@ -129,6 +123,7 @@ export function AskVaultScreen() {
       ? t('localAi.askVault.onMac', { device: desktopTitle })
       : t('localAi.askVault.footerPrivate')
   const isEmpty = turns.length === 0
+  const { threadRef, scrollProps } = useAskThreadScroll(isEmpty)
   const canShowRecent = ready && isEmpty && threads.length > 0
   const recentOpen = showRecent && canShowRecent
   const contentStyle = useMemo(
@@ -214,20 +209,6 @@ export function AskVaultScreen() {
   const titleOf = useCallback(
     (key: string) => notesData?.[key]?.title?.trim() || t('activity.untitledNote'),
     [notesData, t],
-  )
-
-  const handleViewportLayout = useCallback((event: LayoutChangeEvent) => {
-    viewportHeightRef.current = event.nativeEvent.layout.height
-  }, [])
-
-  const scrollToLatest = useCallback(
-    (_width: number, contentHeight: number) => {
-      const keyboardHeight = Keyboard.isVisible() ? (Keyboard.metrics()?.height ?? 0) : 0
-      const bottomInset = Math.max(keyboardHeight, insets.bottom)
-      const y = Math.max(contentHeight - viewportHeightRef.current + bottomInset, -headerHeight)
-      threadRef.current?.scrollTo({ y, animated: true })
-    },
-    [headerHeight, insets.bottom],
   )
 
   const renderAnswerText = useCallback(
@@ -421,11 +402,8 @@ export function AskVaultScreen() {
       <Stack.Screen options={screenOptions} />
       <ScrollView
         ref={threadRef}
-        contentInsetAdjustmentBehavior="automatic"
-        automaticallyAdjustKeyboardInsets
-        onLayout={handleViewportLayout}
+        {...scrollProps}
         contentContainerStyle={[styles.content, contentStyle]}
-        onContentSizeChange={isEmpty ? undefined : scrollToLatest}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
       >
