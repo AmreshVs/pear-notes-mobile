@@ -7,7 +7,10 @@ import { runAsk } from '@pear-notes/core/store/services/localAiAsk.js'
 import {
   canRunModels,
   configureLocalAiDevice,
+  getCoremlSet,
+  getCoremlSetBytes,
   getFeatureRegistryNames,
+  getFlatModelFile,
   getLocalAiDevice,
   getTextAskFallback,
   isOcrModel,
@@ -74,6 +77,7 @@ import { PDF_TEXT_MAX_BYTES, readPdfText } from '@/lib/pdfTools'
 import ExpoLocalAi from '../../../modules/expo-local-ai'
 
 type QvacSdk = typeof import('@qvac/sdk')
+type CoremlSet = NonNullable<ReturnType<typeof getCoremlSet>>
 type LoadModelInput = Record<string, unknown>
 type RegistryModels = Record<string, { bytes: number; engine: string } | undefined>
 type DownloadAssetInput = Parameters<QvacSdk['downloadAsset']>[0]
@@ -157,6 +161,8 @@ export class LocalAiError extends Error {
 }
 
 let sdkPromise: Promise<QvacSdk> | null = null
+let sdkReset: Promise<void> | null = null
+let stopServerLogs: (() => void) | null = null
 let registryCacheSwept = false
 let modelsDirectory: string | null = null
 let appStateSubscription: NativeEventSubscription | null = null
@@ -315,6 +321,9 @@ async function withModelWork<T>(
     const ran = readModelGuard().active
     if (ran) recordModelSuccess(ran)
     return result
+  } catch (error) {
+    await resetDeadSdk(error)
+    throw error
   } finally {
     releaseJobs()
     activeModelWork = Math.max(0, activeModelWork - 1)
@@ -458,6 +467,7 @@ function removeRetiredModelFiles(directory: string) {
 function loadSdk(): Promise<QvacSdk> {
   if (!sdkPromise) {
     const pending = (async () => {
+      await sdkReset
       sweepRegistryBlockCache()
       removeAskCacheFiles()
       await excludeQvacHomeFromBackups()
@@ -471,6 +481,11 @@ function loadSdk(): Promise<QvacSdk> {
         handleAppStateChange(sdk, state),
       )
       memoryWarningSubscription = AppState.addEventListener('memoryWarning', handleMemoryWarning)
+      stopServerLogs?.()
+      stopServerLogs = sdk.subscribeServerLogs(({ level, namespace, message }) => {
+        if (level === 'error') log.error(`[qvac] ${namespace}: ${message}`)
+        else if (level === 'warn') log.warn(`[qvac] ${namespace}: ${message}`)
+      })
       return sdk
     })()
     sdkPromise = pending
@@ -543,6 +558,59 @@ async function getDownloadedBytes(sdk: QvacSdk, name: string) {
   return (LOCAL_AI_REGISTRY_MODELS as RegistryModels)[name]?.bytes ?? 0
 }
 
+const coremlSetDir = (directory: string, set: CoremlSet) => `${directory}/sets/${set.setKey}`
+
+function hasCompleteCoremlSet(directory: string, set: CoremlSet) {
+  return set.files.every((file) => {
+    try {
+      const entry = new File(toFileUri(`${coremlSetDir(directory, set)}/${file.path}`))
+      return entry.exists && entry.size === file.bytes
+    } catch {
+      return false
+    }
+  })
+}
+
+function removeFlatCoremlFile(directory: string, set: CoremlSet) {
+  try {
+    const flat = new File(toFileUri(`${directory}/${set.flatFile}`))
+    if (flat.exists) flat.delete()
+  } catch {}
+}
+
+function hasFlatModelFile(directory: string, name: string) {
+  try {
+    const file = new File(toFileUri(`${directory}/${getFlatModelFile(name)}`))
+    return file.exists && file.size === (LOCAL_AI_REGISTRY_MODELS as RegistryModels)[name]?.bytes
+  } catch {
+    return false
+  }
+}
+
+async function findIncompleteModels(names: string[]): Promise<string[]> {
+  const checked = names.filter((name) => getFlatModelFile(name))
+  if (checked.length === 0) return []
+  const directory = await ensureModelsDirectory()
+  return checked.filter((name) => {
+    const set = getCoremlSet(name, Platform.OS)
+    return set ? !hasCompleteCoremlSet(directory, set) : !hasFlatModelFile(directory, name)
+  })
+}
+
+function trackSetProgress(totalBytes: number, onProgress: DownloadOptions['onProgress']) {
+  let doneBytes = 0
+  let fileTotal = 0
+  let fileDone = 0
+  return (progress: { downloaded: number; total: number }) => {
+    if (fileTotal > 0 && (progress.total !== fileTotal || progress.downloaded < fileDone)) {
+      doneBytes += fileTotal
+    }
+    fileTotal = progress.total
+    fileDone = progress.downloaded
+    onProgress?.({ downloadedBytes: Math.min(totalBytes, doneBytes + fileDone), totalBytes })
+  }
+}
+
 function download(name: string, { onProgress }: DownloadOptions = {}) {
   downloadCounter += 1
   const requestId = `local-ai-download-${downloadCounter}`
@@ -552,20 +620,38 @@ function download(name: string, { onProgress }: DownloadOptions = {}) {
   const done = (async () => {
     try {
       const sdk = await loadSdk()
-      const operation = sdk.downloadAsset({
-        assetSrc: registryAsset(sdk, name) as DownloadAssetInput['assetSrc'],
-        onProgress: (progress) =>
-          onProgress?.({ downloadedBytes: progress.downloaded, totalBytes: progress.total }),
-        requireSecureTransport: true,
-        requireHttpChecksum: true,
-      })
-      pending.sdkRequestId = operation.requestId
-      if (pending.cancelled) {
-        sdk.cancel({ requestId: operation.requestId, clearCache: pending.discard }).catch(() => {})
+      const set = getCoremlSet(name, Platform.OS)
+      const directory = set ? await ensureModelsDirectory() : ''
+      const attempts = set ? 2 : 1
+      for (let attempt = 1; attempt <= attempts; attempt += 1) {
+        if (pending.cancelled) throw new LocalAiError(LOCAL_AI_ERROR.DOWNLOAD_FAILED, 'cancelled')
+        const operation = sdk.downloadAsset({
+          assetSrc: registryAsset(sdk, name) as DownloadAssetInput['assetSrc'],
+          onProgress: set
+            ? trackSetProgress(getCoremlSetBytes(set), onProgress)
+            : (progress) =>
+                onProgress?.({ downloadedBytes: progress.downloaded, totalBytes: progress.total }),
+          requireSecureTransport: true,
+          requireHttpChecksum: true,
+        })
+        pending.sdkRequestId = operation.requestId
+        if (pending.cancelled) {
+          sdk
+            .cancel({ requestId: operation.requestId, clearCache: pending.discard })
+            .catch(() => {})
+        }
+        await operation
+        if (!set || hasCompleteCoremlSet(directory, set)) break
+        log.warn(`[ai-model] ${name}: Core ML files missing after download ${attempt}`)
+        if (attempt === attempts) {
+          removeFlatCoremlFile(directory, set)
+          throw new LocalAiError(LOCAL_AI_ERROR.DOWNLOAD_FAILED, 'Core ML files missing')
+        }
       }
-      await operation
+      if (set) removeFlatCoremlFile(directory, set)
       return { bytes: await getDownloadedBytes(sdk, name) }
     } catch (error) {
+      await resetDeadSdk(error)
       throw toDownloadError(error)
     } finally {
       pendingDownloads.delete(requestId)
@@ -596,9 +682,20 @@ async function deleteModel(name: string) {
       if (file.exists) file.delete()
     } catch {}
   }
+  const set = getCoremlSet(name, Platform.OS)
+  if (set) {
+    const directory = await ensureModelsDirectory()
+    try {
+      const dir = new Directory(toFileUri(coremlSetDir(directory, set)))
+      if (dir.exists) dir.delete()
+    } catch {}
+    removeFlatCoremlFile(directory, set)
+  }
 }
 
 async function shutDownSdk() {
+  stopServerLogs?.()
+  stopServerLogs = null
   appStateSubscription?.remove()
   appStateSubscription = null
   memoryWarningSubscription?.remove()
@@ -622,6 +719,20 @@ async function shutDownSdk() {
   wantsSuspend = false
   usedSinceResume = false
   lifecycleRun = null
+}
+
+const isChannelClosed = (error: unknown) =>
+  (error as { code?: string } | null)?.code === 'CHANNEL_CLOSED'
+
+function resetDeadSdk(error: unknown): Promise<void> {
+  if (!isChannelClosed(error)) return Promise.resolve()
+  if (!sdkReset) {
+    log.warn('[ai-model] QVAC worker channel closed, restarting the worker')
+    sdkReset = shutDownSdk().finally(() => {
+      sdkReset = null
+    })
+  }
+  return sdkReset
 }
 
 async function closeAndWipe() {
@@ -654,7 +765,9 @@ async function loadSpeechModel(
   const names = getFeatureRegistryNames(feature, featureConfig)
   const [modelName, vadName] = names
   const englishOnly = featureConfig.language === LOCAL_AI_LANGUAGE.ENGLISH
-  return ensureModelLoaded(sdk, names.join('|'), () => {
+  return ensureModelLoaded(sdk, names.join('|'), async () => {
+    const [missing] = await findIncompleteModels([modelName])
+    if (missing) throw new LocalAiError(LOCAL_AI_ERROR.MODEL_MISSING, `${missing} files missing`)
     if ((LOCAL_AI_REGISTRY_MODELS as RegistryModels)[modelName]?.engine === PARAKEET_ENGINE) {
       return loadModelWith(sdk, {
         modelSrc: registryAsset(sdk, modelName),
@@ -1228,7 +1341,13 @@ export function startLiveTranscription(
       })
       let live: LiveTranscription
       try {
-        live = await startLiveTranscriptionNow(feature, featureConfig, handlers)
+        live = await startLiveTranscriptionNow(feature, featureConfig, handlers).catch(
+          async (error) => {
+            if (!isChannelClosed(error)) throw error
+            await resetDeadSdk(error)
+            return startLiveTranscriptionNow(feature, featureConfig, handlers)
+          },
+        )
       } catch (error) {
         reject(error)
         throw error
@@ -1412,14 +1531,18 @@ async function startLiveTranscriptionNow(
       transcript = next
       onText(transcript)
     }
-  })().catch(() => {})
+  })().catch((error) => {
+    if (isChannelClosed(error)) release().finally(() => resetDeadSdk(error))
+  })
 
   const subscription = native.addListener('onPcmChunk', (event) => {
     if (closed) return
     onLevel?.(event.level)
     const chunk = decodeBase64(event.data)
     captured.push(chunk)
-    session.write(chunk)
+    try {
+      session.write(chunk)
+    } catch {}
   })
 
   const release = async () => {
@@ -1577,6 +1700,7 @@ export const qvacAdapter = {
   download,
   cancel,
   deleteModel,
+  findIncompleteModels,
   closeAndWipe,
   clearAskCache,
   embedTexts,
