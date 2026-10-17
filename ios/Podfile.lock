@@ -67,6 +67,8 @@ PODS:
     - ExpoModulesCore
   - ExpoAudio (56.0.13):
     - ExpoModulesCore
+  - ExpoBackgroundService (1.0.0):
+    - ExpoModulesCore
   - ExpoBackgroundTask (56.0.27):
     - ExpoModulesCore
     - ExpoTaskManager
@@ -2115,7 +2117,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - "react-native-bare-kit (0.15.5+aaca93)":
+  - "react-native-bare-kit (0.15.5+0266b8)":
     - boost
     - DoubleConversion
     - fast_float
@@ -3283,6 +3285,7 @@ DEPENDENCIES:
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
   - ExpoAudio (from `../node_modules/expo-audio/ios`)
+  - ExpoBackgroundService (from `../modules/expo-background-service/ios`)
   - ExpoBackgroundTask (from `../node_modules/expo-background-task/ios`)
   - ExpoBackupExclusion (from `../modules/expo-backup-exclusion/ios`)
   - ExpoBattery (from `../node_modules/expo-battery/ios`)
@@ -3446,6 +3449,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-asset/ios"
   ExpoAudio:
     :path: "../node_modules/expo-audio/ios"
+  ExpoBackgroundService:
+    :path: "../modules/expo-background-service/ios"
   ExpoBackgroundTask:
     :path: "../node_modules/expo-background-task/ios"
   ExpoBackupExclusion:
@@ -3722,6 +3727,7 @@ SPEC CHECKSUMS:
   Expo: 2db5f67700319b2b14f6a1be123d13758b959cd4
   ExpoAsset: 3f825e3c30de2d3e8a280b97602a8a607ce864fe
   ExpoAudio: 2970e2d332b52bfbb64d88564105df4b422c78a4
+  ExpoBackgroundService: 4088816410104b591eacf084dc4f95c20eecfd9e
   ExpoBackgroundTask: 255f4700897df147f52f36e2f34e84c4bb1bed8f
   ExpoBackupExclusion: 0d4a2031cc4c8dcaf15cdc9c9d3ce4f94d35e62f
   ExpoBattery: a42e918404ceee07a957db4312918ec0c52bc0d6
@@ -3811,7 +3817,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 3cf4ae68a4d69ca69de94385d423d57785907eb7
   React-microtasksnativemodule: 663a8165cfe10e4eb749796a53b3b8c68631b00c
   React-mutationobservernativemodule: 4f7e4c18735cfbb0f81eada4f34aa527697e8704
-  react-native-bare-kit: c317e046414f24b9e792b89c133a0952dc1d30c2
+  react-native-bare-kit: 790f0e3c3b7f256875b139b79063db08b46f4308
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
   react-native-slider: 4faf1b2266c73f1afb7b30cc6ebb3df238a37c0b
   react-native-vector-icons-material-design-icons: a4b6ec02814573c09203a725ee3767a7e8d5eb77
