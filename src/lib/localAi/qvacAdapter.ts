@@ -140,6 +140,7 @@ interface PendingDownload {
 const QVAC_RUNTIME_CONFIG_FILE = 'qvac.config.json'
 const PCM_FILE_PREFIX = 'local-ai-audio-'
 const PCM_FILE_EXTENSION = '.raw'
+const DOWNLOAD_POLL_MS = 500
 const PARAKEET_ENGINE = 'parakeet'
 const WHISPER_AUDIO_FORMAT = 's16le'
 
@@ -597,18 +598,39 @@ async function findIncompleteModels(names: string[]): Promise<string[]> {
   })
 }
 
-function trackSetProgress(totalBytes: number, onProgress: DownloadOptions['onProgress']) {
-  let doneBytes = 0
-  let fileTotal = 0
-  let fileDone = 0
-  return (progress: { downloaded: number; total: number }) => {
-    if (fileTotal > 0 && (progress.total !== fileTotal || progress.downloaded < fileDone)) {
-      doneBytes += fileTotal
+async function getDownloadTargets(sdk: QvacSdk, name: string, set: CoremlSet | null) {
+  if (set) {
+    const dir = coremlSetDir(await ensureModelsDirectory(), set)
+    return {
+      paths: set.files.map((file) => `${dir}/${file.path}`),
+      totalBytes: getCoremlSetBytes(set),
     }
-    fileTotal = progress.total
-    fileDone = progress.downloaded
-    onProgress?.({ downloadedBytes: Math.min(totalBytes, doneBytes + fileDone), totalBytes })
   }
+  const info = await sdk.getModelInfo({ name }).catch(() => null)
+  return {
+    paths: (info?.cacheFiles ?? []).map((file) => file.path),
+    totalBytes:
+      Number(info?.expectedSize) || (LOCAL_AI_REGISTRY_MODELS as RegistryModels)[name]?.bytes || 0,
+  }
+}
+
+function watchDownloadedBytes(
+  { paths, totalBytes }: { paths: string[]; totalBytes: number },
+  onProgress: DownloadOptions['onProgress'],
+) {
+  const report = () => {
+    let downloadedBytes = 0
+    for (const path of paths) {
+      try {
+        const file = new File(toFileUri(path))
+        if (file.exists) downloadedBytes += file.size ?? 0
+      } catch {}
+    }
+    onProgress?.({ downloadedBytes: Math.min(downloadedBytes, totalBytes), totalBytes })
+  }
+  report()
+  const timer = setInterval(report, DOWNLOAD_POLL_MS)
+  return () => clearInterval(timer)
 }
 
 function download(name: string, { onProgress }: DownloadOptions = {}) {
@@ -622,15 +644,12 @@ function download(name: string, { onProgress }: DownloadOptions = {}) {
       const sdk = await loadSdk()
       const set = getCoremlSet(name, Platform.OS)
       const directory = set ? await ensureModelsDirectory() : ''
+      const targets = await getDownloadTargets(sdk, name, set)
       const attempts = set ? 2 : 1
       for (let attempt = 1; attempt <= attempts; attempt += 1) {
         if (pending.cancelled) throw new LocalAiError(LOCAL_AI_ERROR.DOWNLOAD_FAILED, 'cancelled')
         const operation = sdk.downloadAsset({
           assetSrc: registryAsset(sdk, name) as DownloadAssetInput['assetSrc'],
-          onProgress: set
-            ? trackSetProgress(getCoremlSetBytes(set), onProgress)
-            : (progress) =>
-                onProgress?.({ downloadedBytes: progress.downloaded, totalBytes: progress.total }),
           requireSecureTransport: true,
           requireHttpChecksum: true,
         })
@@ -640,7 +659,12 @@ function download(name: string, { onProgress }: DownloadOptions = {}) {
             .cancel({ requestId: operation.requestId, clearCache: pending.discard })
             .catch(() => {})
         }
-        await operation
+        const stopWatching = watchDownloadedBytes(targets, onProgress)
+        try {
+          await operation
+        } finally {
+          stopWatching()
+        }
         if (!set || hasCompleteCoremlSet(directory, set)) break
         log.warn(`[ai-model] ${name}: Core ML files missing after download ${attempt}`)
         if (attempt === attempts) {
