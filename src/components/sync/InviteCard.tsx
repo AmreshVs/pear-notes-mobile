@@ -227,13 +227,7 @@ const useStyles = createThemedStylesheet((theme) => {
 
   const styles = StyleSheet.create({
     heroCard: {
-      borderRadius: Radii.card,
-      paddingHorizontal: Space.lg,
-      paddingTop: Space.xl,
-      paddingBottom: Space.xl,
       marginBottom: Space.xl,
-      backgroundColor: theme.colors.cardSurface,
-      borderColor: theme.colors.borderSecondary,
     },
     heroSection: {
       alignItems: 'center',

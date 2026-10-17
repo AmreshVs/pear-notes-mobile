@@ -30,7 +30,6 @@ import {
   UI_SIZE_18,
   UI_SIZE_20,
   UI_SIZE_22,
-  UI_SIZE_28,
   UI_SIZE_32,
   UI_SIZE_36,
   UI_SIZE_120,
@@ -69,7 +68,7 @@ export function AndroidInviteCard({ invite, copy, idleIcon, idleBadgeIcon }: Pro
 
   if (!inviteCode || expired) {
     return (
-      <View style={styles.heroCard}>
+      <View>
         <View style={styles.heroSection}>
           <View style={styles.heroCircle}>
             <MaterialCommunityIcons name={idleIcon} size={UI_ICON_SIZE_48} color={c.primary} />
@@ -112,7 +111,7 @@ export function AndroidInviteCard({ invite, copy, idleIcon, idleBadgeIcon }: Pro
   }
 
   return (
-    <View style={styles.heroCard}>
+    <View>
       <View style={styles.heroSection}>
         <View style={styles.heroCircle}>
           <MaterialCommunityIcons
@@ -221,11 +220,6 @@ const useStyles = createThemedStylesheetWithHooks(
   (theme, { md3 }) => {
     const c = md3.colors as ExtendedColors
     const styles = StyleSheet.create({
-      heroCard: {
-        borderRadius: UI_SIZE_28,
-        padding: UI_SIZE_16,
-        backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      },
       heroSection: {
         alignItems: 'center',
         position: 'relative',
