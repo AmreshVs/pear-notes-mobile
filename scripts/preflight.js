@@ -190,6 +190,13 @@ const BUNDLE_FORBIDDEN_STRINGS = [
   'redux store exposed',
 ]
 
+const READABLE_CORE_MARKERS = [
+  'class NoteBase',
+  'async initBase(',
+  'async addNote(',
+  'async subscribePairUser(',
+]
+
 const HYPERCORE_FIRST_BAD = [11, 35, 5]
 
 function checkHypercoreVersion() {
@@ -229,6 +236,14 @@ function checkBundleHygiene() {
     )
   }
 
+  const readable = READABLE_CORE_MARKERS.filter((needle) => contents.includes(needle))
+  if (readable.length > 0) {
+    return fail(
+      'bundle-hygiene',
+      `${relative} contains readable core source (${readable.join(', ')}) - rebuild with npm run bare-bundle without PEAR_OBFUSCATE=0`,
+    )
+  }
+
   const consoleLogs = (contents.match(/console\.log\(/g) ?? []).length
   if (consoleLogs > 5) {
     return fail(
@@ -237,7 +252,10 @@ function checkBundleHygiene() {
     )
   }
 
-  pass('bundle-hygiene', `no "</", no sensitive strings, ${consoleLogs} console.log left`)
+  pass(
+    'bundle-hygiene',
+    `no "</", no sensitive strings, core obfuscated, ${consoleLogs} console.log left`,
+  )
 }
 
 const SENSITIVE_LOG_PATTERNS = [

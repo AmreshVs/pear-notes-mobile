@@ -67,3 +67,11 @@ credentials/
 
 # QVAC worker bundle and addons manifest, produced by scripts/build-qvac-bundle.mjs
 qvac/
+
+# Local agent and tool config
+.argent/
+.gemini/
+.codex/
+.mcp.json
+.vscode/mcp.json
+skills-lock.json

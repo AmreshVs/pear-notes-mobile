@@ -1,6 +1,7 @@
 {
   "name": "pear-notes-editor-bundle",
   "version": "1.0.0",
+  "license": "SEE LICENSE IN ../LICENSE",
   "private": true,
   "description": "Builds a self-contained Tiptap editor HTML for the mobile WebView.",
   "scripts": {
