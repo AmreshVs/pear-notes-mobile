@@ -36,23 +36,8 @@
         "simulator": false
       }
     },
-    "production-cloud": {
-      "extends": "production",
-      "environment": "production",
-      "node": "24.21.0",
-      "ios": {
-        "image": "macos-tahoe-26.5-xcode-26.6"
-      }
-    },
     "production-apk": {
       "extends": "production",
-      "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      }
-    },
-    "production-cloud-apk": {
-      "extends": "production-cloud",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
@@ -70,14 +55,6 @@
       "ios": {
         "ascAppId": "6803172019",
         "appleTeamId": "DRQUZF86A2"
-      }
-    },
-    "production-cloud": {
-      "extends": "production",
-      "ios": {
-        "ascApiKeyPath": "$ASC_API_KEY_PATH",
-        "ascApiKeyIssuerId": "$ASC_ISSUER_ID",
-        "ascApiKeyId": "$ASC_KEY_ID"
       }
     }
   }

@@ -6,6 +6,7 @@ const play = require('./playCredentials')
 const { checkCorePinRef, compareInstalledCore } = require('./coreInstall')
 const { storeBuild } = require('./store-build')
 const { findIosXcode, MAX_IOS_SDK_MAJOR } = require('./xcode')
+const { MAX_CONSOLE_LOGS, inspectBackendBundle } = require('./bundleHygiene')
 
 const ROOT = path.resolve(__dirname, '..')
 const IS_CI = process.env.CI === 'true'
@@ -165,7 +166,7 @@ function checkBackendBundle() {
   const bundle = path.join(ROOT, relative)
 
   if (!fs.existsSync(bundle)) {
-    return fail('backend', `${relative} missing - run npm run bare-bundle`)
+    return fail('backend', `${relative} missing - run npm run setup`)
   }
 
   const size = fs.statSync(bundle).size
@@ -173,29 +174,8 @@ function checkBackendBundle() {
     return fail('backend', `backend.bundle.js is suspiciously small (${size} bytes)`)
   }
 
-  if (!tryRun(`git ls-files ${relative}`)) {
-    return fail(
-      'backend',
-      `${relative} is not tracked by git - eas build --local copies the project from git, so the build will fail to resolve it`,
-    )
-  }
-
-  pass('backend', `${(size / 1024 / 1024).toFixed(1)} MB, tracked`)
+  pass('backend', `${(size / 1024 / 1024).toFixed(1)} MB`)
 }
-
-const BUNDLE_FORBIDDEN_STRINGS = [
-  'Attempting to pair:',
-  'autobase key',
-  'drive key',
-  'redux store exposed',
-]
-
-const READABLE_CORE_MARKERS = [
-  'class NoteBase',
-  'async initBase(',
-  'async addNote(',
-  'async subscribePairUser(',
-]
 
 const HYPERCORE_FIRST_BAD = [11, 35, 5]
 
@@ -219,16 +199,17 @@ function checkBundleHygiene() {
   const bundle = path.join(ROOT, relative)
   if (!fs.existsSync(bundle)) return
 
-  const contents = fs.readFileSync(bundle, 'utf8')
+  const { hasClosingTag, leaked, readable, consoleLogs } = inspectBackendBundle(
+    fs.readFileSync(bundle, 'utf8'),
+  )
 
-  if (contents.includes('</')) {
+  if (hasClosingTag) {
     return fail(
       'bundle-hygiene',
       `${relative} contains a bare "</" sequence, which kills the worklet at launch - rebuild with npm run bare-bundle`,
     )
   }
 
-  const leaked = BUNDLE_FORBIDDEN_STRINGS.filter((needle) => contents.includes(needle))
   if (leaked.length > 0) {
     return fail(
       'bundle-hygiene',
@@ -236,7 +217,6 @@ function checkBundleHygiene() {
     )
   }
 
-  const readable = READABLE_CORE_MARKERS.filter((needle) => contents.includes(needle))
   if (readable.length > 0) {
     return fail(
       'bundle-hygiene',
@@ -244,8 +224,7 @@ function checkBundleHygiene() {
     )
   }
 
-  const consoleLogs = (contents.match(/console\.log\(/g) ?? []).length
-  if (consoleLogs > 5) {
+  if (consoleLogs > MAX_CONSOLE_LOGS) {
     return fail(
       'bundle-hygiene',
       `${relative} has ${consoleLogs} console.log calls - scripts/minify-core.js should have stripped core's; rebuild with npm run bare-bundle`,
@@ -328,7 +307,7 @@ function checkNativeAddonSetup() {
   if (unwired.length) {
     return fail(
       'native-addons',
-      `${unwired.join(', ')} no longer run ${script} - native builds would link every QVAC addon. Re-run expo prebuild or restore the setup call`,
+      `${unwired.join(', ')} no longer run ${script} - native builds would miss the backend and editor bundles and link every QVAC addon. Re-run expo prebuild or restore the setup call`,
     )
   }
   pass('native-addons', `${script} runs from ${entryPoints.join(' and ')}`)
@@ -337,7 +316,7 @@ function checkNativeAddonSetup() {
 function checkEditorBundle() {
   const bundle = path.join(ROOT, 'src', 'utils', 'tiptap-editor-bundle.ts')
   if (!fs.existsSync(bundle))
-    return fail('editor', 'src/utils/tiptap-editor-bundle.ts missing - run npm run build:editor')
+    return fail('editor', 'src/utils/tiptap-editor-bundle.ts missing - run npm run setup')
   pass('editor', `${(fs.statSync(bundle).size / 1024).toFixed(0)} KB`)
 }
 

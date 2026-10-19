@@ -31,7 +31,7 @@ credentials/play-service-account.json.enc. The 32-byte wrapping key lives in
 the macOS login keychain and never touches disk, argv or your shell history.
 
 Neither half is useful alone. During a release the plaintext exists only as a
-0600 file under $TMPDIR, for the seconds \`eas submit\` needs it.
+0600 file under $TMPDIR, for the seconds the Play uploader needs it.
 `)
 }
 
@@ -74,7 +74,7 @@ function importKey(source) {
   console.log(`\n  rm -P ${resolved}\n`)
 
   if (isPlaintextInRepo) {
-    warn('that path is the one eas.json used to read — leaving it means the release still uses it')
+    warn('the release still reads that plaintext path until you delete it')
   }
 
   console.log(

@@ -26,8 +26,8 @@ const bundleInputs = [
   'node_modules/@pear-notes/core/store/services/localAiRegistryCheck.js',
 ].map((file) => path.join(projectRoot, file))
 
-function runScript(name) {
-  const result = spawnSync(process.execPath, [path.join(projectRoot, 'scripts', name)], {
+function runScript(name, args = []) {
+  const result = spawnSync(process.execPath, [path.join(projectRoot, 'scripts', name), ...args], {
     cwd: projectRoot,
     stdio: 'inherit',
   })
@@ -60,6 +60,10 @@ function isWorkerBundleCurrent() {
 runScript('patch-bare-kit-linker.mjs')
 runScript('patch-expo-ui-sheet.mjs')
 runScript('patch-expo-modules-jsi.mjs')
+
+const bundleBuildArgs = process.env.NATIVE_ADDONS_REBUILD === '1' ? [] : ['--if-stale']
+runScript('build-backend-bundle.mjs', bundleBuildArgs)
+runScript('build-editor-bundle.mjs', bundleBuildArgs)
 
 if (isWorkerBundleCurrent()) {
   console.log(`QVAC worker bundle is up to date with ${readManifestAddons().length} native addons`)

@@ -65,6 +65,12 @@ credentials/
 # Staged minified copy of @pear-notes/core, produced by scripts/minify-core.js
 .core-build/
 
+# Backend and editor bundles, produced by scripts/build-backend-bundle.mjs and scripts/build-editor-bundle.mjs
+src/backend/backend.bundle.js
+src/backend/backend.bundle.stamp
+src/utils/tiptap-editor-bundle.ts
+src/utils/tiptap-editor-bundle.stamp
+
 # QVAC worker bundle and addons manifest, produced by scripts/build-qvac-bundle.mjs
 qvac/
 

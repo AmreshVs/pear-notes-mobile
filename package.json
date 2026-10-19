@@ -15,13 +15,13 @@
     "ios": "RCT_METRO_PORT=8099 expo run:ios --port 8099",
     "ios:release": "expo run:ios --device --configuration Release",
     "pod": "cd ios && LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 pod install",
-    "bare-bundle": "node scripts/minify-core.js && npx bare-pack --host android-arm64 --host ios-arm64 --host ios-arm64-simulator --linked --out src/backend/backend.bundle.js .core-build/main.mjs",
+    "bare-bundle": "node scripts/build-backend-bundle.mjs",
     "harden-core": "node scripts/minify-core.js",
     "lint": "eslint . --fix",
     "format": "prettier --write .",
     "kickstart": "node scripts/kickstart.js",
     "copy-core": "node scripts/copy-core.js && npm run bare-bundle",
-    "build:editor": "cd editor-bundle && npm install && npm run build",
+    "build:editor": "node scripts/build-editor-bundle.mjs",
     "typecheck": "tsc --noEmit",
     "version:set": "node scripts/set-version.js",
     "preflight": "node scripts/preflight.js",
@@ -31,9 +31,7 @@
     "release:all": "node scripts/release.js --platform all",
     "creds:check": "node scripts/check-eas-credentials.js",
     "pin-core": "node scripts/pin-core.js",
-    "native-addons": "node scripts/prepare-native-addons.mjs",
-    "eas-build-pre-install": "node scripts/eas-build-hooks.mjs pre-install",
-    "eas-build-post-install": "node scripts/eas-build-hooks.mjs post-install"
+    "native-addons": "node scripts/prepare-native-addons.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",

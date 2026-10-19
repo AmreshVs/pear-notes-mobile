@@ -14,13 +14,9 @@ const ARTIFACT_DIR = path.join(ROOT, 'build')
 
 const PLATFORMS = ['ios', 'android']
 const PROFILE = 'production'
-const CLOUD_PROFILE = 'production-cloud'
 const APK_PROFILE = 'production-apk'
-const CLOUD_APK_PROFILE = 'production-cloud-apk'
 const ANDROID_PACKAGES = ['aab', 'apk', 'both']
 
-const cleanups = []
-let viaEas = false
 let parallel = false
 
 function parseArgs(argv) {
@@ -30,9 +26,6 @@ function parseArgs(argv) {
     skipSubmit: false,
     skipPreflight: false,
     submitOnly: false,
-    viaEas: false,
-    autoSubmit: false,
-    cloud: false,
     parallel: false,
     androidPackage: 'aab',
     bump: false,
@@ -50,10 +43,7 @@ function parseArgs(argv) {
     else if (arg === '--no-commit') args.commit = false
     else if (arg === '--skip-preflight') args.skipPreflight = true
     else if (arg === '--submit-only') args.submitOnly = true
-    else if (arg === '--via-eas') args.viaEas = true
-    else if (arg === '--cloud') args.cloud = true
     else if (arg === '--parallel') args.parallel = true
-    else if (arg === '--auto-submit') args.autoSubmit = true
     else if (arg === '--android-package') args.androidPackage = argv[++i]
   }
 
@@ -64,28 +54,7 @@ function heading(text) {
   console.log(`\n\x1b[1m==> ${text}\x1b[0m`)
 }
 
-function runCleanups() {
-  while (cleanups.length) {
-    try {
-      cleanups.pop()()
-    } catch {}
-  }
-}
-
-function registerCleanup(cleanup) {
-  cleanups.push(cleanup)
-  return () => {
-    const index = cleanups.indexOf(cleanup)
-    if (index === -1) return
-    cleanups.splice(index, 1)
-    try {
-      cleanup()
-    } catch {}
-  }
-}
-
 function abort(message) {
-  runCleanups()
   console.error(`\n\x1b[31mrelease failed: ${message}\x1b[0m\n`)
   process.exit(1)
 }
@@ -214,7 +183,10 @@ function artifactPath(platform, version, buildNumber, extension = null) {
 
 async function prepareSources() {
   await sh('npm run lint', 'Linting')
-  await sh('npm run bare-bundle', 'Bundling the Bare backend worklet')
+  await sh(
+    'node scripts/build-backend-bundle.mjs --if-stale',
+    'Checking the Bare backend worklet bundle',
+  )
 }
 
 async function applyVersion({ bump, version }) {
@@ -238,141 +210,6 @@ async function commitVersion({ commit, version, buildNumber }) {
     `git commit -am "Release ${version} (${buildNumber})"`,
     `Committing version bump ${version} (${buildNumber})`,
   )
-}
-
-function captureJson(command, description, options = {}) {
-  heading(description)
-  const started = Date.now()
-  const stop = options.heartbeat ? startHeartbeat(options.heartbeat, started) : null
-
-  return new Promise((resolve) => {
-    const child = spawn(command, {
-      cwd: ROOT,
-      stdio: ['ignore', 'pipe', 'inherit'],
-      shell: true,
-      env: { ...process.env, ...(options.env ?? {}) },
-    })
-    let stdout = ''
-    child.stdout.on('data', (chunk) => {
-      stdout += chunk
-    })
-
-    const finish = (status) => {
-      if (stop) stop()
-      console.log(`\x1b[2m    took ${formatDuration(Date.now() - started)}\x1b[0m`)
-      let json = null
-      try {
-        json = JSON.parse(stdout.slice(stdout.indexOf('[')))
-      } catch {}
-      if (status !== 0)
-        return resolve({ json, failure: `\`${command}\` exited with code ${status}` })
-      if (!json) return resolve({ json, failure: 'could not read the JSON that eas build printed' })
-      resolve({ json, failure: null })
-    }
-
-    child.on('error', () => finish(1))
-    child.on('close', finish)
-  })
-}
-
-async function download(url, output) {
-  heading(`Downloading ${path.basename(output)}`)
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`download failed with HTTP ${response.status}`)
-  fs.writeFileSync(output, Buffer.from(await response.arrayBuffer()))
-}
-
-async function buildAndSubmitOnEas(platform, version, buildNumber) {
-  const env = submitCredentialsEnv(platform)
-  if (env.failure) return { file: null, failure: env.failure }
-
-  try {
-    const { json, failure } = await captureJson(
-      `eas build --non-interactive --json --wait --auto-submit --platform ${platform} --profile ${CLOUD_PROFILE}`,
-      `Building ${platform} ${version} (${buildNumber}) on EAS, then submitting from EAS`,
-      { heartbeat: `still building or submitting ${platform} on EAS`, env: env.values },
-    )
-    const build = json?.[0]
-    if (!failure) return { file: null, failure: null, submitted: true, easBuildId: build?.id }
-    if (build?.status === 'FINISHED') {
-      const kept = await keepEasArtifact(build, platform, version, buildNumber)
-      return { file: kept, failure, submitFailed: true, easBuildId: build.id }
-    }
-    return { file: null, failure }
-  } finally {
-    env.cleanup?.()
-  }
-}
-
-async function keepEasArtifact(build, platform, version, buildNumber) {
-  const url = build.artifacts?.applicationArchiveUrl ?? build.artifacts?.buildUrl
-  if (!url) return null
-  fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
-  const output = artifactPath(platform, version, buildNumber)
-  try {
-    await download(url, output)
-    return output
-  } catch {
-    return null
-  }
-}
-
-function submitCredentialsEnv(platform) {
-  if (platform === 'ios') {
-    try {
-      const config = asc.resolve()
-      asc.requirePrivateKey(config.ASC_KEY_ID)
-      console.log(`\n  App Store Connect key: ${config.ASC_KEY_ID} (${config.source})`)
-      return {
-        values: {
-          ASC_API_KEY_PATH: asc.privateKeyPath(config.ASC_KEY_ID),
-          ASC_KEY_ID: config.ASC_KEY_ID,
-          ASC_ISSUER_ID: config.ASC_ISSUER_ID,
-        },
-      }
-    } catch (error) {
-      return { failure: `${error.message}${error.hint ? ` (hint: ${error.hint})` : ''}` }
-    }
-  }
-
-  const key = resolvePlayKey()
-  if (!key) return { failure: 'no Play upload key configured - node scripts/setup-play-key.js' }
-  const cleanup = registerCleanup(key.cleanup)
-  console.log(`\n  Play upload key: ${key.email} (${key.source})`)
-  return { values: { [play.ENV_VAR]: key.path }, cleanup }
-}
-
-async function buildOnEas(
-  platform,
-  version,
-  buildNumber,
-  { profile = CLOUD_PROFILE, extension } = {},
-) {
-  fs.mkdirSync(ARTIFACT_DIR, { recursive: true })
-  const output = artifactPath(platform, version, buildNumber, extension)
-
-  const { json, failure } = await captureJson(
-    `eas build --non-interactive --json --wait --platform ${platform} --profile ${profile}`,
-    `Building ${path.basename(output)} on EAS`,
-    { heartbeat: `still building ${platform} on EAS` },
-  )
-  if (failure) return { file: null, failure }
-
-  const build = json?.[0]
-  const url = build?.artifacts?.applicationArchiveUrl ?? build?.artifacts?.buildUrl
-  if (!url)
-    return { file: null, failure: `EAS build ${build?.id ?? ''} finished without an artifact` }
-
-  try {
-    await download(url, output)
-  } catch (error) {
-    return { file: null, failure: error.message }
-  }
-
-  const sizeMb = (fs.statSync(output).size / 1e6).toFixed(1)
-  console.log(`\n  EAS build ${build.id}`)
-  console.log(`  artifact: ${path.relative(ROOT, output)} (${sizeMb} MB)`)
-  return { file: output, failure: null, easBuildId: build.id }
 }
 
 async function buildLocally(platform, profile, version, buildNumber, extension = null) {
@@ -401,32 +238,6 @@ async function buildLocally(platform, profile, version, buildNumber, extension =
   return { file: output, failure: null }
 }
 
-function resolvePlayKey() {
-  try {
-    return play.materialize()
-  } catch (error) {
-    abort(`${error.message}${error.hint ? `\n  hint: ${error.hint}` : ''}`)
-  }
-}
-
-async function submitIosThroughEas(artifact, config) {
-  const { failure } = await sh(
-    `eas submit --non-interactive --platform ios --profile ${CLOUD_PROFILE} --path "${artifact}"`,
-    'Uploading ios build to App Store Connect through EAS',
-    {
-      heartbeat: 'still uploading ios',
-      allowFailure: true,
-      prefix: outputPrefix('ios'),
-      env: {
-        ASC_API_KEY_PATH: asc.privateKeyPath(config.ASC_KEY_ID),
-        ASC_KEY_ID: config.ASC_KEY_ID,
-        ASC_ISSUER_ID: config.ASC_ISSUER_ID,
-      },
-    },
-  )
-  return { skipped: false, failure }
-}
-
 async function submitIos(artifact) {
   let config
   try {
@@ -440,7 +251,9 @@ async function submitIos(artifact) {
 
   console.log(`\n  App Store Connect key: ${config.ASC_KEY_ID} (${config.source})`)
 
-  if (process.platform !== 'darwin' || viaEas) return submitIosThroughEas(artifact, config)
+  if (process.platform !== 'darwin') {
+    return { skipped: false, failure: 'uploading an iOS build needs macOS (xcrun altool)' }
+  }
 
   const { failure } = await sh(
     `xcrun altool --upload-app -f "${artifact}" -t ios --apiKey ${config.ASC_KEY_ID} --apiIssuer ${config.ASC_ISSUER_ID}`,
@@ -501,7 +314,6 @@ async function submitAndroidDirect(artifact, profile, version, buildNumber) {
   } catch (error) {
     console.error(`\n\x1b[31m  ${error.message}\x1b[0m`)
     if (error.hint) console.error(`  hint: ${error.hint}`)
-    console.error(`  Retry through EAS instead: npm run release:android -- --submit-only --via-eas`)
     return { skipped: false, failure: error.message }
   }
 }
@@ -522,44 +334,13 @@ async function submit(platform, profile, artifact, version, buildNumber) {
     }
   })()
 
-  if (hasKey && !viaEas) {
-    return submitAndroidDirect(artifact, profile, version, buildNumber)
-  }
+  if (hasKey) return submitAndroidDirect(artifact, profile, version, buildNumber)
 
-  const env = {}
-  let cleanupKey = null
-
-  if (platform === 'android') {
-    const key = resolvePlayKey()
-
-    if (!key) {
-      heading('Skipping Play upload - no upload key configured')
-      console.log(`  Configure it once:  node scripts/setup-play-key.js <path-to-key.json>`)
-      console.log(`  Or upload by hand:  ${path.relative(ROOT, artifact)}`)
-      console.log('  Play Console -> Testing -> Internal testing -> Create new release')
-      return { skipped: true, failure: null }
-    }
-
-    cleanupKey = registerCleanup(key.cleanup)
-    env[play.ENV_VAR] = key.path
-    console.log(`\n  Play upload key: ${key.email} (${key.source})`)
-  }
-
-  try {
-    const { failure } = await sh(
-      `eas submit --non-interactive --platform ${platform} --profile ${profile} --path "${artifact}"`,
-      `Submitting ${platform} build to the store`,
-      {
-        env,
-        heartbeat: `still uploading ${platform}`,
-        allowFailure: true,
-        prefix: outputPrefix(platform),
-      },
-    )
-    return { skipped: false, failure }
-  } finally {
-    cleanupKey?.()
-  }
+  heading('Skipping Play upload - no upload key configured')
+  console.log(`  Configure it once:  node scripts/setup-play-key.js <path-to-key.json>`)
+  console.log(`  Or upload by hand:  ${path.relative(ROOT, artifact)}`)
+  console.log('  Play Console -> Testing -> Internal testing -> Create new release')
+  return { skipped: true, failure: null }
 }
 
 function summarise(outcomes, totalMs) {
@@ -609,25 +390,7 @@ function finish(outcomes, totalMs, version, buildNumber, commit) {
 }
 
 async function releasePlatform(platform, args, version, buildNumber) {
-  const { file, failure, submitted, submitFailed } = args.autoSubmit
-    ? await buildAndSubmitOnEas(platform, version, buildNumber)
-    : args.cloud
-      ? await buildOnEas(platform, version, buildNumber)
-      : await buildLocally(platform, args.profile, version, buildNumber)
-
-  if (submitted) {
-    return { platform, status: 'ok', detail: 'built and submitted on EAS' }
-  }
-
-  if (submitFailed) {
-    console.error(`\n\x1b[31m  ${platform} built on EAS, but the EAS submission failed.\x1b[0m`)
-    if (file) {
-      console.error(
-        `  The build is kept at ${path.relative(ROOT, file)} - retry with --submit-only.`,
-      )
-    }
-    return { platform, status: 'failed', detail: 'built ok, EAS submit failed' }
-  }
+  const { file, failure } = await buildLocally(platform, args.profile, version, buildNumber)
 
   if (failure) {
     console.error(`\n\x1b[31m  ${platform} build failed: ${failure}\x1b[0m`)
@@ -658,12 +421,7 @@ async function releasePlatform(platform, args, version, buildNumber) {
 }
 
 async function buildSideloadApk(args, version, buildNumber) {
-  const { file, failure } = args.cloud
-    ? await buildOnEas('android', version, buildNumber, {
-        profile: CLOUD_APK_PROFILE,
-        extension: 'apk',
-      })
-    : await buildLocally('android', APK_PROFILE, version, buildNumber, 'apk')
+  const { file, failure } = await buildLocally('android', APK_PROFILE, version, buildNumber, 'apk')
 
   if (failure) {
     console.error(`\n\x1b[31m  android apk build failed: ${failure}\x1b[0m`)
@@ -694,7 +452,6 @@ async function main() {
   const platforms = resolvePlatforms(args.platform)
   const started = Date.now()
 
-  viaEas = args.viaEas
   parallel = args.parallel && platforms.length > 1 && !args.submitOnly
 
   if (!ANDROID_PACKAGES.includes(args.androidPackage)) {
@@ -712,19 +469,8 @@ async function main() {
     )
   }
 
-  if (args.autoSubmit && (!args.cloud || args.skipSubmit || args.submitOnly || args.viaEas)) {
-    abort(
-      '--auto-submit needs --cloud and cannot be combined with --no-submit, --submit-only or --via-eas',
-    )
-  }
-
-  if (
-    platforms.includes('ios') &&
-    process.platform !== 'darwin' &&
-    !args.cloud &&
-    !args.submitOnly
-  ) {
-    abort('local iOS builds require macOS - add --cloud to build on EAS instead')
+  if (platforms.includes('ios') && process.platform !== 'darwin' && !args.submitOnly) {
+    abort('iOS builds require macOS')
   }
 
   if (args.submitOnly) {
@@ -757,8 +503,7 @@ async function main() {
 
   if (!args.skipPreflight) {
     heading('Running release preflight')
-    const buildsIosLocally = platforms.includes('ios') && !args.cloud
-    const preflightArgs = buildsIosLocally ? ['--local-ios'] : []
+    const preflightArgs = platforms.includes('ios') ? ['--local-ios'] : []
     const preflight = spawnSync('node', ['scripts/preflight.js', ...preflightArgs], {
       cwd: ROOT,
       stdio: 'inherit',
@@ -779,10 +524,8 @@ async function main() {
 
   const release = (platform) => releaseTargets(platform, args, version, buildNumber)
   const outcomes = []
-  if (platforms.length > 1 && (args.cloud || parallel)) {
-    heading(
-      `Building ${platforms.join(' and ')} ${args.cloud ? 'on EAS' : 'locally'} at the same time`,
-    )
+  if (parallel) {
+    heading(`Building ${platforms.join(' and ')} at the same time`)
     outcomes.push(...(await Promise.all(platforms.map(release))).flat())
   } else {
     for (const platform of platforms) outcomes.push(...(await release(platform)))
@@ -790,15 +533,5 @@ async function main() {
 
   finish(outcomes, Date.now() - started, version, buildNumber, commit)
 }
-
-process.on('exit', runCleanups)
-process.on('SIGINT', () => {
-  runCleanups()
-  process.exit(130)
-})
-process.on('SIGTERM', () => {
-  runCleanups()
-  process.exit(143)
-})
 
 main().catch((error) => abort(error.message))

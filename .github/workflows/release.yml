@@ -8,15 +8,10 @@ on:
         type: choice
         options: [all, ios, android]
         default: all
-      builder:
-        description: 'Build on: github (GitHub runners) or eas (Expo cloud, uses the EAS free-plan builds)'
-        type: choice
-        options: [github, eas]
-        default: github
       upload:
-        description: 'Upload to TestFlight / Play internal: direct (from the runner), eas-submit (eas submit), eas-auto-submit (EAS submits right after building - needs builder eas), none'
+        description: 'Upload to TestFlight / Play internal: direct (from the runner) or none'
         type: choice
-        options: [direct, eas-submit, eas-auto-submit, none]
+        options: [direct, none]
         default: direct
       android_package:
         description: 'Android: aab (Google Play), both (AAB plus a sideload APK), apk (sideload APK only - needs upload none)'
@@ -55,12 +50,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-
-      - name: Check the build and upload combination
-        if: inputs.upload == 'eas-auto-submit' && inputs.builder != 'eas'
-        run: |
-          echo "::error::upload eas-auto-submit needs builder eas - EAS can only auto-submit builds it made"
-          exit 1
 
       - name: Check the Android package and upload combination
         if: inputs.android_package == 'apk' && inputs.upload != 'none' && inputs.platform != 'ios'
@@ -101,7 +90,7 @@ jobs:
       fail-fast: false
       matrix:
         platform: ${{ fromJSON(needs.prepare.outputs.platforms) }}
-    runs-on: ${{ (inputs.builder == 'github' && matrix.platform == 'ios') && 'macos-26' || 'ubuntu-24.04' }}
+    runs-on: ${{ matrix.platform == 'ios' && 'macos-26' || 'ubuntu-24.04' }}
     timeout-minutes: 150
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
@@ -115,7 +104,6 @@ jobs:
           persist-credentials: false
 
       - name: Free disk space
-        if: inputs.builder == 'github'
         run: |
           df -h /
           if [ "$RUNNER_OS" = "Linux" ]; then
@@ -189,7 +177,7 @@ jobs:
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Give Gradle more memory
-        if: runner.os == 'Linux' && inputs.builder == 'github' && matrix.platform == 'android'
+        if: runner.os == 'Linux' && matrix.platform == 'android'
         run: |
           free -h
           mkdir -p ~/.gradle
@@ -230,18 +218,12 @@ jobs:
       - name: Build and upload
         env:
           PLATFORM: ${{ matrix.platform }}
-          BUILDER: ${{ inputs.builder }}
           UPLOAD: ${{ inputs.upload }}
           ANDROID_PACKAGE: ${{ inputs.android_package }}
         run: |
           flags=(--platform "$PLATFORM")
-          [ "$BUILDER" = "eas" ] && flags+=(--cloud)
           [ "$PLATFORM" = "android" ] && flags+=(--android-package "$ANDROID_PACKAGE")
-          case "$UPLOAD" in
-            none) flags+=(--no-submit) ;;
-            eas-submit) flags+=(--via-eas) ;;
-            eas-auto-submit) flags+=(--auto-submit) ;;
-          esac
+          [ "$UPLOAD" = "none" ] && flags+=(--no-submit)
           node scripts/release.js "${flags[@]}"
 
       - name: Record the upload
