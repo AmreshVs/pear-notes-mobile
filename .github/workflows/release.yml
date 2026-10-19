@@ -161,7 +161,7 @@ jobs:
             [ -z "$PLAY_SERVICE_ACCOUNT_JSON" ] && missing+=(PLAY_SERVICE_ACCOUNT_JSON)
           fi
           if [ ${#missing[@]} -gt 0 ]; then
-            echo "::error::Missing repository secrets: ${missing[*]} (see docs/RELEASE.md, GitHub Actions)"
+            echo "::error::Missing repository secrets: ${missing[*]} (see the mobile release runbook, GitHub Actions section)"
             exit 1
           fi
 
