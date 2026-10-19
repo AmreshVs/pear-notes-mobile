@@ -5,7 +5,8 @@ import { getNoteSummary } from '@pear-notes/core/utils.js'
 
 import { ATTACHMENT_THUMBNAIL_CACHE_DIR } from '@/constants/constants'
 import { ATTACHMENT_CACHE_PREFIX } from '@/lib/noteAttachmentManager'
-import { thumbnailCacheKey, thumbnailFileNames } from '@/lib/thumbnailCache'
+import { UNCACHED_THUMBNAIL_PREFIX } from '@/lib/pdfTools'
+import { deleteThumbnail, thumbnailCacheKey, thumbnailFileNames } from '@/lib/thumbnailCache'
 
 export const IN_SESSION_CACHE_MAX_AGE_MS = 30 * 60 * 1000
 
@@ -29,6 +30,7 @@ export async function sweepTransientUploadCache(): Promise<void> {
           (name) =>
             name.startsWith(UPLOAD_CACHE_PREFIX) ||
             name.startsWith(SCAN_PDF_PREFIX) ||
+            name.startsWith(UNCACHED_THUMBNAIL_PREFIX) ||
             TRANSIENT_AUDIO_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
             TRANSIENT_CACHE_DIRS.includes(name),
         )
@@ -71,7 +73,35 @@ export async function pruneAttachmentCache(maxAgeMs = 0): Promise<number> {
   return reclaimed
 }
 
-type SweepNote = { value?: object | null } | null
+type SweepNote = { value?: { locked?: boolean } | null } | null
+
+type ThumbnailSummary = {
+  pdfs?: { url: string }[]
+  images?: string[]
+}
+
+function thumbnailUrlsOf(noteValue: object): string[] {
+  const summary = getNoteSummary(noteValue) as ThumbnailSummary
+  return [...(summary.pdfs || []).map((pdf) => pdf.url), ...(summary.images || [])]
+}
+
+export async function deleteNoteThumbnails(noteValue: object | null | undefined): Promise<void> {
+  if (!noteValue) return
+  for (const url of thumbnailUrlsOf(noteValue)) await deleteThumbnail(url)
+}
+
+async function thumbnailFilesFor(urls: Set<string>): Promise<Set<string> | null> {
+  const files = new Set<string>()
+  for (const url of urls) {
+    try {
+      const key = await thumbnailCacheKey(url)
+      for (const name of thumbnailFileNames(key)) files.add(name)
+    } catch {
+      return null
+    }
+  }
+  return files
+}
 
 /**
  * Drops every PDF thumbnail no note refers to any more.
@@ -96,27 +126,18 @@ export async function sweepThumbnailCache(notes: SweepNote[]): Promise<void> {
   if (names.length === 0) return
 
   const urls = new Set<string>()
+  const lockedUrls = new Set<string>()
   for (const note of notes) {
     if (!note?.value) continue
-    const summary = getNoteSummary(note.value) as {
-      pdfs?: { url: string }[]
-      images?: string[]
-    }
-    for (const pdf of summary.pdfs || []) urls.add(pdf.url)
-    for (const image of summary.images || []) urls.add(image)
+    const target = note.value.locked === true ? lockedUrls : urls
+    for (const url of thumbnailUrlsOf(note.value)) target.add(url)
   }
 
-  const liveFiles = new Set<string>()
-  for (const url of urls) {
-    try {
-      const key = await thumbnailCacheKey(url)
-      for (const name of thumbnailFileNames(key)) liveFiles.add(name)
-    } catch {
-      // A url we cannot hash is a url we cannot match, so keep everything rather than risk
-      // deleting a live thumbnail.
-      return
-    }
-  }
+  // A url we cannot hash is a url we cannot match, so keep everything rather than risk
+  // deleting a live thumbnail.
+  const liveFiles = await thumbnailFilesFor(urls)
+  const lockedFiles = await thumbnailFilesFor(lockedUrls)
+  if (!liveFiles || !lockedFiles) return
 
   const cutoff = Date.now() - THUMBNAIL_SWEEP_GRACE_MS
   for (const name of names) {
@@ -125,7 +146,7 @@ export async function sweepThumbnailCache(notes: SweepNote[]): Promise<void> {
     try {
       const info = await FileSystem.getInfoAsync(uri)
       if (!info.exists) continue
-      if ((info.modificationTime ?? 0) * 1000 > cutoff) continue
+      if (!lockedFiles.has(name) && (info.modificationTime ?? 0) * 1000 > cutoff) continue
       await FileSystem.deleteAsync(uri, { idempotent: true })
     } catch {
       continue

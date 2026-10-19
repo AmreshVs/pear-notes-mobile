@@ -30,6 +30,7 @@ async function loadPdfTools() {
 
 const PDF_THUMBNAIL_MAX_WIDTH = 360
 const SCAN_PDF_PREFIX = 'scan-'
+export const UNCACHED_THUMBNAIL_PREFIX = 'pdf-preview-'
 
 export type ScanPdfResult = {
   uri: string
@@ -138,8 +139,36 @@ export async function warmPdfThumbnail(
   ).catch(() => null)
 }
 
+async function renderUncachedPdfThumbnail(
+  url: string,
+  fileName: string,
+): Promise<PdfThumbnail | null> {
+  const pdfTools = await loadPdfTools()
+  const cacheDirectory = FileSystem.cacheDirectory
+  if (!pdfTools || !cacheDirectory) return null
+  const localPdfUri = await downloadToCache(url, fileName)
+  const outputUri = `${cacheDirectory}${UNCACHED_THUMBNAIL_PREFIX}${Date.now()}.jpg`
+  try {
+    const { pageCount } = await pdfTools.getPdfThumbnail({
+      url: toBackendPath(localPdfUri),
+      outputPath: toBackendPath(outputUri),
+      maxWidth: PDF_THUMBNAIL_MAX_WIDTH,
+    })
+    const base64 = await FileSystem.readAsStringAsync(outputUri, { encoding: 'base64' })
+    return { dataUri: `data:image/jpeg;base64,${base64}`, pageCount }
+  } finally {
+    await FileSystem.deleteAsync(outputUri, { idempotent: true }).catch(() => {})
+    await cleanupCachedAttachment(localPdfUri)
+  }
+}
+
 /** Editor path: renders on demand (fetching the PDF if needed) and returns an inlineable image. */
-export async function getPdfThumbnail(url: string, fileName: string): Promise<PdfThumbnail | null> {
+export async function getPdfThumbnail(
+  url: string,
+  fileName: string,
+  { cache = true }: { cache?: boolean } = {},
+): Promise<PdfThumbnail | null> {
+  if (!cache) return renderUncachedPdfThumbnail(url, fileName).catch(() => null)
   const file = await requestThumbnail(url, true, async ({ dir, key, identity }) => {
     const localPdfUri = await downloadToCache(url, fileName)
     try {

@@ -22,7 +22,7 @@ import {
   takeVideoFromCamera,
   toBackendPath,
 } from '@/lib/noteAttachmentManager'
-import { toggleNoteLock } from '@/lib/noteLockActions'
+import { isStoredNoteLocked, toggleNoteLock } from '@/lib/noteLockActions'
 import { runNoteUpload } from '@/lib/noteUploadManager'
 import {
   createScanPdf,
@@ -246,7 +246,7 @@ export function useNoteEditorActions({
         })
         // The picked file is still on disk here, so the list thumbnail costs one downscale and no
         // fetch. Without it the row would pull the full image the first time it appears.
-        if (imageLink) await warmImageThumbnail(imageLink, uri)
+        if (imageLink && !isStoredNoteLocked(targetNoteId)) await warmImageThumbnail(imageLink, uri)
       } finally {
         await deleteCachedAsset(uri)
       }
@@ -325,7 +325,7 @@ export function useNoteEditorActions({
         })
         // The PDF is still in the upload cache here, so the notes-list thumbnail costs a render
         // and nothing else. Waiting until the note is opened would leave the row blank.
-        if (insertedLink && isPdfAttachment(name, mimeType)) {
+        if (insertedLink && isPdfAttachment(name, mimeType) && !isStoredNoteLocked(targetNoteId)) {
           await warmPdfThumbnail(insertedLink, uri, name || labels.file)
         }
       } finally {
@@ -443,7 +443,9 @@ export function useNoteEditorActions({
           isNoteOpen: () => loadedNoteRef.current === targetNoteId,
           onError: () => onUploadError(labels.uploadFailedScan),
         })
-        if (scanLink) await warmPdfThumbnail(scanLink, pdf.uri, pdf.fileName)
+        if (scanLink && !isStoredNoteLocked(targetNoteId)) {
+          await warmPdfThumbnail(scanLink, pdf.uri, pdf.fileName)
+        }
       } finally {
         await deleteCachedAsset(pdf.uri)
       }
@@ -502,7 +504,9 @@ export function useNoteEditorActions({
   const handleRequestPdfThumbnail = useCallback(
     async (url: string, fileName: string, attachmentId: string) => {
       try {
-        const thumbnail = await getPdfThumbnail(resolveHyperdriveUrl(url), fileName)
+        const thumbnail = await getPdfThumbnail(resolveHyperdriveUrl(url), fileName, {
+          cache: !isStoredNoteLocked(noteId),
+        })
         if (!thumbnail) return
         editorRef.current?.setAttachmentThumbnail(
           url,
@@ -513,7 +517,7 @@ export function useNoteEditorActions({
         )
       } catch {}
     },
-    [editorRef, labels, resolveHyperdriveUrl],
+    [editorRef, labels, resolveHyperdriveUrl, noteId],
   )
 
   const handleRecordingDone = useCallback(

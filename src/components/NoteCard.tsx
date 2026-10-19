@@ -245,11 +245,11 @@ export const NoteCard = memo(function NoteCard({
   const canShowThumbnail = !masked && !isAccessibilityTextSize(fontScale)
   const showThumbnail = !!imageUrl && !thumbError && canShowThumbnail
   // Prefer our own downscaled copy; the original is only ever a fallback, and never disk-cached.
-  const imageThumbnailUri = useCachedImageThumbnail(imageUrl, showThumbnail)
+  const imageThumbnailUri = useCachedImageThumbnail(imageUrl, showThumbnail && !locked)
   // A PDF only fills the slot when there is no image to show there.
   const pdfThumbnailUri = useCachedPdfThumbnail(
     pdfAttachment ?? null,
-    canShowThumbnail && (!imageUrl || thumbError),
+    canShowThumbnail && !locked && (!imageUrl || thumbError),
   )
   const displayTitle = title || t('noteCard.untitled')
   const accessibilityLabel = useMemo(() => {

@@ -20,6 +20,7 @@ import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlic
 import { FontSize, FontWeight, UI_SIZE_8, UI_SIZE_12, UI_SIZE_20 } from '@/constants/commonStyles'
 import type { SharedParagraph } from '@/lib/shareIntake.types'
 import {
+  clearEditorWebViewCacheOnce,
   EDITOR_ORIGIN_WHITELIST,
   isEditorMessageSource,
   shouldStartEditorLoad,
@@ -692,6 +693,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       }
     }, [hyperdriveServerAddress, sendCommand])
 
+    const handleLoadEnd = useCallback(() => clearEditorWebViewCacheOnce(webViewRef.current), [])
+
     const handleError = useCallback((_e: any) => {
       setEditorState('error')
     }, [])
@@ -947,6 +950,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
             source={{ html: TIPTAP_EDITOR_BUNDLE, baseUrl: 'https://localhost/' }}
             onMessage={handleMessage}
             onError={handleError}
+            onLoadEnd={handleLoadEnd}
             onContentProcessDidTerminate={handleProcessGone}
             onRenderProcessGone={handleProcessGone}
             style={[styles.webView, backgroundColor ? { backgroundColor } : null]}

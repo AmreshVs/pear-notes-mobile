@@ -181,11 +181,11 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const canShowThumb = !masked && !isAccessibilityTextSize(fontScale)
   const showThumb = !!resolvedImageUrl && !thumbError && canShowThumb
   // Prefer our own downscaled copy; the original is only ever a fallback, and never disk-cached.
-  const imageThumbUri = useCachedImageThumbnail(resolvedImageUrl, showThumb)
+  const imageThumbUri = useCachedImageThumbnail(resolvedImageUrl, showThumb && !locked)
   // A PDF only fills the slot when there is no image to show there.
   const pdfThumbUri = useCachedPdfThumbnail(
     metadata.pdf,
-    canShowThumb && (!resolvedImageUrl || thumbError),
+    canShowThumb && !locked && (!resolvedImageUrl || thumbError),
   )
 
   const entering = useMemo(

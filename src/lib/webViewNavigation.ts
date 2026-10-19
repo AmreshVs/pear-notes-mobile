@@ -1,4 +1,5 @@
-import { Linking } from 'react-native'
+import { Linking, Platform } from 'react-native'
+import type WebView from 'react-native-webview'
 import type { ShouldStartLoadRequest } from 'react-native-webview/lib/WebViewTypes'
 
 const EDITOR_ORIGIN = 'https://localhost'
@@ -53,4 +54,12 @@ export function shouldStartEditorLoad(request: ShouldStartLoadRequest): boolean 
   }
 
   return false
+}
+
+let editorCacheCleared = false
+
+export function clearEditorWebViewCacheOnce(webView: WebView | null): void {
+  if (Platform.OS !== 'android' || editorCacheCleared || !webView) return
+  editorCacheCleared = true
+  webView.clearCache?.(true)
 }
