@@ -17,6 +17,7 @@ import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { router } from 'expo-router'
 
+import { PAIRING_OUTDATED } from '@pear-notes/core/constant.js'
 import {
   clearStorage,
   confirmPairing,
@@ -28,6 +29,7 @@ import {
   resetInvite,
   resetReceiverStatus,
   setDeviceRemoved,
+  setInviterStatus,
   setShowPairingInput,
   subscribePairUser,
 } from '@pear-notes/core/store/slices/syncSlice.js'
@@ -36,7 +38,7 @@ import {
   getHasMultipleVaults,
   removeVault,
 } from '@pear-notes/core/store/slices/vaultsSlice.js'
-import { extractInvite, getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
+import { getFingerprint, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { MotionView } from '@/components/MotionView'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -70,6 +72,7 @@ import { createThemedStylesheetWithHooks, Text, useColors, useTheme, View } from
 
 const isAndroid = process.env.EXPO_OS === 'android'
 const REQUESTED_AGE_TICK_MS = 30000
+const OUTDATED_REASONS: string[] = Object.values(PAIRING_OUTDATED)
 
 export const PairingOverlay = memo(function PairingOverlay() {
   const { t } = useTranslation()
@@ -96,7 +99,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
 
   const activeStatus = isInviterActive ? inviterStatus : receiverStatus
   const isInviter = isInviterActive
-  const { step, progress, userData, localKey, data, requestedAt } = activeStatus
+  const { step, progress, localKey, data, requestedAt, reason, code } = activeStatus
 
   useEffect(() => {
     if (deviceRemoved && router.canDismiss()) router.dismissAll()
@@ -145,12 +148,13 @@ export const PairingOverlay = memo(function PairingOverlay() {
   }, [dispatch])
 
   const handleResetAfterFailedPairing = useCallback(() => {
-    dispatch(resetReceiverStatus())
-  }, [dispatch])
+    if (isInviter) dispatch(setInviterStatus({ step: 'idle', reason: '' }))
+    else dispatch(resetReceiverStatus())
+  }, [dispatch, isInviter])
 
   const joinWithInvite = useCallback(
     (code: string) => {
-      dispatch(subscribePairUser({ invite: extractInvite(code) }))
+      dispatch(subscribePairUser({ invite: code.trim() }))
       dispatch(setShowPairingInput(false))
       setIsScanning(false)
       setPasteCode('')
@@ -245,7 +249,6 @@ export const PairingOverlay = memo(function PairingOverlay() {
     [step],
   )
 
-  const peerFp = useMemo(() => getFingerprint(userData), [userData])
   const myFp = useMemo(() => getFingerprint(localKey), [localKey])
   const isConfirm = step === 'confirmation'
   const requestedTime = useMemo(
@@ -253,14 +256,10 @@ export const PairingOverlay = memo(function PairingOverlay() {
       isConfirm ? getRelativeTime(requestedAt, Math.max(presenceNow, requestedAt || 0)) : null,
     [isConfirm, requestedAt, presenceNow],
   )
-  const mainFp = isConfirm ? peerFp : myFp
+  const mainFp = code || ''
   const mainLabel = isConfirm ? t('pairing.overlay.remoteId') : t('pairing.overlay.myId')
-  const subLabel = isConfirm
-    ? t('pairing.overlay.myId')
-    : peerFp
-      ? t('pairing.overlay.remoteId')
-      : null
-  const subFp = isConfirm ? myFp : peerFp || null
+  const subLabel = isConfirm ? t('pairing.overlay.myId') : null
+  const subFp = isConfirm ? myFp : null
 
   const getMessage = useCallback(() => {
     switch (step) {
@@ -305,6 +304,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     const isError = step === 'error'
     const isRejected = step === 'rejected'
     const isExpired = step === 'expired'
+    const isOutdated = isError && OUTDATED_REASONS.includes(reason)
 
     if (deviceRemoved) {
       return (
@@ -361,18 +361,22 @@ export const PairingOverlay = memo(function PairingOverlay() {
             />
           </View>
           <Text style={styles.title}>
-            {isExpired
-              ? t('pairing.overlay.pairingExpiredTitle')
-              : isRejected
-                ? t('pairing.overlay.pairingRejectedTitle')
-                : t('pairing.overlay.pairingFailedTitle')}
+            {isOutdated
+              ? t('pairing.overlay.updateTitle')
+              : isExpired
+                ? t('pairing.overlay.pairingExpiredTitle')
+                : isRejected
+                  ? t('pairing.overlay.pairingRejectedTitle')
+                  : t('pairing.overlay.pairingFailedTitle')}
           </Text>
           <Text style={styles.sub}>
-            {isExpired
-              ? t('pairing.overlay.pairingExpiredDesc')
-              : isRejected
-                ? t('pairing.overlay.pairingRejectedDesc')
-                : t('pairing.overlay.pairingFailedDesc')}
+            {isOutdated
+              ? t(`pairing.overlay.outdated.${reason}`)
+              : isExpired
+                ? t('pairing.overlay.pairingExpiredDesc')
+                : isRejected
+                  ? t('pairing.overlay.pairingRejectedDesc')
+                  : t('pairing.overlay.pairingFailedDesc')}
           </Text>
           <Pressable onPress={handleResetAfterFailedPairing} style={[styles.btn, styles.errorBtn]}>
             <Text style={styles.errorBtnText}>{t('pairing.overlay.okay')}</Text>
@@ -524,6 +528,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     )
   }, [
     step,
+    reason,
     isInviter,
     progress,
     renderIcon,

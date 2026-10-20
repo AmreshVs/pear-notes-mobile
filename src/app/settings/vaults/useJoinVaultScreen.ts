@@ -7,7 +7,7 @@ import { VAULT_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import { subscribePairUser } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getCanAddVault, getVaultPending } from '@pear-notes/core/store/slices/vaultsSlice.js'
-import { extractInvite, getInviteNameHint, isValidInvite } from '@pear-notes/core/utils.js'
+import { getInviteNameHint, isValidInvite } from '@pear-notes/core/utils.js'
 
 import { JOIN_CHOICE } from '@/constants/vaultActions'
 import { useInviteScanner } from '@/hooks/useInviteScanner'
@@ -58,7 +58,7 @@ export function useJoinVaultScreen() {
   const join = useCallback(() => {
     if (!canJoin) return
     Keyboard.dismiss()
-    const invite = extractInvite(code)
+    const invite = code.trim()
     dispatch(
       keepsSeparate
         ? subscribePairUser({ invite, mode: 'add', vaultName: vaultName.trim() })
