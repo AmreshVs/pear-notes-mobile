@@ -17,7 +17,7 @@ import { BlurView } from 'expo-blur'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { router } from 'expo-router'
 
-import { PAIRING_OUTDATED } from '@pear-notes/core/constant.js'
+import { PAIRING_HOST_UNVERIFIED, PAIRING_OUTDATED } from '@pear-notes/core/constant.js'
 import {
   clearStorage,
   confirmPairing,
@@ -305,6 +305,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
     const isRejected = step === 'rejected'
     const isExpired = step === 'expired'
     const isOutdated = isError && OUTDATED_REASONS.includes(reason)
+    const isUnverified = isError && !!reason && reason === PAIRING_HOST_UNVERIFIED
 
     if (deviceRemoved) {
       return (
@@ -363,20 +364,24 @@ export const PairingOverlay = memo(function PairingOverlay() {
           <Text style={styles.title}>
             {isOutdated
               ? t('pairing.overlay.updateTitle')
-              : isExpired
-                ? t('pairing.overlay.pairingExpiredTitle')
-                : isRejected
-                  ? t('pairing.overlay.pairingRejectedTitle')
-                  : t('pairing.overlay.pairingFailedTitle')}
+              : isUnverified
+                ? t('pairing.overlay.pairingUnverifiedTitle')
+                : isExpired
+                  ? t('pairing.overlay.pairingExpiredTitle')
+                  : isRejected
+                    ? t('pairing.overlay.pairingRejectedTitle')
+                    : t('pairing.overlay.pairingFailedTitle')}
           </Text>
           <Text style={styles.sub}>
             {isOutdated
               ? t(`pairing.overlay.outdated.${reason}`)
-              : isExpired
-                ? t('pairing.overlay.pairingExpiredDesc')
-                : isRejected
-                  ? t('pairing.overlay.pairingRejectedDesc')
-                  : t('pairing.overlay.pairingFailedDesc')}
+              : isUnverified
+                ? t('pairing.overlay.pairingUnverifiedDesc')
+                : isExpired
+                  ? t('pairing.overlay.pairingExpiredDesc')
+                  : isRejected
+                    ? t('pairing.overlay.pairingRejectedDesc')
+                    : t('pairing.overlay.pairingFailedDesc')}
           </Text>
           <Pressable onPress={handleResetAfterFailedPairing} style={[styles.btn, styles.errorBtn]}>
             <Text style={styles.errorBtnText}>{t('pairing.overlay.okay')}</Text>
