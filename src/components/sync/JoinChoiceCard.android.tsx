@@ -29,6 +29,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 export function JoinChoiceCard({
   vaultName,
+  hasNotes = true,
   choice,
   canKeepSeparate,
   maxVaults,
@@ -48,7 +49,11 @@ export function JoinChoiceCard({
   return (
     <View style={styles.section}>
       <Text style={styles.label}>{t('vaults.join.choiceLabel')}</Text>
-      <Text style={styles.hint}>{t('vaults.join.choiceDesc', { name: vaultName })}</Text>
+      <Text style={styles.hint}>
+        {t(hasNotes ? 'vaults.join.choiceDesc' : 'vaults.join.choiceDescEmpty', {
+          name: vaultName,
+        })}
+      </Text>
       <View style={styles.card}>
         <Pressable
           onPress={selectSeparate}
@@ -86,7 +91,11 @@ export function JoinChoiceCard({
           />
           <View style={commonStyles.flex1}>
             <Text style={styles.rowTitle}>{t('vaults.join.combineTitle')}</Text>
-            <Text style={styles.rowDesc}>{t('vaults.join.combineDesc', { name: vaultName })}</Text>
+            <Text style={styles.rowDesc}>
+              {t(hasNotes ? 'vaults.join.combineDesc' : 'vaults.join.combineDescEmpty', {
+                name: vaultName,
+              })}
+            </Text>
           </View>
         </Pressable>
       </View>

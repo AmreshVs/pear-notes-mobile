@@ -98,15 +98,14 @@ export default function JoinVaultScreen() {
         )}
       </RNView>
 
-      {hasNotes && (
-        <JoinChoiceCard
-          vaultName={openVaultName}
-          choice={choice}
-          canKeepSeparate={canAdd}
-          maxVaults={MAX_VAULTS}
-          onSelect={setChoice}
-        />
-      )}
+      <JoinChoiceCard
+        hasNotes={hasNotes}
+        vaultName={openVaultName}
+        choice={choice}
+        canKeepSeparate={canAdd}
+        maxVaults={MAX_VAULTS}
+        onSelect={setChoice}
+      />
 
       {keepsSeparate && (
         <RNView style={styles.section}>

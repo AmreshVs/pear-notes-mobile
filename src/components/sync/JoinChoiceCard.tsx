@@ -21,6 +21,7 @@ import type { JoinChoiceCardProps } from './joinChoiceCard.types'
 
 export function JoinChoiceCard({
   vaultName,
+  hasNotes = true,
   choice,
   canKeepSeparate,
   maxVaults,
@@ -39,7 +40,11 @@ export function JoinChoiceCard({
   return (
     <RNView style={styles.section}>
       <Text style={styles.label}>{t('vaults.join.choiceLabel')}</Text>
-      <Text style={styles.hint}>{t('vaults.join.choiceDesc', { name: vaultName })}</Text>
+      <Text style={styles.hint}>
+        {t(hasNotes ? 'vaults.join.choiceDesc' : 'vaults.join.choiceDescEmpty', {
+          name: vaultName,
+        })}
+      </Text>
       <RNView style={commonThemedStyles.card}>
         <Pressable
           onPress={selectSeparate}
@@ -75,7 +80,11 @@ export function JoinChoiceCard({
         >
           <RNView style={commonStyles.flex1}>
             <Text style={styles.rowTitle}>{t('vaults.join.combineTitle')}</Text>
-            <Text style={styles.rowDesc}>{t('vaults.join.combineDesc', { name: vaultName })}</Text>
+            <Text style={styles.rowDesc}>
+              {t(hasNotes ? 'vaults.join.combineDesc' : 'vaults.join.combineDescEmpty', {
+                name: vaultName,
+              })}
+            </Text>
           </RNView>
           {combineSelected && (
             <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />

@@ -48,11 +48,11 @@ export function useJoinVaultScreen() {
 
   const hasNotes = notes.length > 0
   const choice = picked === JOIN_CHOICE.combine ? picked : canAdd ? JOIN_CHOICE.separate : null
-  const keepsSeparate = hasNotes && choice === JOIN_CHOICE.separate
+  const keepsSeparate = choice === JOIN_CHOICE.separate
   const isCodeValid = isValidInvite(code)
   const showCodeHint = !!code.trim() && !isCodeValid
   const nameFromInvite = !!nameHint && vaultName === nameHint
-  const choiceReady = !hasNotes || choice === JOIN_CHOICE.combine || (canAdd && !!vaultName.trim())
+  const choiceReady = choice === JOIN_CHOICE.combine || (canAdd && !!vaultName.trim())
   const canJoin = !pending && isCodeValid && choiceReady
 
   const join = useCallback(() => {
