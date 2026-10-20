@@ -1432,6 +1432,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               noteId={noteId ?? 'new'}
               initialContent=""
               initialTitle=""
+              hiddenFromAccessibility={isNoteLocked}
               safeAreaTop={contentTop}
               safeAreaBottom={0}
               scrollEnabled={!isEdgeSwipeActive}
@@ -1499,7 +1500,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
           )}
 
           {isNoteLocked && (
-            <View style={styles.lockOverlay}>
+            <View style={styles.lockOverlay} accessibilityViewIsModal>
               <LockedNoteView noteId={noteId ?? ''} topInset={contentTop} />
             </View>
           )}

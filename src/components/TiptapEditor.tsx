@@ -178,6 +178,7 @@ export interface TiptapEditorProps {
   safeAreaTop?: number
   safeAreaBottom?: number
   scrollEnabled?: boolean
+  hiddenFromAccessibility?: boolean
   backgroundColor?: string
   onContentChange: (html: string, sourceNoteId: string | null) => void
   onTitleChange?: (title: string, sourceNoteId: string | null) => void
@@ -323,6 +324,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       safeAreaTop,
       safeAreaBottom,
       scrollEnabled = true,
+      hiddenFromAccessibility = false,
       backgroundColor,
       onContentChange,
       onTitleChange,
@@ -933,7 +935,11 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     )
 
     return (
-      <View style={[styles.container, backgroundColor ? { backgroundColor } : null]}>
+      <View
+        style={[styles.container, backgroundColor ? { backgroundColor } : null]}
+        accessibilityElementsHidden={hiddenFromAccessibility}
+        importantForAccessibility={hiddenFromAccessibility ? 'no-hide-descendants' : 'auto'}
+      >
         {editorState === 'error' && (
           <View style={styles.overlay}>
             <Text style={styles.errorText}>{t('noteEditor.loadFailed')}</Text>
