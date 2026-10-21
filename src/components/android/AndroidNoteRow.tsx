@@ -38,6 +38,7 @@ import {
 import { FALLBACK_FOLDER_MATERIAL, FOLDER_ICON_MATERIAL } from '@/constants/folderIcons'
 import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import { useHasLockPassword } from '@/hooks/useHasLockPassword'
 import type { NoteSearchHit } from '@/hooks/useNoteSearch'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
@@ -121,6 +122,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const c = md3.colors
 
   const isUnlocked = useIsNoteUnlocked(note.key)
+  const hasLockPassword = useHasLockPassword()
   const uploadQueue = useNoteUploadQueue(note.key)
   const upload = uploadQueue.activeItem
   const locked = note.value?.locked === true
@@ -130,7 +132,7 @@ export const AndroidNoteRow = memo(function AndroidNoteRow({
   const title = note.value?.title || t('noteCard.untitled')
   const metadata = getNoteMetadata(note.value)
   const previewText = masked
-    ? t('noteCard.lockedSummary')
+    ? t(hasLockPassword ? 'noteCard.lockedSummaryPassword' : 'noteCard.lockedSummary')
     : meaningSnippet || metadata.preview
   const attachment = masked ? null : metadata.attachment
   const searchSnippet = !masked && !meaningSnippet && searchHit?.snippet ? searchHit : null

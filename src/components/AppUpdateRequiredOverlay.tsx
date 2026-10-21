@@ -1,7 +1,13 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
 import { BlurView } from 'expo-blur'
+
+import {
+  getVaultUpdateRequired,
+  setVaultUpdateRequired,
+} from '@pear-notes/core/store/slices/syncSlice.js'
 
 import { GlassView } from '@/components/GlassView'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -24,8 +30,11 @@ export const AppUpdateRequiredOverlay = memo(function AppUpdateRequiredOverlay()
   const { colors } = useTheme()
   const styles = useStyles()
   const status = useAppUpdateStatus()
+  const dispatch = useDispatch()
+  const vaultUpdateRequired = useSelector(getVaultUpdateRequired)
 
-  const visible = !!status?.mandatory
+  const forVault = vaultUpdateRequired && !status?.mandatory
+  const visible = !!status?.mandatory || vaultUpdateRequired
 
   const handleUpdate = () => {
     if (status?.storeUrl) Linking.openURL(status.storeUrl)
@@ -56,21 +65,33 @@ export const AppUpdateRequiredOverlay = memo(function AppUpdateRequiredOverlay()
 
               <Text style={styles.title}>{t('update.overlay.title')}</Text>
               <Text style={styles.sub}>
-                {t('update.overlay.description', { version: status?.latestVersion })}
+                {forVault
+                  ? t('update.overlay.vaultDescription')
+                  : t('update.overlay.description', { version: status?.latestVersion })}
               </Text>
 
               <RNView style={styles.row}>
-                <Pressable
-                  onPress={handleUpdate}
-                  style={({ pressed }) => [
-                    styles.btn,
-                    styles.confirmBtn,
-                    pressed && commonStyles.pressed,
-                  ]}
-                >
-                  <Text style={styles.confirmText}>{t('update.overlay.updateButton')}</Text>
-                </Pressable>
+                {!!status?.storeUrl && (
+                  <Pressable
+                    onPress={handleUpdate}
+                    style={({ pressed }) => [
+                      styles.btn,
+                      styles.confirmBtn,
+                      pressed && commonStyles.pressed,
+                    ]}
+                  >
+                    <Text style={styles.confirmText}>{t('update.overlay.updateButton')}</Text>
+                  </Pressable>
+                )}
               </RNView>
+              {forVault && (
+                <Pressable
+                  onPress={() => dispatch(setVaultUpdateRequired(false))}
+                  style={({ pressed }) => [styles.readOnlyBtn, pressed && commonStyles.pressed]}
+                >
+                  <Text style={styles.readOnlyText}>{t('update.overlay.readOnlyButton')}</Text>
+                </Pressable>
+              )}
             </RNView>
           </GlassView>
         </RNView>
@@ -137,6 +158,16 @@ const useStyles = createThemedStylesheet((theme) => {
     confirmText: {
       color: theme.colors.onPrimary,
       fontWeight: FontWeight.bold,
+      fontSize: FontSize.body,
+    },
+    readOnlyBtn: {
+      marginTop: Space.md,
+      paddingVertical: Space.sm,
+      alignItems: 'center',
+    },
+    readOnlyText: {
+      color: theme.colors.textMuted,
+      fontWeight: FontWeight.semibold,
       fontSize: FontSize.body,
     },
   })

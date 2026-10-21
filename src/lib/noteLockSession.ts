@@ -12,6 +12,7 @@ import {
   type NoteLockPasswordPurpose,
   requestNoteLockPassword,
   requestNoteLockPasswordCreate,
+  requestNoteLockPasswordFromSettings,
 } from '@/lib/noteLockPasswordFlow'
 import { showNoteLockPrompt } from '@/lib/noteLockPrompt'
 import {
@@ -144,7 +145,7 @@ export async function submitLockPassword(password: string): Promise<LockPassword
 export async function enableBiometricUnlock(reason: string): Promise<boolean> {
   enrollRequested = true
   enrolledKey = ''
-  const ok = await requestNoteLockPassword(reason)
+  const ok = await requestNoteLockPasswordFromSettings('biometric', reason)
   enrollRequested = false
   const rootKey = enrolledKey
   enrolledKey = ''
@@ -182,6 +183,7 @@ export async function offerPasswordMigrationFromSettings(reason: string): Promis
 export async function unlockLockedNotes(
   reason: string,
   purpose: NoteLockPasswordPurpose = 'unlock',
+  { fromSettings = false }: { fromSettings?: boolean } = {},
 ): Promise<boolean> {
   if (!hasLockPassword()) {
     if (!(await isDeviceAuthSupported())) {
@@ -193,5 +195,7 @@ export async function unlockLockedNotes(
     return true
   }
   if (await unlockWithBiometric(reason)) return true
-  return requestNoteLockPassword(reason, purpose)
+  return fromSettings
+    ? requestNoteLockPasswordFromSettings(purpose, reason)
+    : requestNoteLockPassword(reason, purpose)
 }

@@ -38,6 +38,7 @@ import {
 import { FALLBACK_FOLDER_SF, FOLDER_ICON_SF } from '@/constants/folderIcons'
 import { NOTE_ACTION } from '@/constants/noteActions'
 import { useAndroidColorTheme } from '@/hooks/useAndroidColorTheme'
+import { useHasLockPassword } from '@/hooks/useHasLockPassword'
 import type { NoteSearchHit } from '@/hooks/useNoteSearch'
 import { useIsNoteUnlocked } from '@/lib/noteLock'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
@@ -187,6 +188,7 @@ export const NoteCard = memo(function NoteCard({
   const masked = locked === true && !isUnlocked
 
   const hyperdriveServerAddress = useSelector(getHyperdriveServerAddress)
+  const hasLockPassword = useHasLockPassword()
   const imageUrl = useMemo(
     () => resolveHyperdriveUrl(rawImageUrl, hyperdriveServerAddress),
     [rawImageUrl, hyperdriveServerAddress],
@@ -267,7 +269,7 @@ export const NoteCard = memo(function NoteCard({
     ? t('folderView.permanentlyDeleteTitle')
     : t('noteCard.actions.delete')
   const displaySummary = masked
-    ? t('noteCard.lockedSummary')
+    ? t(hasLockPassword ? 'noteCard.lockedSummaryPassword' : 'noteCard.lockedSummary')
     : meaningSnippet || summary || t('noteCard.noAdditionalText')
 
   const accessibilityActions = useMemo(() => {

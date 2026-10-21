@@ -1,9 +1,10 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { Pressable, StyleSheet, View as RNView } from 'react-native'
 import { BlurView } from 'expo-blur'
 
 import { GlassView } from '@/components/GlassView'
+import { RootOverlay } from '@/components/RootOverlay'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -26,13 +27,7 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
   const visible = useLockInfoVisible()
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={hideLockInfo}
-    >
+    <RootOverlay visible={visible} onRequestClose={hideLockInfo}>
       <RNView style={styles.modalFill}>
         <BlurView intensity={95} tint={colorScheme} style={StyleSheet.absoluteFill} />
         <RNView style={commonStyles.modalOverlay} />
@@ -65,7 +60,7 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
           </GlassView>
         </RNView>
       </RNView>
-    </Modal>
+    </RootOverlay>
   )
 })
 

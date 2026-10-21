@@ -23,18 +23,31 @@ import {
   isBiometricUnlockOn,
   offerPasswordMigrationFromSettings,
 } from '@/lib/noteLockSession'
+import { formatNameList } from '@/utils/nameList'
 
 const SCREEN_POP_DELAY_MS = 400
+export const UNNAMED_DEVICE = '?'
 
-type SyncedDevice = { key: string; title?: string; sealedNotes?: boolean }
+export type SyncedDevice = {
+  key: string
+  title?: string
+  sealedNotes?: boolean
+  deviceType?: string
+  appVersion?: string
+  lastSeenAt?: number
+}
 
 export function usePrivacyLock() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { lockAvailable, lockMethod: deviceMethod } = useLockStatus()
   const lockMethod = useSelector(getLockMethod) as string
   const isPassword = lockMethod === 'password'
   const devices = useSelector(getSyncedDevices) as SyncedDevice[]
   const outdatedDevices = devices.filter((device) => device.sealedNotes === false)
+  const outdatedNames = formatNameList(
+    outdatedDevices.map((device) => device.title || UNNAMED_DEVICE),
+    i18n.language,
+  )
 
   const [biometricAvailable, setBiometricAvailable] = useState(false)
   const [biometricOn, setBiometricOn] = useState(false)
@@ -80,7 +93,9 @@ export function usePrivacyLock() {
       } else if (lockAvailable && !(await authenticate(reason))) {
         return
       }
-      router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
+      router.push(
+        `/settings/note-lock-password?mode=create&purpose=${isPassword ? 'change' : 'set'}` as any,
+      )
     },
     [isPassword, lockAvailable],
   )
@@ -128,7 +143,9 @@ export function usePrivacyLock() {
     deviceMethod,
     isPassword,
     outdatedDevices,
+    outdatedNames,
     biometricAvailable: isPassword && biometricAvailable,
+    biometricBlocked: outdatedDevices.length > 0,
     biometricOn,
     biometricBusy,
     screenshotProtection,

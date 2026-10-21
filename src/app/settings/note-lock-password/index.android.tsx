@@ -51,7 +51,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 export default function AndroidNoteLockPasswordScreen() {
   const { t } = useTranslation()
-  const { mode } = useLocalSearchParams<{ mode: string; purpose: string }>()
+  const { mode, purpose } = useLocalSearchParams<{ mode: string; purpose: string }>()
   const theme = useTheme()
   const md3 = useMD3Theme()
   const c = md3.colors as ExtendedColors
@@ -62,6 +62,8 @@ export default function AndroidNoteLockPasswordScreen() {
 
   const {
     isCreate,
+    copy,
+    reason,
     password,
     setPassword,
     confirm,
@@ -77,7 +79,7 @@ export default function AndroidNoteLockPasswordScreen() {
     setUnderstood,
     showUnderstood,
     submit,
-  } = useNoteLockPasswordScreen(mode)
+  } = useNoteLockPasswordScreen(mode, purpose)
 
   const barFillStyle = useMemo(() => {
     const colorStyle =
@@ -128,9 +130,7 @@ export default function AndroidNoteLockPasswordScreen() {
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
       <Stack.Screen options={{ headerShown: false }} />
 
-      <AndroidSettingsAppBar
-        title={isCreate ? t('noteLockPassword.createTitle') : t('noteLockPassword.enterTitle')}
-      />
+      <AndroidSettingsAppBar title={t(copy.title)} />
 
       <KeyboardAvoidingView style={commonStyles.flex1} behavior="height">
         <ScrollView
@@ -142,9 +142,7 @@ export default function AndroidNoteLockPasswordScreen() {
             <MaterialCommunityIcons name="lock" size={UI_ICON_SIZE_28} color={c.primary} />
           </View>
 
-          <Text style={styles.subtitle}>
-            {isCreate ? t('noteLockPassword.createDesc') : t('noteLockPassword.enterDesc')}
-          </Text>
+          <Text style={styles.subtitle}>{(!isCreate && reason) || t(copy.desc)}</Text>
 
           {isCreate && (
             <View style={styles.warningBox}>
@@ -172,7 +170,7 @@ export default function AndroidNoteLockPasswordScreen() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('noteLockPassword.placeholder')}
+              placeholder={t(copy.placeholder)}
               placeholderTextColor={c.onSurfaceVariant}
               secureTextEntry={secure}
               maxLength={PASSWORD_MAX_LENGTH}
@@ -247,7 +245,7 @@ export default function AndroidNoteLockPasswordScreen() {
             style={[styles.confirmBtn, !canSubmit && styles.confirmBtnDisabled]}
           >
             <Text style={[styles.confirmBtnText, !canSubmit && styles.confirmBtnTextDisabled]}>
-              {isCreate ? t('noteLockPassword.createButton') : t('noteLockPassword.unlockButton')}
+              {t(copy.button)}
             </Text>
           </Pressable>
         </View>

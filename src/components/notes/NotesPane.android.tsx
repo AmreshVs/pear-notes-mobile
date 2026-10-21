@@ -1211,6 +1211,7 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3, insets, width, 
       letterSpacing: -0.5,
       color: c.onSurface,
       paddingRight: UI_SIZE_16,
+      marginTop: UI_SIZE_8,
     },
     pageCountRow: {
       flexDirection: 'row',

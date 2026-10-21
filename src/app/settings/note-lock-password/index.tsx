@@ -39,7 +39,7 @@ import useNoteLockPasswordScreen from './useNoteLockPasswordScreen'
 
 export default function NoteLockPasswordScreen() {
   const { t } = useTranslation()
-  const { mode } = useLocalSearchParams<{ mode: string; purpose: string }>()
+  const { mode, purpose } = useLocalSearchParams<{ mode: string; purpose: string }>()
   const { colors } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
@@ -47,6 +47,8 @@ export default function NoteLockPasswordScreen() {
 
   const {
     isCreate,
+    copy,
+    reason,
     password,
     setPassword,
     confirm,
@@ -62,7 +64,7 @@ export default function NoteLockPasswordScreen() {
     setUnderstood,
     showUnderstood,
     submit,
-  } = useNoteLockPasswordScreen(mode)
+  } = useNoteLockPasswordScreen(mode, purpose)
 
   const barFillStyle = useMemo(() => {
     const colorStyle =
@@ -127,7 +129,7 @@ export default function NoteLockPasswordScreen() {
     <RNView style={styles.root}>
       <Stack.Screen
         options={{
-          title: isCreate ? t('noteLockPassword.createTitle') : t('noteLockPassword.enterTitle'),
+          title: t(copy.title),
         }}
       />
       <KeyboardAvoidingView
@@ -145,9 +147,7 @@ export default function NoteLockPasswordScreen() {
             <SymbolIcon name="lock" size={UI_ICON_SIZE_28} color={colors.primary} weight="medium" />
           </RNView>
 
-          <Text style={styles.subtitle}>
-            {isCreate ? t('noteLockPassword.createDesc') : t('noteLockPassword.enterDesc')}
-          </Text>
+          <Text style={styles.subtitle}>{(!isCreate && reason) || t(copy.desc)}</Text>
 
           {isCreate && (
             <RNView style={styles.warningBox}>
@@ -176,7 +176,7 @@ export default function NoteLockPasswordScreen() {
             <TextInput
               value={password}
               onChangeText={setPassword}
-              placeholder={t('noteLockPassword.placeholder')}
+              placeholder={t(copy.placeholder)}
               placeholderTextColor={colors.textMuted}
               secureTextEntry={secure}
               maxLength={PASSWORD_MAX_LENGTH}
@@ -248,9 +248,7 @@ export default function NoteLockPasswordScreen() {
               pressed && commonStyles.pressed,
             ]}
           >
-            <Text style={styles.confirmBtnText}>
-              {isCreate ? t('noteLockPassword.createButton') : t('noteLockPassword.unlockButton')}
-            </Text>
+            <Text style={styles.confirmBtnText}>{t(copy.button)}</Text>
           </Pressable>
         </RNView>
       </KeyboardAvoidingView>

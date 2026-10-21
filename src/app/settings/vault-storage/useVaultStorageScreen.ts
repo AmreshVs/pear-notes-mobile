@@ -84,7 +84,12 @@ function useVaultStorageScreen() {
       hapticWarning()
       const note = notesData[noteKey] as { sealed?: boolean; bodyOmitted?: boolean } | undefined
       if (note?.sealed && !isNoteSessionUnlocked()) {
-        if (!(await unlockLockedNotes(t('noteLockPassword.deleteFileReason')))) return
+        if (
+          !(await unlockLockedNotes(t('noteLockPassword.deleteFileReason'), 'unlock', {
+            fromSettings: true,
+          }))
+        )
+          return
         markNoteUnlocked()
       }
       dispatch(deleteNoteMedia({ noteKey, mediaPath } as any))

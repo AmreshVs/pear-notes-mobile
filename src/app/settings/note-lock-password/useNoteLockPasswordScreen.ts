@@ -8,14 +8,17 @@ import { loadSettings } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { isValidBackupPassword } from '@pear-notes/core/utils.js'
 
 import { hapticError, hapticSuccess } from '@/lib/haptics'
-import { resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
+import { getNoteLockPasswordCopy } from '@/lib/noteLockPasswordCopy'
+import { getNoteUnlockReason, resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
 import { hasLockPassword, submitLockPassword } from '@/lib/noteLockSession'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
-export default function useNoteLockPasswordScreen(mode?: string) {
+export default function useNoteLockPasswordScreen(mode?: string, purpose?: string) {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const isCreate = mode !== 'enter'
+  const copy = getNoteLockPasswordCopy(isCreate, purpose)
+  const [reason] = useState(() => getNoteUnlockReason())
 
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -63,6 +66,8 @@ export default function useNoteLockPasswordScreen(mode?: string) {
 
   return {
     isCreate,
+    copy,
+    reason,
     password,
     setPassword,
     confirm,

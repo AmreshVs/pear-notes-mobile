@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from 'react'
+import { Platform } from 'react-native'
 import { router } from 'expo-router'
 
-export type NoteLockPasswordPurpose = 'lock' | 'unlock'
+export type NoteLockPasswordPurpose = 'lock' | 'unlock' | 'biometric' | 'change'
 
 let visible = false
 let resolver: ((ok: boolean) => void) | null = null
@@ -46,12 +47,26 @@ export function getNoteLockPasswordPurpose(): NoteLockPasswordPurpose {
   return currentPurpose
 }
 
-export function requestNoteLockPasswordScreen(): Promise<boolean> {
+export function requestNoteLockPasswordScreen(
+  purpose: NoteLockPasswordPurpose = 'change',
+  reason?: string,
+): Promise<boolean> {
   return new Promise((resolve) => {
     if (resolver) resolver(false)
     resolver = resolve
-    router.push('/settings/note-lock-password?mode=enter&purpose=verify' as any)
+    currentReason = reason
+    currentPurpose = purpose
+    router.push(`/settings/note-lock-password?mode=enter&purpose=${purpose}` as any)
   })
+}
+
+export function requestNoteLockPasswordFromSettings(
+  purpose: NoteLockPasswordPurpose,
+  reason?: string,
+): Promise<boolean> {
+  return Platform.OS === 'ios'
+    ? requestNoteLockPasswordScreen(purpose, reason)
+    : requestNoteLockPassword(reason, purpose)
 }
 
 export function requestNoteLockPasswordCreate(): Promise<boolean> {

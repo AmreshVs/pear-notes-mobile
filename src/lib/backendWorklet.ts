@@ -3,6 +3,7 @@ import { Directory, Paths } from 'expo-file-system'
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import * as log from '@pear-notes/core/log.js'
 
+import { getAppVersion } from '@/lib/appVersion'
 import { getDbEncryptionKey, getVaultEntropy } from '@/lib/secureStore'
 import { withTimeout } from '@/utils/withTimeout'
 import { markBackendReady, startWorklet, terminateWorkletIfActive } from '@/utils/worklet'
@@ -31,7 +32,12 @@ export async function startBackendWorkletForBackgroundTask(): Promise<any | null
   const readyAt = Date.now()
   try {
     await withTimeout(
-      backendApi.ready({ storage: WORKLET_STORAGE_PATH, encryption, entropy }),
+      backendApi.ready({
+        storage: WORKLET_STORAGE_PATH,
+        encryption,
+        entropy,
+        appVersion: getAppVersion(),
+      }),
       BACKEND_READY_TIMEOUT_MS,
       'backendApi.ready',
     )

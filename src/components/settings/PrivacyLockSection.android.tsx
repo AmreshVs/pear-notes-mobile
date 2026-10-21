@@ -29,6 +29,7 @@ import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
 
+import { OutdatedDevicesRow } from './OutdatedDevicesRow'
 import { usePrivacyLock } from './usePrivacyLock'
 
 type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
@@ -51,7 +52,9 @@ export function PrivacyLockSection() {
     deviceMethod,
     isPassword,
     outdatedDevices,
+    outdatedNames,
     biometricAvailable,
+    biometricBlocked,
     biometricOn,
     biometricBusy,
     screenshotProtection,
@@ -71,8 +74,15 @@ export function PrivacyLockSection() {
   }, [setOrChangePassword, t])
 
   const handleToggleBiometric = useCallback(() => {
-    toggleBiometric(t('settings.privacy.biometricReason', { method: methodName }))
+    toggleBiometric(t('noteLockPassword.biometricEnableDesc', { method: methodName }))
   }, [toggleBiometric, methodName, t])
+
+  const biometricDesc = biometricBlocked
+    ? t('settings.privacy.biometricUnlockOutdated', {
+        devices: outdatedNames,
+        count: outdatedDevices.length,
+      })
+    : t('settings.privacy.biometricUnlockDesc')
 
   const methodDesc = isPassword
     ? t('settings.privacy.noteLockPasswordDesc')
@@ -124,11 +134,11 @@ export function PrivacyLockSection() {
                 <Text style={styles.rowTitle}>
                   {t('settings.privacy.biometricUnlock', { method: methodName })}
                 </Text>
-                <Text style={styles.rowSubtitle}>{t('settings.privacy.biometricUnlockDesc')}</Text>
+                <Text style={styles.rowSubtitle}>{biometricDesc}</Text>
               </View>
               <Switch
-                value={biometricOn}
-                disabled={biometricBusy}
+                value={biometricOn && !biometricBlocked}
+                disabled={biometricBusy || biometricBlocked}
                 onValueChange={handleToggleBiometric}
               />
             </View>
@@ -138,14 +148,7 @@ export function PrivacyLockSection() {
         {outdatedDevices.length > 0 && (
           <>
             <View style={styles.separator} />
-            <View style={styles.methodRow}>
-              <Text style={styles.rowTitle}>{t('settings.privacy.outdatedDevices')}</Text>
-              <Text style={styles.rowSubtitle}>
-                {t('settings.privacy.outdatedDevicesDesc', {
-                  devices: outdatedDevices.map((device) => device.title || '?').join(', '),
-                })}
-              </Text>
-            </View>
+            <OutdatedDevicesRow devices={outdatedDevices} />
           </>
         )}
 
@@ -207,10 +210,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_18,
       gap: UI_SIZE_16,
-    },
-    methodRow: {
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_18,
     },
     actionBtn: {
       paddingHorizontal: UI_SIZE_16,

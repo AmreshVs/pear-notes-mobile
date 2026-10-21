@@ -1,7 +1,13 @@
 import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Linking, Modal, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { useDispatch, useSelector } from 'react-redux'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+
+import {
+  getVaultUpdateRequired,
+  setVaultUpdateRequired,
+} from '@pear-notes/core/store/slices/syncSlice.js'
 
 import { useMD3Theme } from '@/components/android/useMD3Theme'
 import { createThemedStylesheetWithHooks, Text } from '@/components/Themed'
@@ -26,8 +32,11 @@ export const AppUpdateRequiredOverlay = memo(function AppUpdateRequiredOverlay()
   const c = md3.colors as ExtendedColors
   const styles = useStyles()
   const status = useAppUpdateStatus()
+  const dispatch = useDispatch()
+  const vaultUpdateRequired = useSelector(getVaultUpdateRequired)
 
-  const visible = !!status?.mandatory
+  const forVault = vaultUpdateRequired && !status?.mandatory
+  const visible = !!status?.mandatory || vaultUpdateRequired
 
   const handleUpdate = () => {
     if (status?.storeUrl) Linking.openURL(status.storeUrl)
@@ -52,15 +61,27 @@ export const AppUpdateRequiredOverlay = memo(function AppUpdateRequiredOverlay()
 
             <Text style={styles.title}>{t('update.overlay.title')}</Text>
             <Text style={styles.sub}>
-              {t('update.overlay.description', { version: status?.latestVersion })}
+              {forVault
+                ? t('update.overlay.vaultDescription')
+                : t('update.overlay.description', { version: status?.latestVersion })}
             </Text>
 
-            <Pressable
-              onPress={handleUpdate}
-              style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
-            >
-              <Text style={styles.btnText}>{t('update.overlay.updateButton')}</Text>
-            </Pressable>
+            {!!status?.storeUrl && (
+              <Pressable
+                onPress={handleUpdate}
+                style={({ pressed }) => [styles.btn, pressed && styles.btnPressed]}
+              >
+                <Text style={styles.btnText}>{t('update.overlay.updateButton')}</Text>
+              </Pressable>
+            )}
+            {forVault && (
+              <Pressable
+                onPress={() => dispatch(setVaultUpdateRequired(false))}
+                style={({ pressed }) => [styles.readOnlyBtn, pressed && styles.btnPressed]}
+              >
+                <Text style={styles.readOnlyText}>{t('update.overlay.readOnlyButton')}</Text>
+              </Pressable>
+            )}
           </RNView>
         </RNView>
       </RNView>
@@ -131,6 +152,16 @@ const useStyles = createThemedStylesheetWithHooks((theme, md3) => {
     btnText: {
       color: c.onPrimary,
       fontWeight: FontWeight.bold,
+      fontSize: FontSize.body,
+    },
+    readOnlyBtn: {
+      marginTop: Space.md,
+      paddingVertical: Space.sm,
+      alignItems: 'center',
+    },
+    readOnlyText: {
+      color: c.onSurfaceVariant,
+      fontWeight: FontWeight.semibold,
       fontSize: FontSize.body,
     },
   })

@@ -18,6 +18,7 @@ import {
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
 
+import { OutdatedDevicesRow } from './OutdatedDevicesRow'
 import { usePrivacyLock } from './usePrivacyLock'
 
 export function PrivacyLockSection() {
@@ -30,7 +31,9 @@ export function PrivacyLockSection() {
     deviceMethod,
     isPassword,
     outdatedDevices,
+    outdatedNames,
     biometricAvailable,
+    biometricBlocked,
     biometricOn,
     biometricBusy,
     screenshotProtection,
@@ -48,8 +51,15 @@ export function PrivacyLockSection() {
   }, [setOrChangePassword, t])
 
   const handleToggleBiometric = useCallback(() => {
-    toggleBiometric(t('settings.privacy.biometricReason', { method: methodName }))
+    toggleBiometric(t('noteLockPassword.biometricEnableDesc', { method: methodName }))
   }, [toggleBiometric, methodName, t])
+
+  const biometricDesc = biometricBlocked
+    ? t('settings.privacy.biometricUnlockOutdated', {
+        devices: outdatedNames,
+        count: outdatedDevices.length,
+      })
+    : t('settings.privacy.biometricUnlockDesc')
 
   const methodDesc = isPassword
     ? t('settings.privacy.noteLockPasswordDesc')
@@ -103,11 +113,11 @@ export function PrivacyLockSection() {
                   <Text style={styles.rowTitle}>
                     {t('settings.privacy.biometricUnlock', { method: methodName })}
                   </Text>
-                  <Text style={styles.rowDesc}>{t('settings.privacy.biometricUnlockDesc')}</Text>
+                  <Text style={styles.rowDesc}>{biometricDesc}</Text>
                 </RNView>
                 <Switch
-                  value={biometricOn}
-                  disabled={biometricBusy}
+                  value={biometricOn && !biometricBlocked}
+                  disabled={biometricBusy || biometricBlocked}
                   onValueChange={handleToggleBiometric}
                   trackColor={trackColor}
                   thumbColor={colors.white}
@@ -119,14 +129,7 @@ export function PrivacyLockSection() {
           {outdatedDevices.length > 0 && (
             <>
               <RNView style={styles.divider} />
-              <RNView style={styles.methodRow}>
-                <Text style={styles.rowTitle}>{t('settings.privacy.outdatedDevices')}</Text>
-                <Text style={styles.rowDesc}>
-                  {t('settings.privacy.outdatedDevicesDesc', {
-                    devices: outdatedDevices.map((device) => device.title || '?').join(', '),
-                  })}
-                </Text>
-              </RNView>
+              <OutdatedDevicesRow devices={outdatedDevices} />
             </>
           )}
 
@@ -190,9 +193,6 @@ const useStyles = createThemedStylesheet((theme) => {
       height: StyleSheet.hairlineWidth,
       backgroundColor: theme.colors.border,
       marginHorizontal: Space.base,
-    },
-    methodRow: {
-      padding: Space.lg,
     },
     actionBtn: {
       paddingHorizontal: Space.md,

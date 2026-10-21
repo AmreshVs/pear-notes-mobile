@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import {
   KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   TextInput,
@@ -30,8 +29,10 @@ import {
   UI_SIZE_54,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { useModalCardSurface } from '@/hooks/useModalCardSurface'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticError } from '@/lib/haptics'
+import { getNoteLockPasswordCopy } from '@/lib/noteLockPasswordCopy'
 import {
   getNoteLockPasswordPurpose,
   getNoteUnlockReason,
@@ -73,13 +74,10 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
     setError('')
   }, [])
 
+  const cardSurface = useModalCardSurface()
   const modalCardStyle = useMemo(
-    () =>
-      StyleSheet.flatten([
-        commonStyles.modalCard,
-        Platform.OS === 'android' && styles.androidModal,
-      ]),
-    [styles.androidModal],
+    () => StyleSheet.flatten([commonStyles.modalCard, cardSurface]),
+    [cardSurface],
   )
 
   const handleSubmit = useCallback(async () => {
@@ -170,9 +168,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
                   ]}
                 >
                   <Text style={styles.confirmText}>
-                    {purpose === 'lock'
-                      ? t('noteLockPassword.lockButton')
-                      : t('noteLockPassword.unlockButton')}
+                    {t(getNoteLockPasswordCopy(false, purpose).button)}
                   </Text>
                 </Pressable>
               </RNView>
@@ -194,9 +190,6 @@ const useStyles = createThemedStylesheet((theme) => {
       justifyContent: 'center',
       alignItems: 'center',
       paddingHorizontal: Space.xl,
-    },
-    androidModal: {
-      backgroundColor: theme.colors.background,
     },
     icon: {
       width: 80,

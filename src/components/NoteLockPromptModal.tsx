@@ -1,7 +1,8 @@
 import { memo, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Modal, Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
 
+import { RootOverlay } from '@/components/RootOverlay'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
@@ -45,13 +46,7 @@ export const NoteLockPromptModal = memo(function NoteLockPromptModal() {
     : t('noteLockPrompt.setPassword')
 
   return (
-    <Modal
-      visible={kind !== null}
-      transparent
-      animationType="fade"
-      statusBarTranslucent
-      onRequestClose={decline}
-    >
+    <RootOverlay visible={kind !== null} onRequestClose={decline}>
       <RNView style={styles.scrim}>
         <RNView style={styles.card}>
           <RNView style={styles.icon}>
@@ -81,7 +76,7 @@ export const NoteLockPromptModal = memo(function NoteLockPromptModal() {
           </Pressable>
         </RNView>
       </RNView>
-    </Modal>
+    </RootOverlay>
   )
 })
 

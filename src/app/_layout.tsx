@@ -73,6 +73,7 @@ import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
 import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
 import { useReminders } from '@/hooks/useReminders'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
+import { getAppVersion } from '@/lib/appVersion'
 import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
@@ -251,7 +252,12 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       )
       let readyResult
       try {
-        readyResult = await backendApi.ready({ storage, encryption: key, entropy })
+        readyResult = await backendApi.ready({
+          storage,
+          encryption: key,
+          entropy,
+          appVersion: getAppVersion(),
+        })
       } finally {
         clearTimeout(readySlowTimer)
       }
