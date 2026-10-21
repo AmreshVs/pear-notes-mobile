@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useFocusEffect } from 'expo-router'
+import { useFocusEffect, useIsFocused } from 'expo-router'
 import type { TFunction } from 'i18next'
 
 import {
@@ -10,6 +10,8 @@ import {
   UPCOMING_GROUP,
 } from '@pear-notes/core/store/services/noteTasks.js'
 import { loadUpcomingGroups, setTaskDone } from '@pear-notes/core/store/services/upcomingTasks.js'
+
+import { useOnNotesChanged } from '@/hooks/useOnNotesChanged'
 
 export type UpcomingTask = {
   noteKey: string
@@ -47,6 +49,7 @@ const NEXT_GROUPS: string[] = [
 const pendingId = (task: UpcomingTask) => `${task.noteKey}|${task.date}|${task.text}`
 
 const MINUTE_MS = 60 * 1000
+const UPCOMING_REFRESH_MS = 30 * 1000
 const HOUR_MS = 60 * MINUTE_MS
 const DAY_MS = 24 * HOUR_MS
 
@@ -130,6 +133,7 @@ export function useUpcomingTasks() {
   const [pending, setPending] = useState<Set<string>>(() => new Set())
   const [openFolds, setOpenFolds] = useState<Set<string>>(() => new Set())
   const mountedRef = useRef(true)
+  const isFocused = useIsFocused()
 
   useEffect(() => {
     mountedRef.current = true
@@ -149,8 +153,12 @@ export function useUpcomingTasks() {
   useFocusEffect(
     useCallback(() => {
       load()
+      const timer = setInterval(load, UPCOMING_REFRESH_MS)
+      return () => clearInterval(timer)
     }, [load]),
   )
+
+  useOnNotesChanged(load, isFocused)
 
   const refresh = useCallback(async () => {
     setRefreshing(true)
@@ -242,6 +250,7 @@ const UPCOMING_COUNT_REFRESH_MS = 60 * 1000
 
 export function useUpcomingCount(): number {
   const [count, setCount] = useState(0)
+  const isFocused = useIsFocused()
   const refresh = useCallback(() => {
     loadUpcomingGroups()
       .then((groups: UpcomingGroup[]) => setCount(countOpenUpcoming(groups)))
@@ -254,5 +263,6 @@ export function useUpcomingCount(): number {
       return () => clearInterval(timer)
     }, [refresh]),
   )
+  useOnNotesChanged(refresh, isFocused)
   return count
 }

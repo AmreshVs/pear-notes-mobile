@@ -72,6 +72,7 @@ import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
 import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
 import { useReminders } from '@/hooks/useReminders'
+import { DEVICES_ROUTE, PAIRING_DONE_STEP, PAIRING_IDLE_STEP } from '@/hooks/useVaultSwitcher'
 import { loadAndroidColorTheme } from '@/lib/androidColorTheme'
 import { getAppVersion } from '@/lib/appVersion'
 import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
@@ -210,6 +211,8 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const pathnameRef = useRef(pathname)
   pathnameRef.current = pathname
   const prevNeedsConfirmRef = useRef(false)
+  const reopenDevicesRef = useRef(false)
+  const prevInviterStepRef = useRef(inviterStatus?.step)
 
   const initWorklet = useCallback(async () => {
     try {
@@ -366,11 +369,22 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       pathnameRef.current.startsWith('/settings') &&
       Platform.OS === 'ios'
     ) {
+      reopenDevicesRef.current =
+        inviterStatus?.step === 'confirmation' && pathnameRef.current.startsWith(DEVICES_ROUTE)
       router.dismissAll()
       router.back()
     }
     prevNeedsConfirmRef.current = needsConfirm
   }, [inviterStatus?.step, receiverStatus?.step])
+
+  useEffect(() => {
+    const step = inviterStatus?.step
+    const previousStep = prevInviterStepRef.current
+    prevInviterStepRef.current = step
+    if (step !== PAIRING_IDLE_STEP || !reopenDevicesRef.current) return
+    reopenDevicesRef.current = false
+    if (previousStep === PAIRING_DONE_STEP) router.push(DEVICES_ROUTE)
+  }, [inviterStatus?.step])
 
   // LEGACY(hyperdb-migration): see docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8
   const startFreshFromLegacyVault = useCallback(async () => {

@@ -16,6 +16,8 @@ export const VAULTS_SETTINGS_ROUTE = '/settings/vaults'
 export const JOIN_VAULT_ROUTE = '/settings/vaults/join'
 export const DEVICES_ROUTE = '/settings/devices'
 export const ADD_DEVICE_ROUTE = '/settings/devices/add'
+export const PAIRING_DONE_STEP = 'done'
+export const PAIRING_IDLE_STEP = 'idle'
 
 export function useVaultSwitcher() {
   const vaults = useSelector(getVaults) as Vault[]
