@@ -14,7 +14,6 @@ import {
   setImportStatus,
 } from '@pear-notes/core/store/slices/backupSlice.js'
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import {
   getTotalBlobBytes,
   subscribeStorageInfo,
@@ -70,7 +69,6 @@ function useBackupScreen() {
   const importStatus = useSelector(getImportStatus) as BackupStatus
   const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
   const notes = useSelector(getNotes) as { value?: { locked?: boolean } }[]
-  const lockMethod = useSelector(getLockMethod) as string
   const hasLockedNotes = notes.some((note) => note.value?.locked === true)
 
   const [lastBackupDate, setLastBackupDate] = useState<string | null>(null)
@@ -148,12 +146,12 @@ function useBackupScreen() {
 
   const handleCreateBackup = useCallback(async () => {
     if (hasLockedNotes) {
-      const ok = await authenticateWithLockMethod(t('backup.lockedAuthReason'), lockMethod)
+      const ok = await authenticateWithLockMethod(t('backup.lockedAuthReason'))
       if (!ok) return
     }
     setHideModal(false)
     router.push(`${BACKUP_PASSWORD_ROUTE}?mode=create`)
-  }, [hasLockedNotes, lockMethod, t])
+  }, [hasLockedNotes, t])
 
   const handleRunInBackground = useCallback(async () => {
     setHideModal(true)

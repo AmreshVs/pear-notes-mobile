@@ -100,3 +100,34 @@ export async function deleteVaultEntropy(): Promise<void> {
 export async function clearVaultSecrets(): Promise<void> {
   await Promise.all([deleteDbEncryptionKey(), deleteVaultEntropy()])
 }
+
+const LOCK_ROOT_OPTIONS: SecureStore.SecureStoreOptions = {
+  keychainService: 'pear-notes-lock-root',
+  keychainAccessible: SecureStore.WHEN_PASSCODE_SET_THIS_DEVICE_ONLY,
+  requireAuthentication: true,
+}
+
+const lockRootName = (vaultId: string) => `lock_root_${vaultId.replace(/[^A-Za-z0-9._-]/g, '')}`
+
+export function canUseBiometricSecret(): boolean {
+  try {
+    return SecureStore.canUseBiometricAuthentication()
+  } catch {
+    return false
+  }
+}
+
+export async function getLockRootKey(vaultId: string, prompt: string): Promise<string | null> {
+  return SecureStore.getItemAsync(lockRootName(vaultId), {
+    ...LOCK_ROOT_OPTIONS,
+    authenticationPrompt: prompt,
+  })
+}
+
+export async function setLockRootKey(vaultId: string, rootKey: string): Promise<void> {
+  await SecureStore.setItemAsync(lockRootName(vaultId), rootKey, LOCK_ROOT_OPTIONS)
+}
+
+export async function deleteLockRootKey(vaultId: string): Promise<void> {
+  await SecureStore.deleteItemAsync(lockRootName(vaultId), LOCK_ROOT_OPTIONS).catch(() => {})
+}

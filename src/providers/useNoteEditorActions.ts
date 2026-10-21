@@ -87,7 +87,6 @@ export type NoteEditorActionLabels = {
 
 export type NoteEditorActionOptions = {
   editor: ReturnType<typeof useNoteEditor>
-  lockMethod?: string
   screenWidth: number
   recordingFileNamePrefix: string
   labels: NoteEditorActionLabels
@@ -99,7 +98,6 @@ export type NoteEditorActionOptions = {
 
 export function useNoteEditorActions({
   editor,
-  lockMethod,
   screenWidth,
   recordingFileNamePrefix,
   labels,
@@ -606,9 +604,8 @@ export function useNoteEditorActions({
       reason: labels.unlockReason,
       lockReason: labels.lockReason,
       dispatch,
-      lockMethod,
     })
-  }, [noteId, noteData?.locked, dispatch, lockMethod, labels, onBeforeToggleLock])
+  }, [noteId, noteData?.locked, dispatch, labels, onBeforeToggleLock])
 
   return {
     handleUpdate,

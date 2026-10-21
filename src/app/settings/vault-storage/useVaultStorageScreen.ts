@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDispatch, useSelector } from 'react-redux'
 
 import { isMultiVaultEnabled } from '@pear-notes/core/constant.js'
@@ -30,6 +31,8 @@ import { formatDate } from '@pear-notes/core/utils.js'
 
 import { resetAllData } from '@/lib/clearAllData'
 import { hapticLight, hapticWarning } from '@/lib/haptics'
+import { isNoteSessionUnlocked, markNoteUnlocked } from '@/lib/noteLock'
+import { unlockLockedNotes } from '@/lib/noteLockSession'
 import type { Vault } from '@/lib/vaults.types'
 import { getNoteMetadata } from '@/utils/noteMetadata'
 
@@ -44,6 +47,7 @@ function useVaultStorageScreen() {
   const activeUploads = useSelector(getActiveUploads) as any[]
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
+  const { t } = useTranslation()
   const notesData = useSelector(getNotesData) as Record<string, any>
   const noteCount = (useSelector(getNoteKeys) as string[] | undefined)?.length ?? 0
   const folderCount = (useSelector(getFolderKeys) as string[] | undefined)?.length ?? 0
@@ -76,11 +80,16 @@ function useVaultStorageScreen() {
   }, [dispatch])
 
   const handleDeleteMedia = useCallback(
-    (noteKey: string, mediaPath: string) => {
+    async (noteKey: string, mediaPath: string) => {
       hapticWarning()
+      const note = notesData[noteKey] as { sealed?: boolean; bodyOmitted?: boolean } | undefined
+      if (note?.sealed && !isNoteSessionUnlocked()) {
+        if (!(await unlockLockedNotes(t('noteLockPassword.deleteFileReason')))) return
+        markNoteUnlocked()
+      }
       dispatch(deleteNoteMedia({ noteKey, mediaPath } as any))
     },
-    [dispatch],
+    [dispatch, notesData, t],
   )
 
   const handleReclaim = useCallback(() => {

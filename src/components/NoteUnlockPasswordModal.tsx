@@ -11,7 +11,6 @@ import {
 } from 'react-native'
 import { BlurView } from 'expo-blur'
 
-import { backendApi } from '@pear-notes/core/backend/api.js'
 import { PASSWORD_MAX_LENGTH } from '@pear-notes/core/constant.js'
 
 import { GlassView } from '@/components/GlassView'
@@ -40,6 +39,7 @@ import {
   resolveNoteLockPassword,
   useNoteUnlockVisible,
 } from '@/lib/noteLockPasswordFlow'
+import { submitLockPassword } from '@/lib/noteLockSession'
 
 export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
   const { t } = useTranslation()
@@ -85,8 +85,8 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
   const handleSubmit = useCallback(async () => {
     if (!password.trim() || submitting) return
     setSubmitting(true)
-    const { valid, retryAfter } = await backendApi.verifyNoteLockPassword({ password })
-    if (valid) {
+    const { ok, retryAfter } = await submitLockPassword(password)
+    if (ok) {
       resolveNoteLockPassword(true)
     } else {
       hapticError()

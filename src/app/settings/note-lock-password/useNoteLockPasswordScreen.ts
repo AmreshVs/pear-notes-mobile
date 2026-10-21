@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useDispatch } from 'react-redux'
 import { router } from 'expo-router'
 
@@ -8,9 +9,11 @@ import { isValidBackupPassword } from '@pear-notes/core/utils.js'
 
 import { hapticError, hapticSuccess } from '@/lib/haptics'
 import { resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
+import { hasLockPassword, submitLockPassword } from '@/lib/noteLockSession'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
 export default function useNoteLockPasswordScreen(mode?: string) {
+  const { t } = useTranslation()
   const dispatch = useDispatch()
   const isCreate = mode !== 'enter'
 
@@ -18,31 +21,37 @@ export default function useNoteLockPasswordScreen(mode?: string) {
   const [confirm, setConfirm] = useState('')
   const [secure, setSecure] = useState(true)
   const [error, setError] = useState('')
+  const [understood, setUnderstood] = useState(false)
 
   const strength = useMemo(() => getPasswordStrength(password), [password])
   const passwordsMatch = password === confirm
   const canSubmit = isCreate
-    ? isValidBackupPassword(password) && passwordsMatch
+    ? isValidBackupPassword(password) && passwordsMatch && (understood || hasLockPassword())
     : password.trim().length > 0
 
   const toggleSecure = useCallback(() => setSecure((s) => !s), [])
 
-  useEffect(() => {
-    if (isCreate) return
-    return () => resolveNoteLockPassword(false)
-  }, [isCreate])
+  useEffect(() => () => resolveNoteLockPassword(false), [])
 
   const submit = useCallback(async (): Promise<{ retryAfter: number } | null> => {
     if (!canSubmit) return null
     if (isCreate) {
+      const firstTime = !hasLockPassword()
       const done = await backendApi.setNoteLockPassword({ password })
-      if (done) dispatch(loadSettings())
+      if (!done) {
+        hapticError()
+        setError(t('noteLockPassword.setFailed'))
+        return null
+      }
+      dispatch(loadSettings())
+      if (firstTime) await submitLockPassword(password)
       hapticSuccess()
+      resolveNoteLockPassword(true)
       router.back()
       return null
     }
-    const { valid, retryAfter } = await backendApi.verifyNoteLockPassword({ password })
-    if (valid) {
+    const { ok, retryAfter } = await submitLockPassword(password)
+    if (ok) {
       hapticSuccess()
       resolveNoteLockPassword(true)
       router.back()
@@ -50,7 +59,7 @@ export default function useNoteLockPasswordScreen(mode?: string) {
     }
     hapticError()
     return { retryAfter }
-  }, [canSubmit, isCreate, password, dispatch])
+  }, [canSubmit, isCreate, password, dispatch, t])
 
   return {
     isCreate,
@@ -65,6 +74,9 @@ export default function useNoteLockPasswordScreen(mode?: string) {
     canSubmit,
     error,
     setError,
+    understood,
+    setUnderstood,
+    showUnderstood: isCreate && !hasLockPassword(),
     submit,
   }
 }

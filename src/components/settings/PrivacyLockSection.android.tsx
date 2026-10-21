@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View } from 'react-native'
 import { Switch } from 'react-native-paper'
@@ -14,7 +14,6 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_20,
   UI_ICON_SIZE_22,
   UI_SIZE_4,
   UI_SIZE_8,
@@ -26,6 +25,7 @@ import {
   UI_SIZE_44,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
 
@@ -50,25 +50,34 @@ export function PrivacyLockSection() {
     lockAvailable,
     deviceMethod,
     isPassword,
-    passwordDisabled,
+    outdatedDevices,
+    biometricAvailable,
+    biometricOn,
+    biometricBusy,
     screenshotProtection,
     switcherHide,
-    selectBiometric,
-    selectPassword,
+    setOrChangePassword,
+    toggleBiometric,
     toggleScreenshotProtection,
     toggleSwitcherHide,
   } = usePrivacyLock()
 
-  const disabledContentColor = hexWithAlpha(c.onSurface, 0.38)
+  const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
-  const handleSelectPassword = useCallback(() => {
-    selectPassword(t('settings.privacy.changeMethodReason'))
-  }, [selectPassword, t])
+  const methodName = t(getLockMethodLabelKey(deviceMethod))
+
+  const handleSetPassword = useCallback(() => {
+    setOrChangePassword(t('settings.privacy.changeMethodReason'))
+  }, [setOrChangePassword, t])
+
+  const handleToggleBiometric = useCallback(() => {
+    toggleBiometric(t('settings.privacy.biometricReason', { method: methodName }))
+  }, [toggleBiometric, methodName, t])
 
   const methodDesc = isPassword
     ? t('settings.privacy.noteLockPasswordDesc')
     : lockAvailable
-      ? t('settings.privacy.noteLockDesc', { method: t(getLockMethodLabelKey(deviceMethod)) })
+      ? t('settings.privacy.noteLockDesc', { method: methodName })
       : t('settings.privacy.noteLockUnavailableDesc')
 
   return (
@@ -91,77 +100,57 @@ export function PrivacyLockSection() {
 
       <MotionView
         layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        style={styles.card}
+        style={styles.groupCard}
       >
-        <Text style={styles.rowTitle}>{t('settings.privacy.unlockMethod')}</Text>
-        <View style={styles.segContainer}>
-          <Pressable
-            onPress={selectBiometric}
-            disabled={!lockAvailable}
-            style={[
-              styles.segItem,
-              !isPassword && styles.segItemActive,
-              !lockAvailable && styles.segItemDisabled,
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="fingerprint"
-              size={UI_ICON_SIZE_20}
-              color={
-                !lockAvailable
-                  ? disabledContentColor
-                  : !isPassword
-                    ? c.onPrimaryContainer
-                    : c.onSurfaceVariant
-              }
-            />
-            <Text
-              style={[
-                styles.segText,
-                !isPassword && styles.segTextActive,
-                !lockAvailable && styles.segTextDisabled,
-              ]}
-            >
-              {t('settings.privacy.biometric')}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={handleSelectPassword}
-            disabled={passwordDisabled}
-            style={[
-              styles.segItem,
-              isPassword && styles.segItemActive,
-              passwordDisabled && styles.segItemDisabled,
-            ]}
-          >
-            <MaterialCommunityIcons
-              name="key-outline"
-              size={UI_ICON_SIZE_20}
-              color={
-                passwordDisabled
-                  ? disabledContentColor
-                  : isPassword
-                    ? c.onPrimaryContainer
-                    : c.onSurfaceVariant
-              }
-            />
-            <Text
-              style={[
-                styles.segText,
-                isPassword && styles.segTextActive,
-                passwordDisabled && styles.segTextDisabled,
-              ]}
-            >
-              {t('settings.privacy.password')}
+        <View style={styles.toggleRow}>
+          <View style={styles.toggleInfo}>
+            <Text style={styles.rowTitle}>{t('settings.privacy.lockPassword')}</Text>
+            <Text style={styles.rowSubtitle}>{t('settings.privacy.attachmentsNotEncrypted')}</Text>
+          </View>
+          <Pressable onPress={handleSetPassword} android_ripple={ripple} style={styles.actionBtn}>
+            <Text style={styles.actionText}>
+              {isPassword
+                ? t('settings.privacy.lockPasswordChange')
+                : t('settings.privacy.lockPasswordSet')}
             </Text>
           </Pressable>
         </View>
-      </MotionView>
 
-      <MotionView
-        layout={LinearTransition.duration(250).easing(Easing.out(Easing.cubic))}
-        style={styles.groupCard}
-      >
+        {biometricAvailable && (
+          <>
+            <View style={styles.separator} />
+            <View style={styles.toggleRow}>
+              <View style={styles.toggleInfo}>
+                <Text style={styles.rowTitle}>
+                  {t('settings.privacy.biometricUnlock', { method: methodName })}
+                </Text>
+                <Text style={styles.rowSubtitle}>{t('settings.privacy.biometricUnlockDesc')}</Text>
+              </View>
+              <Switch
+                value={biometricOn}
+                disabled={biometricBusy}
+                onValueChange={handleToggleBiometric}
+              />
+            </View>
+          </>
+        )}
+
+        {outdatedDevices.length > 0 && (
+          <>
+            <View style={styles.separator} />
+            <View style={styles.methodRow}>
+              <Text style={styles.rowTitle}>{t('settings.privacy.outdatedDevices')}</Text>
+              <Text style={styles.rowSubtitle}>
+                {t('settings.privacy.outdatedDevicesDesc', {
+                  devices: outdatedDevices.map((device) => device.title || '?').join(', '),
+                })}
+              </Text>
+            </View>
+          </>
+        )}
+
+        <View style={styles.separator} />
+
         <View style={styles.toggleRow}>
           <View style={styles.toggleInfo}>
             <Text style={styles.rowTitle}>{t('settings.privacy.blockScreenshots')}</Text>
@@ -207,47 +196,6 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
       ...commonStyles.centered,
     },
-    card: {
-      backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
-      borderRadius: UI_SIZE_28,
-      paddingHorizontal: UI_SIZE_20,
-      paddingVertical: UI_SIZE_16,
-      marginBottom: UI_SIZE_12,
-    },
-    segContainer: {
-      ...commonStyles.row,
-      backgroundColor: hexWithAlpha(c.onSurface, 0.04),
-      borderRadius: UI_SIZE_9999,
-      padding: UI_SIZE_4,
-    },
-    segItem: {
-      ...commonStyles.flex1,
-      flexDirection: 'row',
-      paddingVertical: UI_SIZE_12,
-      borderRadius: UI_SIZE_9999,
-      ...commonStyles.centered,
-      gap: UI_SIZE_8,
-    },
-    segItemActive: {
-      backgroundColor: c.primaryContainer,
-    },
-    segItemDisabled: {
-      backgroundColor: hexWithAlpha(c.onSurface, 0.12),
-    },
-    segText: {
-      fontSize: FontSize.body,
-      fontWeight: FontWeight.semibold,
-      fontFamily: FontFamily.semiBold,
-      color: c.onSurfaceVariant,
-    },
-    segTextActive: {
-      color: c.onPrimaryContainer,
-      fontWeight: FontWeight.bold,
-      fontFamily: FontFamily.bold,
-    },
-    segTextDisabled: {
-      color: hexWithAlpha(c.onSurface, 0.38),
-    },
     groupCard: {
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
       borderRadius: UI_SIZE_28,
@@ -259,6 +207,22 @@ const useStyles = createThemedStylesheetWithHooks((theme, { md3 }) => {
       paddingHorizontal: UI_SIZE_20,
       paddingVertical: UI_SIZE_18,
       gap: UI_SIZE_16,
+    },
+    methodRow: {
+      paddingHorizontal: UI_SIZE_20,
+      paddingVertical: UI_SIZE_18,
+    },
+    actionBtn: {
+      paddingHorizontal: UI_SIZE_16,
+      paddingVertical: UI_SIZE_8,
+      borderRadius: UI_SIZE_9999,
+      overflow: 'hidden',
+    },
+    actionText: {
+      fontSize: FontSize.body,
+      fontWeight: FontWeight.semibold,
+      fontFamily: FontFamily.semiBold,
+      color: c.primary,
     },
     toggleInfo: {
       ...commonStyles.flex1,

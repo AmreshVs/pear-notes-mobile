@@ -32,7 +32,7 @@ export const LockNowButton = memo(function LockNowButton() {
 
   const handleLockNow = useCallback(() => {
     hapticSuccess()
-    clearUnlockedNotes()
+    clearUnlockedNotes({ afterPendingSaves: true })
   }, [])
 
   if (!hasUnlockedNotes) return null

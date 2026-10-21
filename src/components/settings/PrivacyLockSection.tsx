@@ -13,7 +13,6 @@ import {
   FontWeight,
   Radii,
   Space,
-  UI_ICON_SIZE_16,
   UI_ICON_SIZE_20,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
@@ -30,23 +29,32 @@ export function PrivacyLockSection() {
     lockAvailable,
     deviceMethod,
     isPassword,
-    passwordDisabled,
+    outdatedDevices,
+    biometricAvailable,
+    biometricOn,
+    biometricBusy,
     screenshotProtection,
     switcherHide,
-    selectBiometric,
-    selectPassword,
+    setOrChangePassword,
+    toggleBiometric,
     toggleScreenshotProtection,
     toggleSwitcherHide,
   } = usePrivacyLock()
 
-  const handleSelectPassword = useCallback(() => {
-    selectPassword(t('settings.privacy.changeMethodReason'))
-  }, [selectPassword, t])
+  const methodName = t(getLockMethodLabelKey(deviceMethod))
+
+  const handleSetPassword = useCallback(() => {
+    setOrChangePassword(t('settings.privacy.changeMethodReason'))
+  }, [setOrChangePassword, t])
+
+  const handleToggleBiometric = useCallback(() => {
+    toggleBiometric(t('settings.privacy.biometricReason', { method: methodName }))
+  }, [toggleBiometric, methodName, t])
 
   const methodDesc = isPassword
     ? t('settings.privacy.noteLockPasswordDesc')
     : lockAvailable
-      ? t('settings.privacy.noteLockDesc', { method: t(getLockMethodLabelKey(deviceMethod)) })
+      ? t('settings.privacy.noteLockDesc', { method: methodName })
       : t('settings.privacy.noteLockUnavailableDesc')
 
   const trackColor = { false: colors.borderSecondary, true: colors.primary }
@@ -70,49 +78,57 @@ export function PrivacyLockSection() {
 
           <RNView style={styles.divider} />
 
-          <RNView style={styles.methodRow}>
-            <Text style={styles.rowTitle}>{t('settings.privacy.unlockMethod')}</Text>
-            <RNView style={styles.segment}>
-              <Pressable
-                onPress={selectBiometric}
-                disabled={!lockAvailable}
-                style={[
-                  styles.segmentBtn,
-                  !isPassword && styles.segmentBtnActive,
-                  !lockAvailable && styles.segmentBtnDisabled,
-                ]}
-              >
-                <SymbolIcon
-                  name="touchid"
-                  size={UI_ICON_SIZE_16}
-                  color={!isPassword ? colors.onPrimary : colors.textMuted}
-                  weight="medium"
-                />
-                <Text style={!isPassword ? styles.segmentTextActive : styles.segmentText}>
-                  {t('settings.privacy.biometric')}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={handleSelectPassword}
-                disabled={passwordDisabled}
-                style={[
-                  styles.segmentBtn,
-                  isPassword && styles.segmentBtnActive,
-                  passwordDisabled && styles.segmentBtnDisabled,
-                ]}
-              >
-                <SymbolIcon
-                  name="key"
-                  size={UI_ICON_SIZE_16}
-                  color={isPassword ? colors.onPrimary : colors.textMuted}
-                  weight="medium"
-                />
-                <Text style={isPassword ? styles.segmentTextActive : styles.segmentText}>
-                  {t('settings.privacy.password')}
-                </Text>
-              </Pressable>
+          <RNView style={styles.toggleRow}>
+            <RNView style={styles.toggleInfo}>
+              <Text style={styles.rowTitle}>{t('settings.privacy.lockPassword')}</Text>
+              <Text style={styles.rowDesc}>{t('settings.privacy.attachmentsNotEncrypted')}</Text>
             </RNView>
+            <Pressable
+              onPress={handleSetPassword}
+              style={({ pressed }) => [styles.actionBtn, pressed && commonStyles.pressed]}
+            >
+              <Text style={styles.actionText}>
+                {isPassword
+                  ? t('settings.privacy.lockPasswordChange')
+                  : t('settings.privacy.lockPasswordSet')}
+              </Text>
+            </Pressable>
           </RNView>
+
+          {biometricAvailable && (
+            <>
+              <RNView style={styles.divider} />
+              <RNView style={styles.toggleRow}>
+                <RNView style={styles.toggleInfo}>
+                  <Text style={styles.rowTitle}>
+                    {t('settings.privacy.biometricUnlock', { method: methodName })}
+                  </Text>
+                  <Text style={styles.rowDesc}>{t('settings.privacy.biometricUnlockDesc')}</Text>
+                </RNView>
+                <Switch
+                  value={biometricOn}
+                  disabled={biometricBusy}
+                  onValueChange={handleToggleBiometric}
+                  trackColor={trackColor}
+                  thumbColor={colors.white}
+                />
+              </RNView>
+            </>
+          )}
+
+          {outdatedDevices.length > 0 && (
+            <>
+              <RNView style={styles.divider} />
+              <RNView style={styles.methodRow}>
+                <Text style={styles.rowTitle}>{t('settings.privacy.outdatedDevices')}</Text>
+                <Text style={styles.rowDesc}>
+                  {t('settings.privacy.outdatedDevicesDesc', {
+                    devices: outdatedDevices.map((device) => device.title || '?').join(', '),
+                  })}
+                </Text>
+              </RNView>
+            </>
+          )}
 
           <RNView style={styles.divider} />
 
@@ -177,41 +193,18 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     methodRow: {
       padding: Space.lg,
-      gap: Space.md,
     },
-    segment: {
-      flexDirection: 'row',
-      backgroundColor: theme.colors.controlBackground,
+    actionBtn: {
+      paddingHorizontal: Space.md,
+      paddingVertical: Space.sm,
       borderRadius: Radii.md,
-      padding: 4,
-      gap: 4,
+      backgroundColor: theme.colors.controlBackground,
     },
-    segmentBtn: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: Space.sm,
-      height: 40,
-      borderRadius: Radii.sm,
-    },
-    segmentBtnActive: {
-      backgroundColor: theme.colors.primary,
-    },
-    segmentBtnDisabled: {
-      opacity: 0.4,
-    },
-    segmentText: {
+    actionText: {
       fontSize: FontSize.body,
       fontFamily: FontFamily.semiBold,
       fontWeight: FontWeight.semibold,
-      color: theme.colors.textMuted,
-    },
-    segmentTextActive: {
-      fontSize: FontSize.body,
-      fontFamily: FontFamily.semiBold,
-      fontWeight: FontWeight.semibold,
-      color: theme.colors.onPrimary,
+      color: theme.colors.primary,
     },
     toggleRow: {
       flexDirection: 'row',

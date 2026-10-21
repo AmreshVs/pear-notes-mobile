@@ -24,10 +24,7 @@ import {
   selectIsTextAiAvailable,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import {
-  getActivityLogEnabled,
-  getLockMethod,
-} from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getActivityLogEnabled } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { AiToolsSheet } from '@/components/AiToolsSheet'
 import { AttachmentSheet } from '@/components/android/AttachmentSheet'
@@ -102,7 +99,7 @@ import {
   downloadToCache,
   shareMessage,
 } from '@/lib/noteAttachmentManager'
-import { useIsNoteUnlocked } from '@/lib/noteLock'
+import { useIsNoteUnlocked, useNeedsOtherLockPassword } from '@/lib/noteLock'
 import { buildNoteSharePayload } from '@/lib/noteShare'
 import { setToastBottomOffset } from '@/lib/toastOffset'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
@@ -246,10 +243,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         : insets.bottom + UI_SIZE_12) + UI_SIZE_72,
     [editorOwnsKeyboard, keyboardHeight, insets.bottom],
   )
-  const lockMethod = useSelector(getLockMethod)
   const activityEnabled = useSelector(getActivityLogEnabled) as boolean
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
-  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
+  const needsOtherLockPassword = useNeedsOtherLockPassword(noteId, noteData)
+  const isNoteLocked =
+    !!noteData?.locked && !!noteId && (!isNoteUnlockedForNote || needsOtherLockPassword)
   const relatedOn = useAiSuggestionOn(AI_SUGGESTION.RELATED)
   const tasksOn = useAiSuggestionOn(AI_SUGGESTION.TASKS)
   const relatedEnabled =
@@ -373,7 +371,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleToggleLock,
   } = useNoteEditorActions({
     editor,
-    lockMethod,
     screenWidth: width,
     recordingFileNamePrefix: 'voice-note',
     labels: editorLabels,

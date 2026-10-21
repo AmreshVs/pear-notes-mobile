@@ -300,6 +300,13 @@ export function useNoteEditor() {
   }, [searchQuery])
 
   useEffect(() => {
+    if (noteId && noteData?.sealed && noteData.bodyOmitted && noteId === loadedNoteRef.current) {
+      loadedNoteRef.current = null
+      noteContentRef.current = ''
+      isLoadingNoteRef.current = true
+      editorRef.current?.loadNote(noteId, '', '')
+      return
+    }
     if (!noteId || noteId === loadedNoteRef.current) return
     if (noteData?.bodyOmitted) return
     loadedNoteRef.current = noteId

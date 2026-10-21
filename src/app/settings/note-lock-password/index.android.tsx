@@ -7,6 +7,7 @@ import {
   ScrollView,
   StatusBar,
   StyleSheet,
+  Switch,
   TextInput,
   View,
 } from 'react-native'
@@ -72,6 +73,9 @@ export default function AndroidNoteLockPasswordScreen() {
     canSubmit,
     error,
     setError,
+    understood,
+    setUnderstood,
+    showUnderstood,
     submit,
   } = useNoteLockPasswordScreen(mode)
 
@@ -150,6 +154,17 @@ export default function AndroidNoteLockPasswordScreen() {
                 color={c.primary}
               />
               <Text style={styles.warningText}>{t('noteLockPassword.warning')}</Text>
+            </View>
+          )}
+
+          {showUnderstood && (
+            <View style={styles.understoodRow}>
+              <Text style={styles.understoodText}>{t('noteLockPassword.understood')}</Text>
+              <Switch
+                value={understood}
+                onValueChange={setUnderstood}
+                trackColor={{ false: c.outlineVariant ?? c.outline, true: c.primary }}
+              />
             </View>
           )}
 
@@ -285,6 +300,19 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3, insets }) => {
       borderRadius: UI_SIZE_16,
       backgroundColor: hexWithAlpha(c.primaryContainer || c.primary, 0.15),
       marginBottom: UI_SIZE_4,
+    },
+    understoodRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: UI_SIZE_12,
+      marginBottom: UI_SIZE_4,
+    },
+    understoodText: {
+      flex: 1,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: c.onSurfaceVariant,
+      lineHeight: FontSize.caption * 1.5,
     },
     warningText: {
       flex: 1,

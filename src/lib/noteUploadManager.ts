@@ -9,12 +9,15 @@ import {
 } from '@pear-notes/core/store/slices/uiSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
+import { markNoteUnlocked } from '@/lib/noteLock'
+import { unlockLockedNotes } from '@/lib/noteLockSession'
 import {
   beginNoteUploadItem,
   completeNoteUploadItem,
   isNoteUploadItemCancelled,
   updateNoteUploadItemProgress,
 } from '@/lib/uploadRegistry'
+import i18n from '@/locales/i18n'
 import { resolveHyperdriveUrl } from '@/utils/hyperdriveUrl'
 
 const BLOB_SERVER_READY_TIMEOUT_MS = 5000
@@ -90,21 +93,35 @@ function buildAttachmentHtml(link: string, attachment: StoredAttachment, fileNam
   return `<div data-file-attachment="" url="${url}" fileName="${escapeHtml(fileName)}" fileSize="${attachment.fileSize || 0}" fileType="${escapeHtml(attachment.fileType || '')}"></div>`
 }
 
+type AppendTarget = {
+  title?: string
+  note?: string
+  folderKey?: string
+  sealed?: boolean
+  bodyOmitted?: boolean
+}
+
+async function readStoredNote(noteId: string): Promise<AppendTarget | null> {
+  const response = (await backendApi.getSingleNote({ key: noteId })) as {
+    data?: AppendTarget
+  } | null
+  return response?.data?.folderKey ? response.data : null
+}
+
 export async function appendHtmlToStoredNote(noteId: string, html: string): Promise<boolean> {
   if (!html) return false
-  let note = getNoteData(noteId)(store.getState()) as
-    | { title?: string; note?: string; bodyOmitted?: boolean }
-    | undefined
+  let note = getNoteData(noteId)(store.getState()) as AppendTarget | undefined | null
   if (!note) return false
-  if (note.bodyOmitted) {
-    const response = (await backendApi.getSingleNote({ key: noteId })) as {
-      data?: { title?: string; note?: string; folderKey?: string }
-    } | null
-    if (!response?.data?.folderKey) {
-      log.error('appendHtmlToStoredNote: could not read the note to append to', { noteId })
-      return false
-    }
-    note = response.data
+  if (note.bodyOmitted) note = await readStoredNote(noteId)
+  if (note?.sealed && note.bodyOmitted) {
+    if (!(await unlockLockedNotes(i18n.t('noteLockPassword.appendReason')))) return false
+    markNoteUnlocked()
+    note = await readStoredNote(noteId)
+    if (note?.bodyOmitted) note = null
+  }
+  if (!note) {
+    log.error('appendHtmlToStoredNote: could not read the note to append to', { noteId })
+    return false
   }
   store.dispatch(
     updateNote({ key: noteId, title: note.title || '', note: `${note.note || ''}${html}` } as any),

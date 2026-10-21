@@ -7,6 +7,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  Switch,
   TextInput,
   View as RNView,
 } from 'react-native'
@@ -57,6 +58,9 @@ export default function NoteLockPasswordScreen() {
     canSubmit,
     error,
     setError,
+    understood,
+    setUnderstood,
+    showUnderstood,
     submit,
   } = useNoteLockPasswordScreen(mode)
 
@@ -154,6 +158,17 @@ export default function NoteLockPasswordScreen() {
                 weight="medium"
               />
               <Text style={styles.warningText}>{t('noteLockPassword.warning')}</Text>
+            </RNView>
+          )}
+
+          {showUnderstood && (
+            <RNView style={styles.understoodRow}>
+              <Text style={styles.understoodText}>{t('noteLockPassword.understood')}</Text>
+              <Switch
+                value={understood}
+                onValueChange={setUnderstood}
+                trackColor={{ false: colors.borderSecondary, true: colors.primary }}
+              />
             </RNView>
           )}
 
@@ -280,6 +295,19 @@ const useStyles = createThemedStylesheet((theme) => {
       borderRadius: Radii.md,
       backgroundColor: theme.colors.cardSelected,
       marginBottom: Space.sm,
+    },
+    understoodRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: Space.sm,
+      marginBottom: Space.sm,
+    },
+    understoodText: {
+      flex: 1,
+      fontSize: FontSize.caption,
+      fontFamily: FontFamily.regular,
+      color: theme.colors.textSecondary,
+      lineHeight: FontSize.caption * 1.5,
     },
     warningText: {
       flex: 1,

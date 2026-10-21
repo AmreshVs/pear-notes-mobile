@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useTranslation } from 'react-i18next'
+import { useSelector } from 'react-redux'
 import { router } from 'expo-router'
 
 import {
   LOCK_SCREENSHOT_PROTECTION_KEY,
   LOCK_SWITCHER_HIDE_KEY,
 } from '@pear-notes/core/constant.js'
-import { clearLockPassword, getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getSyncedDevices } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { getLockPrivacyPreference, setLockPrivacyPreference } from '@pear-notes/core/utils.js'
 
 import useLockStatus from '@/app/settings/privacy/useLockStatus'
@@ -14,16 +16,29 @@ import { authenticate } from '@/lib/deviceAuth'
 import { hapticSelection } from '@/lib/haptics'
 import { clearUnlockedNotes } from '@/lib/noteLock'
 import { requestNoteLockPasswordScreen } from '@/lib/noteLockPasswordFlow'
+import {
+  canUseBiometricUnlock,
+  disableBiometricUnlock,
+  enableBiometricUnlock,
+  isBiometricUnlockOn,
+  offerPasswordMigrationFromSettings,
+} from '@/lib/noteLockSession'
 
 const SCREEN_POP_DELAY_MS = 400
 
+type SyncedDevice = { key: string; title?: string; sealedNotes?: boolean }
+
 export function usePrivacyLock() {
-  const dispatch = useDispatch()
+  const { t } = useTranslation()
   const { lockAvailable, lockMethod: deviceMethod } = useLockStatus()
   const lockMethod = useSelector(getLockMethod) as string
   const isPassword = lockMethod === 'password'
-  const passwordDisabled = !isPassword && !lockAvailable
+  const devices = useSelector(getSyncedDevices) as SyncedDevice[]
+  const outdatedDevices = devices.filter((device) => device.sealedNotes === false)
 
+  const [biometricAvailable, setBiometricAvailable] = useState(false)
+  const [biometricOn, setBiometricOn] = useState(false)
+  const [biometricBusy, setBiometricBusy] = useState(false)
   const [screenshotProtection, setScreenshotProtection] = useState(true)
   const [switcherHide, setSwitcherHide] = useState(true)
 
@@ -40,26 +55,53 @@ export function usePrivacyLock() {
     }
   }, [])
 
-  const selectBiometric = useCallback(async () => {
-    if (!isPassword) return
-    const ok = await requestNoteLockPasswordScreen()
-    if (ok) dispatch(clearLockPassword())
-  }, [isPassword, dispatch])
+  useEffect(() => {
+    let active = true
+    Promise.all([canUseBiometricUnlock(), isBiometricUnlockOn()]).then(([available, on]) => {
+      if (!active) return
+      setBiometricAvailable(available)
+      setBiometricOn(on)
+    })
+    return () => {
+      active = false
+    }
+  }, [isPassword])
 
-  const selectPassword = useCallback(
+  useEffect(() => {
+    offerPasswordMigrationFromSettings(t('settings.privacy.changeMethodReason'))
+  }, [t])
+
+  const setOrChangePassword = useCallback(
     async (reason: string) => {
       if (isPassword) {
         const ok = await requestNoteLockPasswordScreen()
         if (!ok) return
         await new Promise((resolve) => setTimeout(resolve, SCREEN_POP_DELAY_MS))
-      } else {
-        if (!lockAvailable) return
-        const ok = await authenticate(reason)
-        if (!ok) return
+      } else if (lockAvailable && !(await authenticate(reason))) {
+        return
       }
       router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
     },
     [isPassword, lockAvailable],
+  )
+
+  const toggleBiometric = useCallback(
+    async (reason: string) => {
+      if (biometricBusy) return
+      hapticSelection()
+      setBiometricBusy(true)
+      try {
+        if (biometricOn) {
+          await disableBiometricUnlock()
+          setBiometricOn(false)
+        } else {
+          setBiometricOn(await enableBiometricUnlock(reason))
+        }
+      } finally {
+        setBiometricBusy(false)
+      }
+    },
+    [biometricBusy, biometricOn],
   )
 
   const toggleScreenshotProtection = useCallback(() => {
@@ -85,11 +127,14 @@ export function usePrivacyLock() {
     lockAvailable,
     deviceMethod,
     isPassword,
-    passwordDisabled,
+    outdatedDevices,
+    biometricAvailable: isPassword && biometricAvailable,
+    biometricOn,
+    biometricBusy,
     screenshotProtection,
     switcherHide,
-    selectBiometric,
-    selectPassword,
+    setOrChangePassword,
+    toggleBiometric,
     toggleScreenshotProtection,
     toggleSwitcherHide,
   }

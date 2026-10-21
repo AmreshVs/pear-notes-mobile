@@ -54,6 +54,14 @@ export function requestNoteLockPasswordScreen(): Promise<boolean> {
   })
 }
 
+export function requestNoteLockPasswordCreate(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (resolver) resolver(false)
+    resolver = resolve
+    router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
+  })
+}
+
 export function resolveNoteLockPassword(ok: boolean): void {
   if (visible) {
     visible = false

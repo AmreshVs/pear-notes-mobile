@@ -56,6 +56,7 @@ import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
 import { MergePreviewModal } from '@/components/merge/MergePreviewModal'
 import { MergeNotesBanner } from '@/components/MergeNotesBanner'
+import { NoteLockPromptModal } from '@/components/NoteLockPromptModal'
 import { NoteUnlockPasswordModal } from '@/components/NoteUnlockPasswordModal'
 import { PairingOverlay } from '@/components/PairingOverlay'
 import {
@@ -547,6 +548,7 @@ function RootLayoutNav() {
               <ForceVaultRemovalPrompt />
               <LockUnavailableModal />
               <NoteUnlockPasswordModal />
+              <NoteLockPromptModal />
               <BackupProgressBanner />
               <AppUpdateBanner />
               <TipBanner />

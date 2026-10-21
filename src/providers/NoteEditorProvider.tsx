@@ -35,10 +35,7 @@ import {
   selectIsTextAiAvailable,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
 import { deleteNote } from '@pear-notes/core/store/slices/notesSlice.js'
-import {
-  getActivityLogEnabled,
-  getLockMethod,
-} from '@pear-notes/core/store/slices/settingsSlice.js'
+import { getActivityLogEnabled } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { NoteHistoryModal } from '@/components/activity/NoteHistoryModal'
 import { AiToolsSheet } from '@/components/AiToolsSheet'
@@ -101,7 +98,7 @@ import {
   saveImageToPhotos,
   shareMessage,
 } from '@/lib/noteAttachmentManager'
-import { useIsNoteUnlocked } from '@/lib/noteLock'
+import { useIsNoteUnlocked, useNeedsOtherLockPassword } from '@/lib/noteLock'
 import { buildNoteSharePayload } from '@/lib/noteShare'
 import { isPdfAttachment } from '@/lib/pdfTools'
 import { showCameraPermissionAlert } from '@/lib/permissionAlerts'
@@ -191,7 +188,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
 
   const shouldMountEditor = useDeferredEditorMount(isOpen)
 
-  const lockMethod = useSelector(getLockMethod)
   const activityEnabled = useSelector(getActivityLogEnabled) as boolean
   const relatedOn = useAiSuggestionOn(AI_SUGGESTION.RELATED)
   const tasksOn = useAiSuggestionOn(AI_SUGGESTION.TASKS)
@@ -203,7 +199,9 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const findingsEnabled = LOCAL_AI_ENABLED && tasksOn && !noteData?.locked
   const inThisNoteEnabled = relatedEnabled || findingsEnabled
   const isNoteUnlockedForNote = useIsNoteUnlocked(noteId)
-  const isNoteLocked = !!noteData?.locked && !!noteId && !isNoteUnlockedForNote
+  const needsOtherLockPassword = useNeedsOtherLockPassword(noteId, noteData)
+  const isNoteLocked =
+    !!noteData?.locked && !!noteId && (!isNoteUnlockedForNote || needsOtherLockPassword)
   const protectLockedNote = isOpen && !!noteData?.locked
   useLockedNoteScreenProtection(protectLockedNote)
 
@@ -298,7 +296,6 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleToggleLock,
   } = useNoteEditorActions({
     editor,
-    lockMethod,
     screenWidth: Dimensions.get('window').width,
     recordingFileNamePrefix: 'recording',
     labels: editorLabels,

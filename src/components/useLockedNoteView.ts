@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Platform } from 'react-native'
 import { useSelector } from 'react-redux'
 import * as LocalAuthentication from 'expo-local-authentication'
 
+import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 
 import { isDeviceAuthSupported } from '@/lib/deviceAuth'
 import { hapticSuccess } from '@/lib/haptics'
-import { markNoteUnlocked, unlockNote } from '@/lib/noteLock'
+import { isNoteSessionUnlocked, markNoteUnlocked, useNeedsOtherLockPassword } from '@/lib/noteLock'
 import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
+import { unlockLockedNotes } from '@/lib/noteLockSession'
 
 const isAndroid = Platform.OS === 'android'
 
@@ -16,11 +19,14 @@ export type AuthState = 'checking' | 'supported' | 'unavailable'
 export type BiometricKind = 'face' | 'fingerprint' | 'generic'
 
 export function useLockedNoteView(noteId: string) {
+  const { t } = useTranslation()
   const [authState, setAuthState] = useState<AuthState>('checking')
   const [biometric, setBiometric] = useState<BiometricKind>('generic')
   const [unlocking, setUnlocking] = useState(false)
   const lockMethod = useSelector(getLockMethod)
   const isPassword = lockMethod === 'password'
+  const noteData = useSelector(getNoteData(noteId))
+  const needsOtherPassword = useNeedsOtherLockPassword(noteId, noteData)
 
   useEffect(() => {
     let active = true
@@ -53,25 +59,26 @@ export function useLockedNoteView(noteId: string) {
     }
   }, [isPassword])
 
+  const otherPasswordReason = t('noteLockPassword.otherPasswordReason')
+
   const handleUnlock = useCallback(
     async (reason: string) => {
       if (unlocking) return
       setUnlocking(true)
       try {
-        if (isPassword) {
-          const ok = await requestNoteLockPassword()
-          if (ok) {
-            markNoteUnlocked(noteId)
-            hapticSuccess()
-          }
-        } else {
-          await unlockNote(noteId, reason)
+        const ok =
+          needsOtherPassword && isNoteSessionUnlocked()
+            ? await requestNoteLockPassword(otherPasswordReason)
+            : await unlockLockedNotes(reason)
+        if (ok) {
+          markNoteUnlocked(noteId)
+          hapticSuccess()
         }
       } finally {
         setUnlocking(false)
       }
     },
-    [noteId, unlocking, isPassword],
+    [noteId, unlocking, needsOtherPassword, otherPasswordReason],
   )
 
   return {

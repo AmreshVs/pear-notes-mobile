@@ -2,10 +2,9 @@ import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlic
 import { store } from '@pear-notes/core/store/store.js'
 
 import { deleteNoteThumbnails } from '@/lib/cacheCleanup'
-import { authenticate, isDeviceAuthSupported } from '@/lib/deviceAuth'
 import { hapticSuccess } from '@/lib/haptics'
-import { showLockUnavailable } from '@/lib/lockInfoModal'
-import { type NoteLockPasswordPurpose, requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
+import { type NoteLockPasswordPurpose } from '@/lib/noteLockPasswordFlow'
+import { unlockLockedNotes } from '@/lib/noteLockSession'
 
 type ToggleArgs = {
   key: string
@@ -13,7 +12,6 @@ type ToggleArgs = {
   reason: string
   lockReason: string
   dispatch: (action: any) => void
-  lockMethod?: string
 }
 
 export function isStoredNoteLocked(key: string | null | undefined): boolean {
@@ -22,21 +20,11 @@ export function isStoredNoteLocked(key: string | null | undefined): boolean {
   return note?.locked === true
 }
 
-export async function authenticateWithLockMethod(
+export function authenticateWithLockMethod(
   reason: string,
-  lockMethod: string = 'biometric',
   purpose: NoteLockPasswordPurpose = 'unlock',
 ): Promise<boolean> {
-  const usePassword = lockMethod === 'password'
-  if (!usePassword) {
-    const supported = await isDeviceAuthSupported()
-    if (!supported) {
-      showLockUnavailable()
-      return false
-    }
-    return authenticate(reason)
-  }
-  return requestNoteLockPassword(reason, purpose)
+  return unlockLockedNotes(reason, purpose)
 }
 
 export async function toggleNoteLock({
@@ -45,12 +33,10 @@ export async function toggleNoteLock({
   reason,
   lockReason,
   dispatch,
-  lockMethod = 'biometric',
 }: ToggleArgs): Promise<void> {
   if (!key) return
   const ok = await authenticateWithLockMethod(
     currentlyLocked ? reason : lockReason,
-    lockMethod,
     currentlyLocked ? 'unlock' : 'lock',
   )
   if (!ok) return

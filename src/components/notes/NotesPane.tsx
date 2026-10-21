@@ -40,7 +40,6 @@ import {
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -124,7 +123,6 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const navigation = useNavigation()
   const allFolders = useSelector(getFolders)
   const notes = useSelector(getFilteredNotes)
-  const lockMethod = useSelector(getLockMethod)
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote)
   const localPreferences = useSelector(getLocalPreferences)
@@ -399,10 +397,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         reason: t('noteCard.unlockReason'),
         lockReason: t('noteCard.lockReason'),
         dispatch,
-        lockMethod,
       })
     },
-    [dispatch, lockMethod, t],
+    [dispatch, t],
   )
 
   const handleRenameFolder = useCallback(() => {

@@ -62,7 +62,6 @@ import {
   updateNote,
 } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getTitleHighlight, prewarmSearch } from '@pear-notes/core/store/slices/searchSlice.js'
-import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 import { getLocalPreferences } from '@pear-notes/core/store/slices/syncedDevicesSlice.js'
 import { setShowPairingInput } from '@pear-notes/core/store/slices/syncSlice.js'
 import { getSearchQuery, setSearchQuery } from '@pear-notes/core/store/slices/uiSlice.js'
@@ -157,7 +156,6 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const allFolders = useSelector(getFolders) as any[]
   const notes = useSelector(getFilteredNotes) as any[]
-  const lockMethod = useSelector(getLockMethod) as string
   const searchQuery = useSelector(getSearchQuery) as string
   const selectedNote = useSelector(getSelectedNote) as string | null
   const localPreferences = useSelector(getLocalPreferences) as any
@@ -509,9 +507,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       reason: t('noteCard.unlockReason'),
       lockReason: t('noteCard.lockReason'),
       dispatch,
-      lockMethod,
     })
-  }, [activeNoteId, activeNoteLocked, dispatch, lockMethod, t])
+  }, [activeNoteId, activeNoteLocked, dispatch, t])
 
   const handleNoteSheetTogglePin = useCallback(() => {
     if (!activeNoteId) return

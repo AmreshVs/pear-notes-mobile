@@ -22,7 +22,7 @@ export const LockNowButton = memo(function LockNowButton() {
 
   const handleLockNow = useCallback(() => {
     hapticSuccess()
-    clearUnlockedNotes()
+    clearUnlockedNotes({ afterPendingSaves: true })
   }, [])
 
   const getPressableStyle = useCallback(
