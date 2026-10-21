@@ -1,3 +1,3 @@
 // Generated from package.json by scripts/set-version.js - do not edit.
 MARKETING_VERSION = 1.1.1
-CURRENT_PROJECT_VERSION = 10118
+CURRENT_PROJECT_VERSION = 10119
