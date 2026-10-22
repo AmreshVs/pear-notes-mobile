@@ -115,7 +115,7 @@ export function PrivacyLockSection() {
         <View style={styles.toggleRow}>
           <View style={styles.toggleInfo}>
             <Text style={styles.rowTitle}>{t('settings.privacy.lockPassword')}</Text>
-            <Text style={styles.rowSubtitle}>{t('settings.privacy.attachmentsNotEncrypted')}</Text>
+            <Text style={styles.rowSubtitle}>{t('settings.privacy.attachmentsEncrypted')}</Text>
           </View>
           <Pressable onPress={handleSetPassword} android_ripple={ripple} style={styles.actionBtn}>
             <Text style={styles.actionText}>

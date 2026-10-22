@@ -5,6 +5,8 @@ import * as log from '@pear-notes/core/log.js'
 import { getNotesData, setNotesDataBatch } from '@pear-notes/core/store/slices/notesSlice.js'
 import { store } from '@pear-notes/core/store/store.js'
 
+import { wipeAttachmentCopies } from '@/lib/noteAttachmentManager'
+
 const PENDING_SAVE_GRACE_MS = 600
 
 let sessionUnlocked = false
@@ -51,6 +53,7 @@ export function clearUnlockedNotes({ afterPendingSaves = false } = {}) {
     if (closing !== generation) return
     backendApi.closeLockSession().catch((e: unknown) => log.error('closeLockSession', e))
     purgeSealedBodies()
+    wipeAttachmentCopies()
   }
   if (afterPendingSaves) setTimeout(close, PENDING_SAVE_GRACE_MS)
   else close()

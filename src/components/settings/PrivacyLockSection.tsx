@@ -91,7 +91,7 @@ export function PrivacyLockSection() {
           <RNView style={styles.toggleRow}>
             <RNView style={styles.toggleInfo}>
               <Text style={styles.rowTitle}>{t('settings.privacy.lockPassword')}</Text>
-              <Text style={styles.rowDesc}>{t('settings.privacy.attachmentsNotEncrypted')}</Text>
+              <Text style={styles.rowDesc}>{t('settings.privacy.attachmentsEncrypted')}</Text>
             </RNView>
             <Pressable
               onPress={handleSetPassword}

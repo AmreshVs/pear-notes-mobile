@@ -124,6 +124,9 @@ export async function deleteAttachment(noteKey: string, url: string) {
 export const ATTACHMENT_CACHE_PREFIX = 'share-'
 
 let attachmentCacheSequence = 0
+const attachmentCacheDirs = new Set<string>()
+const handedOffDirs = new Set<string>()
+const waitingForReturn = new Set<string>()
 
 function sanitizeAttachmentFileName(fileName: string): string {
   const stripped = (fileName || '')
@@ -138,8 +141,42 @@ function sanitizeAttachmentFileName(fileName: string): string {
 async function createAttachmentCacheDir(): Promise<string> {
   attachmentCacheSequence += 1
   const dir = `${FileSystem.cacheDirectory}${ATTACHMENT_CACHE_PREFIX}${Date.now()}-${attachmentCacheSequence}/`
+  attachmentCacheDirs.add(dir)
   await FileSystem.makeDirectoryAsync(dir, { intermediates: true })
   return dir
+}
+
+function cacheDirOf(localUri: string): string {
+  return [...attachmentCacheDirs].find((dir) => localUri.startsWith(dir)) || ''
+}
+
+function forgetCacheDir(dir: string) {
+  attachmentCacheDirs.delete(dir)
+  handedOffDirs.delete(dir)
+  waitingForReturn.delete(dir)
+}
+
+export function markAttachmentHandedOff(localUri: string) {
+  const dir = cacheDirOf(localUri)
+  if (dir) handedOffDirs.add(dir)
+}
+
+export function wipeAttachmentCopies() {
+  for (const dir of attachmentCacheDirs) {
+    if (handedOffDirs.has(dir)) {
+      waitingForReturn.add(dir)
+      continue
+    }
+    forgetCacheDir(dir)
+    FileSystem.deleteAsync(dir, { idempotent: true }).catch(() => {})
+  }
+}
+
+export function wipeHandedOffAttachmentCopies() {
+  for (const dir of waitingForReturn) {
+    forgetCacheDir(dir)
+    FileSystem.deleteAsync(dir, { idempotent: true }).catch(() => {})
+  }
 }
 
 export async function cleanupCachedAttachment(localUri: string) {
@@ -151,6 +188,7 @@ export async function cleanupCachedAttachment(localUri: string) {
     const topSegment = relative.split('/')[0]
     if (topSegment.startsWith(ATTACHMENT_CACHE_PREFIX)) {
       target = `${cacheDir}${topSegment}`
+      forgetCacheDir(`${target}/`)
     }
   }
   await FileSystem.deleteAsync(target, { idempotent: true }).catch(() => {})

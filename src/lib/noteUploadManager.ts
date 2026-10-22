@@ -1,6 +1,7 @@
 import { AppState } from 'react-native'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
+import { LOCK_REFUSAL } from '@pear-notes/core/constant.js'
 import * as log from '@pear-notes/core/log.js'
 import { getNoteData, updateNote } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
@@ -48,10 +49,15 @@ function createProgressUpload(
   }
   const promise = (async () => {
     let link = ''
+    let reason = ''
     let gotDone = false
     try {
       for await (const msg of stream) {
         if (cancelled) break
+        if (msg.reason) {
+          reason = msg.reason
+          continue
+        }
         if (msg.done) {
           link = msg.link
           gotDone = true
@@ -62,12 +68,12 @@ function createProgressUpload(
         }
       }
     } catch (e) {
-      if (gotDone) return { link }
+      if (gotDone) return { link, reason }
       if (cancelled) throw new UploadCancelledError()
       throw e
     }
     if (cancelled && !gotDone) throw new UploadCancelledError()
-    return { link }
+    return { link, reason }
   })()
   return { promise, cancel }
 }
@@ -190,7 +196,7 @@ type RunNoteUploadOptions = {
   onError?: () => void
 }
 
-export async function runNoteUpload(options: RunNoteUploadOptions): Promise<void> {
+export async function runNoteUpload(options: RunNoteUploadOptions, retried = false): Promise<void> {
   const {
     noteId,
     itemId,
@@ -211,18 +217,24 @@ export async function runNoteUpload(options: RunNoteUploadOptions): Promise<void
   )
   beginNoteUploadItem(noteId, itemId, cancel)
 
+  let retry = false
   try {
-    const { link } = await promise
-    if (!link) return
-    const address = isNoteOpen() ? await waitForBlobServer() : null
-    if (isNoteOpen()) {
-      insertLive(resolveLiveLink(link, address, resolveLink))
-    } else {
-      appendAttachmentToStoredNote(noteId, link, attachment, displayName)
+    const { link, reason } = await promise
+    if (reason === LOCK_REFUSAL.SESSION_CLOSED && !retried) {
+      retry = await unlockLockedNotes(i18n.t('noteLockPassword.addFileReason'))
+      if (retry) markNoteUnlocked()
+    } else if (link) {
+      const address = isNoteOpen() ? await waitForBlobServer() : null
+      if (isNoteOpen()) {
+        insertLive(resolveLiveLink(link, address, resolveLink))
+      } else {
+        appendAttachmentToStoredNote(noteId, link, attachment, displayName)
+      }
     }
   } catch (e) {
     if (!(e instanceof UploadCancelledError)) onError?.()
   } finally {
     if (!isNoteUploadItemCancelled(itemId)) completeNoteUploadItem(noteId, itemId)
   }
+  if (retry) await runNoteUpload(options, true)
 }

@@ -11,6 +11,7 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 import { AndroidBackupBreakdownSection } from '@/components/android/AndroidBackupBreakdownSection'
 import { AndroidBackupNotesListSection } from '@/components/android/AndroidBackupNotesListSection'
 import { AndroidDownloadsSection } from '@/components/android/AndroidDownloadsSection'
+import { AndroidSealWaitingSection } from '@/components/android/AndroidSealWaitingSection'
 import { AndroidSettingsAppBar } from '@/components/android/AndroidSettingsAppBar'
 import { AndroidUploadsSection } from '@/components/android/AndroidUploadsSection'
 import { RemovalBottomSheet } from '@/components/android/RemovalBottomSheet'
@@ -64,6 +65,7 @@ export default function AndroidVaultStorageScreen() {
     isReclaiming,
     activeDownloads,
     activeUploads,
+    sealWaiting,
     noteTitleByKey,
     notesStorageRows,
     buckets,
@@ -127,6 +129,12 @@ export default function AndroidVaultStorageScreen() {
 
         <AndroidUploadsSection
           uploads={activeUploads}
+          noteTitles={noteTitleByKey}
+          formatBytes={formatBytes}
+        />
+
+        <AndroidSealWaitingSection
+          files={sealWaiting}
           noteTitles={noteTitleByKey}
           formatBytes={formatBytes}
         />

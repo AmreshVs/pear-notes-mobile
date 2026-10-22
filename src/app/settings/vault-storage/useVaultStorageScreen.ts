@@ -9,6 +9,7 @@ import {
   deleteNoteMedia,
   getActiveDownloads,
   getActiveUploads,
+  getFilesWaitingToSeal,
   getIsReclaiming,
   getNotesStorageInfo,
   getReclaimableBytes,
@@ -45,6 +46,7 @@ function useVaultStorageScreen() {
   const isReclaiming = (useSelector(getIsReclaiming) as boolean) ?? false
   const activeDownloads = useSelector(getActiveDownloads) as any[]
   const activeUploads = useSelector(getActiveUploads) as any[]
+  const sealWaiting = useSelector(getFilesWaitingToSeal) as any[]
   const notesStorageInfo = useSelector(getNotesStorageInfo) as any[]
   const buckets = useSelector(selectStorageByKind) as any
   const { t } = useTranslation()
@@ -143,6 +145,7 @@ function useVaultStorageScreen() {
     isReclaiming,
     activeDownloads,
     activeUploads,
+    sealWaiting,
     noteTitleByKey,
     notesStorageInfo,
     notesStorageRows,

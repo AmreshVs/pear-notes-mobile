@@ -8,6 +8,7 @@ import { formatBytes } from '@pear-notes/core/utils.js'
 import { BackupBreakdownSection } from '@/components/backup/BackupBreakdownSection'
 import { BackupNotesListSection } from '@/components/backup/BackupNotesListSection'
 import { DownloadsSection } from '@/components/backup/DownloadsSection'
+import { SealWaitingSection } from '@/components/backup/SealWaitingSection'
 import { UploadsSection } from '@/components/backup/UploadsSection'
 import { ClearStorageBottomSheet } from '@/components/bottomsheet/ClearStorageAppBottomSheet'
 import { SymbolIcon } from '@/components/SymbolIcon'
@@ -45,6 +46,7 @@ export default function VaultStorageScreen() {
     isReclaiming,
     activeDownloads,
     activeUploads,
+    sealWaiting,
     noteTitleByKey,
     notesStorageInfo,
     buckets,
@@ -100,6 +102,12 @@ export default function VaultStorageScreen() {
 
         <UploadsSection
           uploads={activeUploads}
+          noteTitles={noteTitleByKey}
+          formatBytes={formatBytes}
+        />
+
+        <SealWaitingSection
+          files={sealWaiting}
           noteTitles={noteTitleByKey}
           formatBytes={formatBytes}
         />

@@ -70,6 +70,7 @@ import { VaultChangeOverlay } from '@/components/VaultChangeOverlay'
 import Colors from '@/constants/Colors'
 import { commonStyles, FontSize, FontWeight } from '@/constants/commonStyles'
 import { useIsLargeScreen } from '@/hooks/useIsLargeScreen'
+import { useLockRefusals } from '@/hooks/useLockRefusals'
 import { useNoteAutoRelock } from '@/hooks/useNoteAutoRelock'
 import { useReminders } from '@/hooks/useReminders'
 import { DEVICES_ROUTE, PAIRING_DONE_STEP, PAIRING_IDLE_STEP } from '@/hooks/useVaultSwitcher'
@@ -460,6 +461,11 @@ const useStyles = createThemedStylesheet((theme) => {
   return styles
 })
 
+function LockRefusalToasts() {
+  useLockRefusals()
+  return null
+}
+
 function SplashGate() {
   const notesLoading = useSelector(getNotesLoading)
   const hiddenRef = useRef(false)
@@ -544,6 +550,7 @@ function RootLayoutNav() {
         <SheetProvider>
           <ToastProvider>
             <SplashGate />
+            <LockRefusalToasts />
             <NoteEditorProvider>
               <Stack
                 screenOptions={{

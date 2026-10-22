@@ -1,7 +1,12 @@
 import * as FileSystem from 'expo-file-system/legacy'
 
 import { hasFileExtension } from '@/lib/fileSignature'
-import { copyFileToSAF, downloadToCache, shareMessage } from '@/lib/noteAttachmentManager'
+import {
+  copyFileToSAF,
+  downloadToCache,
+  markAttachmentHandedOff,
+  shareMessage,
+} from '@/lib/noteAttachmentManager'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
@@ -36,12 +41,14 @@ function applyDownloadedExtension(fileName: string, localPath: string): string {
 
 export async function previewAttachmentFile(url: string, fileName: string, onReady: () => void) {
   const localUri = await downloadToCache(url, fileName)
+  markAttachmentHandedOff(localUri)
   onReady()
   await ExpoNativeShareModule.preview({ url: localUri })
 }
 
 export async function shareAttachmentFile(url: string, fileName: string) {
   const localUri = await downloadToCache(url, fileName)
+  markAttachmentHandedOff(localUri)
   await shareMessage('', [localUri])
 }
 
