@@ -22,6 +22,7 @@ import {
   enableBiometricUnlock,
   isBiometricUnlockOn,
   offerPasswordMigrationFromSettings,
+  subscribeBiometricUnlock,
 } from '@/lib/noteLockSession'
 import { formatNameList } from '@/utils/nameList'
 
@@ -68,6 +69,10 @@ export function usePrivacyLock() {
     }
   }, [])
 
+  const [biometricVersion, setBiometricVersion] = useState(0)
+
+  useEffect(() => subscribeBiometricUnlock(() => setBiometricVersion((version) => version + 1)), [])
+
   useEffect(() => {
     let active = true
     Promise.all([canUseBiometricUnlock(), isBiometricUnlockOn()]).then(([available, on]) => {
@@ -78,7 +83,7 @@ export function usePrivacyLock() {
     return () => {
       active = false
     }
-  }, [isPassword])
+  }, [isPassword, biometricVersion])
 
   useEffect(() => {
     offerPasswordMigrationFromSettings(t('settings.privacy.changeMethodReason'))

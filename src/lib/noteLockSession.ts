@@ -59,6 +59,18 @@ async function writePref(key: string, value: string): Promise<void> {
   }
 }
 
+const biometricListeners = new Set<() => void>()
+
+export function subscribeBiometricUnlock(listener: () => void): () => void {
+  biometricListeners.add(listener)
+  return () => biometricListeners.delete(listener)
+}
+
+async function writeBiometricPref(vaultId: string, value: string): Promise<void> {
+  await writePref(biometricPref(vaultId), value)
+  biometricListeners.forEach((listener) => listener())
+}
+
 export async function canUseBiometricUnlock(): Promise<boolean> {
   if (!canUseBiometricSecret()) return false
   const method = await getDeviceAuthMethod()
@@ -81,7 +93,7 @@ async function storeRootKey(rootKey: string): Promise<boolean> {
   if (!vaultId) return false
   try {
     await setLockRootKey(vaultId, rootKey)
-    await writePref(biometricPref(vaultId), BIOMETRIC_ON)
+    await writeBiometricPref(vaultId, BIOMETRIC_ON)
     return true
   } catch (e) {
     log.error('store lock root key', e)
@@ -96,13 +108,13 @@ async function offerBiometric(rootKey: string): Promise<void> {
   if (await showNoteLockPrompt('biometricOffer')) {
     await storeRootKey(rootKey)
   } else {
-    await writePref(biometricPref(vaultId), BIOMETRIC_OFF)
+    await writeBiometricPref(vaultId, BIOMETRIC_OFF)
   }
 }
 
 async function forgetBiometric(vaultId: string, offerAgain: boolean): Promise<void> {
   await deleteLockRootKey(vaultId)
-  await writePref(biometricPref(vaultId), offerAgain ? '' : BIOMETRIC_OFF)
+  await writeBiometricPref(vaultId, offerAgain ? '' : BIOMETRIC_OFF)
 }
 
 async function unlockWithBiometric(reason: string): Promise<boolean> {
