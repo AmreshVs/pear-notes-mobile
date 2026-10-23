@@ -8,6 +8,8 @@ import {
   TITLE_COLLAPSE_HYSTERESIS,
 } from '@/constants/constants'
 
+type RestingScroller = { scrollTo: (options: { y: number; animated: boolean }) => void }
+
 export function useTitleCollapse() {
   const titleBlockBottomRef = useRef(0)
   const restingOffsetRef = useRef(0)
@@ -55,6 +57,11 @@ export function useTitleCollapse() {
     [lowerRestingOffset],
   )
 
+  const scrollToRest = useCallback((scroller: RestingScroller | null | undefined) => {
+    if (!hasInteractedRef.current || !scroller) return
+    scroller.scrollTo({ y: restingOffsetRef.current, animated: false })
+  }, [])
+
   const scrollProps = useMemo(
     () => ({
       onScroll: handleScroll,
@@ -65,5 +72,5 @@ export function useTitleCollapse() {
     [handleScroll, handleScrollBeginDrag, handleMomentumScrollEnd],
   )
 
-  return { isTitleCollapsed, handleTitleBlockLayout, scrollProps }
+  return { isTitleCollapsed, handleTitleBlockLayout, scrollProps, scrollToRest }
 }

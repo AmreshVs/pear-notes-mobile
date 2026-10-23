@@ -375,7 +375,7 @@ export function VoiceTypingSheet({
               </Pressable>
             </View>
 
-            {mode === 'translate' && !!sourceLanguage && !isError && (
+            {mode === 'translate' && !!sourceLanguage && error !== 'empty' && (
               <View style={styles.languagePanel}>
                 <Pressable
                   onPress={() => setSourcePickerOpen((open) => !open)}

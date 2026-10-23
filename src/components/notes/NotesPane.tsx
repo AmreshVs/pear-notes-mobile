@@ -589,7 +589,15 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const noteKey = useCallback((item: any) => item.key, [])
 
-  const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
+  const { isTitleCollapsed, handleTitleBlockLayout, scrollProps, scrollToRest } = useTitleCollapse()
+  const listRef = useRef<SectionList>(null)
+  const lastSearchQueryRef = useRef(searchQuery)
+
+  useEffect(() => {
+    if (lastSearchQueryRef.current === searchQuery) return
+    lastSearchQueryRef.current = searchQuery
+    scrollToRest(listRef.current?.getScrollResponder())
+  }, [searchQuery, scrollToRest])
 
   const listHeader = useMemo(
     () => (
@@ -714,6 +722,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         ref: searchBarRef,
         placeholder: t('folderView.searchPlaceholder'),
         hideWhenScrolling: false,
+        hideNavigationBar: false,
         placement: embedded ? ('inline' as const) : ('automatic' as const),
         allowToolbarIntegration: !embedded,
         textColor: colors.text,
@@ -804,6 +813,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         </>
       )}
       <SectionList
+        ref={listRef}
         sections={groupedNotes}
         keyExtractor={noteKey}
         renderItem={renderItem}

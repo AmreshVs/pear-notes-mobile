@@ -171,18 +171,18 @@ export async function disableBiometricUnlock(): Promise<void> {
   if (vaultId) await forgetBiometric(vaultId, false)
 }
 
-function hasLockedNotes(): boolean {
+export function hasLockedNotes(): boolean {
   const notes = getNotesData(store.getState()) as Record<string, { locked?: boolean } | undefined>
   return Object.values(notes).some((note) => note?.locked === true)
 }
 
 // One-time prompt for devices still on the biometric-only lock (design §5).
-async function offerPasswordMigration(): Promise<void> {
-  if (hasLockPassword() || (await readPref(MIGRATION_SEEN_PREF)) === 'true') return
+async function offerPasswordMigration(): Promise<boolean> {
+  if (hasLockPassword() || (await readPref(MIGRATION_SEEN_PREF)) === 'true') return false
   await writePref(MIGRATION_SEEN_PREF, 'true')
-  if (!(await showNoteLockPrompt('migration'))) return
+  if (!(await showNoteLockPrompt('migration'))) return false
   await wait(PROMPT_DELAY_MS)
-  await requestNoteLockPasswordCreate()
+  return requestNoteLockPasswordCreate()
 }
 
 export async function offerPasswordMigrationFromSettings(reason: string): Promise<void> {
@@ -198,6 +198,7 @@ export async function unlockLockedNotes(
   { fromSettings = false }: { fromSettings?: boolean } = {},
 ): Promise<boolean> {
   if (!hasLockPassword()) {
+    if (!hasLockedNotes() && (await offerPasswordMigration())) return true
     if (!(await isDeviceAuthSupported())) {
       showLockUnavailable()
       return false

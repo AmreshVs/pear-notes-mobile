@@ -20,6 +20,7 @@ import {
   canUseBiometricUnlock,
   disableBiometricUnlock,
   enableBiometricUnlock,
+  hasLockedNotes,
   isBiometricUnlockOn,
   offerPasswordMigrationFromSettings,
   subscribeBiometricUnlock,
@@ -95,7 +96,7 @@ export function usePrivacyLock() {
         const ok = await requestNoteLockPasswordScreen()
         if (!ok) return
         await new Promise((resolve) => setTimeout(resolve, SCREEN_POP_DELAY_MS))
-      } else if (lockAvailable && !(await authenticate(reason))) {
+      } else if (lockAvailable && hasLockedNotes() && !(await authenticate(reason))) {
         return
       }
       router.push(

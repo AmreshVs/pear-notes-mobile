@@ -715,10 +715,31 @@ window.addEventListener('scroll', () => dictation && moveDictationCaret(), {
   capture: true,
 })
 
+const USER_SCROLL_SETTLE_MS = 300
+let userScrollUntil = 0
+
+window.addEventListener(
+  'touchstart',
+  () => {
+    userScrollUntil = 0
+  },
+  { passive: true, capture: true },
+)
+
+window.addEventListener(
+  'touchmove',
+  () => {
+    userScrollUntil = Date.now() + USER_SCROLL_SETTLE_MS
+  },
+  { passive: true, capture: true },
+)
+
 window.addEventListener(
   'scroll',
   () => {
-    if (Date.now() < programmaticScrollUntil) return
+    const now = Date.now()
+    if (now < programmaticScrollUntil || now > userScrollUntil) return
+    userScrollUntil = now + USER_SCROLL_SETTLE_MS
     caretAutoscrollSuspended = true
     cancelPendingCaretScroll()
   },

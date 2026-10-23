@@ -515,13 +515,14 @@ export function useVoiceTypingSheet({
         return
       }
       hapticSuccess()
+      dispatch({ type: setLocalAiTranslationTarget.type, payload: request.target })
       setText(result)
       updatePhase('preview')
     } catch (error) {
       if (runId !== runIdRef.current) return
       failWith('failed', error)
     }
-  }, [beginWork, failWith, paragraphs, updatePhase])
+  }, [beginWork, dispatch, failWith, paragraphs, updatePhase])
 
   const checkDownload = useCallback(() => {
     if (phaseRef.current !== 'downloading' && phaseRef.current !== 'waiting') return
@@ -579,7 +580,6 @@ export function useVoiceTypingSheet({
       translateRequestRef.current = { source, target }
       downloadNamesRef.current = getTranslationModelNames(source, target) as string[]
       updatePhase('downloading')
-      dispatch({ type: setLocalAiTranslationTarget.type, payload: target })
       dispatch({ type: downloadLocalAiModels.type, payload: { names: downloadNamesRef.current } })
       checkDownload()
     },

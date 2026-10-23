@@ -2,8 +2,6 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -32,6 +30,7 @@ import {
   UI_SIZE_16,
   UI_SIZE_54,
 } from '@/constants/commonStyles'
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap'
 import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
 import useBackupPasswordScreen from './useBackupPasswordScreen'
@@ -44,6 +43,7 @@ export default function BackupPasswordScreen() {
   const insets = useSafeAreaInsets()
   const scrollRef = useRef<ScrollView>(null)
   const confirmRef = useRef<TextInput>(null)
+  const { rootRef, overlap } = useKeyboardOverlap()
 
   const handleRevealRequirements = useCallback(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250)
@@ -75,9 +75,14 @@ export default function BackupPasswordScreen() {
   }, [strength.score, styles.barFill, styles.barSuccess, styles.barPrimary, styles.barError])
 
   const footerStyle = useMemo(
-    () => [styles.footer, { paddingBottom: Math.max(insets.bottom, UI_SIZE_16) }],
-    [styles.footer, insets.bottom],
+    () => [
+      styles.footer,
+      { paddingBottom: overlap > 0 ? UI_SIZE_16 : Math.max(insets.bottom, UI_SIZE_16) },
+    ],
+    [styles.footer, insets.bottom, overlap],
   )
+
+  const bodyStyle = useMemo(() => [commonStyles.flex1, { paddingBottom: overlap }], [overlap])
 
   const handleSubmit = useCallback(() => {
     submit(t('backup.progress.restoringDesc'))
@@ -116,17 +121,13 @@ export default function BackupPasswordScreen() {
   )
 
   return (
-    <RNView style={styles.root}>
+    <RNView ref={rootRef} style={styles.root}>
       <Stack.Screen
         options={{
           title: isCreate ? t('backup.password.createTitle') : t('backup.password.enterTitle'),
         }}
       />
-      <KeyboardAvoidingView
-        style={commonStyles.flex1}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={insets.top + UI_SIZE_54}
-      >
+      <RNView style={bodyStyle}>
         <ScrollView
           ref={scrollRef}
           contentInsetAdjustmentBehavior="automatic"
@@ -221,7 +222,7 @@ export default function BackupPasswordScreen() {
             </Text>
           </Pressable>
         </RNView>
-      </KeyboardAvoidingView>
+      </RNView>
     </RNView>
   )
 }

@@ -2,8 +2,6 @@ import { useCallback, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   type DimensionValue,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -33,6 +31,7 @@ import {
   UI_SIZE_16,
   UI_SIZE_54,
 } from '@/constants/commonStyles'
+import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap'
 import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
 import useNoteLockPasswordScreen from './useNoteLockPasswordScreen'
@@ -44,6 +43,7 @@ export default function NoteLockPasswordScreen() {
   const styles = useStyles()
   const insets = useSafeAreaInsets()
   const confirmRef = useRef<TextInput>(null)
+  const { rootRef, overlap } = useKeyboardOverlap()
 
   const {
     isCreate,
@@ -78,9 +78,14 @@ export default function NoteLockPasswordScreen() {
   }, [strength.score, styles.barFill, styles.barSuccess, styles.barPrimary, styles.barError])
 
   const footerStyle = useMemo(
-    () => [styles.footer, { paddingBottom: Math.max(insets.bottom, UI_SIZE_16) }],
-    [styles.footer, insets.bottom],
+    () => [
+      styles.footer,
+      { paddingBottom: overlap > 0 ? UI_SIZE_16 : Math.max(insets.bottom, UI_SIZE_16) },
+    ],
+    [styles.footer, insets.bottom, overlap],
   )
+
+  const bodyStyle = useMemo(() => [commonStyles.flex1, { paddingBottom: overlap }], [overlap])
 
   const handleSubmit = useCallback(async () => {
     const failure = await submit()
@@ -126,17 +131,13 @@ export default function NoteLockPasswordScreen() {
   )
 
   return (
-    <RNView style={styles.root}>
+    <RNView ref={rootRef} style={styles.root}>
       <Stack.Screen
         options={{
           title: t(copy.title),
         }}
       />
-      <KeyboardAvoidingView
-        style={commonStyles.flex1}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={insets.top + UI_SIZE_54}
-      >
+      <RNView style={bodyStyle}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.scroll}
@@ -251,7 +252,7 @@ export default function NoteLockPasswordScreen() {
             <Text style={styles.confirmBtnText}>{t(copy.button)}</Text>
           </Pressable>
         </RNView>
-      </KeyboardAvoidingView>
+      </RNView>
     </RNView>
   )
 }
