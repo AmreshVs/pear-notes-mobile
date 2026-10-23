@@ -69,11 +69,11 @@ export function requestNoteLockPasswordFromSettings(
     : requestNoteLockPassword(reason, purpose)
 }
 
-export function requestNoteLockPasswordCreate(): Promise<boolean> {
+export function requestNoteLockPasswordCreate(purpose: 'set' | 'change' = 'set'): Promise<boolean> {
   return new Promise((resolve) => {
     if (resolver) resolver(false)
     resolver = resolve
-    router.push('/settings/note-lock-password?mode=create&purpose=set' as any)
+    router.push(`/settings/note-lock-password?mode=create&purpose=${purpose}` as any)
   })
 }
 

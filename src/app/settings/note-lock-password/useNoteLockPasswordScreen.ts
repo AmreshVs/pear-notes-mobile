@@ -10,7 +10,7 @@ import { isValidBackupPassword } from '@pear-notes/core/utils.js'
 import { hapticError, hapticSuccess } from '@/lib/haptics'
 import { getNoteLockPasswordCopy } from '@/lib/noteLockPasswordCopy'
 import { getNoteUnlockReason, resolveNoteLockPassword } from '@/lib/noteLockPasswordFlow'
-import { hasLockPassword, submitLockPassword } from '@/lib/noteLockSession'
+import { hasLockPassword, refreshBiometricKey, submitLockPassword } from '@/lib/noteLockSession'
 import { getPasswordStrength } from '@/utils/passwordStrength'
 
 export default function useNoteLockPasswordScreen(mode?: string, purpose?: string) {
@@ -48,6 +48,7 @@ export default function useNoteLockPasswordScreen(mode?: string, purpose?: strin
       }
       dispatch(loadSettings())
       if (firstTime) await submitLockPassword(password)
+      else await refreshBiometricKey(password)
       hapticSuccess()
       resolveNoteLockPassword(true)
       router.back()

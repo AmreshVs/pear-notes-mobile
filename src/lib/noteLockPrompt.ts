@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
 
-export type NoteLockPromptKind = 'migration' | 'biometricOffer'
+export type NoteLockPromptKind = 'migration' | 'biometricOffer' | 'changeSuggested'
 
 let current: NoteLockPromptKind | null = null
 let resolver: ((accepted: boolean) => void) | null = null
