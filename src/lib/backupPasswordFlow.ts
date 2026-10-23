@@ -1,11 +1,16 @@
-let pendingImportPath: string | null = null
-
-export function setPendingImportPath(path: string): void {
-  pendingImportPath = path
+export type PendingImport = {
+  path: string
+  sealed: boolean
 }
 
-export function takePendingImportPath(): string | null {
-  const path = pendingImportPath
-  pendingImportPath = null
-  return path
+let pendingImport: PendingImport | null = null
+
+export function setPendingImport(path: string, sealed: boolean): void {
+  pendingImport = { path, sealed }
+}
+
+export function takePendingImport(): PendingImport | null {
+  const pending = pendingImport
+  pendingImport = null
+  return pending
 }

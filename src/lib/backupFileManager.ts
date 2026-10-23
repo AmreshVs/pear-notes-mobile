@@ -152,14 +152,19 @@ export type RestoreOutdatedDevice = {
   title?: string
 }
 
-export async function findRestoreOutdatedDevices(
-  filePath: string,
-): Promise<RestoreOutdatedDevice[]> {
+export type RestoreCheck = {
+  sealed: boolean
+  blocking: RestoreOutdatedDevice[]
+}
+
+const NOTHING_TO_WARN: RestoreCheck = { sealed: false, blocking: [] }
+
+export async function checkRestore(filePath: string, password?: string): Promise<RestoreCheck> {
   try {
-    const check = await backendApi.checkBackupRestore({ buffer: null, filePath })
-    return check.sealed ? check.blocking : []
+    const check = await backendApi.checkBackupRestore({ buffer: null, filePath, password })
+    return check.sealed ? check : NOTHING_TO_WARN
   } catch (e) {
-    console.error('findRestoreOutdatedDevices', e)
-    return []
+    console.error('checkRestore', e)
+    return NOTHING_TO_WARN
   }
 }

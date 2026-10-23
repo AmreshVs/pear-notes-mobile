@@ -28,24 +28,23 @@ import {
 } from '@/lib/backupBackgroundService'
 import {
   backupUriToPath,
+  checkRestore,
   clearBackupExportCache,
   clearImportCacheFile,
   EmptyBackupFileError,
-  findRestoreOutdatedDevices,
   getBackupExportPath,
   InvalidBackupFileError,
   pickBackupFile,
   rememberImportCacheFile,
-  type RestoreOutdatedDevice,
   saveBackupToDevice,
   saveBackupWithShare,
 } from '@/lib/backupFileManager'
-import { setPendingImportPath } from '@/lib/backupPasswordFlow'
+import { setPendingImport } from '@/lib/backupPasswordFlow'
 import { loadLastBackupDate, saveLastBackupDate } from '@/lib/backupUtils'
 import { hapticError, hapticSuccess } from '@/lib/haptics'
 import { authenticateWithLockMethod } from '@/lib/noteLockActions'
+import { confirmRestoreWithOutdatedDevices } from '@/lib/restoreWarning'
 import { useToast } from '@/providers/ToastProvider'
-import { formatNameList } from '@/utils/nameList'
 
 type BackupStatus = {
   step: string
@@ -235,30 +234,6 @@ function useBackupScreen() {
     }
   }, [exportStatus.step, handleSaveBackup])
 
-  const confirmRestoreWithOutdatedDevices = useCallback(
-    (devices: RestoreOutdatedDevice[]) =>
-      new Promise<boolean>((resolve) => {
-        const names = formatNameList(
-          devices.map((device) => device.title || t('outdatedDevices.unnamedDevice')),
-          i18n.language,
-        )
-        Alert.alert(
-          t('outdatedDevices.title'),
-          t('backup.outdatedDevices.description', { devices: names, count: devices.length }),
-          [
-            { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
-            {
-              text: t('backup.outdatedDevices.restoreAnyway'),
-              style: 'destructive',
-              onPress: () => resolve(true),
-            },
-          ],
-          { cancelable: true, onDismiss: () => resolve(false) },
-        )
-      }),
-    [i18n.language, t],
-  )
-
   const handleRestoreData = useCallback(async () => {
     try {
       clearImportCacheFile()
@@ -277,12 +252,15 @@ function useBackupScreen() {
       dispatch(resetImport())
       const importPath = backupUriToPath(picked.uri)
       rememberImportCacheFile(importPath)
-      const outdated = await findRestoreOutdatedDevices(importPath)
-      if (outdated.length && !(await confirmRestoreWithOutdatedDevices(outdated))) {
+      const check = await checkRestore(importPath)
+      if (
+        check.blocking.length &&
+        !(await confirmRestoreWithOutdatedDevices(check.blocking, t, i18n.language))
+      ) {
         clearImportCacheFile()
         return
       }
-      setPendingImportPath(importPath)
+      setPendingImport(importPath, check.sealed)
       router.push(`${BACKUP_PASSWORD_ROUTE}?mode=enter`)
     } catch (e) {
       dispatch(resetImport())
@@ -294,7 +272,7 @@ function useBackupScreen() {
         Alert.alert(t('backup.restoreError'), String(e))
       }
     }
-  }, [confirmRestoreWithOutdatedDevices, dispatch, showToast, t])
+  }, [dispatch, i18n.language, showToast, t])
 
   return {
     importStatus,
