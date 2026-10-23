@@ -53,6 +53,7 @@ import { BackupProgressBanner } from '@/components/backup/BackupProgressBanner'
 import { BackupNudge } from '@/components/BackupNudge'
 import { ErrorScreen } from '@/components/ErrorScreen'
 import { ForceVaultRemovalPrompt } from '@/components/ForceVaultRemovalPrompt'
+import { HeldMergePrompt } from '@/components/HeldMergePrompt'
 import { LockUnavailableModal } from '@/components/LockUnavailableModal'
 import { MergePreviewModal } from '@/components/merge/MergePreviewModal'
 import { MergeNotesBanner } from '@/components/MergeNotesBanner'
@@ -573,6 +574,7 @@ function RootLayoutNav() {
               <PairingOverlay />
               <VaultChangeOverlay />
               <ForceVaultRemovalPrompt />
+              <HeldMergePrompt />
               <LockUnavailableModal />
               <NoteUnlockPasswordModal />
               <NoteLockPromptModal />

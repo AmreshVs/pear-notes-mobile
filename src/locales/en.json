@@ -1058,6 +1058,16 @@
     },
     "readAloudNoVoice": "No offline voice is installed. Add one in your phone's text-to-speech settings."
   },
+  "outdatedDevices": {
+    "title": "Update your other devices first",
+    "unnamedDevice": "Unnamed device"
+  },
+  "heldMerge": {
+    "description_one": "Your notes from before you joined include locked notes. {{devices}} is on an older version of Pear Notes, which can erase locked notes. Your notes will be added once it's updated.",
+    "description_other": "Your notes from before you joined include locked notes. {{devices}} are on an older version of Pear Notes, which can erase locked notes. Your notes will be added once they're updated.",
+    "combineAnyway": "Combine anyway",
+    "combineLater": "Combine later"
+  },
   "pairing": {
     "status": {
       "searching": "Searching for device...",
@@ -1341,6 +1351,11 @@
     "invalidFileDesc": "Please select a .pnbk backup file.",
     "emptyFileDesc": "The backup file is empty. Please create the backup again.",
     "restoreError": "Restore failed",
+    "outdatedDevices": {
+      "description_one": "This backup has locked notes. {{devices}} is on an older version of Pear Notes, which can erase locked notes. Update it before you restore.",
+      "description_other": "This backup has locked notes. {{devices}} are on an older version of Pear Notes, which can erase locked notes. Update them before you restore.",
+      "restoreAnyway": "Restore anyway"
+    },
     "confirmExportTitle": "Backup recovery key",
     "confirmExportDesc": "Please make sure you have copied your recovery key securely. You will need it to restore this backup on other devices.",
     "confirmExportYes": "Yes, I copied it",

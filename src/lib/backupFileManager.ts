@@ -3,6 +3,8 @@ import * as DocumentPicker from 'expo-document-picker'
 import { Directory, File } from 'expo-file-system'
 import * as FileSystemLegacy from 'expo-file-system/legacy'
 
+import { backendApi } from '@pear-notes/core/backend/api.js'
+
 const LEGACY_TEMP_BACKUP_NAME = 'temp_export.pnbk'
 
 export class InvalidBackupFileError extends Error {
@@ -144,4 +146,20 @@ export async function pickBackupFile(): Promise<PickedBackupFile | null> {
 
 export function backupUriToPath(uri: string): string {
   return decodeURIComponent(uri.replace('file://', ''))
+}
+
+export type RestoreOutdatedDevice = {
+  title?: string
+}
+
+export async function findRestoreOutdatedDevices(
+  filePath: string,
+): Promise<RestoreOutdatedDevice[]> {
+  try {
+    const check = await backendApi.checkBackupRestore({ buffer: null, filePath })
+    return check.sealed ? check.blocking : []
+  } catch (e) {
+    console.error('findRestoreOutdatedDevices', e)
+    return []
+  }
 }

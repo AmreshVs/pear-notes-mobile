@@ -245,7 +245,14 @@ export const PairingOverlay = memo(function PairingOverlay() {
   )
 
   const isSyncing = useMemo(
-    () => ['initializing_storage', 'replicating_data', 'syncing', 'receiving_data'].includes(step),
+    () =>
+      [
+        'initializing_storage',
+        'replicating_data',
+        'merge_needs_confirm',
+        'syncing',
+        'receiving_data',
+      ].includes(step),
     [step],
   )
 
@@ -274,6 +281,7 @@ export const PairingOverlay = memo(function PairingOverlay() {
       case 'initializing_storage':
         return t('pairing.status.initializing')
       case 'replicating_data':
+      case 'merge_needs_confirm':
         return t('pairing.status.replicating')
       case 'syncing':
         return t('pairing.status.startingReplication')
