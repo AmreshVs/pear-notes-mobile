@@ -148,8 +148,7 @@ const useStyles = createThemedStylesheetWithHooks(
         color: theme.colors.onPrimary,
       },
       secondaryBtn: {
-        borderWidth: StyleSheet.hairlineWidth,
-        borderColor: theme.colors.borderSecondary,
+        backgroundColor: theme.colors.controlBackground,
       },
       secondaryText: {
         fontSize: FontSize.body,

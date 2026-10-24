@@ -80,6 +80,7 @@ import { getAppVersion } from '@/lib/appVersion'
 import { WORKLET_STORAGE_PATH } from '@/lib/backendWorklet'
 import { getBackgroundSyncMode } from '@/lib/backgroundSync'
 import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
+import { reclaimIfRestored } from '@/lib/backupActions'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
 import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
@@ -420,6 +421,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     openBackupAfterReadyRef.current = false
     router.push('/settings/backup')
   }, [notesLoading])
+
+  useEffect(() => {
+    if (!notesLoading) reclaimIfRestored(dispatch)
+  }, [notesLoading, dispatch])
 
   useEffect(() => {
     if (!notesLoading && clearStorageState.getClearing()) {
