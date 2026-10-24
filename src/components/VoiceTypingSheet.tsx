@@ -552,7 +552,7 @@ export function VoiceTypingSheet({
 
       {phase === 'preview' && showReportLink && (
         <Pressable
-          onPress={() => handleReportProblem(t('localAi.reportSubject'))}
+          onPress={() => handleReportProblem()}
           accessibilityRole="link"
           hitSlop={8}
           style={({ pressed }) => [styles.reportLink, pressed && styles.pressed]}

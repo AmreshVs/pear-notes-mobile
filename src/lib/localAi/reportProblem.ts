@@ -1,7 +1,7 @@
 import { Linking } from 'react-native'
 
-const REPORT_EMAIL = 'vsamreshpro@gmail.com'
+const REPORT_URL = 'https://amreshvs.github.io/pear-notes/contact/?topic=ai-result'
 
-export function openReportProblem(subject: string) {
-  Linking.openURL(`mailto:${REPORT_EMAIL}?subject=${encodeURIComponent(subject)}`).catch(() => {})
+export function openReportProblem() {
+  Linking.openURL(REPORT_URL).catch(() => {})
 }

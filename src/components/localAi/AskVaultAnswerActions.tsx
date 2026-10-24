@@ -78,7 +78,7 @@ export const AskVaultAnswerActions = memo(function AskVaultAnswerActions({
         )}
       </View>
       <Pressable
-        onPress={() => openReportProblem(t('localAi.reportSubject'))}
+        onPress={() => openReportProblem()}
         accessibilityRole="link"
         hitSlop={8}
         style={({ pressed }) => [styles.reportLink, pressed && commonStyles.pressed]}

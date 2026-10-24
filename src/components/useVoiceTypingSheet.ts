@@ -914,7 +914,7 @@ export function useVoiceTypingSheet({
     }
   }, [dispatch])
 
-  const handleReportProblem = useCallback((subject: string) => openReportProblem(subject), [])
+  const handleReportProblem = useCallback(() => openReportProblem(), [])
 
   const handleAgain = useCallback(() => {
     if (error === 'unstable') resetLocalAiModelHealth()
