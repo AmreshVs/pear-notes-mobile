@@ -543,13 +543,20 @@ let lastSelectionFrom = null
 let caretBottomInset = CARET_BOTTOM_OBSTRUCTION
 let hostBottomInset = null
 
+function visualKeyboardOverlap() {
+  const vv = window.visualViewport
+  if (!vv || hostBottomInset.keyboardHeight > 0) return 0
+  return Math.max(0, Math.round(window.innerHeight - (vv.offsetTop + vv.height)))
+}
+
 function applyBottomInset() {
   if (!hostBottomInset) return
   // Everything below is measured in *layout* viewport coordinates, which is what
   // getBoundingClientRect returns and what window.innerHeight reports. visualViewport is
   // deliberately not consulted: WKWebView does not shrink it for the keyboard the way
   // Safari does, so anything derived from it is unreliable here.
-  const obstructed = hostBottomInset.keyboardHeight + hostBottomInset.toolbarHeight
+  const obstructed =
+    hostBottomInset.keyboardHeight + hostBottomInset.toolbarHeight + visualKeyboardOverlap()
   caretBottomInset = obstructed
   document.documentElement.style.setProperty('--bottom-inset', `${obstructed}px`)
 }
