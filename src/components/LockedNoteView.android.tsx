@@ -64,7 +64,7 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId, topInset = 
     : unavailable
       ? t('noteCard.lockedNoAuthDesc')
       : biometric === 'face'
-        ? t('noteCard.lockedUnlockFaceDesc')
+        ? t('noteCard.lockedUnlockFaceAndroidDesc')
         : biometric === 'fingerprint'
           ? t('noteCard.lockedUnlockFingerprintDesc')
           : t('noteCard.lockedUnlockDesc')
@@ -72,7 +72,7 @@ export const LockedNoteView = memo(function LockedNoteView({ noteId, topInset = 
   const unlockLabel = isPassword
     ? t('noteCard.unlockWithPassword')
     : biometric === 'face'
-      ? t('noteCard.unlockWithFace')
+      ? t('noteCard.unlockWithFaceAndroid')
       : biometric === 'fingerprint'
         ? t('noteCard.unlockWithFingerprint')
         : t('noteCard.unlock')

@@ -21,12 +21,29 @@ import {
   getLockRootKey,
   setLockRootKey,
 } from '@/lib/secureStore'
+import i18n from '@/locales/i18n'
+import { getLockMethodLabelKey } from '@/utils/settingsUtils'
 
 const PROMPT_DELAY_MS = 400
 const MIGRATION_SEEN_PREF = 'noteLockPasswordPromptSeen'
 const BIOMETRIC_ON = 'on'
 const BIOMETRIC_OFF = 'off'
 const CHANGE_SUGGESTED = 'CHANGE_SUGGESTED'
+const WRONG_KEY = 'WRONG_KEY'
+const KEY_MISSING = 'KEY_MISSING'
+const BIOMETRIC_UNLOCKED = 'UNLOCKED'
+const BIOMETRIC_SKIPPED = 'SKIPPED'
+
+type BiometricOutcome =
+  | typeof BIOMETRIC_UNLOCKED
+  | typeof BIOMETRIC_SKIPPED
+  | typeof WRONG_KEY
+  | typeof KEY_MISSING
+
+const STALE_KEY_MESSAGES: Partial<Record<BiometricOutcome, string>> = {
+  [WRONG_KEY]: 'noteLockPassword.biometricPasswordChanged',
+  [KEY_MISSING]: 'noteLockPassword.biometricKeyMissing',
+}
 
 export type LockPasswordResult = { ok: boolean; retryAfter: number; reason: string }
 
@@ -133,29 +150,38 @@ async function forgetBiometric(vaultId: string, offerAgain: boolean): Promise<vo
   await writeBiometricPref(vaultId, offerAgain ? '' : BIOMETRIC_OFF)
 }
 
-async function unlockWithBiometric(reason: string): Promise<boolean> {
+async function unlockWithBiometric(reason: string): Promise<BiometricOutcome> {
   const vaultId = currentVaultId()
-  if (!vaultId || (await readPref(biometricPref(vaultId))) !== BIOMETRIC_ON) return false
+  if (!vaultId || (await readPref(biometricPref(vaultId))) !== BIOMETRIC_ON) {
+    return BIOMETRIC_SKIPPED
+  }
   let rootKey: string | null
   try {
     rootKey = await getLockRootKey(vaultId, reason)
   } catch (e) {
-    if (/cancel/i.test(e instanceof Error ? e.message : String(e))) return false
-    await forgetBiometric(vaultId, true)
-    return false
+    if (/cancel/i.test(e instanceof Error ? e.message : String(e))) return BIOMETRIC_SKIPPED
+    rootKey = null
   }
   if (!rootKey) {
     await forgetBiometric(vaultId, true)
-    return false
+    return KEY_MISSING
   }
   const result = await backendApi.openLockSession({ rootKey })
   if (result.ok) {
     markNoteUnlocked()
     if (result.reason === CHANGE_SUGGESTED) suggestPasswordChange()
-    return true
+    return BIOMETRIC_UNLOCKED
   }
-  if (result.reason === 'WRONG_KEY') await forgetBiometric(vaultId, true)
-  return false
+  if (result.reason !== WRONG_KEY) return BIOMETRIC_SKIPPED
+  await forgetBiometric(vaultId, true)
+  return WRONG_KEY
+}
+
+async function staleKeyMessage(outcome: BiometricOutcome): Promise<string> {
+  const key = STALE_KEY_MESSAGES[outcome]
+  if (!key) return ''
+  const method = i18n.t(getLockMethodLabelKey(await getDeviceAuthMethod()))
+  return i18n.t(key, { method })
 }
 
 export async function submitLockPassword(password: string): Promise<LockPasswordResult> {
@@ -237,8 +263,10 @@ export async function unlockLockedNotes(
     await offerPasswordMigration()
     return true
   }
-  if (await unlockWithBiometric(reason)) return true
+  const outcome = await unlockWithBiometric(reason)
+  if (outcome === BIOMETRIC_UNLOCKED) return true
+  const message = (await staleKeyMessage(outcome)) || reason
   return fromSettings
-    ? requestNoteLockPasswordFromSettings(purpose, reason)
-    : requestNoteLockPassword(reason, purpose)
+    ? requestNoteLockPasswordFromSettings(purpose, message)
+    : requestNoteLockPassword(message, purpose)
 }

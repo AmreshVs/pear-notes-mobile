@@ -1,19 +1,28 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform } from 'react-native'
 import { useSelector } from 'react-redux'
-import * as LocalAuthentication from 'expo-local-authentication'
 
 import { getNoteData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { getLockMethod } from '@pear-notes/core/store/slices/settingsSlice.js'
 
-import { isDeviceAuthSupported } from '@/lib/deviceAuth'
+import { type DeviceAuthMethod, getDeviceAuthMethod, isDeviceAuthSupported } from '@/lib/deviceAuth'
 import { hapticSuccess } from '@/lib/haptics'
 import { isNoteSessionUnlocked, markNoteUnlocked, useNeedsOtherLockPassword } from '@/lib/noteLock'
 import { requestNoteLockPassword } from '@/lib/noteLockPasswordFlow'
-import { unlockLockedNotes } from '@/lib/noteLockSession'
+import {
+  isBiometricUnlockOn,
+  subscribeBiometricUnlock,
+  unlockLockedNotes,
+} from '@/lib/noteLockSession'
 
-const isAndroid = Platform.OS === 'android'
+const BIOMETRIC_KIND: Partial<Record<DeviceAuthMethod, BiometricKind>> = {
+  face: 'face',
+  fingerprint: 'fingerprint',
+}
+
+async function detectBiometricKind(): Promise<BiometricKind> {
+  return BIOMETRIC_KIND[await getDeviceAuthMethod()] ?? 'generic'
+}
 
 export type AuthState = 'checking' | 'supported' | 'unavailable'
 export type BiometricKind = 'face' | 'fingerprint' | 'generic'
@@ -25,39 +34,41 @@ export function useLockedNoteView(noteId: string) {
   const [unlocking, setUnlocking] = useState(false)
   const lockMethod = useSelector(getLockMethod)
   const isPassword = lockMethod === 'password'
+  const [biometricOn, setBiometricOn] = useState(false)
+  const usesBiometric = !isPassword || biometricOn
   const noteData = useSelector(getNoteData(noteId))
   const needsOtherPassword = useNeedsOtherLockPassword(noteId, noteData)
 
   useEffect(() => {
+    if (!isPassword) return
+    let active = true
+    const refresh = () =>
+      isBiometricUnlockOn().then((on) => {
+        if (active) setBiometricOn(on)
+      })
+    refresh()
+    const unsubscribe = subscribeBiometricUnlock(refresh)
+    return () => {
+      active = false
+      unsubscribe()
+    }
+  }, [isPassword])
+
+  useEffect(() => {
     let active = true
     ;(async () => {
-      if (isPassword) {
-        if (active) setAuthState('supported')
+      if (!isPassword && !(await isDeviceAuthSupported())) {
+        if (active) setAuthState('unavailable')
         return
       }
-      const supported = await isDeviceAuthSupported()
-      if (!active) return
-      if (!supported) {
-        setAuthState('unavailable')
-        return
-      }
-      setAuthState('supported')
-      if (isAndroid) return
-      try {
-        const types = await LocalAuthentication.supportedAuthenticationTypesAsync()
-        if (types.includes(LocalAuthentication.AuthenticationType.FACIAL_RECOGNITION)) {
-          setBiometric('face')
-        } else if (types.includes(LocalAuthentication.AuthenticationType.FINGERPRINT)) {
-          setBiometric('fingerprint')
-        }
-      } catch {
-        setBiometric('generic')
-      }
+      if (active) setAuthState('supported')
+      const kind = usesBiometric ? await detectBiometricKind() : 'generic'
+      if (active) setBiometric(kind)
     })()
     return () => {
       active = false
     }
-  }, [isPassword])
+  }, [isPassword, usesBiometric])
 
   const otherPasswordReason = t('noteLockPassword.otherPasswordReason')
 
@@ -85,7 +96,7 @@ export function useLockedNoteView(noteId: string) {
     authState,
     biometric,
     unlocking,
-    isPassword,
+    isPassword: !usesBiometric,
     unavailable: authState === 'unavailable',
     handleUnlock,
   }

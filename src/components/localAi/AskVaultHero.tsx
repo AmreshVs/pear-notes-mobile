@@ -8,10 +8,10 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
-  UI_ICON_SIZE_28,
   UI_SIZE_6,
   UI_SIZE_10,
   UI_SIZE_24,
+  UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
 
 interface AskVaultHeroProps {
@@ -26,7 +26,7 @@ export const AskVaultHero = memo(function AskVaultHero({ subtitle }: AskVaultHer
     <View style={styles.hero}>
       <SymbolView
         name="sparkles"
-        size={UI_ICON_SIZE_28}
+        size={UI_ICON_SIZE_40}
         tintColor={colors.primary}
         weight="semibold"
       />

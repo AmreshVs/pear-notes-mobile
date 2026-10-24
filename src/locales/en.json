@@ -911,10 +911,12 @@
     "lockedNoAuthDesc": "This note is locked and can't be opened on this device. Set up Face ID, Touch ID, or a device passcode in Settings to view it.",
     "lockedUnlockDesc": "This note is protected. Use biometric to authenticate and view it.",
     "lockedUnlockFaceDesc": "This note is protected. Use Face ID to view it.",
+    "lockedUnlockFaceAndroidDesc": "This note is protected. Use face unlock to view it.",
     "lockedUnlockFingerprintDesc": "This note is protected. Use your fingerprint to view it.",
     "lockedUnlockPasswordDesc": "This note is protected. Enter your note lock password to view it.",
     "unlock": "Unlock",
     "unlockWithFace": "Unlock with Face ID",
+    "unlockWithFaceAndroid": "Unlock with face",
     "unlockWithFingerprint": "Unlock with fingerprint",
     "unlockWithPassword": "Enter password"
   },
@@ -1203,6 +1205,8 @@
     "failedDescription": "Try again in a moment."
   },
   "noteLockPassword": {
+    "biometricPasswordChanged": "The note lock password was changed on another device, so {{method}} can't open locked notes here yet. Enter the new password. You'll be offered {{method}} again after.",
+    "biometricKeyMissing": "{{method}} can't open locked notes on this device anymore. Enter your note lock password. You'll be offered {{method}} again after.",
     "createTitle": "Set note lock password",
     "enterTitle": "Enter note lock password",
     "createDesc": "This password will be required to open locked notes on all your synced devices.",
