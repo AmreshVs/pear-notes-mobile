@@ -17,6 +17,7 @@ import {
   UI_ICON_SIZE_40,
   UI_SIZE_50,
 } from '@/constants/commonStyles'
+import { useModalCardStyle } from '@/hooks/useModalCardStyle'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hideLockInfo, useLockInfoVisible } from '@/lib/lockInfoModal'
 
@@ -24,6 +25,7 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
   const { t } = useTranslation()
   const { colors, colorScheme } = useTheme()
   const styles = useStyles()
+  const modalCardStyle = useModalCardStyle()
   const visible = useLockInfoVisible()
 
   return (
@@ -35,7 +37,7 @@ export const LockUnavailableModal = memo(function LockUnavailableModal() {
         <Pressable style={StyleSheet.absoluteFill} onPress={hideLockInfo} />
 
         <RNView style={styles.modalCenter} pointerEvents="box-none">
-          <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
+          <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.icon}>
                 <SymbolIcon name="touchid" size={UI_ICON_SIZE_40} color={colors.primary} />

@@ -17,6 +17,7 @@ import {
   UI_SIZE_80,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { useModalCardStyle } from '@/hooks/useModalCardStyle'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getLeaderModalCopy } from '@/utils/indexerUtils'
 
@@ -39,6 +40,7 @@ export function SyncIndexerModal({
 }: Props) {
   const { colors } = useTheme()
   const styles = useStyles()
+  const modalCardStyle = useModalCardStyle()
   const commonThemedStyles = useCommonThemedStyles()
   const { t } = useTranslation()
   const copy = getLeaderModalCopy(t, mode, isLocalTarget, deviceName)
@@ -58,7 +60,7 @@ export function SyncIndexerModal({
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
 
         <RNView style={styles.modalCenter} pointerEvents="box-none">
-          <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
+          <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.leaderIcon}>
                 <SymbolIcon

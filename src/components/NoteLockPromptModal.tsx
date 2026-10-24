@@ -1,86 +1,78 @@
-import { memo, useEffect, useState } from 'react'
+import { memo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Platform, Pressable, StyleSheet, View as RNView } from 'react-native'
+import { Pressable, StyleSheet, View as RNView } from 'react-native'
+import { BlurView } from 'expo-blur'
 
+import { GlassView } from '@/components/GlassView'
 import { RootOverlay } from '@/components/RootOverlay'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import {
+  acceptNoteLockPrompt,
+  declineNoteLockPrompt,
+  useNoteLockPromptModal,
+} from '@/components/useNoteLockPromptModal'
+import {
   commonStyles,
   FontSize,
   FontWeight,
+  LetterSpacing,
   Radii,
   Space,
   UI_ICON_SIZE_40,
   UI_SIZE_50,
 } from '@/constants/commonStyles'
+import { useModalCardStyle } from '@/hooks/useModalCardStyle'
 import { hexWithAlpha } from '@/lib/backupUtils'
-import { type DeviceAuthMethod, getDeviceAuthMethod } from '@/lib/deviceAuth'
-import { resolveNoteLockPrompt, useNoteLockPrompt } from '@/lib/noteLockPrompt'
 import { getLockMethodLabelKey } from '@/utils/settingsUtils'
-
-const decline = () => resolveNoteLockPrompt(false)
-const accept = () => resolveNoteLockPrompt(true)
 
 export const NoteLockPromptModal = memo(function NoteLockPromptModal() {
   const { t } = useTranslation()
-  const { colors } = useTheme()
+  const { colors, colorScheme } = useTheme()
   const styles = useStyles()
-  const kind = useNoteLockPrompt()
-  const [deviceMethod, setDeviceMethod] = useState<DeviceAuthMethod>('none')
-
-  useEffect(() => {
-    if (kind) getDeviceAuthMethod().then(setDeviceMethod)
-  }, [kind])
+  const modalCardStyle = useModalCardStyle()
+  const { visible, isOffer, copy, deviceMethod } = useNoteLockPromptModal()
 
   const method = deviceMethod === 'none' ? '' : t(getLockMethodLabelKey(deviceMethod))
-  const isOffer = kind === 'biometricOffer'
-  const isChange = kind === 'changeSuggested'
-  const title = isOffer
-    ? t('noteLockPrompt.biometricTitle', { method })
-    : isChange
-      ? t('noteLockPrompt.changeTitle')
-      : t('noteLockPrompt.migrationTitle')
-  const body = isOffer
-    ? t('noteLockPrompt.biometricBody', { method })
-    : isChange
-      ? t('noteLockPrompt.changeBody')
-      : t('noteLockPrompt.migrationBody', { method })
-  const confirm = isOffer
-    ? t('noteLockPrompt.useBiometric', { method })
-    : isChange
-      ? t('noteLockPrompt.changePassword')
-      : t('noteLockPrompt.setPassword')
 
   return (
-    <RootOverlay visible={kind !== null} onRequestClose={decline}>
-      <RNView style={styles.scrim}>
-        <RNView style={styles.card}>
-          <RNView style={styles.icon}>
-            <SymbolIcon
-              name={isOffer ? 'faceid' : 'lock'}
-              size={UI_ICON_SIZE_40}
-              color={colors.primary}
-            />
-          </RNView>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.body}>{body}</Text>
-          <Pressable
-            onPress={accept}
-            style={({ pressed }) => [
-              styles.btn,
-              styles.confirmBtn,
-              pressed && commonStyles.pressed,
-            ]}
-          >
-            <Text style={styles.confirmText}>{confirm}</Text>
-          </Pressable>
-          <Pressable
-            onPress={decline}
-            style={({ pressed }) => [styles.btn, pressed && commonStyles.pressed]}
-          >
-            <Text style={styles.cancelText}>{t('noteLockPrompt.notNow')}</Text>
-          </Pressable>
+    <RootOverlay visible={visible} onRequestClose={declineNoteLockPrompt}>
+      <RNView style={styles.modalFill}>
+        <BlurView intensity={95} tint={colorScheme} style={StyleSheet.absoluteFill} />
+        <RNView style={commonStyles.modalOverlay} />
+
+        <RNView style={styles.modalCenter} pointerEvents="box-none">
+          <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
+            <RNView style={commonStyles.modalInner}>
+              <RNView style={styles.icon}>
+                <SymbolIcon
+                  name={isOffer ? 'faceid' : 'lock'}
+                  size={UI_ICON_SIZE_40}
+                  color={colors.primary}
+                />
+              </RNView>
+
+              <Text style={styles.title}>{t(copy.title, { method })}</Text>
+              <Text style={styles.sub}>{t(copy.body, { method })}</Text>
+
+              <Pressable
+                onPress={acceptNoteLockPrompt}
+                style={({ pressed }) => [
+                  styles.btn,
+                  styles.confirmBtn,
+                  pressed && commonStyles.pressed,
+                ]}
+              >
+                <Text style={styles.confirmText}>{t(copy.confirm, { method })}</Text>
+              </Pressable>
+              <Pressable
+                onPress={declineNoteLockPrompt}
+                style={({ pressed }) => [styles.btn, pressed && commonStyles.pressed]}
+              >
+                <Text style={styles.cancelText}>{t('noteLockPrompt.notNow')}</Text>
+              </Pressable>
+            </RNView>
+          </GlassView>
         </RNView>
       </RNView>
     </RootOverlay>
@@ -89,19 +81,13 @@ export const NoteLockPromptModal = memo(function NoteLockPromptModal() {
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
-    scrim: {
+    modalFill: {
+      ...StyleSheet.absoluteFill,
+    },
+    modalCenter: {
       flex: 1,
       ...commonStyles.centered,
       paddingHorizontal: Space.xl,
-      backgroundColor: hexWithAlpha('#000000', 0.4),
-    },
-    card: {
-      width: '100%',
-      maxWidth: 400,
-      alignItems: 'center',
-      padding: Space.xl,
-      borderRadius: Platform.OS === 'android' ? 28 : 32,
-      backgroundColor: theme.colors.background,
     },
     icon: {
       width: 80,
@@ -115,10 +101,11 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.heading,
       fontWeight: FontWeight.bold,
       textAlign: 'center',
+      letterSpacing: LetterSpacing.tight,
       marginBottom: Space.sm,
       color: theme.colors.text,
     },
-    body: {
+    sub: {
       fontSize: FontSize.body,
       textAlign: 'center',
       lineHeight: 22,

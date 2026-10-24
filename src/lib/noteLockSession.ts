@@ -177,6 +177,13 @@ export async function submitLockPassword(password: string): Promise<LockPassword
   }
 }
 
+export async function openLockSessionForChange(password: string): Promise<LockPasswordResult> {
+  const result = await backendApi.openLockSession({ password })
+  if (!result.ok && result.reason !== 'DEVICES_OUTDATED') return result
+  markNoteUnlocked()
+  return { ok: true, retryAfter: 0, reason: '' }
+}
+
 export async function enableBiometricUnlock(reason: string): Promise<boolean> {
   enrollRequested = true
   enrolledKey = ''

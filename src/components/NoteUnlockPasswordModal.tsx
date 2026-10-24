@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useState } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   KeyboardAvoidingView,
@@ -29,7 +29,7 @@ import {
   UI_SIZE_54,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { useModalCardSurface } from '@/hooks/useModalCardSurface'
+import { useModalCardStyle } from '@/hooks/useModalCardStyle'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { hapticError } from '@/lib/haptics'
 import { getNoteLockPasswordCopy } from '@/lib/noteLockPasswordCopy'
@@ -74,11 +74,7 @@ export const NoteUnlockPasswordModal = memo(function NoteUnlockPasswordModal() {
     setError('')
   }, [])
 
-  const cardSurface = useModalCardSurface()
-  const modalCardStyle = useMemo(
-    () => StyleSheet.flatten([commonStyles.modalCard, cardSurface]),
-    [cardSurface],
-  )
+  const modalCardStyle = useModalCardStyle()
 
   const handleSubmit = useCallback(async () => {
     if (!password.trim() || submitting) return

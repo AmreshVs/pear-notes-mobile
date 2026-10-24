@@ -35,6 +35,7 @@ import {
   UI_SIZE_54,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { useFocusAfterTransition } from '@/hooks/useFocusAfterTransition'
 import { androidRipple } from '@/lib/androidRipple'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
@@ -58,12 +59,18 @@ export default function AndroidNoteLockPasswordScreen() {
   const rippleBorderless = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const styles = useStyles()
+  const currentRef = useRef<TextInput>(null)
+  const passwordRef = useRef<TextInput>(null)
+  const noFocusRef = useRef<TextInput>(null)
   const confirmRef = useRef<TextInput>(null)
 
   const {
     isCreate,
+    needsCurrent,
     copy,
     reason,
+    current,
+    setCurrent,
     password,
     setPassword,
     confirm,
@@ -102,6 +109,10 @@ export default function AndroidNoteLockPasswordScreen() {
       )
     }
   }, [submit, setError, t])
+
+  useFocusAfterTransition(needsCurrent ? currentRef : isCreate ? noFocusRef : passwordRef)
+
+  const focusPassword = useCallback(() => passwordRef.current?.focus(), [])
 
   const handleNext = useCallback(() => {
     if (isCreate) confirmRef.current?.focus()
@@ -166,8 +177,31 @@ export default function AndroidNoteLockPasswordScreen() {
             </View>
           )}
 
+          {needsCurrent && (
+            <View style={styles.inputRow}>
+              <TextInput
+                ref={currentRef}
+                value={current}
+                onChangeText={setCurrent}
+                placeholder={t('noteLockPassword.currentPlaceholder')}
+                placeholderTextColor={c.onSurfaceVariant}
+                secureTextEntry={secure}
+                maxLength={PASSWORD_MAX_LENGTH}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="current-password"
+                importantForAutofill="yes"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={focusPassword}
+                style={styles.input}
+              />
+            </View>
+          )}
+
           <View style={styles.inputRow}>
             <TextInput
+              ref={passwordRef}
               value={password}
               onChangeText={setPassword}
               placeholder={t(copy.placeholder)}
@@ -176,13 +210,12 @@ export default function AndroidNoteLockPasswordScreen() {
               maxLength={PASSWORD_MAX_LENGTH}
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="off"
-              importantForAutofill="no"
+              autoComplete={isCreate ? 'new-password' : 'current-password'}
+              importantForAutofill="yes"
               returnKeyType={isCreate ? 'next' : 'done'}
               submitBehavior={isCreate ? 'submit' : 'blurAndSubmit'}
               onSubmitEditing={handleNext}
               style={styles.input}
-              autoFocus={!isCreate}
             />
             <Pressable
               onPress={toggleSecure}
@@ -211,8 +244,8 @@ export default function AndroidNoteLockPasswordScreen() {
                   maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
-                  autoComplete="off"
-                  importantForAutofill="no"
+                  autoComplete="new-password"
+                  importantForAutofill="yes"
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit}
                   style={styles.input}

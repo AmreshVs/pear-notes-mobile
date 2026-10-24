@@ -31,6 +31,7 @@ import {
   UI_SIZE_16,
   UI_SIZE_54,
 } from '@/constants/commonStyles'
+import { useFocusAfterTransition } from '@/hooks/useFocusAfterTransition'
 import { useKeyboardOverlap } from '@/hooks/useKeyboardOverlap'
 import { PASSWORD_RULE_KEYS } from '@/utils/passwordStrength'
 
@@ -42,13 +43,19 @@ export default function NoteLockPasswordScreen() {
   const { colors } = useTheme()
   const styles = useStyles()
   const insets = useSafeAreaInsets()
+  const currentRef = useRef<TextInput>(null)
+  const passwordRef = useRef<TextInput>(null)
+  const noFocusRef = useRef<TextInput>(null)
   const confirmRef = useRef<TextInput>(null)
-  const { rootRef, overlap } = useKeyboardOverlap()
+  const overlap = useKeyboardOverlap()
 
   const {
     isCreate,
+    needsCurrent,
     copy,
     reason,
+    current,
+    setCurrent,
     password,
     setPassword,
     confirm,
@@ -98,6 +105,10 @@ export default function NoteLockPasswordScreen() {
     }
   }, [submit, setError, t])
 
+  useFocusAfterTransition(needsCurrent ? currentRef : isCreate ? noFocusRef : passwordRef)
+
+  const focusPassword = useCallback(() => passwordRef.current?.focus(), [])
+
   const handleNext = useCallback(() => {
     if (isCreate) confirmRef.current?.focus()
     else handleSubmit()
@@ -131,7 +142,7 @@ export default function NoteLockPasswordScreen() {
   )
 
   return (
-    <RNView ref={rootRef} style={styles.root}>
+    <RNView style={styles.root}>
       <Stack.Screen
         options={{
           title: t(copy.title),
@@ -173,8 +184,31 @@ export default function NoteLockPasswordScreen() {
             </RNView>
           )}
 
+          {needsCurrent && (
+            <RNView style={styles.inputRow}>
+              <TextInput
+                ref={currentRef}
+                value={current}
+                onChangeText={setCurrent}
+                placeholder={t('noteLockPassword.currentPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry={secure}
+                maxLength={PASSWORD_MAX_LENGTH}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="current-password"
+                textContentType="password"
+                returnKeyType="next"
+                submitBehavior="submit"
+                onSubmitEditing={focusPassword}
+                style={styles.input}
+              />
+            </RNView>
+          )}
+
           <RNView style={styles.inputRow}>
             <TextInput
+              ref={passwordRef}
               value={password}
               onChangeText={setPassword}
               placeholder={t(copy.placeholder)}
@@ -183,13 +217,12 @@ export default function NoteLockPasswordScreen() {
               maxLength={PASSWORD_MAX_LENGTH}
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="off"
-              textContentType="none"
+              autoComplete={isCreate ? 'new-password' : 'current-password'}
+              textContentType={isCreate ? 'newPassword' : 'password'}
               returnKeyType={isCreate ? 'next' : 'done'}
               submitBehavior={isCreate ? 'submit' : 'blurAndSubmit'}
               onSubmitEditing={handleNext}
               style={styles.input}
-              autoFocus={!isCreate}
             />
             <Pressable onPress={toggleSecure} hitSlop={UI_SIZE_8} style={styles.eyeBtn}>
               {secure ? (
@@ -213,8 +246,8 @@ export default function NoteLockPasswordScreen() {
                   maxLength={PASSWORD_MAX_LENGTH}
                   autoCapitalize="none"
                   autoCorrect={false}
-                  autoComplete="off"
-                  textContentType="none"
+                  autoComplete="new-password"
+                  textContentType="newPassword"
                   returnKeyType="done"
                   onSubmitEditing={handleSubmit}
                   style={styles.input}

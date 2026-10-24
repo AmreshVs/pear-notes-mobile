@@ -43,7 +43,7 @@ export default function BackupPasswordScreen() {
   const insets = useSafeAreaInsets()
   const scrollRef = useRef<ScrollView>(null)
   const confirmRef = useRef<TextInput>(null)
-  const { rootRef, overlap } = useKeyboardOverlap()
+  const overlap = useKeyboardOverlap()
 
   const handleRevealRequirements = useCallback(() => {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 250)
@@ -121,7 +121,7 @@ export default function BackupPasswordScreen() {
   )
 
   return (
-    <RNView ref={rootRef} style={styles.root}>
+    <RNView style={styles.root}>
       <Stack.Screen
         options={{
           title: isCreate ? t('backup.password.createTitle') : t('backup.password.enterTitle'),

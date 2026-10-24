@@ -17,6 +17,7 @@ import {
   UI_SIZE_50,
 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { useModalCardStyle } from '@/hooks/useModalCardStyle'
 import { useOpenVault } from '@/hooks/useOpenVault'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getVaultLabel } from '@/lib/vaultLabels'
@@ -32,6 +33,7 @@ export function SyncDeleteModal({ visible, opacity, onCancel, onConfirm }: Props
   const { colors } = useTheme()
   const fadeStyle = useAnimatedStyle(() => ({ opacity: opacity.value }))
   const styles = useStyles()
+  const modalCardStyle = useModalCardStyle()
   const commonThemedStyles = useCommonThemedStyles()
   const { t } = useTranslation()
   const { openVault } = useOpenVault()
@@ -52,7 +54,7 @@ export function SyncDeleteModal({ visible, opacity, onCancel, onConfirm }: Props
         <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
 
         <RNView style={styles.modalCenter} pointerEvents="box-none">
-          <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
+          <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.dangerIcon}>
                 <SymbolIcon

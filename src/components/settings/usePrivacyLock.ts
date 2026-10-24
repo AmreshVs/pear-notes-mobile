@@ -15,7 +15,6 @@ import useLockStatus from '@/app/settings/privacy/useLockStatus'
 import { authenticate } from '@/lib/deviceAuth'
 import { hapticSelection } from '@/lib/haptics'
 import { clearUnlockedNotes } from '@/lib/noteLock'
-import { requestNoteLockPasswordScreen } from '@/lib/noteLockPasswordFlow'
 import {
   canUseBiometricUnlock,
   disableBiometricUnlock,
@@ -27,7 +26,6 @@ import {
 } from '@/lib/noteLockSession'
 import { formatNameList } from '@/utils/nameList'
 
-const SCREEN_POP_DELAY_MS = 400
 export const UNNAMED_DEVICE = '?'
 
 export type SyncedDevice = {
@@ -92,11 +90,7 @@ export function usePrivacyLock() {
 
   const setOrChangePassword = useCallback(
     async (reason: string) => {
-      if (isPassword) {
-        const ok = await requestNoteLockPasswordScreen()
-        if (!ok) return
-        await new Promise((resolve) => setTimeout(resolve, SCREEN_POP_DELAY_MS))
-      } else if (lockAvailable && hasLockedNotes() && !(await authenticate(reason))) {
+      if (!isPassword && lockAvailable && hasLockedNotes() && !(await authenticate(reason))) {
         return
       }
       router.push(

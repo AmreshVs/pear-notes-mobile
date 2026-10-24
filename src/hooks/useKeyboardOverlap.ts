@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Keyboard, type KeyboardEvent, LayoutAnimation, type View } from 'react-native'
+import { Dimensions, Keyboard, type KeyboardEvent, LayoutAnimation } from 'react-native'
 
 const MIN_LAYOUT_ANIMATION_MS = 10
 
@@ -12,7 +12,6 @@ function animateLike(event: KeyboardEvent) {
 }
 
 export function useKeyboardOverlap() {
-  const rootRef = useRef<View>(null)
   const overlapRef = useRef(0)
   const [overlap, setOverlap] = useState(0)
 
@@ -25,10 +24,8 @@ export function useKeyboardOverlap() {
 
   const measure = useCallback(
     (event: KeyboardEvent) => {
-      const keyboardTop = event.endCoordinates.screenY
-      rootRef.current?.measureInWindow((_x, y, _width, height) => {
-        apply(Math.max(0, Math.round(y + height - keyboardTop)), event)
-      })
+      const windowBottom = Dimensions.get('window').height
+      apply(Math.max(0, Math.round(windowBottom - event.endCoordinates.screenY)), event)
     },
     [apply],
   )
@@ -42,5 +39,5 @@ export function useKeyboardOverlap() {
     return () => subscriptions.forEach((subscription) => subscription.remove())
   }, [apply, measure])
 
-  return { rootRef, overlap }
+  return overlap
 }

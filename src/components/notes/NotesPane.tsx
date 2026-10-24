@@ -62,6 +62,7 @@ import {
   FontSize,
   FontWeight,
   LetterSpacing,
+  ListMotion,
   Space,
   UI_ICON_SIZE_13,
   UI_SIZE_6,
@@ -493,7 +494,9 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
   const renderNoteCard = useCallback(
     (note: any, index: number, sectionIndex: number, sectionDataLength: number) => {
       const isLast = index === sectionDataLength - 1
-      const animationIndex = sectionIndex * 3 + index
+      const animationIndex = hasSearchQuery
+        ? ListMotion.enterMaxIndex + 1
+        : sectionIndex * 3 + index
 
       const isLocked = note.value?.locked === true
       const isPinned = note.value?.pinned === true
@@ -543,6 +546,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     [
       folderById,
       showFolderNames,
+      hasSearchQuery,
       searchHits,
       searchTerms,
       isSelecting,

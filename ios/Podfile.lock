@@ -2117,7 +2117,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - SocketRocket
     - Yoga
-  - "react-native-bare-kit (0.15.5+b6ec20)":
+  - "react-native-bare-kit (0.15.5+f01b52)":
     - boost
     - DoubleConversion
     - fast_float
@@ -3817,7 +3817,7 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 3cf4ae68a4d69ca69de94385d423d57785907eb7
   React-microtasksnativemodule: 663a8165cfe10e4eb749796a53b3b8c68631b00c
   React-mutationobservernativemodule: 4f7e4c18735cfbb0f81eada4f34aa527697e8704
-  react-native-bare-kit: 016d4651a3a471b013b8ab4586a9f54297496e41
+  react-native-bare-kit: 3c0641d767f78419d0fa5bae7851e812b339cded
   react-native-safe-area-context: befb5404eb8a16fdc07fa2bebab3568ecabcbb8a
   react-native-slider: 4faf1b2266c73f1afb7b30cc6ebb3df238a37c0b
   react-native-vector-icons-material-design-icons: a4b6ec02814573c09203a725ee3767a7e8d5eb77

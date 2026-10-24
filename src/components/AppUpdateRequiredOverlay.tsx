@@ -23,12 +23,14 @@ import {
   UI_SIZE_50,
 } from '@/constants/commonStyles'
 import { useAppUpdateStatus } from '@/hooks/useAppUpdateStatus'
+import { useModalCardStyle } from '@/hooks/useModalCardStyle'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
 export const AppUpdateRequiredOverlay = memo(function AppUpdateRequiredOverlay() {
   const { t } = useTranslation()
   const { colors } = useTheme()
   const styles = useStyles()
+  const modalCardStyle = useModalCardStyle()
   const status = useAppUpdateStatus()
   const dispatch = useDispatch()
   const vaultUpdateRequired = useSelector(getVaultUpdateRequired)
@@ -53,7 +55,7 @@ export const AppUpdateRequiredOverlay = memo(function AppUpdateRequiredOverlay()
         <RNView style={commonStyles.modalOverlay} />
 
         <RNView style={styles.modalCenter} pointerEvents="box-none">
-          <GlassView intensity={40} borderRadius={32} style={commonStyles.modalCard}>
+          <GlassView intensity={40} borderRadius={32} style={modalCardStyle}>
             <RNView style={commonStyles.modalInner}>
               <RNView style={styles.icon}>
                 <SymbolIcon
