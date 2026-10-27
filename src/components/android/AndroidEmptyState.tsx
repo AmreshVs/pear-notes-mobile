@@ -31,6 +31,7 @@ type EmptyStateProps = {
   meaningNotice?: string | null
   isOnboarding: boolean
   isTrash?: boolean
+  isLocked?: boolean
   onLinkDevice: () => void
   onCreateNote: () => void
   onRestoreBackup: () => void
@@ -42,6 +43,7 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
   meaningNotice,
   isOnboarding,
   isTrash,
+  isLocked,
   onLinkDevice,
   onCreateNote,
   onRestoreBackup,
@@ -131,6 +133,16 @@ export const AndroidEmptyState = memo(function AndroidEmptyState({
               {t('folderView.empty.restoreBtn')}
             </Text>
           </Pressable>
+        </>
+      ) : isLocked ? (
+        <>
+          <MaterialCommunityIcons
+            name="lock-outline"
+            size={UI_ICON_SIZE_48}
+            color={hexWithAlpha(c.onSurfaceVariant, 0.3)}
+          />
+          <Text style={styles.title}>{t('folderView.empty.lockedEmptyTitle')}</Text>
+          <Text style={styles.subtitle}>{t('folderView.empty.lockedEmptySubtitle')}</Text>
         </>
       ) : isTrash ? (
         <>

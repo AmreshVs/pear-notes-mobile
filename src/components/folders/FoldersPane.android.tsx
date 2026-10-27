@@ -465,6 +465,7 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
                     icon={tool.icon}
                     count={tool.count}
                     isLast={index === toolRows.length - 1}
+                    selected={tool.id === selectedFolderId}
                     colors={c}
                     onPress={handleSelectFolder}
                     onLongPress={handleFolderLongPress}

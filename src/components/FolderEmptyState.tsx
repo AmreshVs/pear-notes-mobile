@@ -23,6 +23,7 @@ type FolderEmptyStateProps = {
   hasSearchQuery: boolean
   meaningNotice?: string | null
   isTrash: boolean
+  isLocked?: boolean
   showOnboarding: boolean
   onCreateNote: () => void
   onLinkDevice: () => void
@@ -34,6 +35,7 @@ export const FolderEmptyState = memo(function FolderEmptyState({
   hasSearchQuery,
   meaningNotice,
   isTrash,
+  isLocked,
   showOnboarding,
   onCreateNote,
   onLinkDevice,
@@ -68,6 +70,20 @@ export const FolderEmptyState = memo(function FolderEmptyState({
         </Text>
         <Text style={commonThemedStyles.emptySubtitle}>
           {t('folderView.empty.trashEmptySubtitle', { days: TRASH_RETENTION_DAYS })}
+        </Text>
+      </View>
+    )
+  }
+
+  if (isLocked) {
+    return (
+      <View style={containerStyle}>
+        <SymbolView name="lock" size={UI_ICON_SIZE_44} tintColor={colors.textMuted} />
+        <Text style={[styles.emptyTitle, commonThemedStyles.emptyTitle]}>
+          {t('folderView.empty.lockedEmptyTitle')}
+        </Text>
+        <Text style={commonThemedStyles.emptySubtitle}>
+          {t('folderView.empty.lockedEmptySubtitle')}
         </Text>
       </View>
     )
