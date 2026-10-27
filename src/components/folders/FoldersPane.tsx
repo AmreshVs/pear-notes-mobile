@@ -306,10 +306,11 @@ export function FoldersPane({ embedded, selectedFolderId, onSelectFolder }: Fold
           animationIndex={startIndex + index}
           grouped
           isLast={index === toolRows.length - 1}
+          selected={tool.id === selectedFolderId}
           onPress={handleSelectFolder}
         />
       )),
-    [toolRows, handleSelectFolder],
+    [toolRows, selectedFolderId, handleSelectFolder],
   )
 
   const handleAskVault = useCallback(() => openAskVaultScreen(searchQuery.trim()), [searchQuery])

@@ -42,6 +42,7 @@ export const FOLDER_ICON_SF: Record<string, IconName> = {
   attachments: 'paperclip',
   duplicates: 'doc.on.doc',
   recap: 'clock.arrow.circlepath',
+  locked: 'lock',
   trash: 'trash',
 }
 
@@ -85,6 +86,7 @@ export const FOLDER_ICON_MATERIAL: Record<string, string> = {
   attachments: 'paperclip',
   duplicates: 'content-copy',
   recap: 'history',
+  locked: 'lock-outline',
   trash: 'delete-outline',
 }
 

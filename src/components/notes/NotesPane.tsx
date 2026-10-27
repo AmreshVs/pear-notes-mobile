@@ -8,6 +8,7 @@ import { router, Stack, useNavigation } from 'expo-router'
 import {
   ALL_NOTES_KEY,
   FOLDER_ERROR,
+  LOCKED_NOTES_KEY,
   RECENTLY_DELETED_KEY,
   SEARCH_QUERY_MAX_LENGTH,
   TRASH_RETENTION_DAYS,
@@ -151,9 +152,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     router.push('/settings/backup')
   }, [])
 
+  const isLockedView = id === LOCKED_NOTES_KEY
   const folder = useMemo(
-    () => allFolders.find((f: any) => f.id === id || f.key === id),
-    [allFolders, id],
+    () =>
+      isLockedView
+        ? { id, name: t('tools.locked'), isSystem: true }
+        : allFolders.find((f: any) => f.id === id || f.key === id),
+    [allFolders, id, isLockedView, t],
   )
 
   const folderById = useMemo(() => new Map(allFolders.map((f: any) => [f.id, f])), [allFolders])
@@ -655,6 +660,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           hasSearchQuery={hasSearchQuery}
           meaningNotice={meaningNoticeText}
           isTrash={isTrashFolder}
+          isLocked={isLockedView}
           showOnboarding={localPreferences['isSynced'] !== true && !hasAnyNotes}
           onCreateNote={handleCreateNote}
           onLinkDevice={handleLinkDevice}
@@ -667,6 +673,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       hasSearchQuery,
       meaningNoticeText,
       isTrashFolder,
+      isLockedView,
       localPreferences,
       hasAnyNotes,
       handleCreateNote,

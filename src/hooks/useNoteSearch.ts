@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { ALL_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
+import { ALL_NOTES_KEY, LOCKED_NOTES_KEY, RECENTLY_DELETED_KEY } from '@pear-notes/core/constant.js'
 import {
   getActiveSearchHits,
   getSearchScope,
@@ -34,8 +34,9 @@ export function useNoteSearch(folderId: string | undefined) {
   }, [dispatch, hasUnlockedNotes])
 
   const hasSearchQuery = searchQuery.trim().length > 0
+  const isLockedView = folderId === LOCKED_NOTES_KEY
   const canScopeSearch =
-    !!folderId && folderId !== ALL_NOTES_KEY && folderId !== RECENTLY_DELETED_KEY
+    !!folderId && folderId !== ALL_NOTES_KEY && folderId !== RECENTLY_DELETED_KEY && !isLockedView
   const searchingAll = hasSearchQuery && canScopeSearch && searchScope === SEARCH_SCOPE.ALL
 
   return {
@@ -44,6 +45,6 @@ export function useNoteSearch(folderId: string | undefined) {
     searchScope,
     hideEmptyState: hasSearchQuery && !searchSettled,
     showSearchScope: hasSearchQuery && canScopeSearch,
-    showFolderNames: folderId === ALL_NOTES_KEY || searchingAll,
+    showFolderNames: folderId === ALL_NOTES_KEY || isLockedView || searchingAll,
   }
 }

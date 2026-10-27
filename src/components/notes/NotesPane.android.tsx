@@ -30,6 +30,7 @@ import {
   ALL_NOTES_KEY,
   FOLDER_ERROR,
   FOLDER_NAME_MAX_LENGTH,
+  LOCKED_NOTES_KEY,
   RECENTLY_DELETED_KEY,
   TRASH_RETENTION_DAYS,
 } from '@pear-notes/core/constant.js'
@@ -196,9 +197,13 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
 
+  const isLockedView = id === LOCKED_NOTES_KEY
   const folder = useMemo(
-    () => allFolders.find((f: any) => f.id === id || f.key === id),
-    [allFolders, id],
+    () =>
+      isLockedView
+        ? { id, name: t('tools.locked'), isSystem: true }
+        : allFolders.find((f: any) => f.id === id || f.key === id),
+    [allFolders, id, isLockedView, t],
   )
 
   const moveFolders = useMemo(
@@ -783,6 +788,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
           meaningNotice={meaningNoticeText}
           isOnboarding={!isTrashFolder && localPreferences['isSynced'] !== true && !hasAnyNotes}
           isTrash={isTrashFolder}
+          isLocked={isLockedView}
           onLinkDevice={handleLinkDevice}
           onCreateNote={handleCreateNote}
           onRestoreBackup={handleRestoreBackup}
@@ -794,6 +800,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       hasSearchQuery,
       meaningNoticeText,
       isTrashFolder,
+      isLockedView,
       localPreferences,
       hasAnyNotes,
       handleLinkDevice,

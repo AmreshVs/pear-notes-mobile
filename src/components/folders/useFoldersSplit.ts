@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
-import { ALL_NOTES_KEY } from '@pear-notes/core/constant.js'
+import { ALL_NOTES_KEY, LOCKED_NOTES_KEY } from '@pear-notes/core/constant.js'
 import {
   getFolders,
   getSelectedFolder,
@@ -19,7 +19,9 @@ export function useFoldersSplit() {
   )
 
   const activeFolderId =
-    persistedFolder && folderIds.has(persistedFolder) ? persistedFolder : ALL_NOTES_KEY
+    persistedFolder && (folderIds.has(persistedFolder) || persistedFolder === LOCKED_NOTES_KEY)
+      ? persistedFolder
+      : ALL_NOTES_KEY
 
   const selectFolder = useCallback(
     (folderId: string) => {
