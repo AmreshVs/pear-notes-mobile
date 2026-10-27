@@ -6,7 +6,7 @@ const play = require('./playCredentials')
 const { checkCorePinRef, compareInstalledCore } = require('./coreInstall')
 const { storeBuild } = require('./store-build')
 const { findIosXcode, MAX_IOS_SDK_MAJOR } = require('./xcode')
-const { MAX_CONSOLE_LOGS, inspectBackendBundle } = require('./bundleHygiene')
+const { MAX_CONSOLE_LOGS, EXPECT_OBFUSCATED, inspectBackendBundle } = require('./bundleHygiene')
 
 const ROOT = path.resolve(__dirname, '..')
 const IS_CI = process.env.CI === 'true'
@@ -220,7 +220,7 @@ function checkBundleHygiene() {
   if (readable.length > 0) {
     return fail(
       'bundle-hygiene',
-      `${relative} contains readable core source (${readable.join(', ')}) - rebuild with npm run bare-bundle without PEAR_OBFUSCATE=0`,
+      `${relative} contains readable core source (${readable.join(', ')}) - rebuild with npm run bare-bundle with PEAR_OBFUSCATE=1`,
     )
   }
 
@@ -233,7 +233,7 @@ function checkBundleHygiene() {
 
   pass(
     'bundle-hygiene',
-    `no "</", no sensitive strings, core obfuscated, ${consoleLogs} console.log left`,
+    `no "</", no sensitive strings, core ${EXPECT_OBFUSCATED ? 'obfuscated' : 'minified'}, ${consoleLogs} console.log left`,
   )
 }
 

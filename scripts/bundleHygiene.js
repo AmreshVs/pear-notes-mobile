@@ -14,11 +14,17 @@ const READABLE_CORE_MARKERS = [
 
 const MAX_CONSOLE_LOGS = 5
 
+// Readable class and method names only mean something went wrong when core was
+// meant to be obfuscated; a default minify-only build keeps them.
+const EXPECT_OBFUSCATED = process.env.PEAR_OBFUSCATE === '1'
+
 function inspectBackendBundle(contents) {
   return {
     hasClosingTag: contents.includes('</'),
     leaked: BUNDLE_FORBIDDEN_STRINGS.filter((needle) => contents.includes(needle)),
-    readable: READABLE_CORE_MARKERS.filter((needle) => contents.includes(needle)),
+    readable: EXPECT_OBFUSCATED
+      ? READABLE_CORE_MARKERS.filter((needle) => contents.includes(needle))
+      : [],
     consoleLogs: (contents.match(/console\.log\(/g) ?? []).length,
   }
 }
@@ -37,6 +43,7 @@ module.exports = {
   BUNDLE_FORBIDDEN_STRINGS,
   READABLE_CORE_MARKERS,
   MAX_CONSOLE_LOGS,
+  EXPECT_OBFUSCATED,
   inspectBackendBundle,
   backendBundleProblems,
 }

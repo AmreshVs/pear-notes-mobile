@@ -17,7 +17,7 @@ Website and downloads: https://amreshvs.github.io/pear-notes/
 
 This repository is published so you can read and audit how the app works. It is licensed under the [PolyForm Strict License 1.0.0](LICENSE): you may read and study the code for non-commercial purposes, but you may not modify it, redistribute it, or publish it as an app. The name, logo and icon are covered separately by [TRADEMARK.md](TRADEMARK.md).
 
-**This repository doesn't build on its own.** The backend, sync and encryption logic live in `@pear-notes/core`, which is private. The app installs it from a private repository, and `npm run setup` builds an obfuscated copy of it into `src/backend/backend.bundle.js`, which is not tracked.
+**This repository doesn't build on its own.** The backend, sync and encryption logic live in `@pear-notes/core`, which is private. The app installs it from a private repository, and `npm run setup` builds a minified copy of it into `src/backend/backend.bundle.js`, which is not tracked.
 
 Pull requests aren't accepted. Bug reports are welcome in Issues. For security issues, see [SECURITY.md](SECURITY.md).
 
