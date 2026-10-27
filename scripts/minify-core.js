@@ -10,7 +10,10 @@ const STAGE = path.join(ROOT, '.core-build')
 const STAGED_CORE = path.join(STAGE, 'node_modules', CORE_PKG)
 const ENTRY = path.join(STAGE, 'main.mjs')
 
-const OBFUSCATE_ENABLED = process.env.PEAR_OBFUSCATE !== '0'
+// Off unless PEAR_OBFUSCATE=1: the obfuscator's base64 string array got the
+// desktop 1.1.1 MSIX rejected by the Microsoft Store malware scan, and the
+// same pattern trips generic AV heuristics and store review elsewhere.
+const OBFUSCATE_ENABLED = process.env.PEAR_OBFUSCATE === '1'
 const OBFUSCATE_LEVEL =
   process.env.PEAR_OBFUSCATE_LEVEL === 'aggressive' ? 'aggressive' : 'standard'
 
