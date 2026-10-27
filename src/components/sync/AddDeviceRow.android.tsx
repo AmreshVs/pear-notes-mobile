@@ -23,7 +23,13 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
   surfaceContainerHigh?: string
 }
 
-export const AddDeviceRow = memo(function AddDeviceRow({ label, onPress }: AddDeviceRowProps) {
+const ANDROID_ICONS = { plus: 'plus', link: 'link-variant' } as const
+
+export const AddDeviceRow = memo(function AddDeviceRow({
+  label,
+  onPress,
+  icon = 'plus',
+}: AddDeviceRowProps) {
   const { colors } = useMD3Theme()
   const styles = useStyles()
   const ripple = useMemo(() => androidRipple(colors.onSurface), [colors.onSurface])
@@ -36,7 +42,11 @@ export const AddDeviceRow = memo(function AddDeviceRow({ label, onPress }: AddDe
       style={styles.card}
     >
       <View style={styles.icon}>
-        <MaterialCommunityIcons name="plus" size={UI_ICON_SIZE_20} color={colors.primary} />
+        <MaterialCommunityIcons
+          name={ANDROID_ICONS[icon]}
+          size={UI_ICON_SIZE_20}
+          color={colors.primary}
+        />
       </View>
       <Text style={styles.label}>{label}</Text>
     </Pressable>

@@ -12,7 +12,7 @@ import { SyncLeadersNotes } from '@/components/sync/SyncLeadersNotes'
 import { createThemedStylesheet, Text, useTheme } from '@/components/Themed'
 import { commonStyles, FontSize, Radii, Space, UI_ICON_SIZE_13 } from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
-import { ADD_DEVICE_ROUTE } from '@/hooks/useVaultSwitcher'
+import { ADD_DEVICE_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { getVaultLabel } from '@/lib/vaultLabels'
 
 import useDevicesScreen from './useDevicesScreen'
@@ -31,6 +31,7 @@ export default function DevicesScreen() {
     : t('layouts.linkDevices')
 
   const handleAddDevice = useCallback(() => router.push(ADD_DEVICE_ROUTE as never), [])
+  const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
 
   const renderLocalDevices = useCallback(() => {
     return (syncedDevices as any[])
@@ -102,6 +103,14 @@ export default function DevicesScreen() {
         {otherDevices.length === 0 && (
           <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
         )}
+
+        <Text style={[commonThemedStyles.sectionCamelCase, commonStyles.sectionHeader]}>
+          {t('sync.devices.joinSection')}
+        </Text>
+        <RNView style={styles.deviceGroup}>
+          <AddDeviceRow icon="link" label={t('vaults.join.sectionTitle')} onPress={handleJoin} />
+        </RNView>
+        <Text style={styles.emptyText}>{t('sync.devices.joinHint')}</Text>
 
         <SyncLeadersNotes />
 

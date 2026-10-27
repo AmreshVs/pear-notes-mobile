@@ -34,15 +34,12 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 type AndroidFolderAppBarProps = {
   searchQuery: string
-  showFolderOptions: boolean
-  canMultiSelect: boolean
   searchInputRef: RefObject<TextInput | null>
   onSearchBarLayout?: (event: LayoutChangeEvent) => void
   onBack: () => void
   showBack?: boolean
   showCreateNote?: boolean
   onCreateNote?: () => void
-  onStartSelecting: () => void
   onOpenFolderOptions: () => void
   onChangeSearch: (text: string) => void
   onClearSearch: () => void
@@ -54,15 +51,12 @@ type AndroidFolderAppBarProps = {
 
 export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   searchQuery,
-  showFolderOptions,
-  canMultiSelect,
   searchInputRef,
   onSearchBarLayout,
   onBack,
   showBack = true,
   showCreateNote,
   onCreateNote,
-  onStartSelecting,
   onOpenFolderOptions,
   onChangeSearch,
   onClearSearch,
@@ -77,7 +71,6 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
   const c = md3.colors as ExtendedColors
 
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
-  const selectAccessibilityState = useMemo(() => ({ disabled: !canMultiSelect }), [canMultiSelect])
 
   return (
     <>
@@ -131,37 +124,15 @@ export const AndroidFolderAppBar = memo(function AndroidFolderAppBar({
             </Pressable>
           )}
           <Pressable
-            onPress={onStartSelecting}
-            disabled={!canMultiSelect}
-            android_ripple={canMultiSelect ? ripple : undefined}
-            style={[styles.iconBtn, !canMultiSelect && commonStyles.disabled]}
+            onPress={onOpenFolderOptions}
+            android_ripple={ripple}
+            style={styles.iconBtn}
             hitSlop={UI_SIZE_8}
             accessibilityRole="button"
-            accessibilityState={selectAccessibilityState}
-            accessibilityLabel={t('folderView.selection.select')}
+            accessibilityLabel={t('folderView.moreOptions')}
           >
-            <MaterialCommunityIcons
-              name="checkbox-multiple-outline"
-              size={UI_ICON_SIZE_24}
-              color={c.primary}
-            />
+            <MaterialCommunityIcons name="dots-vertical" size={UI_ICON_SIZE_24} color={c.primary} />
           </Pressable>
-          {showFolderOptions && (
-            <Pressable
-              onPress={onOpenFolderOptions}
-              android_ripple={ripple}
-              style={styles.iconBtn}
-              hitSlop={UI_SIZE_8}
-              accessibilityRole="button"
-              accessibilityLabel={t('folders.options')}
-            >
-              <MaterialCommunityIcons
-                name="dots-vertical"
-                size={UI_ICON_SIZE_24}
-                color={c.primary}
-              />
-            </Pressable>
-          )}
         </View>
       </View>
 

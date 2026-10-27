@@ -16,7 +16,11 @@ import {
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 
-export const AddDeviceRow = memo(function AddDeviceRow({ label, onPress }: AddDeviceRowProps) {
+export const AddDeviceRow = memo(function AddDeviceRow({
+  label,
+  onPress,
+  icon = 'plus',
+}: AddDeviceRowProps) {
   const { colors } = useTheme()
   const styles = useStyles()
 
@@ -27,7 +31,7 @@ export const AddDeviceRow = memo(function AddDeviceRow({ label, onPress }: AddDe
       style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
     >
       <RNView style={styles.icon}>
-        <SymbolIcon name="plus" size={UI_ICON_SIZE_18} color={colors.primary} />
+        <SymbolIcon name={icon} size={UI_ICON_SIZE_18} color={colors.primary} />
       </RNView>
       <Text style={styles.label}>{label}</Text>
     </Pressable>

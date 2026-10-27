@@ -540,6 +540,63 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     setShowFolderDeleteConfirm(true)
   }, [])
 
+  const handleFolderSheetSelect = useCallback(() => {
+    setFolderOptionsSheet(false)
+    handleStartSelecting()
+  }, [handleStartSelecting])
+
+  const handleFolderSheetSettings = useCallback(() => {
+    setFolderOptionsSheet(false)
+    router.push('/settings')
+  }, [])
+
+  const folderOptionActions = useMemo(
+    () => [
+      ...(canMultiSelect
+        ? [
+            {
+              icon: 'checkbox-multiple-outline',
+              label: t('folderView.selection.select'),
+              onPress: handleFolderSheetSelect,
+            },
+          ]
+        : []),
+      ...(folder?.isSystem
+        ? []
+        : [
+            {
+              icon: 'pencil-outline',
+              label: t('folders.buttons.rename'),
+              onPress: handleFolderSheetRename,
+            },
+          ]),
+      {
+        icon: 'cog-outline',
+        label: t('layouts.settings'),
+        onPress: handleFolderSheetSettings,
+      },
+      ...(folder?.isSystem
+        ? []
+        : [
+            {
+              icon: 'delete-outline',
+              label: t('folders.deleteTitle'),
+              onPress: handleFolderSheetDelete,
+              destructive: true,
+            },
+          ]),
+    ],
+    [
+      canMultiSelect,
+      folder?.isSystem,
+      handleFolderSheetDelete,
+      handleFolderSheetRename,
+      handleFolderSheetSelect,
+      handleFolderSheetSettings,
+      t,
+    ],
+  )
+
   const handleConfirmDeleteNote = useCallback(() => {
     if (!deleteConfirmNote) return
     hapticWarning()
@@ -964,15 +1021,12 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         ) : (
           <AndroidFolderAppBar
             searchQuery={searchQuery}
-            showFolderOptions={!folder?.isSystem}
-            canMultiSelect={canMultiSelect}
             searchInputRef={searchInputRef}
             onSearchBarLayout={handleSearchBarLayout}
             onBack={closePane}
             showBack={!embedded}
             showCreateNote={embedded && !isTrashFolder}
             onCreateNote={handleCreateNote}
-            onStartSelecting={handleStartSelecting}
             onOpenFolderOptions={handleOpenFolderOptions}
             onChangeSearch={handleChangeSearch}
             onClearSearch={handleClearSearch}
@@ -1075,19 +1129,7 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
         onDismiss={handleCloseFolderOptions}
         title={folder?.name ?? t('folders.untitled')}
         subtitle={t('folders.options')}
-        actions={[
-          {
-            icon: 'pencil-outline',
-            label: t('folders.buttons.rename'),
-            onPress: handleFolderSheetRename,
-          },
-          {
-            icon: 'delete-outline',
-            label: t('folders.deleteTitle'),
-            onPress: handleFolderSheetDelete,
-            destructive: true,
-          },
-        ]}
+        actions={folderOptionActions}
       />
 
       <FolderPickerSheet

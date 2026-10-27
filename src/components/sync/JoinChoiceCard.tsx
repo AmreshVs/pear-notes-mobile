@@ -2,7 +2,6 @@ import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, StyleSheet, View as RNView } from 'react-native'
 
-import { Divider } from '@/components/Divider'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import { createThemedStylesheet, Text, useColors } from '@/components/Themed'
 import {
@@ -10,12 +9,13 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  Radii,
   Space,
   UI_ICON_SIZE_20,
   UI_SIZE_44,
 } from '@/constants/commonStyles'
-import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 import { JOIN_CHOICE } from '@/constants/vaultActions'
+import { hexWithAlpha } from '@/lib/backupUtils'
 
 import type { JoinChoiceCardProps } from './joinChoiceCard.types'
 
@@ -30,7 +30,6 @@ export function JoinChoiceCard({
   const { t } = useTranslation()
   const styles = useStyles()
   const colors = useColors()
-  const commonThemedStyles = useCommonThemedStyles()
 
   const selectSeparate = useCallback(() => onSelect(JOIN_CHOICE.separate), [onSelect])
   const selectCombine = useCallback(() => onSelect(JOIN_CHOICE.combine), [onSelect])
@@ -45,52 +44,52 @@ export function JoinChoiceCard({
           name: vaultName,
         })}
       </Text>
-      <RNView style={commonThemedStyles.card}>
-        <Pressable
-          onPress={selectSeparate}
-          disabled={!canKeepSeparate}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: separateSelected, disabled: !canKeepSeparate }}
-          style={({ pressed }) => [
-            styles.row,
-            !canKeepSeparate && commonStyles.disabled,
-            pressed && commonStyles.pressed,
-          ]}
-        >
-          <RNView style={commonStyles.flex1}>
-            <Text style={styles.rowTitle}>{t('vaults.join.keepTitle')}</Text>
-            <Text style={styles.rowDesc}>
-              {canKeepSeparate
-                ? t('vaults.join.keepDesc', { name: vaultName })
-                : t('vaults.limitReached', { max: maxVaults })}
-            </Text>
-          </RNView>
-          {separateSelected && (
-            <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
-          )}
-        </Pressable>
-        <RNView style={styles.dividerWrap}>
-          <Divider />
+      <Pressable
+        onPress={selectSeparate}
+        disabled={!canKeepSeparate}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: separateSelected, disabled: !canKeepSeparate }}
+        style={({ pressed }) => [
+          styles.option,
+          separateSelected && styles.optionSelected,
+          !canKeepSeparate && commonStyles.disabled,
+          pressed && commonStyles.pressed,
+        ]}
+      >
+        <RNView style={commonStyles.flex1}>
+          <Text style={styles.rowTitle}>{t('vaults.join.keepTitle')}</Text>
+          <Text style={styles.rowDesc}>
+            {canKeepSeparate
+              ? t('vaults.join.keepDesc', { name: vaultName })
+              : t('vaults.limitReached', { max: maxVaults })}
+          </Text>
         </RNView>
-        <Pressable
-          onPress={selectCombine}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: combineSelected }}
-          style={({ pressed }) => [styles.row, pressed && commonStyles.pressed]}
-        >
-          <RNView style={commonStyles.flex1}>
-            <Text style={styles.rowTitle}>{t('vaults.join.combineTitle')}</Text>
-            <Text style={styles.rowDesc}>
-              {t(hasNotes ? 'vaults.join.combineDesc' : 'vaults.join.combineDescEmpty', {
-                name: vaultName,
-              })}
-            </Text>
-          </RNView>
-          {combineSelected && (
-            <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
-          )}
-        </Pressable>
-      </RNView>
+        {separateSelected && (
+          <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+        )}
+      </Pressable>
+      <Pressable
+        onPress={selectCombine}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: combineSelected }}
+        style={({ pressed }) => [
+          styles.option,
+          combineSelected && styles.optionSelected,
+          pressed && commonStyles.pressed,
+        ]}
+      >
+        <RNView style={commonStyles.flex1}>
+          <Text style={styles.rowTitle}>{t('vaults.join.combineTitle')}</Text>
+          <Text style={styles.rowDesc}>
+            {t(hasNotes ? 'vaults.join.combineDesc' : 'vaults.join.combineDescEmpty', {
+              name: vaultName,
+            })}
+          </Text>
+        </RNView>
+        {combineSelected && (
+          <SymbolIcon name="checkmark" size={UI_ICON_SIZE_20} color={colors.primary} />
+        )}
+      </Pressable>
     </RNView>
   )
 }
@@ -109,11 +108,19 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       color: theme.colors.textMuted,
     },
-    row: {
+    option: {
       ...commonStyles.row,
       gap: Space.md,
       minHeight: UI_SIZE_44,
       padding: Space.base,
+      borderRadius: Radii.card,
+      borderWidth: 1,
+      borderColor: theme.colors.borderSecondary,
+      backgroundColor: theme.colors.cardSurface,
+    },
+    optionSelected: {
+      borderColor: theme.colors.primary,
+      backgroundColor: hexWithAlpha(theme.colors.primary, theme.isDark ? 0.15 : 0.08),
     },
     rowTitle: {
       fontSize: FontSize.subtitle,
@@ -124,9 +131,6 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.caption,
       color: theme.colors.textSecondary,
       marginTop: Space.xs,
-    },
-    dividerWrap: {
-      marginHorizontal: Space.base,
     },
   })
   return styles
