@@ -1,5 +1,7 @@
+import { useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Pressable, ScrollView, StyleSheet, TextInput, View as RNView } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 
 import { MAX_VAULTS, VAULT_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
 
@@ -14,6 +16,8 @@ import {
   Radii,
   Space,
   UI_ICON_SIZE_14,
+  UI_ICON_SIZE_18,
+  UI_SIZE_32,
 } from '@/constants/commonStyles'
 import { hexWithAlpha } from '@/lib/backupUtils'
 import { getVaultLabel } from '@/lib/vaultLabels'
@@ -42,6 +46,11 @@ export default function JoinVaultScreen() {
     scanner,
   } = useJoinVaultScreen()
   const openVaultName = getVaultLabel(openVault, t)
+
+  const handlePaste = useCallback(async () => {
+    const text = (await Clipboard.getStringAsync()).trim()
+    if (text) setCode(text)
+  }, [setCode])
 
   return (
     <ScrollView
@@ -77,7 +86,7 @@ export default function JoinVaultScreen() {
             </Pressable>
           </RNView>
         </RNView>
-        <RNView style={styles.inputRow}>
+        <RNView style={styles.codeRow}>
           <TextInput
             value={code}
             onChangeText={setCode}
@@ -87,8 +96,17 @@ export default function JoinVaultScreen() {
             accessibilityLabel={t('vaults.join.codeLabel')}
             autoCapitalize="none"
             autoCorrect={false}
-            style={styles.input}
+            style={styles.codeInput}
           />
+          <Pressable
+            onPress={handlePaste}
+            hitSlop={Space.sm}
+            accessibilityRole="button"
+            accessibilityLabel={t('sync.paste.pasteBtn')}
+            style={({ pressed }) => [styles.pasteButton, pressed && commonStyles.pressed]}
+          >
+            <SymbolIcon name="doc.on.clipboard" size={UI_ICON_SIZE_18} color={colors.primary} />
+          </Pressable>
         </RNView>
         {!scanner.scannerVisible && !!scanner.scanError && (
           <Text style={styles.error}>{t(scanner.scanError)}</Text>
@@ -194,6 +212,15 @@ const useStyles = createThemedStylesheet((theme) => {
       fontWeight: FontWeight.bold,
       color: theme.colors.primary,
     },
+    codeRow: {
+      ...commonStyles.row,
+      gap: Space.xs,
+      borderRadius: Space.base,
+      paddingLeft: Space.base,
+      paddingRight: Space.xs,
+      paddingVertical: Space.xs,
+      backgroundColor: theme.colors.inputBackground,
+    },
     inputRow: {
       borderRadius: Space.base,
       paddingHorizontal: Space.base,
@@ -204,6 +231,17 @@ const useStyles = createThemedStylesheet((theme) => {
       fontSize: FontSize.body,
       paddingVertical: Space.sm,
       color: theme.colors.text,
+    },
+    codeInput: {
+      ...commonStyles.flex1,
+      fontSize: FontSize.body,
+      paddingVertical: Space.sm,
+      color: theme.colors.text,
+    },
+    pasteButton: {
+      ...commonStyles.centered,
+      width: UI_SIZE_32,
+      height: UI_SIZE_32,
     },
     error: {
       fontSize: FontSize.caption,

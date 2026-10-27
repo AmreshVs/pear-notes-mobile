@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   KeyboardAvoidingView,
@@ -11,6 +11,7 @@ import {
 import { TextInput as PaperTextInput } from 'react-native-paper'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import MaterialCommunityIcons from '@react-native-vector-icons/material-design-icons/static'
+import * as Clipboard from 'expo-clipboard'
 import { Stack } from 'expo-router'
 
 import { MAX_VAULTS, VAULT_NAME_MAX_LENGTH } from '@pear-notes/core/constant.js'
@@ -70,6 +71,18 @@ export default function AndroidJoinVaultScreen() {
   const ripple = useMemo(() => androidRipple(c.onSurface), [c.onSurface])
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
 
+  const handlePaste = useCallback(async () => {
+    const text = (await Clipboard.getStringAsync()).trim()
+    if (text) setCode(text)
+  }, [setCode])
+
+  const renderPasteIcon = useCallback(
+    ({ size }: { size: number }) => (
+      <MaterialCommunityIcons name="content-paste" size={size} color={c.primary} />
+    ),
+    [c.primary],
+  )
+
   return (
     <View style={styles.root}>
       <StatusBar barStyle={theme.isDark ? 'light-content' : 'dark-content'} />
@@ -121,6 +134,13 @@ export default function AndroidJoinVaultScreen() {
             autoCapitalize="none"
             autoCorrect={false}
             error={showCodeHint}
+            right={
+              <PaperTextInput.Icon
+                icon={renderPasteIcon}
+                onPress={handlePaste}
+                accessibilityLabel={t('sync.paste.pasteBtn')}
+              />
+            }
           />
           {!scanner.scannerVisible && !!scanner.scanError && (
             <Text style={styles.error}>{t(scanner.scanError)}</Text>

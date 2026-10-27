@@ -236,6 +236,8 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
     startSelecting()
   }, [startSelecting])
 
+  const handleOpenSettings = useCallback(() => router.push('/settings'), [])
+
   const handleToggleSelect = useCallback(
     (noteId: string) => {
       hapticLight()
@@ -770,16 +772,6 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
       ) : (
         <>
           <Stack.Toolbar placement="right">
-            {!folder?.isSystem && (
-              <Stack.Toolbar.Menu icon="ellipsis" accessibilityLabel={t('folders.options')}>
-                <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
-                  {t('folders.renameTitle')}
-                </Stack.Toolbar.MenuAction>
-                <Stack.Toolbar.MenuAction icon="trash" destructive onPress={handleDeleteFolder}>
-                  {t('folders.deleteTitle')}
-                </Stack.Toolbar.MenuAction>
-              </Stack.Toolbar.Menu>
-            )}
             {tidyMoves.length > 0 && (
               <Stack.Toolbar.Button
                 icon="wand.and.stars"
@@ -787,12 +779,30 @@ export function NotesPane({ folderId, embedded, onRequestClose }: NotesPaneProps
                 onPress={handleOpenTidyUp}
               />
             )}
-            <Stack.Toolbar.Button
-              icon="checkmark.circle"
-              accessibilityLabel={t('folderView.selection.select')}
-              disabled={!canMultiSelect}
-              onPress={handleStartSelecting}
-            />
+            <Stack.Toolbar.Menu icon="ellipsis" accessibilityLabel={t('folderView.moreOptions')}>
+              <Stack.Toolbar.MenuAction
+                icon="checkmark.circle"
+                disabled={!canMultiSelect}
+                onPress={handleStartSelecting}
+              >
+                {t('folderView.selection.select')}
+              </Stack.Toolbar.MenuAction>
+              {!folder?.isSystem && (
+                <Stack.Toolbar.Menu inline>
+                  <Stack.Toolbar.MenuAction icon="pencil" onPress={handleRenameFolder}>
+                    {t('folders.renameTitle')}
+                  </Stack.Toolbar.MenuAction>
+                  <Stack.Toolbar.MenuAction icon="trash" destructive onPress={handleDeleteFolder}>
+                    {t('folders.deleteTitle')}
+                  </Stack.Toolbar.MenuAction>
+                </Stack.Toolbar.Menu>
+              )}
+              <Stack.Toolbar.Menu inline>
+                <Stack.Toolbar.MenuAction icon="gearshape" onPress={handleOpenSettings}>
+                  {t('layouts.settings')}
+                </Stack.Toolbar.MenuAction>
+              </Stack.Toolbar.Menu>
+            </Stack.Toolbar.Menu>
           </Stack.Toolbar>
           {(!isTrashFolder || SUPPORTS_TOOLBAR_SEARCH) && (
             <Stack.Toolbar placement="bottom">

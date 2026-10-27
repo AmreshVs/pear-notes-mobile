@@ -29,7 +29,7 @@ import {
   UI_SIZE_24,
   UI_SIZE_40,
 } from '@/constants/commonStyles'
-import { ADD_DEVICE_ROUTE } from '@/hooks/useVaultSwitcher'
+import { ADD_DEVICE_ROUTE, JOIN_VAULT_ROUTE } from '@/hooks/useVaultSwitcher'
 import { getVaultLabel } from '@/lib/vaultLabels'
 
 import useDevicesScreen from './useDevicesScreen'
@@ -63,6 +63,7 @@ export default function AndroidDevicesScreen() {
   const title = hasSeveralVaults ? t('sync.devicesIn', { name: vaultName }) : t('sync.title')
 
   const handleAddDevice = useCallback(() => router.push(ADD_DEVICE_ROUTE as never), [])
+  const handleJoin = useCallback(() => router.push(JOIN_VAULT_ROUTE as never), [])
   const handleDismissDelete = useCallback(
     () => setDeleteSheetVisible(false),
     [setDeleteSheetVisible],
@@ -163,6 +164,14 @@ export default function AndroidDevicesScreen() {
           {otherDevices.length === 0 && (
             <Text style={styles.emptyText}>{t('sync.devices.empty')}</Text>
           )}
+
+          <Text style={[commonStyles.sectionHeader, md3Styles.settingsSectionCamelCase]}>
+            {t('sync.devices.joinSection')}
+          </Text>
+          <View style={styles.deviceList}>
+            <AddDeviceRow icon="link" label={t('vaults.join.sectionTitle')} onPress={handleJoin} />
+          </View>
+          <Text style={styles.emptyText}>{t('sync.devices.joinHint')}</Text>
 
           <AndroidSyncLeadersNotes />
 

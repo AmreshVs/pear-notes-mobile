@@ -641,6 +641,7 @@
     "paste": {
       "scanBtn": "Scan QR",
       "attachBtn": "Attach QR",
+      "pasteBtn": "Paste invite link",
       "hintInvalid": "That isn't a complete invite code yet."
     },
     "footer": "Your data moves directly between your devices over an end-to-end encrypted connection. Nothing is stored on our servers.",
@@ -649,6 +650,8 @@
       "thisDevice": "This device",
       "otherDevices": "Other devices",
       "empty": "No other devices connected yet.",
+      "joinSection": "Join another vault",
+      "joinHint": "Got an invite link from another device? Use it to open that vault on this device.",
       "removeDevice": "Remove {{name}}",
       "rename": "Rename this device",
       "confirmRename": "Save device name",
@@ -836,6 +839,7 @@
       "last7Days": "Last 7 days",
       "older": "Older"
     },
+    "moreOptions": "More options",
     "permanentlyDeleteTitle": "Permanently delete",
     "permanentlyDeleteSubtitle": "This note cannot be recovered.",
     "noAdditionalText": "No additional text",

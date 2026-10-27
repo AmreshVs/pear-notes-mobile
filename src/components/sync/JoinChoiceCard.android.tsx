@@ -14,7 +14,6 @@ import {
   UI_SIZE_8,
   UI_SIZE_16,
   UI_SIZE_20,
-  UI_SIZE_28,
 } from '@/constants/commonStyles'
 import { JOIN_CHOICE } from '@/constants/vaultActions'
 import { androidRipple } from '@/lib/androidRipple'
@@ -54,51 +53,53 @@ export function JoinChoiceCard({
           name: vaultName,
         })}
       </Text>
-      <View style={styles.card}>
-        <Pressable
-          onPress={selectSeparate}
-          disabled={!canKeepSeparate}
-          android_ripple={ripple}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: separateSelected, disabled: !canKeepSeparate }}
-          style={canKeepSeparate ? styles.rowDivider : styles.rowDividerDisabled}
-        >
-          <MaterialCommunityIcons
-            name={separateSelected ? 'radiobox-marked' : 'radiobox-blank'}
-            size={UI_ICON_SIZE_24}
-            color={separateSelected ? c.primary : c.onSurfaceVariant}
-          />
-          <View style={commonStyles.flex1}>
-            <Text style={styles.rowTitle}>{t('vaults.join.keepTitle')}</Text>
-            <Text style={styles.rowDesc}>
-              {canKeepSeparate
-                ? t('vaults.join.keepDesc', { name: vaultName })
-                : t('vaults.limitReached', { max: maxVaults })}
-            </Text>
-          </View>
-        </Pressable>
-        <Pressable
-          onPress={selectCombine}
-          android_ripple={ripple}
-          accessibilityRole="radio"
-          accessibilityState={{ checked: combineSelected }}
-          style={styles.row}
-        >
-          <MaterialCommunityIcons
-            name={combineSelected ? 'radiobox-marked' : 'radiobox-blank'}
-            size={UI_ICON_SIZE_24}
-            color={combineSelected ? c.primary : c.onSurfaceVariant}
-          />
-          <View style={commonStyles.flex1}>
-            <Text style={styles.rowTitle}>{t('vaults.join.combineTitle')}</Text>
-            <Text style={styles.rowDesc}>
-              {t(hasNotes ? 'vaults.join.combineDesc' : 'vaults.join.combineDescEmpty', {
-                name: vaultName,
-              })}
-            </Text>
-          </View>
-        </Pressable>
-      </View>
+      <Pressable
+        onPress={selectSeparate}
+        disabled={!canKeepSeparate}
+        android_ripple={ripple}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: separateSelected, disabled: !canKeepSeparate }}
+        style={[
+          styles.option,
+          separateSelected && styles.optionSelected,
+          !canKeepSeparate && commonStyles.disabled,
+        ]}
+      >
+        <MaterialCommunityIcons
+          name={separateSelected ? 'radiobox-marked' : 'radiobox-blank'}
+          size={UI_ICON_SIZE_24}
+          color={separateSelected ? c.primary : c.onSurfaceVariant}
+        />
+        <View style={commonStyles.flex1}>
+          <Text style={styles.rowTitle}>{t('vaults.join.keepTitle')}</Text>
+          <Text style={styles.rowDesc}>
+            {canKeepSeparate
+              ? t('vaults.join.keepDesc', { name: vaultName })
+              : t('vaults.limitReached', { max: maxVaults })}
+          </Text>
+        </View>
+      </Pressable>
+      <Pressable
+        onPress={selectCombine}
+        android_ripple={ripple}
+        accessibilityRole="radio"
+        accessibilityState={{ checked: combineSelected }}
+        style={[styles.option, combineSelected && styles.optionSelected]}
+      >
+        <MaterialCommunityIcons
+          name={combineSelected ? 'radiobox-marked' : 'radiobox-blank'}
+          size={UI_ICON_SIZE_24}
+          color={combineSelected ? c.primary : c.onSurfaceVariant}
+        />
+        <View style={commonStyles.flex1}>
+          <Text style={styles.rowTitle}>{t('vaults.join.combineTitle')}</Text>
+          <Text style={styles.rowDesc}>
+            {t(hasNotes ? 'vaults.join.combineDesc' : 'vaults.join.combineDescEmpty', {
+              name: vaultName,
+            })}
+          </Text>
+        </View>
+      </Pressable>
     </View>
   )
 }
@@ -110,13 +111,6 @@ const useChoiceHooks = () => {
 
 const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
   const c = md3.colors as ExtendedColors
-  const rowBase = {
-    ...commonStyles.row,
-    alignItems: 'flex-start' as const,
-    gap: UI_SIZE_16,
-    paddingVertical: UI_SIZE_16,
-    paddingHorizontal: UI_SIZE_20,
-  }
   const styles = StyleSheet.create({
     section: {
       gap: UI_SIZE_8,
@@ -130,22 +124,21 @@ const useStyles = createThemedStylesheetWithHooks((_theme, { md3 }) => {
       fontSize: FontSize.caption,
       color: c.onSurfaceVariant,
     },
-    card: {
-      borderRadius: UI_SIZE_28,
+    option: {
+      ...commonStyles.row,
+      alignItems: 'flex-start',
+      gap: UI_SIZE_16,
+      paddingVertical: UI_SIZE_16,
+      paddingHorizontal: UI_SIZE_20,
       overflow: 'hidden',
+      borderRadius: UI_SIZE_20,
+      borderWidth: 1,
+      borderColor: hexWithAlpha(c.onSurface, 0.12),
       backgroundColor: c.surfaceContainerHigh ?? c.surfaceVariant,
     },
-    row: rowBase,
-    rowDivider: {
-      ...rowBase,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
-    },
-    rowDividerDisabled: {
-      ...rowBase,
-      ...commonStyles.disabled,
-      borderBottomWidth: StyleSheet.hairlineWidth,
-      borderBottomColor: hexWithAlpha(c.onSurface, 0.12),
+    optionSelected: {
+      borderColor: c.primary,
+      backgroundColor: hexWithAlpha(c.primary, 0.12),
     },
     rowTitle: {
       fontSize: FontSize.subtitle,
