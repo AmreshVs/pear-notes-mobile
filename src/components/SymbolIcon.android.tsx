@@ -32,6 +32,8 @@ const MATERIAL_EQUIVALENT: Record<string, MaterialIconName> = {
   hourglass: 'timer-sand',
   'cylinder.split.1x2': 'database-outline',
   'doc.text': 'file-document-outline',
+  'doc.on.doc': 'content-copy',
+  paperplane: 'send-outline',
   video: 'video-outline',
   folder: 'folder-outline',
   'folder.badge.plus': 'folder-plus-outline',
