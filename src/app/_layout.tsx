@@ -83,7 +83,7 @@ import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { reclaimIfRestored } from '@/lib/backupActions'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
-import { type Crash, readLastBackendCrash } from '@/lib/crashReport'
+import { type Crash, listenForBackendCrash } from '@/lib/crashReport'
 import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
 import { loadHapticsPreference } from '@/lib/haptics'
 import { localAiAdapter } from '@/lib/localAi/localAi'
@@ -203,7 +203,6 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   const savedEncryptionKeyRef = useRef<string | null>(null)
   const workletRestartAttemptsRef = useRef(0)
   const keychainRetryAttemptsRef = useRef(0)
-  const workletStartedAtRef = useRef(0)
   const backendCrashRef = useRef<Crash | null>(null)
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
@@ -226,15 +225,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       setLegacyVault(false)
       appBoot.mark('app js reached initWorklet')
       excludeFromDeviceBackups(storage)
-      workletStartedAtRef.current = Date.now()
       await startWorklet(storage, {
         onWorkletDied: () => {
           workletRestartAttemptsRef.current += 1
           log.error('[boot] worklet died, restart attempt ' + workletRestartAttemptsRef.current)
-          // The backend leaves the error that killed it behind; keep the
-          // latest, since the restart below starts a fresh run.
-          const died = readLastBackendCrash(storage, workletStartedAtRef.current)
-          if (died) backendCrashRef.current = { source: 'backend', ...died }
           if (workletRestartAttemptsRef.current > MAX_WORKLET_RESTART_ATTEMPTS) {
             setFatalError({
               message: t('error.backendFailed'),
@@ -255,6 +249,9 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         notificationMessage: t('sync.backgroundSync.notificationMessage'),
       })
       appBoot.mark('worklet started')
+      listenForBackendCrash((crash) => {
+        backendCrashRef.current = crash
+      })
       let key = await getDbEncryptionKey()
       if (!key) {
         key = randomHex32()

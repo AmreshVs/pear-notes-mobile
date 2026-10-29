@@ -1,24 +1,20 @@
+import { EventEmitter } from 'events'
+
 import {
   crashDetails,
   formatCrashReport,
-  readLastBackendCrash,
+  listenForBackendCrash,
   sendCrashReport,
 } from '../src/lib/crashReport'
 
-const files: Record<string, string> = {}
+const mockCrashes = new EventEmitter()
+let mockSubscribeCrash: (() => Promise<EventEmitter>) | undefined
 
-jest.mock('expo-file-system', () => ({
-  File: class {
-    uri: string
-    constructor(uri: string) {
-      this.uri = uri
-    }
-    get exists() {
-      return this.uri in files
-    }
-    textSync() {
-      return files[this.uri]
-    }
+jest.mock('@pear-notes/core/backend/api.js', () => ({
+  backendApi: {
+    get subscribeCrash() {
+      return mockSubscribeCrash
+    },
   },
 }))
 
@@ -27,25 +23,34 @@ const STACK =
 
 describe('crash report', () => {
   afterEach(() => {
-    for (const key of Object.keys(files)) delete files[key]
+    mockCrashes.removeAllListeners()
     jest.restoreAllMocks()
   })
 
-  it('reads the backend crash from this run only', () => {
-    files['file:///docs/last-crash.json'] = JSON.stringify({
-      at: 2000,
+  it('hears the error the backend sends before it dies', async () => {
+    mockSubscribeCrash = async () => mockCrashes
+    const onCrash = jest.fn()
+    await listenForBackendCrash(onCrash)
+    mockCrashes.emit('data', {
       kind: 'unhandledRejection',
       error: "TypeError: Cannot read properties of null (reading 'dht')",
       stack: STACK,
+      at: 2000,
     })
-    expect(readLastBackendCrash('/docs/', 1000)?.stack).toBe(STACK)
-    expect(readLastBackendCrash('/docs', 3000)).toBeNull()
-    expect(readLastBackendCrash('/elsewhere', 0)).toBeNull()
+    expect(onCrash).toHaveBeenCalledWith({
+      source: 'backend',
+      error: "TypeError: Cannot read properties of null (reading 'dht')",
+      stack: STACK,
+      at: 2000,
+    })
+    expect(() => mockCrashes.emit('error', new Error('backend gone'))).not.toThrow()
   })
 
-  it('ignores a crash file it cannot parse', () => {
-    files['file:///docs/last-crash.json'] = '{not json'
-    expect(readLastBackendCrash('/docs', 0)).toBeNull()
+  it('does nothing with a core that has no crash stream', async () => {
+    mockSubscribeCrash = undefined
+    const onCrash = jest.fn()
+    await expect(listenForBackendCrash(onCrash)).resolves.toBeUndefined()
+    expect(onCrash).not.toHaveBeenCalled()
   })
 
   it('shows the error once, then the stack', () => {

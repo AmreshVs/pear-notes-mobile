@@ -1,5 +1,6 @@
 import { Platform } from 'react-native'
-import { File } from 'expo-file-system'
+
+import { backendApi } from '@pear-notes/core/backend/api.js'
 
 import { getAppVersionLabel } from '@/lib/appVersion'
 
@@ -11,9 +12,6 @@ const CRASH_REPORT_REFERRER = `${CRASH_REPORT_ORIGIN}/pear-notes/contact/`
 const CRASH_REPORT_MAX_CHARS = 20000
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-// Written by the backend (@pear-notes/core errorLog) when it dies of a fatal error.
-const LAST_CRASH_FILE_NAME = 'last-crash.json'
-
 export type CrashSource = 'backend' | 'startup' | 'render'
 
 export type Crash = {
@@ -23,20 +21,20 @@ export type Crash = {
   at?: number
 }
 
-type BackendCrash = { at: number; kind: string; error: string; stack: string }
+type BackendCrash = { kind: string; error: string; stack: string; at: number }
 
-// The backend's last fatal error, if it happened at or after `since`: an older
-// one belongs to a previous run and would explain the wrong crash.
-export function readLastBackendCrash(storagePath: string, since: number): BackendCrash | null {
+// The backend sends the error that kills it just before it dies. A core that
+// predates the crash stream has no subscribeCrash, and the report then says
+// only how the backend stopped.
+export async function listenForBackendCrash(onCrash: (crash: Crash) => void) {
   try {
-    const file = new File('file://' + storagePath.replace(/\/$/, '') + '/' + LAST_CRASH_FILE_NAME)
-    if (!file.exists) return null
-    const crash = JSON.parse(file.textSync()) as BackendCrash
-    if (typeof crash?.at !== 'number' || crash.at < since) return null
-    return crash
-  } catch {
-    return null
-  }
+    const api = backendApi as { subscribeCrash?: () => Promise<any> }
+    const crashes = await api.subscribeCrash?.()
+    crashes?.on('error', () => {})
+    crashes?.on('data', ({ error, stack, at }: BackendCrash) =>
+      onCrash({ source: 'backend', error, stack, at }),
+    )
+  } catch {}
 }
 
 // What the screen shows: the error, then its stack without the line repeated.
