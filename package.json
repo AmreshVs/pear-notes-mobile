@@ -113,7 +113,7 @@
   },
   "devDependencies": {
     "@react-native/typescript-config": "^0.84.0",
-    "@swmansion/argent": "^0.22.0",
+    "@swmansion/argent": "^0.31.0",
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "^29.5.14",
     "@types/react": "~19.2.10",
@@ -145,5 +145,9 @@
     "globals": [
       "BareKit"
     ]
+  },
+  "overrides": {
+    "minimatch@^9.0.0": "^9.0.7",
+    "zod@^4.0.0": "^4.6.6"
   }
 }
