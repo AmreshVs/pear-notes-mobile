@@ -163,10 +163,8 @@ jobs:
             exit 1
           fi
 
-      - name: Fetch GitHub dependencies over HTTPS
+      - name: Configure git
         run: |
-          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
-          git config --global --add url."https://github.com/".insteadOf "git@github.com:"
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 

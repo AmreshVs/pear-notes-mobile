@@ -3,7 +3,7 @@ const fs = require('fs')
 const path = require('path')
 
 const play = require('./playCredentials')
-const { checkCorePinRef, compareInstalledCore } = require('./coreInstall')
+const { checkCorePinRef, checkCorePublished, compareInstalledCore } = require('./coreInstall')
 const { storeBuild } = require('./store-build')
 const { findIosXcode, MAX_IOS_SDK_MAJOR } = require('./xcode')
 const { MAX_CONSOLE_LOGS, EXPECT_OBFUSCATED, inspectBackendBundle } = require('./bundleHygiene')
@@ -89,74 +89,18 @@ function checkLockfiles() {
 }
 
 function checkCorePinned() {
-  const lockPath = path.join(ROOT, 'package-lock.json')
-  const lock = fs.existsSync(lockPath) ? fs.readFileSync(lockPath, 'utf8') : ''
-  const lockedSha = lock.match(/pear-notes-core(?:\.git)?#([0-9a-f]{40})/)?.[1]
-
-  if (!lockedSha) {
-    return fail(
-      'core',
-      '@pear-notes/core has no resolved commit in package-lock.json - npm ci is not reproducible',
-    )
-  }
-
   const pin = checkCorePinRef(ROOT)
-  if (pin.level === 'fail') return fail('core', pin.detail)
-  if (pin.level === 'warn') warn('core', pin.detail)
-
-  if (IS_CI) {
-    return pass('core', `lock pins ${lockedSha.slice(0, 12)}, installed from that commit by setup`)
-  }
-
-  const coreRoot = path.resolve(ROOT, '..', 'pear-notes-core')
-  if (!fs.existsSync(path.join(coreRoot, '.git'))) {
-    return warn(
-      'core',
-      `lock pins ${lockedSha.slice(0, 12)}, but ../pear-notes-core is not checked out - cannot ` +
-        'verify the shipped core matches the one backend.bundle.js was built from',
-    )
-  }
-
-  const coreGit = (command) => tryRun(`git -C "${coreRoot}" ${command}`)
-  const coreHead = coreGit('rev-parse HEAD')
-
-  if (!coreHead) {
-    return warn('core', `lock pins ${lockedSha.slice(0, 12)}, but ../pear-notes-core has no HEAD`)
-  }
-
-  const coreDirty = coreGit('status --porcelain')
-  if (coreDirty) {
-    return fail(
-      'core',
-      `../pear-notes-core has ${coreDirty.split('\n').length} uncommitted file(s) - EAS installs ` +
-        'core from a commit, so those changes can never reach the build. Commit and push them.',
-    )
-  }
-
-  if (coreHead !== lockedSha) {
-    const behind = coreGit(`rev-list --count ${lockedSha}..${coreHead}`)
-    return fail(
-      'core',
-      `package-lock.json pins core ${lockedSha.slice(0, 12)} but ../pear-notes-core is at ` +
-        `${coreHead.slice(0, 12)}${behind && behind !== '0' ? ` (${behind} commit(s) ahead)` : ''} - ` +
-        'the build would ship a JS bundle whose core is missing exports the app calls. ' +
-        'Run "npm update @pear-notes/core --package-lock-only" and commit the lock.',
-    )
-  }
-
-  if (!coreGit(`branch -r --contains ${coreHead}`)) {
-    return fail(
-      'core',
-      `core ${coreHead.slice(0, 12)} is not on any remote branch - EAS resolves the dependency ` +
-        'over the network and the install will fail. Push pear-notes-core first.',
-    )
-  }
-
-  pass('core', `lock and ../pear-notes-core both at ${lockedSha.slice(0, 12)}, pushed`)
+  if (pin.level !== 'pass') return record(pin.level, 'core', pin.detail)
+  const published = checkCorePublished(ROOT)
+  record(
+    published.level,
+    'core',
+    published.level === 'pass' ? `${pin.detail}, matches npm` : published.detail,
+  )
 }
 
 function checkInstalledCore() {
-  if (IS_CI) return pass('core-install', 'fresh install from the pinned commit')
+  if (IS_CI) return pass('core-install', 'fresh install from the locked npm release')
   const { level, detail } = compareInstalledCore(ROOT)
   record(level, 'core-install', detail)
 }

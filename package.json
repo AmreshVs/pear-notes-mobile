@@ -31,7 +31,7 @@
     "release:android": "node scripts/release.js --platform android",
     "release:all": "node scripts/release.js --platform all",
     "creds:check": "node scripts/check-eas-credentials.js",
-    "pin-core": "node scripts/pin-core.js",
+    "core:bump": "node scripts/core-bump.js",
     "native-addons": "node scripts/prepare-native-addons.mjs",
     "eas-build-post-install": "node scripts/prepare-native-addons.mjs"
   },

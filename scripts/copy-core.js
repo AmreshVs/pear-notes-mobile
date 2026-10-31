@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const { LOCAL_CORE_MARKER } = require('./coreInstall')
 
 const sourceDir = path.resolve(__dirname, '../../pear-notes-core')
 const targetDir = path.resolve(__dirname, '../node_modules/@pear-notes/core')
@@ -36,4 +37,5 @@ for (const entry of entries) {
   console.log(`Copied ${entry}`)
 }
 
-console.log(`@pear-notes/core synced into ${targetDir}`)
+fs.writeFileSync(path.join(targetDir, LOCAL_CORE_MARKER), `${sourceDir}\n`)
+console.log(`@pear-notes/core synced into ${targetDir} - npm run setup puts the npm release back`)
