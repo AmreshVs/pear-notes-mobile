@@ -81,3 +81,11 @@ qvac/
 .mcp.json
 .vscode/mcp.json
 skills-lock.json
+
+# Never public: notes, agent config, local secrets
+docs/
+CLAUDE.md
+lint_report.txt
+.env
+.release.*.env
+.trail/
