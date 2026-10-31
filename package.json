@@ -39,7 +39,7 @@
     "@expo-google-fonts/plus-jakarta-sans": "^0.4.2",
     "@expo/ui": "~56.0.26",
     "@pchmn/expo-material3-theme": "^1.4.0",
-    "@pear-notes/core": "github:AmreshVs/pear-notes-core#aafd7b5e6f038888fa41a96b49b97a33faa6c5be",
+    "@pear-notes/core": "1.2.0",
     "@qvac/asr-ggml-android-arm64": "0.7.0",
     "@qvac/asr-ggml-ios": "0.7.0",
     "@qvac/fabric-android-arm64": "0.18.1",
