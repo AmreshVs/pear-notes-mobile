@@ -13,6 +13,29 @@ describe('ErrorScreen', () => {
     expect(onRetry).toHaveBeenCalledTimes(1)
   })
 
+  it('shows the crash details and sends the report', async () => {
+    const fetchMock = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: 'true' }),
+    })
+    global.fetch = fetchMock as unknown as typeof fetch
+    await renderWithStore(
+      <ErrorScreen
+        message="Backend failed"
+        onRetry={jest.fn()}
+        crash={{
+          source: 'backend',
+          error: 'Error: boom',
+          stack: 'Error: boom\n    at pairing.js:1:1',
+        }}
+      />,
+    )
+    expect(screen.getByText(/at pairing\.js:1:1/)).toBeTruthy()
+    await fireEvent.press(screen.getByText('crash.send'))
+    await screen.findByText('crash.sent')
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).message).toContain('at pairing.js:1:1')
+  })
+
   it('offers the custom action instead of retry', async () => {
     const onRetry = jest.fn()
     const onPress = jest.fn()

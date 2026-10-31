@@ -83,6 +83,7 @@ import { applyBackgroundSyncMode } from '@/lib/backgroundSyncTask'
 import { reclaimIfRestored } from '@/lib/backupActions'
 import { sweepBackupCache } from '@/lib/backupFileManager'
 import { clearStorageState } from '@/lib/clearStorageState'
+import { type Crash, listenForBackendCrash } from '@/lib/crashReport'
 import { excludeFromDeviceBackups } from '@/lib/deviceBackupExclusion'
 import { loadHapticsPreference } from '@/lib/haptics'
 import { localAiAdapter } from '@/lib/localAi/localAi'
@@ -195,13 +196,14 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   useNoteAutoRelock()
   useReminders()
 
-  const [fatalError, setFatalError] = useState<string | null>(null)
+  const [fatalError, setFatalError] = useState<{ message: string; crash?: Crash } | null>(null)
   // LEGACY(hyperdb-migration): see docs/HYPERDB-VIEW-MIGRATION-PLAN-2026-09-23.md section 8
   const [legacyVault, setLegacyVault] = useState(false)
   const openBackupAfterReadyRef = useRef(false)
   const savedEncryptionKeyRef = useRef<string | null>(null)
   const workletRestartAttemptsRef = useRef(0)
   const keychainRetryAttemptsRef = useRef(0)
+  const backendCrashRef = useRef<Crash | null>(null)
 
   const needsReload = useSelector((state: any) => state.sync.needsReload)
   const vaultEnteredAt = useSelector(getVaultEnteredAt)
@@ -228,7 +230,13 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
           workletRestartAttemptsRef.current += 1
           log.error('[boot] worklet died, restart attempt ' + workletRestartAttemptsRef.current)
           if (workletRestartAttemptsRef.current > MAX_WORKLET_RESTART_ATTEMPTS) {
-            setFatalError(t('error.backendFailed'))
+            setFatalError({
+              message: t('error.backendFailed'),
+              crash: backendCrashRef.current ?? {
+                source: 'backend',
+                error: `The backend stopped ${workletRestartAttemptsRef.current} times`,
+              },
+            })
             return
           }
           initWorklet()
@@ -241,6 +249,9 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         notificationMessage: t('sync.backgroundSync.notificationMessage'),
       })
       appBoot.mark('worklet started')
+      listenForBackendCrash((crash) => {
+        backendCrashRef.current = crash
+      })
       let key = await getDbEncryptionKey()
       if (!key) {
         key = randomHex32()
@@ -276,11 +287,16 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
           setLegacyVault(true)
           return
         }
-        setFatalError(
-          readyResult?.reason === 'VAULT_KEY_SEALED'
-            ? t('error.vaultSealed')
-            : t('error.backendFailed'),
-        )
+        setFatalError({
+          message:
+            readyResult?.reason === 'VAULT_KEY_SEALED'
+              ? t('error.vaultSealed')
+              : t('error.backendFailed'),
+          crash: backendCrashRef.current ?? {
+            source: 'startup',
+            error: `The backend did not start: ${readyResult?.reason ?? 'no reason given'}`,
+          },
+        })
         return
       }
       appBoot.mark('backendApi.ready resolved')
@@ -288,6 +304,7 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
       log.info('[boot] backend ready in ' + (Date.now() - readyStartedAt) + 'ms')
       workletRestartAttemptsRef.current = 0
       keychainRetryAttemptsRef.current = 0
+      backendCrashRef.current = null
       loadHapticsPreference()
       loadAndroidColorTheme()
       getBackgroundSyncMode().then(applyBackgroundSyncMode)
@@ -314,7 +331,14 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
         return
       }
       log.error('[boot] initWorklet failed', e)
-      setFatalError(e instanceof Error ? e.message : t('error.backendFailed'))
+      setFatalError({
+        message: e instanceof Error ? e.message : t('error.backendFailed'),
+        crash: {
+          source: 'startup',
+          error: String(e),
+          stack: e instanceof Error ? e.stack : undefined,
+        },
+      })
     }
   }, [dispatch, t])
 
@@ -394,7 +418,10 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
     const fresh = await backendApi.startFreshVault({ storage }).catch(() => null)
     if (fresh?.done !== true) {
       setLegacyVault(false)
-      setFatalError(t('error.legacyVaultStartFreshFailed'))
+      setFatalError({
+        message: t('error.legacyVaultStartFreshFailed'),
+        crash: { source: 'startup', error: 'Starting a fresh vault failed' },
+      })
       return
     }
     openBackupAfterReadyRef.current = true
@@ -447,7 +474,9 @@ function RootLayoutInner({ triggerReload }: { triggerReload: () => void }) {
   }
 
   if (fatalError) {
-    return <ErrorScreen message={fatalError} onRetry={initWorklet} />
+    return (
+      <ErrorScreen message={fatalError.message} crash={fatalError.crash} onRetry={initWorklet} />
+    )
   }
 
   return (

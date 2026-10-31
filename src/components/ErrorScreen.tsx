@@ -1,7 +1,8 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
-import { StyleSheet, TouchableOpacity } from 'react-native'
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
 
+import { CrashReportPanel } from '@/components/CrashReportPanel'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import {
   commonStyles,
@@ -12,30 +13,45 @@ import {
   UI_ICON_SIZE_20,
   UI_ICON_SIZE_64,
 } from '@/constants/commonStyles'
+import type { Crash } from '@/lib/crashReport'
 
-import { createThemedStylesheet, Text, View } from './Themed'
+import { createThemedStylesheet, Text } from './Themed'
 
 interface ErrorScreenProps {
   message: string
   onRetry: () => void
   title?: string
   action?: { label: string; onPress: () => void }
+  crash?: Crash
 }
 
-export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry, title, action }) => {
+export const ErrorScreen: React.FC<ErrorScreenProps> = ({
+  message,
+  onRetry,
+  title,
+  action,
+  crash,
+}) => {
   const { t } = useTranslation()
   const styles = useStyles()
+  const heading = title ?? t('error.initFailed')
 
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       <SymbolIcon
         name="exclamationmark.circle"
         size={UI_ICON_SIZE_64}
         color={styles.icon.color}
         style={styles.icon}
       />
-      <Text style={styles.title}>{title ?? t('error.initFailed')}</Text>
+      <Text style={styles.title}>{heading}</Text>
       <Text style={styles.message}>{message}</Text>
+
+      {crash ? <CrashReportPanel crash={crash} title={heading} message={message} /> : null}
 
       {action ? (
         <TouchableOpacity
@@ -57,16 +73,19 @@ export const ErrorScreen: React.FC<ErrorScreenProps> = ({ message, onRetry, titl
           <Text style={styles.buttonText}>{t('error.retry')}</Text>
         </TouchableOpacity>
       )}
-    </View>
+    </ScrollView>
   )
 }
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
-    container: {
+    scroll: {
       ...commonStyles.flex1,
-      ...commonStyles.centered,
       backgroundColor: theme.colors.background,
+    },
+    container: {
+      flexGrow: 1,
+      ...commonStyles.centered,
       padding: Space.lg,
     },
     icon: {

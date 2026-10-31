@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
-import { Pressable, StyleSheet } from 'react-native'
+import { Pressable, ScrollView, StyleSheet } from 'react-native'
 
+import { CrashReportPanel } from '@/components/CrashReportPanel'
 import { SymbolIcon } from '@/components/SymbolIcon'
 import {
   FontFamily,
@@ -24,15 +25,25 @@ export function AppErrorBoundary({ error, retry }: AppErrorBoundaryProps) {
   const styles = useStyles()
   const { colors } = useTheme()
 
+  const title = t('errorBoundary.title')
+  const message = t('errorBoundary.message')
+  const crash = { source: 'render' as const, error: String(error), stack: error?.stack }
+
   return (
-    <View style={styles.container}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+    >
       <View style={styles.card}>
         <View style={styles.iconBadge}>
           <SymbolIcon name="exclamationmark.triangle" size={UI_ICON_SIZE_40} color={colors.error} />
         </View>
-        <Text style={styles.title}>{t('errorBoundary.title')}</Text>
-        <Text style={styles.message}>{t('errorBoundary.message')}</Text>
-        {error?.message ? <Text style={styles.detail}>{error.message}</Text> : null}
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.message}>{message}</Text>
+        <View style={styles.panel}>
+          <CrashReportPanel crash={crash} title={title} message={message} />
+        </View>
         <Pressable
           onPress={retry}
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
@@ -40,18 +51,21 @@ export function AppErrorBoundary({ error, retry }: AppErrorBoundaryProps) {
           <Text style={styles.buttonLabel}>{t('errorBoundary.reload')}</Text>
         </Pressable>
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
 const useStyles = createThemedStylesheet((theme) => {
   const styles = StyleSheet.create({
-    container: {
+    scroll: {
       flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    container: {
+      flexGrow: 1,
       alignItems: 'center',
       justifyContent: 'center',
       padding: Space.xl,
-      backgroundColor: theme.colors.background,
     },
     card: {
       width: '100%',
@@ -84,12 +98,9 @@ const useStyles = createThemedStylesheet((theme) => {
       textAlign: 'center',
       lineHeight: 20,
     },
-    detail: {
-      fontSize: FontSize.caption,
-      fontFamily: FontFamily.mono,
-      color: theme.colors.textMuted,
-      textAlign: 'center',
-      marginTop: Space.sm,
+    panel: {
+      width: '100%',
+      marginTop: Space.lg,
     },
     button: {
       width: '100%',
