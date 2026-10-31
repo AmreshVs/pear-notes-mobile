@@ -143,14 +143,12 @@ jobs:
 
       - name: Check secrets
         env:
-          CORE_REPO_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           PLATFORM: ${{ matrix.platform }}
           UPLOAD: ${{ inputs.upload }}
         run: |
           missing=()
-          [ -z "$CORE_REPO_TOKEN" ] && missing+=(CORE_REPO_TOKEN)
           [ -z "$EXPO_TOKEN" ] && missing+=(EXPO_TOKEN)
           if [ "$UPLOAD" != "none" ] && [ "$PLATFORM" = "ios" ]; then
             [ -z "$ASC_KEY_ID" ] && missing+=(ASC_KEY_ID)
@@ -165,14 +163,10 @@ jobs:
             exit 1
           fi
 
-      - name: Give git read access to pear-notes-core
-        env:
-          CORE_REPO_TOKEN: ${{ secrets.CORE_REPO_TOKEN }}
+      - name: Fetch GitHub dependencies over HTTPS
         run: |
-          base="https://x-access-token:${CORE_REPO_TOKEN}@github.com/"
-          git config --global url."$base".insteadOf "https://github.com/"
-          git config --global --add url."$base".insteadOf "ssh://git@github.com/"
-          git config --global --add url."$base".insteadOf "git@github.com:"
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+          git config --global --add url."https://github.com/".insteadOf "git@github.com:"
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
