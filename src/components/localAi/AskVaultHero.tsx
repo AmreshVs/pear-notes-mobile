@@ -8,10 +8,10 @@ import {
   FontFamily,
   FontSize,
   FontWeight,
+  UI_ICON_SIZE_40,
   UI_SIZE_6,
   UI_SIZE_10,
   UI_SIZE_24,
-  UI_ICON_SIZE_40,
 } from '@/constants/commonStyles'
 
 interface AskVaultHeroProps {
