@@ -27,7 +27,6 @@ export function AppErrorBoundary({ error, retry }: AppErrorBoundaryProps) {
 
   const title = t('errorBoundary.title')
   const message = t('errorBoundary.message')
-  // String(error) is "TypeError: ..." - the same line the stack opens with.
   const crash = { source: 'render' as const, error: String(error), stack: error?.stack }
 
   return (

@@ -4,8 +4,7 @@ import { backendApi } from '@pear-notes/core/backend/api.js'
 
 import { getAppVersionLabel } from '@/lib/appVersion'
 
-// The website's contact form posts here too; FormSubmit forwards it by email.
-// It only accepts requests from a page, so the send names the contact page.
+// FormSubmit rejects requests that do not name a page as their origin.
 const CRASH_REPORT_ENDPOINT = 'https://formsubmit.co/ajax/56678a3e75e24bb3c6476594b14f7113'
 const CRASH_REPORT_ORIGIN = 'https://amreshvs.github.io'
 const CRASH_REPORT_REFERRER = `${CRASH_REPORT_ORIGIN}/pear-notes/contact/`
@@ -23,9 +22,7 @@ export type Crash = {
 
 type BackendCrash = { kind: string; error: string; stack: string; at: number }
 
-// The backend sends the error that kills it just before it dies. A core that
-// predates the crash stream has no subscribeCrash, and the report then says
-// only how the backend stopped.
+// Cores before the crash stream have no subscribeCrash.
 export async function listenForBackendCrash(onCrash: (crash: Crash) => void) {
   try {
     const api = backendApi as { subscribeCrash?: () => Promise<any> }
@@ -37,7 +34,6 @@ export async function listenForBackendCrash(onCrash: (crash: Crash) => void) {
   } catch {}
 }
 
-// What the screen shows: the error, then its stack without the line repeated.
 export function crashDetails(crash: Crash): string {
   const lines: string[] = []
   if (crash.error) lines.push(crash.error)
@@ -48,7 +44,6 @@ export function crashDetails(crash: Crash): string {
   return lines.join('\n').trim()
 }
 
-// What Copy and Send carry: the details plus enough context to act on them.
 export function formatCrashReport(
   crash: Crash,
   { title, message }: { title: string; message: string },

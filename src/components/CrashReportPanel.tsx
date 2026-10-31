@@ -26,7 +26,6 @@ interface CrashReportPanelProps {
   message: string
 }
 
-// The error and its stack, with Copy and Send, under an error screen's message.
 export function CrashReportPanel({ crash, title, message }: CrashReportPanelProps) {
   const { t } = useTranslation()
   const styles = useStyles()
