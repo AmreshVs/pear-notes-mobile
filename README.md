@@ -4,8 +4,10 @@ Private notes, encrypted on your devices and synced peer to peer. There's no acc
 
 ## Download
 
-- **iPhone and iPad:** [App Store](https://apps.apple.com/app/pear-notes-private-ai-sync/id6803172019)
-- **Android:** [Google Play](https://play.google.com/store/apps/details?id=com.amreshvs.pearnotes), or the `.apk` from the [latest release](https://github.com/AmreshVs/pear-notes/releases/latest)
+<a href="https://apps.apple.com/app/pear-notes-private-ai-sync/id6803172019"><img src="https://toolbox.marketingtools.apple.com/api/v2/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="40"></a>
+<a href="https://play.google.com/store/apps/details?id=com.amreshvs.pearnotes"><img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="58"></a>
+
+Android also has a sideload `.apk` in the [latest release](https://github.com/AmreshVs/pear-notes/releases/latest).
 
 For macOS, Windows and Linux, see [pear-notes-desktop](https://github.com/AmreshVs/pear-notes-desktop). Website: https://amreshvs.github.io/pear-notes/
 
