@@ -33,6 +33,7 @@ import { EditorToolbar } from '@/components/android/EditorToolbar'
 import { FolderPickerSheet } from '@/components/android/FolderPickerSheet'
 import { UploadBanner } from '@/components/android/UploadBanner'
 import { useMD3Theme } from '@/components/android/useMD3Theme'
+import { VaultNameDialog } from '@/components/android/VaultNameDialog'
 import { AskNoteSheet } from '@/components/AskNoteSheet'
 import { EdgeFade } from '@/components/EdgeFade'
 import { ScrollJumpButton } from '@/components/editor/ScrollJumpButton'
@@ -80,6 +81,7 @@ import {
   UI_SIZE_96,
   UI_SIZE_9999,
 } from '@/constants/commonStyles'
+import { FILE_NAME_MAX_LENGTH } from '@/constants/constants'
 import { useAiFeatureGate, useAiToolsVisible } from '@/hooks/useAiFeatureGate'
 import { useAiSuggestionOn } from '@/hooks/useAiSuggestionOn'
 import { useDeferredEditorMount } from '@/hooks/useDeferredEditorMount'
@@ -110,7 +112,13 @@ import { NoteHistoryModal } from '../components/activity/NoteHistoryModal'
 import { AudioRecorderModal, type RecordingDoneOptions } from '../components/AudioRecorderModal'
 import { RelatedNotesModal } from '../components/localAi/RelatedNotesModal'
 import { isPdfAttachment } from '../lib/pdfTools'
-import { getAttachmentFileName, isAudioFile, isImageFile } from '../utils/media'
+import {
+  fileBaseName,
+  getAttachmentFileName,
+  isAudioFile,
+  isImageFile,
+  renamedFileName,
+} from '../utils/media'
 
 import { useToast } from './ToastProvider'
 import { useNoteEditor } from './useNoteEditor'
@@ -286,6 +294,10 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
   const [voiceSheetVisible, setVoiceSheetVisible] = useState(false)
   const [dictationActive, setDictationActive] = useState(false)
   const [findNoteId, setFindNoteId] = useState<string | null>(null)
+  const [renamingAttachment, setRenamingAttachment] = useState<{
+    url: string
+    fileName: string
+  } | null>(null)
   const [findState, setFindState] = useState<FindInNoteState>(EMPTY_FIND_STATE)
   const [scrollJumpDirection, setScrollJumpDirection] = useState<ScrollJumpDirection | null>(null)
   const [voiceMode, setVoiceMode] = useState<VoiceTypingMode>('dictate')
@@ -503,6 +515,29 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     setSelectedAttachmentSrc,
     setSelectedAttachmentFileName,
   ])
+
+  const handleAttachmentMenuRename = useCallback(() => {
+    if (!selectedAttachmentSrc) return
+    setAttachmentSheetVisible2(false)
+    setRenamingAttachment({
+      url: selectedAttachmentSrc,
+      fileName: selectedAttachmentFileName || '',
+    })
+  }, [selectedAttachmentSrc, selectedAttachmentFileName, setAttachmentSheetVisible2])
+
+  const handleRenameCancel = useCallback(() => setRenamingAttachment(null), [])
+
+  const handleRenameConfirm = useCallback(
+    (input: string) => {
+      setRenamingAttachment(null)
+      if (!renamingAttachment) return
+      const name = renamedFileName(input, renamingAttachment.fileName)
+      if (name && name !== renamingAttachment.fileName) {
+        editorRef.current?.renameAttachment(renamingAttachment.url, name)
+      }
+    },
+    [renamingAttachment, editorRef],
+  )
 
   const handleAttachmentMenuDelete = useCallback(async () => {
     if (!selectedAttachmentSrc) return
@@ -1601,6 +1636,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             label: t('noteCard.actions.share'),
             onPress: handleAttachmentMenuShare,
           },
+          {
+            icon: 'pencil-outline',
+            label: t('noteEditor.menu.rename'),
+            onPress: handleAttachmentMenuRename,
+          },
           ...(aiToolsVisible && isAudioFile(selectedAttachmentFileName ?? undefined)
             ? [
                 {
@@ -1626,6 +1666,17 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
             destructive: true,
           },
         ]}
+      />
+
+      <VaultNameDialog
+        visible={!!renamingAttachment}
+        title={t('noteEditor.menu.renameTitle')}
+        confirmLabel={t('noteEditor.menu.rename')}
+        label={t('noteEditor.menu.renameLabel')}
+        maxLength={FILE_NAME_MAX_LENGTH}
+        initialName={fileBaseName(renamingAttachment?.fileName ?? '')}
+        onCancel={handleRenameCancel}
+        onConfirm={handleRenameConfirm}
       />
 
       {!!noteId && (

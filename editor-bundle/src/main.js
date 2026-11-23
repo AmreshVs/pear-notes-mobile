@@ -2186,6 +2186,27 @@ window.editorBridge = {
         break
       }
 
+      case 'renameAttachment': {
+        const { url: urlToRename, fileName } = msg
+        if (!fileName) break
+        let tr = editor.state.tr
+        editor.state.doc.descendants((node, pos) => {
+          if (
+            (node.type.name === 'fileAttachment' || node.type.name === 'audioAttachment') &&
+            (node.attrs.url === urlToRename ||
+              node.attrs.fileData === urlToRename ||
+              node.attrs.audioData === urlToRename)
+          ) {
+            tr = tr.setNodeMarkup(pos, undefined, { ...node.attrs, fileName })
+          }
+        })
+        if (tr.docChanged) {
+          editor.view.dispatch(tr)
+          flushContentChange(editor.getHTML())
+        }
+        break
+      }
+
       case 'updateImageSrc': {
         const { oldSrc, newSrc } = msg
         let pos = -1

@@ -106,7 +106,7 @@ import { setToastBottomOffset } from '@/lib/toastOffset'
 import { useNoteUploadQueue } from '@/lib/uploadRegistry'
 import { NoteEditorContext } from '@/providers/NoteEditorContext'
 import { imageDetailsBlocks } from '@/utils/imageDetailsLabels'
-import { isAudioFile } from '@/utils/media'
+import { fileBaseName, isAudioFile, renamedFileName } from '@/utils/media'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
@@ -633,6 +633,40 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     await handleDeleteAttachment(url)
     editorRef.current?.deleteAttachment(url)
   }, [selectedAttachmentSrc, setIsAttachmentActionSheetOpen, handleDeleteAttachment])
+
+  const renameAttachment = useCallback(
+    (url: string, current: string, input?: string) => {
+      const name = renamedFileName(input ?? '', current)
+      if (name && name !== current) editorRef.current?.renameAttachment(url, name)
+    },
+    [editorRef],
+  )
+
+  const handleAttachmentRenameAction = useCallback(() => {
+    if (!selectedAttachmentSrc) return
+    const url = selectedAttachmentSrc
+    const current = selectedAttachmentFileName || ''
+    setIsAttachmentActionSheetOpen(false)
+    Alert.prompt(
+      t('noteEditor.menu.renameTitle'),
+      undefined,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('noteEditor.menu.rename'),
+          onPress: (value?: string) => renameAttachment(url, current, value),
+        },
+      ],
+      'plain-text',
+      fileBaseName(current),
+    )
+  }, [
+    selectedAttachmentSrc,
+    selectedAttachmentFileName,
+    setIsAttachmentActionSheetOpen,
+    renameAttachment,
+    t,
+  ])
 
   const handleAttachmentLongPress = useCallback(
     (
@@ -1733,6 +1767,11 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
                       label={t('noteCard.actions.share')}
                       systemImage="square.and.arrow.up"
                       onPress={handleAttachmentShareAction}
+                    />
+                    <ExpoUI.Button
+                      label={t('noteEditor.menu.rename')}
+                      systemImage="pencil"
+                      onPress={handleAttachmentRenameAction}
                     />
                     {aiToolsVisible && isAudioFile(selectedAttachmentFileName ?? undefined) && (
                       <ExpoUI.Button

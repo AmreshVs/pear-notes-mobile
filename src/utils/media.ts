@@ -1,3 +1,5 @@
+import { FILE_NAME_MAX_LENGTH } from '@/constants/constants'
+
 export const isImageFile = (name?: string, mimeType?: string): boolean =>
   mimeType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic|heif)$/i.test(name || '')
 
@@ -9,6 +11,28 @@ export const isVideoFile = (name?: string, mimeType?: string): boolean =>
 
 export const getAttachmentFileName = (url: string, fallback: string): string =>
   url.split('/').pop()?.split('?')[0] || fallback
+
+const fileExtension = (name: string): string => {
+  const dot = name.lastIndexOf('.')
+  return dot > 0 ? name.slice(dot) : ''
+}
+
+export const fileBaseName = (name: string): string => {
+  const extension = fileExtension(name)
+  return extension ? name.slice(0, -extension.length) : name
+}
+
+export const renamedFileName = (input: string, current: string): string => {
+  const name = input
+    .trim()
+    .replace(/[/\\:]/g, '-')
+    .slice(0, FILE_NAME_MAX_LENGTH)
+  if (!name) return ''
+  const extension = fileExtension(current)
+  return extension && !name.toLowerCase().endsWith(extension.toLowerCase())
+    ? `${name}${extension}`
+    : name
+}
 
 const VIDEO_MIME_TYPES: Record<string, string> = {
   mp4: 'video/mp4',

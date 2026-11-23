@@ -166,6 +166,7 @@ export interface TiptapEditorHandle {
   ) => void
   deleteImage: (src: string) => void
   deleteAttachment: (url: string) => void
+  renameAttachment: (url: string, fileName: string) => void
   findSetQuery: (query: string) => void
   findMove: (step: 1 | -1) => void
   findClear: () => void
@@ -922,6 +923,8 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
           }),
         deleteImage: (src) => sendCommand({ type: 'deleteImage', src }),
         deleteAttachment: (url) => sendCommand({ type: 'deleteAttachment', url }),
+        renameAttachment: (url, fileName) =>
+          sendCommand({ type: 'renameAttachment', url, fileName }),
         revealLastInsert: (url?: string) =>
           webViewRef.current?.injectJavaScript(revealLastInsertJs(url)),
         setKeyboardInset: (height: number, scrollToCursor?: boolean) =>

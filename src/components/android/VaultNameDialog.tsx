@@ -26,6 +26,8 @@ type Props = {
   title: string
   confirmLabel: string
   initialName: string
+  label?: string
+  maxLength?: number
   onCancel: () => void
   onConfirm: (name: string) => void
 }
@@ -41,6 +43,8 @@ export function VaultNameDialog({
   title,
   confirmLabel,
   initialName,
+  label,
+  maxLength = VAULT_NAME_MAX_LENGTH,
   onCancel,
   onConfirm,
 }: Props) {
@@ -74,8 +78,8 @@ export function VaultNameDialog({
             onSubmitEditing={handleConfirm}
             autoFocus
             mode="outlined"
-            maxLength={VAULT_NAME_MAX_LENGTH}
-            label={t('vaults.nameLabel')}
+            maxLength={maxLength}
+            label={label ?? t('vaults.nameLabel')}
           />
           <View style={styles.actions}>
             <Pressable onPress={onCancel} android_ripple={ripple} style={styles.button}>
