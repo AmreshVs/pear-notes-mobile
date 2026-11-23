@@ -13,6 +13,15 @@ import { loadUpcomingGroups, setTaskDone } from '@pear-notes/core/store/services
 
 import { useOnNotesChanged } from '@/hooks/useOnNotesChanged'
 
+export type UpcomingRepeat = {
+  unit: 'day' | 'week' | 'month' | 'year'
+  interval: number
+  from: string
+  day?: number
+  nth?: number
+  weekdays?: number[]
+}
+
 export type UpcomingTask = {
   noteKey: string
   title: string
@@ -22,6 +31,7 @@ export type UpcomingTask = {
   checklist: boolean
   yearly?: boolean
   sinceYear?: number | null
+  repeat?: UpcomingRepeat
   name?: string
   beyondWindow?: boolean
   done?: boolean

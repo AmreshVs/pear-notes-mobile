@@ -62,9 +62,16 @@ export function yearlyLabel(task: UpcomingTask, t: TFunction): string {
   return age > 0 ? t('upcoming.turns', { age }) : t('upcoming.everyYear')
 }
 
+export function recurrenceLabel(task: UpcomingTask, t: TFunction): string {
+  if (task.yearly) return yearlyLabel(task, t)
+  if (!task.repeat?.unit) return ''
+  return t(`upcoming.repeat.${task.repeat.unit}`, { count: task.repeat.interval || 1 })
+}
+
 export function upcomingNoteLine(task: UpcomingTask, t: TFunction): string {
   const title = task.title || t('noteCard.untitled')
-  return task.yearly ? `${yearlyLabel(task, t)} · ${title}` : title
+  const recurrence = recurrenceLabel(task, t)
+  return recurrence ? `${recurrence} · ${title}` : title
 }
 
 export function showsReminderBell(task: UpcomingTask, group: string, remindersOn: boolean) {
