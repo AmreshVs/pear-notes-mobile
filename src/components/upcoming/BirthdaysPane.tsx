@@ -3,12 +3,23 @@ import { useTranslation } from 'react-i18next'
 import { RefreshControl, SectionList, StyleSheet, View as RNView } from 'react-native'
 import { Stack } from 'expo-router'
 
+import { CollapsedNavTitle } from '@/components/CollapsedNavTitle'
 import { Divider } from '@/components/Divider'
 import { ScreenEdgeFades } from '@/components/ScreenEdgeFades'
 import { createThemedStylesheet, Text, View } from '@/components/Themed'
 import { UpcomingBirthdayRow } from '@/components/upcoming/UpcomingBirthdayRow'
-import { commonStyles, FontSize, FontWeight, Radii, Space } from '@/constants/commonStyles'
+import {
+  commonStyles,
+  FontSize,
+  FontWeight,
+  LetterSpacing,
+  Radii,
+  Space,
+  UI_SIZE_42,
+} from '@/constants/commonStyles'
 import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
+import { HIDDEN_SCROLL_EDGE_EFFECTS } from '@/constants/navigation'
+import { useTitleCollapse } from '@/hooks/useTitleCollapse'
 import { type UpcomingTask, upcomingTaskKey, useUpcomingTasks } from '@/hooks/useUpcomingTasks'
 import { useNoteEditor } from '@/providers/NoteEditorContext'
 import { type BirthdayMonth, birthdaysByMonth } from '@/utils/upcomingFormat'
@@ -20,10 +31,29 @@ export function BirthdaysPane() {
   const { openNote } = useNoteEditor()
   const { yearly, loaded, refreshing, refresh } = useUpcomingTasks()
   const months = useMemo(() => birthdaysByMonth(yearly, i18n.language), [yearly, i18n.language])
+  const { isTitleCollapsed, handleTitleBlockLayout, scrollProps } = useTitleCollapse()
 
   const handleOpenTask = useCallback((task: UpcomingTask) => openNote(task.noteKey), [openNote])
 
-  const screenOptions = useMemo(() => ({ title: t('upcoming.birthdayList.title') }), [t])
+  const title = t('upcoming.birthdayList.title')
+  const status =
+    yearly.length > 0 ? t('upcoming.birthdayList.subtitle', { count: yearly.length }) : ''
+
+  const headerTitle = useCallback(
+    () => <CollapsedNavTitle title={title} subtitle={status} />,
+    [title, status],
+  )
+
+  const screenOptions = useMemo(
+    () => ({
+      title,
+      headerTitle: isTitleCollapsed ? headerTitle : '',
+      headerLargeTitle: false,
+      headerTransparent: true,
+      scrollEdgeEffects: HIDDEN_SCROLL_EDGE_EFFECTS,
+    }),
+    [title, isTitleCollapsed, headerTitle],
+  )
 
   const renderItem = useCallback(
     ({ item, index, section }: { item: UpcomingTask; index: number; section: BirthdayMonth }) => (
@@ -63,13 +93,28 @@ export function BirthdaysPane() {
   )
 
   const listHeader = useMemo(
-    () =>
-      yearly.length > 0 ? (
-        <Text style={styles.status}>
-          {t('upcoming.birthdayList.subtitle', { count: yearly.length })}
+    () => (
+      <View onLayout={handleTitleBlockLayout}>
+        <Text style={styles.pageTitle} numberOfLines={2}>
+          {title}
         </Text>
-      ) : null,
-    [yearly.length, t, styles.status],
+        {!!status && (
+          <View style={styles.headerInfo}>
+            <Text style={commonThemedStyles.sectionCap} accessibilityLiveRegion="polite">
+              {status}
+            </Text>
+          </View>
+        )}
+      </View>
+    ),
+    [
+      handleTitleBlockLayout,
+      title,
+      status,
+      styles.pageTitle,
+      styles.headerInfo,
+      commonThemedStyles.sectionCap,
+    ],
   )
 
   const listEmpty = useMemo(
@@ -102,6 +147,7 @@ export function BirthdaysPane() {
         refreshControl={refreshControl}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.scrollContent}
+        {...scrollProps}
         showsVerticalScrollIndicator={false}
       />
       <ScreenEdgeFades />
@@ -117,12 +163,24 @@ const useStyles = createThemedStylesheet((theme) => {
     },
     scrollContent: {
       flexGrow: 1,
+      paddingTop: Space.sm,
       paddingBottom: Space.scrollBottom,
     },
-    status: {
-      marginHorizontal: Space.base,
-      fontSize: FontSize.body,
-      color: theme.colors.textMuted,
+    pageTitle: {
+      fontSize: FontSize.hero,
+      lineHeight: UI_SIZE_42,
+      fontWeight: FontWeight.heavy,
+      letterSpacing: LetterSpacing.tight,
+      color: theme.colors.text,
+      marginLeft: Space.base,
+      paddingRight: Space.base,
+    },
+    headerInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginLeft: Space.base,
+      marginRight: Space.base,
+      marginBottom: Space.sm,
     },
     sectionHeader: {
       ...commonStyles.rowBetween,
