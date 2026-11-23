@@ -30,7 +30,7 @@ type ExtendedColors = ReturnType<typeof useMD3Theme>['colors'] & {
 
 type AndroidBackupStatsSectionProps = {
   lastBackupDate: string | null
-  totalBlobBytes: number
+  notesBytes: number
   formatBackupDate: (iso: string) => string
   formatBytes: (bytes: number) => string
 }
@@ -39,7 +39,7 @@ const ICON_WRAP_SIZE = 44
 
 export function AndroidBackupStatsSection({
   lastBackupDate,
-  totalBlobBytes,
+  notesBytes,
   formatBackupDate,
   formatBytes,
 }: AndroidBackupStatsSectionProps) {
@@ -68,7 +68,7 @@ export function AndroidBackupStatsSection({
           />
         </View>
         <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
-        <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
+        <Text style={styles.statValue}>{formatBytes(notesBytes)}</Text>
       </View>
     </View>
   )

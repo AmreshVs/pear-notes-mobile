@@ -15,6 +15,7 @@ import {
   getReclaimableBytes,
   getTotalBlobBytes,
   getTotalOnDiskBytes,
+  getTotalStorageSize,
   pauseDownload,
   reclaimStorage,
   retryDownload,
@@ -42,6 +43,9 @@ function useVaultStorageScreen() {
 
   const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
   const totalOnDiskBytes = (useSelector(getTotalOnDiskBytes) as number) ?? 0
+  const notesDataBytes = (useSelector(getTotalStorageSize) as number) ?? 0
+  const noteTextBytes = Math.max(0, notesDataBytes - totalBlobBytes)
+  const onDiskBytes = totalOnDiskBytes + noteTextBytes
   const reclaimableBytes = (useSelector(getReclaimableBytes) as number) ?? 0
   const isReclaiming = (useSelector(getIsReclaiming) as boolean) ?? false
   const activeDownloads = useSelector(getActiveDownloads) as any[]
@@ -140,7 +144,8 @@ function useVaultStorageScreen() {
 
   return {
     totalBlobBytes,
-    totalOnDiskBytes,
+    notesDataBytes,
+    onDiskBytes,
     reclaimableBytes,
     isReclaiming,
     activeDownloads,

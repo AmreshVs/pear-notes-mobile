@@ -49,7 +49,7 @@ export default function BackupScreen() {
 
   const {
     importStatus,
-    totalBlobBytes,
+    notesBytes,
     lastBackupDate,
     showProgressModal,
     isError,
@@ -143,7 +143,7 @@ export default function BackupScreen() {
 
         <BackupStatsSection
           lastBackupDate={lastBackupDate}
-          totalBlobBytes={totalBlobBytes}
+          notesBytes={notesBytes}
           formatBackupDate={formatBackupDate}
           formatBytes={formatBytes}
         />

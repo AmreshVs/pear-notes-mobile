@@ -42,7 +42,8 @@ export default function VaultStorageScreen() {
 
   const {
     totalBlobBytes,
-    totalOnDiskBytes,
+    notesDataBytes,
+    onDiskBytes,
     isReclaiming,
     activeDownloads,
     activeUploads,
@@ -117,11 +118,11 @@ export default function VaultStorageScreen() {
           <RNView style={commonThemedStyles.card}>
             <RNView style={styles.usageRow}>
               <Text style={styles.usageLabel}>{t('storage.notesData')}</Text>
-              <Text style={styles.usageValue}>{formatBytes(totalBlobBytes)}</Text>
+              <Text style={styles.usageValue}>{formatBytes(notesDataBytes)}</Text>
             </RNView>
             <RNView style={[styles.usageRow, styles.usageRowBorder]}>
               <Text style={styles.usageLabel}>{t('storage.diskFootprint')}</Text>
-              <Text style={styles.usageValue}>{formatBytes(totalOnDiskBytes)}</Text>
+              <Text style={styles.usageValue}>{formatBytes(onDiskBytes)}</Text>
             </RNView>
             <RNView style={[styles.usageRow, styles.usageRowBorder]}>
               <RNView style={styles.reclaimLabelWrap}>

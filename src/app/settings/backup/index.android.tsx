@@ -71,7 +71,7 @@ export default function AndroidBackupScreen() {
   const ripplePrimary = useMemo(() => androidRipple(c.onPrimary), [c.onPrimary])
   const {
     importStatus,
-    totalBlobBytes,
+    notesBytes,
     lastBackupDate,
     isExporting,
     showProgressModal,
@@ -152,7 +152,7 @@ export default function AndroidBackupScreen() {
 
         <AndroidBackupStatsSection
           lastBackupDate={lastBackupDate}
-          totalBlobBytes={totalBlobBytes}
+          notesBytes={notesBytes}
           formatBackupDate={formatBackupDate}
           formatBytes={formatBytes}
         />

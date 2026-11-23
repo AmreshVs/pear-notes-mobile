@@ -16,14 +16,14 @@ import { useCommonThemedStyles } from '@/constants/commonThemedStyles'
 
 type BackupStatsSectionProps = {
   lastBackupDate: string | null
-  totalBlobBytes: number
+  notesBytes: number
   formatBackupDate: (iso: string) => string
   formatBytes: (bytes: number) => string
 }
 
 export function BackupStatsSection({
   lastBackupDate,
-  totalBlobBytes,
+  notesBytes,
   formatBackupDate,
   formatBytes,
 }: BackupStatsSectionProps) {
@@ -49,7 +49,7 @@ export function BackupStatsSection({
           <SymbolIcon name="internaldrive" size={UI_ICON_SIZE_16} color={colors.primary} />
         </RNView>
         <Text style={styles.statLabel}>{t('backup.notesSize')}</Text>
-        <Text style={styles.statValue}>{formatBytes(totalBlobBytes)}</Text>
+        <Text style={styles.statValue}>{formatBytes(notesBytes)}</Text>
       </RNView>
     </RNView>
   )

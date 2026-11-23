@@ -15,7 +15,7 @@ import {
 } from '@pear-notes/core/store/slices/backupSlice.js'
 import { getNotes } from '@pear-notes/core/store/slices/notesSlice.js'
 import {
-  getTotalBlobBytes,
+  getTotalStorageSize,
   subscribeStorageInfo,
   unsubscribeStorageInfo,
 } from '@pear-notes/core/store/slices/storageSlice.js'
@@ -69,7 +69,7 @@ function useBackupScreen() {
 
   const exportStatus = useSelector(getExportStatus) as BackupStatus
   const importStatus = useSelector(getImportStatus) as BackupStatus
-  const totalBlobBytes = (useSelector(getTotalBlobBytes) as number) ?? 0
+  const notesBytes = (useSelector(getTotalStorageSize) as number) ?? 0
   const notes = useSelector(getNotes) as { value?: { locked?: boolean } }[]
   const hasLockedNotes = notes.some((note) => note.value?.locked === true)
 
@@ -276,7 +276,7 @@ function useBackupScreen() {
 
   return {
     importStatus,
-    totalBlobBytes,
+    notesBytes,
     lastBackupDate,
     isExporting,
     showProgressModal,
