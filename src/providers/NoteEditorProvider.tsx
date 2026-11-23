@@ -285,6 +285,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     handleTakePhoto,
     handleTakeVideo,
     handlePickFile,
+    handlePastedImages,
     handleScanDocument,
     handleAddSharedItems,
     handleRequestPdfThumbnail,
@@ -1475,6 +1476,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
               onOpenAttachment={handleOpenAttachment}
               onPreviewAttachment={handlePreviewAttachment}
               onRequestPdfThumbnail={handleRequestPdfThumbnail}
+              onPastedImages={handlePastedImages}
               onDeleteAttachment={handleDeleteAttachment}
               onImageLongPress={handleImageLongPress}
               onAttachmentLongPress={handleAttachmentLongPress}

@@ -1,9 +1,10 @@
+import type { DocumentPickerAsset } from 'expo-document-picker'
 import * as FileSystem from 'expo-file-system/legacy'
 
 import { backendApi } from '@pear-notes/core/backend/api.js'
 import { HYPERDRIVE_URL_PREFIX } from '@pear-notes/core/constant.js'
 
-import { ensureFileExtension } from '@/lib/fileSignature'
+import { ensureFileExtension, hasFileExtension } from '@/lib/fileSignature'
 
 import ExpoNativeShareModule from '../../modules/expo-native-share'
 
@@ -86,6 +87,55 @@ export async function pickDocuments() {
     return null
   }
   return result.assets
+}
+
+const PASTED_IMAGE_EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'image/heic': 'heic',
+  'image/heif': 'heif',
+  'image/bmp': 'bmp',
+  'image/tiff': 'tiff',
+  'image/svg+xml': 'svg',
+}
+
+const DATA_URI_PATTERN = /^data:([^;,]+)((?:;[^;,]*)*?)(;base64)?,([\s\S]*)$/
+
+export type PastedImage = { dataUri: string; fileName?: string }
+
+export async function writePastedImageToCache(
+  image: PastedImage,
+  index: number,
+): Promise<DocumentPickerAsset | null> {
+  const match = DATA_URI_PATTERN.exec(image.dataUri || '')
+  const mimeType = match?.[1]?.toLowerCase() || ''
+  const extension = PASTED_IMAGE_EXTENSIONS[mimeType]
+  if (!match || !extension) return null
+  const name = hasFileExtension(image.fileName || '')
+    ? (image.fileName as string)
+    : `image-${Date.now()}-${index}.${extension}`
+  const uri = `${FileSystem.cacheDirectory}pasted-${Date.now()}-${index}.${extension}`
+  try {
+    if (match[3]) {
+      await FileSystem.writeAsStringAsync(uri, match[4], { encoding: 'base64' })
+    } else {
+      await FileSystem.writeAsStringAsync(uri, decodeURIComponent(match[4]))
+    }
+    const info = await FileSystem.getInfoAsync(uri)
+    return {
+      uri,
+      name,
+      mimeType,
+      size: (info as { size?: number }).size || 0,
+      lastModified: Date.now(),
+    }
+  } catch {
+    await FileSystem.deleteAsync(uri, { idempotent: true }).catch(() => {})
+    return null
+  }
 }
 
 export function toBackendPath(uri: string): string {

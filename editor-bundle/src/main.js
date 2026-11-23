@@ -19,6 +19,12 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { Plugin, PluginKey, Selection } from '@tiptap/pm/state'
 import StarterKit from '@tiptap/starter-kit'
 import {
+  collectPastedImages,
+  imageFilesFrom,
+  takePendingInlineImages,
+  transformPastedInlineImages,
+} from './inlineImages.js'
+import {
   buildImageDetailsTransaction,
   buildLineRewriteTransaction,
   buildMakeTasksTransaction,
@@ -87,6 +93,16 @@ function reloadHyperdriveMedia() {
 }
 
 const MEDIA_RETRY_DELAYS = [300, 800, 1500, 3000, 5000]
+
+function handlePastedImages(transfer, slice) {
+  const files = imageFilesFrom(transfer)
+  const srcs = takePendingInlineImages()
+  if (!files.length && !srcs.length) return false
+  collectPastedImages(files, files.length ? [] : srcs).then((images) => {
+    if (images.length) sendToRN({ type: 'pastedImages', images })
+  })
+  return files.length > 0 && !slice?.content.size
+}
 
 function sendToRN(msg) {
   try {
@@ -1595,6 +1611,12 @@ function createEditorSession(html) {
       ...commonExtensions,
     ],
     content: html || '',
+    editorProps: {
+      transformPasted: transformPastedInlineImages,
+      handlePaste: (_view, event, slice) => handlePastedImages(event.clipboardData, slice),
+      handleDrop: (_view, event, slice, moved) =>
+        !moved && handlePastedImages(event.dataTransfer, slice),
+    },
 
     onUpdate: ({ editor }) => {
       scheduleContentChange(editor)

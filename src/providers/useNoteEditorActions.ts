@@ -15,12 +15,14 @@ import {
   copyVideoToUploadCache,
   deleteAttachment,
   deleteCachedAsset,
+  type PastedImage,
   pickDocuments,
   pickImagesFromLibrary,
   scanDocument,
   takePhotoFromCamera,
   takeVideoFromCamera,
   toBackendPath,
+  writePastedImageToCache,
 } from '@/lib/noteAttachmentManager'
 import { isStoredNoteLocked, toggleNoteLock } from '@/lib/noteLockActions'
 import { runNoteUpload } from '@/lib/noteUploadManager'
@@ -399,6 +401,31 @@ export function useNoteEditorActions({
     clearNoteUploadQueue(noteId)
   }, [processDocumentAsset, noteId, labels])
 
+  const handlePastedImages = useCallback(
+    async (images: PastedImage[]) => {
+      if (!noteId || !images.length) return
+      const targetNoteId = noteId
+      const written = await Promise.all(images.map(writePastedImageToCache))
+      const assets = written.filter((asset): asset is DocumentPickerAsset => !!asset)
+      if (!assets.length) return
+      const queued = assets.map((asset) => ({
+        id: nextUploadItemId(),
+        fileName: getAssetDisplayName(asset, labels.photo),
+        asset,
+      }))
+      enqueueNoteUploads(targetNoteId, queued)
+      for (const entry of queued) {
+        try {
+          await processDocumentAsset(entry.asset, entry.id)
+        } finally {
+          await deleteCachedAsset(entry.asset.uri)
+        }
+      }
+      clearNoteUploadQueue(targetNoteId)
+    },
+    [processDocumentAsset, noteId, labels],
+  )
+
   const handleScanDocument = useCallback(async () => {
     hapticMedium()
     if (!noteId) return
@@ -614,6 +641,7 @@ export function useNoteEditorActions({
     handleTakePhoto,
     handleTakeVideo,
     handlePickFile,
+    handlePastedImages,
     handleScanDocument,
     handleAddSharedItems,
     handleRequestPdfThumbnail,

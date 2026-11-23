@@ -18,6 +18,7 @@ import { getEditorFontSize, getFontFamily } from '@pear-notes/core/store/slices/
 import { getHyperdriveServerAddress } from '@pear-notes/core/store/slices/uiSlice.js'
 
 import { FontSize, FontWeight, UI_SIZE_8, UI_SIZE_12, UI_SIZE_20 } from '@/constants/commonStyles'
+import type { PastedImage } from '@/lib/noteAttachmentManager'
 import type { SharedParagraph } from '@/lib/shareIntake.types'
 import {
   clearEditorWebViewCacheOnce,
@@ -195,6 +196,7 @@ export interface TiptapEditorProps {
   onPreviewAttachment?: (url: string, fileName: string, attachmentId: string) => void
   onRequestPdfThumbnail?: (url: string, fileName: string, attachmentId: string) => void
   onDeleteAttachment?: (url: string) => void
+  onPastedImages?: (images: PastedImage[]) => void
   onImageLongPress?: (
     src: string,
     rect?: { x: number; y: number; width: number; height: number },
@@ -233,6 +235,7 @@ type WebViewMsg =
   | { type: 'previewAttachment'; url: string; fileName: string; attachmentId: string }
   | { type: 'requestPdfThumbnail'; url: string; fileName: string; attachmentId: string }
   | { type: 'deleteAttachment'; url: string }
+  | { type: 'pastedImages'; images: PastedImage[] }
   | {
       type: 'imageLongPress'
       src: string
@@ -341,6 +344,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
       onPreviewAttachment,
       onRequestPdfThumbnail,
       onDeleteAttachment,
+      onPastedImages,
       onImageLongPress,
       onAttachmentLongPress,
     },
@@ -374,6 +378,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     const onPreviewAttachmentRef = useRef(onPreviewAttachment)
     const onRequestPdfThumbnailRef = useRef(onRequestPdfThumbnail)
     const onDeleteAttachmentRef = useRef(onDeleteAttachment)
+    const onPastedImagesRef = useRef(onPastedImages)
     const onImageLongPressRef = useRef(onImageLongPress)
     const onAttachmentLongPressRef = useRef(onAttachmentLongPress)
 
@@ -391,6 +396,7 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
     onPreviewAttachmentRef.current = onPreviewAttachment
     onRequestPdfThumbnailRef.current = onRequestPdfThumbnail
     onDeleteAttachmentRef.current = onDeleteAttachment
+    onPastedImagesRef.current = onPastedImages
     onImageLongPressRef.current = onImageLongPress
     onAttachmentLongPressRef.current = onAttachmentLongPress
 
@@ -635,6 +641,10 @@ const TiptapEditorComponent = forwardRef<TiptapEditorHandle, TiptapEditorProps>(
 
           case 'deleteAttachment':
             onDeleteAttachmentRef.current?.(msg.url)
+            break
+
+          case 'pastedImages':
+            if (Array.isArray(msg.images)) onPastedImagesRef.current?.(msg.images)
             break
 
           case 'imageLongPress':
