@@ -573,7 +573,9 @@
         "minutesLeft_other": "about {{count}} minutes left",
         "size": "Index size {{size}}",
         "onlyWhileCharging": "Index only while charging",
-        "onlyWhileChargingDesc": "On battery, only new and edited notes are indexed. The rest waits until this device is plugged in."
+        "onlyWhileChargingDesc": "On battery, only new and edited notes are indexed. The rest waits until this device is plugged in.",
+        "leftOut_one": "{{count}} locked or deleted note isn't indexed",
+        "leftOut_other": "{{count}} locked or deleted notes aren't indexed"
       },
       "offload": {
         "connectedTo": "Connected to {{device}}",

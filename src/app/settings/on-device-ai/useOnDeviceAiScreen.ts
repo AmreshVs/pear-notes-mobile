@@ -10,6 +10,7 @@ import {
   LOCAL_AI_NETWORK,
   LOCAL_AI_NOTICE,
 } from '@pear-notes/core/store/services/localAiCatalog.js'
+import { isIndexable } from '@pear-notes/core/store/services/localAiIndex.js'
 import {
   cancelLocalAiFeatureDownload,
   clearLocalAiNotice,
@@ -30,6 +31,7 @@ import {
   setLocalAiOffload,
   setLocalAiWifiOnly,
 } from '@pear-notes/core/store/slices/localAiSlice.js'
+import { getNoteKeys, getNotesData } from '@pear-notes/core/store/slices/notesSlice.js'
 import { formatBytes } from '@pear-notes/core/utils.js'
 
 import { hapticLight, hapticSelection, hapticWarning } from '@/lib/haptics'
@@ -97,12 +99,19 @@ const DOWNLOAD_BLOCKING_NETWORKS = [
   LOCAL_AI_NETWORK.OFFLINE,
 ]
 
+const selectIndexLeftOutCount = (state: unknown): number => {
+  const data = getNotesData(state) as Record<string, unknown>
+  const keys = (getNoteKeys(state) as string[] | undefined) ?? []
+  return keys.filter((key) => data[key] && !isIndexable(data[key])).length
+}
+
 function useOnDeviceAiScreen() {
   const { t } = useTranslation()
   const dispatch = useDispatch()
   const state = useSelector(getLocalAiState) as LocalAiScreenState
   const bytesOnDisk = (useSelector(selectLocalAiBytesOnDisk) as number) ?? 0
   const coverage = useSelector(selectIndexCoverage) as { indexed: number; total: number } | null
+  const leftOut = useSelector(selectIndexLeftOutCount)
   const linkedDesktopTitle = useSelector(getLinkedDesktopTitle) as string
   const [confirm, setConfirm] = useState<OnDeviceAiConfirm | null>(null)
 
@@ -131,13 +140,15 @@ function useOnDeviceAiScreen() {
       return t('settings.onDeviceAi.index.failed')
     }
     if (!coverage) return t('settings.onDeviceAi.index.notYet')
-    return t(
+    const covered = t(
       coverage.indexed < coverage.total
         ? 'settings.onDeviceAi.index.partial'
         : 'settings.onDeviceAi.index.done',
       coverage,
     )
-  }, [t, indexStatus, state.index.done, state.index.total, coverage])
+    if (!leftOut) return covered
+    return `${covered}\n${t('settings.onDeviceAi.index.leftOut', { count: leftOut })}`
+  }, [t, indexStatus, state.index.done, state.index.total, coverage, leftOut])
 
   const rebuildIndex = useCallback(() => {
     hapticLight()
