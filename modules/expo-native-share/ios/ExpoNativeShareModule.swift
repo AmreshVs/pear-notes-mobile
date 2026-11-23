@@ -26,8 +26,53 @@ private class QuickLookDelegate: NSObject, QLPreviewControllerDataSource, QLPrev
   }
 }
 
+private let letterPaperRegions: Set<String> = ["US", "CA", "MX", "PH", "CL", "CO", "VE", "GT", "CR", "PA", "DO", "PR", "SV", "NI", "BZ"]
+private let a4PageSize = CGSize(width: 595.2, height: 841.8)
+private let letterPageSize = CGSize(width: 612, height: 792)
+
+private class TitledTextItemSource: NSObject, UIActivityItemSource {
+  let text: String
+  let title: String
+
+  init(text: String, title: String) {
+    self.text = text
+    self.title = title
+  }
+
+  func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any { text }
+
+  func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? { text }
+
+  func activityViewController(_ activityViewController: UIActivityViewController, subjectForActivityType activityType: UIActivity.ActivityType?) -> String { title }
+}
+
+private class PrintInfoItemSource: NSObject, UIActivityItemSource {
+  let printInfo: UIPrintInfo
+
+  init(jobName: String) {
+    printInfo = UIPrintInfo.printInfo()
+    printInfo.jobName = jobName
+    printInfo.outputType = .general
+  }
+
+  func activityViewControllerPlaceholderItem(_ activityViewController: UIActivityViewController) -> Any { printInfo }
+
+  func activityViewController(_ activityViewController: UIActivityViewController, itemForActivityType activityType: UIActivity.ActivityType?) -> Any? {
+    activityType == .print ? printInfo : nil
+  }
+}
+
+private class RegionalPaperDelegate: NSObject, UIPrintInteractionControllerDelegate {
+  func printInteractionController(_ printInteractionController: UIPrintInteractionController, choosePaper paperList: [UIPrintPaper]) -> UIPrintPaper {
+    let region = Locale.current.region?.identifier ?? ""
+    let size = letterPaperRegions.contains(region) ? letterPageSize : a4PageSize
+    return UIPrintPaper.bestPaper(forPageSize: size, withPapersFrom: paperList)
+  }
+}
+
 public class ExpoNativeShareModule: Module {
   private var activityViewController: UIActivityViewController?
+  private let paperDelegate = RegionalPaperDelegate()
   private var quickLookDelegate: QuickLookDelegate?
 
   private func keyWindowRootViewController() -> UIViewController? {
@@ -97,9 +142,14 @@ public class ExpoNativeShareModule: Module {
       }
 
       var itemsToShare: [Any] = []
+      let title = (options["title"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
       if !message.isEmpty {
-        itemsToShare.append(message)
+        itemsToShare.append(title.isEmpty ? message : TitledTextItemSource(text: message, title: title))
+      }
+
+      if !title.isEmpty {
+        itemsToShare.append(PrintInfoItemSource(jobName: title))
       }
 
       if let urls = options["urls"] as? [String] {
@@ -116,7 +166,7 @@ public class ExpoNativeShareModule: Module {
         }
       }
 
-      guard !itemsToShare.isEmpty else {
+      guard !itemsToShare.isEmpty, !(itemsToShare.count == 1 && itemsToShare.first is PrintInfoItemSource) else {
         promise.reject(Exception(name: "NoContent", description: "Nothing to share."))
         return
       }
@@ -126,9 +176,15 @@ public class ExpoNativeShareModule: Module {
         self.activityViewController = avc
 
         let resolveOnDismiss = options["resolveOnDismiss"] as? Bool ?? false
+        let printController = UIPrintInteractionController.shared
+        printController.delegate = self.paperDelegate
+        printController.showsPaperSelectionForLoadedPapers = true
 
         avc.completionWithItemsHandler = { [weak self] _, _, _, _ in
           self?.activityViewController = nil
+          if printController.delegate === self?.paperDelegate {
+            printController.delegate = nil
+          }
           if resolveOnDismiss {
             promise.resolve(nil)
           }

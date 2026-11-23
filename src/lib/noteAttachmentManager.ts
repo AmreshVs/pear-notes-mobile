@@ -252,8 +252,8 @@ export async function shareAttachment(url: string, fileName: string) {
   }
 }
 
-export async function shareMessage(message: string, urls: string[] = []) {
-  await ExpoNativeShareModule.share({ message, urls })
+export async function shareMessage(message: string, urls: string[] = [], title?: string) {
+  await ExpoNativeShareModule.share({ message, urls, title })
 }
 
 export async function copyFileToSAF(sourceUri: string, destUri: string) {

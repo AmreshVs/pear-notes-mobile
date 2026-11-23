@@ -340,7 +340,7 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
         resolveHyperdriveUrl,
       })
       try {
-        await shareMessage(message, urls)
+        await shareMessage(message, urls, title)
       } catch {
         await Share.share({ title, message })
       }

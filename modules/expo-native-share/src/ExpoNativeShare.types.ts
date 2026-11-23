@@ -1,5 +1,6 @@
 export interface ExpoNativeShareOptions {
   message: string
+  title?: string
   urls?: string[]
   resolveOnDismiss?: boolean
 }

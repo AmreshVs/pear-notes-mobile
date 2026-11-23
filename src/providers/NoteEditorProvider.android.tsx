@@ -1255,12 +1255,13 @@ export function NoteEditorProvider({ children }: { children: React.ReactNode }) 
     hapticMedium()
     setIsSharing(true)
     try {
+      const title = titleRef.current || t('noteCard.untitled')
       const { message, urls } = await buildNoteSharePayload({
-        title: titleRef.current || t('noteCard.untitled'),
+        title,
         html: noteContentRef.current || '',
         resolveHyperdriveUrl,
       })
-      await shareMessage(message, urls)
+      await shareMessage(message, urls, title)
     } catch (error) {
       console.error('handleShare', error)
     } finally {

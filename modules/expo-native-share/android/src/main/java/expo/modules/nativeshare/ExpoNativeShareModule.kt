@@ -18,6 +18,7 @@ class ExpoNativeShareModule : Module() {
       val context = appContext.reactContext ?: throw Exceptions.ReactContextLost()
       val message = options["message"] as? String ?: ""
       val urls = options["urls"] as? List<String> ?: emptyList()
+      val title = (options["title"] as? String)?.trim().orEmpty()
 
       val uris = ArrayList<Uri>()
       urls.forEach { urlString ->
@@ -39,6 +40,10 @@ class ExpoNativeShareModule : Module() {
         type = "text/plain"
         if (message.isNotEmpty()) {
           putExtra(Intent.EXTRA_TEXT, message)
+        }
+        if (title.isNotEmpty()) {
+          putExtra(Intent.EXTRA_SUBJECT, title)
+          putExtra(Intent.EXTRA_TITLE, title)
         }
       }
 
